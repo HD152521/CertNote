@@ -157,48 +157,48 @@ Frequent SAP categories: (1) "Athena cost reduction" → Parquet+partition+compr
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 분석팀이 raw JSON 로그(일별 3TB, 압축 안 됨)에 Athena 쿼리를 직접 실행해 쿼리당 $15가 청구된다. 50명이 하루 10번 쿼리한다. 가장 큰 비용 절감을 제공하는 변경은?
+**Question 1.** An analytics team runs Athena queries directly against raw JSON logs (3 TB per day, uncompressed) and is charged $15 per query. 50 people run 10 queries a day. Which change provides the largest cost savings?
 
-A) Athena Workgroup을 하나로 통합
-B) Glue ETL로 Parquet + snappy 압축 + 날짜 파티션의 Curated 계층 생성
-C) Result Reuse만 활성화
-D) S3 Lifecycle으로 30일 후 Glacier 이동
+A) Consolidate the Athena Workgroups into one
+B) Create a Curated layer with Glue ETL using Parquet + snappy compression + date partitions
+C) Enable only Result Reuse
+D) Move data to Glacier after 30 days with an S3 Lifecycle policy
 
 **Answer: B**
-Explanation: Athena는 스캔 데이터 1TB당 $5로 과금되므로 비용 절감의 핵심은 스캔량 감소다. Parquet(컬럼 지향으로 필요한 컬럼만 스캔)+압축(snappy로 5~10배 축소)+파티션(WHERE 조건의 prefix만 스캔)을 결합하면 스캔량이 100배 가까이 줄어 비용도 그만큼 감소한다. A(Workgroup)는 비용 격리·한도 설정이지 절감 자체가 아니다. C(Result Reuse)는 동일 쿼리 반복에만 효과가 있어 다양한 쿼리에는 제한적. D(Lifecycle)는 스토리지 비용 절감이지 쿼리 스캔 비용과 무관하며, Glacier 데이터는 Athena가 직접 쿼리하지도 못한다. 함정: "Athena 비용 폭증"은 거의 항상 raw에 직접 쿼리하는 문제이고 답은 Curated 계층(Parquet+파티션+압축)이다.
+Explanation: Athena is billed at $5 per TB scanned, so the key to cost savings is reducing the amount scanned. Combining Parquet (columnar, scanning only the needed columns) + compression (5-10x reduction with snappy) + partitions (scanning only the prefixes matching the WHERE condition) reduces the scan volume by nearly 100x and the cost by the same factor. A (Workgroup) provides cost isolation and limits, not savings itself. C (Result Reuse) is effective only for repeated identical queries, so it is limited for varied queries. D (Lifecycle) saves storage cost, has nothing to do with query scan cost, and Athena cannot even query Glacier data directly. Trap: "Athena cost explosion" is almost always the problem of querying raw data directly, and the answer is a Curated layer (Parquet + partitions + compression).
 
 ---
 
-**Question 2.** 보안팀이 5년치 VPC Flow Log를 시간별 파티션으로 저장한다. 파티션이 약 44,000개이고, Athena 쿼리 시 파티션 메타데이터 조회(GetPartitions)에 쿼리보다 더 오래 걸린다. 운영 자동화 부담 없이 쿼리를 빠르게 하려면?
+**Question 2.** A security team stores 5 years of VPC Flow Logs in hourly partitions. There are about 44,000 partitions, and when running Athena queries, the partition metadata lookup (GetPartitions) takes longer than the query itself. How can you speed up queries without operational automation burden?
 
-A) Glue Crawler를 매시간 실행해 파티션을 미리 등록
-B) Partition Projection을 활성화해 파티션 경로를 규칙으로 계산
-C) 파티션을 일별로 줄여 365개로 축소
-D) Redshift Spectrum으로 전환
+A) Run a Glue Crawler every hour to register partitions in advance
+B) Enable Partition Projection to compute partition paths by rule
+C) Reduce partitions to daily, bringing them down to 365
+D) Switch to Redshift Spectrum
 
 **Answer: B**
-Explanation: Partition Projection은 파티션 정보를 카탈로그에 일일이 저장하는 대신 TBLPROPERTIES에 범위·타입·경로 템플릿 규칙을 선언하고, Athena가 카탈로그 조회 없이 파티션 경로를 직접 계산하게 한다. 수만 파티션에서도 GetPartitions 호출이 0이 되어 즉시 쿼리가 시작되고, MSCK REPAIR나 ALTER TABLE ADD PARTITION 같은 운영 자동화도 불필요하다. A는 Crawler 실행 비용·시간이 오히려 늘고 근본 해결이 아님. C는 시간별 분석 능력을 잃음. D는 같은 카탈로그를 쓰므로 메타데이터 병목이 동일하게 발생. 함정: "수만 파티션 + 메타데이터 조회 느림"은 Partition Projection.
+Explanation: Instead of storing every partition in the catalog one by one, Partition Projection declares range, type, and path template rules in TBLPROPERTIES and lets Athena compute partition paths directly without a catalog lookup. Even with tens of thousands of partitions, GetPartitions calls drop to 0 and queries start immediately, and operational automation such as MSCK REPAIR or ALTER TABLE ADD PARTITION is unnecessary. A actually increases Crawler run cost and time and is not a fundamental fix. C loses the ability to analyze hourly. D uses the same catalog, so the same metadata bottleneck occurs. Trap: "tens of thousands of partitions + slow metadata lookup" is Partition Projection.
 
 ---
 
-**Question 3.** 여러 병원의 환자 데이터를 하나의 데이터 레이크에 통합했다. 데이터 과학팀은 진단·치료 컬럼은 보되 환자 이름·주민번호 컬럼은 볼 수 없어야 하고, 각 병원은 자기 병원 데이터(행)만 봐야 한다. 가장 적합한 구성은?
+**Question 3.** Patient data from multiple hospitals has been consolidated into a single data lake. The data science team must be able to see the diagnosis and treatment columns but not the patient name and Korean resident registration number columns, and each hospital must see only its own hospital's data (rows). What is the most appropriate configuration?
 
-A) S3 버킷 정책으로 prefix를 분리
-B) IAM 정책으로 테이블별 접근 제어
-C) Lake Formation으로 컬럼 수준·행 수준 권한 설정
-D) 민감 컬럼을 별도 테이블로 분리하는 ETL 구축
+A) Separate prefixes with an S3 bucket policy
+B) Control access per table with IAM policies
+C) Set column-level and row-level permissions with Lake Formation
+D) Build an ETL that splits sensitive columns into a separate table
 
 **Answer: C**
-Explanation: Lake Formation은 Glue Catalog 위에 얹는 거버넌스 레이어로, 컬럼 수준(특정 컬럼 마스킹/차단)·행 수준(필터 조건)·셀 수준 권한을 카탈로그에서 중앙 선언적으로 관리한다. LF-Tags로 "PII 태그 컬럼은 분석팀 차단" 같은 정책을 한 번에 적용할 수도 있다. A·B는 S3 prefix·테이블 단위까지만 제어할 수 있고 컬럼·행 수준 제어가 불가능하다. D는 가능하지만 ETL 복잡성이 크고 유지보수 부담이 높아 권장되지 않는다. 함정: "같은 테이블의 컬럼·행마다 다른 권한"은 IAM/S3 정책으로 불가능하고 Lake Formation이 정답.
+Explanation: Lake Formation is a governance layer on top of the Glue Catalog that manages column-level (masking/blocking specific columns), row-level (filter conditions), and cell-level permissions centrally and declaratively in the catalog. With LF-Tags, you can also apply a policy such as "block PII-tagged columns for the analytics team" all at once. A and B can control only down to the S3 prefix or table level and cannot control at the column or row level. D is possible, but the ETL complexity is large and the maintenance burden is high, so it is not recommended. Trap: "different permissions per column and row in the same table" is impossible with IAM/S3 policies, and Lake Formation is the answer.
 
 ---
 
-**Question 4.** GDPR 준수를 위해 5년치 클릭스트림 데이터에서 특정 사용자의 모든 레코드를 삭제해야 한다. 삭제 요청이 매주 수백 건이고 데이터는 수천 파티션에 흩어져 있다. 전통 Parquet 레이크는 파티션 전체를 다시 써야 해 비효율적이다. 가장 적합한 구성은?
+**Question 4.** For GDPR compliance, all records of a specific user must be deleted from 5 years of clickstream data. Hundreds of deletion requests arrive every week, and the data is scattered across thousands of partitions. A traditional Parquet lake must rewrite entire partitions, which is inefficient. What is the most appropriate configuration?
 
-A) S3 Object Lambda로 응답 시점에 필터링
-B) Apache Iceberg 테이블 포맷 + 행 수준 DELETE
-C) Athena CTAS로 전체 테이블을 매번 재생성
-D) Kinesis로 모든 변경을 스트리밍해 실시간 DB에 유지
+A) Filter at response time with S3 Object Lambda
+B) Apache Iceberg table format + row-level DELETE
+C) Recreate the entire table every time with Athena CTAS
+D) Stream all changes with Kinesis and keep them in a real-time DB
 
 **Answer: B**
 Explanation: [Korean explanation preserved exactly as-is per translation rules]

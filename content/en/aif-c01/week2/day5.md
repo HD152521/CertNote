@@ -86,7 +86,7 @@ Next week we enter machine learning and deep learning, plus AWS's AI/ML service 
 
 ## 📝 Practice Questions
 
-**Question 1.** ML 수명주기에 대한 설명으로 가장 정확한 것은?
+**Question 1.** Which statement about the ML lifecycle is most accurate?
 
 A) Collection → Training → Deployment in one linear direction, then done  
 B) Collection → Preparation → Training → Evaluation → Deployment → Monitoring, with circulation when performance degrades  
@@ -98,7 +98,7 @@ Explanation: The ML lifecycle goes through six stages: collection, preparation, 
 
 ---
 
-**Question 2.** 다음 중 정밀도(Precision)를 우선해야 하는 상황으로 가장 적절한 것은?
+**Question 2.** Which of the following is the most appropriate situation in which precision should be prioritized?
 
 A) Diagnosis model where we can't miss a single cancer patient  
 B) Spam filter where wrongly classifying normal emails as spam is problematic  
@@ -110,7 +110,7 @@ Explanation: Wrongly flagging a normal email as spam is a false positive (FP), a
 
 ---
 
-**Question 3.** 학습 데이터 정확도는 98%로 매우 높지만 테스트 데이터 정확도는 64%로 크게 낮다. 이 현상과 그 진단으로 옳은 것은?
+**Question 3.** Training data accuracy is very high at 98%, but test data accuracy is much lower at 64%. Which option correctly states this phenomenon and its diagnosis?
 
 A) Underfitting — model is too simple  
 B) Overfitting — model memorized training data and failed to generalize  
@@ -122,7 +122,7 @@ Explanation: A large gap where training score is very high but test score is muc
 
 ---
 
-**Question 4.** 데이터 드리프트(Data Drift)와 데이터 누수(Data Leakage)를 구분한 설명으로 옳은 것은?
+**Question 4.** Which statement correctly distinguishes data drift from data leakage?
 
 A) Both occur before training and are the same problem  
 B) Drift is distribution change over time after deployment; leakage is test data mixing into training causing inflated evaluation scores  
@@ -134,7 +134,7 @@ Explanation: Data drift is an operational problem where data distribution change
 
 ---
 
-**Question 5.** 고위험 자동 의사결정 시스템에서 책임 있는 AI를 위해 권장되는 설계는?
+**Question 5.** What design is recommended for responsible AI in a high-stakes automated decision-making system?
 
 A) Have AI handle all decisions independently and automatically  
 B) Have people review and approve critical decisions through Human-in-the-loop  

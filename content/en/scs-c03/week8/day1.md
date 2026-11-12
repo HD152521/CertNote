@@ -151,62 +151,62 @@ CloudWatch is a *first-line detector*: "quantize patterns from single log group,
 
 ## 📝 Practice Questions
 
-**Question 1.** CloudTrail 로그에서 루트 계정 사용을 탐지해 즉시 알림을 보내려 한다. 올바른 구성 순서는?
+**Question 1.** You want to detect root account usage in CloudTrail logs and send an immediate alert. What is the correct configuration order?
 
-A) CloudTrail → S3 → Athena 쿼리 스케줄링 → 이메일  
-B) CloudTrail을 CloudWatch Logs로 전송 → Metric Filter로 루트 사용 패턴 매칭 → Alarm(임계 1) → SNS  
-C) GuardDuty를 활성화하면 자동으로 처리된다  
-D) VPC Flow Logs에 Metric Filter를 적용  
+A) CloudTrail → S3 → Athena scheduled query → email  
+B) Send CloudTrail to CloudWatch Logs → match the root usage pattern with a Metric Filter → Alarm (threshold 1) → SNS  
+C) Enabling GuardDuty handles it automatically  
+D) Apply a Metric Filter to VPC Flow Logs  
 
 **Answer: B**  
-Explanation: 루트 사용 탐지의 표준 경로는 CloudTrail 로그를 CloudWatch Logs로 보내고, JSON 패턴 Metric Filter로 루트 주체 호출을 카운트한 뒤, 임계 1 이상이면 발동하는 Alarm을 SNS에 연결하는 것이다. S3+Athena는 사후 배치 분석이라 "즉시"가 아니고, GuardDuty는 루트 사용 자체를 핵심 탐지로 다루지 않으며, VPC Flow Logs에는 API 호출 정보가 없다.
+Explanation: The standard path for detecting root usage is to send CloudTrail logs to CloudWatch Logs, count calls by the root principal with a JSON-pattern Metric Filter, and connect an Alarm that fires at a threshold of 1 or more to SNS. S3 + Athena is after-the-fact batch analysis and so is not "immediate," GuardDuty does not treat root usage itself as a core detection, and VPC Flow Logs contain no API call information.
 
 ---
 
-**Question 2.** 5분 동안 콘솔 로그인 실패가 5회 이상이면 경보하도록 알람을 만들었는데 한 번도 발동하지 않는다. 메트릭 필터와 알람을 점검했을 때 가장 가능성 높은 원인은?
+**Question 2.** You created an alarm to alert when there are 5 or more failed console logins in 5 minutes, but it has never fired. When checking the metric filter and alarm, what is the most likely cause?
 
-A) 알람의 Statistic을 Average로 설정해 카운트 합이 임계를 넘지 못한다  
-B) SNS 토픽이 암호화되어 있다  
-C) 로그 그룹 보존 기간이 너무 길다  
-D) CloudFront 스코프가 잘못되었다  
+A) The alarm Statistic is set to Average, so the count sum never exceeds the threshold  
+B) The SNS topic is encrypted  
+C) The log group retention period is too long  
+D) The CloudFront scope is wrong  
 
 **Answer: A**  
-Explanation: 카운트 기반 보안 탐지는 지정 기간 동안 발생 횟수의 합이 중요하므로 `Sum` 통계를 써야 한다. `Average`로 평가하면 5분 평균이 임계 5에 도달하지 못해 영원히 발동하지 않는다. SNS 암호화·보존 기간은 발동 여부와 무관하고, CloudFront 스코프는 WAF 개념으로 이 문맥과 관계없다.
+Explanation: For count-based security detection, the sum of occurrences over the specified period matters, so you must use the `Sum` statistic. If evaluated with `Average`, the 5-minute average never reaches the threshold of 5, so it never fires. SNS encryption and the retention period are unrelated to whether it fires, and CloudFront scope is a WAF concept unrelated to this context.
 
 ---
 
-**Question 3.** 트래픽이 시간대와 요일에 따라 크게 변동하는 애플리케이션의 NetworkOut 급증(데이터 유출 의심)을 정적 임계 없이 탐지하려 한다. 가장 적절한 것은?
+**Question 3.** You want to detect a NetworkOut spike (suspected data exfiltration) in an application whose traffic varies greatly by time of day and day of week, without a static threshold. What is most appropriate?
 
-A) 고정 임계 알람을 보수적으로 낮게 설정  
-B) CloudWatch Anomaly Detection으로 학습된 밴드를 벗어나는 값을 탐지  
-C) Subscription Filter로 모든 로그를 Lambda로 전송  
-D) 로그 그룹 보존 기간을 무기한으로 설정  
+A) Set a fixed threshold alarm conservatively low  
+B) Use CloudWatch Anomaly Detection to detect values outside the learned band  
+C) Send all logs to Lambda with a Subscription Filter  
+D) Set the log group retention period to indefinite  
 
 **Answer: B**  
-Explanation: 패턴이 시간에 따라 변동해 정적 임계를 정하기 어려운 메트릭에는 Anomaly Detection이 적합하다. ML 모델이 과거 패턴으로 예상 밴드를 만들고 이를 벗어나면 발동한다. 고정 임계를 낮게 잡으면 정상 피크에서 오탐이 폭증하고, Subscription Filter는 탐지가 아니라 스트리밍 전달이며, 보존 기간은 탐지와 무관하다.
+Explanation: Anomaly Detection suits metrics whose pattern varies over time, making a static threshold hard to set. An ML model builds an expected band from past patterns and fires when values leave it. Setting a low fixed threshold causes a flood of false positives at normal peaks, a Subscription Filter is streaming delivery rather than detection, and the retention period is unrelated to detection.
 
 ---
 
-**Question 4.** 여러 멤버 계정의 로그를 중앙 로깅 계정으로 실시간 집계하려 한다. 핵심 구성 요소는?
+**Question 4.** You want to aggregate logs from multiple member accounts to a central logging account in real time. What are the key components?
 
-A) 각 계정에서 S3 버킷 복제(replication)만 설정  
-B) 각 로그 그룹의 Subscription Filter를 중앙 계정의 Kinesis Data Firehose destination으로 연결하고, destination access policy로 소스 계정을 허용  
-C) 각 계정에서 Metric Filter를 만들면 자동으로 중앙 집계된다  
-D) CloudWatch Alarm을 cross-account로 공유  
+A) Set up only S3 bucket replication in each account  
+B) Connect each log group's Subscription Filter to a Kinesis Data Firehose destination in the central account, and allow the source accounts with the destination access policy  
+C) Creating a Metric Filter in each account automatically aggregates centrally  
+D) Share CloudWatch Alarms cross-account  
 
 **Answer: B**  
-Explanation: 실시간 로그 집계는 Subscription Filter가 핵심이며, cross-account 시 *대상* 계정에 destination(Kinesis/Firehose)을 만들고 그 access policy로 소스 계정을 허용해야 한다. S3 복제는 실시간 이벤트 스트리밍이 아니고, Metric Filter는 같은 계정 내 숫자 변환일 뿐 cross-account 집계를 하지 않으며, 알람 공유로는 원본 로그가 모이지 않는다.
+Explanation: Real-time log aggregation centers on the Subscription Filter, and for cross-account use you must create a destination (Kinesis/Firehose) in the *target* account and allow the source accounts with its access policy. S3 replication is not real-time event streaming, a Metric Filter is only a numeric conversion within the same account and does not aggregate cross-account, and sharing alarms does not gather the original logs.
 
 ---
 
-**Question 5.** 로그 그룹에 KMS CMK 암호화를 설정했더니 로그가 더 이상 수집되지 않는다. 가장 먼저 확인할 것은?
+**Question 5.** After you configured KMS CMK encryption on a log group, logs are no longer ingested. What should you check first?
 
-A) IAM 사용자에게 CloudWatch 읽기 권한이 있는지  
-B) KMS 키 정책에 `logs.<region>.amazonaws.com` 서비스 주체의 키 사용 권한이 있는지  
-C) 로그 그룹 보존 기간 설정  
-D) SNS 토픽 구독 상태  
+A) Whether the IAM user has CloudWatch read permission  
+B) Whether the KMS key policy grants key usage permission to the `logs.<region>.amazonaws.com` service principal  
+C) The log group retention setting  
+D) The SNS topic subscription status  
 
 **Answer: B**  
-Explanation: CloudWatch Logs가 KMS로 암호화하려면 *키 정책*에 CloudWatch Logs 서비스 주체의 Encrypt/Decrypt/GenerateDataKey 권한이 명시돼야 한다. KMS는 IAM 권한과 키 정책 두 게이트를 모두 통과해야 하며, 서비스 주체 권한이 없으면 수집이 실패한다. IAM 읽기 권한, 보존 기간, SNS 구독은 수집 실패 원인과 무관하다.
+Explanation: For CloudWatch Logs to encrypt with KMS, the *key policy* must explicitly grant the CloudWatch Logs service principal Encrypt/Decrypt/GenerateDataKey permissions. KMS requires passing both gates, IAM permissions and the key policy, and ingestion fails if the service principal lacks permission. IAM read permission, the retention period, and SNS subscriptions are unrelated to the cause of ingestion failure.
 
 ---

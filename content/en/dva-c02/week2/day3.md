@@ -337,7 +337,7 @@ Explanation: A volume created from a snapshot uses lazy load — it fetches bloc
 
 ---
 
-**문제 5(중복 방지를 위해 재번호): NotApplicable. 이미 5번 출제.
+**Question 5 (renumbered to avoid duplication): NotApplicable. Question 5 has already been asked.
 
 **Question 7.** A company wants to retain EBS snapshots for 90+ days of long-term storage. How do you minimize cost?
 

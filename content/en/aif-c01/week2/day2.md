@@ -71,7 +71,7 @@ Tomorrow, we'll cover how to measure whether models built with this prepared dat
 
 ## 📝 Practice Questions
 
-**Question 1.** 다음 중 비정형 데이터(Unstructured Data)에 해당하는 것은?
+**Question 1.** Which of the following is unstructured data?
 
 A) Rows and columns organized in a customer database table  
 B) Transaction history CSV consisting of date, amount, and account number  
@@ -83,7 +83,7 @@ Explanation: Voice call recordings are unstructured data with no fixed row-colum
 
 ---
 
-**Question 2.** 데이터를 학습용·검증용·테스트용으로 나누는 가장 근본적인 이유는?
+**Question 2.** What is the most fundamental reason for splitting data into training, validation, and test sets?
 
 A) To reduce data storage costs  
 B) To fairly evaluate performance on data not used in training  
@@ -95,7 +95,7 @@ Explanation: If we measure model performance on data it trained on, it's just "a
 
 ---
 
-**Question 3.** 테스트용으로 따로 떼어 둔 데이터가 학습 데이터에 섞여 들어가 평가 점수가 비현실적으로 높게 나오는 현상을 무엇이라 하는가?
+**Question 3.** What is the phenomenon called in which data set aside for testing leaks into the training data, producing unrealistically high evaluation scores?
 
 A) Data Drift  
 B) Data Leakage  
@@ -107,7 +107,7 @@ Explanation: When test data that shouldn't be used in training accidentally gets
 
 ---
 
-**Question 4.** 얼굴 인식 모델을 특정 인종의 사진으로만 학습시켰더니 다른 인종 얼굴을 잘 인식하지 못했다. 이는 데이터 품질의 어떤 측면이 부족했기 때문인가?
+**Question 4.** A face recognition model trained only on photos of people of one particular ethnicity fails to recognize faces of other ethnicities. Which aspect of data quality was lacking?
 
 A) Timeliness  
 B) Consistency  
@@ -119,7 +119,7 @@ Explanation: When training data doesn't broadly represent diverse subjects in re
 
 ---
 
-**Question 5.** 정상 거래 99.9%, 사기 거래 0.1%인 데이터로 사기 탐지 모델을 평가할 때, 단순 정확도(Accuracy)만 보면 안 되는 이유로 가장 적절한 것은?
+**Question 5.** When evaluating a fraud detection model on data that is 99.9% legitimate transactions and 0.1% fraudulent transactions, what is the most appropriate reason not to rely on simple accuracy alone?
 
 A) Because accuracy always comes out as 0  
 B) Because just answering "all normal" yields 99.9% accuracy, potentially leading to misinterpreting a model that can't detect fraud as good  

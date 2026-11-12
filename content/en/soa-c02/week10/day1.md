@@ -129,93 +129,93 @@ In the next article, we'll move beyond EBS alone, bundling RDS, DynamoDB, EFS, a
 
 ## 📝 Practice Questions
 
-**Question 1.** 1TB EBS 볼륨의 매시간 스냅샷을 한 달간 찍었는데 청구액이 예상보다 훨씬 적다. 그 이유로 가장 정확한 것은?
+**Question 1.** A company took hourly snapshots of a 1 TB EBS volume for a month, but the bill is far lower than expected. Which is the most accurate reason?
 
-A) AWS가 스냅샷에 자동 할인을 적용한다
-B) EBS Snapshot은 증분 방식이라 첫 스냅샷만 전체 크기고 이후는 변경된 블록만 저장하며, 변경량이 작으면 누적 비용이 작다
-C) Free tier가 스냅샷 비용을 면제한다
-D) 스냅샷이 압축되어 저장된다
-
-**Answer: B**
-
-Explanation: EBS Snapshot의 핵심은 블록 단위 증분 백업이다. 첫 스냅샷은 볼륨의 모든 점유 블록을 백업하지만, 이후 스냅샷은 직전 이후 dirty bit가 켜진(변경된) 블록만 새로 저장하고 변경되지 않은 블록은 이전 스냅샷이 저장한 블록을 그대로 참조한다(structural sharing). 따라서 비용은 볼륨 크기가 아니라 시간당 변경량에 비례한다. 1TB라도 변경이 적으면 두 번째 이후 스냅샷은 거의 비용이 들지 않는다.
-
----
-
-**Question 2.** 운영자가 사용하지 않는 AMI를 deregister했는데 스토리지 비용이 줄지 않았다. 원인과 해결은?
-
-A) AMI 삭제는 비동기라 며칠 기다리면 자동 정리된다
-B) AMI deregister는 부팅 레시피만 제거하고 연관 EBS 스냅샷은 남으므로, 스냅샷을 별도로 삭제하거나 DLM 정책으로 정리해야 한다
-C) AMI를 다시 등록한 뒤 삭제하면 스냅샷도 같이 지워진다
-D) EC2 인스턴스를 종료하면 자동 정리된다
+A) AWS automatically applies a discount to snapshots
+B) EBS snapshots are incremental: only the first snapshot is full size and later ones store only changed blocks, so the cumulative cost is small when the change rate is low
+C) The Free Tier waives snapshot charges
+D) Snapshots are stored compressed
 
 **Answer: B**
 
-Explanation: AMI는 데이터를 직접 갖지 않고 EBS 스냅샷들에 대한 참조 + 디바이스 매핑 메타데이터(부팅 레시피)일 뿐이다. deregister는 이 레시피만 제거하므로 실제 데이터인 스냅샷은 그대로 남아 계속 GB당 과금된다. 골든 AMI를 버전별로 만들고 지우는 환경에서 deregister만 반복하면 미사용 스냅샷이 테라바이트 단위로 누적되는 대표적 비용 함정이다. 스냅샷을 명시적으로 삭제하거나 DLM의 정리 옵션을 써야 한다.
+Explanation: The core of EBS snapshots is block-level incremental backup. The first snapshot backs up all occupied blocks of the volume, but each later snapshot stores only the blocks whose dirty bit was set (changed) since the previous one, and unchanged blocks simply reference the blocks stored by an earlier snapshot (structural sharing). Therefore cost is proportional to the hourly change volume, not the volume size. Even for 1 TB, snapshots after the second cost almost nothing if little changes.
 
 ---
 
-**Question 3.** 데이터베이스가 실행 중인 인스턴스의 AMI를 `--no-reboot`로 만들었더니 복원한 DB가 간헐적으로 손상된 상태로 뜬다. 근본 원인은?
+**Question 2.** An operator deregistered unused AMIs, but storage costs did not go down. What is the cause and the fix?
 
-A) AMI 생성 자체가 DB를 손상시킨다
-B) `--no-reboot`는 crash-consistent 스냅샷이라 OS의 write-back 캐시와 진행 중 트랜잭션이 디스크에 반영되지 않은 채로 백업될 수 있다 — fsfreeze/VSS로 application-consistent 백업이 필요하다
-C) DB는 AMI로 백업할 수 없다
-D) 스냅샷이 증분이라 일부 블록이 누락됐다
+A) AMI deletion is asynchronous and is cleaned up automatically after a few days
+B) Deregistering an AMI removes only the boot recipe and leaves the associated EBS snapshots, so the snapshots must be deleted separately or cleaned up with a DLM policy
+C) Re-registering the AMI and then deleting it also deletes the snapshots
+D) Terminating the EC2 instance cleans them up automatically
 
 **Answer: B**
 
-Explanation: `--no-reboot`는 인스턴스를 멈추지 않고 스냅샷을 찍어 운영 중단은 없지만, 그 시점 OS의 page cache(write-back)에 떠 있던 쓰기와 진행 중인 멀티 블록 트랜잭션이 디스크에 내려가지 않은 상태일 수 있다(crash-consistent). DB처럼 일관성이 중요한 워크로드는 스냅샷 직전 `fsfreeze`(Linux)나 VSS(Windows)로 캐시를 flush하고 쓰기를 정지시켜 application-consistent 상태에서 백업해야 한다. AWS는 이를 SSM Document로 자동화한다.
+Explanation: An AMI holds no data itself; it is only a reference to EBS snapshots plus device-mapping metadata (the boot recipe). Deregistering removes only this recipe, so the snapshots, which hold the actual data, remain and continue to be billed per GB. In environments that create and discard golden AMIs per version, repeating only deregister is a classic cost trap that accumulates terabytes of unused snapshots. You must delete the snapshots explicitly or use DLM's cleanup option.
 
 ---
 
-**Question 4.** Ransomware 공격자가 운영자 자격증명을 탈취해 백업 스냅샷까지 삭제하는 시나리오를 막아야 한다. 규제상 백업은 발급자조차 삭제할 수 없어야 한다. 어떤 조치가 맞나?
+**Question 3.** An AMI was created with `--no-reboot` from an instance running a database, and the restored DB intermittently comes up in a corrupted state. What is the root cause?
 
-A) IAM 정책으로 삭제 권한을 제거
-B) Snapshot Lock Compliance 모드 — cooling-off 후에는 루트 계정도 AWS도 해제 불가한 WORM
-C) 스냅샷을 더 자주 생성
-D) Snapshot Lock Governance 모드
+A) Creating an AMI itself corrupts the DB
+B) `--no-reboot` produces a crash-consistent snapshot, so the OS write-back cache and in-flight transactions may be backed up without having been flushed to disk; an application-consistent backup using fsfreeze/VSS is needed
+C) A DB cannot be backed up with an AMI
+D) Some blocks were missing because snapshots are incremental
 
 **Answer: B**
 
-Explanation: Snapshot Lock의 Compliance 모드는 cooling-off 기간이 지나면 루트 계정·AWS를 포함해 누구도 잠금을 해제하거나 스냅샷을 삭제할 수 없는 진짜 불변(WORM) 백업이다. SEC 17a-4·HIPAA 같은 규제 요건을 만족한다. Governance 모드(D)는 특정 IAM 권한자가 해제할 수 있어 실수 방지용 가드레일에 가깝고, 자격증명을 탈취한 공격자가 그 권한까지 갖고 있으면 무력하다. IAM(A)도 권한 탈취 시 우회된다.
+Explanation: `--no-reboot` takes the snapshot without stopping the instance, so there is no downtime, but writes sitting in the OS page cache (write-back) and in-flight multi-block transactions may not yet have reached disk at that moment (crash-consistent). For workloads where consistency matters, such as a database, you must flush the cache and quiesce writes with `fsfreeze` (Linux) or VSS (Windows) just before the snapshot and back up in an application-consistent state. AWS automates this with an SSM Document.
 
 ---
 
-**Question 5.** DR 페일오버 시 큰 스냅샷에서 새 볼륨을 만들었는데 첫 IO가 매우 느려 복구가 지연된다. 비용을 고려하며 해결하려면?
+**Question 4.** You must prevent a ransomware scenario in which an attacker steals operator credentials and even deletes backup snapshots. Regulations require that backups cannot be deleted even by the party that created them. Which action is correct?
 
-A) 스냅샷을 다시 생성한다
-B) 해당 DR 스냅샷에 대해 페일오버 대상 AZ에만 Fast Snapshot Restore(FSR)를 켜 미리 hydrate해 둔다
-C) 볼륨 타입을 gp2에서 gp3로 바꾼다
-D) 인스턴스 타입을 키운다
+A) Remove the delete permission with an IAM policy
+B) Snapshot Lock in Compliance mode: WORM that, after the cooling-off period, cannot be unlocked by the root account or by AWS
+C) Create snapshots more frequently
+D) Snapshot Lock in Governance mode
 
 **Answer: B**
 
-Explanation: 스냅샷에서 만든 볼륨은 기본적으로 lazy loading이라 블록을 처음 접근할 때 백업 스토리지에서 끌어오므로 초기 IO가 느리다. FSR은 스냅샷을 특정 AZ에 미리 완전히 hydrate해 둬 거기서 만든 볼륨이 첫 IO부터 최대 성능을 내게 한다. 단 FSR은 스냅샷×AZ 조합마다 시간당 과금되므로, 모든 AZ가 아니라 실제 페일오버 대상 AZ에만 선택적으로 켜는 것이 비용 최적화 정답이다.
+Explanation: Snapshot Lock in Compliance mode is truly immutable (WORM) backup: once the cooling-off period has passed, no one, including the root account and AWS, can remove the lock or delete the snapshot. It satisfies regulatory requirements such as SEC 17a-4 and HIPAA. Governance mode (D) can be unlocked by specific IAM principals, so it is closer to a guardrail against mistakes, and it is powerless if an attacker with stolen credentials also holds that permission. IAM (A) is also bypassed if the permissions are stolen.
 
 ---
 
-**Question 6.** EBS만 백업하면 되는 단순한 환경에서 매일 스냅샷 생성과 7일 보존을 자동화하려 한다. 가장 가볍고 비용 효율적인 도구는?
+**Question 5.** During a DR failover, a new volume was created from a large snapshot and the first I/O is very slow, delaying recovery. How can you fix this while considering cost?
+
+A) Recreate the snapshot
+B) Enable Fast Snapshot Restore (FSR) for that DR snapshot only in the failover target AZ so it is hydrated in advance
+C) Change the volume type from gp2 to gp3
+D) Increase the instance type
+
+**Answer: B**
+
+Explanation: A volume created from a snapshot uses lazy loading by default, pulling blocks from backup storage the first time they are accessed, so initial I/O is slow. FSR fully hydrates the snapshot in a specific AZ in advance so that volumes created there deliver full performance from the first I/O. However, FSR is billed hourly per snapshot-AZ combination, so enabling it selectively only in the actual failover target AZ rather than all AZs is the cost-optimized answer.
+
+---
+
+**Question 6.** In a simple environment where only EBS needs backing up, you want to automate daily snapshot creation with 7-day retention. Which is the lightest and most cost-effective tool?
 
 A) AWS Backup + Backup Plan + Audit Manager
-B) DLM(Data Lifecycle Manager) — EBS/AMI 전용 경량 스케줄러, 정책 자체는 무료
-C) Lambda + EventBridge 커스텀 스크립트
-D) 수동 스냅샷 + 캘린더 알림
+B) DLM (Data Lifecycle Manager): a lightweight scheduler dedicated to EBS/AMI, with no charge for the policy itself
+C) A custom script using Lambda + EventBridge
+D) Manual snapshots with calendar reminders
 
 **Answer: B**
 
-Explanation: DLM은 EBS 볼륨과 AMI 전용의 가벼운 라이프사이클 스케줄러로, 태그 기반으로 생성·보존·삭제·Cross-Region 복제를 자동화하며 정책 자체에는 요금이 없다(스냅샷 저장 비용만). AWS Backup(A)은 RDS·DynamoDB·EFS 등 멀티 서비스 통합과 컴플라이언스가 필요할 때 쓰는 더 무거운 플랫폼이라 EBS만 다루는 경우엔 과하다. 단순 EBS 백업 자동화는 DLM이 정석이다.
+Explanation: DLM is a lightweight lifecycle scheduler dedicated to EBS volumes and AMIs. It automates creation, retention, deletion, and cross-Region copy based on tags, and the policy itself is free (you pay only for snapshot storage). AWS Backup (A) is a heavier platform used when you need multi-service integration (RDS, DynamoDB, EFS, and so on) and compliance, so it is overkill when only EBS is involved. DLM is the standard choice for simple EBS backup automation.
 
 ---
 
-**Question 7.** 한 스냅샷(Snapshot 1)을 삭제했는데, 그 이후에 만든 증분 스냅샷(Snapshot 2)의 복원이 멀쩡히 된다. 이게 가능한 이유는?
+**Question 7.** After one snapshot (Snapshot 1) was deleted, an incremental snapshot taken later (Snapshot 2) still restores fine. Why is this possible?
 
-A) Snapshot 2가 삭제 직전 Snapshot 1을 전체 복사해 둔다
-B) 스냅샷은 블록을 공유하며, 삭제 시 다른 스냅샷이 아무도 참조하지 않는 블록만 실제로 제거되므로 Snapshot 2가 참조하는 블록은 보존된다
-C) 삭제된 스냅샷은 Recycle Bin에서 자동 복구된다
-D) 증분 스냅샷은 원래 독립적인 전체 백업이다
+A) Snapshot 2 makes a full copy of Snapshot 1 just before deletion
+B) Snapshots share blocks, and on deletion only blocks that no other snapshot references are actually removed, so the blocks referenced by Snapshot 2 are preserved
+C) The deleted snapshot is automatically recovered from the Recycle Bin
+D) An incremental snapshot is originally an independent full backup
 
 **Answer: B**
 
-Explanation: 증분 스냅샷들은 변경되지 않은 블록을 포인터로 공유한다(structural sharing). 스냅샷을 삭제하면 EBS는 다른 스냅샷이 여전히 참조하는 블록은 남기고, 삭제 대상 스냅샷만 단독으로 참조하던 블록만 실제로 제거한다. 따라서 Snapshot 1을 지워도 Snapshot 2가 가리키는 블록은 살아남아 각 스냅샷은 독립적인 완전 백업처럼 복원된다. 사용자에게는 독립 백업으로 보이지만 내부는 블록을 공유하는 포인터 그래프다.
+Explanation: Incremental snapshots share unchanged blocks via pointers (structural sharing). When a snapshot is deleted, EBS keeps the blocks that other snapshots still reference and actually removes only the blocks referenced solely by the snapshot being deleted. Therefore, even if Snapshot 1 is deleted, the blocks that Snapshot 2 points to survive, and each snapshot restores like an independent full backup. To the user it looks like an independent backup, but internally it is a pointer graph that shares blocks.
 
 ---

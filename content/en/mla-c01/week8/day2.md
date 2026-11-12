@@ -97,62 +97,62 @@ Next, we'll look at monitoring from an **operations perspective** rather than mo
 
 ## 📝 Practice Questions
 
-**Question 1.** 운영 중인 신용 평가 모델에 대해 정답 레이블이 확정되기까지 수 주가 걸린다. 성능 저하를 가능한 한 빨리 감지하고 싶다. 가장 적절한 방법은?
+**Question 1.** For a production credit scoring model, it takes several weeks for ground truth labels to be finalized. You want to detect performance degradation as early as possible. What is the most appropriate method?
 
-A) 모델 품질 모니터로 정확도를 매시간 계산  
-B) 피처 기여도 드리프트(Feature Attribution Drift) 모니터로 SHAP 중요도 변화를 감시  
-C) 엔드포인트 CPU 사용률 알람  
-D) 데이터 캡처를 끈다  
+A) Compute accuracy every hour with the Model Quality monitor  
+B) Monitor changes in SHAP importance with the Feature Attribution Drift monitor  
+C) Endpoint CPU utilization alarm  
+D) Turn off data capture  
 
 **Answer: B**  
-Explanation: 피처 기여도 드리프트는 정답 레이블 없이 SHAP로 즉시 계산되므로, 성능 저하가 확정되기 전에 모델 행동 변화의 선행 신호를 준다. A는 ground truth가 수 주 후에야 모이므로 조기 감지가 불가능하고, C는 시스템 자원 지표일 뿐 모델 행동과 무관하며, D는 모니터링 자체를 불가능하게 만든다.
+Explanation: Feature attribution drift is computed immediately with SHAP without ground truth labels, so it provides a leading signal of changes in model behavior before performance degradation is confirmed. A cannot detect early because ground truth only accumulates weeks later, C is only a system resource metric unrelated to model behavior, and D makes monitoring itself impossible.
 
 ---
 
-**Question 2.** SageMaker Clarify가 각 피처의 예측 기여도를 계산하는 데 사용하는 기법은?
+**Question 2.** Which technique does SageMaker Clarify use to compute each feature's prediction contribution?
 
-A) 선형 회귀 계수  
-B) SHAP(Shapley) 값  
-C) 정규화(normalization)  
-D) k-평균 군집  
+A) Linear regression coefficients  
+B) SHAP (Shapley) values  
+C) Normalization  
+D) k-means clustering  
 
 **Answer: B**  
-Explanation: Clarify의 설명가능성과 피처 기여도 드리프트는 게임 이론 기반의 SHAP 값으로 각 피처가 예측에 기여한 정도를 산출한다. A는 선형 모델에만 한정되고, C는 전처리 기법, D는 비지도 군집 알고리즘으로 설명가능성과 무관하다.
+Explanation: Clarify's explainability and feature attribution drift use game-theory-based SHAP values to compute how much each feature contributed to the prediction. A is limited to linear models, C is a preprocessing technique, and D is an unsupervised clustering algorithm, both unrelated to explainability.
 
 ---
 
-**Question 3.** "운영 중 모델이 특정 성별 그룹에 점점 불리한 예측을 내는지 감시하라"는 요구에 맞는 모니터는?
+**Question 3.** Which monitor fits the requirement "monitor whether the production model increasingly makes unfavorable predictions for a specific gender group"?
 
-A) 데이터 품질 모니터  
-B) 피처 기여도 드리프트 모니터  
-C) 편향 드리프트(Bias Drift) 모니터  
-D) 엔드포인트 지연(latency) 알람  
+A) Data Quality monitor  
+B) Feature Attribution Drift monitor  
+C) Bias Drift monitor  
+D) Endpoint latency alarm  
 
 **Answer: C**  
-Explanation: 그룹 간 예측 편향(공정성) 변화를 지속 감시하는 것은 Clarify 기반 편향 드리프트 모니터다. A는 피처 분포 통계만 보고 공정성을 직접 측정하지 않으며, B는 피처 중요도를, D는 시스템 성능을 볼 뿐 편향과 무관하다.
+Explanation: Continuously monitoring changes in prediction bias (fairness) between groups is the job of the Clarify-based Bias Drift monitor. A looks only at feature distribution statistics and does not directly measure fairness, and B looks at feature importance and D at system performance, neither related to bias.
 
 ---
 
-**Question 4.** 데이터 품질 모니터와 피처 기여도 드리프트 모니터의 차이로 가장 정확한 것은?
+**Question 4.** Which statement most accurately describes the difference between the Data Quality monitor and the Feature Attribution Drift monitor?
 
-A) 둘 다 동일하게 피처 평균만 비교한다  
-B) 데이터 품질은 피처 분포 통계 변화를, 피처 기여도는 피처가 예측에 미치는 영향(중요도) 변화를 본다  
-C) 피처 기여도는 항상 ground truth가 필요하다  
-D) 데이터 품질은 Clarify가, 피처 기여도는 Deequ가 담당한다  
+A) Both identically compare only feature means  
+B) Data Quality looks at changes in feature distribution statistics, while Feature Attribution looks at changes in the influence (importance) of features on predictions  
+C) Feature Attribution always requires ground truth  
+D) Data Quality is handled by Clarify and Feature Attribution by Deequ  
 
 **Answer: B**  
-Explanation: 데이터 품질은 입력 X의 통계 분포 변화를, 피처 기여도는 그 피처가 예측에 미치는 영향(SHAP 중요도)의 변화를 본다 — 후자가 모델 행동에 더 직접적이다. A는 둘이 다르므로 틀리고, C는 피처 기여도가 라벨 불필요라 반대이며, D는 도구 매핑이 뒤바뀌었다(데이터 품질=Deequ, 피처 기여도=Clarify).
+Explanation: Data Quality looks at changes in the statistical distribution of input X, while Feature Attribution looks at changes in the influence (SHAP importance) of those features on predictions; the latter is more directly tied to model behavior. A is wrong because the two differ, C is the opposite because feature attribution needs no labels, and D has the tool mapping swapped (Data Quality = Deequ, Feature Attribution = Clarify).
 
 ---
 
-**Question 5.** Clarify 기반 모니터(편향·피처 기여도)가 Day 1의 Model Monitor 모니터들과 공유하는 운영 골격으로 옳은 것은?
+**Question 5.** Which is correct about the operational skeleton that Clarify-based monitors (bias, feature attribution) share with the Model Monitor monitors from Day 1?
 
-A) 모두 DynamoDB에 결과를 적재한다  
-B) 모두 베이스라인 생성 → cron 스케줄 → Processing Job 비교 → CloudWatch 지표의 흐름을 따른다  
-C) 모두 정답 레이블을 반드시 요구한다  
-D) 모두 엔드포인트를 매번 재배포한다  
+A) All store results in DynamoDB  
+B) All follow the flow of baseline creation → cron schedule → Processing Job comparison → CloudWatch metrics  
+C) All require ground truth labels  
+D) All redeploy the endpoint every time  
 
 **Answer: B**  
-Explanation: 네 가지 모니터는 모두 베이스라인을 만들고 cron 스케줄로 Processing Job을 띄워 캡처 데이터와 비교한 뒤 CloudWatch 지표를 내보내는 동일한 골격을 공유한다. A는 결과를 S3에 저장하고, C는 데이터 품질·피처 기여도는 라벨이 불필요하며, D는 모니터링이 재배포를 수반하지 않는다.
+Explanation: All four monitors share the same skeleton: create a baseline, launch a Processing Job on a cron schedule to compare against captured data, and emit CloudWatch metrics. A is wrong because results are stored in S3, C is wrong because Data Quality and Feature Attribution need no labels, and D is wrong because monitoring does not involve redeployment.
 
 ---

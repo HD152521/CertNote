@@ -86,151 +86,151 @@ Knowing repeated operational mistakes helps avoid exam trap questions.
 
 ## 📝 Scenario Practice Questions
 
-**Question 1.** 운영팀이 사설 VPC(인터넷 게이트웨이 없음)에서 EC2 인스턴스를 SSM으로 관리하고 있다. 인스턴스에 `AmazonSSMManagedInstanceCore` IAM Role이 부착되어 있고 SSM Agent도 실행 중이지만, SSM 콘솔의 Fleet Manager에 인스턴스가 보이지 않는다. 원인은?
+**Question 1.** The operations team manages EC2 instances with SSM in a private VPC (no internet gateway). The instance has the `AmazonSSMManagedInstanceCore` IAM role attached and the SSM Agent is running, but the instance does not appear in Fleet Manager in the SSM console. What is the cause?
 
-A) IAM Role에 `ssm:UpdateInstanceInformation` 같은 추가 권한이 빠져 Agent가 등록 핸드셰이크를 완료하지 못한다
-B) SSM Agent가 stale 캐시 상태라 재시작 후 `amazon-ssm-agent` 서비스를 restart해야 Fleet Manager에 나타난다
-C) VPC에 ssm, ssmmessages, ec2messages Interface Endpoint가 없거나 해당 Endpoint로의 443 포트가 보안 그룹에서 차단되어 있다
-D) 인스턴스가 단일 AZ에만 있어 Managed Instance 등록에 필요한 cross-AZ heartbeat가 성립하지 않는다
-
-**Answer: C**
-Explanation: 사설 VPC(인터넷 없음) + IAM Role 정상 + Agent 실행 중 → 남은 원인은 네트워크다. SSM Agent는 `ssm`, `ssmmessages`, `ec2messages` 세 엔드포인트에 HTTPS(443)로 통신한다. 사설 VPC에서는 VPC Interface Endpoint 3개가 없으면 이 통신이 불가능하다. 또한 Endpoint 보안 그룹이 인스턴스 서브넷에서의 443 인바운드를 허용해야 한다. 두 조건 중 하나라도 빠지면 `PingStatus=ConnectionLost`로 나타난다.
-
----
-
-**Question 2.** 회사가 Auto Scaling Group을 사용해 웹 서버 용량을 유동적으로 조정한다. 새 EC2 인스턴스가 ASG로 시작될 때마다 자동으로 CloudWatch Agent 설정이 적용되어야 한다. 운영팀이 직접 개입할 필요가 없어야 한다. 가장 적합한 구성은?
-
-A) ASG Launch Template의 User Data 스크립트에 CW Agent 설정 JSON을 하드코딩하고, AMI 갱신 시마다 스크립트를 다시 배포한다
-B) ASG 인스턴스에 `MonitoringEnabled=true` 태그를 부여하고, State Manager Association을 같은 태그로 설정하여 `AmazonCloudWatch-ManageAgent` Document를 일일 스케줄로 실행한다
-C) EventBridge로 EC2 `RunInstances`(또는 ASG launch) 이벤트를 감지해 Lambda가 Run Command로 `AmazonCloudWatch-ManageAgent`를 신규 인스턴스에 실행한다
-D) Maintenance Window를 매 30분마다 실행하도록 설정해 태그 대상 인스턴스에 CW Agent 설정 Task를 주기적으로 적용한다
-
-**Answer: B**
-Explanation: State Manager Association의 핵심 특성이 "새 Managed Instance가 태그와 일치하는 순간 즉시 실행된다"는 것이다. ASG로 새 인스턴스가 시작되면 Managed Instance로 등록되는 순간 Association이 자동 실행된다. User Data(A)는 AMI 변경 없이 CW Agent 설정을 업데이트하기 어렵고 drift 교정이 안 된다. Lambda(C)도 동작하지만 State Manager보다 복잡하고 drift 교정이 안 된다. Maintenance Window(D)는 스케줄 기반이라 신규 인스턴스가 다음 창 전까지 설정 없이 떠 있고, 30분 주기는 즉시성·drift 교정 측면에서 State Manager의 "태그 일치 즉시 실행 + 지속 강제"에 못 미친다.
-
----
-
-**Question 3.** 회사의 패치 정책은 다음과 같다: "prod 환경의 Web 서버(Linux)에는 Security 분류의 Critical 패치만, 공개 후 14일이 지난 것만 적용한다. Patch Group 기반으로 관리한다." 이를 구현하기 위한 최소한의 구성 단계를 올바른 순서로 나열하면?
-
-A) Maintenance Window 생성 → Patch Baseline 생성(Security/Critical, 14일) → EC2에 `Patch Group=prod-web` 태그 추가 (Window를 먼저 만들어 일정부터 고정)
-B) EC2 태그(`Patch Group=prod-web`) 추가 → Patch Baseline 생성(Security/Critical, 14일) → Patch Baseline을 prod-web 그룹에 연결 → Maintenance Window에 Task 등록
-C) Patch Baseline 생성(Security/Critical, 14일) → EC2에 `Patch Group=prod-web` 태그 추가 → Maintenance Window 생성 (Baseline-그룹 연결은 태그만으로 자동 적용)
-D) AWS 기본 베이스라인(Security/Critical, 14일 승인)을 그대로 쓰고 Maintenance Window만 설정해 운영 부담을 최소화한다
-
-**Answer: B**
-Explanation: 올바른 구성 순서다. (1) EC2에 태그 `Patch Group=prod-web` 추가 (공백 포함 정확한 이름), (2) Custom Patch Baseline 생성 (Security/Critical, ApproveAfterDays=14), (3) `register-patch-baseline-for-patch-group`으로 Baseline과 그룹 연결, (4) Maintenance Window 생성 후 Target과 Task(AWS-RunPatchBaseline) 등록. C는 태그만으로 Custom Baseline이 그룹에 자동 연결되지 않으므로(명시적 `register-patch-baseline-for-patch-group`이 없으면 AWS 기본 베이스라인으로 패치됨) 누락이 발생한다. AWS 기본 베이스라인(D)은 Security/Critical만이라는 분류는 맞지만 승인 대기 기간이 OS별 기본값(보통 7일)이라 14일 요구사항과 다르고 분류 커스터마이즈도 불가하다.
-
----
-
-**Question 4.** 보안팀이 다음 요구사항을 제시했다. "모든 EC2 접속 세션을 감사 가능하게 보관해야 한다. 접속자의 모든 명령어가 로깅되어야 한다. 포트 22는 보안 그룹에서 허용하지 않는다." 운영팀이 개발자들의 접속 요구도 충족시키면서 이 요구사항을 구현할 수 있는 방법은?
-
-A) AWS CloudShell에서 인스턴스로 간접 접속하고, CloudShell 세션 로그를 CloudWatch Logs로 보내 명령어를 감사한다
-B) Session Manager를 활성화하고, Session Preferences에서 S3 버킷과 CloudWatch Logs 그룹을 설정한다. 개발자 IAM 정책에 `ssm:StartSession` 권한을 부여한다
-C) 포트 22를 닫은 채 CloudTrail Data Event로 SSH 세션의 모든 명령어를 API 이벤트로 기록하고 S3에 보관한다
-D) VPN + Bastion Host를 구성하고 Bastion에 auditd·script 로깅을 붙여 모든 세션 명령어를 S3로 전송한다
-
-**Answer: B**
-Explanation: Session Manager가 모든 요구사항을 충족한다. 포트 22 없이 IAM 기반 접속, 세션 입출력 자동 로깅(S3/CloudWatch Logs), KMS 암호화 옵션. CloudTrail(C)은 AWS API 호출을 기록하지 SSH 명령어를 기록하지 않는다. Bastion(D)은 포트 22가 필요하고 세션 로깅을 별도로 구성해야 한다.
-
----
-
-**Question 5.** 운영자가 실행 중인 Maintenance Window에서 패치 Task가 `Window Duration`을 초과할 것 같다. Cutoff가 1시간으로 설정되어 있다. 현재 Window 종료 30분 전이고, 새로운 Task 실행 요청이 왔다. 어떻게 되는가?
-
-A) 새 Task가 즉시 실행된다. Cutoff는 권고일 뿐 종료 전이라면 새 Task 시작을 막지 않는다
-B) 새 Task 실행이 거부된다. Window 종료 30분 전은 Cutoff 시간(종료 1시간 전)을 지났으므로 새 Task를 시작할 수 없다
-C) 진행 중·대기 중 Task가 모두 즉시 중단되고, Cutoff를 넘긴 시점이라 Window가 강제 종료된다
-D) Window가 Cutoff만큼(1시간) 자동 연장되어 새 Task와 기존 Task를 모두 완료시킨다
-
-**Answer: B**
-Explanation: Cutoff=1시간이면 Window 종료 1시간 전부터 새 Task 시작이 차단된다. Window 종료 30분 전은 이미 Cutoff를 지난 시점이므로 새 Task 실행이 거부된다. 현재 진행 중인 Task들은 Cutoff와 무관하게 Window 종료 후에도 완료될 때까지 계속 실행된다. Cutoff의 목적은 "새 Task가 Window 끝에 시작되어 미완료 상태로 끊기는 것"을 방지하는 것이다.
-
----
-
-**Question 6.** Lambda 함수가 Production RDS에 접근하기 위해 비밀번호가 필요하다. 현재 Lambda 환경변수에 평문 비밀번호가 저장되어 있다. 보안팀이 개선을 요구했다. 90일마다 자동으로 비밀번호가 변경되어야 하고, Lambda 코드 변경 없이 새 비밀번호가 사용되어야 한다. 가장 적합한 솔루션은?
-
-A) Parameter Store SecureString(KMS 암호화)으로 마이그레이션하고, EventBridge 스케줄 + 회전 Lambda로 90일마다 값을 직접 갱신한 뒤 애플리케이션이 API로 조회
-B) Secrets Manager로 마이그레이션하고 RDS 자동 회전을 설정. Lambda SDK가 항상 최신 시크릿을 가져오도록 구현
-C) KMS Customer Managed Key로 Lambda 환경변수를 암호화하고, 키 회전을 켜서 90일마다 비밀번호가 갱신되게 한다
-D) 암호화된 설정 파일을 Lambda Layer에 포함하고, 90일마다 새 Layer 버전을 배포해 비밀번호를 교체한다
-
-**Answer: B**
-Explanation: "90일 자동 회전 + Lambda 코드 변경 없이"가 핵심이다. Secrets Manager는 RDS와 통합된 자동 회전을 지원하며, 회전 시 Lambda(회전 함수)가 자동으로 새 비밀번호를 RDS에 설정하고 Secrets Manager를 업데이트한다. 이후 애플리케이션 Lambda는 `get_secret_value()` 호출로 항상 최신 값을 가져온다. Parameter Store(A)는 네이티브 자동 회전이 없어 회전 Lambda를 직접 구축·유지해야 한다. KMS 암호화(C)에서 키 회전은 암호화 키만 교체할 뿐 RDS 비밀번호 값 자체를 바꾸지 않으므로 요구사항을 충족하지 못한다. D의 Layer 재배포는 코드(아티팩트) 재배포라 "코드 변경 없이" 조건에 어긋난다.
-
----
-
-**Question 7.** 운영팀이 Config Rule을 통해 "공개 S3 버킷"을 감지하고, 감지 즉시 자동으로 버킷의 공개 접근을 차단하려 한다. 어떤 SSM 기능이 가장 적합한가?
-
-A) Run Command — `AWS-RunShellScript`로 AWS CLI를 호출해 위반 버킷의 퍼블릭 액세스를 차단
-B) State Manager — Association으로 S3 퍼블릭 차단 설정을 desired state로 지속 강제
-C) Automation Runbook (Config Auto Remediation 대상)
-D) Session Manager — 세션을 열어 운영자가 위반 버킷을 즉시 수동 차단
+A) The IAM role is missing additional permissions such as `ssm:UpdateInstanceInformation`, so the Agent cannot complete the registration handshake
+B) The SSM Agent is in a stale cache state, so the `amazon-ssm-agent` service must be restarted for it to appear in Fleet Manager
+C) The VPC does not have the ssm, ssmmessages, and ec2messages Interface Endpoints, or port 443 to those Endpoints is blocked by a security group
+D) The instance is in only a single AZ, so the cross-AZ heartbeat required for Managed Instance registration cannot be established
 
 **Answer: C**
-Explanation: Config Auto Remediation은 비준수 리소스를 발견하면 SSM Automation Document를 실행한다. `AWS-DisableS3BucketPublicReadWrite` 같은 표준 Runbook이 제공된다. Run Command(A)는 EC2 인스턴스 대상이고 S3 버킷을 직접 제어하지 않는다. State Manager(B)는 EC2 설정 관리가 주 목적이다. Automation은 `executeAwsApi` action으로 모든 AWS API를 호출할 수 있어 S3, EC2, IAM 등 다양한 리소스를 제어할 수 있다.
+Explanation: Private VPC (no internet) + IAM role correct + Agent running → the remaining cause is the network. The SSM Agent communicates with the three endpoints `ssm`, `ssmmessages`, and `ec2messages` over HTTPS (443). In a private VPC, this communication is impossible without the 3 VPC Interface Endpoints. In addition, the Endpoint security group must allow inbound 443 from the instance subnet. If either condition is missing, it appears as `PingStatus=ConnectionLost`.
 
 ---
 
-**Question 8.** 개발팀이 "설치된 Node.js 버전을 14.x에서 18.x로 전환하는 과정에서, 현재 14.x를 사용하는 prod 서버 목록을 뽑아달라"고 요청했다. 어떤 SSM 기능으로 가장 효율적으로 답할 수 있는가?
+**Question 2.** A company uses an Auto Scaling group to adjust web server capacity dynamically. Each time a new EC2 instance is launched by the ASG, the CloudWatch Agent configuration must be applied automatically. The operations team must not need to intervene. What is the most appropriate configuration?
 
-A) Run Command로 prod 태그 인스턴스 전체에 `node --version`을 일괄 실행하고, 출력에서 14.x를 grep해 서버 목록을 취합
-B) SSM Inventory(`AWS:Application` 데이터)에서 Node.js 버전을 필터링
-C) CloudTrail Lake에서 npm·yum install 관련 API 이벤트를 SQL로 검색해 Node.js 14.x 설치 이력을 가진 서버를 역추적
-D) Amazon Inspector로 prod 인스턴스를 스캔해 Node.js 14.x 패키지가 탐지된 인스턴스 목록을 추출
+A) Hardcode the CW Agent configuration JSON in the User Data script of the ASG Launch Template and redeploy the script every time the AMI is updated
+B) Assign a `MonitoringEnabled=true` tag to ASG instances, configure a State Manager Association with the same tag, and run the `AmazonCloudWatch-ManageAgent` Document on a daily schedule
+C) Detect the EC2 `RunInstances` (or ASG launch) event with EventBridge and have a Lambda function run `AmazonCloudWatch-ManageAgent` on the new instance through Run Command
+D) Set a Maintenance Window to run every 30 minutes and periodically apply a CW Agent configuration Task to the tagged target instances
 
 **Answer: B**
-Explanation: SSM Inventory의 `AWS:Application` 유형은 각 인스턴스에 설치된 소프트웨어 이름과 버전을 주기적으로 수집한다. Resource Data Sync로 S3에 동기화한 후 Athena SQL로 "Node.js 14.x 설치된 prod 인스턴스 목록"을 즉시 쿼리할 수 있다. Run Command(A)도 동작하지만 실시간 일회성 조회이며 결과 취합이 번거롭다. Inventory는 설정 한 번으로 지속적으로 데이터를 수집하므로 이런 조회에 최적이다.
+Explanation: The key characteristic of a State Manager Association is that "it runs immediately the moment a new Managed Instance matches the tag." When a new instance is launched by the ASG, the Association runs automatically the moment it registers as a Managed Instance. With User Data (A), it is hard to update the CW Agent configuration without changing the AMI, and drift is not corrected. A Lambda function (C) also works but is more complex than State Manager and does not correct drift. A Maintenance Window (D) is schedule-based, so a new instance runs without the configuration until the next window, and a 30-minute cycle falls short of State Manager's "run immediately on tag match + continuous enforcement" in terms of immediacy and drift correction.
 
 ---
 
-**Question 9.** 회사가 Hybrid Activations를 사용해 온프레미스 서버 50대를 SSM으로 관리하고 있다. 이 서버들에 매주 보안 패치를 적용하고 싶다. 어떤 Patch Manager 기능을 사용해야 하며, 온프레미스 서버의 SSM 식별자는 어떤 형식인가?
+**Question 3.** The company's patch policy is as follows: "For Web servers (Linux) in the prod environment, apply only Critical patches in the Security classification, and only those more than 14 days past release. Manage by Patch Group." What is the minimum set of configuration steps to implement this, in the correct order?
 
-A) EC2와 같은 i-xxx 형식으로 등록되지만, 온프레미스 서버는 하이퍼바이저 메타데이터가 없어 Patch Manager는 사용 불가하고 Run Command만 된다
-B) mi-xxx 형식, EC2와 동일하게 Patch Baseline + Maintenance Window 사용 가능
-C) ARN 형식으로 식별되며, Patch Group 태그는 EC2 전용이라 온프레미스에는 Resource Group으로 별도 묶어야 한다
-D) 등록된 IP 주소를 식별자로 사용하며, 온프레미스에는 Run Command만 지원되고 Patch Baseline 연결은 불가하다
+A) Create a Maintenance Window → create a Patch Baseline (Security/Critical, 14 days) → add the `Patch Group=prod-web` tag to the EC2 instances (create the Window first to fix the schedule)
+B) Add the EC2 tag (`Patch Group=prod-web`) → create a Patch Baseline (Security/Critical, 14 days) → associate the Patch Baseline with the prod-web group → register a Task in the Maintenance Window
+C) Create a Patch Baseline (Security/Critical, 14 days) → add the `Patch Group=prod-web` tag to the EC2 instances → create a Maintenance Window (the Baseline-to-group association is applied automatically by the tag alone)
+D) Use the AWS default baseline (Security/Critical, 14-day approval) as is and configure only a Maintenance Window to minimize operational burden
 
 **Answer: B**
-Explanation: Hybrid Activations로 등록된 온프레미스 서버는 `mi-xxxxxxxxxxxxxxxxx` 형식의 ID를 받는다. 이후 EC2와 완전히 동일하게 Patch Manager, Run Command, Session Manager, State Manager를 사용할 수 있다. Patch Group 태그도 동일하게 `Key=Patch Group,Value=onprem-prod`로 설정하고 베이스라인을 연결하면 된다. 50대는 Standard Tier(무료) 범위 내이므로 추가 비용 없이 사용 가능하다.
+Explanation: This is the correct configuration order. (1) Add the tag `Patch Group=prod-web` to the EC2 instances (the exact name, including the space), (2) create a Custom Patch Baseline (Security/Critical, ApproveAfterDays=14), (3) associate the Baseline with the group using `register-patch-baseline-for-patch-group`, (4) create a Maintenance Window and register the Target and Task (AWS-RunPatchBaseline). C leaves a gap because a Custom Baseline is not automatically associated with the group by the tag alone (without an explicit `register-patch-baseline-for-patch-group`, patching uses the AWS default baseline). The AWS default baseline (D) is right about the Security/Critical-only classification, but its approval wait period is the OS-specific default (usually 7 days), which differs from the 14-day requirement, and the classification cannot be customized.
 
 ---
 
-**Question 10.** Maintenance Window에서 패치 Task가 실패했다. Concurrency를 10%, Error Tolerance를 5%로 설정했는데 6%의 인스턴스에서 실패가 발생했다. 어떻게 되는가?
+**Question 4.** The security team has presented the following requirements. "All EC2 connection sessions must be retained in an auditable form. All commands entered by the user must be logged. Port 22 is not allowed in security groups." What is a way for the operations team to implement these requirements while also meeting developers' access needs?
 
-A) Error Tolerance 초과가 감지되면 이미 패치된 인스턴스를 포함해 전체에 자동 롤백이 시작된다
-B) 실패한 인스턴스만 이전 패치 상태로 자동 롤백되고, 나머지 인스턴스는 계속 패치가 진행된다
-C) Error Tolerance(5%)를 초과했으므로 나머지 인스턴스에 대한 Task 실행이 중단된다. 이미 성공한 인스턴스는 그대로 유지된다
-D) 실패율이 임계값에 근접하면 Error Tolerance가 Concurrency(10%)까지 자동 확장되어 실행을 이어간다
+A) Connect to the instance indirectly from AWS CloudShell and send the CloudShell session logs to CloudWatch Logs to audit the commands
+B) Enable Session Manager and configure an S3 bucket and a CloudWatch Logs group in Session Preferences. Grant the `ssm:StartSession` permission in the developers' IAM policy
+C) With port 22 closed, record all commands of SSH sessions as API events with CloudTrail Data Events and retain them in S3
+D) Set up a VPN + Bastion Host, attach auditd/script logging to the Bastion, and send all session commands to S3
+
+**Answer: B**
+Explanation: Session Manager satisfies all requirements: IAM-based access without port 22, automatic logging of session input and output (S3/CloudWatch Logs), and a KMS encryption option. CloudTrail (C) records AWS API calls, not SSH commands. A Bastion (D) requires port 22 and session logging must be configured separately.
+
+---
+
+**Question 5.** An operator thinks a patch Task in a running Maintenance Window is likely to exceed the `Window Duration`. Cutoff is set to 1 hour. It is currently 30 minutes before the Window ends, and a request to run a new Task has arrived. What happens?
+
+A) The new Task runs immediately. Cutoff is only advisory and does not prevent new Tasks from starting as long as the Window has not ended
+B) The new Task execution is rejected. 30 minutes before the Window ends is past the Cutoff time (1 hour before the end), so a new Task cannot be started
+C) All in-progress and pending Tasks are stopped immediately, and the Window is forcibly terminated because the Cutoff has been passed
+D) The Window is automatically extended by the Cutoff amount (1 hour) so that both the new Task and the existing Tasks can complete
+
+**Answer: B**
+Explanation: With Cutoff=1 hour, starting new Tasks is blocked from 1 hour before the Window ends. 30 minutes before the Window ends is already past the Cutoff, so the new Task execution is rejected. Tasks currently in progress keep running until they complete, even after the Window ends, regardless of Cutoff. The purpose of Cutoff is to prevent "a new Task from starting at the end of the Window and being cut off in an incomplete state."
+
+---
+
+**Question 6.** A Lambda function needs a password to access Production RDS. Currently the plaintext password is stored in a Lambda environment variable. The security team has requested an improvement. The password must be changed automatically every 90 days, and the new password must be used without changing the Lambda code. What is the most appropriate solution?
+
+A) Migrate to Parameter Store SecureString (KMS encryption), update the value directly every 90 days with an EventBridge schedule + rotation Lambda, and have the application look it up through the API
+B) Migrate to Secrets Manager and configure automatic RDS rotation. Implement the Lambda SDK so that it always fetches the latest secret
+C) Encrypt the Lambda environment variable with a KMS Customer Managed Key and turn on key rotation so that the password is renewed every 90 days
+D) Include an encrypted configuration file in a Lambda Layer and deploy a new Layer version every 90 days to replace the password
+
+**Answer: B**
+Explanation: "90-day automatic rotation + without changing the Lambda code" is the key. Secrets Manager supports automatic rotation integrated with RDS, and during rotation the Lambda (rotation function) automatically sets the new password in RDS and updates Secrets Manager. The application Lambda then always gets the latest value by calling `get_secret_value()`. Parameter Store (A) has no native automatic rotation, so you must build and maintain the rotation Lambda yourself. In KMS encryption (C), key rotation only replaces the encryption key and does not change the RDS password value itself, so it does not meet the requirement. Redeploying a Layer in D is a redeployment of code (artifacts), which conflicts with the "without code changes" condition.
+
+---
+
+**Question 7.** The operations team wants to detect a "public S3 bucket" with a Config rule and automatically block the bucket's public access immediately upon detection. Which SSM feature is most appropriate?
+
+A) Run Command — call the AWS CLI with `AWS-RunShellScript` to block public access on the violating bucket
+B) State Manager — continuously enforce the S3 public access block setting as a desired state through an Association
+C) Automation Runbook (as the Config Auto Remediation target)
+D) Session Manager — open a session so the operator immediately blocks the violating bucket manually
 
 **Answer: C**
-Explanation: Error Tolerance는 "이 비율 이상 실패하면 나머지 실행을 중단"하는 circuit breaker다. 6%가 실패하면 5% 임계값을 초과하여 나머지 인스턴스에 대한 Task 실행이 즉시 중단된다. 이미 성공적으로 패치된 인스턴스는 그대로 유지되고, 아직 패치되지 않은 인스턴스는 건너뛴다. 자동 롤백 기능은 없으며, 실패 원인을 파악한 후 재실행해야 한다.
+Explanation: Config Auto Remediation runs an SSM Automation Document when it finds a non-compliant resource. Standard Runbooks such as `AWS-DisableS3BucketPublicReadWrite` are provided. Run Command (A) targets EC2 instances and does not directly control S3 buckets. State Manager (B) is mainly for managing EC2 configuration. Automation can call any AWS API with the `executeAwsApi` action, so it can control a variety of resources such as S3, EC2, and IAM.
 
 ---
 
-**Question 11.** Parameter Store의 파라미터 `/myapp/prod/db/password`가 90일 동안 변경되지 않았을 때 자동 알림을 보내고, 이 파라미터가 2027년 1월 1일에 자동으로 삭제되도록 설정하려 한다. 어떤 구성이 필요한가?
+**Question 8.** During the transition of the installed Node.js version from 14.x to 18.x, the development team asked, "please pull a list of prod servers currently using 14.x." Which SSM feature can answer this most efficiently?
 
-A) EventBridge 스케줄로 Lambda를 매일 실행해 파라미터 LastModifiedDate를 검사하고, 90일 초과 시 SNS 알림 + 2027-01-01에 `delete-parameter` 호출
-B) Parameter Store Advanced + NoChangeNotification Policy(90일) + Expiration Policy(2027-01-01)
-C) Parameter Store Standard에 두고 CloudWatch Events(EventBridge) 규칙으로 변경 미발생·만료를 감지해 알림·삭제를 자동화
-D) Secrets Manager로 옮겨 90일 Rotation을 설정하고, 만료일에 시크릿을 삭제하는 lifecycle 정책을 추가한다
+A) Run `node --version` in bulk on all prod-tagged instances with Run Command, and grep for 14.x in the output to compile the server list
+B) Filter for the Node.js version in SSM Inventory (`AWS:Application` data)
+C) Search npm/yum install-related API events with SQL in CloudTrail Lake and trace back the servers that have a Node.js 14.x installation history
+D) Scan the prod instances with Amazon Inspector and extract the list of instances where a Node.js 14.x package was detected
 
 **Answer: B**
-Explanation: Parameter Policies는 Parameter Store Advanced Tier 전용이다. `NoChangeNotification`은 지정 기간 동안 값이 변경되지 않으면 EventBridge를 통해 알림 이벤트를 발생시킨다. `Expiration`은 지정 날짜에 파라미터를 자동으로 삭제한다. 두 Policy를 하나의 파라미터에 동시에 적용할 수 있다. Standard Tier(C)는 Policy를 지원하지 않는다.
+Explanation: The `AWS:Application` type of SSM Inventory periodically collects the names and versions of software installed on each instance. After syncing to S3 with Resource Data Sync, you can immediately query "the list of prod instances with Node.js 14.x installed" using Athena SQL. Run Command (A) also works, but it is a real-time one-time query and compiling the results is cumbersome. Inventory continuously collects data with a single setup, so it is ideal for this kind of query.
 
 ---
 
-**Question 12.** 다음 중 Session Manager가 기존 SSH/Bastion 방식보다 우수한 이유로 올바르지 않은 것은?
+**Question 9.** A company manages 50 on-premises servers with SSM using Hybrid Activations. It wants to apply security patches to these servers weekly. Which Patch Manager features should it use, and what format is the SSM identifier of an on-premises server?
 
-A) 포트 22를 열지 않아도 되고, 인바운드 SG 규칙 없이 아웃바운드 443만으로 접속해 공격 표면을 줄인다
-B) IAM 기반 접근 제어로 태그·MFA·시간 조건까지 거는 세밀한 권한 부여가 가능하다
-C) 모든 세션 입출력이 자동으로 S3/CloudWatch Logs에 기록되어 감사 추적을 별도 구성 없이 확보한다
-D) SSH 키보다 더 강력한 암호화 알고리즘을 사용한다
+A) They are registered in the same i-xxx format as EC2, but on-premises servers have no hypervisor metadata, so Patch Manager cannot be used and only Run Command works
+B) mi-xxx format; Patch Baseline + Maintenance Window can be used exactly as with EC2
+C) They are identified by ARN format, and the Patch Group tag is EC2-only, so on-premises servers must be grouped separately with a Resource Group
+D) The registered IP address is used as the identifier, and only Run Command is supported on-premises, with no Patch Baseline association possible
+
+**Answer: B**
+Explanation: On-premises servers registered with Hybrid Activations receive an ID in the format `mi-xxxxxxxxxxxxxxxxx`. After that, you can use Patch Manager, Run Command, Session Manager, and State Manager exactly as with EC2. For the Patch Group tag as well, just set `Key=Patch Group,Value=onprem-prod` in the same way and associate the baseline. 50 servers fall within the Standard Tier (free) range, so there is no additional cost.
+
+---
+
+**Question 10.** A patch Task in a Maintenance Window failed. Concurrency is set to 10% and Error Tolerance to 5%, and 6% of instances failed. What happens?
+
+A) When the Error Tolerance is detected as exceeded, an automatic rollback starts for everything, including instances that were already patched
+B) Only the failed instances are automatically rolled back to the previous patch state, and patching continues on the remaining instances
+C) Because Error Tolerance (5%) was exceeded, Task execution on the remaining instances is stopped. Instances that already succeeded are left as they are
+D) When the failure rate approaches the threshold, Error Tolerance automatically expands up to Concurrency (10%) and execution continues
+
+**Answer: C**
+Explanation: Error Tolerance is a circuit breaker that "stops the remaining execution once failures reach this rate." When 6% fail, the 5% threshold is exceeded and Task execution on the remaining instances stops immediately. Instances that were already patched successfully are left as they are, and instances not yet patched are skipped. There is no automatic rollback feature, and you must rerun after identifying the cause of the failure.
+
+---
+
+**Question 11.** You want to send an automatic notification when the Parameter Store parameter `/myapp/prod/db/password` has not been changed for 90 days, and also have this parameter deleted automatically on January 1, 2027. What configuration is required?
+
+A) Run a Lambda function daily on an EventBridge schedule to check the parameter's LastModifiedDate, send an SNS notification when it exceeds 90 days, and call `delete-parameter` on 2027-01-01
+B) Parameter Store Advanced + NoChangeNotification policy (90 days) + Expiration policy (2027-01-01)
+C) Keep it in Parameter Store Standard and automate notification and deletion by detecting no-change and expiration with CloudWatch Events (EventBridge) rules
+D) Move it to Secrets Manager, set up 90-day rotation, and add a lifecycle policy that deletes the secret on the expiration date
+
+**Answer: B**
+Explanation: Parameter Policies are exclusive to the Parameter Store Advanced tier. `NoChangeNotification` raises a notification event through EventBridge if the value is not changed for the specified period. `Expiration` automatically deletes the parameter on the specified date. Both policies can be applied to a single parameter at the same time. The Standard tier (C) does not support Policies.
+
+---
+
+**Question 12.** Which of the following is NOT a correct reason why Session Manager is better than the traditional SSH/Bastion approach?
+
+A) Port 22 does not need to be opened, and connecting with outbound 443 only, with no inbound SG rules, reduces the attack surface
+B) IAM-based access control enables fine-grained permission assignment, even with tag, MFA, and time conditions
+C) All session input and output are automatically recorded in S3/CloudWatch Logs, providing an audit trail without separate configuration
+D) It uses a stronger encryption algorithm than SSH keys
 
 **Answer: D**
-Explanation: SSH는 이미 강력한 암호화(RSA 4096, ED25519 등)를 사용한다. Session Manager가 SSH보다 "더 강력한 암호화"를 사용한다는 주장은 올바르지 않다. Session Manager는 AWS KMS 기반 암호화를 사용하지만 이것이 SSH 암호화보다 더 강력하다는 의미는 아니다. Session Manager의 진짜 장점은 A(포트 불필요), B(IAM 세밀한 제어), C(자동 감사 로깅), 그리고 SSH 키 분배 부담 제거, MFA 강제 용이성이다.
+Explanation: SSH already uses strong encryption (RSA 4096, ED25519, etc.). The claim that Session Manager uses "stronger encryption" than SSH is incorrect. Session Manager uses AWS KMS-based encryption, but this does not mean it is stronger than SSH encryption. The real advantages of Session Manager are A (no port required), B (fine-grained IAM control), C (automatic audit logging), plus removing the burden of SSH key distribution and making it easier to enforce MFA.
 
 ---
 
-> 📚 **사례**: 2023년, 중견 물류 기업 E사가 SSM 전면 도입 1년 후 운영 지표를 공개했다. 패치 관련 보안 사고 0건, 운영자의 주간 수작업 시간 65% 감소, 새 서버 온보딩 시간 8시간→15분, 컴플라이언스 감사 준비 기간 3주→2일. 이 숫자들이 SSM이 제공하는 "운영 자동화의 가치"를 가장 잘 보여준다. SOA-C02 시험이 SSM 비중을 높게 가져가는 이유다.
+> 📚 **Case study**: In 2023, a mid-sized logistics company, Company E, disclosed its operational metrics one year after a full SSM rollout. Zero patch-related security incidents, a 65% reduction in operators' weekly manual work time, new server onboarding time from 8 hours to 15 minutes, and compliance audit preparation time from 3 weeks to 2 days. These numbers best show the "value of operations automation" that SSM provides. This is why the SOA-C02 exam gives SSM a heavy weighting.
 
 ## Week 6 Preview
 

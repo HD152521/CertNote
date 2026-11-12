@@ -87,7 +87,7 @@ SAP exam frequent mappings: (1) "Whether credit card number·SSN stored in S3" �
 
 ## 📝 Practice Questions
 
-**Question 1.** S3 버킷에 신용카드 번호나 SSN 같은 민감 데이터가 저장된 적이 있는지 자동으로 탐지·분류하고, 버킷별 민감도 점수로 우선순위를 매기고 싶다. 가장 적합한 것은?
+**Question 1.** You want to automatically detect and classify whether sensitive data such as credit card numbers or SSNs has ever been stored in S3 buckets, and prioritize buckets by a per-bucket sensitivity score. Which is the most appropriate?
 
 A) GuardDuty S3 Protection
 
@@ -99,11 +99,11 @@ D) Config Rule
 
 **Answer: B**
 
-**해설:** Macie는 ML 기반으로 S3 객체의 내용을 스캔해 PII·PCI·자격 증명 등 민감 데이터를 분류하고 버킷별 민감도 점수(0~100)를 매긴다. A(GuardDuty S3 Protection)는 객체 내용이 아니라 "접근 행동의 이상"을 탐지한다(비정상 IP에서 대량 GetObject 등) — 콘텐츠 검사가 아니다. C(Inspector)는 EC2·ECR·Lambda의 CVE 취약점 스캔이다. D(Config Rule)는 리소스 설정 평가이지 객체 내용 분류가 아니다. 함정: "S3 내용에 민감 데이터" = Macie, "S3 접근 행동 이상" = GuardDuty.
+**Explanation:** Macie uses ML to scan the contents of S3 objects, classifies sensitive data such as PII, PCI, and credentials, and assigns each bucket a sensitivity score (0-100). A (GuardDuty S3 Protection) detects "anomalies in access behavior" (for example, a large number of GetObject calls from an abnormal IP), not object contents — it is not content inspection. C (Inspector) scans EC2, ECR, and Lambda for CVE vulnerabilities. D (Config Rule) evaluates resource configuration and does not classify object contents. Trap: "sensitive data in S3 contents" = Macie; "anomalous S3 access behavior" = GuardDuty.
 
 ---
 
-**Question 2.** EC2 인스턴스가 알려진 악성 IP와 통신하고, 평소 사용하지 않던 리전에서 IAM 자격 증명이 사용되는 등 이상 행동을 에이전트 설치 없이 탐지해야 한다. 가장 적합한 것은?
+**Question 2.** You must detect anomalous behavior, such as an EC2 instance communicating with a known malicious IP or IAM credentials being used in a Region that is not normally used, without installing any agent. Which is the most appropriate?
 
 A) Inspector v2
 
@@ -115,11 +115,11 @@ D) AWS WAF
 
 **Answer: B**
 
-**해설:** GuardDuty는 VPC Flow Log·CloudTrail·DNS 로그를 분석하고 AWS 위협 인텔리전스(악성 IP 목록) + ML 행동 베이스라이닝으로 이상을 탐지한다. 에이전트 설치가 필요 없다. A(Inspector)는 소프트웨어 취약점(CVE) 평가이지 네트워크·행동 이상 탐지가 아니다. C(Macie)는 S3 데이터 분류. D(WAF)는 L7 웹 요청 필터링이지 계정·네트워크 행동 분석이 아니다. 함정: "악성 IP 통신·비정상 행동·에이전트 없음" = GuardDuty.
+**Explanation:** GuardDuty analyzes VPC Flow Logs, CloudTrail, and DNS logs and detects anomalies using AWS threat intelligence (malicious IP lists) plus ML behavioral baselining. No agent installation is required. A (Inspector) assesses software vulnerabilities (CVEs) and does not detect network or behavioral anomalies. C (Macie) classifies S3 data. D (WAF) filters L7 web requests and does not analyze account or network behavior. Trap: "malicious IP communication + abnormal behavior + no agent" = GuardDuty.
 
 ---
 
-**Question 3.** 수백 개의 컨테이너 이미지(ECR)와 EC2, Lambda 함수에서 알려진 CVE 취약점을 지속적으로 자동 탐지하고, 신규 CVE가 공개되면 추가 스캔 없이 자동 재평가되어야 한다. 가장 적합한 것은?
+**Question 3.** You must continuously and automatically detect known CVE vulnerabilities across hundreds of container images (ECR), EC2 instances, and Lambda functions, and have them automatically re-evaluated without additional scans when a new CVE is published. Which is the most appropriate?
 
 A) GuardDuty
 
@@ -131,13 +131,13 @@ D) Systems Manager Patch Manager
 
 **Answer: B**
 
-**해설:** Inspector v2는 EC2·ECR·Lambda의 소프트웨어 인벤토리를 CVE 데이터베이스와 지속 대조하며, 신규 CVE가 NVD에 등록되면 추가 스캔 없이 영향 리소스를 자동 재평가한다. A(GuardDuty)는 행동·위협 탐지이지 CVE 평가가 아니다. C(Macie)는 S3 데이터. D(Patch Manager)는 패치를 "적용"하는 도구이지 취약점을 "탐지·평가"하는 도구가 아니다. 함정: "CVE 자동 탐지·재평가" = Inspector, "패치 적용" = Patch Manager.
+**Explanation:** Inspector v2 continuously matches the software inventory of EC2, ECR, and Lambda against the CVE database, and when a new CVE is registered in the NVD it automatically re-evaluates the affected resources without additional scans. A (GuardDuty) is behavior/threat detection, not CVE assessment. C (Macie) is for S3 data. D (Patch Manager) is a tool that "applies" patches, not one that "detects and assesses" vulnerabilities. Trap: "automatic CVE detection and re-evaluation" = Inspector; "applying patches" = Patch Manager.
 
 ---
 
-**Question 4.** EKS 클러스터에서 Pod의 런타임 의심 동작(권한 상승 시도, 의심 프로세스 실행)을 탐지해야 한다. 가장 적합한 것은?
+**Question 4.** You must detect suspicious runtime behavior of Pods (privilege escalation attempts, execution of suspicious processes) in an EKS cluster. Which is the most appropriate?
 
-A) Inspector ECR 스캔
+A) Inspector ECR scanning
 
 B) GuardDuty EKS Protection (Runtime Monitoring)
 
@@ -147,15 +147,15 @@ D) Config
 
 **Answer: B**
 
-**해설:** GuardDuty EKS Protection은 쿠버네티스 감사 로그(Audit)와 런타임(Runtime Monitoring)을 분석해 Pod의 런타임 의심 동작을 탐지한다. A(Inspector ECR)는 이미지의 정적 CVE 취약점을 스캔하지만 런타임 행동은 보지 못한다. C(Macie)는 S3 데이터. D(Config)는 설정 평가. 함정: "EKS 이미지 취약점(정적)" = Inspector ECR, "EKS 런타임 행동(동적)" = GuardDuty EKS Protection.
+**Explanation:** GuardDuty EKS Protection analyzes Kubernetes audit logs (Audit) and runtime activity (Runtime Monitoring) to detect suspicious runtime behavior of Pods. A (Inspector ECR) statically scans images for CVE vulnerabilities but cannot see runtime behavior. C (Macie) is for S3 data. D (Config) evaluates configuration. Trap: "EKS image vulnerabilities (static)" = Inspector ECR; "EKS runtime behavior (dynamic)" = GuardDuty EKS Protection.
 
 ---
 
-**Question 5.** GuardDuty가 EC2 자격 증명 탈취 의심을 탐지하면 사람 개입 없이 즉시 해당 EC2를 격리하고, 포렌식 스냅샷을 생성하고, 보안팀에 알림을 보내야 한다. 어떤 구성인가?
+**Question 5.** When GuardDuty detects a suspected EC2 credential theft, it must immediately isolate that EC2 instance, create a forensic snapshot, and notify the security team without human intervention. Which configuration should you use?
 
-A) GuardDuty Finding → SNS만
+A) GuardDuty Finding → SNS only
 
-B) GuardDuty Finding → EventBridge Rule → Lambda(격리 SG 교체 + 스냅샷 + SNS)
+B) GuardDuty Finding → EventBridge Rule → Lambda (replace with isolation SG + snapshot + SNS)
 
 C) Macie → Security Hub
 
@@ -163,29 +163,29 @@ D) Inspector → Patch Manager
 
 **Answer: B**
 
-**해설:** GuardDuty Finding을 EventBridge Rule이 트리거로 받아 Lambda를 실행해, EC2를 격리 보안 그룹으로 교체하고 EBS 스냅샷을 떠서 증거를 보존하며 SNS로 알린다 — 탐지 → 자동 격리·증거 보존 → 알림의 표준 SOAR 패턴. A(SNS만)는 알림만 하고 자동 격리·증거 보존이 없다. C·D는 시나리오(EC2 자격 증명 탈취 자동 대응)와 무관. 함정: "탐지 후 자동 격리·증거 보존"은 EventBridge → Lambda 자동화.
+**Explanation:** An EventBridge Rule receives the GuardDuty Finding as a trigger and runs a Lambda function that replaces the EC2 instance's security group with an isolation security group, takes an EBS snapshot to preserve evidence, and notifies through SNS — the standard SOAR pattern of detection → automatic isolation and evidence preservation → notification. A (SNS only) only sends a notification, with no automatic isolation or evidence preservation. C and D are unrelated to the scenario (automatic response to EC2 credential theft). Trap: "automatic isolation and evidence preservation after detection" is EventBridge → Lambda automation.
 
 ---
 
-**Question 6.** 50개 계정으로 구성된 Organization에서 GuardDuty·Inspector·Macie를 모든 계정에 일괄 활성화하고, 신규 계정도 자동 포함되며, 모든 Finding을 한 콘솔에서 통합 관리하고 싶다. 가장 적합한 구성은?
+**Question 6.** In an Organization of 50 accounts, you want to enable GuardDuty, Inspector, and Macie across all accounts at once, have new accounts included automatically, and manage all Findings in a single console. Which is the most appropriate configuration?
 
-A) 계정마다 수동으로 각 서비스 활성화
+A) Manually enable each service in every account
 
-B) Organization 위임 관리자 + Security Hub 통합
+B) Organization delegated administrator + Security Hub integration
 
-C) 각 계정의 Finding을 S3로 내보내 ETL
+C) Export each account's Findings to S3 and run ETL
 
-D) CloudTrail만 활성화
+D) Enable CloudTrail only
 
 **Answer: B**
 
-**해설:** 각 탐지 서비스의 Organization 위임 관리자(delegated administrator)에서 전 계정 일괄 활성화·관리가 가능하고 신규 계정이 자동 포함되며, Security Hub가 모든 Finding을 ASFF로 통합해 단일 콘솔에서 본다. A는 50개 계정 수동 관리가 비현실적이고 신규 계정 자동 포함이 안 된다. C는 통합·자동화가 빈약하고 운영 부담이 크다. D(CloudTrail)는 API 로그일 뿐 탐지·통합이 아니다. 함정: "멀티 계정 일괄 + 신규 자동 + 통합 콘솔"은 위임 관리자 + Security Hub.
+**Explanation:** From the Organization delegated administrator of each detection service, you can enable and manage all accounts at once, new accounts are included automatically, and Security Hub consolidates all Findings in ASFF so they can be viewed in a single console. A is impractical because it requires manually managing 50 accounts and does not include new accounts automatically. C has weak consolidation and automation and a heavy operational burden. D (CloudTrail) is merely an API log, not detection or consolidation. Trap: "multi-account bulk enablement + automatic new accounts + consolidated console" is delegated administrator + Security Hub.
 
 ---
 
-**Question 7.** EC2의 EBS 디스크에 멀웨어가 있는지 검사하되, 인스턴스에 에이전트를 설치하지 않고 호스트 성능에도 영향을 주지 않아야 한다. 가장 적합한 것은?
+**Question 7.** You must scan the EBS disks of EC2 instances for malware without installing an agent on the instances and without affecting host performance. Which is the most appropriate?
 
-A) 각 EC2에 ClamAV 에이전트 설치
+A) Install a ClamAV agent on each EC2 instance
 
 B) GuardDuty Malware Protection
 
@@ -195,7 +195,7 @@ D) Macie
 
 **Answer: B**
 
-**해설:** GuardDuty Malware Protection은 의심 Finding이 발생한 EC2의 EBS 볼륨 스냅샷을 떠서 AWS 관리 환경에서 멀웨어를 스캔한다 — 호스트에 에이전트 불필요, CPU 영향 없음. A는 에이전트 설치·관리 부담이 있어 요건("에이전트 없이")에 어긋난다. C(Inspector)는 CVE 취약점 평가이지 멀웨어 스캔이 아니다. D(Macie)는 S3 데이터 분류. 함정: "에이전트 없이 EC2 멀웨어 스캔"은 GuardDuty Malware Protection.
+**Explanation:** GuardDuty Malware Protection takes a snapshot of the EBS volumes of the EC2 instance for which a suspicious Finding was raised and scans it for malware in an AWS-managed environment — no agent is needed on the host and there is no CPU impact. A adds the burden of installing and managing agents and conflicts with the requirement ("without an agent"). C (Inspector) assesses CVE vulnerabilities and is not a malware scanner. D (Macie) classifies S3 data. Trap: "agentless EC2 malware scanning" is GuardDuty Malware Protection.
 
 ---
 

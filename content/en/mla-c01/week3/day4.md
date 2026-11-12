@@ -96,62 +96,62 @@ Next, we'll comprehensively review this week's feature engineering and data qual
 
 ## 📝 Practice Questions
 
-**Question 1.** 대출 승인 모델을 만들기 전에 데이터가 성별 그룹 간 균형 잡혀 있는지, 긍정 레이블 비율에 차이가 없는지 측정하려 한다. 적합한 도구와 단계는?
+**Question 1.** Before building a loan approval model, you want to measure whether the data is balanced across gender groups and whether the positive label rate differs. What are the appropriate tool and stage?
 
-A) 학습 후 Model Monitor로 지연시간을 측정  
-B) SageMaker Clarify로 학습 전 편향(pre-training bias)을 측정  
-C) Athena로 데이터 용량을 계산  
-D) SageMaker Autopilot으로 자동 학습  
+A) Measure latency with Model Monitor after training  
+B) Measure pre-training bias with SageMaker Clarify  
+C) Calculate data volume with Athena  
+D) Train automatically with SageMaker Autopilot  
 
 **Answer: B**  
-Explanation: Clarify의 학습 전 편향 분석은 민감 속성(facet)을 지정해 그룹 간 표본 불균형(CI)과 긍정 레이블 비율 차이(DPL)를 측정하므로 적합하다. Model Monitor(A)는 배포 후 운영 모니터링, Athena 용량 계산(C)·Autopilot 학습(D)은 편향 측정과 목적이 다르다.
+Explanation: Clarify's pre-training bias analysis is appropriate because you specify the sensitive attribute (facet) and it measures sample imbalance between groups (CI) and the difference in positive label proportions (DPL). Model Monitor (A) is post-deployment operational monitoring, and Athena volume calculation (C) and Autopilot training (D) have different purposes from bias measurement.
 
 ---
 
-**Question 2.** 사기 거래가 전체의 0.2%뿐인 불균형 데이터에서 소수 클래스의 합성 샘플을 보간으로 생성해 단순 복제보다 일반화를 높이려 한다. 적합한 기법은?
+**Question 2.** In an imbalanced dataset where fraudulent transactions are only 0.2% of the total, you want to generate synthetic samples of the minority class by interpolation to improve generalization over simple duplication. Which technique is appropriate?
 
-A) 언더샘플링  
+A) Undersampling  
 B) SMOTE  
-C) 모든 데이터 삭제  
-D) 다수 클래스 복제  
+C) Delete all data  
+D) Duplicate the majority class  
 
 **Answer: B**  
-Explanation: SMOTE는 소수 클래스 표본 사이를 보간해 새 합성 샘플을 만들어, 같은 점을 반복 놓는 단순 복제보다 결정 경계를 부드럽게 하고 과적합을 줄인다. 언더샘플링(A)은 다수를 줄여 정보 손실이 있고, 데이터 삭제(C)는 부적절하며, 다수 클래스 복제(D)는 불균형을 악화시킨다.
+Explanation: SMOTE creates new synthetic samples by interpolating between minority class samples, which smooths the decision boundary and reduces overfitting more than simple duplication that places the same points repeatedly. Undersampling (A) reduces the majority class and loses information, deleting data (C) is inappropriate, and duplicating the majority class (D) worsens the imbalance.
 
 ---
 
-**Question 3.** 불균형 데이터에 SMOTE를 적용하려 한다. 데이터 누수를 막기 위한 올바른 순서는?
+**Question 3.** You want to apply SMOTE to imbalanced data. What is the correct order to prevent data leakage?
 
-A) 전체 데이터에 SMOTE를 먼저 적용한 뒤 train/test로 분할  
-B) train/test로 먼저 분할한 뒤 학습 셋에만 SMOTE 적용  
-C) test 셋에만 SMOTE 적용  
-D) 분할 없이 전체에 적용  
+A) Apply SMOTE to the entire dataset first, then split into train/test  
+B) Split into train/test first, then apply SMOTE to the training set only  
+C) Apply SMOTE to the test set only  
+D) Apply it to everything without splitting  
 
 **Answer: B**  
-Explanation: 분할을 먼저 하고 학습 셋에만 리샘플링해야 합성 샘플이 검증·테스트 셋에 새지 않아 평가가 정직해진다. 분할 전 전체 적용(A·D)은 합성 샘플이 평가 셋에 섞여 누수를 일으키고, test에만 적용(C)은 평가 분포를 왜곡한다.
+Explanation: Splitting first and resampling only the training set keeps synthetic samples from leaking into the validation and test sets, so the evaluation stays honest. Applying it to everything before splitting (A, D) mixes synthetic samples into the evaluation set and causes leakage, and applying it only to test (C) distorts the evaluation distribution.
 
 ---
 
-**Question 4.** train/validation/test 분할에서 test 셋의 올바른 사용 원칙은?
+**Question 4.** In a train/validation/test split, what is the correct principle for using the test set?
 
-A) 하이퍼파라미터를 튜닝할 때마다 반복해서 평가에 사용한다  
-B) 최종 모델의 일반화 성능을 단 한 번만 평가하는 데 사용한다  
-C) 학습 파라미터 갱신에 직접 사용한다  
-D) 매 epoch마다 손실 계산에 사용한다  
+A) Use it repeatedly for evaluation every time you tune hyperparameters  
+B) Use it to evaluate the generalization performance of the final model only once  
+C) Use it directly to update training parameters  
+D) Use it to compute the loss at every epoch  
 
 **Answer: B**  
-Explanation: test 셋은 최종 성능을 정직하게 평가하기 위해 마지막에 단 한 번만 사용한다. 반복 평가로 모델을 고치면(A) test가 사실상 validation이 되어 일반화 추정이 왜곡되고, 학습 파라미터 갱신(C)·epoch별 손실(D)은 train/validation의 역할이다.
+Explanation: The test set is used only once, at the very end, to honestly evaluate final performance. If you tweak the model through repeated evaluation (A), the test set effectively becomes a validation set and the generalization estimate is distorted, and updating training parameters (C) and per-epoch loss (D) are the roles of train/validation.
 
 ---
 
-**Question 5.** 클래스가 심하게 불균형한 데이터를 train/test로 나눌 때, 각 셋이 원본의 클래스 비율을 유지하도록 분할하려 한다. 적합한 방법은?
+**Question 5.** When splitting heavily imbalanced data into train/test, you want each set to preserve the class proportions of the original. Which method is appropriate?
 
-A) 완전 무작위 분할  
-B) 층화 분할(stratified split, stratify 옵션)  
-C) 시간 순서로 분할  
-D) 클래스를 무시하고 알파벳 순 분할  
+A) Fully random split  
+B) Stratified split (stratify option)  
+C) Split in chronological order  
+D) Ignore the classes and split alphabetically  
 
 **Answer: B**  
-Explanation: 층화 분할은 각 셋의 클래스 비율을 원본과 동일하게 유지해, 불균형 데이터에서 소수 클래스가 특정 셋에 거의 없게 되는 문제를 막는다. 무작위 분할(A)은 비율이 흔들릴 수 있고, 시간 분할(C)은 시계열 전용이며, 알파벳 순 분할(D)은 비율 보장과 무관하다.
+Explanation: A stratified split keeps each set's class proportions identical to the original, preventing the problem in imbalanced data where the minority class almost disappears from a particular set. A random split (A) can make the proportions fluctuate, a chronological split (C) is only for time series, and an alphabetical split (D) has nothing to do with guaranteeing proportions.
 
 ---

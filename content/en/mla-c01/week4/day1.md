@@ -139,62 +139,62 @@ Next, we look at the actual built-in algorithms for this Training Job and their 
 
 ## 📝 Practice Questions
 
-**Question 1.** 학습 비용을 최대한 줄이고 싶지만, 인스턴스가 중간에 회수되어 학습이 중단되어도 진행 상황을 잃지 않고 재개되어야 한다. 가장 적합한 구성은?
+**Question 1.** You want to cut training costs as much as possible, but even if an instance is reclaimed and training is interrupted, training must resume without losing progress. What is the most suitable configuration?
 
-A) 온디맨드 인스턴스로 학습하고 인스턴스 수를 늘린다  
-B) Managed Spot Training을 켜고 checkpoint_s3_uri로 체크포인트를 저장한다  
-C) Spot 인스턴스만 켜고 체크포인트는 설정하지 않는다  
-D) 학습을 여러 번 반복 실행한다  
+A) Train on On-Demand Instances and increase the number of instances  
+B) Enable Managed Spot Training and save checkpoints with checkpoint_s3_uri  
+C) Enable only Spot Instances and do not configure checkpoints  
+D) Run the training repeatedly multiple times  
 
 **Answer: B**  
-Explanation: Spot은 최대 90% 비용을 절감하지만 회수로 중단될 수 있어, 체크포인트를 S3에 저장하면 마지막 지점부터 재개해 진행분을 잃지 않는다. A는 비용 절감 효과가 없고, C는 중단 시 처음부터 다시 학습해 손실이 발생하며, D는 매번 처음부터 시작하는 비효율적 방식이다.
+Explanation: Spot saves up to 90% of cost but can be interrupted by reclamation, so saving checkpoints to S3 lets training resume from the last point without losing progress. A has no cost-saving effect, C retrains from scratch on interruption and incurs losses, and D is an inefficient approach that starts from the beginning every time.
 
 ---
 
-**Question 2.** 수 TB 규모의 학습 데이터를 여러 epoch에 걸쳐 반복적으로 읽는 대규모 분산 학습에서, 매 epoch마다 S3에서 데이터를 다시 받느라 I/O가 병목이다. 가장 적합한 데이터 소스는?
+**Question 2.** In large-scale distributed training that repeatedly reads several TB of training data across many epochs, I/O is a bottleneck because the data is re-downloaded from S3 every epoch. What is the most suitable data source?
 
-A) S3 File 모드  
+A) S3 File mode  
 B) FSx for Lustre  
-C) 로컬 노트북 디스크  
+C) Local notebook disk  
 D) DynamoDB  
 
 **Answer: B**  
-Explanation: FSx for Lustre는 고성능 병렬 파일시스템으로, 한 번 올려두면 저지연으로 반복 접근할 수 있어 대용량 데이터를 여러 epoch 반복 읽는 학습의 I/O 병목을 해소한다. A는 매 시작 시 전체 다운로드가 필요하고, C는 학습 규모에 맞지 않으며, D는 key-value 저장소로 대량 학습 데이터 스트리밍에 부적합하다.
+Explanation: FSx for Lustre is a high-performance parallel file system that, once loaded, allows low-latency repeated access, resolving the I/O bottleneck of training that repeatedly reads large datasets over multiple epochs. A requires downloading everything at each start, C does not fit the training scale, and D is a key-value store unsuitable for streaming large volumes of training data.
 
 ---
 
-**Question 3.** 직접 작성한 PyTorch 학습 스크립트(train.py)를 SageMaker Training Job으로 실행하려 한다. 올바른 접근은?
+**Question 3.** You want to run your own PyTorch training script (train.py) as a SageMaker Training Job. What is the correct approach?
 
-A) 빌트인 XGBoost 컨테이너에 스크립트를 넣는다  
-B) PyTorch 프레임워크 Estimator의 entry_point에 train.py를 지정한다  
-C) 추론 엔드포인트를 먼저 생성한다  
-D) Feature Store에 스크립트를 적재한다  
+A) Put the script in the built-in XGBoost container  
+B) Specify train.py as the entry_point of the PyTorch framework Estimator  
+C) Create an inference endpoint first  
+D) Load the script into Feature Store  
 
 **Answer: B**  
-Explanation: 프레임워크 Estimator(PyTorch 등)는 entry_point로 사용자 학습 스크립트를 받아 해당 프레임워크 컨테이너에서 실행하므로 커스텀 PyTorch 코드 학습에 적합하다. A는 무관한 알고리즘 컨테이너이고, C는 추론용이라 학습 단계와 맞지 않으며, D는 특성 저장소로 학습 코드 실행과 무관하다.
+Explanation: A framework Estimator (such as PyTorch) takes the user's training script via entry_point and runs it in the corresponding framework container, so it suits training custom PyTorch code. A is an unrelated algorithm container, C is for inference and does not fit the training stage, and D is a feature store unrelated to running training code.
 
 ---
 
-**Question 4.** SageMaker Training Job이 정상 완료된 직후의 동작으로 옳은 것은?
+**Question 4.** Which of the following is correct about the behavior immediately after a SageMaker Training Job completes successfully?
 
-A) 학습 인스턴스가 계속 떠 있으면서 추론 요청을 처리한다  
-B) 모델 아티팩트를 output_path의 S3에 저장하고 학습 인스턴스를 자동 종료한다  
-C) 인스턴스가 종료되며 모델도 함께 삭제된다  
-D) 데이터를 자동으로 Feature Store에 적재한다  
+A) The training instance stays up and handles inference requests  
+B) The model artifact is saved to S3 at output_path and the training instance is terminated automatically  
+C) The instance terminates and the model is deleted along with it  
+D) The data is loaded into Feature Store automatically  
 
 **Answer: B**  
-Explanation: Training Job은 학습 완료 후 model.tar.gz를 지정한 S3에 업로드하고 인스턴스를 자동으로 내려 과금을 멈춘다. A는 추론 엔드포인트의 동작이고, C는 모델이 S3에 보존되므로 틀리며, D는 학습 작업이 자동으로 수행하지 않는다.
+Explanation: After training completes, a Training Job uploads model.tar.gz to the specified S3 location and automatically brings down the instance, stopping billing. A describes the behavior of an inference endpoint, C is wrong because the model is preserved in S3, and D is not something a training job does automatically.
 
 ---
 
-**Question 5.** Managed Spot Training을 설정할 때 max_run과 max_wait의 관계로 올바른 것은?
+**Question 5.** When configuring Managed Spot Training, which is the correct relationship between max_run and max_wait?
 
-A) max_wait는 항상 max_run보다 작아야 한다  
-B) max_wait는 max_run보다 크거나 같아야 한다(Spot 용량 대기 시간 포함)  
-C) 둘은 항상 같아야 한다  
-D) max_wait는 Spot에서 의미가 없다  
+A) max_wait must always be less than max_run  
+B) max_wait must be greater than or equal to max_run (including time waiting for Spot capacity)  
+C) The two must always be equal  
+D) max_wait is meaningless for Spot  
 
 **Answer: B**  
-Explanation: Spot은 가용 용량을 기다리는 시간이 추가로 필요하므로 대기 포함 총 시간인 max_wait가 실제 학습 시간 상한인 max_run보다 크거나 같아야 한다. A는 반대로 설정한 것이고, C는 대기 시간을 고려하지 못하며, D는 Spot 학습에서 max_wait가 필수 파라미터라는 점과 어긋난다.
+Explanation: Spot requires additional time waiting for available capacity, so max_wait, the total time including waiting, must be greater than or equal to max_run, the upper limit on actual training time. A sets it the other way around, C fails to account for waiting time, and D conflicts with the fact that max_wait is a required parameter for Spot training.
 
 ---

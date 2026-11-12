@@ -399,86 +399,86 @@ Private VPC requires VPC Endpoints:
 
 ## 📝 Practice Questions
 
-**Question 1.** EC2 인스턴스가 SSM Managed Instances 목록에 나타나지 않는다. 인스턴스는 실행 중이며, Amazon Linux 2 최신 AMI를 사용한다. 가장 먼저 확인해야 할 항목은?
+**Question 1.** An EC2 instance does not appear in the SSM Managed Instances list. The instance is running and uses the latest Amazon Linux 2 AMI. What should be checked first?
 
-A) AMI에 SSM Agent가 포함되어 있는지 확인한다
-B) Instance Profile에 `AmazonSSMManagedInstanceCore` 정책이 포함된 IAM Role이 부착되어 있는지 확인한다
-C) 보안 그룹에 포트 22 인바운드가 허용되어 있는지 확인한다
-D) 인스턴스가 퍼블릭 서브넷에 있는지 확인한다
+A) Check whether the AMI includes the SSM Agent
+B) Check whether an IAM role that includes the `AmazonSSMManagedInstanceCore` policy is attached to the Instance Profile
+C) Check whether inbound port 22 is allowed in the security group
+D) Check whether the instance is in a public subnet
 
 **Answer: B**
-Explanation: Amazon Linux 2 최신 AMI에는 SSM Agent가 기본 설치되어 있으므로 A는 이미 충족됐을 가능성이 높다. SSM은 포트 22를 사용하지 않으므로 C는 관계없다. 퍼블릭/프라이빗 서브넷은 추가 조건(VPC Endpoint)에 영향을 주지만 가장 먼저 확인해야 할 것은 IAM Role 누락이다. Managed Instance가 안 되는 원인 1순위가 IAM 권한 누락이다. 확인 명령: `aws ec2 describe-iam-instance-profile-associations --filters "Name=instance-id,Values=i-xxx"`
+Explanation: The latest Amazon Linux 2 AMI has the SSM Agent installed by default, so A is most likely already satisfied. SSM does not use port 22, so C is irrelevant. Public/private subnets affect additional conditions (VPC endpoints), but the first thing to check is a missing IAM role. A missing IAM permission is the number one cause of an instance not becoming a Managed Instance. Verification command: `aws ec2 describe-iam-instance-profile-associations --filters "Name=instance-id,Values=i-xxx"`
 
 ---
 
-**Question 2.** 회사가 완전한 사설 VPC(인터넷 게이트웨이 없음)에서 EC2 인스턴스를 SSM으로 관리하려 한다. IAM Role은 이미 올바르게 설정되어 있다. 추가로 필요한 것은?
+**Question 2.** A company wants to manage EC2 instances with SSM in a fully private VPC (no internet gateway). The IAM role is already configured correctly. What else is required?
 
-A) NAT Gateway 생성
-B) 인터넷 게이트웨이 추가
-C) 세 개의 VPC Interface Endpoint 생성: ssm, ssmmessages, ec2messages
-D) Bastion Host 설정
+A) Create a NAT Gateway
+B) Add an internet gateway
+C) Create three VPC Interface Endpoints: ssm, ssmmessages, ec2messages
+D) Set up a Bastion Host
 
 **Answer: C**
-Explanation: SSM Agent는 HTTPS(443)를 통해 SSM 서비스 엔드포인트에 연결한다. 인터넷이 없는 사설 VPC에서는 VPC Interface Endpoint로 AWS 내부 백본을 통해 통신한다. NAT Gateway는 인터넷 경유이고, Bastion은 SSH 기반으로 SSM의 목적과 무관하다. S3 Gateway Endpoint도 함께 생성하는 것이 표준(Document 다운로드, 결과 저장용). 각 Endpoint의 보안 그룹은 EC2 서브넷에서 443 인바운드를 허용해야 한다.
+Explanation: The SSM Agent connects to the SSM service endpoints over HTTPS (443). In a private VPC without internet, communication goes through the AWS internal backbone using VPC Interface Endpoints. A NAT Gateway goes through the internet, and a Bastion is SSH-based and unrelated to the purpose of SSM. It is also standard to create an S3 Gateway Endpoint as well (for downloading Documents and storing results). The security group of each Endpoint must allow inbound 443 from the EC2 subnet.
 
 ---
 
-**Question 3.** 운영팀이 "현재 우리 인프라에서 Python 2.7이 설치된 EC2가 몇 대인가?"를 알고 싶다. 가장 적합한 도구와 방법은?
+**Question 3.** The operations team wants to know "how many EC2 instances in our infrastructure currently have Python 2.7 installed?" What are the most appropriate tool and method?
 
-A) 각 EC2에 Run Command로 `python --version`을 실행한다
-B) CloudTrail에서 Python 관련 이벤트를 검색한다
-C) SSM Inventory를 활성화하고 `AWS:Application` 데이터에서 Python 2.7을 필터링한다
-D) Config Rules를 통해 Python 버전을 확인한다
+A) Run `python --version` on each EC2 instance with Run Command
+B) Search CloudTrail for Python-related events
+C) Enable SSM Inventory and filter for Python 2.7 in the `AWS:Application` data
+D) Check the Python version through Config Rules
 
 **Answer: C**
-Explanation: Inventory는 모든 Managed Instance의 설치된 소프트웨어를 주기적으로 수집한다. `AWS:Application` 유형에 이름과 버전이 포함된다. Resource Data Sync로 S3에 모으면 Athena SQL로 대규모 분석이 가능하다. Run Command(A)도 동작하지만 일회성이고 결과를 집계하기 어렵다. Inventory는 한 번 설정하면 모든 인스턴스의 소프트웨어 현황을 지속적으로 추적한다.
+Explanation: Inventory periodically collects the installed software of all Managed Instances. The `AWS:Application` type includes names and versions. With Resource Data Sync gathering the data into S3, large-scale analysis is possible with Athena SQL. Run Command (A) also works, but it is a one-time operation and its results are hard to aggregate. Once configured, Inventory continuously tracks the software status of all instances.
 
 ---
 
-**Question 4.** 온프레미스 데이터센터에 서버 80대가 있고, 이 서버들에 SSM을 통해 Run Command와 Patch Manager를 적용하려 한다. 가장 적합한 접근 방법은?
+**Question 4.** There are 80 servers in an on-premises data center, and the company wants to apply Run Command and Patch Manager to these servers through SSM. What is the most appropriate approach?
 
-A) SSM은 EC2만 지원하므로 불가능하다
-B) 온프레미스 서버에 Direct Connect를 통해 VPN을 구성한다
-C) Hybrid Activations를 생성하고 각 서버에 SSM Agent를 설치 후 Activation Code/ID로 등록한다
-D) AWS Outposts를 데이터센터에 설치한다
+A) It is not possible because SSM supports only EC2
+B) Configure a VPN over Direct Connect to the on-premises servers
+C) Create a Hybrid Activation, install the SSM Agent on each server, and register it with the Activation Code/ID
+D) Install AWS Outposts in the data center
 
 **Answer: C**
-Explanation: Hybrid Activations는 정확히 이 목적을 위해 만들어진 기능이다. Activation 생성 후 서버에 Agent 설치 + 등록 과정을 거치면 `mi-xxxxxxxxx` 형식의 ID가 부여된다. 이후 EC2와 완전히 동일하게 Run Command, Patch Manager, Session Manager를 사용할 수 있다. 80대까지는 Standard Tier(무료) 범위 내이므로 추가 비용 없이 사용 가능하다.
+Explanation: Hybrid Activations is a feature built for exactly this purpose. After creating an Activation, installing the Agent on the server and going through the registration process assigns an ID in the format `mi-xxxxxxxxx`. After that, you can use Run Command, Patch Manager, and Session Manager exactly as with EC2. Up to 80 servers falls within the Standard Tier (free) range, so there is no additional cost.
 
 ---
 
-**Question 5.** 회사가 EC2 접속 시 SSH 키 분배 부담을 없애고, 모든 접속 세션을 자동으로 감사 로그로 남기려 한다. 동시에 포트 22를 보안 그룹에서 완전히 닫고 싶다. 가장 적합한 도구는?
+**Question 5.** A company wants to eliminate the burden of distributing SSH keys when connecting to EC2 and automatically keep all connection sessions as audit logs. At the same time, it wants to close port 22 in the security group completely. What is the most appropriate tool?
 
-A) Bastion Host를 통한 SSH 접속
-B) AWS VPN + SSH 키 관리
-C) Session Manager (SSM) - IAM 기반 접속, 자동 세션 로깅, 포트 22 불필요
+A) SSH access through a Bastion Host
+B) AWS VPN + SSH key management
+C) Session Manager (SSM) - IAM-based access, automatic session logging, no port 22 needed
 D) EC2 Instance Connect
 
 **Answer: C**
-Explanation: Session Manager는 IAM 권한으로 접속하며 포트 22가 전혀 필요 없다. 모든 세션 내용이 S3 또는 CloudWatch Logs에 자동으로 저장된다. EC2 Instance Connect(D)는 일시적인 SSH 키를 푸시하는 방식으로 포트 22가 필요하다. Session Manager는 운영 보안 모범 사례로, PCI-DSS, HIPAA 환경에서 특히 권장된다. 포트 포워딩 기능으로 RDS, Redis 등 내부 서비스에도 SSH 없이 직접 접근 가능하다.
+Explanation: Session Manager connects using IAM permissions and does not need port 22 at all. All session content is automatically stored in S3 or CloudWatch Logs. EC2 Instance Connect (D) pushes temporary SSH keys and requires port 22. Session Manager is an operational security best practice and is especially recommended in PCI-DSS and HIPAA environments. With the port forwarding feature, internal services such as RDS and Redis can also be accessed directly without SSH.
 
 ---
 
-**Question 6.** Default Host Management Configuration(DHMC)에 대한 설명으로 옳은 것은?
+**Question 6.** Which statement about Default Host Management Configuration (DHMC) is correct?
 
-A) 모든 EC2 인스턴스에 자동으로 SSM Agent를 설치한다
-B) Instance Profile(IAM Role) 없이도 EC2가 SSM Managed Instance로 등록될 수 있게 한다
-C) Hybrid Activations 없이 온프레미스 서버를 등록할 수 있다
-D) Session Manager의 로깅을 자동으로 활성화한다
+A) It automatically installs the SSM Agent on all EC2 instances
+B) It allows EC2 to register as an SSM Managed Instance even without an Instance Profile (IAM role)
+C) It allows registering on-premises servers without Hybrid Activations
+D) It automatically enables Session Manager logging
 
 **Answer: B**
-Explanation: DHMC는 계정 레벨에서 활성화하면 AWS가 서비스 연결 역할을 생성해 모든 EC2에 자동 적용한다. 이로 인해 개별 인스턴스마다 IAM Role을 부착하는 번거로움이 사라진다. 단, Agent 설치는 별도이고 네트워크 조건도 여전히 필요하다. DHMC는 Instance Profile 부재로 인한 Managed Instance 등록 실패를 근본적으로 방지한다.
+Explanation: When DHMC is enabled at the account level, AWS creates a service-linked role and applies it automatically to all EC2 instances. This removes the hassle of attaching an IAM role to each individual instance. However, Agent installation is separate, and network conditions are still required. DHMC fundamentally prevents Managed Instance registration failures caused by a missing Instance Profile.
 
 ---
 
-**Question 7.** Session Manager 세션 로그를 S3에 저장할 때 보안을 강화하려 한다. 어떤 구성이 필요한가?
+**Question 7.** You want to strengthen security when storing Session Manager session logs in S3. What configuration is required?
 
-A) S3 버킷 공개 접근 차단만 설정한다
-B) Session Manager 기본 설정에서 `s3EncryptionEnabled: true` + KMS 키 지정 + S3 버킷 서버 측 암호화 활성화
-C) CloudWatch Logs에만 저장한다
-D) 세션 로그는 암호화할 수 없다
+A) Only configure S3 bucket Block Public Access
+B) In the Session Manager preferences, set `s3EncryptionEnabled: true` + specify a KMS key + enable server-side encryption on the S3 bucket
+C) Store logs only in CloudWatch Logs
+D) Session logs cannot be encrypted
 
 **Answer: B**
-Explanation: Session Manager 세션 로그의 완전한 보안을 위해서는 (1) Session Manager 설정에서 `s3EncryptionEnabled: true`, (2) KMS CMK 지정(`kmsKeyId`), (3) S3 버킷 자체에 SSE-KMS 활성화, 세 가지가 모두 필요하다. CloudWatch Logs에도 `cloudWatchEncryptionEnabled: true`로 설정해야 한다. 이렇게 하면 세션 중 타이핑한 모든 명령과 출력이 암호화되어 저장된다. PCI-DSS 3.4와 HIPAA Security Rule이 요구하는 저장 데이터 암호화를 충족한다.
+Explanation: For complete security of Session Manager session logs, all three are required: (1) `s3EncryptionEnabled: true` in the Session Manager settings, (2) a KMS CMK specified (`kmsKeyId`), and (3) SSE-KMS enabled on the S3 bucket itself. CloudWatch Logs must also be set with `cloudWatchEncryptionEnabled: true`. This way, all commands typed during the session and their output are stored encrypted. It satisfies the encryption of data at rest required by PCI-DSS 3.4 and the HIPAA Security Rule.
 
 ---

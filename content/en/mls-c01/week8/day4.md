@@ -108,31 +108,31 @@ Today: Learning stability — batch size, LR schedule, gradient issues, observab
 
 ## 📝 Practice Questions
 
-**Question 1.** 딥러닝 모델을 학습하는데 몇 스텝 만에 손실이 NaN으로 발산한다. 가장 가능성 높은 원인과 대응은?
+**Question 1.** While training a deep learning model, the loss diverges to NaN within a few steps. What are the most likely cause and response?
 
-A) 학습률이 너무 작다 — 학습률을 더 줄인다  
-B) 학습률이 너무 크거나 그래디언트 폭발 — 학습률을 낮추고 그래디언트 클리핑 적용  
-C) 배치 크기가 너무 작다 — 배치를 1로 줄인다  
-D) 정규화가 과해서다 — 정규화를 모두 제거한다  
+A) The learning rate is too small - reduce it further  
+B) The learning rate is too large or the gradients are exploding - lower the learning rate and apply gradient clipping  
+C) The batch size is too small - reduce the batch to 1  
+D) The regularization is excessive - remove all regularization  
 
 **Answer: B**  
-Explanation: 손실이 NaN으로 발산하는 것은 학습률 과다나 그래디언트 폭발의 전형적 증상이며, 학습률 인하와 그래디언트 클리핑이 대응이다. 학습률이 작으면 발산이 아니라 정체가 생기고(A), 배치 축소(C)·정규화 제거(D)는 발산을 해결하지 못한다.
+Explanation: A loss diverging to NaN is a classic symptom of an excessive learning rate or exploding gradients, and the responses are lowering the learning rate and gradient clipping. A small learning rate causes stagnation, not divergence (A), and reducing the batch (C) or removing regularization (D) does not fix divergence.
 
 ---
 
-**Question 2.** 매우 깊은 신경망에서 앞쪽 층의 가중치가 거의 갱신되지 않고 손실이 초기부터 정체된다. 이 그래디언트 소실 문제를 완화하는 기법으로 가장 거리가 먼 것은?
+**Question 2.** In a very deep neural network, the weights of the early layers are barely updated and the loss stagnates from the start. Which of the following techniques is the LEAST helpful for mitigating this vanishing gradient problem?
 
-A) ReLU 계열 활성화 함수 사용  
-B) 배치 정규화 적용  
-C) 잔차 연결(ResNet) 도입  
-D) 모든 활성화를 시그모이드로 교체  
+A) Use ReLU-family activation functions  
+B) Apply batch normalization  
+C) Introduce residual connections (ResNet)  
+D) Replace all activations with sigmoid  
 
 **Answer: D**  
-Explanation: 시그모이드는 포화 구간에서 미분이 0에 가까워 그래디언트 소실을 악화시키므로 완화책이 아니다. ReLU(A)·배치 정규화(B)·잔차 연결(C)은 모두 소실을 완화하는 대표적 기법이다.
+Explanation: Sigmoid's derivative is close to 0 in its saturated regions, which worsens vanishing gradients, so it is not a remedy. ReLU (A), batch normalization (B), and residual connections (C) are all representative techniques for mitigating the vanishing.
 
 ---
 
-**Question 3.** 학습 중 그래디언트 소실, 과적합, 손실 미감소 같은 학습 품질 이상을 자동으로 탐지하고 위반 시 알림이나 조기 중단을 트리거하려 한다. 가장 적합한 SageMaker 기능은?
+**Question 3.** You want to automatically detect training quality issues such as vanishing gradients, overfitting, and non-decreasing loss, and trigger alerts or early stopping when a rule is violated. Which SageMaker feature is MOST suitable?
 
 A) SageMaker Profiler  
 B) SageMaker Model Monitor  
@@ -140,30 +140,30 @@ C) SageMaker Debugger
 D) SageMaker Clarify  
 
 **Answer: C**  
-Explanation: Debugger는 vanishing_gradient·overfit·loss_not_decreasing 등 내장 규칙으로 학습 품질 이상을 자동 탐지하고 CloudWatch 이벤트로 알림·조기중단을 트리거한다. Profiler(A)는 자원 병목 분석, Model Monitor(B)는 배포 후 추론 모니터링, Clarify(D)는 편향·설명용이다.
+Explanation: Debugger automatically detects training quality issues with built-in rules such as vanishing_gradient, overfit, and loss_not_decreasing, and triggers alerts or early stopping through CloudWatch events. Profiler (A) analyzes resource bottlenecks, Model Monitor (B) monitors inference after deployment, and Clarify (D) is for bias and explainability.
 
 ---
 
-**Question 4.** 학습 작업의 GPU 사용률이 낮고 데이터 로딩에서 병목이 의심된다. 시스템 자원 활용과 병목을 분석해 비용·속도를 개선하려 한다. 가장 적합한 도구는?
+**Question 4.** A training job shows low GPU utilization and you suspect a data loading bottleneck. You want to analyze system resource utilization and bottlenecks to improve cost and speed. Which tool is MOST suitable?
 
 A) SageMaker Profiler  
-B) SageMaker Debugger 규칙  
+B) SageMaker Debugger rules  
 C) Automatic Model Tuning  
-D) SHAP 값 분석  
+D) SHAP value analysis  
 
 **Answer: A**  
-Explanation: Profiler는 CPU/GPU 사용률, 메모리, I/O, 데이터 로딩 병목 같은 시스템 메트릭을 분석해 자원 비효율과 병목을 진단·권고한다. Debugger(B)는 모델 품질 이상용, AMT(C)는 하이퍼파라미터 탐색, SHAP(D)는 설명용이다.
+Explanation: Profiler analyzes system metrics such as CPU/GPU utilization, memory, I/O, and data loading bottlenecks to diagnose and recommend fixes for resource inefficiency and bottlenecks. Debugger (B) is for model quality issues, AMT (C) is for hyperparameter search, and SHAP (D) is for explainability.
 
 ---
 
-**Question 5.** 대형 모델 학습 중 큰 배치 크기 때문에 GPU 메모리 초과(OOM)가 발생한다. 배치가 주는 효과를 유지하면서 메모리 제약을 회피하는 기법은?
+**Question 5.** During large model training, a large batch size causes GPU out-of-memory (OOM). Which technique keeps the effect of the batch size while avoiding the memory constraint?
 
-A) 학습률을 0으로 설정  
-B) 검증 세트를 제거  
-C) 그래디언트 누적(gradient accumulation)으로 작은 배치를 여러 번 모음  
-D) 에폭 수를 늘림  
+A) Set the learning rate to 0  
+B) Remove the validation set  
+C) Accumulate small batches several times with gradient accumulation  
+D) Increase the number of epochs  
 
 **Answer: C**  
-Explanation: 그래디언트 누적은 작은 배치들의 그래디언트를 모아 한 번에 업데이트해 큰 배치 효과를 내면서도 순간 메모리 사용을 줄여 OOM을 회피한다. 학습률 0(A)은 학습을 멈추고, 검증 제거(B)·에폭 증가(D)는 메모리 문제와 무관하다.
+Explanation: Gradient accumulation gathers the gradients of small batches and updates once, achieving the effect of a large batch while reducing instantaneous memory use to avoid OOM. A learning rate of 0 (A) stops learning, and removing validation (B) and increasing epochs (D) are unrelated to the memory problem.
 
 ---

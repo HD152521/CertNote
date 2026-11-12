@@ -87,62 +87,62 @@ Heterogeneous DB migration, CDC .............. DMS
 
 ## 📝 Practice Questions
 
-**Question 1.** "S3에 쌓인 데이터를 인프라 프로비저닝 없이 간헐적으로 표준 SQL로 분석"하려는 요구에 가장 적합한 서비스는?
+**Question 1.** Which service is the most suitable for the requirement to "analyze data accumulated in S3 intermittently with standard SQL without provisioning infrastructure"?
 
-A) Amazon Redshift (프로비저닝 클러스터)  
+A) Amazon Redshift (provisioned cluster)  
 B) Amazon Athena  
 C) Amazon Aurora  
 D) Amazon DynamoDB  
 
 **Answer: B**  
-Explanation: Athena는 서버리스로 S3 데이터를 SQL로 직접 쿼리하고 스캔량으로 과금되어, 간헐적·애드혹 분석에 인프라 운영 없이 적합합니다. 프로비저닝 Redshift는 상시 클러스터, Aurora는 OLTP, DynamoDB는 키 조회용입니다.
+Explanation: Athena is serverless, queries S3 data directly with SQL, and is billed by the amount scanned, so it suits intermittent, ad hoc analysis without infrastructure operations. Provisioned Redshift is an always-on cluster, Aurora is OLTP, and DynamoDB is for key lookups.
 
 ---
 
-**Question 2.** Redshift에서 두 대형 팩트/차원 테이블을 동일 키로 자주 조인할 때 재분배를 피하는 최적 설정은?
+**Question 2.** What is the optimal setting in Redshift to avoid redistribution when two large fact/dimension tables are frequently joined on the same key?
 
-A) 두 테이블 모두 동일 컬럼을 DISTKEY로 지정  
-B) 두 테이블 모두 DISTSTYLE EVEN  
-C) 두 테이블 모두 INTERLEAVED SORTKEY  
-D) 한 테이블만 DISTSTYLE ALL (둘 다 대형)  
+A) Specify the same column as the DISTKEY for both tables  
+B) DISTSTYLE EVEN for both tables  
+C) INTERLEAVED SORTKEY for both tables  
+D) DISTSTYLE ALL for only one table (both are large)  
 
 **Answer: A**  
-Explanation: 동일 컬럼을 DISTKEY로 지정하면 같은 키 값이 같은 슬라이스에 배치되어 재분배 없는 co-located join이 됩니다. EVEN은 재분배, INTERLEAVED는 정렬 다축이며 분산과 무관하고, 대형 테이블에 ALL은 비용이 과합니다.
+Explanation: Specifying the same column as the DISTKEY places the same key values on the same slice, resulting in a co-located join without redistribution. EVEN causes redistribution, INTERLEAVED is a multi-axis sort and unrelated to distribution, and ALL on a large table is excessively costly.
 
 ---
 
-**Question 3.** DynamoDB에 저장된 운영 데이터를 대규모로 집계·리포팅해야 한다. 권장 접근은?
+**Question 3.** You need to aggregate and report on operational data stored in DynamoDB at large scale. What is the recommended approach?
 
-A) DynamoDB에서 풀 스캔으로 직접 집계  
-B) GSI를 수십 개 만들어 모든 집계를 인덱스로 처리  
-C) Streams/S3 export로 S3·Redshift에 옮겨 Athena/Redshift로 분석  
-D) LSI를 추가해 집계 전용 축을 만든다  
+A) Aggregate directly in DynamoDB with full scans  
+B) Create dozens of GSIs and handle all aggregations through indexes  
+C) Move the data to S3/Redshift with Streams/S3 export and analyze it with Athena/Redshift  
+D) Add an LSI to create a dedicated aggregation axis  
 
 **Answer: C**  
-Explanation: DynamoDB는 대량 집계·애드혹 분석에 부적합하므로, Streams나 S3 export로 변경분을 분석 스토어(S3+Athena/Redshift)로 옮겨 분석하는 CQRS형 분리가 정석입니다. 풀 스캔·과도한 인덱스는 비용·성능 면에서 부적절합니다.
+Explanation: DynamoDB is unsuitable for large-scale aggregation and ad hoc analytics, so the standard approach is a CQRS-style separation in which changes are moved with Streams or S3 export to an analytics store (S3 + Athena/Redshift) for analysis. Full scans and excessive indexes are inappropriate in terms of cost and performance.
 
 ---
 
-**Question 4.** Aurora의 운영 데이터를 ETL 파이프라인 운영 부담 없이 Redshift에서 거의 실시간으로 분석하려면?
+**Question 4.** How can you analyze Aurora operational data in Redshift in near real time without the burden of operating an ETL pipeline?
 
-A) AWS DMS로 매시간 배치 마이그레이션  
-B) 제로 ETL(Zero-ETL) 통합  
-C) Athena 페더레이션 쿼리  
-D) Redshift Spectrum 외부 스키마  
+A) Hourly batch migration with AWS DMS  
+B) Zero-ETL integration  
+C) Athena federated query  
+D) Redshift Spectrum external schema  
 
 **Answer: B**  
-Explanation: 제로 ETL 통합은 AWS 관리형 CDC로 Aurora 데이터를 코드리스·거의 실시간으로 Redshift에 복제합니다. DMS는 인스턴스 운영 부담이 있고, 페더레이션·Spectrum은 적재 없이 외부를 쿼리하는 방식으로 요구와 다릅니다.
+Explanation: Zero-ETL integration replicates Aurora data to Redshift without code and in near real time using AWS-managed CDC. DMS carries the burden of operating instances, and federation and Spectrum query external data without loading it, which differs from the requirement.
 
 ---
 
-**Question 5.** Athena에서 파티션이 수만 개로 늘어 카탈로그 조회와 MSCK REPAIR가 병목이 될 때 가장 적절한 해결책은?
+**Question 5.** What is the most appropriate solution when partitions in Athena have grown to tens of thousands and catalog lookups and MSCK REPAIR have become a bottleneck?
 
-A) 동시성 스케일링 활성화  
-B) DISTSTYLE ALL 적용  
-C) 파티션 프로젝션(Partition Projection)  
-D) 모든 파일을 CSV로 변환  
+A) Enable Concurrency Scaling  
+B) Apply DISTSTYLE ALL  
+C) Partition projection  
+D) Convert all files to CSV  
 
 **Answer: C**  
-Explanation: 파티션 프로젝션은 파티션을 카탈로그에 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경의 조회 병목을 제거합니다. 동시성 스케일링·DISTSTYLE은 Redshift 개념이고, CSV 전환은 스캔량을 늘려 역효과입니다.
+Explanation: Partition projection computes partitions from range and format rules without registering them in the catalog, eliminating the lookup bottleneck in environments with a large number of partitions. Concurrency Scaling and DISTSTYLE are Redshift concepts, and converting to CSV backfires by increasing the amount scanned.
 
 ---

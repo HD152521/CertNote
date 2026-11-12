@@ -275,97 +275,97 @@ Next we explore **CDK** itself. SAM applied Transform Macro abstraction over YAM
 
 (All practice problems in Korean - preserved from original)
 
-**Question 1.** Custom Resource Lambda가 어떤 분기에서도 ResponseURL에 응답을 보내지 못하면 발생하는 일은?
+**Question 1.** What happens if a custom resource Lambda fails to send a response to the ResponseURL in any branch?
 
-A) 자동 성공으로 처리
-B) CFN이 기본 1시간(설정 시 최대 3일) 대기 후 Stack을 실패 처리 — 그동안 전체 Stack이 IN_PROGRESS로 묶임
-C) 자동 재시도 3회
-D) Layer로 자동 우회
+A) It is treated as an automatic success
+B) CFN waits for 1 hour by default (up to 3 days if configured) and then marks the stack as failed — meanwhile the entire stack is stuck in IN_PROGRESS
+C) Automatic retry 3 times
+D) Automatically bypassed through a layer
 
 **Answer: B**
 
-Explanation: CFN과 Lambda 간 비동기 응답 프로토콜의 핵심. Lambda timeout, 예외, return 누락 어떤 경로든 응답이 안 오면 CFN은 ResponseURL polling을 계속한다. 모든 try/finally 분기에 응답 보장이 필수이고, AWS는 `cfn-response` 모듈 또는 CDK Provider framework 사용을 권장한다. Stack이 묶이면 다른 변경도 막혀 운영 사고로 이어짐.
+Explanation: This is the core of the asynchronous response protocol between CFN and Lambda. Whichever path it is — Lambda timeout, exception, or a missing return — if no response arrives, CFN keeps polling the ResponseURL. A response must be guaranteed in every try/finally branch, and AWS recommends using the `cfn-response` module or the CDK Provider framework. If the stack gets stuck, other changes are blocked too, leading to an operational incident.
 
 ---
 
-**Question 2.** Custom Resource Update 시 Lambda가 새 PhysicalResourceId를 반환하면 CFN의 동작은?
+**Question 2.** What does CFN do when the Lambda returns a new PhysicalResourceId on a custom resource update?
 
-A) 동일 자원의 정상 Update
-B) CFN이 이전 PhysicalResourceId로 Delete 호출 + 새 ID로 Create — 자원 교체로 해석
-C) Stack 실패
-D) 동작 변화 없음
+A) A normal update of the same resource
+B) CFN calls Delete with the previous PhysicalResourceId + Create with the new ID — interpreted as a resource replacement
+C) The stack fails
+D) No change in behavior
 
 **Answer: B**
 
-Explanation: PhysicalResourceId가 외부 자원의 동일성 키. 키가 바뀌면 다른 자원으로 간주해 자동 교체. RDS DBInstanceIdentifier 변경이 교체를 유발하는 것과 같은 모델. 2020년 핀테크 결제 API key 자동 회전 사고와 같은 패턴 — 매 Update마다 새 키 생성하도록 짜면 이전 자원이 자동 삭제되어 진행 중인 트랜잭션 실패. Update 분기에선 `event['PhysicalResourceId']` 유지가 표준.
+Explanation: PhysicalResourceId is the identity key of the external resource. If the key changes, it is considered a different resource and is replaced automatically. It is the same model as how changing an RDS DBInstanceIdentifier triggers replacement. It is the same pattern as the 2020 fintech payment API key automatic rotation incident — if you write it to create a new key on every update, the previous resource is deleted automatically and in-flight transactions fail. In the update branch, keeping `event['PhysicalResourceId']` is the standard.
 
 ---
 
-**Question 3.** CDK Provider framework의 isComplete 핸들러가 풀어주는 문제는?
+**Question 3.** What problem does the isComplete handler of the CDK Provider framework solve?
 
-A) IAM 자동 생성
-B) Lambda 15분 timeout 한계 — 장시간 작업(RDS 스냅샷 크로스 리전 복사, ECR 복제 등)을 Step Functions polling으로 우아하게 처리
-C) 비용 절감
-D) 자동 Drift Detection
+A) Automatic IAM creation
+B) The 15-minute Lambda timeout limit — it gracefully handles long-running work (cross-Region RDS snapshot copy, ECR replication, and so on) with Step Functions polling
+C) Cost savings
+D) Automatic drift detection
 
 **Answer: B**
 
-Explanation: Lambda invocation은 최대 15분이지만 외부 자원 작업은 더 길 수 있음. onEventHandler는 작업 시작, isCompleteHandler는 주기적으로 완료 여부 확인. CDK가 Step Functions를 자동 생성해 polling 인프라를 캡슐화. queryInterval/totalTimeout으로 polling 주기와 최대 대기 시간 조절. 수동으로 Step Functions를 작성하지 않아도 되는 추상화의 가치.
+Explanation: A Lambda invocation is at most 15 minutes, but operations on external resources can take longer. onEventHandler starts the work, and isCompleteHandler periodically checks whether it has completed. CDK automatically creates Step Functions to encapsulate the polling infrastructure. Use queryInterval/totalTimeout to adjust the polling interval and the maximum wait time. This shows the value of an abstraction that spares you from writing Step Functions manually.
 
 ---
 
-**Question 4.** CloudFormation Hooks와 AWS Config Rules의 가장 정확한 차이는?
+**Question 4.** What is the most accurate difference between CloudFormation Hooks and AWS Config rules?
 
-A) 둘 다 동일한 시점에 평가
-B) Hooks는 변경 전(pre-provision) 차단(proactive prevention), Config Rules는 변경 후(post-provision) 평가/알람/자동 수정(reactive detection)
-C) Hooks는 IAM 전용
-D) Config Rules는 비용이 더 비쌈
+A) Both are evaluated at the same time
+B) Hooks block before the change (pre-provision) as proactive prevention, while Config rules evaluate/alarm/auto-remediate after the change (post-provision) as reactive detection
+C) Hooks are IAM only
+D) Config rules are more expensive
 
 **Answer: B**
 
-Explanation: 사전 vs 사후가 핵심 차이. Hooks는 K8s ValidatingAdmissionWebhook과 같은 admission control 패턴 — 위반 변경이 절대 발생하지 않게 차단. Config Rules는 일어난 변경을 평가하고 알람 또는 Remediation Action으로 사후 대응. NIST SP 800-204C의 "policy-as-code with admission control" 권고 구현. Control Tower Proactive Guardrails가 내부적으로 Hooks 사용.
+Explanation: The key difference is before versus after. Hooks are an admission control pattern like the K8s ValidatingAdmissionWebhook — they block violating changes so they never happen. Config rules evaluate changes that have already happened and respond afterward with alarms or remediation actions. It implements the NIST SP 800-204C recommendation of "policy-as-code with admission control." Control Tower proactive guardrails use Hooks internally.
 
 ---
 
-**Question 5.** prod CFN 변경에 SOC 2 / PCI-DSS의 change management 통제 요건을 충족하려면 가장 적절한 패턴은?
+**Question 5.** What is the most appropriate pattern for prod CFN changes to meet the change management control requirements of SOC 2 / PCI-DSS?
 
-A) `aws cloudformation deploy` 한 줄로 자동화
-B) CodePipeline에 CreateChangeSet → Manual Approval → ExecuteChangeSet 3단계 구성 + Change Set의 Replacement 정보를 사람이 검토 후 승인
-C) IAM 권한만 강화
-D) Drift Detection만으로 충분
+A) Automate with the single line `aws cloudformation deploy`
+B) A 3-stage CodePipeline setup of CreateChangeSet → Manual Approval → ExecuteChangeSet, with a human reviewing and approving the replacement information in the change set
+C) Only strengthen IAM permissions
+D) Drift detection alone is enough
 
 **Answer: B**
 
-Explanation: `aws cloudformation deploy`는 Change Set 정보를 보여주지 않고 바로 실행 → Replacement=True 같은 위험 변경을 놓침(2021년 SaaS RDS Engine 사고). 표준 패턴은 Change Set으로 미리보기 → 사람 검토 → 승인 시 실행 3단계. ManualApproval Action이 사람의 한 단계 확인을 강제해 SOC 2 CC8.1(Change Management) 요건 자동화 충족. Drift Detection은 사후 감지이지 변경 통제 아님.
+Explanation: `aws cloudformation deploy` executes immediately without showing the change set information → it misses risky changes such as Replacement=True (the 2021 SaaS RDS engine incident). The standard pattern is three stages: preview with a change set → human review → execute upon approval. The manual approval action enforces a human confirmation step and automatically satisfies the SOC 2 CC8.1 (change management) requirement. Drift detection is after-the-fact detection, not change control.
 
 ---
 
-**Question 6.** Drift Detection이 감지하지 못하는 변경 중 가장 위험한 것은?
+**Question 6.** Which of the changes that drift detection cannot detect is the most dangerous?
 
-A) S3 버킷 콘솔 삭제
-B) Custom Resource로 만든 외부 시스템(Slack 채널, GitHub webhook 등) 자원의 외부 변경 — CFN은 외부 시스템 상태를 모르므로 감지 불가, 별도 audit log 필요
-C) EC2 인스턴스 타입 변경
-D) RDS 비밀번호 회전
+A) Deleting an S3 bucket in the console
+B) An external change to a resource in an external system created by a custom resource (a Slack channel, a GitHub webhook, and so on) — CFN does not know the state of external systems so it cannot detect it, and a separate audit log is needed
+C) Changing an EC2 instance type
+D) Rotating an RDS password
 
 **Answer: B**
 
-Explanation: CFN Drift Detection은 CFN이 추적하는 AWS 리소스 속성만 비교. Custom Resource는 외부 시스템 자원의 PhysicalResourceId만 기록하고 실제 자원 상태는 추적하지 않음. Slack 채널이 외부에서 archive되거나 권한이 변경돼도 CFN drift로 잡히지 않음. 외부 시스템 audit log streaming(Slack Audit Log, GitHub Audit Log)을 별도로 SIEM에 보내야 함. A/C는 모두 CFN drift로 감지 가능, D는 동적 참조 평문 보호 영역.
+Explanation: CFN drift detection compares only the properties of AWS resources that CFN tracks. A custom resource records only the PhysicalResourceId of the external system resource and does not track the actual resource state. Even if a Slack channel is archived externally or its permissions change, CFN drift does not catch it. You must separately send the external system audit log streams (Slack audit log, GitHub audit log) to a SIEM. A and C can both be detected by CFN drift, and D falls under the plaintext protection area of dynamic references.
 
 ---
 
-**Question 7.** CFN Hooks를 도입할 때 안전한 rollout 전략으로 가장 적절한 것은?
+**Question 7.** What is the most appropriate safe rollout strategy when introducing CFN Hooks?
 
-A) 처음부터 FAIL 모드로 모든 리소스에 적용
-B) WARN 모드로 시작해 베이스라인 위반 측정 → 위반 해소 → FAIL 모드로 전환 (graceful rollout)
-C) 한 번에 모든 hook 활성화
-D) Hook 비활성화
+A) Apply to all resources in FAIL mode from the start
+B) Start in WARN mode to measure baseline violations → resolve the violations → switch to FAIL mode (graceful rollout)
+C) Enable all hooks at once
+D) Disable the hooks
 
 **Answer: B**
 
-Explanation: WARN은 위반을 로그/알람만 남기고 변경 진행, FAIL은 차단. 처음부터 FAIL이면 기존 비준수 리소스의 모든 변경이 차단되어 운영 마비. WARN으로 베이스라인 측정 → 기존 위반 정리 → FAIL 전환의 단계적 접근이 표준. K8s OPA Gatekeeper도 동일한 dryrun → warn → deny rollout 패턴 권장. 거버넌스 도입의 일반 원칙.
+Explanation: WARN only logs/alarms the violation and lets the change proceed, while FAIL blocks it. If FAIL from the start, all changes to existing non-compliant resources are blocked and operations are paralyzed. The standard is a phased approach: measure the baseline with WARN → clean up existing violations → switch to FAIL. K8s OPA Gatekeeper also recommends the same dryrun → warn → deny rollout pattern. It is a general principle of governance adoption.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, Custom Resource는 CFN을 선언적 라이프사이클 엔진으로 확장하는 메커니즘이고 K8s CRD + Operator와 같은 추상화. 둘째, ResponseURL/PhysicalResourceId 프로토콜의 비동기성과 동일성 의미를 정확히 알아야 사고 없이 운영. 셋째, CDK Provider framework의 isComplete가 Step Functions를 자동 생성해 Lambda 15분 한계 우회. 넷째, Hooks는 변경 사전 검증(K8s ValidatingAdmissionWebhook과 같은 패턴)으로 Config Rules의 사후 대응과 보완. 다섯째, Change Set + Manual Approval은 SOC 2/PCI 거버넌스 요건의 자동화 표준이며 prod에 필수.
+The five key takeaways from today are as follows. First, a custom resource is a mechanism that extends CFN into a declarative lifecycle engine, the same abstraction as a K8s CRD + operator. Second, you must understand exactly the asynchronous nature of the ResponseURL/PhysicalResourceId protocol and the meaning of identity to operate without incidents. Third, isComplete of the CDK Provider framework automatically creates Step Functions to get around the Lambda 15-minute limit. Fourth, Hooks are pre-change validation (the same pattern as the K8s ValidatingAdmissionWebhook) and complement the after-the-fact response of Config rules. Fifth, change set + manual approval is the automation standard for SOC 2/PCI governance requirements and is mandatory for prod.

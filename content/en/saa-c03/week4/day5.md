@@ -378,7 +378,7 @@ B) Using the S3 static website endpoint as the origin is the problem
 C) OAC works only with SSE-S3
 D) The bucket policy is wrong
 
-**Answer: A, B 모두 문제 (시험에서는 가장 큰 문제 하나를 고른다면 B)**
+**Answer: A, B are both problems (if you must pick the single biggest problem on the exam, B)**
 Explanation: OAC works only with an S3 REST endpoint (`bucket.s3.region.amazonaws.com`). Using the S3 static website endpoint as the origin means OAC doesn't work, allowing access without authentication. Also, disabling BPA can allow direct public access to the bucket. Correct configuration: use the S3 REST endpoint as the origin + configure OAC + fully enable BPA + allow only the OAC Principal in the bucket policy. If static-hosting features (index document, error pages) are needed, handle them at CloudFront with `CustomErrorResponse`.
 
 ---

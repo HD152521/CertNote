@@ -83,7 +83,7 @@ Tomorrow we dive deeper into "data" itself, the fuel of this lifecycle. We'll co
 
 ## 📝 Practice Questions
 
-**Question 1.** ML 수명주기에서 데이터를 모은 직후, 모델 학습 전에 반드시 거쳐야 하는 단계는?
+**Question 1.** In the ML lifecycle, which step must be performed right after collecting data and before training a model?
 
 A) Model Deployment  
 B) Data Preparation (cleaning and transformation)  
@@ -95,7 +95,7 @@ Explanation: Current raw data is messy due to missing values, duplicates, and fo
 
 ---
 
-**Question 2.** ML 수명주기를 한 방향으로 끝나는 직선이 아니라 순환하는 원으로 보는 가장 큰 이유는?
+**Question 2.** What is the main reason the ML lifecycle is viewed as a repeating cycle rather than a one-way straight line?
 
 A) Once a model is deployed, it remains accurate forever  
 B) Because data distribution changes over time (drift), causing the model to become outdated, making retraining necessary  
@@ -107,7 +107,7 @@ Explanation: The distribution of data in the world changes over time (data drift
 
 ---
 
-**Question 3.** 모델 평가 단계에서 성능을 측정할 때 사용해야 하는 데이터로 가장 적절한 것은?
+**Question 3.** Which data is most appropriate to use when measuring performance in the model evaluation stage?
 
 A) Data used in training  
 B) Unseen data that was not used in training  
@@ -119,7 +119,7 @@ Explanation: It's natural that a model fits well on training data (since we've a
 
 ---
 
-**Question 4.** "Garbage In, Garbage Out"이라는 격언이 ML 수명주기에서 강조하는 단계는?
+**Question 4.** Which stage of the ML lifecycle does the adage "Garbage In, Garbage Out" emphasize?
 
 A) Deployment  
 B) Monitoring  
@@ -131,7 +131,7 @@ Explanation: This adage means that no matter how good the algorithm, poor input 
 
 ---
 
-**Question 5.** 6개월 전 배포한 모델의 정확도가 운영 중 점점 떨어지고 있다. ML 수명주기 관점에서 가장 올바른 대응은?
+**Question 5.** The accuracy of a model deployed six months ago is gradually declining in production. From the ML lifecycle perspective, what is the most appropriate response?
 
 A) Immediately discard the model and stop using ML  
 B) Take no action; the model will recover automatically over time  

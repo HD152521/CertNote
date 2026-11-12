@@ -101,31 +101,31 @@ Representative algorithms:
 
 ## 📝 Practice Questions
 
-**Question 1.** "사진 속에 차량과 보행자가 각각 몇 개 있고 어디에 위치하는지" 알아야 한다. 가장 적절한 과제 유형은?
+**Question 1.** You need to know "how many vehicles and pedestrians are in the photo and where they are located." Which task type is MOST appropriate?
 
-A) 객체 탐지  
-B) 이미지 분류  
-C) 토픽 모델링  
-D) 회귀  
+A) Object detection  
+B) Image classification  
+C) Topic modeling  
+D) Regression  
 
 **Answer: A**  
-Explanation: 여러 객체의 클래스와 위치(바운딩 박스)를 동시에 구하는 것은 객체 탐지(SSD/YOLO, SageMaker Object Detection)다. 이미지 분류(B)는 사진 1장당 레이블만, 토픽 모델링(C)은 텍스트, 회귀(D)는 연속값 예측이다.
+Explanation: Obtaining the classes and locations (bounding boxes) of multiple objects at the same time is object detection (SSD/YOLO, SageMaker Object Detection). Image classification (B) gives only a label per photo, topic modeling (C) is for text, and regression (D) predicts continuous values.
 
 ---
 
-**Question 2.** CNN에서 **풀링(pooling) 층**의 역할로 옳지 않은 것은?
+**Question 2.** Which of the following is NOT a role of the **pooling layer** in a CNN?
 
-A) 학습 가능한 가중치를 추가해 표현력을 높인다  
-B) 특성 맵의 공간 크기를 줄인다  
-C) 작은 위치 변화에 강인하게 만든다  
-D) 연산량과 과적합을 줄인다  
+A) Adds learnable weights to increase expressive power  
+B) Reduces the spatial size of the feature map  
+C) Makes the network robust to small positional changes  
+D) Reduces computation and overfitting  
 
 **Answer: A**  
-Explanation: 풀링은 학습 파라미터가 없는 고정 연산이다(최댓값/평균). 다운샘플링(B)·위치 강인성(C)·연산 및 과적합 감소(D)는 풀링의 효과이지만, 가중치를 추가하는 것은 합성곱/Dense 층의 역할이다.
+Explanation: Pooling is a fixed operation (max/average) with no learnable parameters. Downsampling (B), positional robustness (C), and reduced computation and overfitting (D) are effects of pooling, but adding weights is the role of convolution/Dense layers.
 
 ---
 
-**Question 3.** 망을 100층 이상 매우 깊게 쌓아도 안정적으로 학습되도록 **잔차(skip) 연결**을 도입한 대표 구조는?
+**Question 3.** Which representative architecture introduced **residual (skip) connections** so that networks can be trained stably even when stacked more than 100 layers deep?
 
 A) VGG  
 B) AlexNet  
@@ -133,30 +133,30 @@ C) ResNet
 D) LeNet  
 
 **Answer: C**  
-Explanation: ResNet은 입력을 출력에 더하는 잔차 연결로 기울기가 지름길로 흐르게 해 초심층 학습을 가능하게 했다. VGG(A)는 3×3을 깊게 쌓은 단순 구조, AlexNet(B)·LeNet(D)은 그 이전 세대 구조다.
+Explanation: ResNet's residual connections add the input to the output so that gradients flow through shortcuts, enabling ultra-deep training. VGG (A) is a simple structure stacking 3×3 convolutions deeply, and AlexNet (B) and LeNet (D) are earlier-generation architectures.
 
 ---
 
-**Question 4.** 완전연결(Dense) 신경망 대신 CNN이 이미지에 유리한 핵심 이유는?
+**Question 4.** What is the key reason a CNN is advantageous for images compared with a fully connected (Dense) neural network?
 
-A) 활성화 함수가 필요 없어서  
-B) 손실 함수를 쓰지 않기 때문  
-C) 역전파 없이 학습되기 때문  
-D) 가중치 공유와 지역 수용영역으로 파라미터가 적고 이동 불변성을 갖기 때문  
+A) It does not need activation functions  
+B) It does not use a loss function  
+C) It is trained without backpropagation  
+D) Weight sharing and local receptive fields give it fewer parameters and translation invariance  
 
 **Answer: D**  
-Explanation: CNN은 작은 필터를 전 위치에 공유(가중치 공유)하고 지역 영역만 보아 파라미터를 크게 줄이며 이동 불변성을 얻는다. 활성화·손실·역전파(A·B·C)는 CNN도 동일하게 사용한다.
+Explanation: A CNN shares small filters across all positions (weight sharing) and looks only at local regions, greatly reducing parameters and gaining translation invariance. Activations, loss, and backpropagation (A, B, C) are used by CNNs in the same way.
 
 ---
 
-**Question 5.** 이미지 학습 데이터가 매우 적을 때 과적합을 줄이는 가장 적절한 1차 처방은?
+**Question 5.** When image training data is very scarce, what is the MOST appropriate first remedy for reducing overfitting?
 
-A) 배치 크기를 0으로 설정  
-B) 활성화 함수를 모두 제거  
-C) 데이터 증강(회전·뒤집기·크롭)과 사전학습 가중치 전이학습 활용  
-D) 출력층을 회귀로 변경  
+A) Set the batch size to 0  
+B) Remove all activation functions  
+C) Use data augmentation (rotation, flipping, cropping) and transfer learning from pretrained weights  
+D) Change the output layer to regression  
 
 **Answer: C**  
-Explanation: 데이터가 적으면 증강으로 다양성을 늘리고, ImageNet 사전학습 가중치를 전이학습해 적은 데이터로도 일반화를 높인다. 배치 0(A)은 불가능, 활성화 제거(B)는 표현력 상실, 출력 회귀 변경(D)은 분류 과제와 무관하다.
+Explanation: With little data, augmentation increases diversity, and transfer learning from ImageNet pretrained weights improves generalization even with little data. A batch size of 0 (A) is impossible, removing activations (B) destroys expressive power, and changing the output to regression (D) is unrelated to the classification task.
 
 ---

@@ -111,87 +111,87 @@ SAP exam recurring mappings: (1) "large/small table join + network traffic" → 
 
 ## 📝 Practice Questions
 
-**Question 1.** 10억 행의 sales fact 테이블과 1만 행의 product dimension 테이블을 자주 조인한다. 쿼리가 느리고 노드 간 네트워크 트래픽이 높다. 최적 분산 설계는?
+**Question 1.** A 1-billion-row sales fact table and a 10,000-row product dimension table are joined frequently. Queries are slow and inter-node network traffic is high. What is the optimal distribution design?
 
-A) 두 테이블 모두 DISTSTYLE EVEN
-B) sales는 조인 키로 DISTKEY, product는 DISTSTYLE ALL
-C) 두 테이블 모두 DISTSTYLE ALL
-D) sales를 DISTSTYLE ALL, product를 DISTKEY
+A) DISTSTYLE EVEN for both tables
+B) DISTKEY on the join key for sales, DISTSTYLE ALL for product
+C) DISTSTYLE ALL for both tables
+D) DISTSTYLE ALL for sales, DISTKEY for product
 
 **Answer: B**
-Explanation: 큰 fact 테이블은 조인 키로 DISTKEY 분산하고, 작은 차원 테이블(1만 행)은 DISTSTYLE ALL로 모든 노드에 복제하면, 조인 시 차원 데이터가 이미 각 노드 로컬에 있어 노드 간 셔플(네트워크 트래픽)이 사라진다. A(둘 다 EVEN)는 조인 시 셔플이 발생. C(둘 다 ALL)는 10억 행 테이블을 모든 노드에 복제해 스토리지가 폭발하고 비현실적. D는 큰 테이블을 복제하므로 잘못됨. 함정: "큰 테이블 + 작은 테이블 + 네트워크 트래픽 높음"은 fact=KEY, dim=ALL이 정석.
+Explanation: Distribute the large fact table with a DISTKEY on the join key and replicate the small dimension table (10,000 rows) to all nodes with DISTSTYLE ALL; then the dimension data is already local to each node at join time, and inter-node shuffling (network traffic) disappears. A (EVEN for both) causes shuffling during joins. C (ALL for both) replicates the 1-billion-row table to every node, so storage explodes and it is impractical. D is wrong because it replicates the large table. Trap: "large table + small table + high network traffic" is classically fact = KEY, dim = ALL.
 
 ---
 
-**Question 2.** 분석 쿼리가 느린데, 모니터링 결과 일부 슬라이스의 CPU만 100%이고 나머지는 거의 놀고 있다. 분산 키는 `gender`(값 M/F 2개) 컬럼이다. 원인과 해결은?
+**Question 2.** Analytical queries are slow, and monitoring shows that only some slices are at 100% CPU while the rest are nearly idle. The distribution key is the `gender` column (only 2 values, M/F). What are the cause and the fix?
 
-A) 정렬 키 부재 → SORTKEY 추가
-B) 데이터 스큐 → 카디널리티 높은 컬럼으로 DISTKEY 변경
-C) 압축 부재 → 인코딩 적용
-D) VACUUM 필요 → VACUUM 실행
+A) Missing sort key → add a SORTKEY
+B) Data skew → change the DISTKEY to a high-cardinality column
+C) Missing compression → apply encoding
+D) VACUUM needed → run VACUUM
 
 **Answer: B**
-Explanation: gender처럼 카디널리티가 매우 낮은 컬럼을 분산 키로 쓰면 데이터가 두 슬라이스에만 몰려(데이터 스큐) MPP 병렬성이 무너진다. 일부 슬라이스만 과부하되고 나머지는 노는 전형적 증상이다. 카디널리티가 높고 고르게 분포된 컬럼(주문 ID, 사용자 ID 등)으로 DISTKEY를 바꿔야 균등 분산된다. A·C·D도 성능에 영향을 주지만 "일부 슬라이스만 과부하"라는 증상의 직접 원인은 분산 스큐다. 함정: "일부 노드/슬라이스만 CPU 높음"은 분산 스큐를 의심.
+Explanation: If a very low-cardinality column like gender is used as the distribution key, data concentrates on only two slices (data skew), and MPP parallelism collapses. This is the classic symptom of only some slices being overloaded while the rest sit idle. You must change the DISTKEY to a column with high cardinality and even distribution (order ID, user ID, and so on) to distribute evenly. A, C, and D also affect performance, but the direct cause of the symptom "only some slices are overloaded" is distribution skew. Trap: "only some nodes/slices have high CPU" suggests distribution skew.
 
 ---
 
-**Question 3.** DC2 클러스터를 운영 중인데 데이터가 3년간 누적되어 스토리지가 90% 찼다. 컴퓨팅은 충분한데 스토리지 때문에 노드를 추가하니 비용이 급증한다. 가장 적합한 해결책은?
+**Question 3.** You operate a DC2 cluster, and data has accumulated over 3 years so storage is 90% full. Compute is sufficient, but adding nodes because of storage makes costs jump. What is the most appropriate solution?
 
-A) DC2 노드를 계속 추가
-B) RA3로 마이그레이션
-C) Redshift Serverless로 전환
-D) 오래된 데이터를 삭제
+A) Keep adding DC2 nodes
+B) Migrate to RA3
+C) Switch to Redshift Serverless
+D) Delete old data
 
 **Answer: B**
-Explanation: DC2는 컴퓨팅과 스토리지가 결합돼 있어 스토리지가 부족하면 불필요한 컴퓨팅까지 늘려야 한다. RA3는 데이터를 RMS(S3 기반)에 저장하고 로컬 SSD는 캐시로 써서 컴퓨팅과 스토리지를 독립적으로 스케일링한다. 노드 수는 실제 컴퓨팅 요구에만 맞추고 스토리지는 RMS가 탄력적으로 처리해 비용이 최적화된다. A는 비용 급증의 원인 그 자체. C는 가능하지만 꾸준한 프로덕션 워크로드엔 RA3 예약이 더 경제적일 수 있고, 질문의 핵심은 스토리지 분리다. D는 데이터 손실. 함정: "DC2 스토리지 부족 + 비용 증가"는 RA3 마이그레이션.
+Explanation: DC2 couples compute and storage, so when storage runs short you must also add unnecessary compute. RA3 stores data in RMS (S3-based) and uses local SSD as a cache, so compute and storage scale independently. The node count is matched only to actual compute needs and storage is handled elastically by RMS, optimizing cost. A is the very cause of the cost jump. C is possible, but for a steady production workload an RA3 reservation may be more economical, and the key point of the question is the separation of storage. D means data loss. Trap: "DC2 storage shortage + rising cost" is a migration to RA3.
 
 ---
 
-**Question 4.** 개발/테스트 환경에서 분석 쿼리가 하루 몇 번, 불규칙하게 실행된다. 사용하지 않을 때 컴퓨팅 비용을 0에 가깝게 하고 노드 관리도 하고 싶지 않다. 가장 적합한 옵션은?
+**Question 4.** In a dev/test environment, analytical queries run a few times a day at irregular times. You want compute cost to be near zero when not in use and do not want to manage nodes. What is the most appropriate option?
 
-A) DC2 단일 노드
-B) RA3 예약 인스턴스
+A) A single DC2 node
+B) An RA3 reserved instance
 C) Redshift Serverless
 D) Aurora
 
 **Answer: C**
-Explanation: Redshift Serverless는 노드 개념 없이 워크로드에 따라 RPU가 자동 조정되고, 쿼리가 없으면 컴퓨팅 비용이 거의 0으로 떨어진다. 간헐적·예측 불가·개발 환경에 최적이다. A(DC2)·B(RA3 예약)는 쓰지 않아도 노드 비용이 계속 발생하고 노드 관리도 필요. D는 OLTP DB로 분석 웨어하우스가 아님. 함정: "가변/간헐/안 쓸 때 비용 0"은 Serverless, "꾸준한 대량 프로덕션"은 RA3 예약.
+Explanation: Redshift Serverless has no node concept; RPUs adjust automatically to the workload, and when there are no queries compute cost drops to nearly zero. It is optimal for intermittent, unpredictable, and development environments. A (DC2) and B (RA3 reserved) keep incurring node costs even when unused and also require node management. D is an OLTP DB, not an analytics data warehouse. Trap: "variable/intermittent/zero cost when not in use" is Serverless; "steady large-scale production" is an RA3 reservation.
 
 ---
 
-**Question 5.** 이미 Redshift RA3를 운영 중이고, S3 데이터 레이크에 저장된 5년치 과거 주문 데이터(Parquet)를 Redshift의 최근 주문 테이블과 조인해 분석해야 한다. 과거 데이터를 Redshift로 적재하고 싶지 않다. 가장 적합한 구성은?
+**Question 5.** You already run Redshift RA3, and you need to analyze 5 years of historical order data (Parquet) stored in the S3 data lake by joining it with Redshift's recent orders table. You do not want to load the historical data into Redshift. What is the most appropriate configuration?
 
-A) COPY로 S3 데이터를 Redshift 내부 테이블에 적재
+A) Load the S3 data into an internal Redshift table with COPY
 B) Redshift Spectrum + External Schema
-C) Athena로 별도 쿼리 후 수동 결합
-D) DMS로 S3를 Redshift에 복제
+C) Query separately with Athena and combine manually
+D) Replicate S3 to Redshift with DMS
 
 **Answer: B**
-Explanation: Redshift Spectrum은 S3 데이터를 적재(COPY)하지 않고 Glue Catalog의 외부 테이블을 참조하는 External Schema로 직접 쿼리하며, Redshift 내부 테이블과 한 쿼리에서 조인할 수 있다(레이크하우스). S3 스캔은 별도 Spectrum 노드 풀에서 처리되어 클러스터 자원을 거의 안 쓴다. A·D는 적재가 발생해 "적재하고 싶지 않다"는 조건 위반. C는 두 시스템 결과를 수동 결합해야 해 비효율. 함정: "Redshift 사용 중 + S3 과거 데이터와 조인 + 적재 회피"는 Spectrum.
+Explanation: Redshift Spectrum queries S3 data directly through an External Schema that references external tables in the Glue Catalog without loading (COPY) it, and can join it with internal Redshift tables in a single query (lakehouse). The S3 scan is processed by a separate Spectrum node pool, so it barely uses cluster resources. A and D involve loading, which violates the condition "do not want to load." C requires combining the results of two systems manually, which is inefficient. Trap: "using Redshift + joining with historical S3 data + avoiding loading" is Spectrum.
 
 ---
 
-**Question 6.** Aurora PostgreSQL OLTP 데이터를 거의 실시간으로 Redshift에서 분석해야 한다. ETL 파이프라인을 직접 구축·운영하고 싶지 않고, 운영 DB에 분석 쿼리 부하를 주고 싶지도 않다. 가장 적합한 구성은?
+**Question 6.** You must analyze Aurora PostgreSQL OLTP data in Redshift in near real time. You do not want to build and operate an ETL pipeline yourself, nor put analytical query load on the production DB. What is the most appropriate configuration?
 
 A) Redshift Federated Query
 B) Aurora PostgreSQL Zero-ETL Integration with Redshift
-C) DMS CDC로 S3 복제 후 Glue ETL
-D) 매시간 Glue 배치 ETL
+C) Replicate to S3 with DMS CDC and then Glue ETL
+D) Hourly Glue batch ETL
 
 **Answer: B**
-Explanation: Zero-ETL Integration은 CDC로 Aurora 변경을 Redshift에 거의 실시간(수 초~수십 초) 자동 복제한다. ETL 코드를 작성/유지할 필요가 없고(완전 관리형), 데이터가 Redshift로 복제되므로 운영 DB에 분석 쿼리 부하가 가지 않는다. A(Federated Query)는 ETL은 없지만 운영 DB에 직접 쿼리해 부하를 주므로 조건 위반. C·D는 파이프라인을 직접 관리해야 하고 C는 실시간이지만 운영 부담, D는 실시간이 아님. 함정: "ETL 없이 + 실시간 + 운영 DB 부하 회피"는 Zero-ETL.
+Explanation: Zero-ETL Integration automatically replicates Aurora changes to Redshift in near real time (seconds to tens of seconds) using CDC. There is no ETL code to write or maintain (fully managed), and because the data is replicated into Redshift, no analytical query load reaches the production DB. A (Federated Query) has no ETL but queries the production DB directly and puts load on it, which violates the condition. C and D require managing the pipeline yourself; C is real time but an operational burden, and D is not real time. Trap: "without ETL + real time + avoiding production DB load" is Zero-ETL.
 
 ---
 
-**Question 7.** 두 개의 분리된 RA3 클러스터(BI팀, 데이터 과학팀)가 같은 매출 데이터를 읽어야 한다. 데이터 복제 비용과 동기화 부담을 피하면서 각 팀의 쿼리가 서로의 성능에 영향을 주지 않게 격리하려면?
+**Question 7.** Two separate RA3 clusters (the BI team and the data science team) must read the same sales data. How can you avoid data replication cost and synchronization burden while isolating each team's queries so they do not affect each other's performance?
 
-A) 한 클러스터를 두 팀이 공유
-B) Redshift Data Sharing(프로듀서 → 컨슈머)
-C) 각 팀이 데이터를 COPY로 복제
-D) Redshift Spectrum으로 공유
+A) Two teams share one cluster
+B) Redshift Data Sharing (producer → consumer)
+C) Each team replicates the data with COPY
+D) Share with Redshift Spectrum
 
 **Answer: B**
-Explanation: RA3의 Data Sharing은 데이터가 RMS(S3 기반)에 있다는 점을 활용해 프로듀서 클러스터의 데이터를 복사 없이 컨슈머 클러스터가 읽기 공유하게 한다. 각 클러스터는 독립된 컴퓨팅을 가지므로 워크로드가 격리되고(서로 성능 영향 없음), 복제 비용·동기화 부담이 없다. 멀티 계정·멀티 리전도 지원. A는 워크로드 격리 실패(경합). C는 복제 비용·동기화 부담 발생. D(Spectrum)는 S3 외부 데이터용이지 Redshift 내부 테이블 공유 메커니즘이 아님. 함정: "복제 없이 다중 클러스터 공유 + 워크로드 격리"는 Data Sharing.
+Explanation: RA3 Data Sharing takes advantage of the fact that data resides in RMS (S3-based) to let a consumer cluster read-share the producer cluster's data without copying. Each cluster has independent compute, so workloads are isolated (no performance impact on each other) and there is no replication cost or synchronization burden. Multi-account and multi-Region are also supported. A fails at workload isolation (contention). C incurs replication cost and synchronization burden. D (Spectrum) is for external data in S3 and is not a mechanism for sharing internal Redshift tables. Trap: "sharing across multiple clusters without replication + workload isolation" is Data Sharing.
 
 ---
 

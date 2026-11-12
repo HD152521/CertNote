@@ -430,31 +430,31 @@ Is it On-Premises?
 
 ## 📝 Practice Questions
 
-**Question 1.** CodeDeploy 배포가 진행 중일 때 ASG가 스케일 아웃하면, 새로 추가된 EC2 인스턴스의 코드 버전은?
+**Question 1.** If an ASG scales out while a CodeDeploy deployment is in progress, which code version do the newly added EC2 instances get?
 
-A) 구 버전으로 시작하고 다음 배포까지 유지
-B) CodeDeploy가 자동으로 진행 중인 배포의 동일 revision을 새 인스턴스에 적용
-C) 배포가 즉시 실패 처리됨
-D) 새 인스턴스는 Deployment Group에서 제외됨
+A) They start with the old version and keep it until the next deployment
+B) CodeDeploy automatically applies the same revision as the in-progress deployment to the new instances
+C) The deployment is immediately marked as failed
+D) The new instances are excluded from the deployment group
 
 **Answer: B**
-Explanation: CodeDeploy와 ASG가 통합되면, ASG에 새 인스턴스가 추가될 때 CodeDeploy가 이를 감지해 현재 진행 중인 배포의 동일 revision을 자동 적용한다. 이 자동 동기화 덕분에 배포 중 스케일 아웃이 발생해도 클러스터 전체가 일관된 버전을 유지한다. 이것은 별도의 AutoScaling 배포 이벤트로 처리되어 콘솔에서 볼 수 있다.
+Explanation: When CodeDeploy is integrated with the ASG, CodeDeploy detects when a new instance is added to the ASG and automatically applies the same revision as the in-progress deployment. Thanks to this automatic synchronization, the whole cluster keeps a consistent version even if a scale-out occurs during a deployment. This is handled as a separate AutoScaling deployment event and can be viewed in the console.
 
 ---
 
-**Question 2.** CodeDeploy Agent를 모든 EC2에 자동 설치하고 최신 버전으로 유지하는 가장 좋은 방법은?
+**Question 2.** What is the best way to automatically install the CodeDeploy agent on all EC2 instances and keep it up to date?
 
-A) 모든 AMI에 Agent를 미리 설치 (AMI Pipeline으로 주기 업데이트)
-B) SSM State Manager Association: `AWS-ConfigureAWSPackage` + `AWSCodeDeployAgent` + 30일 주기 schedule
-C) User Data 스크립트로 설치 (AMI 변경 없이 업데이트 불가)
-D) Lambda로 매일 SSM Run Command 실행
+A) Pre-install the agent in every AMI (update periodically with an AMI pipeline)
+B) SSM State Manager association: `AWS-ConfigureAWSPackage` + `AWSCodeDeployAgent` + a 30-day schedule
+C) Install it with a user data script (cannot be updated without changing the AMI)
+D) Run SSM Run Command daily with Lambda
 
 **Answer: B**
-Explanation: SSM State Manager는 "desired state"를 정의하면 지속적으로 그 상태를 유지한다. 새 인스턴스에 자동 설치되고, 주기(30일)마다 최신 버전으로 업데이트된다. AMI 굽기(A)는 Agent 업데이트마다 새 AMI를 만들어야 해서 유지보수 부담이 크다. User Data(C)는 업데이트가 어렵다.
+Explanation: When you define a desired state, SSM State Manager continuously maintains that state. It is installed automatically on new instances and updated to the latest version every cycle (30 days). Baking AMIs (A) requires creating a new AMI for every agent update, so the maintenance burden is high. User data (C) makes updates difficult.
 
 ---
 
-**Question 3.** EC2/On-Premises AppSpec Hook의 실행 순서로 올바른 것은?
+**Question 3.** What is the correct execution order of EC2/on-premises AppSpec hooks?
 
 A) BeforeInstall → Install → AfterInstall → ApplicationStop → ApplicationStart → ValidateService
 B) ApplicationStop → DownloadBundle → BeforeInstall → Install → AfterInstall → ApplicationStart → ValidateService
@@ -462,54 +462,54 @@ C) ApplicationStart → BeforeInstall → Install → AfterInstall → ValidateS
 D) Install → BeforeInstall → AfterInstall → ApplicationStop → ApplicationStart
 
 **Answer: B**
-Explanation: EC2/On-Premises AppSpec Hook의 고정 순서는 ApplicationStop(기존 앱 종료) → DownloadBundle(자동) → BeforeInstall(설치 전 준비) → Install(자동 파일 복사) → AfterInstall(설치 후 설정) → ApplicationStart(새 앱 시작) → ValidateService(검증)이다. `ApplicationStop`은 이전 revision의 스크립트가 실행된다는 점이 중요하다.
+Explanation: The fixed order of EC2/on-premises AppSpec hooks is ApplicationStop (stop the existing app) → DownloadBundle (automatic) → BeforeInstall (pre-install preparation) → Install (automatic file copy) → AfterInstall (post-install configuration) → ApplicationStart (start the new app) → ValidateService (validation). It is important that for `ApplicationStop`, the script from the previous revision is executed.
 
 ---
 
-**Question 4.** AppSpec Hook 스크립트의 `exit 0` 강제(항상 성공 반환)가 위험한 이유는?
+**Question 4.** Why is forcing `exit 0` (always returning success) in an AppSpec hook script dangerous?
 
-A) 스크립트가 더 느려진다
-B) CodeDeploy가 실패를 감지하지 못해 잘못된 버전이 배포된 상태로 자동 롤백이 일어나지 않는다
-C) IAM 권한 오류를 숨긴다
-D) S3 업로드 실패를 유발한다
+A) The script becomes slower
+B) CodeDeploy cannot detect failures, so the wrong version stays deployed and no automatic rollback occurs
+C) It hides IAM permission errors
+D) It causes S3 upload failures
 
 **Answer: B**
-Explanation: CodeDeploy는 Hook 스크립트의 exit code로 성공/실패를 판단한다. 항상 0을 반환하면 헬스체크가 실패해도, 앱이 제대로 시작 안 해도 CodeDeploy는 배포가 성공했다고 처리한다. 자동 롤백 트리거(DEPLOYMENT_FAILURE)가 동작하지 않는다. 실패는 반드시 비0 exit code로 정직하게 보고해야 한다.
+Explanation: CodeDeploy determines success or failure from the exit code of the hook script. If it always returns 0, CodeDeploy treats the deployment as successful even if the health check fails or the app does not start properly. The automatic rollback trigger (DEPLOYMENT_FAILURE) does not fire. Failures must always be honestly reported with a non-zero exit code.
 
 ---
 
-**Question 5.** On-Premises 서버에 CodeDeploy로 배포할 때 Blue/Green을 사용할 수 없는 이유는?
+**Question 5.** Why can Blue/Green not be used when deploying to on-premises servers with CodeDeploy?
 
-A) On-Premises Agent 버전이 낮아서
-B) AWS가 On-Premises 인프라를 직접 제어해 새 인스턴스를 생성할 수 없기 때문
-C) 네트워크 속도 제한 때문
-D) IAM 권한 부족 때문
+A) Because the on-premises agent version is too old
+B) Because AWS does not directly control on-premises infrastructure and cannot create new instances
+C) Because of network speed limits
+D) Because of insufficient IAM permissions
 
 **Answer: B**
-Explanation: Blue/Green의 핵심은 "새 환경을 AWS가 자동 생성"하는 것이다. EC2/ASG는 AWS가 생성/종료를 제어할 수 있지만, 온프레미스 서버는 AWS의 제어 범위 밖이다. 따라서 In-place만 가능하다. 온프레미스에서 Blue/Green과 유사한 효과를 내려면 별도의 인프라 자동화(Terraform + 자체 로드밸런서)를 구축해야 한다.
+Explanation: The core of Blue/Green is that "AWS automatically creates the new environment." AWS can control the creation and termination of EC2/ASG, but on-premises servers are outside AWS control. Therefore only in-place is possible. To get an effect similar to Blue/Green on-premises, you must build separate infrastructure automation (Terraform + your own load balancer).
 
 ---
 
-**Question 6.** ASG의 `Launch` 프로세스가 Suspend된 상태에서 EC2 Blue/Green 배포를 시작하면 어떻게 되는가?
+**Question 6.** What happens if you start an EC2 Blue/Green deployment while the ASG `Launch` process is suspended?
 
-A) 배포가 더 빠르게 완료된다
-B) 새 Green 인스턴스를 생성할 수 없어 Blue/Green 배포 자체가 진행되지 않는다
-C) In-place로 자동 전환된다
-D) CodeDeploy가 Suspend를 자동 해제한다
+A) The deployment completes faster
+B) New Green instances cannot be created, so the Blue/Green deployment itself does not proceed
+C) It automatically switches to in-place
+D) CodeDeploy automatically resumes the suspended process
 
 **Answer: B**
-Explanation: EC2 Blue/Green은 새 ASG(또는 인스턴스)를 생성하는 것이 핵심이다. ASG의 `Launch` 프로세스가 Suspend(일시 정지)되면 새 인스턴스 생성이 안 된다. 배포 트러블슈팅 시 ASG의 Suspended Processes 확인이 1순위 체크 항목이다. `Resume` 후 배포를 재시도해야 한다.
+Explanation: The core of EC2 Blue/Green is creating a new ASG (or instances). If the ASG `Launch` process is suspended, new instances cannot be created. When troubleshooting a deployment, checking the ASG suspended processes is the first item on the list. You must retry the deployment after `Resume`.
 
 ---
 
-**Question 7.** Termination Wait Time(종료 대기 시간)을 2일로 설정했다. 이것이 의미하는 비용 영향은?
+**Question 7.** You set the termination wait time to 2 days. What is the cost impact?
 
-A) 배포 비용이 2배가 된다
-B) 트래픽 시프트 완료 후 2일 동안 구 Blue 인스턴스가 그대로 실행되며 EC2 비용이 2일치 추가 발생한다
-C) 비용 영향 없음
-D) 새 Green 인스턴스 비용만 발생한다
+A) The deployment cost doubles
+B) The old Blue instances keep running for 2 days after the traffic shift completes, incurring 2 additional days of EC2 cost
+C) There is no cost impact
+D) Only the cost of the new Green instances is incurred
 
 **Answer: B**
-Explanation: Termination Wait Time 동안 Blue(구) 인스턴스와 Green(새) 인스턴스가 동시에 실행된다. 트래픽은 Green만 받지만 Blue EC2도 계속 과금된다. 2일이면 Blue 인스턴스 비용이 2일치 더 발생한다. 안전망과 비용의 트레이드오프 — 대부분 30분~1시간이 표준적인 균형점이다.
+Explanation: During the termination wait time, the Blue (old) instances and Green (new) instances run at the same time. Traffic goes only to Green, but the Blue EC2 instances are still billed. With 2 days, 2 extra days of Blue instance cost is incurred. It is a trade-off between the safety net and cost — 30 minutes to 1 hour is the typical balance point.
 
 ---

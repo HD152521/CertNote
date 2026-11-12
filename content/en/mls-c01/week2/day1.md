@@ -132,19 +132,19 @@ Tomorrow we explore automating these transformation tasks not by hand but via **
 
 ## 📝 Practice Questions
 
-**Question 1.** 운영 인력이 적은 팀이 하루 몇 차례 산발적으로 발생하는 표준 Spark 변환 작업을 처리하려 한다. 클러스터를 직접 띄우고 관리하는 부담을 최소화하려면?
+**Question 1.** A team with limited operations staff needs to handle standard Spark transformation jobs that occur sporadically a few times a day. What minimizes the burden of launching and managing clusters directly?
 
-A) AWS Glue 서버리스 ETL 작업을 사용한다  
-B) 대형 EMR 클러스터를 상시 운영한다  
-C) EC2에 직접 Spark를 설치해 운영한다  
-D) DynamoDB 스트림으로 변환한다  
+A) Use AWS Glue serverless ETL jobs  
+B) Run a large EMR cluster at all times  
+C) Install and operate Spark directly on EC2  
+D) Transform with DynamoDB Streams  
 
 **Answer: A**  
-Explanation: Glue는 서버리스 Spark로 클러스터 프로비저닝·관리 부담이 없고, 사용한 DPU-시간만 과금되므로 산발적·표준적 ETL에 가장 적합하다. 상시 EMR(B)이나 직접 운영 EC2(C)는 운영 부담과 유휴 비용이 크다. DynamoDB 스트림(D)은 대규모 Spark 변환 도구가 아니다.
+Explanation: Glue is serverless Spark with no burden of cluster provisioning or management, and it bills only for the DPU-hours used, so it is best suited for sporadic, standard ETL. An always-on EMR cluster (B) or self-managed EC2 (C) has a heavy operational burden and idle cost. DynamoDB Streams (D) is not a tool for large-scale Spark transformations.
 
 ---
 
-**Question 2.** 페타바이트급 데이터를 장시간 처리하며 Spark뿐 아니라 Hive와 Presto를 함께 사용하고, 인스턴스 타입과 메모리를 세밀하게 튜닝해야 한다. 가장 적합한 서비스는?
+**Question 2.** You process petabyte-scale data over long periods, use Hive and Presto in addition to Spark, and need to fine-tune instance types and memory. Which service is MOST appropriate?
 
 A) AWS Glue  
 B) Amazon Athena  
@@ -152,23 +152,23 @@ C) Amazon EMR
 D) AWS Lambda  
 
 **Answer: C**  
-Explanation: EMR은 Spark·Hive·Presto 등 다양한 프레임워크를 EC2 클러스터에서 직접 운영하며 세밀한 튜닝과 스팟 인스턴스 비용 절감이 가능하다. Glue(A)는 주로 Spark 중심의 서버리스 ETL이고, Athena(B)는 SQL 질의 서비스, Lambda(D)는 짧은 함수 실행에 적합해 무거운 빅데이터 클러스터 워크로드에는 부적합하다.
+Explanation: EMR directly operates a variety of frameworks such as Spark, Hive, and Presto on an EC2 cluster, enabling fine-grained tuning and cost savings with Spot Instances. Glue (A) is primarily Spark-centric serverless ETL, Athena (B) is a SQL query service, and Lambda (D) is suited to short function executions, so they are unsuitable for heavy big data cluster workloads.
 
 ---
 
-**Question 3.** S3에 저장된 대규모 학습 데이터를 Spark로 읽을 때, 스캔 비용과 I/O를 가장 효과적으로 줄이는 저장 전략의 조합은?
+**Question 3.** When reading large training data stored in S3 with Spark, which combination of storage strategies MOST effectively reduces scan cost and I/O?
 
-A) CSV 포맷 + 단일 거대 파일  
-B) JSON 포맷 + 무작위 파일 분할  
-C) Parquet 컬럼형 포맷 + 자주 필터링하는 키로 파티셔닝  
-D) 압축하지 않은 텍스트 + 컬럼 순서 무작위  
+A) CSV format + a single huge file  
+B) JSON format + random file splitting  
+C) Parquet columnar format + partitioning by a frequently filtered key  
+D) Uncompressed text + random column order  
 
 **Answer: C**  
-Explanation: Parquet 같은 컬럼형 포맷은 필요한 컬럼만 읽고 압축률이 높으며, 파티셔닝은 불필요한 데이터를 건너뛰는 partition pruning을 가능하게 해 스캔량을 크게 줄인다. CSV·JSON·비압축 텍스트는 행 기반이라 컬럼 프루닝이 약하고 I/O가 비효율적이다.
+Explanation: Columnar formats such as Parquet read only the needed columns and have high compression ratios, and partitioning enables partition pruning that skips unnecessary data, greatly reducing the amount scanned. CSV, JSON, and uncompressed text are row-based, so column pruning is weak and I/O is inefficient.
 
 ---
 
-**Question 4.** AWS Glue에서 S3 데이터를 스캔해 스키마를 자동 추론하고 중앙 메타데이터 저장소에 테이블로 등록하는 구성 요소는?
+**Question 4.** In AWS Glue, which component scans S3 data, automatically infers the schema, and registers it as a table in the central metadata repository?
 
 A) Glue ETL Job  
 B) Glue Crawler  
@@ -176,18 +176,18 @@ C) DynamicFrame
 D) DPU  
 
 **Answer: B**  
-Explanation: Glue Crawler가 데이터를 스캔해 스키마를 추론하고 Glue Data Catalog에 테이블을 등록한다. ETL Job(A)은 실제 변환을 수행하고, DynamicFrame(C)은 변환에 쓰는 데이터 구조, DPU(D)는 처리 용량 단위로 스키마 등록과는 무관하다.
+Explanation: The Glue Crawler scans the data, infers the schema, and registers the table in the Glue Data Catalog. An ETL Job (A) performs the actual transformation, a DynamicFrame (C) is a data structure used in transformations, and a DPU (D) is a unit of processing capacity and is unrelated to schema registration.
 
 ---
 
-**Question 5.** ML 파이프라인에서 "데이터 레이크 전반의 공유 정제 데이터 생산"과 "특정 모델만을 위한 전처리"를 구분할 때 일반적으로 더 적합한 도구 짝으로 옳은 것은?
+**Question 5.** In an ML pipeline, when distinguishing between "producing shared refined data across the data lake" and "preprocessing only for a specific model," which tool pairing is generally more appropriate?
 
-A) 둘 다 SageMaker Processing이 적합  
-B) 둘 다 EMR이 유일한 정답  
-C) 공유 정제는 Lambda, 모델 전용 전처리는 Athena  
-D) 공유 정제는 Glue, 모델 전용 전처리는 SageMaker Processing  
+A) SageMaker Processing is suitable for both  
+B) EMR is the only correct answer for both  
+C) Lambda for shared refinement, Athena for model-specific preprocessing  
+D) Glue for shared refinement, SageMaker Processing for model-specific preprocessing  
 
 **Answer: D**  
-Explanation: Glue는 여러 소비자가 공유하는 데이터 레이크 전반의 ETL에 강하고, SageMaker Processing은 특정 ML 작업에 종속된 전처리에 자연스럽게 통합된다. 둘은 역할이 겹쳐 보여도 결이 다르므로 상황에 맞게 나눠 쓰는 것이 정석이다. A·B·C는 이 역할 구분을 반영하지 못한다.
+Explanation: Glue is strong for ETL across the data lake that is shared by multiple consumers, and SageMaker Processing integrates naturally with preprocessing tied to a specific ML task. Although their roles may seem to overlap, they differ in character, so the standard practice is to use them separately as appropriate. A, B, and C do not reflect this division of roles.
 
 ---

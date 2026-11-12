@@ -281,72 +281,72 @@ Synthetics validates "the service is alive" 24 hours a day. RUM measures "what r
 
 ## 📝 Practice Questions
 
-**Question 1.** 새벽 3시에 API가 다운됐는데 트래픽이 없어서 알람이 안 울렸다. 24시간 가용성을 보장하려면?
+**Question 1.** The API went down at 3 AM, but no alarm fired because there was no traffic. How can you ensure 24-hour availability monitoring?
 
-A) CloudWatch Agent로 메트릭 수집 강화
-B) Synthetics Canary로 1분 주기 Heartbeat Canary 구성
-C) RUM 스니펫을 더 많은 페이지에 삽입
-D) X-Ray 샘플링률을 100%로 올린다
+A) Strengthen metric collection with the CloudWatch Agent
+B) Configure a Heartbeat Canary with a 1-minute schedule using Synthetics Canary
+C) Insert the RUM snippet into more pages
+D) Raise the X-Ray sampling rate to 100%
 
 **Answer: B**
-Explanation: RUM은 실제 사용자가 없는 새벽엔 데이터가 없다. Synthetics Canary는 합성 사용자가 정해진 주기로 API를 호출하므로 트래픽과 무관하게 24시간 가용성을 측정한다. 1분 주기 Heartbeat Canary가 API 200 응답을 확인하고, 실패 시 `SuccessPercent` 메트릭 알람 → SNS로 즉시 통보한다.
+Explanation: RUM has no data in the early morning when there are no real users. A Synthetics Canary has synthetic users call the API on a set schedule, so it measures availability 24 hours a day regardless of traffic. A Heartbeat Canary on a 1-minute schedule checks for an API 200 response, and on failure the `SuccessPercent` metric alarm notifies immediately via SNS.
 
 ---
 
-**Question 2.** X-Ray Sampling Rule에서 Priority, Reservoir, Fixed Rate의 의미를 올바르게 설명한 것은?
+**Question 2.** Which option correctly explains the meaning of Priority, Reservoir, and Fixed Rate in an X-Ray Sampling Rule?
 
-A) Priority가 높을수록 먼저 매칭된다
-B) Reservoir는 초당 최소 N개 trace를 보장하는 버킷이고, Fixed Rate는 Reservoir 소진 후 추가 요청에 적용되는 백분율이다. Priority 숫자가 작을수록 먼저 매칭된다
-C) Fixed Rate 1.0은 모든 요청의 1% 샘플링이다
-D) Reservoir는 분당 최소 N개 trace를 보장한다
+A) The higher the Priority, the earlier it is matched
+B) The Reservoir is a bucket that guarantees at least N traces per second, and the Fixed Rate is the percentage applied to additional requests after the Reservoir is used up. The smaller the Priority number, the earlier it is matched
+C) A Fixed Rate of 1.0 means 1% sampling of all requests
+D) The Reservoir guarantees at least N traces per minute
 
 **Answer: B**
-Explanation: Priority는 낮은 숫자가 높은 우선순위다(Priority 1이 10000보다 먼저 매칭). Reservoir는 초당 최소 N개 trace를 반드시 수집하는 버킷이다. Fixed Rate는 Reservoir가 채워진 후 나머지 요청에 적용되는 비율이다. Fixed Rate 1.0은 100%(전체 샘플링)를 의미한다.
+Explanation: For Priority, a lower number means a higher priority (Priority 1 is matched before 10000). The Reservoir is a bucket that always collects at least N traces per second. The Fixed Rate is the percentage applied to the remaining requests after the Reservoir is filled. A Fixed Rate of 1.0 means 100% (sample everything).
 
 ---
 
-**Question 3.** Lambda 함수 내 DynamoDB 쿼리가 X-Ray에서 Subsegment로 보이지 않는다. 이유는?
+**Question 3.** A DynamoDB query inside a Lambda function does not appear as a Subsegment in X-Ray. Why?
 
-A) Lambda의 X-Ray Active Tracing이 비활성화됨
-B) X-Ray SDK의 `captureAWS()`로 AWS SDK를 감싸지 않았기 때문
-C) DynamoDB는 X-Ray 통합을 지원하지 않는다
-D) Sampling Rule에서 DynamoDB를 제외했다
+A) Active Tracing is disabled on the Lambda function
+B) Because the AWS SDK was not wrapped with the X-Ray SDK's `captureAWS()`
+C) DynamoDB does not support X-Ray integration
+D) DynamoDB was excluded in the Sampling Rule
 
 **Answer: B**
-Explanation: Lambda의 Active Tracing을 켜면 Lambda 실행 자체는 Segment로 추적된다. 그러나 Lambda 내부에서 AWS SDK를 호출할 때 Subsegment로 자동 추적되려면 `const AWS = AWSXRay.captureAWS(require('aws-sdk'))` 또는 v3용 미들웨어를 적용해야 한다. 이 설정 없이는 DynamoDB 호출이 X-Ray에 보이지 않는다.
+Explanation: If you turn on Active Tracing for Lambda, the Lambda execution itself is traced as a Segment. However, for AWS SDK calls made inside Lambda to be traced automatically as Subsegments, you must apply `const AWS = AWSXRay.captureAWS(require('aws-sdk'))` or the middleware for v3. Without this setup, DynamoDB calls do not appear in X-Ray.
 
 ---
 
-**Question 4.** ServiceLens에서 특정 Lambda의 5xx 에러 trace를 찾았다. CloudWatch Logs에서 해당 실행 로그를 가장 빠르게 보는 방법은?
+**Question 4.** You found a 5xx error trace for a specific Lambda in ServiceLens. What is the fastest way to view that execution's log in CloudWatch Logs?
 
-A) CloudWatch Logs에서 Log Group을 찾아 시간대로 필터링
-B) ServiceLens의 Trace 상세에서 "View logs" 링크 클릭 → trace_id로 해당 Lambda 실행 로그로 즉시 점프
-C) X-Ray CLI로 trace 상세 조회 후 request_id를 수동으로 찾음
-D) CloudTrail에서 Lambda Invoke 이벤트 검색
+A) Find the Log Group in CloudWatch Logs and filter by time range
+B) In the ServiceLens trace details, click the "View logs" link → jump immediately to that Lambda execution's logs by trace_id
+C) Look up the trace details with the X-Ray CLI and find the request_id manually
+D) Search for the Lambda Invoke event in CloudTrail
 
 **Answer: B**
-Explanation: ServiceLens의 핵심 기능이 바로 이 "Trace → Logs 점프"다. X-Ray trace에 Lambda request_id가 포함되어 있고, ServiceLens가 이를 활용해 해당 Log Group에서 request_id로 필터링된 로그를 즉시 보여준다. 수동으로 Log Group에서 검색하는 것보다 수십 배 빠르다.
+Explanation: This "Trace → Logs jump" is exactly the core feature of ServiceLens. The X-Ray trace contains the Lambda request_id, and ServiceLens uses it to immediately show the logs in that Log Group filtered by request_id. It is dozens of times faster than searching the Log Group manually.
 
 ---
 
-**Question 5.** Synthetics Canary가 로그인 → 장바구니 추가 → 결제 완료의 전체 사용자 플로우를 테스트하려 한다. 어떤 Blueprint를 사용하나?
+**Question 5.** A Synthetics Canary needs to test the full user flow of login → add to cart → complete payment. Which Blueprint do you use?
 
 A) Heartbeat
 B) API Canary
-C) Canary Recorder (실제 브라우저 액션을 기록해 재생)
+C) Canary Recorder (records real browser actions and replays them)
 D) Broken Link Checker
 
 **Answer: C**
-Explanation: Canary Recorder는 크롬 확장 프로그램으로 실제 브라우저에서 사용자 액션(클릭, 입력, 이동)을 기록하고, 이를 Puppeteer 스크립트로 변환한다. 복잡한 사용자 플로우를 코드 없이 자동화할 수 있다. Heartbeat는 단순 URL ping, API Canary는 HTTP API 호출, Broken Link Checker는 링크 유효성 검사 전용이다.
+Explanation: The Canary Recorder is a Chrome extension that records user actions (clicks, input, navigation) in a real browser and converts them into a Puppeteer script. It can automate complex user flows without code. Heartbeat is a simple URL ping, API Canary is an HTTP API call, and Broken Link Checker is dedicated to link validity checks.
 
 ---
 
-**Question 6.** X-Ray 비용을 절감하면서도 결제 API는 100% 추적하고 싶다. 가장 적합한 구성은?
+**Question 6.** You want to reduce X-Ray cost while still tracing the payment API at 100%. What is the most appropriate configuration?
 
-A) 모든 서비스의 X-Ray를 비활성화하고 결제만 활성화
-B) 기본 샘플링 룰 유지(5%) + 결제 API URL 패턴으로 Priority 1, FixedRate 1.0 Sampling Rule 추가
-C) Sampling률을 1%로 낮추고 결제 API만 따로 모니터링 계정에 복사
-D) 결제 Lambda에만 CloudWatch 상세 모니터링 활성화
+A) Disable X-Ray on all services and enable it only for payments
+B) Keep the default sampling rule (5%) + add a Sampling Rule with Priority 1 and FixedRate 1.0 matching the payment API URL pattern
+C) Lower the sampling rate to 1% and separately copy only the payment API to a monitoring account
+D) Enable CloudWatch detailed monitoring only on the payment Lambda
 
 **Answer: B**
-Explanation: X-Ray Sampling Rule의 우선순위 매칭을 활용한다. Priority 1로 결제 API URL 패턴(`/api/*/payments/*`)에 FixedRate 1.0(100%)을 설정한다. 다른 요청은 기본 룰(Priority 10000, 5%)이 적용된다. 전체 비용은 줄이면서 중요 트랜잭션은 완전히 추적하는 표준 패턴이다.
+Explanation: This uses priority matching of X-Ray Sampling Rules. Set FixedRate 1.0 (100%) with Priority 1 for the payment API URL pattern (`/api/*/payments/*`). Other requests fall under the default rule (Priority 10000, 5%). It is the standard pattern for reducing overall cost while fully tracing critical transactions.

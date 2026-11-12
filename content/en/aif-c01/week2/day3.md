@@ -83,7 +83,7 @@ Tomorrow we cover the role humans play in all this—data labeling, feedback, an
 
 ## 📝 Practice Questions
 
-**Question 1.** 정상 메일을 스팸으로 잘못 분류하는 실수를 줄이는 것이 가장 중요한 스팸 필터에서, 우선적으로 높여야 할 지표는?
+**Question 1.** For a spam filter where it is most important to reduce mistakes that misclassify legitimate email as spam, which metric should be raised first?
 
 A) Recall  
 B) Precision  
@@ -95,7 +95,7 @@ Explanation: Wrongly flagging normal emails as spam is a false positive (FP), an
 
 ---
 
-**Question 2.** 암 진단 모델에서 실제 암 환자를 놓치는 것이 가장 치명적이다. 우선적으로 높여야 할 지표는?
+**Question 2.** In a cancer diagnosis model, missing an actual cancer patient is the most critical failure. Which metric should be raised first?
 
 A) Precision  
 B) Recall  
@@ -107,7 +107,7 @@ Explanation: Missing a real cancer patient is a false negative (FN), and recall 
 
 ---
 
-**Question 3.** 어떤 모델이 학습 데이터에서는 정확도 99%를 보이지만 처음 보는 테스트 데이터에서는 60%로 크게 떨어졌다. 이 모델의 문제는?
+**Question 3.** A model shows 99% accuracy on the training data, but its accuracy drops sharply to 60% on unseen test data. What is the problem with this model?
 
 A) Underfitting  
 B) Overfitting  
@@ -119,7 +119,7 @@ Explanation: A large gap where training score is very high but test score is muc
 
 ---
 
-**Question 4.** 정밀도와 재현율을 하나의 값으로 균형 있게 요약하는 지표는?
+**Question 4.** Which metric summarizes precision and recall into a single balanced value?
 
 A) Accuracy  
 B) F1 Score  
@@ -131,7 +131,7 @@ Explanation: F1 score is the harmonic mean of precision and recall, expressing t
 
 ---
 
-**Question 5.** 모델이 너무 단순해 학습 데이터에서도, 테스트 데이터에서도 성능이 모두 낮은 상태를 무엇이라 하는가?
+**Question 5.** What is it called when a model is too simple and performs poorly on both the training data and the test data?
 
 A) Overfitting  
 B) Underfitting  

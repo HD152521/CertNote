@@ -71,19 +71,19 @@ Typical pattern: EMR core nodes On-Demand/committed for stability, task nodes Sp
 
 ## 📝 Practice Questions
 
-**Question 1.** 데이터 팀이 프로젝트별·환경별 AWS 비용을 분해해서 보고 싶을 때 가장 먼저 해야 할 일은?
+**Question 1.** What should a data team do first when it wants to break down AWS costs by project and by environment?
 
-A) 모든 리소스를 한 계정으로 통합  
-B) 모든 인스턴스를 Spot으로 전환  
-C) Cost Allocation Tags를 일관되게 달고 청구 콘솔에서 활성화  
-D) CloudTrail 데이터 이벤트 활성화  
+A) Consolidate all resources into one account  
+B) Switch all instances to Spot  
+C) Apply Cost Allocation Tags consistently and activate them in the billing console  
+D) Enable CloudTrail data events  
 
 **Answer: C**  
-Explanation: 비용 할당 태그(Project, Environment 등)를 일관되게 달고 활성화하면 Cost Explorer에서 태그별로 비용을 분해할 수 있습니다. 계정 통합·Spot 전환은 분해 가시화와 무관하고, CloudTrail 데이터 이벤트는 비용 분석이 아니라 API 감사 용도입니다.
+Explanation: If you apply cost allocation tags (Project, Environment, and so on) consistently and activate them, you can break down costs by tag in Cost Explorer. Account consolidation and switching to Spot are unrelated to breakdown visibility, and CloudTrail data events are for API auditing, not cost analysis.
 
 ---
 
-**Question 2.** Glue 잡 실행 중 스테이지별 필요량에 따라 워커 수를 동적으로 늘리고 줄여 비용과 성능을 모두 잡는 기능은?
+**Question 2.** Which feature dynamically increases and decreases the number of workers during a Glue job run according to the needs of each stage, capturing both cost and performance?
 
 A) Glue Auto Scaling  
 B) Job Bookmark  
@@ -91,35 +91,35 @@ C) Partition Projection
 D) DynamicFrame  
 
 **Answer: A**  
-Explanation: Glue Auto Scaling(`--enable-auto-scaling`)은 잡 실행 중 워크로드에 맞춰 워커를 동적으로 조절하고 최대 워커 수만 상한으로 지정합니다. Job Bookmark는 증분 처리 상태, Partition Projection은 Athena 파티션 계산, DynamicFrame은 데이터 추상화입니다.
+Explanation: Glue Auto Scaling (`--enable-auto-scaling`) dynamically adjusts workers to the workload during job execution, and you specify only the maximum number of workers as the upper limit. Job Bookmark is incremental processing state, Partition Projection is Athena partition computation, and DynamicFrame is a data abstraction.
 
 ---
 
-**Question 3.** EMR 클러스터에서 비용을 크게 절감하면서도 중단 가능성에 견디도록 구성하는 전형적 패턴은?
+**Question 3.** What is the typical pattern for configuring an EMR cluster to cut cost significantly while tolerating interruptions?
 
-A) 모든 노드를 Spot으로 구성  
-B) 모든 노드를 On-Demand로 구성  
-C) 코어 노드를 Spot, 태스크 노드를 On-Demand  
-D) 코어 노드는 On-Demand/약정, 태스크 노드는 Spot  
+A) Configure all nodes as Spot  
+B) Configure all nodes as On-Demand  
+C) Core nodes on Spot, task nodes On-Demand  
+D) Core nodes On-Demand/committed, task nodes Spot  
 
 **Answer: D**  
-Explanation: HDFS 데이터를 보유하는 코어 노드는 안정적인 On-Demand/약정으로 두고, 상태가 없는 태스크 노드를 Spot으로 구성하면 회수되어도 데이터 손실 없이 비용을 절감합니다. 코어를 Spot으로 두면 회수 시 데이터 손실 위험이 큽니다.
+Explanation: Keeping the core nodes that hold HDFS data on stable On-Demand/committed capacity and configuring the stateless task nodes as Spot saves cost without data loss even if they are reclaimed. Putting core nodes on Spot carries a high risk of data loss when reclaimed.
 
 ---
 
-**Question 4.** Athena와 Redshift Spectrum의 쿼리 비용을 직접적으로 줄이는 가장 효과적인 방법은?
+**Question 4.** What is the most effective way to directly reduce the query cost of Athena and Redshift Spectrum?
 
-A) 모든 데이터를 CSV로 저장  
-B) Parquet 컬럼 포맷 + 압축 + 파티션 프루닝으로 스캔 바이트 감소  
-C) 쿼리를 더 자주 실행  
-D) 결과를 항상 JSON으로 출력  
+A) Store all data as CSV  
+B) Reduce scanned bytes with the Parquet columnar format + compression + partition pruning  
+C) Run queries more often  
+D) Always output results as JSON  
 
 **Answer: B**  
-Explanation: Athena/Spectrum은 스캔한 바이트로 과금되므로, 컬럼 포맷(Parquet)·압축·파티션 프루닝으로 읽는 데이터양을 줄이면 비용이 직접 감소합니다. CSV/JSON은 스캔량을 늘리고, 쿼리를 자주 실행하면 비용이 증가합니다.
+Explanation: Athena/Spectrum are billed by bytes scanned, so reducing the amount of data read with a columnar format (Parquet), compression, and partition pruning directly reduces cost. CSV/JSON increase the amount scanned, and running queries more often increases cost.
 
 ---
 
-**Question 5.** AWS 비용에서 평소와 다른 비정상적인 급증을 머신러닝으로 자동 탐지하고 통보하는 서비스는?
+**Question 5.** Which service uses machine learning to automatically detect and notify you of abnormal spikes in AWS costs that differ from the usual?
 
 A) AWS Budgets  
 B) Trusted Advisor  
@@ -127,6 +127,6 @@ C) Compute Optimizer
 D) Cost Anomaly Detection  
 
 **Answer: D**  
-Explanation: Cost Anomaly Detection은 ML로 비용 패턴을 학습해 비정상적 급증을 자동 탐지·통보합니다. Budgets는 사전 설정한 임계값 기반 알림, Trusted Advisor는 모범사례 점검, Compute Optimizer는 리소스 사이징 권고로 동적 이상 탐지와는 다릅니다.
+Explanation: Cost Anomaly Detection learns cost patterns with ML and automatically detects and notifies you of abnormal spikes. Budgets sends alerts based on preset thresholds, Trusted Advisor checks best practices, and Compute Optimizer recommends resource sizing, so they differ from dynamic anomaly detection.
 
 ---

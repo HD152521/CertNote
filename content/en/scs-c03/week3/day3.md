@@ -129,74 +129,74 @@ Flow Logs are visibility, not control — can''t block but can see. When GuardDu
 
 ## 📝 Practice Questions
 
-**Question 1.** NAT Gateway 뒤에 있는 여러 인스턴스 중 어느 것이 의심스러운 외부 IP로 통신했는지 특정하려고 한다. Flow Logs에서 반드시 필요한 필드는?
+**Question 1.** We want to identify which of several instances behind a NAT Gateway communicated with a suspicious external IP. Which field is absolutely required in Flow Logs?
 
-A) 기본 포맷의 srcaddr 필드만으로 충분하다  
-B) 커스텀 포맷의 pkt-srcaddr 필드  
-C) tcp-flags 필드  
-D) az-id 필드  
+A) The srcaddr field of the default format is enough  
+B) The pkt-srcaddr field in a custom format  
+C) The tcp-flags field  
+D) The az-id field  
 
 **Answer: B**  
-Explanation: NAT를 거친 트래픽은 기본 출발지 주소 필드에 NAT의 주소가 기록되어 실제 인스턴스를 구분할 수 없다. 패킷의 원본 출발지 주소 필드를 커스텀 포맷에 추가하면 NAT 변환 이전의 실제 송신 인스턴스를 식별할 수 있어, 침해된 내부 호스트를 특정하는 데 결정적이다.
+Explanation: For traffic that passed through NAT, the NAT's address is recorded in the default source address field, so the actual instance cannot be distinguished. If you add the packet's original source address field to a custom format, you can identify the actual sending instance before NAT translation, which is decisive for pinpointing the compromised internal host.
 
 ---
 
-**Question 2.** 외부 IP 한 곳에서 짧은 시간에 다수의 서로 다른 포트로 향하는 REJECT 레코드가 대량 발생했다. 가장 가능성 높은 활동은?
+**Question 2.** A large number of REJECT records heading to many different ports from a single external IP occurred in a short time. What is the most likely activity?
 
-A) 정상적인 로드밸런서 헬스 체크  
-B) 포트 스캔 등 정찰 활동  
-C) 대규모 데이터 유출  
-D) NAT Gateway의 임시 포트 재사용  
+A) A normal load balancer health check  
+B) Reconnaissance activity such as a port scan  
+C) Large-scale data exfiltration  
+D) NAT Gateway ephemeral port reuse  
 
 **Answer: B**  
-Explanation: 한 출발지가 다수 포트로 짧은 시간에 접근을 시도하고 모두 거부된 패턴은 열린 포트를 찾는 포트 스캔, 즉 정찰 활동의 전형이다. 데이터 유출은 허용된 연결로 큰 바이트가 나가는 패턴이며, 헬스 체크는 정해진 포트로 허용되는 통신이라 구분된다.
+Explanation: A pattern in which one source tries to access many ports in a short time and all are rejected is typical of a port scan looking for open ports, that is, reconnaissance activity. Data exfiltration is a pattern of large numbers of bytes going out over allowed connections, and a health check is distinguished because it is allowed communication to a fixed port.
 
 ---
 
-**Question 3.** Flow Logs를 보안 알람과 장기 포렌식 보관에 모두 활용하려고 한다. 비용 효율적인 구성은?
+**Question 3.** We want to use Flow Logs for both security alarms and long-term forensic retention. What is a cost-effective configuration?
 
-A) 모든 트래픽을 CloudWatch Logs로만 보낸다  
-B) REJECT 트래픽은 CloudWatch Logs(알람용), 전체 트래픽은 S3(보관·Athena)로 이원화한다  
-C) 전체 트래픽을 CloudWatch와 S3에 동시에 모두 보낸다  
-D) 알람과 보관 모두 Kinesis Firehose 하나로 처리한다  
+A) Send all traffic only to CloudWatch Logs  
+B) Split into two: REJECT traffic to CloudWatch Logs (for alarms) and all traffic to S3 (retention and Athena)  
+C) Send all traffic to both CloudWatch and S3 at the same time  
+D) Handle both alarms and retention with a single Kinesis Firehose  
 
 **Answer: B**  
-Explanation: CloudWatch Logs는 수집·저장·메트릭 평가 비용이 높으므로 알람에 필요한 거부 트래픽만 좁혀 보내고, 전체 트래픽은 저비용 장기 보관과 대량 쿼리에 적합한 S3로 보내 Athena로 분석하는 이원화가 표준이다. 전체를 CloudWatch로 보내면 비용이 급증한다.
+Explanation: CloudWatch Logs has high ingestion, storage, and metric evaluation costs, so the standard is to split: send only the rejected traffic needed for alarms there, and send all traffic to S3, which is suited to low-cost long-term retention and large-volume queries, and analyze with Athena. Sending everything to CloudWatch makes costs spike.
 
 ---
 
-**Question 4.** Flow Logs를 실시간 차단(blocking) 메커니즘으로 사용하려는 계획에 대한 평가로 옳은 것은?
+**Question 4.** Which assessment of a plan to use Flow Logs as a real-time blocking mechanism is correct?
 
-A) 집계 간격이 최소 1분이라 실시간 차단에는 부적합하며 탐지·분석용이다  
-B) 밀리초 단위로 기록되므로 실시간 차단에 적합하다  
-C) ACCEPT만 기록되므로 차단에 활용할 수 없다  
-D) S3로 보낼 때만 실시간 차단이 가능하다  
+A) The aggregation interval is at least 1 minute, so it is unsuitable for real-time blocking and is for detection and analysis  
+B) It is recorded in milliseconds, so it is suitable for real-time blocking  
+C) Only ACCEPT is recorded, so it cannot be used for blocking  
+D) Real-time blocking is possible only when sending to S3  
 
 **Answer: A**  
-Explanation: Flow Logs는 집계 간격을 두고 기록되며 기본 10분, 최소 1분이라 즉각적인 인라인 차단에는 맞지 않는다. 트래픽을 막는 통제가 아니라 흐름을 사후에 보는 가시성 도구이므로, 탐지와 분석에 사용하고 차단은 보안 그룹·NACL·네트워크 방화벽으로 수행한다.
+Explanation: Flow Logs are recorded with an aggregation interval, which is 10 minutes by default and 1 minute at minimum, so they do not fit immediate inline blocking. They are not a control that blocks traffic but a visibility tool that views flows after the fact, so use them for detection and analysis and perform blocking with security groups, NACLs, or Network Firewall.
 
 ---
 
-**Question 5.** GuardDuty와 VPC Flow Logs의 관계로 옳은 것은?
+**Question 5.** Which statement about the relationship between GuardDuty and VPC Flow Logs is correct?
 
-A) GuardDuty를 켜면 Flow Logs도 자동으로 사용자 S3 버킷에 적재된다  
-B) GuardDuty는 내부적으로 Flow Logs를 소비하지만 사용자 계정에 적재하지 않으므로, 포렌식 보관은 별도로 Flow Logs를 켜야 한다  
-C) 둘은 완전히 독립적이며 같은 데이터를 쓰지 않는다  
-D) Flow Logs를 켜야만 GuardDuty가 동작한다  
+A) Turning on GuardDuty also automatically delivers Flow Logs to the user's S3 bucket  
+B) GuardDuty consumes Flow Logs internally but does not deliver them to the user's account, so for forensic retention you must enable Flow Logs separately  
+C) The two are completely independent and do not use the same data  
+D) GuardDuty works only if Flow Logs are turned on  
 
 **Answer: B**  
-Explanation: GuardDuty는 Flow Logs를 포함한 데이터 소스를 내부적으로 분석하지만 그 로그를 사용자 계정에 저장해 주지는 않는다. 따라서 사고 조사를 위한 트래픽 메타데이터 보관이 필요하면 별도로 Flow Logs를 활성화해 S3 등에 적재해야 한다. GuardDuty는 사용자가 Flow Logs를 켜지 않아도 자체적으로 동작한다.
+Explanation: GuardDuty internally analyzes data sources including Flow Logs but does not store those logs in the user's account. Therefore, if you need to retain traffic metadata for incident investigation, you must separately enable Flow Logs and deliver them to S3 or elsewhere. GuardDuty works on its own even if the user has not turned on Flow Logs.
 
 ---
 
-**Question 6.** 한 내부 인스턴스의 egress ACCEPT 트래픽 중, 평소 통신하지 않던 외부 IP로 수 GB가 전송된 기록이 발견됐다. 보안 분석가가 우선 의심할 상황은?
+**Question 6.** Among the egress ACCEPT traffic of an internal instance, a record was found of several GB sent to an external IP it does not normally communicate with. What should a security analyst suspect first?
 
-A) 정상적인 소프트웨어 업데이트 다운로드  
-B) 데이터 유출(exfiltration) 가능성  
-C) NACL 임시 포트 부족으로 인한 재전송  
-D) 보안 그룹의 stateful 추적 오류  
+A) A normal software update download  
+B) Possible data exfiltration  
+C) Retransmission due to NACL ephemeral port exhaustion  
+D) A security group stateful tracking error  
 
 **Answer: B**  
-Explanation: 안정적이던 통신 목적지가 갑자기 낯선 외부 IP로 바뀌고 대용량 데이터가 아웃바운드로 나가는 패턴은 데이터 유출의 전형적 징후다. 업데이트 다운로드는 일반적으로 인바운드 수신이 크고 목적지가 알려진 배포 엔드포인트이며, 임시 포트나 stateful 추적 문제는 대용량 egress와 무관하다.
+Explanation: A pattern in which a stable communication destination suddenly changes to an unfamiliar external IP and a large volume of data goes out outbound is a typical sign of data exfiltration. Update downloads generally involve large inbound reception from known distribution endpoints, and ephemeral port or stateful tracking issues have nothing to do with large egress.
 
 ---

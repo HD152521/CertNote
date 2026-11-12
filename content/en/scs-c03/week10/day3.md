@@ -141,62 +141,62 @@ Integrated credential exposure playbook
 
 ## 📝 Practice Questions
 
-**Question 1.** IAM 사용자의 액세스 키가 공개 GitHub 저장소에 노출된 것을 발견했다. 정상 운영 중인 워크로드도 같은 키를 쓰고 있다. 가장 적절한 첫 조치는?
+**Question 1.** You discovered that an IAM user's access key was exposed in a public GitHub repository. A legitimately running workload is using the same key. What is the most appropriate first action?
 
-A) 키를 즉시 delete-access-key로 삭제한다  
-B) 키를 update-access-key로 Inactive 처리해 봉쇄한 뒤, CloudTrail로 영향을 추적하고 새 키로 회전한 후 기존 키를 삭제한다  
-C) 사용자를 삭제한다  
-D) 아무것도 하지 않고 AWS의 자동 격리를 기다린다  
+A) Delete the key immediately with delete-access-key  
+B) Contain by setting the key to Inactive with update-access-key, then trace the impact with CloudTrail, rotate to a new key, and delete the old key  
+C) Delete the user  
+D) Do nothing and wait for AWS automatic quarantine  
 
 **Answer: B**  
-Explanation: 즉시 삭제하면 공격자 활동 추적이 어렵고 정상 워크로드가 장애가 난다. 비활성화로 봉쇄(추적·복구 여지 유지) → CloudTrail 추적 → 새 키 회전·앱 갱신 → 기존 키 삭제 순서가 안전하다. 사용자 삭제는 과도하고, AWS 자동 격리에만 의존하는 것은 위험하다.
+Explanation: Deleting immediately makes it hard to trace attacker activity and causes an outage for the legitimate workload. The safe order is to contain by deactivating (keeping room for tracing and recovery), trace with CloudTrail, rotate to a new key and update the application, and then delete the old key. Deleting the user is excessive, and relying only on AWS automatic quarantine is risky.
 
 ---
 
-**Question 2.** 침해된 EC2 역할의 STS 임시 자격증명을 무력화하려 한다. 운영 중인 다른 정상 워크로드는 영향을 최소화하고 싶다. 올바른 방법은?
+**Question 2.** You want to neutralize the STS temporary credentials of a compromised EC2 role while minimizing the impact on other legitimately running workloads. What is the correct method?
 
-A) 역할을 삭제한다  
-B) 액세스 키를 비활성화한다  
-C) 역할에 aws:TokenIssueTime DateLessThan Deny 정책을 추가해 지정 시점 이전 발급 세션만 폐기한다  
-D) MFA를 강제한다  
+A) Delete the role  
+B) Deactivate the access key  
+C) Add an aws:TokenIssueTime DateLessThan Deny policy to the role to revoke only sessions issued before the specified time  
+D) Enforce MFA  
 
 **Answer: C**  
-Explanation: 임시 자격증명은 폐기 API가 없으므로, 역할에 aws:TokenIssueTime 기반 Deny(콘솔의 Revoke active sessions)를 추가해 기존 세션만 무효화한다. 역할 삭제는 정상 워크로드를 망가뜨리고, STS 토큰에는 비활성화할 액세스 키가 없으며, MFA 강제는 이미 발급된 토큰을 무력화하지 못한다.
+Explanation: Temporary credentials have no revocation API, so add an aws:TokenIssueTime-based Deny to the role (Revoke active sessions in the console) to invalidate only the existing sessions. Deleting the role breaks legitimate workloads, STS tokens have no access key to deactivate, and enforcing MFA does not neutralize tokens that have already been issued.
 
 ---
 
-**Question 3.** 루트 계정이 피싱으로 침해됐다. 다음 중 루트 침해 대응에서 가장 우선순위가 낮거나 부적절한 것은?
+**Question 3.** The root account was compromised through phishing. Which of the following is the lowest priority or inappropriate in a root compromise response?
 
-A) 루트 비밀번호·MFA 재설정 및 루트 액세스 키 삭제  
-B) CloudTrail로 루트가 만든 IAM 사용자·역할·키·SCP 변경 등 백도어 전수 조사  
-C) IAM 사용자 정책만 수정하면 루트 권한도 함께 제한되므로 그것만 한다  
-D) 계정 복구 채널까지 침해됐다면 AWS Support/Abuse로 에스컬레이션  
+A) Reset the root password and MFA, and delete root access keys  
+B) Exhaustively investigate backdoors such as IAM users, roles, keys, and SCP changes created by root using CloudTrail  
+C) Only modify IAM user policies, since that also restricts root permissions  
+D) Escalate to AWS Support/Abuse if the account recovery channels have also been compromised  
 
 **Answer: C**  
-Explanation: 루트는 모든 IAM 정책을 무시하므로 IAM 사용자 정책 수정으로는 루트 권한을 제한할 수 없다 — 이 선택이 부적절하다. 루트 침해는 비밀번호·MFA·키 재설정, CloudTrail 백도어 조사, 복구 채널 침해 시 AWS 에스컬레이션이 정석이다.
+Explanation: Root ignores all IAM policies, so modifying IAM user policies cannot restrict root permissions; this choice is inappropriate. The standard root compromise response is to reset the password, MFA, and keys, investigate backdoors in CloudTrail, and escalate to AWS if the recovery channels are compromised.
 
 ---
 
-**Question 4.** 자격증명을 무력화한 직후 반드시 수행해야 하는 후속 단계로 가장 적절한 묶음은?
+**Question 4.** Which set of follow-up steps is most appropriate to perform immediately after neutralizing the credentials?
 
-A) 봉쇄만 했으면 대응 종료  
-B) CloudTrail/Athena로 유출 자격증명의 전체 활동·백도어를 추적하고, 공격자가 만든 엔티티·키·정책을 근절한 뒤 새 자격증명으로 회전  
-C) 비용 보고서를 확인한다  
-D) 모든 IAM 사용자를 삭제한다  
+A) The response is over once containment is done  
+B) Trace the leaked credentials' full activity and backdoors with CloudTrail/Athena, eradicate the entities, keys, and policies the attacker created, and then rotate to new credentials  
+C) Check the cost report  
+D) Delete all IAM users  
 
 **Answer: B**  
-Explanation: 무력화는 출혈을 멈춘 것일 뿐이다. CloudTrail/Athena로 유출 자격증명이 한 모든 행위와 심어둔 백도어(새 사용자·키·넓힌 신뢰 정책)를 추적·근절하고, 새 자격증명으로 회전해 워크로드를 복구해야 대응이 완결된다. 봉쇄만으로 종료하거나 무차별 삭제는 부적절하다.
+Explanation: Neutralization only stops the bleeding. The response is complete only when you trace and eradicate everything the leaked credentials did and the backdoors planted (new users, keys, widened trust policies) with CloudTrail/Athena, and rotate to new credentials to restore the workloads. Ending at containment or deleting indiscriminately is inappropriate.
 
 ---
 
-**Question 5.** 자격증명 유출 사고의 재발을 구조적으로 줄이는 가장 효과적인 장기 전략은?
+**Question 5.** What is the most effective long-term strategy to structurally reduce recurrence of credential leak incidents?
 
-A) 액세스 키를 더 자주 백업한다  
-B) 장기 자격증명을 제거하고 사람은 IAM Identity Center(SSO) 임시 자격증명, 워크로드는 IAM 역할/IRSA, 머신 비밀은 Secrets Manager 자동 회전으로 전환 + 루트 사용 탐지 알람  
-C) 모든 키를 코드 주석으로 문서화한다  
-D) 키 길이를 늘린다  
+A) Back up access keys more often  
+B) Eliminate long-term credentials: use IAM Identity Center (SSO) temporary credentials for people, IAM roles/IRSA for workloads, and Secrets Manager automatic rotation for machine secrets, plus a root usage detection alarm  
+C) Document all keys in code comments  
+D) Increase the key length  
 
 **Answer: B**  
-Explanation: 사고의 근본 원인은 무력화할 장기 자격증명의 존재다. 사람은 SSO 임시 자격증명, 워크로드는 역할/IRSA, 머신 비밀은 Secrets Manager 자동 회전으로 전환하면 노출될 장기 키 자체가 사라지고, 루트 사용 탐지 알람으로 최악의 경로를 감시한다. 키 백업·주석 문서화·길이 증가는 노출 위험을 오히려 키우거나 무관하다.
+Explanation: The root cause of the incident is the existence of long-term credentials that must be neutralized. Switching to SSO temporary credentials for people, roles/IRSA for workloads, and Secrets Manager automatic rotation for machine secrets removes the long-term keys that could be exposed, and a root usage detection alarm watches the worst-case path. Backing up keys, documenting them in comments, and increasing length either raise the exposure risk or are irrelevant.
 
 ---

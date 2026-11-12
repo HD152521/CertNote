@@ -99,62 +99,62 @@ Week 8 was about "after choosing a good algorithm (Week 6), actually training, t
 
 ## 📝 Practice Questions
 
-**Question 1.** 모델의 학습 손실은 매우 낮은데 검증 손실이 크게 높다. 이 상황을 가장 정확히 규정한 것은?
+**Question 1.** A model's training loss is very low, but its validation loss is much higher. Which statement BEST characterizes this situation?
 
-A) 최적화는 성공했으나 일반화에 실패한 과적합 상태  
-B) 최적화에 실패한 과소적합 상태  
-C) 학습률이 너무 작아 수렴하지 못한 상태  
-D) 데이터 누수로 검증 점수가 비현실적으로 높은 상태  
+A) Overfitting: optimization succeeded but generalization failed  
+B) Underfitting: optimization failed  
+C) The learning rate was too small, so it did not converge  
+D) Data leakage made the validation score unrealistically high  
 
 **Answer: A**  
-Explanation: 학습 손실이 낮다는 것은 최적화(학습 데이터 적합)는 성공했음을 뜻하고, 검증 손실이 높다는 것은 일반화 실패, 즉 과적합이다. 과소적합(B)은 둘 다 높을 때이며, 학습률 과소(C)나 누수(D)와는 증상 패턴이 다르다.
+Explanation: A low training loss means optimization (fitting the training data) succeeded, and a high validation loss means generalization failed, that is, overfitting. Underfitting (B) is when both are high, and the symptom pattern differs from that of a too-small learning rate (C) or leakage (D).
 
 ---
 
-**Question 2.** 8TB 학습 데이터가 인스턴스 디스크보다 크고, 모델이 단일 GPU 메모리를 초과하며, 비용도 절감하고 싶다. 가장 적절한 조합은?
+**Question 2.** The 8 TB of training data is larger than the instance disk, the model exceeds a single GPU's memory, and you also want to reduce cost. Which combination is MOST appropriate?
 
-A) File 모드 + 데이터 병렬 + 온디맨드  
-B) Pipe 모드 + 모델 병렬 + Managed Spot + 체크포인트  
-C) FastFile + 단일 인스턴스 + 그리드 탐색  
-D) File 모드 + 모델 병렬 + 조기 종료  
+A) File mode + data parallel + On-Demand  
+B) Pipe mode + model parallel + Managed Spot + checkpoints  
+C) FastFile + single instance + grid search  
+D) File mode + model parallel + early stopping  
 
 **Answer: B**  
-Explanation: 디스크보다 큰 데이터엔 스트리밍 Pipe, 단일 GPU 메모리 초과엔 모델 병렬, 비용 절감엔 Spot+체크포인트가 각 요구에 정확히 대응한다. File 모드(A, D)는 대용량 시작 지연 문제가 있고, 단일 인스턴스(C)는 모델 메모리 초과를 해결하지 못한다.
+Explanation: For data larger than the disk, streaming Pipe; for exceeding a single GPU's memory, model parallelism; and for cost reduction, Spot plus checkpoints correspond exactly to each requirement. File mode (A, D) has a large-data startup delay problem, and a single instance (C) does not solve the model memory overrun.
 
 ---
 
-**Question 3.** 딥러닝 튜닝에서 가망 없는 후보에 자원을 낭비하지 않고 빠르게 수렴하면서 튜닝 비용을 줄이려 한다. 가장 적합한 AMT 전략은?
+**Question 3.** In deep learning tuning, you want to converge quickly without wasting resources on unpromising candidates while reducing tuning cost. Which AMT strategy is MOST suitable?
 
 A) Grid Search  
 B) Hyperband  
-C) max_parallel_jobs를 최대로 한 Random  
-D) early_stopping_type=Off인 Bayesian  
+C) Random with max_parallel_jobs at maximum  
+D) Bayesian with early_stopping_type=Off  
 
 **Answer: B**  
-Explanation: Hyperband는 다중 fidelity로 가망 없는 trial을 조기 중단해 딥러닝 튜닝을 빠르게 수렴시키며 비용도 절감한다. 그리드(A)는 조합 폭발에 약하고, 무한 병렬 랜덤(C)은 가지치기가 없으며, 조기종료를 끈 베이지안(D)은 비용 절감과 반대 방향이다.
+Explanation: Hyperband stops unpromising trials early through multi-fidelity, making deep learning tuning converge quickly while also reducing cost. Grid (A) is weak against combinatorial explosion, unlimited-parallel random (C) has no pruning, and Bayesian with early stopping turned off (D) goes in the opposite direction from cost reduction.
 
 ---
 
-**Question 4.** 학습 중 손실이 갑자기 NaN으로 발산했다. 다음 중 가장 우선해서 점검·적용할 대응은?
+**Question 4.** During training, the loss suddenly diverged to NaN. Which of the following should be checked and applied first?
 
-A) 모델 층 수를 늘린다  
-B) 데이터를 더 수집한다  
-C) 학습률을 낮추고 그래디언트 클리핑을 적용한다  
-D) 검증 세트를 학습에 합친다  
+A) Increase the number of model layers  
+B) Collect more data  
+C) Lower the learning rate and apply gradient clipping  
+D) Merge the validation set into training  
 
 **Answer: C**  
-Explanation: NaN 발산은 학습률 과다나 그래디언트 폭발이 전형적 원인이므로 학습률 인하와 그래디언트 클리핑이 우선 대응이다. 모델 확대(A)·데이터 수집(B)은 발산과 무관하고, 검증을 학습에 합치면(D) 일반화 측정이 불가능해진다.
+Explanation: NaN divergence is typically caused by an excessive learning rate or exploding gradients, so lowering the learning rate and applying gradient clipping are the first responses. Enlarging the model (A) and collecting data (B) are unrelated to divergence, and merging validation into training (D) makes measuring generalization impossible.
 
 ---
 
-**Question 5.** 학습은 정상적으로 수렴하지만 GPU 사용률이 30%로 낮고 데이터 로딩 병목이 의심된다. 비용·속도 개선을 위해 자원 활용을 분석하려 한다. 가장 적합한 도구는?
+**Question 5.** Training converges normally, but GPU utilization is low at 30% and you suspect a data loading bottleneck. You want to analyze resource utilization to improve cost and speed. Which tool is MOST suitable?
 
-A) SageMaker Debugger의 vanishing_gradient 규칙  
+A) SageMaker Debugger's vanishing_gradient rule  
 B) SageMaker Profiler  
 C) Automatic Model Tuning  
 D) SageMaker Model Monitor  
 
 **Answer: B**  
-Explanation: GPU 저활용·데이터 로딩 병목 같은 시스템 자원·성능 문제는 Profiler가 분석·권고한다. Debugger(A)는 그래디언트·과적합 등 학습 품질 이상용, AMT(C)는 하이퍼파라미터 탐색, Model Monitor(D)는 배포 후 추론 드리프트 모니터링이다.
+Explanation: System resource and performance problems such as GPU underutilization and data loading bottlenecks are analyzed and advised on by Profiler. Debugger (A) is for training quality issues such as gradients and overfitting, AMT (C) is for hyperparameter search, and Model Monitor (D) monitors inference drift after deployment.
 
 ---

@@ -126,62 +126,62 @@ Next we see model evaluation—judging whether a trained model is good, metric s
 
 ## 📝 Practice Questions
 
-**Question 1.** 학습 중 그래디언트가 0에 수렴(소실)하거나 발산(폭발)하는지를 자동으로 감지하려 한다. 가장 적합한 SageMaker 기능은?
+**Question 1.** You want to automatically detect whether gradients converge to 0 (vanish) or diverge (explode) during training. What is the most suitable SageMaker feature?
 
-A) SageMaker Profiler로 GPU 활용률을 본다  
-B) SageMaker Debugger의 vanishing_gradient/exploding_tensor 내장 규칙  
-C) CloudFront 캐시 히트율 확인  
-D) Athena 쿼리  
+A) View GPU utilization with SageMaker Profiler  
+B) SageMaker Debugger built-in rules vanishing_gradient/exploding_tensor  
+C) Check the CloudFront cache hit ratio  
+D) Athena query  
 
 **Answer: B**  
-Explanation: Debugger는 학습 중 텐서를 수집해 그래디언트 소실·폭발 같은 모델 내부 이상을 내장 규칙으로 감지한다. A는 자원 활용률을 보는 도구로 그래디언트 값을 보지 않고, C는 CDN 지표, D는 데이터 쿼리로 모두 학습 텐서 분석과 무관하다.
+Explanation: Debugger collects tensors during training and detects model-internal anomalies such as vanishing and exploding gradients with built-in rules. A is a tool that looks at resource utilization and does not look at gradient values, and C is a CDN metric and D is a data query, both unrelated to analyzing training tensors.
 
 ---
 
-**Question 2.** 비싼 ml.p4d 인스턴스로 학습하는데 GPU 활용률이 25%로 낮아 비용 대비 비효율적이다. 원인을 진단하는 데 가장 적합한 것은?
+**Question 2.** You are training on an expensive ml.p4d instance, but GPU utilization is a low 25%, which is inefficient for the cost. What is most suitable for diagnosing the cause?
 
-A) SageMaker Debugger의 overfit 규칙  
-B) SageMaker Profiler로 시스템 자원·병목(데이터 로딩, CPU)을 분석  
-C) 모델 파라미터 수를 센다  
-D) S3 버킷 정책을 점검한다  
+A) SageMaker Debugger's overfit rule  
+B) Analyze system resources and bottlenecks (data loading, CPU) with SageMaker Profiler  
+C) Count the number of model parameters  
+D) Check the S3 bucket policy  
 
 **Answer: B**  
-Explanation: GPU 저활용은 자원 효율 문제이므로 Profiler가 데이터 로딩·CPU 병목 등 GPU가 노는 원인을 찾아준다. A는 모델 과적합을 보는 규칙으로 활용률과 무관하고, C·D는 GPU가 노는 원인 진단과 직접 관계가 없다.
+Explanation: Low GPU utilization is a resource efficiency problem, so Profiler finds the causes of idle GPUs such as data loading and CPU bottlenecks. A is a rule that looks at model overfitting and is unrelated to utilization, and C and D have no direct relation to diagnosing why the GPU is idle.
 
 ---
 
-**Question 3.** Debugger의 loss_not_decreasing 규칙이 위반됐을 때 학습을 자동으로 중단해 비용을 아끼고 싶다. 필요한 것은?
+**Question 3.** When Debugger's loss_not_decreasing rule is violated, you want to stop training automatically to save cost. What is required?
 
-A) 규칙만 등록하면 자동으로 중단된다  
-B) 규칙에 StopTraining 같은 action을 연결한다  
-C) instance_count를 0으로 설정한다  
-D) Profiler를 비활성화한다  
+A) Just registering the rule stops it automatically  
+B) Attach an action such as StopTraining to the rule  
+C) Set instance_count to 0  
+D) Disable Profiler  
 
 **Answer: B**  
-Explanation: Debugger 규칙은 기본적으로 감지·보고만 하므로 자동 중단하려면 StopTraining 등의 action을 명시적으로 연결해야 한다. A는 흔한 오해로 규칙만으로는 중단되지 않고, C는 학습을 아예 못 돌리며, D는 자원 프로파일링과 무관한 조치다.
+Explanation: Debugger rules by default only detect and report, so to stop automatically you must explicitly attach an action such as StopTraining. A is a common misconception, since a rule alone does not stop training, C makes it impossible to run training at all, and D is an action unrelated to resource profiling.
 
 ---
 
-**Question 4.** Profiler 리포트 결과 GPU가 대부분 데이터 로딩을 기다리며 노는 것으로 나타났다. 적절한 개선 조치로 가장 거리가 먼 것은?
+**Question 4.** A Profiler report shows that the GPU spends most of its time idle waiting for data loading. Which of the following is the LEAST appropriate remedy?
 
-A) DataLoader worker 수를 늘려 데이터 공급을 빠르게 한다  
-B) 데이터를 FSx for Lustre에 캐시해 로딩을 빠르게 한다  
-C) 전처리를 학습과 겹치도록 프리페치·비동기 로딩한다  
-D) 학습률을 10배로 올린다  
+A) Increase the number of DataLoader workers to feed data faster  
+B) Cache data on FSx for Lustre to speed up loading  
+C) Prefetch and load asynchronously so that preprocessing overlaps with training  
+D) Increase the learning rate by 10x  
 
 **Answer: D**  
-Explanation: GPU가 데이터를 기다리는 로딩 병목은 데이터 공급 파이프라인을 빠르게(worker 증가, FSx 캐시, 프리페치) 해서 푼다. 학습률 변경은 수렴 동작에 영향을 줄 뿐 데이터 로딩 병목과 무관하므로 가장 거리가 멀다.
+Explanation: A loading bottleneck in which the GPU waits for data is solved by speeding up the data supply pipeline (more workers, FSx cache, prefetching). Changing the learning rate only affects convergence behavior and is unrelated to the data loading bottleneck, so it is the furthest from a fix.
 
 ---
 
-**Question 5.** 학습 작업의 전반적 메트릭(GPU/CPU 활용률, 손실)을 시계열로 모니터링하고 임계치 초과 시 알람을 받으려 한다. 적합한 서비스는?
+**Question 5.** You want to monitor overall training job metrics (GPU/CPU utilization, loss) as time series and receive an alarm when a threshold is exceeded. Which service is appropriate?
 
-A) Amazon CloudWatch (메트릭/알람)  
+A) Amazon CloudWatch (metrics/alarms)  
 B) Amazon Macie  
 C) AWS Config  
 D) Amazon Comprehend  
 
 **Answer: A**  
-Explanation: CloudWatch는 학습 작업 메트릭을 시계열로 수집하고 알람을 설정할 수 있어 전반 모니터링에 적합하다. B는 데이터 프라이버시 탐지, C는 리소스 구성 추적, D는 NLP 서비스로 학습 메트릭 모니터링·알람 용도가 아니다.
+Explanation: CloudWatch collects training job metrics as time series and can set alarms, so it suits overall monitoring. B is data privacy detection, C is resource configuration tracking, and D is an NLP service, none of which is for monitoring training metrics or alarms.
 
 ---

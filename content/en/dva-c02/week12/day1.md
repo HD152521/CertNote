@@ -166,39 +166,39 @@ Next we'll move into CloudFormation's world where we declare all this infrastruc
 
 ## 📝 Practice Questions
 
-**Question 1.** ECS task definition에 Secrets Manager 비밀을 환경 변수로 주입하도록 설정했는데, 태스크가 시작조차 되지 않고 비밀을 가져오지 못한다. 원인은?
+**Question 1.** You configured an ECS task definition to inject a Secrets Manager secret as an environment variable, but the task does not even start and cannot retrieve the secret. What is the cause?
 
-A) taskRole에 DynamoDB 권한이 없다
+A) The taskRole lacks DynamoDB permissions
 
-B) executionRole에 `secretsmanager:GetSecretValue` 권한이 없다
+B) The executionRole lacks the `secretsmanager:GetSecretValue` permission
 
-C) 컨테이너 포트가 잘못 설정됐다
+C) The container port is configured incorrectly
 
-D) 네트워크 모드가 bridge다
+D) The network mode is bridge
 
 **Answer: B**
 
-Explanation: Secrets Manager secret을 가져와 환경 변수로 **주입하는 일은 컨테이너가 뜨기 전, ECS 인프라(에이전트)가 하는 작업**이므로 **executionRole**의 권한이 필요하다. 앱이 실행 중 직접 Secrets Manager를 호출하는 게 아니라 시작 시점에 주입되는 것이라, taskRole이 아니다. A) taskRole 권한은 앱이 런타임에 AWS 서비스를 호출할 때 쓰이며, 여기선 태스크가 시작도 못 했으므로 무관하다. C·D는 비밀 주입 실패와 관계없다. "비밀 주입 = 시작 시점 = executionRole"로 기억한다.
+Explanation: **Fetching the Secrets Manager secret and injecting it as an environment variable is done by the ECS infrastructure (agent) before the container starts**, so it requires the permissions of the **executionRole**. It is not the taskRole, because the app does not call Secrets Manager directly while running; the secret is injected at startup. A) taskRole permissions are used when the app calls AWS services at runtime, and here the task could not even start, so it is irrelevant. C and D have nothing to do with the secret injection failure. Remember: "secret injection = startup time = executionRole".
 
 ---
 
-**Question 2.** Fargate 태스크가 사용할 수 있는 네트워크 모드와 그 이유로 옳은 것은?
+**Question 2.** Which is the correct network mode available to a Fargate task, and the reason?
 
-A) bridge — 포트 충돌을 피하려고
+A) bridge - to avoid port conflicts
 
-B) host — 성능이 가장 좋아서
+B) host - because it has the best performance
 
-C) awsvpc — Fargate는 호스트를 노출하지 않아 태스크별 ENI를 주는 방식만 일관되기 때문
+C) awsvpc - because Fargate does not expose the host, so only the approach of giving each task its own ENI is consistent
 
-D) none — 보안상 네트워크를 막으려고
+D) none - to block the network for security
 
 **Answer: C**
 
-Explanation: Fargate는 사용자에게 EC2 호스트를 노출하지 않으므로, "호스트 네트워크를 공유"하는 host나 "호스트의 브리지에 NAT"하는 bridge 개념을 줄 수 없다. 호스트가 보이지 않는데 그 네트워크를 공유할 방법이 없기 때문이다. 그래서 **각 태스크에 VPC 안의 독립 ENI(자체 사설 IP, 자체 보안 그룹)를 부여하는 awsvpc만** 일관된 선택이 되어 강제된다. A·B는 Fargate에서 불가능한 모드이고, D는 외부 통신이 막혀 실용성이 없다.
+Explanation: Fargate does not expose the EC2 host to the user, so it cannot offer the host mode that "shares the host network" or the bridge concept that "NATs through the host's bridge". Since the host is invisible, there is no way to share its network. Therefore **only awsvpc, which gives each task an independent ENI in the VPC (its own private IP and its own security group)**, is a consistent choice and is enforced. A and B are modes that are not possible on Fargate, and D blocks external communication, which makes it impractical.
 
 ---
 
-**Question 3.** 비용을 최소화하기 위해 EC2 시작 유형에서 가능한 한 적은 수의 인스턴스에 태스크를 몰아넣고 싶다. 적절한 배치 전략은?
+**Question 3.** To minimize cost, you want to pack tasks onto as few instances as possible with the EC2 launch type. What is the appropriate placement strategy?
 
 A) spread
 
@@ -210,68 +210,68 @@ D) Fargate Spot
 
 **Answer: B**
 
-Explanation: **binpack**은 CPU·메모리가 가장 적게 남은 인스턴스부터 채워, 결과적으로 사용하는 인스턴스 수를 최소화한다. 이는 고전적인 빈 패킹 문제의 그리디 휴리스틱으로, 유휴 인스턴스를 없애 비용을 줄인다. A) spread는 정반대로 AZ·인스턴스에 균등 분산해 가용성을 높이지만 인스턴스가 더 많이 필요하다. C) random은 비용·가용성 어느 쪽도 최적화하지 않는다. D) Fargate Spot은 배치 전략이 아니라 용량 공급자 옵션이다.
+Explanation: **binpack** fills the instance with the least remaining CPU or memory first, which ultimately minimizes the number of instances in use. It is a greedy heuristic for the classic bin packing problem, and it reduces cost by eliminating idle instances. A) spread does the opposite: it distributes tasks evenly across AZs and instances to improve availability, but needs more instances. C) random optimizes neither cost nor availability. D) Fargate Spot is not a placement strategy but a capacity provider option.
 
 ---
 
-**Question 4.** CI 파이프라인이 길게 실행되던 중 ECR push가 갑자기 "authentication" 오류로 실패하기 시작했다. 가장 가능성 높은 원인은?
+**Question 4.** In a long-running CI pipeline, ECR push suddenly started failing with an "authentication" error. What is the most likely cause?
 
-A) 이미지가 너무 커서
+A) The image is too large
 
-B) `get-login-password`로 받은 인증 토큰이 12시간을 넘겨 만료됨
+B) The authentication token obtained with `get-login-password` expired after exceeding 12 hours
 
-C) ECR 수명 주기 정책이 이미지를 삭제함
+C) An ECR lifecycle policy deleted the image
 
-D) 취약점 스캔이 푸시를 차단함
+D) Vulnerability scanning blocked the push
 
 **Answer: B**
 
-Explanation: ECR의 `get-login-password`가 발급하는 docker 인증 토큰은 **12시간** 유효하다. 파이프라인이 그보다 오래 실행되면 토큰이 만료되어 push/pull이 인증 오류를 낸다. 해결은 작업 직전에 다시 로그인(토큰 재발급)하는 것이다. A) 크기는 인증 오류와 무관하다. C) 수명 주기 정책은 오래된 이미지를 지울 뿐 인증을 막지 않는다. D) 취약점 스캔은 푸시 후 동작하며 인증 단계를 막지 않는다.
+Explanation: The docker authentication token issued by ECR's `get-login-password` is valid for **12 hours**. If the pipeline runs longer than that, the token expires and push/pull produce authentication errors. The fix is to log in again (reissue the token) right before the job. A) Size is unrelated to authentication errors. C) A lifecycle policy only deletes old images and does not block authentication. D) Vulnerability scanning runs after the push and does not block the authentication step.
 
 ---
 
-**Question 5.** 안정적인 기본 용량은 정규 Fargate로, 추가 부하는 비용이 싼 옵션으로 처리하되 일부 중단을 감내하려 한다. 적절한 구성은?
+**Question 5.** You want to handle stable baseline capacity with regular Fargate and extra load with a cheaper option, tolerating some interruptions. What is the appropriate configuration?
 
-A) 모든 태스크를 EC2 시작 유형으로
+A) Run all tasks with the EC2 launch type
 
-B) 용량 공급자 전략으로 Fargate + Fargate Spot 혼합
+B) Mix Fargate + Fargate Spot with a capacity provider strategy
 
-C) 모든 태스크를 Fargate Spot으로
+C) Run all tasks on Fargate Spot
 
-D) spread 배치 전략만 적용
+D) Apply only the spread placement strategy
 
 **Answer: B**
 
-Explanation: **용량 공급자 전략(Capacity Provider Strategy)** 으로 정규 Fargate와 Fargate Spot을 비율로 섞으면, 기본 용량은 회수되지 않는 정규 Fargate로 안정성을 확보하고 추가 용량은 최대 70% 싼 Spot으로 비용을 줄인다. Spot은 2분 전 회수 통보가 오므로 일부 중단을 감내하는 워크로드에 적합하다. A) EC2는 인스턴스 관리 부담이 있다. C) 전부 Spot이면 회수 시 서비스가 통째로 흔들린다. D) 배치 전략만으로는 비용·안정성 배합을 못 한다.
+Explanation: By mixing regular Fargate and Fargate Spot by ratio with a **Capacity Provider Strategy**, you get stability for baseline capacity from regular Fargate, which is not reclaimed, and cut cost for additional capacity with Spot, which is up to 70% cheaper. Spot gives a 2-minute reclaim notice, so it suits workloads that can tolerate some interruptions. A) EC2 carries the burden of managing instances. C) With all Spot, the whole service is shaken when capacity is reclaimed. D) A placement strategy alone cannot blend cost and stability.
 
 ---
 
-**Question 6.** 한 태스크 안에 애플리케이션 컨테이너와 로그 수집용 보조 컨테이너를 함께 실행하려 한다. 이를 가리키는 패턴과 ECS에서의 단위는?
+**Question 6.** You want to run an application container and a helper container for log collection together in one task. What is this pattern called, and what is the unit in ECS?
 
-A) 사이드카(sidecar) 패턴 — 한 태스크 안 여러 컨테이너
+A) Sidecar pattern - multiple containers in one task
 
-B) 마이크로서비스 — 각각 별도 서비스
+B) Microservices - each as a separate service
 
-C) 모놀리식 — 단일 컨테이너
+C) Monolithic - a single container
 
-D) 팬아웃 — SNS 사용
+D) Fan-out - using SNS
 
 **Answer: A**
 
-Explanation: 한 태스크 정의 안에 주 컨테이너와 보조(로깅·프록시·모니터링) 컨테이너를 함께 정의해 같은 태스크로 띄우는 것이 **사이드카 패턴**이다. 같은 태스크의 컨테이너들은 네트워크·볼륨을 공유하므로 보조 컨테이너가 주 컨테이너의 로그·트래픽을 가까이서 처리할 수 있다. B는 별도 태스크/서비스로 쪼개는 것이라 한 태스크 안 공존이 아니다. C는 단일 컨테이너라 보조 컨테이너 개념이 없다. D는 메시징 패턴으로 무관하다.
+Explanation: Defining a main container and helper (logging, proxy, monitoring) containers together in one task definition and launching them as the same task is the **sidecar pattern**. Containers in the same task share the network and volumes, so the helper container can process the main container's logs and traffic up close. B splits them into separate tasks/services, so they do not coexist within one task. C is a single container, so there is no helper container concept. D is a messaging pattern and is irrelevant.
 
 ---
 
-**Question 7.** Fargate가 멀티테넌트 환경에서 강한 격리를 빠른 시작 시간과 함께 제공하는 기술적 토대는?
+**Question 7.** What is the technical foundation that lets Fargate provide strong isolation together with fast start times in a multi-tenant environment?
 
-A) 고객마다 전용 물리 서버 할당
+A) Allocating a dedicated physical server to each customer
 
-B) Firecracker microVM(태스크별 경량 가상화)
+B) Firecracker microVM (lightweight per-task virtualization)
 
-C) 단일 공유 커널에 namespace만 적용
+C) A single shared kernel with only namespaces applied
 
-D) Docker bridge 네트워크
+D) Docker bridge network
 
 **Answer: B**
 
-Explanation: Fargate는 각 태스크(또는 작은 묶음)를 **Firecracker microVM**에 넣어, 일반 컨테이너의 "커널 공유로 인한 약한 격리"를 VM 수준 격리로 보강한다. Firecracker는 5MB 미만 오버헤드로 약 125ms 안에 떠서 VM의 강한 격리와 컨테이너의 빠른 시작을 동시에 달성한다. Lambda도 같은 기술을 쓴다. A) 고객별 전용 물리 서버는 비효율적이고 Fargate의 실제 방식이 아니다. C) namespace만으로는 멀티테넌트 격리가 약하다. D) bridge는 네트워크 모드일 뿐 격리 기술이 아니다.
+Explanation: Fargate puts each task (or a small group of tasks) in a **Firecracker microVM**, reinforcing the "weak isolation from a shared kernel" of ordinary containers with VM-level isolation. Firecracker starts in about 125 ms with less than 5 MB of overhead, achieving both the strong isolation of a VM and the fast start of a container. Lambda uses the same technology. A) Dedicated physical servers per customer are inefficient and not how Fargate actually works. C) Namespaces alone give weak multi-tenant isolation. D) Bridge is just a network mode, not an isolation technology.

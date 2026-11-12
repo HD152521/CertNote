@@ -122,62 +122,62 @@ Tomorrow we shift from classification to regression model metrics — RMSE, MAE,
 
 ## 📝 Practice Questions
 
-**Question 1.** 분류 모델의 임계값을 0.5에서 0.3으로 낮췄다. 일반적으로 일어나는 변화는?
+**Question 1.** You lowered a classification model's threshold from 0.5 to 0.3. What change generally occurs?
 
-A) 재현율이 증가하고 정밀도가 감소하는 경향이 있다  
-B) 정밀도와 재현율이 모두 증가한다  
-C) 재현율이 감소하고 정밀도가 증가한다  
-D) 두 지표 모두 변하지 않는다  
+A) Recall tends to increase and precision tends to decrease  
+B) Both precision and recall increase  
+C) Recall decreases and precision increases  
+D) Neither metric changes  
 
 **Answer: A**  
-Explanation: 임계값을 낮추면 더 많은 샘플을 Positive로 분류해 양성을 더 많이 잡지만(재현율 ↑) 거짓양성도 늘어(정밀도 ↓) 트레이드오프가 발생한다. 둘 다 증가(B)·재현율 감소(C)는 방향이 틀렸고, 임계값 변경은 지표를 바꾼다(D 오답).
+Explanation: Lowering the threshold classifies more samples as positive, catching more positives (recall up) but also increasing false positives (precision down), creating a trade-off. Both increasing (B) and recall decreasing (C) have the wrong direction, and changing the threshold does change the metrics (D is wrong).
 
 ---
 
-**Question 2.** ROC 곡선의 AUC가 0.5라는 것은 무엇을 의미하는가?
+**Question 2.** What does an AUC of 0.5 on an ROC curve mean?
 
-A) 모델이 완벽하게 분류한다  
-B) 데이터가 완전히 균형 잡혀 있다  
-C) 정밀도와 재현율이 같다  
-D) 모델의 변별력이 무작위 추측 수준이다  
+A) The model classifies perfectly  
+B) The data is perfectly balanced  
+C) Precision and recall are equal  
+D) The model's discriminative power is at the level of random guessing  
 
 **Answer: D**  
-Explanation: AUC 0.5는 ROC의 대각선에 해당하며 양성/음성을 무작위로 순위 매기는 것과 같은 무의미한 변별력이다. 완벽은 1.0(A), 데이터 균형(B)이나 정밀도=재현율(C)과는 무관하다.
+Explanation: An AUC of 0.5 corresponds to the diagonal of the ROC and is equivalent to ranking positives and negatives randomly - meaningless discriminative power. Perfect is 1.0 (A), and it has nothing to do with data balance (B) or precision = recall (C).
 
 ---
 
-**Question 3.** 양성 클래스가 전체의 0.3%인 극단적 불균형 사기 탐지 문제다. 모델 성능 평가에 ROC-AUC보다 더 정직한 지표는?
+**Question 3.** This is an extremely imbalanced fraud detection problem in which the positive class is 0.3% of the total. Which metric is more honest than ROC-AUC for evaluating model performance?
 
-A) 단순 정확도  
-B) FPR 단독  
-C) PR 곡선의 AUC(Average Precision)  
-D) 학습 손실(loss)  
+A) Simple accuracy  
+B) FPR alone  
+C) AUC of the PR curve (Average Precision)  
+D) Training loss  
 
 **Answer: C**  
-Explanation: 음성(TN)이 압도적이면 ROC의 FPR이 FP 증가를 희석해 낙관적으로 보이므로, 분모에 TN이 없는 PR 곡선의 AP가 더 정직하다. 정확도(A)는 불균형을 가리고, FPR 단독(B)·학습 손실(D)은 성능 요약 지표로 부적절하다.
+Explanation: When negatives (TN) are overwhelming, the ROC's FPR dilutes the increase in FP and looks optimistic, so AP of the PR curve, which has no TN in its denominator, is more honest. Accuracy (A) masks imbalance, and FPR alone (B) and training loss (D) are inappropriate as performance summary metrics.
 
 ---
 
-**Question 4.** FP 한 건의 비용과 FN 한 건의 비용을 금액으로 추정할 수 있는 상황이다. 가장 원칙적인 운영 임계값 선택 방법은?
+**Question 4.** You can estimate the cost of one FP and the cost of one FN in monetary terms. What is the most principled way to choose the operating threshold?
 
-A) 항상 0.5로 고정한다  
-B) AUC가 최대가 되는 임계값을 찾는다  
-C) 재현율을 무조건 1.0으로 만드는 임계값을 찾는다  
-D) `cost_FP×FP + cost_FN×FN` 기대비용을 최소화하는 임계값을 찾는다  
+A) Always fix it at 0.5  
+B) Find the threshold that maximizes AUC  
+C) Find the threshold that unconditionally makes recall 1.0  
+D) Find the threshold that minimizes the expected cost `cost_FP×FP + cost_FN×FN`  
 
 **Answer: D**  
-Explanation: 비용을 금액으로 알면 곡선 위 각 임계값의 총 기대비용을 계산해 최소 지점을 고르는 것이 가장 원칙적이다. 0.5 고정(A)은 비용을 무시하고, AUC는 임계값과 무관해 임계값을 못 정하며(B), 재현율 1.0(C)은 정밀도를 희생해 비용을 폭증시킨다.
+Explanation: If you know the costs in monetary terms, the most principled approach is to compute the total expected cost at each threshold on the curve and pick the minimum point. Fixing 0.5 (A) ignores cost, AUC is independent of the threshold so it cannot determine a threshold (B), and recall of 1.0 (C) sacrifices precision and makes cost explode.
 
 ---
 
-**Question 5.** 여러 후보 모델의 변별력을 임계값과 무관하게 한 숫자로 비교하려 한다. SageMaker Automatic Model Tuning의 목적 지표로 가장 적절한 것은?
+**Question 5.** You want to compare the discriminative power of several candidate models with one number, independent of the threshold. Which is the MOST appropriate objective metric for SageMaker Automatic Model Tuning?
 
 A) validation:accuracy  
 B) validation:auc  
 C) train:loss  
-D) 고정 임계값에서의 FN 개수  
+D) Number of FN at a fixed threshold  
 
 **Answer: B**  
-Explanation: AUC는 임계값과 무관하게 모델의 순위 변별력을 0~1로 요약하므로 모델 간 비교 및 튜닝 목적 지표로 적합하다. 정확도(A)는 불균형에 취약하고, 학습 손실(C)은 일반화를 반영하지 못하며, 특정 임계값 FN(D)은 임계값 의존적이다.
+Explanation: AUC summarizes a model's ranking discriminative power from 0 to 1 independent of the threshold, so it suits model comparison and as a tuning objective metric. Accuracy (A) is weak on imbalance, training loss (C) does not reflect generalization, and FN at a specific threshold (D) is threshold-dependent.
 
 ---

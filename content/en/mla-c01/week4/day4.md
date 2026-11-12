@@ -92,62 +92,62 @@ Next we comprehensively review this week (Model Development 1 — SageMaker Trai
 
 ## 📝 Practice Questions
 
-**Question 1.** 검증된 텍스트 요약 모델을 거의 코드 작성 없이 빠르게 추론 엔드포인트로 배포하고 싶다. 가장 적합한 SageMaker 기능은?
+**Question 1.** You want to quickly deploy a validated text summarization model as an inference endpoint with almost no coding. What is the most suitable SageMaker feature?
 
-A) 빌트인 K-Means를 처음부터 학습한다  
-B) JumpStart에서 사전학습 모델을 선택해 배포한다  
-C) Feature Store에 모델을 적재한다  
-D) Data Wrangler로 데이터를 변환한다  
+A) Train the built-in K-Means from scratch  
+B) Select and deploy a pretrained model from JumpStart  
+C) Load the model into Feature Store  
+D) Transform the data with Data Wrangler  
 
 **Answer: B**  
-Explanation: JumpStart는 수백 개의 사전학습 모델을 제공해 추가 학습 없이 몇 줄로 배포하거나 미세조정할 수 있어 검증된 모델을 빠르게 시작하기에 적합하다. A는 무관한 군집화 알고리즘을 밑바닥 학습하는 것이고, C는 특성 저장소, D는 데이터 전처리 도구로 모델 배포와 거리가 멀다.
+Explanation: JumpStart provides hundreds of pretrained models that can be deployed or fine-tuned in a few lines without additional training, so it suits getting started quickly with a validated model. A trains an unrelated clustering algorithm from the ground up, C is a feature store, and D is a data preprocessing tool, both far from model deployment.
 
 ---
 
-**Question 2.** 클래스당 수백 장 수준의 적은 라벨 이미지로 정확한 이미지 분류기를 만들어야 한다. 가장 적합한 접근은?
+**Question 2.** You must build an accurate image classifier from a small number of labeled images, on the order of a few hundred per class. What is the most suitable approach?
 
-A) 처음부터 깊은 CNN을 무작위 초기화로 학습한다  
-B) 사전학습 모델을 가져와 내 데이터로 미세조정하는 전이학습을 한다  
-C) 데이터를 모두 버리고 규칙 기반으로 분류한다  
-D) 학습 없이 K-Means로 군집화한다  
+A) Train a deep CNN from scratch with random initialization  
+B) Use transfer learning: take a pretrained model and fine-tune it on your data  
+C) Discard all the data and classify with rules  
+D) Cluster with K-Means without training  
 
 **Answer: B**  
-Explanation: 전이학습은 대규모로 학습된 모델의 일반 특징을 물려받아 적은 데이터로도 높은 성능을 내므로, 라벨 데이터가 적은 이미지 분류에 적합하다. A는 데이터가 부족해 과적합되기 쉽고, C는 분류 정확도를 보장하기 어려우며, D는 라벨을 활용하지 못하는 비지도 방식이다.
+Explanation: Transfer learning inherits the general features of a model trained at large scale and achieves high performance even with little data, so it suits image classification with little labeled data. A is prone to overfitting because of the lack of data, C can hardly guarantee classification accuracy, and D is an unsupervised approach that cannot use the labels.
 
 ---
 
-**Question 3.** 사전학습 LLM을 내 도메인 데이터로 미세조정하면서 학습 비용을 최대한 줄이고 싶다. 학습이 중단되어도 재개 가능하다. 가장 효과적인 조합은?
+**Question 3.** You want to fine-tune a pretrained LLM on your domain data while cutting training cost as much as possible. Training can be resumed even if interrupted. What is the most effective combination?
 
-A) 온디맨드 인스턴스 + 더 큰 GPU  
-B) JumpStart 미세조정 + Managed Spot Training + 체크포인트  
-C) 처음부터 LLM 사전학습  
-D) 추론 엔드포인트를 여러 개 띄운다  
+A) On-Demand Instances + a larger GPU  
+B) JumpStart fine-tuning + Managed Spot Training + checkpoints  
+C) Pretrain the LLM from scratch  
+D) Launch multiple inference endpoints  
 
 **Answer: B**  
-Explanation: 전이학습(JumpStart 미세조정)은 학습량 자체를 줄이고 Spot+체크포인트는 인프라 단가를 최대 90% 낮추며 중단 시 재개가 가능하므로, 두 절감 축을 함께 적용해 비용을 크게 줄인다. A는 비용을 키우고, C는 막대한 비용이 들며, D는 학습이 아닌 추론 비용을 늘린다.
+Explanation: Transfer learning (JumpStart fine-tuning) reduces the amount of training itself, and Spot plus checkpoints lowers infrastructure unit cost by up to 90% with the ability to resume on interruption, so applying both savings axes together cuts cost substantially. A raises cost, C incurs enormous cost, and D increases inference cost rather than training cost.
 
 ---
 
-**Question 4.** 학습 비용 최적화 수단을 "단가를 낮추는 것"과 "작업량 자체를 줄이는 것"으로 나눌 때, 작업량을 줄이는 쪽에 해당하는 것은?
+**Question 4.** When dividing training cost optimization measures into "lowering the unit price" and "reducing the amount of work itself," which of the following belongs to reducing the amount of work?
 
 A) Managed Spot Training  
-B) 적절한 인스턴스 타입 선택  
-C) 전이학습(사전학습 모델 활용)  
-D) Pipe 입력 모드  
+B) Choosing an appropriate instance type  
+C) Transfer learning (using a pretrained model)  
+D) Pipe input mode  
 
 **Answer: C**  
-Explanation: 전이학습은 처음부터 배우지 않고 사전학습 지식을 재사용해 필요한 계산량 자체를 줄이는 접근이다. A·B·D는 같은 작업을 더 싼 자원이나 효율적 I/O로 수행해 단가를 낮추는 수단이다.
+Explanation: Transfer learning reuses pretrained knowledge instead of learning from scratch, reducing the amount of computation required itself. A, B, and D are means of lowering the unit price by performing the same work on cheaper resources or with efficient I/O.
 
 ---
 
-**Question 5.** 실험용으로 띄운 GPU 노트북 인스턴스를 끄는 것을 잊어 사용하지 않는 동안에도 과금이 계속되는 문제를 막으려 한다. 가장 적합한 조치는?
+**Question 5.** You want to prevent the problem of continued billing while a GPU notebook instance launched for experiments sits unused because you forgot to shut it down. What is the most suitable measure?
 
-A) 학습 작업의 max_run을 0으로 설정한다  
-B) 노트북 인스턴스에 유휴 자동 종료 lifecycle config를 적용한다  
-C) Spot 인스턴스로 노트북을 띄운다  
-D) Feature Store를 비활성화한다  
+A) Set the training job's max_run to 0  
+B) Apply an idle auto-shutdown lifecycle config to the notebook instance  
+C) Launch the notebook on Spot Instances  
+D) Disable Feature Store  
 
 **Answer: B**  
-Explanation: 유휴 자동 종료 lifecycle config는 일정 시간 활동이 없으면 노트북 인스턴스를 스스로 종료해 켜두고 잊은 자원의 방치 과금을 막는다. A는 학습이 즉시 중단되는 잘못된 설정이고, C는 노트북 중단 위험을 키우며, D는 비용 문제와 무관하다.
+Explanation: An idle auto-shutdown lifecycle config shuts the notebook instance down on its own after a period of inactivity, preventing billing for resources that were left on and forgotten. A is an incorrect setting that stops training immediately, C increases the risk of the notebook being interrupted, and D has nothing to do with the cost problem.
 
 ---

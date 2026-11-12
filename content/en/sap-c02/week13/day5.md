@@ -126,7 +126,7 @@ Next week (Week 14) is **Resilience and DR Advanced**: Four DR strategies (Backu
 
 ## 📝 Practice Questions
 
-**Question 1.** "운영 부담 최소" + "EC2 → Fargate로 전환". 어느 기둥?
+**Question 1.** "Minimal operational burden" + "switching from EC2 to Fargate". Which pillar?
 
 A) Reliability
 B) Operational Excellence
@@ -134,11 +134,11 @@ C) Cost
 D) Sustainability
 
 **Answer: B**
-Explanation: "운영 부담 최소"는 Operational Excellence의 직답 키워드. Managed 전환(EC2→Fargate, RDS→Aurora Serverless)은 모두 Ops 우선. 부수적으로 Cost·Sustainability도 개선되지만 1순위는 Ops.
+Explanation: "Minimal operational burden" is the direct-answer keyword for Operational Excellence. Switching to managed services (EC2 → Fargate, RDS → Aurora Serverless) is always Ops first. Cost and Sustainability improve incidentally, but the top priority is Ops.
 
 ---
 
-**Question 2.** "RTO 5분 + Multi-Region". 어느 기둥?
+**Question 2.** "RTO of 5 minutes + Multi-Region". Which pillar?
 
 A) Performance
 B) Reliability
@@ -146,47 +146,47 @@ C) Cost
 D) Security
 
 **Answer: B**
-Explanation: RTO·RPO·Multi-Region·DR은 Reliability의 핵심. 5분 RTO는 Warm Standby 이상 필요(Backup/Restore의 RTO는 수 시간).
+Explanation: RTO, RPO, Multi-Region, and DR are the core of Reliability. A 5-minute RTO requires Warm Standby or better (the RTO of Backup/Restore is several hours).
 
 ---
 
-**Question 3.** "DB 비밀번호를 30일마다 자동 변경하고 애플리케이션 중단 없이 갱신". 어느 도구 + 기둥?
+**Question 3.** "Change the DB password automatically every 30 days and update it without application downtime". Which tool + pillar?
 
 A) Reliability + RDS Multi-AZ
-B) Security + Secrets Manager 자동 로테이션
+B) Security + Secrets Manager automatic rotation
 C) Ops + Systems Manager Parameter Store
 D) Cost + IAM Role
 
 **Answer: B**
-Explanation: Secrets Manager는 비밀번호 로테이션 Lambda를 자동 호출하고 RDS/Redshift/DocumentDB는 native 통합으로 무중단 갱신. Parameter Store는 로테이션 native 미지원.
+Explanation: Secrets Manager automatically invokes the password rotation Lambda, and RDS/Redshift/DocumentDB use native integration for non-disruptive updates. Parameter Store does not natively support rotation.
 
 ---
 
-**Question 4.** "Graviton 전환으로 비용 30% 절감 + 전력 60% 절감 + 동급 성능". 어느 기둥 조합?
+**Question 4.** "Cost reduced by 30% + power reduced by 60% + equivalent performance by switching to Graviton". Which combination of pillars?
 
-A) Cost만
+A) Cost only
 B) Cost + Sustainability
-C) Performance만
+C) Performance only
 D) Reliability + Cost
 
 **Answer: B**
-Explanation: Graviton은 ARM Neoverse 기반으로 동급 x86 대비 가격·전력 모두 우위. Cost + Sustainability 두 기둥 동시 만족이 Pro 정답의 전형.
+Explanation: Graviton is based on ARM Neoverse and beats comparable x86 in both price and power. Satisfying the two pillars Cost + Sustainability at once is the typical Pro answer.
 
 ---
 
-**Question 5.** "DR 복구 절차를 분기마다 자동 검증". 어느 도구?
+**Question 5.** "Automatically verify DR recovery procedures every quarter". Which tool?
 
-A) AWS Backup의 정기 백업
-B) FIS(Fault Injection Simulator)로 production 장애 시뮬레이션
-C) Trusted Advisor의 정기 체크
+A) Regular backups with AWS Backup
+B) Simulate production failures with FIS (Fault Injection Simulator)
+C) Regular checks with Trusted Advisor
 D) Config Rule
 
 **Answer: B**
-Explanation: 복구 절차 "검증"의 핵심은 실제 장애를 주입해 시스템이 의도대로 복구되는지 확인. FIS는 EC2 종료·latency 주입·API throttling 등을 정기 실행. Backup은 단순 백업이지 복구 검증 아님.
+Explanation: The key to "verifying" recovery procedures is injecting real failures to confirm the system recovers as intended. FIS runs EC2 termination, latency injection, API throttling, and more on a regular basis. Backup is simply a backup and not recovery verification.
 
 ---
 
-**Question 6.** "관리자가 production EC2에 SSH 없이 접속해 디버깅". 어느 도구?
+**Question 6.** "Administrators connect to production EC2 for debugging without SSH". Which tool?
 
 A) Bastion Host + SSH key
 B) SSM Session Manager
@@ -194,11 +194,11 @@ C) Client VPN
 D) Direct Connect
 
 **Answer: B**
-Explanation: SSM Session Manager는 SSH 포트(22) 개방 없이 IAM 권한으로 인증, 모든 세션을 CloudTrail에 기록. Bastion은 22 포트를 노출하므로 공격 표면 증가.
+Explanation: SSM Session Manager authenticates with IAM permissions without opening the SSH port (22) and records all sessions in CloudTrail. A Bastion exposes port 22, which increases the attack surface.
 
 ---
 
-**Question 7.** "탄소 배출량을 콘솔에서 월별 확인 + ESG 보고에 활용". 어느 도구?
+**Question 7.** "Check carbon emissions monthly in the console + use them in ESG reporting". Which tool?
 
 A) Trusted Advisor
 B) Customer Carbon Footprint Tool (CCFT)
@@ -206,11 +206,11 @@ C) Compute Optimizer
 D) Sustainability Lens
 
 **Answer: B**
-Explanation: CCFT는 AWS 사용으로 인한 Scope 1·2·3 탄소 배출을 월별로 보고. ESG 보고에 직접 사용 가능. Sustainability Lens는 아키텍처 가이드일 뿐 측정 도구 아님.
+Explanation: CCFT reports the Scope 1, 2, and 3 carbon emissions from AWS usage monthly. It can be used directly in ESG reporting. The Sustainability Lens is only an architecture guide, not a measurement tool.
 
 ---
 
-**Question 8.** "어느 IAM 사용자가 어느 시각에 어느 API를 호출했는지 추적 + 변경 감사". 어느 도구?
+**Question 8.** "Track which IAM user called which API at what time + change auditing". Which tool?
 
 A) Config
 B) CloudTrail
@@ -218,60 +218,60 @@ C) CloudWatch
 D) GuardDuty
 
 **Answer: B**
-Explanation: CloudTrail은 모든 API 호출(콘솔·SDK·CLI)을 기록. Config는 리소스 구성 변경 추적(IAM API 호출 자체는 추적 안 함). 둘 다 Security 기둥이지만 "누가 호출"은 CloudTrail.
+Explanation: CloudTrail records all API calls (console, SDK, CLI). Config tracks resource configuration changes (it does not track the IAM API calls themselves). Both belong to the Security pillar, but "who called" is CloudTrail.
 
 ---
 
-**Question 9.** "다른 팀이 임의 인프라 생성 금지 + 승인된 템플릿만 사용 가능". 어느 도구?
+**Question 9.** "Other teams are prohibited from creating arbitrary infrastructure + only approved templates can be used". Which tool?
 
-A) IAM Policy로 EC2 RunInstances 거부
-B) Service Catalog로 승인된 Product만 노출
-C) Config Rule로 비표준 리소스 자동 삭제
-D) SCP로 모든 EC2 거부
+A) Deny EC2 RunInstances with an IAM Policy
+B) Expose only approved Products with Service Catalog
+C) Automatically delete nonstandard resources with a Config Rule
+D) Deny all EC2 with an SCP
 
 **Answer: B**
-Explanation: Service Catalog는 IT 부서가 승인한 CloudFormation 템플릿을 Product로 등록 → 개발팀은 Service Catalog에서만 생성 가능. IAM/SCP는 너무 광범위, Config는 사후 탐지. Pro 정답은 거의 항상 "사전 통제 + 셀프서비스" 조합.
+Explanation: Service Catalog registers CloudFormation templates approved by the IT department as Products, so development teams can create resources only from Service Catalog. IAM/SCP are too broad, and Config is after-the-fact detection. The Pro answer is almost always a "preventive control + self-service" combination.
 
 ---
 
-**Question 10.** "HPC 클러스터에서 인스턴스 간 통신 latency를 최소화". 어느 배치?
+**Question 10.** "Minimize inter-instance communication latency in an HPC cluster". Which placement?
 
-A) Spread Placement Group (격리)
+A) Spread Placement Group (isolation)
 B) Partition Placement Group (HDFS)
 C) Cluster Placement Group + EFA
 D) Cross-AZ Auto Scaling
 
 **Answer: C**
-Explanation: Cluster PG는 같은 AZ·같은 rack에 묶어 latency 최소화. EFA(Elastic Fabric Adapter)는 OS bypass로 RDMA 수준 통신. 단 가용성은 떨어짐(HPC는 재실행 가능). A(Spread)는 격리가 목적이라 지연이 늘고, B(Partition)는 대규모 분산 저장(HDFS)용이며, D(Cross-AZ)는 AZ 간 지연으로 통신이 느리다.
+Explanation: A Cluster PG groups instances in the same AZ and the same rack to minimize latency. EFA (Elastic Fabric Adapter) provides RDMA-level communication through OS bypass. However, availability is lower (HPC jobs can be rerun). A (Spread) is for isolation, so latency increases; B (Partition) is for large-scale distributed storage (HDFS); and D (Cross-AZ) slows communication because of inter-AZ latency.
 
 ---
 
-**Question 11.** 한 헬스케어 SaaS가 환자 데이터를 다루며 HIPAA 준수, RTO 1시간, 비용 최소화를 동시에 요구받았다. 세 요구가 충돌할 때 가장 먼저 우선시해야 할 기둥과 그 이유는?
+**Question 11.** A healthcare SaaS handles patient data and is required to satisfy HIPAA compliance, a 1-hour RTO, and cost minimization at the same time. When the three requirements conflict, which pillar should be prioritized first, and why?
 
-A) Cost — 비용 절감이 항상 최우선이다
+A) Cost — cost reduction is always the top priority
 
-B) Security — HIPAA 위반은 환자당 거액 벌금이고 비협상 규제이므로 보안·컴플라이언스가 최우선, 그 위에 Reliability(Warm Standby로 RTO 1h), Cost는 마지막
+B) Security — HIPAA violations carry large fines per patient and are a non-negotiable regulation, so security and compliance come first, then Reliability (Warm Standby for a 1-hour RTO), and Cost last
 
-C) Performance — 응답 속도가 최우선이다
+C) Performance — response speed is the top priority
 
-D) Sustainability — 탄소 절감이 최우선이다
+D) Sustainability — carbon reduction is the top priority
 
 **Answer: B**
-Explanation: 규제 산업에서 컴플라이언스(HIPAA)는 비협상 제약이라 Security 기둥이 최우선이다. 그 위에 RTO 1시간을 만족하는 Reliability(Warm Standby 이상), 비용은 마지막에 최적화한다. Pro 시험은 한 시나리오에 여러 기둥이 충돌할 때 비즈니스 컨텍스트(헬스케어=Security 우선)로 우선순위를 판단하게 한다. A·C·D는 규제 위반 리스크를 비용·성능·탄소보다 낮게 둔 오답이다. 함정: 규제는 비용·성능보다 항상 우선이며, "동시 만족"이 아니라 "우선순위"를 묻는 문제다.
+Explanation: In a regulated industry, compliance (HIPAA) is a non-negotiable constraint, so the Security pillar is the top priority. On top of that comes Reliability that satisfies the 1-hour RTO (Warm Standby or better), and cost is optimized last. The Pro exam makes you judge priority from the business context (healthcare = Security first) when multiple pillars conflict in one scenario. A, C, and D are wrong answers that rank regulatory violation risk below cost, performance, or carbon. Trap: regulation always outranks cost and performance, and the question asks about "priority," not "satisfying all at once."
 
 ---
 
-**Question 12.** 한 회사가 AWS 기본 베스트 프랙티스 외에 "모든 외부 ALB는 WAF 필수", "모든 DB는 사내 KMS 키 암호화" 같은 사내 보안 표준도 WA Tool 평가에 포함하고, 멀티 계정 전체에 동일 기준을 적용하려 한다. 가장 적합한 방법은?
+**Question 12.** A company wants to include internal security standards, such as "all external ALBs must have WAF" and "all databases are encrypted with a company KMS key," in its WA Tool assessment in addition to the AWS default best practices, and to apply the same criteria across all its accounts. What is the most appropriate method?
 
-A) Serverless Lens 적용
+A) Apply the Serverless Lens
 
-B) Custom Lens를 정의해 사내 표준을 질문으로 등록하고 Organization 전 계정에 표준화
+B) Define a Custom Lens, register the internal standards as questions, and standardize it across all accounts in the Organization
 
-C) Trusted Advisor 자동 체크만 사용
+C) Use only Trusted Advisor automated checks
 
-D) Milestone을 더 자주 기록
+D) Record Milestones more often
 
 **Answer: B**
-Explanation: Custom Lens는 기업 표준을 JSON 질문으로 정의해 WA Tool 평가에 포함시키며, 멀티 계정에 표준화하면 모든 팀이 동일 기준으로 HRI를 도출받는다 — WA가 조직 거버넌스 엔진으로 확장된 형태다. A는 서버리스 도메인 특화일 뿐이고, C(Trusted Advisor)는 사용자 정의 6 기둥 평가가 없으며, D는 시점 기록 빈도다. 함정: "AWS 기본 + 사내 규정 동시 점검 + 전 계정 표준화"는 Custom Lens다.
+Explanation: A Custom Lens defines company standards as JSON questions and includes them in the WA Tool assessment; when standardized across multiple accounts, all teams derive HRIs from the same criteria — WA expanded into an organizational governance engine. A is only specific to the serverless domain, C (Trusted Advisor) has no custom six-pillar assessment, and D is the frequency of point-in-time records. Trap: "AWS defaults + internal rules checked together + standardized across all accounts" is Custom Lens.
 
 ---

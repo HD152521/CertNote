@@ -79,7 +79,7 @@ Tomorrow: Domain 4 (deployment).
 
 ## 📝 Practice Questions
 
-**Question 1.** 정형 표 형태의 고객 데이터(수치·범주 혼합, 일부 결측)로 이탈 여부를 예측하려 한다. 가장 먼저 시도할 SageMaker 빌트인 알고리즘으로 가장 적절한 것은?
+**Question 1.** You want to predict churn from structured tabular customer data (mixed numeric and categorical, with some missing values). Which SageMaker built-in algorithm is MOST appropriate to try first?
 
 A) XGBoost  
 B) Image Classification  
@@ -87,54 +87,54 @@ C) DeepAR
 D) Random Cut Forest  
 
 **Answer: A**  
-Explanation: 정형 표 데이터의 분류·회귀에서 결측·혼합 타입·비선형 상호작용을 잘 다루는 XGBoost가 강한 기본값이다. Image Classification(B)은 이미지용, DeepAR(C)은 시계열 예측, RCF(D)는 이상 탐지로 이 문제에 맞지 않는다.
+Explanation: For classification and regression on structured tabular data, XGBoost, which handles missing values, mixed types, and nonlinear interactions well, is a strong default. Image Classification (B) is for images, DeepAR (C) is for time-series forecasting, and RCF (D) is for anomaly detection, so none fits this problem.
 
 ---
 
-**Question 2.** 3개 클래스(저/중/고 위험)로 분류하는 신경망의 출력층을 설계한다. 올바른 활성화 함수는?
+**Question 2.** You are designing the output layer of a neural network that classifies into 3 classes (low/medium/high risk). Which is the correct activation function?
 
 A) Sigmoid  
 B) ReLU  
 C) Softmax  
-D) 활성화 없음(선형)  
+D) No activation (linear)  
 
 **Answer: C**  
-Explanation: 다중 클래스 분류 출력은 합이 1인 확률 벡터를 내는 Softmax가 정답이다. Sigmoid(A)는 이진 분류 출력, ReLU(B)는 은닉층용, 선형(D)은 회귀 출력에 쓴다.
+Explanation: For multiclass classification output, Softmax, which produces a probability vector that sums to 1, is the correct answer. Sigmoid (A) is for binary classification output, ReLU (B) is for hidden layers, and linear (D) is used for regression output.
 
 ---
 
-**Question 3.** 모델의 학습 데이터 정확도는 98%인데 검증 데이터 정확도는 72%로 큰 격차가 있다. 가장 우선해야 할 대응은?
+**Question 3.** A model has 98% accuracy on the training data but 72% accuracy on the validation data, a large gap. What response should be prioritized?
 
-A) 모델 복잡도를 더 높이고 학습을 더 길게 한다  
-B) 학습률을 10배 키운다  
-C) 출력 활성화를 Softmax에서 Sigmoid로 바꾼다  
-D) 정규화 강화·드롭아웃 추가·조기 종료 등 과적합 억제를 적용한다  
+A) Increase model complexity and train for longer  
+B) Increase the learning rate tenfold  
+C) Change the output activation from Softmax to Sigmoid  
+D) Apply overfitting countermeasures such as stronger regularization, added dropout, and early stopping  
 
 **Answer: D**  
-Explanation: 학습은 높고 검증이 낮은 큰 격차는 과적합의 전형으로 정규화·드롭아웃·조기 종료·데이터 증강이 정석 대응이다. 복잡도 증가(A)는 과적합을 악화시키고, 학습률 급증(B)은 발산을 유발하며, 출력 활성화 변경(C)은 과적합과 무관하다.
+Explanation: A large gap with high training and low validation performance is typical of overfitting, and regularization, dropout, early stopping, and data augmentation are the standard responses. Increasing complexity (A) worsens overfitting, a sudden learning rate increase (B) causes divergence, and changing the output activation (C) is unrelated to overfitting.
 
 ---
 
-**Question 4.** SageMaker Automatic Model Tuning에서 적은 학습 잡 예산으로 효율적으로 좋은 하이퍼파라미터를 찾고 싶다. 권장되는 탐색 전략과 그 이유로 옳은 것은?
+**Question 4.** In SageMaker Automatic Model Tuning, you want to efficiently find good hyperparameters with a small training job budget. Which recommended search strategy and reason are correct?
 
-A) Grid Search — 모든 조합을 빠짐없이 본다  
-B) Random Search — 항상 가장 빠르다  
-C) Bayesian Optimization — 이전 시도 결과를 활용해 다음 후보를 똑똑하게 고른다  
-D) 수동 탐색 — 사람이 직관으로 고른다  
+A) Grid Search — examines every combination without omission  
+B) Random Search — is always the fastest  
+C) Bayesian Optimization — uses the results of previous trials to intelligently choose the next candidates  
+D) Manual search — a human chooses by intuition  
 
 **Answer: C**  
-Explanation: 베이지안 최적화는 이전 평가 결과로 유망한 영역을 우선 탐색해 적은 시도로 좋은 해를 찾을 확률이 높아 AMT의 효율적 기본 전략이다. Grid(A)는 차원이 늘면 폭발적으로 비싸고, Random(B)은 이력을 무시하며, 수동(D)은 비효율적이다.
+Explanation: Bayesian optimization uses previous evaluation results to explore promising regions first, so it has a high probability of finding a good solution in few trials and is AMT's efficient default strategy. Grid (A) becomes exponentially expensive as dimensions grow, Random (B) ignores history, and manual (D) is inefficient.
 
 ---
 
-**Question 5.** 사기 거래 탐지 모델에서 양성(사기)은 전체의 0.3%이며 사기를 놓치는 비용이 매우 크다. 가장 중점적으로 봐야 할 평가 지표 조합은?
+**Question 5.** In a fraud transaction detection model, positives (fraud) are 0.3% of the total and the cost of missing fraud is very high. Which combination of evaluation metrics should be the primary focus?
 
-A) 재현율(Recall)과 PR-AUC  
-B) 단순 정확도(Accuracy)  
-C) RMSE와 MAE  
+A) Recall and PR-AUC  
+B) Plain accuracy  
+C) RMSE and MAE  
 D) R²  
 
 **Answer: A**  
-Explanation: 극단 불균형에서 FN(놓친 사기) 비용이 크면 재현율과 PR-AUC가 핵심 지표다. 정확도(B)는 불균형에서 과대평가되고, RMSE/MAE(C)와 R²(D)는 회귀 지표라 분류 문제에 부적합하다.
+Explanation: With extreme imbalance, when the cost of FN (missed fraud) is high, recall and PR-AUC are the key metrics. Accuracy (B) is overestimated under imbalance, and RMSE/MAE (C) and R² (D) are regression metrics and unsuitable for a classification problem.
 
 ---

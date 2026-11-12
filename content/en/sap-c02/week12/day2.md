@@ -107,105 +107,105 @@ Common SAP exam mappings: (1) "precise type·IOPS·memory recommendations" → *
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 팀이 Compute Optimizer를 활성화했는데 EC2 인스턴스에 대해 CPU 기반 권고만 나오고 메모리 기반 권고가 전혀 없다. 가장 가능성 높은 원인은?
+**Question 1.** A team enabled Compute Optimizer, but for EC2 instances it produces only CPU-based recommendations and no memory-based recommendations at all. What is the most likely cause?
 
-A) Compute Optimizer는 메모리를 지원하지 않는다
+A) Compute Optimizer does not support memory
 
-B) 게스트 OS에 CloudWatch Agent가 없어 메모리 메트릭이 수집되지 않는다
+B) The CloudWatch Agent is not installed in the guest OS, so memory metrics are not collected
 
-C) 14일이 지나지 않았다
+C) 14 days have not yet passed
 
-D) IAM 권한이 부족하다
+D) IAM permissions are insufficient
 
 **Answer: B**
-Explanation: 하이퍼바이저는 게스트 OS 내부의 메모리 사용량을 볼 수 없다(가상화의 시맨틱 갭). 따라서 메모리 메트릭은 CloudWatch Agent를 인스턴스에 설치해야만 수집되며, Agent가 없으면 Nitro가 자동 계측하는 CPU·네트워크·디스크 권고는 나오지만 메모리 권고는 생성되지 않는다. A는 틀림(CO는 메모리 권고 제공). C는 가능성이 있으나 "메모리만 없고 CPU는 나온다"는 단서가 메트릭 종류 문제(특정 메트릭 부재)임을 가리킨다 — 14일 미달이면 CPU 권고도 안 나온다. D도 권고 자체가 아예 안 나올 것이다. 함정: "메모리 권고만 부재"의 정답은 거의 항상 CW Agent 미설치다.
+Explanation: The hypervisor cannot see memory usage inside the guest OS (the semantic gap of virtualization). Therefore memory metrics can be collected only by installing the CloudWatch Agent on the instance; without the Agent, recommendations based on CPU, network, and disk, which Nitro instruments automatically, are produced, but memory recommendations are not generated. A is wrong (CO provides memory recommendations). C is possible, but the clue that "only memory is missing while CPU appears" points to a metric-type problem (absence of a specific metric) — if 14 days had not elapsed, CPU recommendations would not appear either. With D, no recommendations would appear at all. Trap: the answer to "only memory recommendations are missing" is almost always that the CW Agent is not installed.
 
 ---
 
-**Question 2.** 운영팀이 수천 대 EC2의 rightsizing을 일회성이 아니라 지속적으로 자동화하려 한다. 권고를 안전하게 적용하는 파이프라인으로 가장 적합한 것은?
+**Question 2.** An operations team wants to automate rightsizing of thousands of EC2 instances continuously rather than as a one-time effort. Which pipeline is the most appropriate for applying recommendations safely?
 
-A) Trusted Advisor 콘솔에서 매주 수동 검토
+A) Review manually every week in the Trusted Advisor console
 
-B) Compute Optimizer 권고를 S3로 Export → EventBridge → Lambda 필터 → 비프로덕션 자동 적용, 프로덕션은 승인 게이트 후 적용
+B) Export Compute Optimizer recommendations to S3 → EventBridge → Lambda filter → automatically apply to non-production, apply to production after an approval gate
 
-C) 모든 권고를 즉시 자동 적용하는 Lambda
+C) A Lambda that immediately applies all recommendations automatically
 
-D) CloudWatch Alarm으로 CPU 낮으면 자동 종료
+D) Automatically terminate with a CloudWatch Alarm when CPU is low
 
 **Answer: B**
-Explanation: 지속적·안전한 rightsizing은 CO 권고를 S3로 Export하고 Lambda가 performance risk 낮은 Over-provisioned 권고만 필터링한 뒤, 위험이 낮은 비프로덕션은 자동 적용하고 프로덕션에는 승인 게이트를 둬 적용하는 파이프라인이다. A는 규모에서 검토 속도가 인프라 증가를 못 따라간다. C는 ML 권고를 무비판적으로 적용해 spike 워크로드를 잘못 줄일 위험이 있다. D는 평균 CPU만 보는 단순 룰이라 배치 spike를 죽일 수 있다. 함정: 운영 워크로드에는 반드시 승인 게이트를 두고, 위험도에 따라 자동/수동을 이원화한다.
+Explanation: Continuous and safe rightsizing is a pipeline that exports CO recommendations to S3, has Lambda filter only the Over-provisioned recommendations with low performance risk, automatically applies them to low-risk non-production, and applies them to production through an approval gate. With A, review speed cannot keep up with infrastructure growth at scale. C applies ML recommendations uncritically and risks wrongly shrinking spike workloads. D is a simple rule that looks only at average CPU and can kill batch spikes. Trap: always place an approval gate on production workloads and split automatic/manual handling by risk level.
 
 ---
 
-**Question 3.** ASG로 관리되는 인스턴스들을 Compute Optimizer 권고에 따라 더 작은 타입으로 교체하려 한다. 올바른 방법은?
+**Question 3.** You want to replace the instances managed by an ASG with smaller types according to Compute Optimizer recommendations. What is the correct method?
 
-A) 각 인스턴스를 stop → ModifyInstanceAttribute → start
+A) Stop each instance → ModifyInstanceAttribute → start
 
-B) Launch Template 새 버전에 권장 타입을 넣고 Instance Refresh로 롤링 교체
+B) Put the recommended type in a new Launch Template version and do a rolling replacement with Instance Refresh
 
-C) ASG를 삭제하고 새로 생성
+C) Delete the ASG and create a new one
 
-D) 인스턴스를 직접 종료하면 ASG가 알아서 새 타입으로 띄운다
+D) Terminate the instances directly and the ASG will launch them with the new type on its own
 
 **Answer: B**
-Explanation: ASG 환경에서 인스턴스를 직접 stop/modify하면 ASG가 헬스 체크에서 비정상으로 판단해 종료·재생성하며, 이때 옛 Launch Template의 기존 타입으로 다시 뜬다. 올바른 방법은 Launch Template의 새 버전에 권장 타입을 넣고 Instance Refresh로 MinHealthyPercentage를 지키며 점진적으로 무중단 교체하는 것이다. A는 ASG가 간섭해 실패한다. C는 불필요하게 파괴적이다. D는 기존 Launch Template의 옛 타입으로 다시 띄워져 교체가 안 된다. 함정: "ASG 인스턴스 직접 modify"는 오답이며 Launch Template + Instance Refresh가 정답이다.
+Explanation: If you directly stop/modify an instance in an ASG environment, the ASG judges it unhealthy in the health check and terminates and recreates it, and it comes back up with the original type from the old Launch Template. The correct method is to put the recommended type in a new version of the Launch Template and gradually replace instances without downtime using Instance Refresh while honoring MinHealthyPercentage. A fails because the ASG interferes. C is unnecessarily destructive. D brings instances back up with the old type from the existing Launch Template, so the replacement does not happen. Trap: "directly modifying ASG instances" is the wrong answer; Launch Template + Instance Refresh is correct.
 
 ---
 
-**Question 4.** 보안·성능·내결함성·비용·서비스 한도를 아우르는 넓은 점검을 룰 기반으로 빠르게 받고 싶다. 어떤 도구인가?
+**Question 4.** You want to quickly get a broad rule-based check covering security, performance, fault tolerance, cost, and service limits. Which tool should you use?
 
 A) Compute Optimizer
 
-B) Trusted Advisor (Business 이상 Support)
+B) Trusted Advisor (Business or higher Support)
 
 C) CUR
 
 D) X-Ray
 
 **Answer: B**
-Explanation: Trusted Advisor는 Cost·Performance·Security·Fault Tolerance·Service Limits 5개 카테고리를 룰 기반으로 넓게 점검하며, 전체 체크는 Business 이상 Support에서 활성화된다. A(Compute Optimizer)는 컴퓨팅·스토리지를 ML로 좁고 깊게 분석하지 정책·내결함성 전반을 보지 않는다. C(CUR)는 청구 데이터이지 점검 도구가 아니다. D(X-Ray)는 분산 추적이다. 함정: "넓고 얕게 5개 카테고리"는 Trusted Advisor, "좁고 깊게 정밀 권고"는 Compute Optimizer. (참고: Azure는 Azure Advisor, GCP는 Recommender가 대응.)
+Explanation: Trusted Advisor performs a broad rule-based check across five categories — Cost, Performance, Security, Fault Tolerance, and Service Limits — and the full set of checks is enabled with Business or higher Support. A (Compute Optimizer) analyzes compute and storage narrowly and deeply using ML and does not look at policy or fault tolerance as a whole. C (CUR) is billing data, not a check tool. D (X-Ray) is distributed tracing. Trap: "broad and shallow across 5 categories" is Trusted Advisor; "narrow and deep precise recommendations" is Compute Optimizer. (Note: the counterparts are Azure Advisor in Azure and Recommender in GCP.)
 
 ---
 
-**Question 5.** 50개 멤버 계정으로 구성된 Organization에서 모든 계정의 rightsizing 권고를 한 화면에서 통합해 보려 한다. 가장 적합한 방법은?
+**Question 5.** In an Organization made up of 50 member accounts, you want to view the rightsizing recommendations of all accounts consolidated on a single screen. What is the most appropriate method?
 
-A) 각 계정 콘솔을 순회하며 확인
+A) Go through each account's console and check
 
-B) Compute Optimizer를 위임 관리자로 지정하고 Org 차원에서 활성화(opt-in)
+B) Designate Compute Optimizer's delegated administrator and enable it at the Org level (opt-in)
 
-C) Config Aggregator로 권고 수집
+C) Collect recommendations with a Config Aggregator
 
-D) Cost Explorer에서 계정별 필터
+D) Filter by account in Cost Explorer
 
 **Answer: B**
-Explanation: Compute Optimizer를 위임 관리자로 지정하면 Org 전체 멤버 계정의 권고를 중앙에서 집계해 보고 일괄 export·분석할 수 있다. A는 규모에서 비현실적이다. C(Config Aggregator)는 리소스 구성 규정 준수를 모으는 것이지 rightsizing 권고가 아니다. D(Cost Explorer)는 비용 가시화이지 정밀 rightsizing 권고 통합이 아니다. 함정: "여러 계정 rightsizing 권고 통합"은 CO 위임 관리자이며, compliance 통합(Config Aggregator)·비용 통합(Cost Explorer)과 구분해야 한다.
+Explanation: If you designate a delegated administrator for Compute Optimizer, you can view the recommendations of all member accounts in the Org aggregated centrally and export and analyze them in bulk. A is impractical at scale. C (Config Aggregator) collects resource configuration compliance, not rightsizing recommendations. D (Cost Explorer) visualizes cost and is not an integration of precise rightsizing recommendations. Trap: "consolidating rightsizing recommendations across multiple accounts" is the CO delegated administrator, and it must be distinguished from compliance consolidation (Config Aggregator) and cost consolidation (Cost Explorer).
 
 ---
 
-**Question 6.** EBS 볼륨을 gp2에서 gp3로 전환하라는 Compute Optimizer 권고를 받았다. 이 전환의 특징으로 옳은 것은?
+**Question 6.** You received a Compute Optimizer recommendation to convert an EBS volume from gp2 to gp3. Which statement about this conversion is correct?
 
-A) 볼륨을 분리·재생성해야 하므로 긴 다운타임이 필요하다
+A) The volume must be detached and recreated, so a long downtime is required
 
-B) ModifyVolume으로 무중단 전환이 가능하며 보통 비용·성능이 개선된다
+B) It can be converted without downtime with ModifyVolume, and cost and performance usually improve
 
-C) 인스턴스를 stop해야만 변경된다
+C) The change takes effect only if you stop the instance
 
-D) 데이터가 손실되므로 스냅샷에서 복원해야 한다
+D) Data is lost, so you must restore from a snapshot
 
 **Answer: B**
-Explanation: gp2→gp3 전환은 ModifyVolume API로 볼륨을 떼지 않고 무중단(online)으로 수행되며, gp3는 동일 성능 기준 보통 약 20% 더 저렴하고 IOPS·Throughput을 용량과 독립적으로 설정할 수 있다(gp2는 용량에 IOPS가 연동). A·C는 EC2 타입 변경(stop→modify→start)과 혼동한 것으로, EBS 타입 변경은 인스턴스 중단이 불필요하다. D는 틀림(데이터 보존). 함정: EC2 타입 변경은 중단을 동반하지만 EBS gp2→gp3는 무중단이다.
+Explanation: The gp2→gp3 conversion is performed online without downtime through the ModifyVolume API without detaching the volume, and gp3 is usually about 20% cheaper at the same performance level and lets you set IOPS and Throughput independently of capacity (with gp2, IOPS is tied to capacity). A and C confuse this with an EC2 type change (stop → modify → start); changing an EBS type does not require stopping the instance. D is wrong (data is preserved). Trap: an EC2 type change involves a stop, but EBS gp2→gp3 is non-disruptive.
 
 ---
 
-**Question 7.** 한 워크로드를 더 긴 lookback과 메모리·디스크 I/O를 반영한 정밀 권고로 분석하고 싶다. 계절성(월말 spike)이 있어 14일로는 부족하다. 어떻게 해야 하나?
+**Question 7.** You want to analyze a workload with a longer lookback and precise recommendations that reflect memory and disk I/O. There is seasonality (month-end spikes), so 14 days is not enough. What should you do?
 
-A) Trusted Advisor로 전환한다
+A) Switch to Trusted Advisor
 
-B) Compute Optimizer의 enhanced infrastructure metrics를 활성화해 lookback을 최대 93일로 늘린다
+B) Enable Compute Optimizer's enhanced infrastructure metrics to extend the lookback to up to 93 days
 
-C) Cost Explorer Forecast를 본다
+C) Look at the Cost Explorer Forecast
 
-D) 인스턴스를 더 크게 키운다
+D) Increase the instance size
 
 **Answer: B**
-Explanation: Compute Optimizer의 enhanced infrastructure metrics를 켜면 추가 메트릭(메모리·디스크 I/O 등)을 반영하고 lookback을 기본 14일에서 최대 93일(3개월)로 확장해 월말 spike 같은 계절성을 반영한 정밀 권고를 얻는다. 활성 리소스 시간당 과금되는 유료 옵션이다. A는 룰 기반이라 계절성 패턴을 못 본다. C는 비용 예측이지 rightsizing 권고가 아니다. D는 문제 해결이 아니다. 함정: "더 긴 기간·계절성 반영 정밀 권고"는 enhanced infrastructure metrics가 단서다.
+Explanation: Turning on Compute Optimizer's enhanced infrastructure metrics incorporates additional metrics (memory, disk I/O, and so on) and extends the lookback from the default 14 days to up to 93 days (3 months), producing precise recommendations that reflect seasonality such as month-end spikes. It is a paid option billed per hour for each active resource. A is rule-based and cannot see seasonal patterns. C is a cost forecast, not a rightsizing recommendation. D does not solve the problem. Trap: "a longer period and precise recommendations that reflect seasonality" points to enhanced infrastructure metrics.

@@ -266,126 +266,126 @@ jobs:
 
 ## 📝 Practice Questions
 
-**Question 1.** GitHub Actions에서 AWS에 배포할 때 가장 안전한 자격 증명 관리 방법은?
+**Question 1.** What is the most secure way to manage credentials when deploying to AWS from GitHub Actions?
 
-A) 전용 IAM User의 장기 액세스 키를 GitHub Secrets에 저장하고 주기적으로 회전
-B) OIDC 페더레이션으로 IAM Role의 단기 자격 증명 사용
-C) EC2 Instance Profile 자격 증명을 추출해 GitHub Secrets에 공유하고 워크플로가 사용
-D) GitHub Personal Access Token으로 AWS API Gateway를 거쳐 리소스에 접근
+A) Store the long-term access keys of a dedicated IAM user in GitHub Secrets and rotate them periodically
+B) Use short-term credentials from an IAM role through OIDC federation
+C) Extract EC2 instance profile credentials, share them in GitHub Secrets, and have the workflow use them
+D) Use a GitHub personal access token to reach resources through Amazon API Gateway
 
 **Answer: B**
-Explanation: 정적 키 자체가 없는 OIDC가 표준. A는 키 노출 시 영향 광범위. C/D는 기술적 의미 부정확.
+Explanation: OIDC is the standard because there are no static keys at all. In A, an exposed key has a wide blast radius. C and D are technically meaningless.
 
 ---
 
-**Question 2.** OIDC Trust Policy에 `sub`을 `repo:my-org/*:ref:refs/heads/main`으로 설정하면 어떤 위험이 있는가?
+**Question 2.** What is the risk of setting `sub` in the OIDC trust policy to `repo:my-org/*:ref:refs/heads/main`?
 
-A) 위험 없음 — `ref:refs/heads/main` 조건이 이미 main 브랜치로 컨텍스트를 충분히 제한하므로 안전
-B) 조직 내 어떤 리포지토리든 main 브랜치라면 권한 가정 가능 — 한 repo 침해 시 prod 권한 도달
-C) main 외 브랜치의 PR 워크플로에서도 이 Role을 assume해 자격 증명을 사용할 수 있게 됨
-D) `refs/tags/*` 패턴이 포함돼 임의 Tag 푸시 워크플로에서도 prod Role을 가정 가능
+A) No risk — the `ref:refs/heads/main` condition already restricts the context sufficiently to the main branch
+B) Any repository in the organization can assume the role as long as it is on the main branch — a compromise of one repo reaches prod permissions
+C) PR workflows from branches other than main can also assume this role and use the credentials
+D) The `refs/tags/*` pattern is included, so workflows triggered by any tag push can assume the prod role
 
 **Answer: B**
-Explanation: 와일드카드 repo는 횡적 침해 경로를 만든다. 항상 specific repo로 명시. 가장 안전한 패턴은 `environment:production` 기반.
+Explanation: A wildcard repo creates a lateral compromise path. Always specify the exact repo. The safest pattern is one based on `environment:production`.
 
 ---
 
-**Question 3.** GitHub Actions 워크플로에서 OIDC 토큰이 발급되지 않는다. 가장 먼저 확인할 것은?
+**Question 3.** An OIDC token is not issued in a GitHub Actions workflow. What should be checked first?
 
-A) `role-to-assume`에 지정한 IAM Role ARN의 이름 오타 또는 계정 ID 불일치
-B) 워크플로 YAML에 `permissions: id-token: write` 명시 여부
-C) `configure-aws-credentials`의 `aws-region` 누락 또는 STS 리전 엔드포인트 설정
-D) GitHub Actions의 월간 무료 분량 소진 또는 동시 실행 사용량 한도 초과
+A) A typo in the name of the IAM role ARN specified in `role-to-assume`, or an account ID mismatch
+B) Whether `permissions: id-token: write` is specified in the workflow YAML
+C) A missing `aws-region` in `configure-aws-credentials`, or the STS regional endpoint setting
+D) Exhaustion of the monthly free minutes of GitHub Actions, or exceeding the concurrent job usage limit
 
 **Answer: B**
-Explanation: `id-token: write` 누락이 압도적 1위 원인. 기본값이 `none`이므로 명시 안 하면 토큰 발급 자체가 안 됨.
+Explanation: A missing `id-token: write` is by far the number one cause. The default is `none`, so if it is not specified, no token is issued at all.
 
 ---
 
-**Question 4.** "프라이빗 RDS에 마이그레이션 스크립트를 실행하는 빌드"가 필요하다. 가장 적절한 구성은?
+**Question 4.** A build that "runs a migration script against a private RDS database" is required. What is the most appropriate configuration?
 
-A) GitHub-hosted Runner가 접근하도록 RDS에 퍼블릭 엔드포인트를 켜고 SG로 runner IP를 허용
-B) Self-hosted Runner를 VPC에 배치 또는 CodeBuild VPC 모드 사용
-C) VPC 안의 Lambda에 마이그레이션 로직을 옮겨 워크플로가 그 함수를 호출해 실행
-D) Bastion EC2에 워크플로가 SSH로 접속해 마이그레이션 스크립트를 원격 실행
+A) Enable a public endpoint on RDS and allow the runner IP in the security group so that a GitHub-hosted runner can reach it
+B) Place a self-hosted runner in the VPC, or use CodeBuild VPC mode
+C) Move the migration logic into a Lambda function in the VPC and have the workflow invoke that function
+D) Have the workflow connect over SSH to a bastion EC2 instance and run the migration script remotely
 
 **Answer: B**
-Explanation: 프라이빗 리소스 접근 = VPC 내부 실행 환경. A는 보안 안티패턴(RDS public 노출). D는 자동화 부재.
+Explanation: Accessing private resources = an execution environment inside the VPC. A is a security anti-pattern (exposing RDS publicly). D lacks automation.
 
 ---
 
-**Question 5.** GitHub Environments의 Required Reviewers 기능은 어떤 단계의 보호인가?
+**Question 5.** At which stage does the Required Reviewers feature of GitHub Environments provide protection?
 
-A) 코드 머지 단계 — PR을 main에 머지하기 전 지정 리뷰어의 승인을 요구
-B) 워크플로 실행 단계 (deploy job 시작 전 승인)
-C) AWS IAM 단계 — Role assume 시점에 IAM이 승인자를 확인해 자격 발급을 보류
-D) CloudFormation Stack 생성 단계 — 스택 변경 적용 전 Change Set 승인을 요구
+A) The code merge stage — it requires approval from designated reviewers before a PR is merged into main
+B) The workflow execution stage (approval before the deploy job starts)
+C) The AWS IAM stage — IAM checks the approver at role assumption time and withholds credential issuance
+D) The CloudFormation stack creation stage — it requires change set approval before stack changes are applied
 
 **Answer: B**
-Explanation: GitHub Environments는 deploy job 직전 게이트. PR 머지 보호는 Branch Protection이 담당하는 별도 계층.
+Explanation: GitHub Environments is a gate right before the deploy job. Protection for PR merges is handled by Branch Protection, a separate layer.
 
 ---
 
-**Question 6.** Trust Policy의 `aud` 조건 기본값과 변경 이유는?
+**Question 6.** What is the default value of the `aud` condition in the trust policy, and why would you change it?
 
-A) 기본값은 `sts.amazonaws.com`이며 STS가 강제하는 고정값이라 변경할 이유도 방법도 없음
-B) 기본 `sts.amazonaws.com`. 다중 조직 공유 환경에서 audience 분리로 토큰 도용 방지
-C) 기본값은 `github.com`(IdP 도메인)이며 trust policy에 하드코딩돼 변경 불가
-D) 기본값은 OIDC Provider URL 자체(`token.actions.githubusercontent.com`)로 설정됨
+A) The default is `sts.amazonaws.com`, a fixed value enforced by STS, so there is neither a reason nor a way to change it
+B) The default is `sts.amazonaws.com`. In an environment shared by multiple organizations, separating the audience prevents token misuse
+C) The default is `github.com` (the IdP domain), hardcoded in the trust policy and unchangeable
+D) The default is the OIDC provider URL itself (`token.actions.githubusercontent.com`)
 
 **Answer: B**
-Explanation: `aud`를 조직별로 다르게 두면 다른 조직의 GitHub Actions가 우리 Role을 훔쳐 사용 불가. 다중 IdP 환경에서 필수 강화.
+Explanation: If `aud` is set differently per organization, GitHub Actions from another organization cannot steal and use our role. It is a required hardening in multi-IdP environments.
 
 ---
 
-**Question 7.** Reusable workflow를 통해 100개 repo가 공통 deploy 로직을 사용한다. Trust Policy `sub` 조건을 어떻게 작성해야 하는가?
+**Question 7.** 100 repos use common deploy logic through a reusable workflow. How should the trust policy `sub` condition be written?
 
-A) 100개 repo 각각의 `repo:my-org/<name>:ref:...` 값을 `StringLike`에 OR 배열로 모두 나열
-B) `job_workflow_ref:my-org/shared-workflows/.github/workflows/deploy.yml@refs/heads/main`로 정의 repo + ref 기준
-C) 와일드카드 `repo:my-org/*`로 조직 내 모든 repo가 한 조건에 매칭되게 설정
-D) repo마다 전용 IAM Role 100개를 만들어 각 trust policy에 해당 repo만 허용
+A) List the `repo:my-org/<name>:ref:...` value of each of the 100 repos in `StringLike` as an OR array
+B) Define it with `job_workflow_ref:my-org/shared-workflows/.github/workflows/deploy.yml@refs/heads/main`, based on the defining repo + ref
+C) Use the wildcard `repo:my-org/*` so that all repos in the organization match a single condition
+D) Create 100 dedicated IAM roles, one per repo, and allow only that repo in each trust policy
 
 **Answer: B**
-Explanation: Reusable workflow의 OIDC sub은 호출 repo가 아닌 정의 repo + ref가 기준. `job_workflow_ref` claim을 trust policy에 사용. 한 trust 조건으로 100개 repo 호출 커버.
+Explanation: For a reusable workflow, the OIDC sub is based on the defining repo + ref, not the calling repo. Use the `job_workflow_ref` claim in the trust policy. One trust condition covers calls from all 100 repos.
 
 ---
 
-**Question 8.** Fork된 PR이 base repo의 secrets에 접근하는 시나리오의 위험은?
+**Question 8.** What is the risk in a scenario where a forked PR accesses the base repo secrets?
 
-A) `pull_request` 이벤트는 fork에서 secrets가 비공개로 마스킹되므로 어떤 경우에도 위험 없음
-B) `pull_request_target` 이벤트는 base 컨텍스트로 실행되어 fork PR이 secrets/OIDC 권한 접근 가능 → fork에서 임의 코드 실행 시 prod 권한 탈취 위험
-C) GitHub Actions는 fork에서 온 PR의 워크플로 실행을 무조건 차단하므로 노출 경로가 없음
-D) fork PR은 읽기 전용 토큰만 받으므로 secrets에 닿아도 권한이 없어 위험 없음
+A) With the `pull_request` event, secrets are masked as private from forks, so there is no risk in any case
+B) The `pull_request_target` event runs in the base context, so a fork PR can access secrets/OIDC permissions → if arbitrary code runs from the fork, prod permissions can be stolen
+C) GitHub Actions unconditionally blocks workflow runs for PRs from forks, so there is no exposure path
+D) Fork PRs receive only a read-only token, so even if they reach secrets they have no permissions and there is no risk
 
 **Answer: B**
-Explanation: `pull_request`는 fork 안전, `pull_request_target`은 base 컨텍스트라 secrets 접근 가능. 조직 차원에서 `pull_request_target` 사용 금지가 일반적.
+Explanation: `pull_request` is safe for forks, while `pull_request_target` runs in the base context and can access secrets. Prohibiting `pull_request_target` at the organization level is common.
 
 ---
 
-**Question 9.** OIDC로 발급받은 임시 자격 증명의 기본 유효 시간과 최대치는?
+**Question 9.** What are the default and maximum validity periods of temporary credentials issued through OIDC?
 
-A) 기본 15분, 최대 1시간 — STS 임시 자격의 최소 단위에 맞춰 짧게 고정
-B) 기본 1시간, 최대 12시간(Role MaxSessionDuration 설정)
-C) 기본 12시간, 최대 24시간 — 야간 대규모 빌드를 한 토큰으로 커버하도록 길게
-D) 무제한 — 워크플로가 끝날 때까지 자격 증명이 유지되며 만료되지 않음
+A) Default 15 minutes, maximum 1 hour — fixed short to match the minimum unit of STS temporary credentials
+B) Default 1 hour, maximum 12 hours (set by the role MaxSessionDuration)
+C) Default 12 hours, maximum 24 hours — long enough to cover large overnight builds with a single token
+D) Unlimited — the credentials remain valid until the workflow ends and do not expire
 
 **Answer: B**
-Explanation: AssumeRoleWithWebIdentity 기본 1시간. Role 속성 `MaxSessionDuration`을 늘리면 최대 12시간까지 가능. 빌드가 12시간 이상이면 워크플로 분할 필요.
+Explanation: AssumeRoleWithWebIdentity defaults to 1 hour. Increasing the role `MaxSessionDuration` attribute allows up to 12 hours. If a build takes longer than 12 hours, the workflow must be split.
 
 ---
 
-**Question 10.** OIDC + GitHub Environments + Trust Policy `sub: environment:production` 조합을 만들었다. 누군가 main 브랜치에서 직접 prod deploy job을 실행하려 한다. 어떻게 차단되는가?
+**Question 10.** You built a combination of OIDC + GitHub Environments + trust policy `sub: environment:production`. Someone tries to run the prod deploy job directly from the main branch. How is this blocked?
 
-A) GitHub Environment의 Required Reviewers가 사람 승인 대기 → 미승인 시 job 시작 안 함 → JWT 발급 안 함 → AWS Role assume 시도조차 발생 안 함
-B) AWS IAM이 trust policy의 `sub` 불일치를 감지해 AssumeRoleWithWebIdentity를 자동 거부
-C) GitHub이 보호된 environment를 참조하는 main 브랜치 job을 자동 격리해 실행을 차단
-D) 차단되지 않음 — main은 기본 브랜치라 environment 게이트가 적용되지 않고 그대로 배포됨
+A) The GitHub Environment Required Reviewers wait for human approval → if not approved, the job does not start → no JWT is issued → an AWS role assumption is never even attempted
+B) AWS IAM detects the `sub` mismatch in the trust policy and automatically denies AssumeRoleWithWebIdentity
+C) GitHub automatically isolates jobs on the main branch that reference a protected environment and blocks their execution
+D) It is not blocked — main is the default branch, so the environment gate does not apply and the deployment proceeds as is
 
 **Answer: A**
-Explanation: GitHub Environments의 게이트는 job 시작 전에 적용된다. 승인이 없으면 JWT 자체가 발급되지 않으므로 AWS는 호출조차 받지 않는다. 이게 이중 방어의 핵심 — AWS IAM에 도달하기 전에 GitHub이 막는다.
+Explanation: The GitHub Environments gate is applied before the job starts. Without approval, the JWT itself is never issued, so AWS never even receives the call. This is the key to the dual defense — GitHub blocks it before it reaches AWS IAM.
 
 ---
 
 ## 📌 Today's Summary
 
-OIDC 페더레이션은 단순한 "키 없는 인증"이 아니라 **정적 자격 증명 자체를 시스템에서 제거하는 패러다임 전환**이다. JWT의 `sub` claim에 컨텍스트(repo, ref, environment, reusable workflow ref)가 모두 담겨 있어, Trust Policy 조건만 정확히 쓰면 매우 정밀한 권한 제어가 가능하다. GitHub Environments + Required Reviewers와 결합하면 GitHub 게이트와 AWS IAM 게이트의 이중 방어가 완성된다. 실무 함정은 `permissions: id-token: write` 누락, `sub` 와일드카드, `pull_request_target` 오용 세 가지가 단연 많다. 내일은 이걸 CodeBuild의 빌드 시스템 관점에서 다시 본다.
+OIDC federation is not just "keyless authentication" but **a paradigm shift that removes static credentials from the system entirely**. Because the JWT `sub` claim carries the full context (repo, ref, environment, reusable workflow ref), writing the trust policy conditions precisely enables very fine-grained access control. Combined with GitHub Environments + Required Reviewers, it completes a dual defense of a GitHub gate and an AWS IAM gate. The three most common practical pitfalls by far are a missing `permissions: id-token: write`, a `sub` wildcard, and misuse of `pull_request_target`. Tomorrow we revisit this from the perspective of the CodeBuild build system.

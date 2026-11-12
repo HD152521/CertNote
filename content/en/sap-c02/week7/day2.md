@@ -264,12 +264,12 @@ Tomorrow we examine Fargate's billing structure and cost optimization. Across EC
 
 ## 📝 Practice Questions
 
-**Question 1.** EKS Pod이 S3에 접근해야 한다. 운영팀은 Pod별 최소 권한을 표준으로 유지하면서 클러스터를 30개 이상 운영한다. 같은 IAM Role을 여러 클러스터에서 재사용하기 쉬운 방법은?
+**Question 1.** EKS Pods need to access S3. The operations team operates 30 or more clusters while keeping least privilege per Pod as the standard. Which method makes it easy to reuse the same IAM Role across multiple clusters?
 
-A) EC2 Instance Profile에 S3 권한 부여
+A) Grant S3 permissions to the EC2 Instance Profile
 B) IRSA (IAM Roles for Service Accounts)
 C) EKS Pod Identity
-D) Secrets Manager로 액세스 키 주입
+D) Inject access keys with Secrets Manager
 
 **Answer: C**
 EKS Pods need S3 access. The ops team maintains Pod-per-IAM as standard while operating 30+ clusters. Easiest method to reuse the same IAM Role across clusters?
@@ -278,10 +278,10 @@ Two keywords to decompose: "Pod-per-IAM" satisfies both IRSA and Pod Identity, b
 
 ---
 
-**Question 2.** 가변 트래픽을 처리하는 EKS 클러스터에서 다음 요구를 모두 만족해야 한다. ① 스케일아웃이 1분 안에 완료 ② Pod requests를 보고 인스턴스 타입을 매번 최적 선택 ③ Spot 혼합 자동 처리 ④ 노드 활용률이 낮을 때 자동 통합. 어떤 도구가 적합한가?
+**Question 2.** An EKS cluster handling variable traffic must satisfy all of the following. (1) Scale-out completes within 1 minute. (2) The optimal instance type is chosen each time by looking at Pod requests. (3) Spot mixing is handled automatically. (4) Nodes are consolidated automatically when utilization is low. Which tool is appropriate?
 
 A) Cluster Autoscaler + ASG
-B) Horizontal Pod Autoscaler만
+B) Horizontal Pod Autoscaler only
 C) Karpenter
 D) EKS Managed Node Group + Spot Allocation
 
@@ -292,12 +292,12 @@ Karpenter alone satisfies all four. CA bounds to ASG with fixed instance types, 
 
 ---
 
-**Question 3.** EKS 노드의 CPU·메모리는 충분한데 새 Pod이 더 이상 스케줄링되지 않는다. 노드 자원이 아니라 다른 한계에 걸린 것 같다. 가장 운영 부담 적은 해결책은?
+**Question 3.** EKS nodes have plenty of CPU and memory, but new Pods can no longer be scheduled. It appears to be hitting a limit other than node resources. What is the solution with the least operational burden?
 
-A) 더 큰 인스턴스로 노드 그룹 교체
-B) VPC CNI에 Prefix Delegation 활성화
-C) Calico CNI로 교체
-D) Custom Networking 구성
+A) Replace the node group with larger instances
+B) Enable Prefix Delegation on the VPC CNI
+C) Replace with the Calico CNI
+D) Configure Custom Networking
 
 **Answer: B**
 EKS nodes have ample CPU/memory, but new Pods stop scheduling. Resource isn't the limit. Least ops burden solution?
@@ -306,12 +306,12 @@ Symptom is clear: AWS VPC CNI assigns VPC IPs directly to Pods, limited by each 
 
 ---
 
-**Question 4.** EKS Fargate Profile에서 다음 중 **사용 가능한** 것은?
+**Question 4.** In an EKS Fargate Profile, which of the following is **available**?
 
 A) DaemonSet
-B) HostPath 볼륨
-C) GPU 워크로드
-D) IRSA를 통한 Pod별 IAM Role
+B) HostPath volumes
+C) GPU workloads
+D) Per-Pod IAM Roles through IRSA
 
 **Answer: D**
 Which is **available** in EKS Fargate Profile?
@@ -320,12 +320,12 @@ Fargate Profile lacks node concept (micro-VM based), so A (node-guaranteed Daemo
 
 ---
 
-**Question 5.** EKS 1.22에서 1.24로 업그레이드하려 한다. 가장 정확한 절차는?
+**Question 5.** You want to upgrade from EKS 1.22 to 1.24. What is the most accurate procedure?
 
-A) Control Plane을 1.22 → 1.24로 한 번에 올림
-B) 노드 그룹을 먼저 1.24로 올린 뒤 Control Plane 업그레이드
-C) Control Plane을 1.22 → 1.23 → 1.24로 한 단계씩, 각 단계마다 노드 그룹과 Addon 호환 확인
-D) 새 1.24 클러스터를 만들고 워크로드를 마이그레이션
+A) Upgrade the Control Plane from 1.22 to 1.24 in one step
+B) Upgrade the node groups to 1.24 first, then upgrade the Control Plane
+C) Upgrade the Control Plane one step at a time, 1.22 → 1.23 → 1.24, checking node group and Addon compatibility at each step
+D) Create a new 1.24 cluster and migrate the workloads
 
 **Answer: C**
 Upgrading EKS from 1.22 to 1.24. Most accurate procedure?
@@ -334,11 +334,11 @@ EKS upgrades one minor version at a time only; node groups tolerate Control Plan
 
 ---
 
-**Question 6.** 한 회사가 EKS 클러스터 50개를 운영하는데 각 클러스터를 분기마다 업그레이드하기 어렵다. 컨트롤 플레인뿐 아니라 노드·Addon 운영도 AWS에 맡기는 가장 새로운 옵션은?
+**Question 6.** A company operates 50 EKS clusters and finds it hard to upgrade each cluster every quarter. What is the newest option that leaves not only the control plane but also node and Addon operations to AWS?
 
 A) EKS + Karpenter + IRSA
 B) EKS Auto Mode
-C) ECS Fargate로 전환
+C) Switch to ECS Fargate
 D) EKS Anywhere
 
 **Answer: B**
@@ -348,12 +348,12 @@ A company operates 50 EKS clusters, quarterly upgrades difficult. Wants AWS to h
 
 ---
 
-**Question 7.** EKS Pod이 ECR에서 이미지 Pull은 잘 되는데, 애플리케이션 코드가 DynamoDB 호출 시 AccessDenied. 원인은?
+**Question 7.** An EKS Pod pulls images from ECR fine, but when the application code calls DynamoDB it gets AccessDenied. What is the cause?
 
-A) Node Instance Profile에 ECR 권한이 없음
-B) ServiceAccount에 매핑된 IAM Role에 DynamoDB 권한이 없음
-C) VPC Endpoint 미설정
-D) 보안 그룹에서 443 차단
+A) The Node Instance Profile lacks ECR permissions
+B) The IAM Role mapped to the ServiceAccount lacks DynamoDB permissions
+C) No VPC Endpoint is configured
+D) Port 443 is blocked in the security group
 
 **Answer: B**
 EKS Pod pulls ECR images successfully, but application code calling DynamoDB gets AccessDenied. Root cause?

@@ -189,7 +189,7 @@ Tomorrow we drill into EKS node groups, IRSA, and Karpenter. EKS spreads across 
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 글로벌 핀테크가 AWS·GCP·온프레미스 데이터센터에 동일한 K8s 워크로드를 배포한다. 운영팀은 클러스터 컨트롤 플레인 운영(etcd 백업, 버전 업그레이드)의 부담을 AWS에서만큼은 줄이고 싶다. 이 요구를 가장 잘 만족하는 조합은?
+**Question 1.** A global fintech deploys the same K8s workloads to AWS, GCP, and on-premises data centers. The operations team wants to reduce the burden of operating the cluster control plane (etcd backups, version upgrades), at least on AWS. Which combination best satisfies this requirement?
 
 A) ECS Fargate
 B) EKS + Managed Node Group
@@ -203,12 +203,12 @@ Two keywords to decompose: "K8s standard + multi-cloud portability" → EKS (K8s
 
 ---
 
-**Question 2.** ECS Task가 시작될 때 ECR에서 이미지 Pull은 잘 되는데, 애플리케이션 코드가 S3 GetObject를 호출하면 AccessDenied가 발생한다. 원인은?
+**Question 2.** When an ECS Task starts, pulling the image from ECR works fine, but when the application code calls S3 GetObject, AccessDenied occurs. What is the cause?
 
-A) Task Execution Role에 S3 권한이 없음
-B) Task Role에 S3 권한이 없음
-C) VPC Endpoint 미설정
-D) 보안 그룹에서 443 차단
+A) The Task Execution Role lacks S3 permissions
+B) The Task Role lacks S3 permissions
+C) No VPC Endpoint is configured
+D) Port 443 is blocked in the security group
 
 **Answer: B**
 An ECS Task pulls images from ECR successfully, but application code calling S3 GetObject encounters AccessDenied. Root cause?
@@ -217,7 +217,7 @@ Image pull success means Task Execution Role's ECR/CloudWatch permissions are co
 
 ---
 
-**Question 3.** 한 미디어 스타트업이 코드 한 줄 푸시로 자동 빌드·배포·HTTPS 엔드포인트 부여까지 되는 가장 운영 부담이 적은 옵션을 찾는다. 사이드카·서비스 메시·고급 VPC 통합은 필요 없다. 어느 서비스가 적합한가?
+**Question 3.** A media startup is looking for the option with the least operational burden, where pushing a single line of code automatically builds, deploys, and assigns an HTTPS endpoint. It does not need sidecars, a service mesh, or advanced VPC integration. Which service is appropriate?
 
 A) ECS Fargate + ALB
 B) EKS + ArgoCD
@@ -231,7 +231,7 @@ App Runner is the simplest PaaS—point to GitHub repo or ECR image, and build/d
 
 ---
 
-**Question 4.** 트래픽이 매우 변동성 높고 새벽엔 거의 0인 ECS 백오피스 API. 가용성 일부 보장 + 비용 절감 둘 다 원한다. 어떤 Capacity Provider 구성?
+**Question 4.** An ECS back-office API with highly variable traffic that is nearly 0 at dawn. The company wants both partial availability guarantees and cost savings. Which Capacity Provider configuration should it use?
 
 A) FARGATE 100%
 B) FARGATE_SPOT 100%
@@ -245,7 +245,7 @@ base=2 maintains 2 stable Fargate Tasks (Spot reclamation won't cause outage) + 
 
 ---
 
-**Question 5.** 한 제조사가 100개 공장의 산업용 게이트웨이에서 컨테이너 워크로드를 운영한다. 일부 공장은 며칠씩 인터넷이 끊긴다. 컨트롤 플레인은 공장 내부에서 동작해야 한다. 적합한 서비스는?
+**Question 5.** A manufacturer runs container workloads on industrial gateways at 100 factories. Some factories lose internet for days at a time. The control plane must operate inside the factory. Which service is appropriate?
 
 A) ECS Anywhere
 B) EKS Anywhere
@@ -259,12 +259,12 @@ A manufacturer operates container workloads on 100 factory gateways. Some factor
 
 ---
 
-**Question 6.** 한 회사가 EKS Pod에서 S3에 접근해야 한다. 운영팀은 "Pod별로 최소 권한"을 달성하고 싶다. 가장 안전한 방법은?
+**Question 6.** A company needs EKS Pods to access S3. The operations team wants to achieve "least privilege per Pod." What is the most secure method?
 
-A) 워커 노드 Instance Profile에 S3 권한 부여
-B) Pod 환경 변수로 AWS Access Key Secret 주입
-C) IRSA (IAM Roles for Service Accounts) 또는 EKS Pod Identity
-D) S3 버킷 정책에 노드 IP 허용
+A) Grant S3 permissions to the worker node Instance Profile
+B) Inject an AWS Access Key Secret through Pod environment variables
+C) IRSA (IAM Roles for Service Accounts) or EKS Pod Identity
+D) Allow the node IPs in the S3 bucket policy
 
 **Answer: C**
 An EKS Pod needs S3 access. The ops team wants "minimum permissions per Pod." Safest method?
@@ -273,12 +273,12 @@ A shares permissions across all Pods on the node, violating least privilege (lar
 
 ---
 
-**Question 7.** ECS 컨테이너 안에서 디버깅을 위해 셸에 접속해야 한다. 회사 보안 정책은 SSH 키 사용을 금지하고, 모든 세션을 감사 로깅해야 한다. 가장 적합한 방법은?
+**Question 7.** You need to connect to a shell inside an ECS container for debugging. The company security policy prohibits the use of SSH keys and requires audit logging of all sessions. What is the most appropriate method?
 
-A) 노드에 SSH 키를 배포하고 docker exec
+A) Distribute SSH keys to nodes and use docker exec
 B) Bastion Host + SSM Port Forwarding
 C) ECS Exec (`aws ecs execute-command`)
-D) Cloud9 IDE 연결
+D) Connect with the Cloud9 IDE
 
 **Answer: C**
 Must debug by shelling into an ECS container. Company security forbids SSH keys; all sessions must be audit-logged. Most suitable method?

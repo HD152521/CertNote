@@ -174,7 +174,7 @@ Week 3 is compute (EC2, ASG, ELB). It's the process of putting workloads on top 
 
 ---
 
-## 📝 종합 연습 문제 (시나리오 12문항)
+## 📝 Comprehensive Practice Questions (12 Scenario Questions)
 
 **Question 1.** A fintech needs its ECS tasks in a Private subnet to call an outbound API. To design so that outbound is maintained even during a full-AZ failure?
 

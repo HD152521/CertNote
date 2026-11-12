@@ -110,62 +110,62 @@ Next we synthesize Week 5—custom training, distributed training, debugging·pr
 
 ## 📝 Practice Questions
 
-**Question 1.** 사기 거래가 전체의 1%인 매우 불균형한 데이터셋에서 모델을 평가한다. 모델 성능을 판단하는 지표로 가장 부적절한 것은?
+**Question 1.** You are evaluating a model on a highly imbalanced dataset in which fraudulent transactions are 1% of the total. Which of the following is the LEAST appropriate metric for judging model performance?
 
-A) F1 점수  
-B) 재현율(Recall)  
-C) 단순 정확도(Accuracy)  
+A) F1 score  
+B) Recall  
+C) Plain accuracy  
 D) AUC-PR  
 
 **Answer: C**  
-Explanation: 1% 양성 불균형에서는 "전부 정상" 예측만으로도 99% 정확도가 나와 정확도가 모델 품질을 왜곡한다. F1·재현율·AUC-PR은 희귀 양성을 얼마나 잡는지를 반영해 불균형 평가에 적합하므로, 가장 부적절한 것은 단순 정확도다.
+Explanation: With a 1% positive imbalance, simply predicting "everything is legitimate" yields 99% accuracy, so accuracy distorts model quality. F1, recall, and AUC-PR reflect how well the rare positives are caught and so suit imbalanced evaluation; therefore the least appropriate is plain accuracy.
 
 ---
 
-**Question 2.** 암 검진 모델에서 실제 환자를 놓치는 것(거짓음성)이 가장 위험하다. 우선적으로 높여야 할 지표는?
+**Question 2.** In a cancer screening model, missing actual patients (false negatives) is the most dangerous. Which metric should be raised first?
 
-A) 정밀도(Precision)  
-B) 재현율(Recall)  
-C) 학습 속도  
-D) GPU 활용률  
+A) Precision  
+B) Recall  
+C) Training speed  
+D) GPU utilization  
 
 **Answer: B**  
-Explanation: 재현율은 실제 양성(환자) 중 모델이 잡아낸 비율로, 놓치면 안 되는 상황(거짓음성 최소화)에서 우선시한다. A는 거짓양성을 줄이는 지표로 초점이 다르고, C·D는 평가 지표가 아니라 학습 효율·자원 관련이다.
+Explanation: Recall is the proportion of actual positives (patients) that the model catches, and it is prioritized in situations where misses are unacceptable (minimizing false negatives). A is a metric for reducing false positives and has a different focus, and C and D are related to training efficiency and resources rather than being evaluation metrics.
 
 ---
 
-**Question 3.** 모델의 학습 정확도는 99%인데 검증 정확도는 70%로 둘의 격차가 크다. 진단과 적절한 완화책은?
+**Question 3.** A model has 99% training accuracy but 70% validation accuracy, a large gap between the two. What are the diagnosis and the appropriate mitigation?
 
-A) 과소적합이므로 모델을 더 단순하게 만든다  
-B) 과적합이므로 정규화·드롭아웃·데이터 증강·조기 종료를 적용한다  
-C) 정상이므로 그대로 배포한다  
-D) 학습 데이터를 검증에도 그대로 쓴다  
+A) Underfitting, so make the model simpler  
+B) Overfitting, so apply regularization, dropout, data augmentation, and early stopping  
+C) It is normal, so deploy as is  
+D) Use the training data as-is for validation too  
 
 **Answer: B**  
-Explanation: 학습 성능은 높고 검증 성능이 낮으며 격차가 큰 것은 전형적 과적합으로, 정규화·드롭아웃·증강·조기 종료로 일반화를 높인다. A는 과소적합 처방이라 방향이 반대이고, C는 일반화 실패를 무시하며, D는 데이터 누수를 일으키는 잘못된 평가다.
+Explanation: High training performance, low validation performance, and a large gap is classic overfitting, and generalization is improved with regularization, dropout, augmentation, and early stopping. A is a remedy for underfitting, so its direction is the opposite, C ignores the generalization failure, and D is a flawed evaluation that causes data leakage.
 
 ---
 
-**Question 4.** 회귀 모델에서 드물게 발생하는 큰 예측 오차에 강한 페널티를 주어 큰 오차를 피하도록 평가·최적화하려 한다. 적합한 지표는?
+**Question 4.** In a regression model, you want to evaluate and optimize so as to avoid large errors by strongly penalizing rarely occurring large prediction errors. Which metric is appropriate?
 
 A) MAE  
 B) RMSE  
-C) 정확도  
-D) 재현율  
+C) Accuracy  
+D) Recall  
 
 **Answer: B**  
-Explanation: RMSE는 오차를 제곱하므로 큰 오차에 더 큰 페널티를 부여해 큰 오차를 피하려는 목적에 적합하다. A(MAE)는 오차에 선형이라 큰 오차에 상대적으로 둔감하고, C·D는 분류 지표라 회귀 평가에 맞지 않는다.
+Explanation: RMSE squares the errors, so it imposes a larger penalty on large errors and suits the goal of avoiding them. A (MAE) is linear in the error and therefore relatively insensitive to large errors, and C and D are classification metrics that do not fit regression evaluation.
 
 ---
 
-**Question 5.** 데이터가 적어 단일 train/test 분할의 평가가 분할 운에 따라 크게 흔들린다. 안정적 평가를 위한 방법은?
+**Question 5.** With little data, the evaluation from a single train/test split fluctuates greatly depending on the luck of the split. What is a method for stable evaluation?
 
-A) k-fold 교차검증으로 여러 분할의 성능을 평균  
-B) 테스트 세트를 학습에 포함  
-C) 평가를 생략하고 바로 배포  
-D) 동일 데이터로 학습과 테스트를 같게 한다  
+A) Average the performance over multiple splits with k-fold cross-validation  
+B) Include the test set in training  
+C) Skip evaluation and deploy right away  
+D) Make training and testing use the same data  
 
 **Answer: A**  
-Explanation: k-fold 교차검증은 데이터를 여러 fold로 나눠 번갈아 검증·학습하고 결과를 평균해 평가 분산을 줄이며 적은 데이터를 효율적으로 활용한다. B·D는 데이터 누수로 성능을 부풀리고, C는 평가 자체를 포기하는 잘못된 선택이다.
+Explanation: k-fold cross-validation splits the data into multiple folds, alternately validating and training, and averages the results to reduce evaluation variance and use limited data efficiently. B and D inflate performance through data leakage, and C is a wrong choice that gives up evaluation itself.
 
 ---

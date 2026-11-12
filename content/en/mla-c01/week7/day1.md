@@ -163,31 +163,31 @@ Each execution gets a unique execution ARN, and Studio's Pipelines tab visually 
 
 ## 📝 Practice Questions
 
-**Question 1.** 데이터 과학팀이 전처리 → 학습 → 평가 → (정확도가 기준 이상이면) 모델 등록을 SageMaker 안에서 재현 가능하게 자동화하려 한다. 가장 적합한 서비스는?
+**Question 1.** A data science team wants to automate, reproducibly within SageMaker, preprocessing → training → evaluation → (if accuracy meets the threshold) model registration. What is the most suitable service?
 
-A) AWS Glue 워크플로  
+A) AWS Glue workflows  
 B) SageMaker Pipelines  
 C) Amazon EMR Steps  
 D) SageMaker Ground Truth  
 
 **Answer: B**  
-Explanation: SageMaker 내부에서 ML 단계를 DAG로 묶어 재현 가능하게 오케스트레이션하는 네이티브 서비스가 Pipelines다. A·C는 ETL/빅데이터 처리용이고, D는 데이터 레이블링 서비스로 워크플로 오케스트레이션과 무관하다.
+Explanation: Pipelines is the native service that chains ML steps into a DAG within SageMaker and orchestrates them reproducibly. A and C are for ETL/big data processing, and D is a data labeling service unrelated to workflow orchestration.
 
 ---
 
-**Question 2.** SageMaker 파이프라인에서 학습 인스턴스 수, 학습 데이터 경로, 정확도 임계값을 매번 코드 수정 없이 실행 시점에 다른 값으로 주입하고 싶다. 무엇을 사용해야 하는가?
+**Question 2.** In a SageMaker pipeline, you want to inject different values for the number of training instances, the training data path, and the accuracy threshold at execution time without modifying code each time. What should you use?
 
-A) 환경 변수를 컨테이너에 하드코딩  
+A) Hardcode environment variables in the container  
 B) Pipeline Parameter (ParameterString/Integer/Float)  
-C) 단계마다 별도 파이프라인을 새로 정의  
-D) S3 버킷 정책  
+C) Define a separate new pipeline for each step  
+D) S3 bucket policy  
 
 **Answer: B**  
-Explanation: Pipeline Parameter는 실행 시점에 값을 주입할 수 있는 변수로, `pipeline.start(parameters=...)`로 덮어쓴다. 같은 정의를 여러 환경에 재사용하게 한다. A는 재사용성을 해치고, C는 DRY 원칙 위반이며, D는 권한 제어로 무관하다.
+Explanation: A Pipeline Parameter is a variable whose value can be injected at execution time and is overridden with `pipeline.start(parameters=...)`. It lets the same definition be reused across multiple environments. A harms reusability, C violates the DRY principle, and D is permission control and unrelated.
 
 ---
 
-**Question 3.** 모델 평가 정확도가 0.85 미만이면 모델을 등록하지 않고, 이상이면 Model Registry에 등록되도록 파이프라인을 구성하려 한다. 어떤 단계를 사용하는가?
+**Question 3.** You want to configure a pipeline so that the model is not registered if the model evaluation accuracy is below 0.85, and is registered in Model Registry if it is at or above that. Which step do you use?
 
 A) TrainingStep  
 B) ConditionStep  
@@ -195,30 +195,30 @@ C) TransformStep
 D) ProcessingStep  
 
 **Answer: B**  
-Explanation: ConditionStep은 평가 결과(예: JsonGet으로 읽은 accuracy)를 임계값과 비교해 `if_steps`/`else_steps`로 분기하는 품질 게이트를 만든다. A는 학습, C는 배치 변환, D는 전처리/평가 작업 실행 단계로 분기 기능이 없다.
+Explanation: ConditionStep compares the evaluation result (for example, accuracy read with JsonGet) against a threshold and branches into `if_steps`/`else_steps`, creating a quality gate. A is training, C is batch transform, and D is a preprocessing/evaluation job execution step, none of which has branching capability.
 
 ---
 
-**Question 4.** SageMaker Pipelines에서 전처리 단계의 출력 S3 경로를 학습 단계 입력으로 참조했을 때 일어나는 일은?
+**Question 4.** In SageMaker Pipelines, what happens when the output S3 path of the preprocessing step is referenced as the input of the training step?
 
-A) 두 단계가 무조건 병렬 실행된다  
-B) SageMaker가 데이터 의존성을 추론해 전처리→학습 실행 순서(DAG 엣지)를 자동 생성한다  
-C) 순환 참조 오류가 발생한다  
-D) 수동으로 depends_on을 지정하지 않으면 무시된다  
+A) The two steps are always run in parallel  
+B) SageMaker infers the data dependency and automatically creates the preprocessing → training execution order (a DAG edge)  
+C) A circular reference error occurs  
+D) It is ignored unless depends_on is specified manually  
 
 **Answer: B**  
-Explanation: 한 단계의 `properties` 출력을 다음 단계 입력으로 참조하면 SageMaker가 의존성을 추론해 실행 순서를 자동으로 결정한다. A는 의존성이 있으면 순차 실행되고, C는 DAG라 순환이 허용되지 않을 뿐 정상 참조는 오류가 아니며, D는 출력 참조만으로 의존성이 자동 생성되므로 틀리다.
+Explanation: When the `properties` output of one step is referenced as the input of the next step, SageMaker infers the dependency and determines the execution order automatically. A is wrong because steps with a dependency run sequentially, C is wrong because a DAG only disallows cycles and a normal reference is not an error, and D is wrong because the dependency is created automatically from the output reference alone.
 
 ---
 
-**Question 5.** SageMaker Pipelines의 장점으로 보기 어려운 것은?
+**Question 5.** Which of the following is NOT considered an advantage of SageMaker Pipelines?
 
-A) 워크플로 정의가 코드로 남아 재현성을 보장한다  
-B) 데이터·코드·파라미터와 산출 모델 간 계보(lineage)가 자동 추적된다  
-C) SageMaker Studio에서 DAG와 실행 상태를 시각적으로 본다  
-D) 온프레미스 Spark 클러스터를 직접 스케줄링한다  
+A) The workflow definition remains as code, ensuring reproducibility  
+B) Lineage between data, code, parameters and the resulting model is tracked automatically  
+C) You can visually view the DAG and execution status in SageMaker Studio  
+D) It directly schedules an on-premises Spark cluster  
 
 **Answer: D**  
-Explanation: SageMaker Pipelines는 AWS/SageMaker 워크로드를 오케스트레이션하는 서비스로, 온프레미스 Spark 클러스터를 직접 스케줄링하지 않는다(그런 하이브리드 오케스트레이션은 MWAA/Airflow 영역). A·B·C는 모두 Pipelines의 실제 핵심 이점이다.
+Explanation: SageMaker Pipelines is a service that orchestrates AWS/SageMaker workloads and does not directly schedule on-premises Spark clusters (that kind of hybrid orchestration is the domain of MWAA/Airflow). A, B, and C are all actual core benefits of Pipelines.
 
 ---

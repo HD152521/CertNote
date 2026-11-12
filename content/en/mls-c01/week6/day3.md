@@ -101,7 +101,7 @@ Today we organized builtins for special data shapes. Text (BlazingText), image (
 
 ## 📝 Practice Questions
 
-**Question 1.** 1,000개 매장의 일별 판매 데이터가 있고, 최근 오픈해 데이터가 짧은 신규 매장의 향후 4주 수요를 P10/P50/P90 구간으로 예측하려 한다. 가장 적합한 빌트인은?
+**Question 1.** You have daily sales data for 1,000 stores and want to forecast the next 4 weeks of demand, as P10/P50/P90 intervals, for a newly opened store with a short data history. Which built-in algorithm is MOST suitable?
 
 A) DeepAR  
 B) XGBoost  
@@ -109,54 +109,54 @@ C) BlazingText
 D) K-Means  
 
 **Answer: A**  
-Explanation: DeepAR는 다수의 관련 시계열을 함께 학습해 신규·짧은 시계열도 다른 매장 패턴으로 예측하며, 분위수(P10/P50/P90) 확률 예측을 제공한다. XGBoost(B)는 시계열 구조를 자연히 다루지 못하고, BlazingText(C)는 텍스트, K-Means(D)는 군집용이다.
+Explanation: DeepAR trains on many related time series together, so it can forecast new and short time series using patterns from other stores, and it provides quantile (P10/P50/P90) probabilistic forecasts. XGBoost (B) does not naturally handle time series structure, BlazingText (C) is for text, and K-Means (D) is for clustering.
 
 ---
 
-**Question 2.** 고객 리뷰 문서를 "긍정/부정/중립"으로 분류하는 모델을 대규모 코퍼스로 매우 빠르게 학습하려 한다. 가장 적합한 빌트인과 모드는?
+**Question 2.** You want to train a model that classifies customer review documents as "positive/negative/neutral" on a large corpus very quickly. Which built-in algorithm and mode are MOST suitable?
 
 A) Image Classification  
 B) Factorization Machines  
-C) BlazingText, supervised(text classification) 모드  
+C) BlazingText, supervised (text classification) mode  
 D) PCA  
 
 **Answer: C**  
-Explanation: 레이블이 있는 문서를 카테고리로 분류하는 과제는 BlazingText의 supervised 모드(fastText 기반)가 적합하며 GPU로 매우 빠르다. 이미지(A), 희소 추천(B), 차원축소(D)는 텍스트 분류 과제와 맞지 않는다.
+Explanation: For the task of classifying labeled documents into categories, BlazingText's supervised mode (fastText-based) is suitable and is very fast on GPU. Images (A), sparse recommendation (B), and dimensionality reduction (D) do not fit a text classification task.
 
 ---
 
-**Question 3.** 약 2,000장의 작은 이미지 데이터셋으로 제품 결함 유무를 분류하려 한다. 데이터가 적어 성능이 걱정된다. 가장 권장되는 접근은?
+**Question 3.** You want to classify product defects using a small image dataset of about 2,000 images. With so little data, you are worried about performance. Which approach is MOST recommended?
 
-A) 처음부터(use_pretrained_model=0) 깊은 CNN 학습  
-B) 전이 학습(use_pretrained_model=1)과 데이터 증강 사용  
-C) Linear Learner로 픽셀을 그대로 입력  
-D) DeepAR로 이미지 시퀀스 예측  
+A) Train a deep CNN from scratch (use_pretrained_model=0)  
+B) Use transfer learning (use_pretrained_model=1) and data augmentation  
+C) Feed pixels directly into Linear Learner  
+D) Predict image sequences with DeepAR  
 
 **Answer: B**  
-Explanation: 데이터가 적을 때는 ImageNet 사전학습 가중치에서 시작하는 전이 학습과 증강이 정석이다. 처음부터 학습(A)은 적은 데이터에서 과적합되기 쉽고, 픽셀을 선형 모델에 직접(C)·DeepAR(D)는 이미지 분류에 부적합하다.
+Explanation: When data is scarce, transfer learning that starts from ImageNet pretrained weights plus augmentation is the standard approach. Training from scratch (A) easily overfits on little data, and feeding pixels directly to a linear model (C) or using DeepAR (D) is unsuitable for image classification.
 
 ---
 
-**Question 4.** 사용자 ID·아이템 ID·맥락 피처를 One-Hot으로 인코딩해 매우 희소하고 고차원인 클릭률 예측 데이터를 만들었다. 상호작용을 효율적으로 학습할 빌트인과 권장 입력 포맷은?
+**Question 4.** You one-hot encoded user ID, item ID, and context features to create very sparse, high-dimensional click-through-rate prediction data. Which built-in algorithm efficiently learns the interactions, and what is the recommended input format?
 
 A) Factorization Machines, RecordIO-protobuf  
 B) XGBoost, CSV  
 C) K-Means, RecordIO-protobuf  
-D) BlazingText, 텍스트 파일  
+D) BlazingText, text file  
 
 **Answer: A**  
-Explanation: Factorization Machines는 초고차원·희소 데이터의 2차 상호작용을 효율적으로 모델링하며, 희소 데이터에 최적화된 RecordIO-protobuf(float32) 입력을 권장한다. XGBoost+CSV(B)는 초고차원 희소 데이터에 비효율적이고, K-Means(C)·BlazingText(D)는 추천 과제용이 아니다.
+Explanation: Factorization Machines efficiently model second-order interactions in ultra-high-dimensional sparse data, and RecordIO-protobuf (float32) input, optimized for sparse data, is recommended. XGBoost with CSV (B) is inefficient for ultra-high-dimensional sparse data, and K-Means (C) and BlazingText (D) are not for recommendation tasks.
 
 ---
 
-**Question 5.** BlazingText의 Word2Vec 모드를 사용하는 가장 적절한 상황은?
+**Question 5.** In which situation is it MOST appropriate to use BlazingText's Word2Vec mode?
 
-A) 문서를 사전 정의된 카테고리로 분류할 때  
-B) 시계열 미래 값을 예측할 때  
-C) 이미지에서 객체를 탐지할 때  
-D) 단어들을 벡터로 임베딩해 의미적으로 유사한 단어를 찾을 때  
+A) When classifying documents into predefined categories  
+B) When predicting future time series values  
+C) When detecting objects in images  
+D) When embedding words as vectors to find semantically similar words  
 
 **Answer: D**  
-Explanation: Word2Vec 모드는 레이블 없이 단어를 벡터 공간에 임베딩해 유사 단어 탐색이나 다운스트림 피처 생성에 쓴다. 문서 분류(A)는 supervised 모드, 시계열(B)·이미지(C)는 BlazingText의 영역이 아니다.
+Explanation: Word2Vec mode embeds words in a vector space without labels and is used for finding similar words or generating downstream features. Document classification (A) uses supervised mode, and time series (B) and images (C) are outside BlazingText's domain.
 
 ---

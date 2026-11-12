@@ -138,38 +138,38 @@ aws sns subscribe \
 
 ## 📝 Practice Questions
 
-**Question 1.** API Gateway에서 throttling을 설정하는 목적은?
+**Question 1.** What is the purpose of configuring throttling in API Gateway?
 
-A) Lambda 함수 실행 시간 제한  
-B) API 요청 속도 제한으로 DDoS 방어, 비용 제어  
-C) API 응답 캐싱  
-D) CORS 정책 관리  
+A) Limiting Lambda function execution time  
+B) Limiting the API request rate to defend against DDoS and control cost  
+C) Caching API responses  
+D) Managing the CORS policy  
 
 **Answer: B**
-Explanation: Throttling은 계정당 또는 메서드당 요청률을 제한한다. 악의적 요청 방어 및 Lambda 동시 실행 제한으로 비용 폭발 방지.
+Explanation: Throttling limits the request rate per account or per method. It defends against malicious requests and prevents cost explosions by limiting Lambda concurrent executions.
 
 ---
 
-**Question 2.** 다수의 서로 다른 시스템이 동일한 메시지를 처리해야 한다면?
+**Question 2.** What if multiple different systems must process the same message?
 
-A) SQS 큐에 메시지 저장  
-B) SNS 토픽에 발행 후 각 시스템이 구독  
-C) Lambda에서 매번 외부 API 호출  
-D) S3에 메시지 저장  
+A) Store the message in an SQS queue  
+B) Publish to an SNS topic and have each system subscribe  
+C) Call an external API from Lambda each time  
+D) Store the message in S3  
 
 **Answer: B**
-Explanation: SNS pub/sub 패턴이 한 메시지를 여러 구독자가 독립적으로 수신하는 경우에 적합하다. SQS는 하나의 컨슈머만 메시지를 처리한다.
+Explanation: The SNS pub/sub pattern is suited to cases where multiple subscribers independently receive one message. With SQS, only one consumer processes a message.
 
 ---
 
-**Question 3.** Lambda가 비동기 작업을 처리하고 싶을 때?
+**Question 3.** What if Lambda needs to handle asynchronous work?
 
-A) API Gateway에서 동기 호출  
-B) SQS 큐 → EventBridge 패턴  
-C) SQS 큐를 Event Source로 Lambda 매핑, 또는 SNS 토픽 구독  
-D) S3 폴링  
+A) Synchronous invocation from API Gateway  
+B) SQS queue → EventBridge pattern  
+C) Map an SQS queue as the event source for Lambda, or subscribe to an SNS topic  
+D) Polling S3  
 
 **Answer: C**
-Explanation: Lambda Event Source Mapping이 SQS를 폴링하거나 SNS 토픽 구독으로 Lambda를 자동 트리거한다. 비동기 처리의 표준.
+Explanation: A Lambda event source mapping polls SQS, or an SNS topic subscription automatically triggers Lambda. This is the standard for asynchronous processing.
 
 ---

@@ -97,62 +97,62 @@ Visualization's goal is not the picture but **actionable insight**.
 
 ## 📝 Practice Questions
 
-**Question 1.** 코드를 작성하지 않는 비즈니스 사용자가 매출 데이터의 대시보드에서 자동 이상 탐지와 예측을 보고 싶어 한다. 가장 적절한 AWS 서비스는?
+**Question 1.** A business user who does not write code wants to see automatic anomaly detection and forecasting on a sales data dashboard. Which AWS service is the MOST appropriate?
 
-A) SageMaker 노트북의 matplotlib  
+A) matplotlib in a SageMaker notebook  
 B) Amazon QuickSight(ML Insights)  
 C) AWS Glue  
 D) Amazon Comprehend  
 
 **Answer: B**  
-Explanation: QuickSight ML Insights는 코드 없이 대시보드 안에서 이상 탐지·예측·자동 내러티브를 제공하므로 비즈니스 사용자에게 적합하다. matplotlib(A)는 코드 기반 EDA, Glue(C)는 ETL, Comprehend(D)는 NLP 서비스다.
+Explanation: QuickSight ML Insights provides anomaly detection, forecasting, and auto-narratives inside the dashboard without code, so it suits business users. matplotlib (A) is code-based EDA, Glue (C) is ETL, and Comprehend (D) is an NLP service.
 
 ---
 
-**Question 2.** 두 변수의 피어슨 상관계수가 0에 가깝지만 산점도에서는 뚜렷한 U자형 곡선이 보인다. 올바른 해석은?
+**Question 2.** The Pearson correlation coefficient of two variables is close to 0, but the scatter plot clearly shows a U-shaped curve. What is the correct interpretation?
 
-A) 두 변수는 어떤 관계도 없다  
-B) 상관계수가 0이면 항상 독립이다  
-C) 피어슨은 선형 관계만 잡으므로 비선형 관계가 존재할 수 있다  
-D) 데이터에 오류가 있어 분석을 중단해야 한다  
+A) The two variables have no relationship of any kind  
+B) A correlation coefficient of 0 always means independence  
+C) Pearson captures only linear relationships, so a nonlinear relationship may exist  
+D) The data contains errors, so the analysis should be stopped  
 
 **Answer: C**  
-Explanation: 피어슨 상관은 선형 관계만 측정하므로 U자형 같은 비선형 관계는 0에 가깝게 나올 수 있다 — 그래서 산점도 확인이 중요하다. 따라서 관계 없음(A)·독립 단정(B)은 틀리고, 곡선 관계는 오류가 아니므로 중단(D)도 부적절하다.
+Explanation: Pearson correlation measures only linear relationships, so a nonlinear relationship such as a U shape can produce a value near 0 - which is why checking the scatter plot matters. Therefore "no relationship" (A) and asserting independence (B) are wrong, and a curved relationship is not an error, so stopping (D) is inappropriate.
 
 ---
 
-**Question 3.** 단일 수치 변수의 분포 모양(치우침, 봉우리 수)과 이상치를 동시에 직관적으로 보고 싶다. 가장 적절한 조합은?
+**Question 3.** You want to intuitively see both the distribution shape (skew, number of peaks) and the outliers of a single numeric variable. Which combination is MOST appropriate?
 
-A) 막대그래프와 파이차트  
-B) 선 그래프와 누적 막대  
-C) 상관 히트맵  
-D) 히스토그램(KDE)과 박스플롯  
+A) Bar chart and pie chart  
+B) Line chart and stacked bar chart  
+C) Correlation heatmap  
+D) Histogram (KDE) and box plot  
 
 **Answer: D**  
-Explanation: 히스토그램/KDE는 분포 모양을, 박스플롯은 사분위와 이상치를 보여 주어 단일 수치 변수 분석에 최적이다. 막대·파이(A)는 범주 빈도용, 선·누적 막대(B)는 추세·구성용, 상관 히트맵(C)은 변수 간 관계용이다.
+Explanation: A histogram/KDE shows the distribution shape and a box plot shows the quartiles and outliers, making them ideal for analyzing a single numeric variable. Bar and pie charts (A) are for category frequencies, line and stacked bar charts (B) are for trends and composition, and a correlation heatmap (C) is for relationships between variables.
 
 ---
 
-**Question 4.** "통계 요약만 믿지 말고 반드시 시각화하라"는 교훈을 가장 잘 보여 주는 사례는?
+**Question 4.** Which example BEST illustrates the lesson "do not rely only on summary statistics; always visualize"?
 
-A) 중심극한정리  
-B) 앤스컴의 사중주(Anscombe's quartet)  
-C) 베이즈 정리  
-D) 차원의 저주  
+A) Central limit theorem  
+B) Anscombe's quartet  
+C) Bayes' theorem  
+D) Curse of dimensionality  
 
 **Answer: B**  
-Explanation: 앤스컴의 사중주는 평균·분산·상관·회귀선이 거의 같지만 산점도 모양은 전혀 다른 네 데이터셋으로, 시각화의 필요성을 보여 준다. 중심극한정리(A)·베이즈 정리(C)·차원의 저주(D)는 다른 개념이다.
+Explanation: Anscombe's quartet consists of four datasets with nearly identical mean, variance, correlation, and regression line but completely different scatter plot shapes, demonstrating the need for visualization. The central limit theorem (A), Bayes' theorem (C), and the curse of dimensionality (D) are different concepts.
 
 ---
 
-**Question 5.** S3에 저장된 대용량 데이터를 SQL로 질의한 뒤 서버리스로 시각화 대시보드를 만들려 한다. 가장 적절한 조합은?
+**Question 5.** You want to query large data stored in S3 with SQL and then build a serverless visualization dashboard. Which combination is MOST appropriate?
 
-A) Athena로 S3를 질의하고 QuickSight로 시각화  
-B) EC2에 직접 데이터베이스를 설치  
-C) SageMaker 학습 작업으로 시각화  
-D) Lambda로 차트 이미지를 생성  
+A) Query S3 with Athena and visualize with QuickSight  
+B) Install a database directly on EC2  
+C) Visualize with a SageMaker training job  
+D) Generate chart images with Lambda  
 
 **Answer: A**  
-Explanation: Athena는 S3 데이터를 서버리스 SQL로 질의하고, QuickSight가 그 결과를 대시보드로 시각화하는 표준 서버리스 분석 조합이다. EC2 DB(B)는 서버리스가 아니고, SageMaker 학습(C)·Lambda 이미지(D)는 BI 대시보드 용도가 아니다.
+Explanation: Athena queries S3 data with serverless SQL, and QuickSight visualizes the results as a dashboard - the standard serverless analytics combination. An EC2 database (B) is not serverless, and SageMaker training (C) and Lambda images (D) are not meant for BI dashboards.
 
 ---

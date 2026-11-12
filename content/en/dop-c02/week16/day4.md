@@ -108,4 +108,4 @@ Startup: 20 microservices (monorepo), single AWS region (dev budget), need fast 
 
 ## 📌 Today's Summary
 
-다섯 시나리오는 모두 여섯 도메인을 이해하는 것이 아니라 **단서 인식과 트레이드오프 판단**을 테스트한다. 첫째, 제약 단어 표시 ("60계정", "5분", "영비용"). 둘째, 도메인 ID (각 도메인이 문제의 어느 부분을 커버하는가). 셋째, 두 선택지로 좁히기 (작동하는 것 vs 작동하고 제약에 맞는 것). 넷째, Pro의 바이어스 (관리형 > 자가구축). 다섯째, 두 선택지 비교 (하나를 선택). 이 5단계가 2분 내에 75문제를 푸는 열쇠이다.
+All five scenarios test not an understanding of the six domains but **clue recognition and trade-off judgment**. First, mark the constraint words ("60 accounts", "5 minutes", "zero cost"). Second, domain ID (which part of the question does each domain cover?). Third, narrow to two choices (something that works vs something that works and fits the constraints). Fourth, the Professional bias (managed > self-built). Fifth, compare the two choices (pick one). These 5 steps are the key to solving 75 questions in 2 minutes each.

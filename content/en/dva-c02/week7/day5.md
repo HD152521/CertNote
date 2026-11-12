@@ -412,7 +412,7 @@ Explanation: DAX DynamoDB-only (in-memory write-through). ElastiCache like gener
 
 ---
 
-## 정리하며
+## Wrapping Up
 
 Week 7 grasps two essentials: **First, distributed systems' fundamental CAP/PACELC trade-offs map directly to AWS data service choices.** **Second, same problem (availability, scale, latency) has RDS/Aurora/ElastiCache each answering, exams ask "given these constraints, which fits best."**
 

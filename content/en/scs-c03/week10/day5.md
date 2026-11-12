@@ -94,62 +94,62 @@ Track these metrics post-incident to find *bottleneck phases* and invest in auto
 
 ## 📝 Practice Questions
 
-**Question 1.** 프로덕션 EC2에서 GuardDuty가 암호화폐 채굴을 탐지했고 인스턴스 역할로 S3에 접근한 흔적이 있다. 가장 적절한 통합 대응 순서는?
+**Question 1.** GuardDuty detected cryptocurrency mining on a production EC2 instance, and there are traces of S3 access using the instance role. What is the most appropriate integrated response order?
 
-A) 인스턴스를 즉시 종료하고 끝낸다  
-B) 증거 보존(스냅샷·메모리) → 격리 SG 봉쇄 + 역할 세션 폐기 → CloudTrail로 S3 접근 추적 → prod 종료는 승인 게이트 후 → 골든 AMI 재배포  
-C) 보안 그룹만 추가하고 모니터링만 한다  
-D) IAM 사용자를 삭제한다  
+A) Terminate the instance immediately and stop there  
+B) Preserve evidence (snapshot, memory) -> contain with an isolation SG + revoke role sessions -> trace S3 access with CloudTrail -> terminate prod only after an approval gate -> redeploy from a golden AMI  
+C) Only add a security group and just monitor  
+D) Delete the IAM user  
 
 **Answer: B**  
-Explanation: 휘발성 증거를 잃지 않게 실행 상태에서 스냅샷·메모리를 먼저 보존하고, 격리 SG로 봉쇄하며 인스턴스 역할 세션을 aws:TokenIssueTime Deny로 폐기한 뒤, CloudTrail로 역할이 접근한 S3를 추적하고, 비가역인 prod 종료는 승인 게이트 후 골든 AMI로 복구한다. 즉시 종료는 증거를 파괴하고, 모니터링만 하거나 사용자 삭제는 부적절하다.
+Explanation: To avoid losing volatile evidence, first preserve the snapshot and memory while the instance is running, contain with an isolation SG, revoke the instance role sessions with an aws:TokenIssueTime Deny, trace the S3 access made by the role with CloudTrail, and recover from a golden AMI after an approval gate for the irreversible prod termination. Immediate termination destroys evidence, and only monitoring or deleting a user is inappropriate.
 
 ---
 
-**Question 2.** 액세스 키가 공개 저장소에 노출되어 공격자가 새 IAM 사용자와 추가 키를 만든 정황이 있다. 무력화 직후 가장 중요한 후속 단계는?
+**Question 2.** An access key was exposed in a public repository, and there are signs that the attacker created a new IAM user and additional keys. What is the most important follow-up step immediately after neutralization?
 
-A) 봉쇄만 했으면 종료한다  
-B) CloudTrail/Athena로 키 활동을 전수 조사해 공격자가 만든 백도어(새 사용자·키·넓힌 정책)를 식별·근절하고, Detective로 연관 관계를 분석한 뒤 자격증명을 회전한다  
-C) 비용 보고서를 확인한다  
-D) 모든 키를 즉시 삭제하고 추적은 생략한다  
+A) Finish once containment is done  
+B) Exhaustively investigate the key's activity with CloudTrail/Athena to identify and eradicate backdoors the attacker created (new users, keys, widened policies), analyze relationships with Detective, and then rotate the credentials  
+C) Check the cost report  
+D) Delete all keys immediately and skip tracing  
 
 **Answer: B**  
-Explanation: 키 비활성화는 출혈을 멈춘 것일 뿐이고, 공격자가 심은 지속성(백도어)을 추적·근절하지 않으면 재침해된다. CloudTrail/Athena로 키 활동을 전수 조사하고 Detective로 연관을 분석해 백도어를 제거한 뒤 회전하는 것이 필수다. 봉쇄만으로 종료하거나 추적 없이 삭제하는 것은 위험하다.
+Explanation: Deactivating the key only stops the bleeding, and if you do not trace and eradicate the persistence (backdoors) the attacker planted, re-compromise follows. It is essential to exhaustively investigate the key's activity with CloudTrail/Athena, analyze relationships with Detective, remove the backdoors, and then rotate. Ending at containment or deleting without tracing is risky.
 
 ---
 
-**Question 3.** 다음 중 이번 주에 다룬 "함정"으로 자주 지적되는 항목이 아닌 것은?
+**Question 3.** Which of the following is NOT an item frequently pointed out as a "pitfall" covered this week?
 
-A) 침해 인스턴스를 즉시 terminate해 휘발성 증거를 파괴  
-B) 인스턴스만 격리하고 유출된 STS 토큰은 폐기하지 않아 외부에서 만료까지 유효  
-C) 증거 스냅샷을 별도 포렌식 계정으로 공유하고 Object Lock으로 무결성을 보장  
-D) 근절 없이 복구해 백도어로 재침해  
+A) Terminating the compromised instance immediately, destroying volatile evidence  
+B) Isolating only the instance without revoking the leaked STS token, so it remains valid externally until expiry  
+C) Sharing the evidence snapshot to a separate forensic account and guaranteeing integrity with Object Lock  
+D) Recovering without eradication, leading to re-compromise through a backdoor  
 
 **Answer: C**  
-Explanation: 증거 스냅샷을 별도 계정 공유·Object Lock으로 보호하는 것은 함정이 아니라 chain of custody의 모범이다. 나머지는 모두 실제 빈출 함정이다: 즉시 종료로 증거 파괴, STS 토큰 미폐기로 외부 유효, 근절 누락 후 복구로 재침해. 함정이 아닌 것을 고르는 문제이므로 정답은 증거 무결성 보장이다.
+Explanation: Protecting the evidence snapshot with sharing to a separate account and Object Lock is not a pitfall but the chain of custody best practice. All the others are real, frequently tested pitfalls: destroying evidence by immediate termination, leaving the STS token unrevoked so it stays valid externally, and re-compromise from recovering without eradication. Since the question asks for what is not a pitfall, the answer is guaranteeing evidence integrity.
 
 ---
 
-**Question 4.** EventBridge+SSM Automation으로 봉쇄를 자동화하되 프로덕션 자원의 비가역 조치는 사람이 통제하려 한다. 가장 적절한 설계 원칙은?
+**Question 4.** We want to automate containment with EventBridge + SSM Automation while keeping irreversible actions on production resources under human control. What is the most appropriate design principle?
 
-A) 모든 조치를 완전 자동화한다  
-B) graduated automation — 가역·저영향(격리·키 비활성화)은 자동 즉시 실행하고, 비가역·고영향(prod 종료)은 aws:approve 승인 게이트를 두며, 자동화가 한 일을 SNS로 사람이 항상 볼 수 있게 한다  
-C) 모든 조치를 사람이 콘솔에서 수동 실행한다  
-D) 자동화 결과를 사람에게 알리지 않는다  
+A) Fully automate every action  
+B) Graduated automation — run reversible, low-impact actions (isolation, key deactivation) automatically and immediately, put an aws:approve approval gate on irreversible, high-impact actions (prod termination), and always let people see what the automation did via SNS  
+C) Have people run every action manually in the console  
+D) Do not notify people of automation results  
 
 **Answer: B**  
-Explanation: graduated automation은 가역·저영향 조치를 자동 즉시 실행해 MTTR을 줄이고, 비가역·고영향 조치엔 aws:approve로 사람의 승인을 남기며, SNS 알림으로 상황 인식을 유지해 자동화의 역설(사람이 개입 능력을 잃음)을 방지한다. 전면 자동화는 false positive 위험, 전면 수동은 지연, 무통보는 상황 인식 상실을 낳는다.
+Explanation: Graduated automation runs reversible, low-impact actions automatically and immediately to reduce MTTR, keeps human approval for irreversible, high-impact actions with aws:approve, and maintains situational awareness with SNS notifications to prevent the automation paradox (people losing the ability to intervene). Full automation carries false positive risk, fully manual response causes delay, and no notification causes loss of situational awareness.
 
 ---
 
-**Question 5.** 사후(Post-Incident) 단계에서 IR 프로그램을 측정·개선하는 핵심으로 가장 적절한 것은?
+**Question 5.** What is most appropriate as the core of measuring and improving the IR program in the Post-Incident phase?
 
-A) 인스턴스 비용만 줄인다  
-B) MTTD·MTTR·dwell time을 추적해 병목 단계를 찾고, CloudTrail/Detective로 타임라인·근본 원인을 분석해 교훈을 준비 단계(런북·통제)로 환류하며, 침해 통지 등 규제 의무를 이행한다  
-C) 로그를 삭제해 저장 비용을 아낀다  
-D) 사고를 잊고 다음 작업으로 넘어간다  
+A) Only reduce instance costs  
+B) Track MTTD, MTTR, and dwell time to find the bottleneck stages, analyze the timeline and root cause with CloudTrail/Detective, feed lessons back into the Preparation phase (runbooks and controls), and fulfill regulatory obligations such as breach notification  
+C) Delete logs to save storage costs  
+D) Forget the incident and move on to the next task  
 
 **Answer: B**  
-Explanation: 사후 단계는 MTTD/MTTR/dwell time으로 어느 단계가 병목인지 찾아 자동화·통제를 투자하고, CloudTrail·Detective로 타임라인·근본 원인을 분석해 교훈을 준비 단계로 환류하며 규제 보고 의무를 이행하는, NIST 생명주기의 순환을 완성하는 단계다. 비용 절감만 보거나 증거 로그 삭제·사고 망각은 개선과 법적 요구에 어긋난다.
+Explanation: The post-incident phase uses MTTD/MTTR/dwell time to find which stage is the bottleneck and invest in automation and controls, analyzes the timeline and root cause with CloudTrail and Detective, feeds lessons back into the Preparation phase, and fulfills regulatory reporting obligations, completing the NIST lifecycle loop. Looking only at cost savings, deleting evidence logs, or forgetting the incident runs counter to improvement and legal requirements.
 
 ---

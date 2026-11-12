@@ -106,62 +106,62 @@ X_embedded = tsne.fit_transform(X_scaled)   # 2D coordinates for visualization
 
 ## 📝 Practice Questions
 
-**Question 1.** 784차원 이미지 데이터를 SageMaker로 차원 축소해 후속 분류 모델의 입력으로 쓰려 한다. 특성 수가 많아 확장성이 중요하다. 가장 적절한 선택은?
+**Question 1.** You want to reduce the dimensionality of 784-dimensional image data with SageMaker and use it as input to a downstream classification model. The number of features is large, so scalability is important. What is the MOST appropriate choice?
 
-A) t-SNE로 2차원 임베딩을 만들어 분류기에 입력  
-B) SageMaker 내장 PCA를 `algorithm_mode=randomized`로 사용  
-C) SageMaker 내장 PCA를 `algorithm_mode=regular`로 사용하되 표준화 생략  
-D) 차원 축소 없이 KNN을 그대로 적용  
+A) Create a 2-dimensional embedding with t-SNE and feed it to the classifier  
+B) Use SageMaker built-in PCA with `algorithm_mode=randomized`  
+C) Use SageMaker built-in PCA with `algorithm_mode=regular` but skip standardization  
+D) Apply KNN as is without dimensionality reduction  
 
 **Answer: B**  
-Explanation: 특성 수가 많고 확장성이 중요하면 근사 SVD 기반의 `randomized` 모드가 적합하다. t-SNE(A)는 시각화 전용이라 모델 입력·새 데이터 변환에 부적합하고, 표준화 생략(C)은 분산 기반 PCA를 왜곡하며, 고차원에서 KNN(D)은 차원의 저주로 무너진다.
+Explanation: When the number of features is large and scalability is important, the approximate-SVD-based `randomized` mode is appropriate. t-SNE (A) is for visualization only and is unsuitable for model input or transforming new data, skipping standardization (C) distorts the variance-based PCA, and KNN (D) collapses in high dimensions because of the curse of dimensionality.
 
 ---
 
-**Question 2.** PCA를 적용하기 전에 반드시 해야 하는 전처리는?
+**Question 2.** What preprocessing must be done before applying PCA?
 
-A) 타깃 변수 인코딩  
-B) SMOTE 오버샘플링  
-C) 특성 표준화(스케일링)  
-D) 다항 특성 생성  
+A) Target variable encoding  
+B) SMOTE oversampling  
+C) Feature standardization (scaling)  
+D) Polynomial feature generation  
 
 **Answer: C**  
-Explanation: PCA는 분산이 큰 방향을 주성분으로 잡으므로, 스케일이 큰 변수가 결과를 지배하지 않도록 표준화가 필수다. 타깃 인코딩(A)은 비지도 변환인 PCA와 무관하고, SMOTE(B)는 불균형 처리, 다항 특성(D)은 차원을 오히려 늘린다.
+Explanation: PCA picks the directions of largest variance as principal components, so standardization is essential to keep variables with large scales from dominating the result. Target encoding (A) is unrelated to PCA, an unsupervised transformation, SMOTE (B) handles imbalance, and polynomial features (D) actually increase dimensionality.
 
 ---
 
-**Question 3.** t-SNE에 대한 설명으로 옳지 않은 것은?
+**Question 3.** Which statement about t-SNE is NOT correct?
 
-A) 비선형 기법으로 국소 이웃 구조를 보존한다  
-B) 주로 2~3차원 시각화에 사용된다  
-C) 결과는 무작위 초기화와 seed에 의존한다  
-D) 학습된 매핑으로 새 데이터를 동일 공간에 변환할 수 있다  
+A) It is a nonlinear technique that preserves local neighborhood structure  
+B) It is mainly used for 2- to 3-dimensional visualization  
+C) The results depend on random initialization and the seed  
+D) New data can be transformed into the same space using a learned mapping  
 
 **Answer: D**  
-Explanation: t-SNE는 변환 함수를 학습하지 않으므로 새 데이터를 같은 공간에 사영할 수 없고 매번 재학습해야 한다 — 이 점이 PCA와의 핵심 차이다. 비선형·국소 구조 보존(A), 시각화 용도(B), seed 의존성(C)은 모두 옳다.
+Explanation: t-SNE does not learn a transformation function, so new data cannot be projected into the same space and it must be rerun each time — this is the key difference from PCA. Being nonlinear and preserving local structure (A), being used for visualization (B), and depending on the seed (C) are all correct.
 
 ---
 
-**Question 4.** PCA에서 적절한 주성분 개수 k를 선택하는 방법으로 가장 적절한 것은?
+**Question 4.** What is the most appropriate way to choose an appropriate number of principal components k in PCA?
 
-A) 누적 설명 분산 곡선의 팔꿈치 또는 목표 분산 비율로 정한다  
-B) 항상 원본 차원의 절반으로 고정한다  
-C) 가장 큰 고유값 하나만 남긴다  
-D) 무작위로 선택한다  
+A) Decide using the elbow of the cumulative explained variance curve or a target variance ratio  
+B) Always fix it at half of the original dimensions  
+C) Keep only the single largest eigenvalue  
+D) Choose randomly  
 
 **Answer: A**  
-Explanation: 스크리 플롯의 팔꿈치나 "누적 설명 분산 95%" 같은 목표 비율로 k를 정하는 것이 표준이다. 절반 고정(B)이나 고유값 하나만 남기기(C), 무작위 선택(D)은 데이터의 분산 구조를 반영하지 못한다.
+Explanation: The standard approach is to decide k using the elbow of the scree plot or a target ratio such as "95% cumulative explained variance." Fixing at half (B), keeping only one eigenvalue (C), and random selection (D) do not reflect the variance structure of the data.
 
 ---
 
-**Question 5.** 차원의 저주가 가장 직접적으로 악화시키는 알고리즘 유형은?
+**Question 5.** Which type of algorithm does the curse of dimensionality worsen MOST directly?
 
-A) 의사결정 트리의 분할 기준  
-B) 나이브 베이즈의 조건부 독립 가정  
-C) 유클리드 거리 기반 KNN·K-means  
-D) 선형 회귀의 절편 계산  
+A) Split criteria of decision trees  
+B) The conditional independence assumption of Naive Bayes  
+C) Euclidean-distance-based KNN and K-means  
+D) Intercept calculation in linear regression  
 
 **Answer: C**  
-Explanation: 차원의 저주는 고차원에서 점들 사이 거리가 동질화되어 변별력을 잃게 하므로, 거리에 의존하는 KNN·K-means가 가장 직접적으로 타격을 받는다. 트리 분할(A)·나이브 베이즈(B)·선형 회귀 절편(D)은 거리 기반이 아니어서 영향이 상대적으로 작다.
+Explanation: The curse of dimensionality homogenizes the distances between points in high dimensions, causing them to lose discriminative power, so KNN and K-means, which depend on distance, are hit most directly. Tree splits (A), Naive Bayes (B), and the linear regression intercept (D) are not distance-based, so the effect is relatively small.
 
 ---

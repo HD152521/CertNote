@@ -129,91 +129,91 @@ The next article examines these telemetry's destination **backends — OpenSearc
 
 ## 📝 Practice Questions
 
-**Question 1.** ADOT(OpenTelemetry)의 가장 근본적인 가치는?
+**Question 1.** What is the most fundamental value of ADOT (OpenTelemetry)?
 
-A) X-Ray보다 빠르다
+A) It is faster than X-Ray
 
-B) 계측과 백엔드를 분리(의존성 역전)해 벤더 락인을 없앤다 — 코드는 OTel API로 한 번 계측하고 백엔드는 exporter 설정으로 자유롭게 바꾼다
+B) It decouples instrumentation from the backend (dependency inversion) to eliminate vendor lock-in — instrument the code once with the OTel API and freely change the backend through exporter configuration
 
-C) IAM을 자동 관리한다
+C) It manages IAM automatically
 
-D) Lambda 전용 도구다
+D) It is a Lambda-only tool
 
 **Answer: B**
 
-Explanation: OpenTelemetry의 핵심 가치는 계측(OTel API)과 백엔드(exporter)의 분리다. 애플리케이션은 벤더 SDK가 아니라 표준 API에 의존하고, X-Ray로 보낼지 Datadog으로 보낼지는 설정으로 정한다(의존성 역전 원칙). 따라서 도구를 바꿔도 비즈니스 코드가 그대로여서 벤더 락인이 사라진다. SLF4J·JDBC가 로깅·DB 접근을 표준화하고 구현을 갈아끼우는 것과 같은 패턴이다. 속도(A)·IAM(C)·Lambda 전용(D)은 본질이 아니다.
+Explanation: The core value of OpenTelemetry is the separation of instrumentation (the OTel API) from the backend (exporters). The application depends on a standard API rather than a vendor SDK, and whether to send to X-Ray or Datadog is decided by configuration (the dependency inversion principle). Therefore, even if the tool changes, the business code stays the same, and vendor lock-in disappears. It is the same pattern as SLF4J and JDBC standardizing logging and database access while allowing implementations to be swapped. Speed (A), IAM (C), and Lambda-only (D) are not the essence.
 
 ---
 
-**Question 2.** ADOT Collector의 receiver-processor-exporter 파이프라인에서, PII를 마스킹하고 헬스체크 trace를 버리는 가공은 어디서 하나?
+**Question 2.** In the ADOT Collector's receiver-processor-exporter pipeline, where do you perform processing such as masking PII and dropping health-check traces?
 
 A) receiver
 
-B) processor (attributes로 PII 마스킹, filter로 헬스체크 제거)
+B) The processor (mask PII with attributes, remove health checks with filter)
 
 C) exporter
 
-D) Collector로는 불가능하다
+D) It is not possible with the Collector
 
 **Answer: B**
 
-Explanation: Collector 파이프라인의 가공은 processor 단계에서 한다 — `attributes` processor로 PII 속성을 마스킹·삭제하고, `filter` processor로 불필요한(헬스체크) 데이터를 버리며, `tail_sampling`으로 결과 기반 샘플링을 한다. receiver(A)는 데이터를 받기만, exporter(C)는 백엔드로 내보내기만 한다. 이 가공을 백엔드와 무관하게 한곳(Collector)에서 하는 것이 파이프-필터 아키텍처의 조합성 이점이다.
+Explanation: Processing in the Collector pipeline is done at the processor stage — mask or delete PII attributes with the `attributes` processor, drop unnecessary (health-check) data with the `filter` processor, and perform outcome-based sampling with `tail_sampling`. A receiver (A) only receives data and an exporter (C) only sends data out to the backend. Doing this processing in one place (the Collector) independent of the backend is the composability benefit of the pipe-and-filter architecture.
 
 ---
 
-**Question 3.** 온프레미스 Jaeger에서 AWS X-Ray로 추적을 마이그레이션하되, 기간 중 두 도구를 병행 검증하고 싶다. ADOT로 어떻게 하나?
+**Question 3.** You want to migrate tracing from on-premises Jaeger to AWS X-Ray while validating both tools in parallel during the transition. How do you do this with ADOT?
 
-A) 모든 서비스를 한 번에 X-Ray SDK로 재작성한다
+A) Rewrite all services with the X-Ray SDK at once
 
-B) Collector의 trace 파이프라인 exporter에 `awsxray`와 `otlp/jaeger`를 둘 다 넣어 같은 trace를 양쪽에 동시 전송(fan-out)하고, 검증 후 Jaeger exporter를 제거한다
+B) Put both `awsxray` and `otlp/jaeger` in the Collector's trace pipeline exporters to send the same traces to both simultaneously (fan-out), and remove the Jaeger exporter after validation
 
-C) X-Ray와 Jaeger를 둘 다 끄고 새로 만든다
+C) Turn off both X-Ray and Jaeger and build anew
 
-D) Lambda Layer만 추가한다
+D) Just add a Lambda Layer
 
 **Answer: B**
 
-Explanation: Collector는 같은 데이터를 여러 exporter로 fan-out할 수 있다. trace 파이프라인에 `awsxray`와 `otlp/jaeger`를 함께 두면 동일한 trace가 양쪽에 동시 전송되어, 마이그레이션 기간 동안 두 도구를 병행하며 X-Ray를 검증할 수 있다. 검증 후 Jaeger exporter만 제거하면 무중단 전환이 된다. 한 번에 재작성(A)은 위험이 크고, exporter fan-out이 관찰성 도구 마이그레이션의 위험을 극적으로 낮춘다.
+Explanation: The Collector can fan out the same data to multiple exporters. If `awsxray` and `otlp/jaeger` are placed together in the trace pipeline, identical traces are sent to both at the same time, so you can validate X-Ray while running both tools in parallel during the migration. After validation, removing only the Jaeger exporter completes a zero-downtime cutover. Rewriting everything at once (A) is highly risky, and exporter fan-out dramatically lowers the risk of observability tool migration.
 
 ---
 
-**Question 4.** Lambda에서 핸들러 코드를 전혀 바꾸지 않고 ADOT 자동 계측을 적용하는 핵심 설정은?
+**Question 4.** What is the key configuration for applying ADOT auto-instrumentation in Lambda without changing the handler code at all?
 
-A) 코드에 `patch_all()` 추가
+A) Add `patch_all()` to the code
 
-B) ADOT Lambda Layer 추가 + `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument` 환경 변수 — wrapper가 런타임 부트스트랩을 가로채 OTel을 주입
+B) Add the ADOT Lambda Layer + the `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument` environment variable — the wrapper intercepts the runtime bootstrap and injects OTel
 
-C) X-Ray Daemon 사이드카 추가
+C) Add an X-Ray Daemon sidecar
 
-D) ECS로 이전
+D) Move to ECS
 
 **Answer: B**
 
-Explanation: ADOT Lambda Layer를 붙이고 `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument`를 설정하면, Lambda가 런타임 시작 전에 이 wrapper 스크립트를 실행해 OTel auto-instrumentation을 주입한다. 핸들러 코드는 한 줄도 안 바뀐다. 이는 `-javaagent`·`LD_PRELOAD`처럼 본체를 수정하지 않고 경계에서 횡단 관심사를 주입하는 인터셉션 패턴(AOP의 인프라 구현)이다. `patch_all()`(A)은 코드 변경이 필요한 X-Ray SDK 방식이다.
+Explanation: When you attach the ADOT Lambda Layer and set `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument`, Lambda runs this wrapper script before the runtime starts and injects OTel auto-instrumentation. Not a single line of the handler code changes. This is an interception pattern (the infrastructure implementation of AOP) that injects cross-cutting concerns at the boundary without modifying the main body, like `-javaagent` and `LD_PRELOAD`. `patch_all()` (A) is the X-Ray SDK approach, which requires code changes.
 
 ---
 
-**Question 5.** ADOT Collector를 tail-based 샘플링(에러 trace 100% 유지)에 쓰려면 agent 모드와 gateway 모드 중 무엇이 필요하며 그 이유는?
+**Question 5.** To use the ADOT Collector for tail-based sampling (keeping 100% of error traces), which is needed, agent mode or gateway mode, and why?
 
-A) agent 모드 — 각 Pod 옆에 두면 된다
+A) Agent mode — place it next to each Pod
 
-B) gateway 모드 — tail 샘플링은 한 trace의 모든 span이 한곳에 모여야 결과를 보고 판단할 수 있는데, agent 모드는 span이 여러 노드에 흩어진다
+B) Gateway mode — tail sampling can judge by outcome only when all spans of a trace are gathered in one place, but in agent mode the spans are scattered across multiple nodes
 
-C) 둘 다 동일하다
+C) Both are the same
 
-D) Lambda Layer로만 가능하다
+D) Only possible with a Lambda Layer
 
 **Answer: B**
 
-Explanation: tail-based 샘플링은 trace가 완성된 뒤 결과(에러 여부·지연)를 보고 유지/폐기를 정하므로, 그 trace의 모든 span이 한 Collector에 모여 있어야 한다. agent 모드(노드별 사이드카/DaemonSet)는 한 trace의 span들이 여러 agent에 흩어져 결과 기반 판단이 불가능하다. 따라서 모든 텔레메트리를 모으는 gateway(중앙 집중) Collector가 필요하다. 실무 권장은 agent(1차 수집·가공) + gateway(tail 샘플링·라우팅)의 2계층이다.
+Explanation: Tail-based sampling decides whether to keep or discard a trace by looking at its outcome (whether it errored, its latency) after the trace is complete, so all spans of that trace must be gathered in a single Collector. In agent mode (a per-node sidecar/DaemonSet), the spans of one trace are scattered across multiple agents, making outcome-based decisions impossible. Therefore, a gateway (centralized) Collector that gathers all telemetry is required. The practical recommendation is two tiers: agent (first-stage collection and processing) + gateway (tail sampling and routing).
 
 ---
 
-**Question 6.** OpenTelemetry는 어떤 두 프로젝트의 합병으로 탄생했고, 각각 무엇에 집중했나?
+**Question 6.** OpenTelemetry was born from the merger of which two projects, and what did each focus on?
 
 A) Prometheus + Grafana
 
-B) OpenTracing(API 표준화)과 OpenCensus(구현·자동 계측)의 2019년 합병 — API 추상화와 자동 계측 구현을 합쳤다
+B) The 2019 merger of OpenTracing (API standardization) and OpenCensus (implementation and auto-instrumentation) — combining API abstraction with an auto-instrumentation implementation
 
 C) Zipkin + Jaeger
 
@@ -221,26 +221,26 @@ D) X-Ray + CloudWatch
 
 **Answer: B**
 
-Explanation: OpenTelemetry는 추적 계측 API를 표준화하던 OpenTracing(CNCF)과 구글 주도로 자동 계측·에이전트를 제공하던 OpenCensus가 2019년 CNCF 주도로 합병해 탄생했다. OpenTracing의 API 추상화와 OpenCensus의 구현·auto-instrumentation을 합쳐, "API는 표준화, 자동 계측과 Collector는 구현으로 제공"하는 지금의 OTel이 됐다. 두 경쟁 표준의 분열을 합병으로 끝낸 사례다.
+Explanation: OpenTelemetry was born in 2019, led by the CNCF, from the merger of OpenTracing (CNCF), which standardized the tracing instrumentation API, and OpenCensus, which was led by Google and provided auto-instrumentation and agents. By combining OpenTracing's API abstraction with OpenCensus's implementation and auto-instrumentation, it became today's OTel, in which "the API is standardized, and auto-instrumentation and the Collector are provided as implementations." It is a case where the fragmentation of two competing standards was ended through a merger.
 
 ---
 
-**Question 7.** "지금 AWS만 쓰고 단순한 추적이면 X-Ray SDK, 멀티 백엔드·벤더 중립이 필요하면 ADOT"라는 결정 기준의 근본 차이는?
+**Question 7.** What is the fundamental difference behind the decision criterion "if you use only AWS now and need simple tracing, use the X-Ray SDK; if you need multiple backends and vendor neutrality, use ADOT"?
 
-A) 비용
+A) Cost
 
-B) 결합도 — X-Ray SDK는 코드를 X-Ray에 묶고, ADOT는 코드를 표준에 묶어 백엔드를 자유롭게 한다(대신 Collector·propagator 운영 부담)
+B) Coupling — the X-Ray SDK ties the code to X-Ray, while ADOT ties the code to a standard so the backend can be chosen freely (at the price of the operational burden of the Collector and propagators)
 
-C) 보안 수준
+C) Security level
 
-D) 지원 리전 수
+D) Number of supported Regions
 
 **Answer: B**
 
-Explanation: 둘의 근본 차이는 결합도다. X-Ray SDK는 코드가 X-Ray에 묶여 단순하지만 백엔드를 바꾸기 어렵고, ADOT는 코드가 OTel 표준에 묶여 백엔드를 exporter 설정으로 자유롭게 바꿀 수 있다. 대신 ADOT는 Collector 운영·propagator 설정 등 다룰 구성요소가 더 많다. 따라서 "AWS만·단순 → X-Ray SDK, 멀티 백엔드·멀티 클라우드·벤더 중립 → ADOT"가 결정 기준이다. 비용·보안·리전은 핵심 판단 축이 아니다.
+Explanation: The fundamental difference between the two is coupling. The X-Ray SDK ties the code to X-Ray, which is simple but makes it hard to change the backend, whereas ADOT ties the code to the OTel standard so the backend can be changed freely through exporter configuration. In return, ADOT has more components to handle, such as Collector operation and propagator configuration. Therefore the decision criterion is "AWS only and simple → X-Ray SDK; multiple backends, multi-cloud, vendor neutral → ADOT." Cost, security, and Regions are not the key axes of judgment.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, OpenTelemetry는 OpenTracing(API)과 OpenCensus(구현)의 2019년 합병으로 추적 도구 전쟁을 끝냈고, 핵심 가치는 계측과 백엔드의 분리(의존성 역전)로 벤더 락인을 없앤 것이다. 둘째, OTel은 logs·metrics·traces 세 신호를 OTLP 하나로 통합해 trace ID·resource 공유로 상관관계를 자동화한다. 셋째, Collector는 receiver-processor-exporter 파이프라인(ETL/파이프-필터의 텔레메트리판)으로, 같은 데이터를 여러 백엔드로 fan-out하고 PII 마스킹·필터·tail 샘플링을 한곳에서 하며, tail 샘플링은 gateway 모드가 필요하다. 넷째, ADOT는 Lambda Layer·EKS Add-on 등으로 배포되고 `AWS_LAMBDA_EXEC_WRAPPER` 같은 인터셉션(AOP의 인프라 구현)으로 코드 변경 없이 자동 계측한다. 다섯째, ADOT vs X-Ray SDK의 차이는 결합도이며(표준 vs X-Ray 종속), EKS 관찰성 표준 스택은 ADOT + AMP + AMG다.
+There are five key takeaways today. First, OpenTelemetry ended the tracing-tool wars through the 2019 merger of OpenTracing (API) and OpenCensus (implementation), and its core value is eliminating vendor lock-in by separating instrumentation from the backend (dependency inversion). Second, OTel unifies the three signals of logs, metrics, and traces into a single OTLP and automates correlation through shared trace IDs and resources. Third, the Collector is a receiver-processor-exporter pipeline (the telemetry version of ETL/pipe-and-filter) that fans out the same data to multiple backends and performs PII masking, filtering, and tail sampling in one place; tail sampling requires gateway mode. Fourth, ADOT is deployed through Lambda Layers, EKS Add-ons, and similar means, and auto-instruments without code changes through interception such as `AWS_LAMBDA_EXEC_WRAPPER` (the infrastructure implementation of AOP). Fifth, the difference between ADOT and the X-Ray SDK is coupling (standard vs X-Ray lock-in), and the standard EKS observability stack is ADOT + AMP + AMG.

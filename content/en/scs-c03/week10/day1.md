@@ -180,62 +180,62 @@ Core insight: *Combine notification (people) and remediation (auto)*. Auto-conta
 
 ## 📝 Practice Questions
 
-**Question 1.** GuardDuty가 심각도 8의 EC2 C2 통신 결과를 생성할 때만 자동으로 인스턴스를 격리하고, 동시에 보안팀에 알리고 싶다. 가장 적절한 구성은?
+**Question 1.** We want to automatically isolate an instance only when GuardDuty generates a severity 8 EC2 C2 communication finding, and notify the security team at the same time. What is the most appropriate configuration?
 
-A) Lambda를 1분마다 실행해 GuardDuty API를 폴링하고 조건을 검사  
-B) EventBridge 규칙(severity≥7 + type 필터)을 두 타깃(SSM Automation 격리 런북 + SNS 알림)에 연결  
-C) GuardDuty 콘솔에서 결과를 보고 사람이 수동 격리  
-D) Config 규칙으로 인스턴스를 평가  
+A) Run Lambda every minute to poll the GuardDuty API and check the conditions  
+B) Connect an EventBridge rule (severity>=7 + type filter) to two targets (an SSM Automation isolation runbook + SNS notification)  
+C) View the finding in the GuardDuty console and have a person isolate manually  
+D) Evaluate the instance with an AWS Config rule  
 
 **Answer: B**  
-Explanation: EventBridge 규칙은 이벤트 패턴으로 심각도·타입을 필터링하고, 하나의 규칙을 여러 타깃에 라우팅할 수 있다. SSM Automation 런북으로 격리를 자동 실행하고 SNS로 동시에 알림을 보내면 봉쇄와 통보가 병행된다. Lambda 폴링은 지연·비용·중복 처리 문제가 있고, 수동 격리는 자동화가 아니며, Config는 구성 규정 준수용이지 위협 결과 트리거가 아니다.
+Explanation: An EventBridge rule filters on severity and type with an event pattern and can route a single rule to multiple targets. Running the isolation automatically with an SSM Automation runbook while sending a notification through SNS at the same time makes containment and notification happen in parallel. Lambda polling has latency, cost, and duplicate-processing problems, manual isolation is not automation, and Config is for configuration compliance, not a trigger for threat findings.
 
 ---
 
-**Question 2.** 자동 대응 파이프라인에서 SSM Automation 런북을 Lambda보다 선호하게 되는 결정적 요인은?
+**Question 2.** In an automated response pipeline, what is the deciding factor for preferring an SSM Automation runbook over Lambda?
 
-A) Lambda보다 항상 더 빠르게 실행되므로  
-B) 다단계 교정의 순서 보장, 단계별 재시도, 사람 승인 게이트(aws:approve), CloudTrail 단계별 감사가 플랫폼 제공되므로  
-C) Lambda는 AWS API를 호출할 수 없으므로  
-D) 런북은 IAM 권한이 필요 없으므로  
+A) It always runs faster than Lambda  
+B) The platform provides ordering guarantees for multi-step remediation, per-step retries, a human approval gate (aws:approve), and per-step CloudTrail auditing  
+C) Lambda cannot call AWS APIs  
+D) Runbooks do not require IAM permissions  
 
 **Answer: B**  
-Explanation: SSM Automation은 선언적 다단계 런북으로 순서·재시도·승인 게이트·감사 기록을 플랫폼이 관리해, 증거 능력과 규정 준수가 중요한 보안 교정에 유리하다. 실행 속도가 항상 빠른 것은 아니고, Lambda도 당연히 AWS API를 호출하며, 런북 역시 assumeRole로 IAM 권한이 필요하다.
+Explanation: SSM Automation uses declarative multi-step runbooks, and the platform manages ordering, retries, approval gates, and audit records, which is advantageous for security remediation where evidentiary value and compliance matter. It is not always faster, Lambda can of course call AWS APIs, and a runbook also needs IAM permissions through assumeRole.
 
 ---
 
-**Question 3.** 자동 교정 역할에 `ec2:*`, `iam:*` 같은 광범위 권한을 부여한 설계의 가장 큰 위험은?
+**Question 3.** What is the biggest risk of a design that grants broad permissions such as `ec2:*` and `iam:*` to the automated remediation role?
 
-A) 비용이 증가한다  
-B) 자동화 파이프라인이나 실행기가 침해되면 광범위 권한이 권한 상승·측면 이동 경로가 되어 폭발 반경이 커진다  
-C) 런북이 실행되지 않는다  
-D) EventBridge 패턴이 매칭되지 않는다  
+A) Costs increase  
+B) If the automation pipeline or executor is compromised, the broad permissions become a privilege escalation and lateral movement path, enlarging the blast radius  
+C) The runbook does not run  
+D) The EventBridge pattern does not match  
 
 **Answer: B**  
-Explanation: 자동 교정 역할의 권한은 곧 자동화의 폭발 반경이다. 광범위 권한은 파이프라인이 표적이 됐을 때 공격자에게 강력한 권한을 넘겨준다. 정확히 필요한 액션(예: ec2:ModifyInstanceAttribute)만, 태그·리소스 조건으로 범위를 제한하는 최소 권한이 정답이다. 권한 폭은 비용·런북 실행·이벤트 매칭과 직접 관련이 없다.
+Explanation: The permissions of the automated remediation role are the blast radius of the automation. Broad permissions hand an attacker powerful privileges when the pipeline is targeted. Least privilege is the correct answer: only the exact actions needed (for example, ec2:ModifyInstanceAttribute), scoped with tag and resource conditions. Permission breadth has no direct relation to cost, runbook execution, or event matching.
 
 ---
 
-**Question 4.** 침해 인스턴스 격리 런북에서 단계 순서를 설계할 때 모범은?
+**Question 4.** What is the best practice for designing the step order in a runbook that isolates a compromised instance?
 
-A) 인스턴스를 즉시 종료한 뒤 스냅샷을 생성  
-B) 스냅샷(증거 보존)을 먼저 만든 뒤 격리 보안 그룹으로 교체하고 태깅  
-C) 격리만 하고 증거는 보존하지 않음  
-D) 태깅만 하고 봉쇄는 사람이 나중에  
+A) Terminate the instance immediately, then create a snapshot  
+B) Create a snapshot first (to preserve evidence), then replace the security group with an isolation security group and add tags  
+C) Isolate only, without preserving evidence  
+D) Add tags only, and have a person contain it later  
 
 **Answer: B**  
-Explanation: 휘발성·디스크 증거 보존을 위해 스냅샷을 먼저 생성한 뒤 보안 그룹 교체로 봉쇄하고 태깅하는 순서가 모범이다. 인스턴스를 먼저 종료하면 메모리 등 휘발성 증거가 소실되고, 증거 미보존이나 봉쇄 누락은 포렌식·대응 실패로 이어진다.
+Explanation: The best-practice order is to create a snapshot first to preserve volatile and disk evidence, then contain by replacing the security group, and then tag. Terminating the instance first destroys volatile evidence such as memory, and failing to preserve evidence or omitting containment leads to forensic and response failure.
 
 ---
 
-**Question 5.** 다계정·다리전 환경에서 GuardDuty 결과에 일관된 자동 대응을 적용하려 한다. 가장 적절한 접근은?
+**Question 5.** We want to apply a consistent automated response to GuardDuty findings in a multi-account, multi-Region environment. What is the most appropriate approach?
 
-A) 한 리전에 EventBridge 규칙 하나만 만든다  
-B) 멤버 계정 결과를 Security Hub로 집계(또는 중앙 이벤트 버스로 전달)하고 각 리전 규칙을 IaC로 일관 배포해 중앙에서 대응  
-C) 계정마다 사람이 수동으로 콘솔을 확인  
-D) GuardDuty를 끄고 Config만 사용  
+A) Create only one EventBridge rule in one Region  
+B) Aggregate member account findings in Security Hub (or forward them to a central event bus), deploy the rules in each Region consistently with IaC, and respond centrally  
+C) Have people manually check the console for each account  
+D) Turn off GuardDuty and use only AWS Config  
 
 **Answer: B**  
-Explanation: GuardDuty는 리전별 서비스라 리전마다 규칙이 필요하고, 다계정은 Security Hub 집계나 중앙 이벤트 버스 전달로 단일 대응 지점을 만든 뒤 IaC로 일관 배포하는 것이 정답이다. 한 리전 규칙 하나로는 전체가 보호되지 않고, 수동 확인은 자동화가 아니며, GuardDuty 비활성화는 탐지 자체를 포기하는 것이다.
+Explanation: GuardDuty is a Regional service, so a rule is needed in every Region. For multiple accounts, the correct answer is to create a single response point by aggregating in Security Hub or forwarding to a central event bus, and then deploy consistently with IaC. A single rule in one Region does not protect everything, manual checking is not automation, and disabling GuardDuty gives up detection itself.
 
 ---

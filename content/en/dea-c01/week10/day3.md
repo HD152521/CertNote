@@ -32,98 +32,98 @@ Faced with a long problem, follow this order:
 
 ## 📝 Practice Questions
 
-**Question 1.** 모바일 앱의 클릭스트림을 실시간으로 받아 추가 서버 관리 없이 S3에 Parquet로 적재하고, 분석가가 즉석 SQL로 조회해야 한다. 가장 적합한 조합은?
+**Question 1.** You must receive a mobile app's clickstream in real time, load it into S3 as Parquet without managing additional servers, and let analysts query it with ad hoc SQL. Which combination is the most suitable?
 
 A) Kinesis Data Firehose → S3(Parquet) → Athena  
-B) RDS → EC2 cron → 수동 CSV 다운로드  
-C) DynamoDB → DAX → QuickSight 직접  
-D) EMR 상시 클러스터 → HDFS → 로컬 Presto  
+B) RDS → EC2 cron → manual CSV download  
+C) DynamoDB → DAX → QuickSight direct  
+D) Always-on EMR cluster → HDFS → local Presto  
 
 **Answer: A**  
-Explanation: Firehose는 완전관리형으로 스트리밍을 버퍼링·Parquet 변환 후 S3에 적재하고, Athena는 서버리스 SQL로 즉석 조회합니다. RDS·EC2·EMR 상시 클러스터는 운영 부담이 크고 실시간 적재에 부적합하며, DynamoDB는 분석 SQL 용도가 아닙니다.
+Explanation: Firehose is fully managed; it buffers the stream, converts it to Parquet, and loads it into S3, and Athena provides ad hoc querying with serverless SQL. RDS, EC2, and an always-on EMR cluster have a heavy operational burden and are unsuitable for real-time ingestion, and DynamoDB is not intended for analytical SQL.
 
 ---
 
-**Question 2.** 온프레미스 PostgreSQL의 변경분을 거의 실시간으로 AWS 분석 환경에 지속 복제해야 한다. 초기 전체 적재 후 지속적인 CDC가 필요하다. 가장 적합한 서비스는?
+**Question 2.** You must continuously replicate changes from an on-premises PostgreSQL database to an AWS analytics environment in near real time. After the initial full load, ongoing CDC is required. Which service is the most suitable?
 
-A) AWS Glue 크롤러  
-B) AWS DMS(전체 적재 + CDC)  
-C) S3 배치 업로드 스크립트  
-D) Amazon Athena 페더레이션 쿼리만  
+A) AWS Glue crawler  
+B) AWS DMS (full load + CDC)  
+C) S3 batch upload script  
+D) Amazon Athena federated queries only  
 
 **Answer: B**  
-Explanation: AWS DMS는 초기 전체 적재(full load)에 이어 변경 데이터 캡처(CDC)로 소스 DB 변경분을 지속 복제할 수 있습니다. Glue 크롤러는 스키마 추론, S3 배치는 실시간 CDC가 아니며, 페더레이션 쿼리는 복제가 아니라 즉석 조회입니다.
+Explanation: AWS DMS can continuously replicate changes from the source database using change data capture (CDC) after the initial full load. A Glue crawler infers schemas, S3 batch uploads are not real-time CDC, and federated queries perform ad hoc querying rather than replication.
 
 ---
 
-**Question 3.** 여러 Lambda·Glue 잡을 순서대로 실행하되, 단계별 분기와 자동 재시도, 시각적 실행 추적이 필요하다. 서버리스로 운영 부담을 최소화하려 한다. 가장 적합한 서비스는?
+**Question 3.** You need to run multiple Lambda functions and Glue jobs in sequence, with per-step branching, automatic retries, and visual execution tracking. You want to minimize operational overhead by running serverless. Which service is the most suitable?
 
 A) AWS Step Functions  
-B) cron이 설정된 단일 EC2  
-C) S3 이벤트 알림만  
-D) DynamoDB 스트림 트리거 하나  
+B) A single EC2 instance with cron configured  
+C) S3 event notifications only  
+D) A single DynamoDB Streams trigger  
 
 **Answer: A**  
-Explanation: Step Functions는 서버리스 상태 기계로 단계 조율, 분기, 자동 재시도, 시각적 실행 추적을 제공합니다. EC2 cron은 운영 부담이 크고, S3 이벤트·DynamoDB 스트림 단독으로는 다단계 분기·재시도 오케스트레이션을 구성하기 어렵습니다.
+Explanation: Step Functions is a serverless state machine that provides step coordination, branching, automatic retries, and visual execution tracking. EC2 cron has a heavy operational burden, and S3 events or DynamoDB Streams alone make it difficult to build multi-step branching and retry orchestration.
 
 ---
 
-**Question 4.** 데이터레이크의 여러 부서가 같은 테이블을 쓰는데, 인사팀만 급여 컬럼을 볼 수 있고 다른 팀은 마스킹되어야 한다. 권한을 중앙에서 컬럼 단위로 통제하려 한다. 가장 적합한 서비스는?
+**Question 4.** Several departments in a data lake use the same table, but only the HR team may view the salary column and it must be masked for other teams. You want to control permissions centrally at the column level. Which service is the most suitable?
 
-A) S3 버킷 ACL  
-B) AWS Lake Formation 컬럼 수준 권한  
-C) Security Group 규칙  
-D) CloudFront 지오 제한  
+A) S3 bucket ACL  
+B) AWS Lake Formation column-level permissions  
+C) Security Group rules  
+D) CloudFront geo restriction  
 
 **Answer: B**  
-Explanation: Lake Formation은 테이블·컬럼·행·셀 수준 권한을 중앙에서 관리하므로 컬럼 단위 접근 통제에 적합합니다. S3 ACL은 객체 수준까지만, Security Group은 네트워크, CloudFront 지오 제한은 콘텐츠 배포용으로 데이터 컬럼 통제와 무관합니다.
+Explanation: Lake Formation centrally manages permissions at the table, column, row, and cell level, making it suitable for column-level access control. S3 ACLs apply only down to the object level, Security Groups are for networking, and CloudFront geo restriction is for content distribution, so none of them relate to controlling data columns.
 
 ---
 
-**Question 5.** Redshift 대시보드 쿼리가 최근 30일 데이터에만 자주 접근하고, 1년 이전 콜드 데이터는 가끔만 조회된다. 비용을 줄이면서 콜드 데이터도 필요 시 SQL로 조회하려 한다. 가장 적합한 접근은?
+**Question 5.** Redshift dashboard queries frequently access only the last 30 days of data, while cold data older than one year is queried only occasionally. You want to reduce cost while still being able to query the cold data with SQL when needed. Which approach is the most suitable?
 
-A) 모든 데이터를 Redshift 노드에 영구 보관  
-B) 콜드 데이터를 삭제한다  
-C) 콜드 데이터는 S3에 두고 Redshift Spectrum으로 조회  
-D) 콜드 데이터를 DynamoDB로 옮긴다  
+A) Keep all data permanently on Redshift nodes  
+B) Delete the cold data  
+C) Keep the cold data in S3 and query it with Redshift Spectrum  
+D) Move the cold data to DynamoDB  
 
 **Answer: C**  
-Explanation: 핫 데이터는 Redshift 클러스터에, 콜드 데이터는 저렴한 S3에 두고 Redshift Spectrum으로 로드 없이 SQL 조회하면 스토리지 비용을 줄이면서 접근성을 유지합니다. 전량 보관은 비용 증가, 삭제는 조회 불가, DynamoDB는 분석 SQL에 부적합합니다.
+Explanation: Keeping hot data in the Redshift cluster and cold data in inexpensive S3, and querying it with SQL through Redshift Spectrum without loading it, reduces storage cost while preserving accessibility. Keeping everything increases cost, deleting makes the data unqueryable, and DynamoDB is unsuitable for analytical SQL.
 
 ---
 
-**Question 6.** Glue ETL 잡이 가끔 실패해 재실행되는데, 동일 데이터가 타깃에 중복 적재되는 문제가 있다. 재시도 시 안전하게 만들려면 가장 우선해야 할 설계 원칙은?
+**Question 6.** A Glue ETL job occasionally fails and is rerun, but the same data ends up loaded into the target more than once. Which design principle should be prioritized to make retries safe?
 
-A) 잡 재시도를 완전히 비활성화한다  
-B) 로그 레벨을 낮춘다  
-C) 잡을 멱등(idempotent)하게 설계해 재실행해도 중복이 생기지 않게 한다  
-D) 매번 타깃 테이블을 수동으로 비운다  
+A) Disable job retries entirely  
+B) Lower the log level  
+C) Design the job to be idempotent so that rerunning it does not create duplicates  
+D) Manually empty the target table every time  
 
 **Answer: C**  
-Explanation: 분산·재시도 환경에서는 잡을 멱등하게 설계(예: 업서트/MERGE, 결정적 키 기반 덮어쓰기)해 재실행해도 결과가 동일하도록 해야 합니다. 재시도 비활성화는 복원력을 해치고, 수동 정리·로그 조정은 근본 해결이 아닙니다.
+Explanation: In distributed, retry-prone environments, jobs should be designed to be idempotent (for example, upsert/MERGE, or overwrite based on a deterministic key) so that rerunning them produces the same result. Disabling retries undermines resilience, and manual cleanup or log adjustments are not a root-cause fix.
 
 ---
 
-**Question 7.** 매시간 S3 raw 존에 도착하는 신규 로그만 처리해 curated 존(Parquet)으로 변환하는 서버리스 ETL을 구성한다. 이미 처리한 파일은 다시 읽지 않아야 한다. 가장 적합한 조합은?
+**Question 7.** You are building a serverless ETL that processes only the new logs arriving hourly in the S3 raw zone and converts them into the curated zone (Parquet). Files that have already been processed must not be read again. Which combination is the most suitable?
 
-A) Glue 잡 + 잡 북마크  
-B) EMR 상시 클러스터 + 전체 재처리  
-C) Athena CTAS로 매번 전체 재생성  
-D) Lambda로 전체 버킷을 매번 스캔  
+A) Glue job + job bookmarks  
+B) Always-on EMR cluster + full reprocessing  
+C) Regenerate everything every time with Athena CTAS  
+D) Scan the entire bucket every time with Lambda  
 
 **Answer: A**  
-Explanation: 서버리스 ETL은 Glue가 기본이며, 잡 북마크가 이미 처리한 데이터를 추적해 신규 데이터만 증분 처리합니다. EMR 상시 클러스터·전체 재처리·전체 스캔은 증분 요구와 비용·운영 효율을 위반합니다.
+Explanation: Glue is the default for serverless ETL, and job bookmarks track data that has already been processed so that only new data is processed incrementally. An always-on EMR cluster, full reprocessing, and full scans violate the incremental requirement and cost and operational efficiency.
 
 ---
 
-**Question 8.** 스트리밍 주문 이벤트를 받아 5분 윈도로 매장별 매출 합계를 실시간 집계해야 한다. SQL 기반으로 윈도 집계를 처리하려 한다. 가장 적합한 서비스는?
+**Question 8.** You must aggregate sales totals per store in real time over 5-minute windows from a stream of order events. You want to handle the window aggregation using SQL. Which service is the most suitable?
 
-A) Amazon Athena 단발 쿼리  
-B) AWS Glue 배치 잡  
+A) A one-off Amazon Athena query  
+B) AWS Glue batch job  
 C) Amazon QuickSight  
 D) Amazon Managed Service for Apache Flink(Kinesis Data Analytics)  
 
 **Answer: D**  
-Explanation: Managed Service for Apache Flink는 스트리밍 데이터에 대해 텀블링/슬라이딩 윈도 집계를 SQL/Flink로 실시간 처리합니다. Athena·Glue는 배치 지향이라 5분 윈도 실시간 집계에 부적합하고, QuickSight는 시각화 도구입니다.
+Explanation: Managed Service for Apache Flink processes tumbling/sliding window aggregations on streaming data in real time using SQL/Flink. Athena and Glue are batch-oriented and unsuitable for real-time 5-minute window aggregation, and QuickSight is a visualization tool.
 
 ---

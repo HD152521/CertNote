@@ -274,110 +274,110 @@ In two weeks (Week 13-14), we'll cover **cost optimization and governance** — 
 
 ## 📝 Practice Questions
 
-**Question 1.** "API 지연 시간이 급증했다"는 알람이 났을 때 5단계 파이프라인을 구성하면?
+**Question 1.** When an alarm fires saying "API latency has spiked," how would you construct the 5-stage pipeline?
 
 A) Detect (CloudWatch latency metric) → Route (EventBridge, event pattern) → Respond (Tier 1 restart) → Notify (Slack alert) → Learn (post-mortem)
 
-B) Detect (on-call이 손으로 콘솔 확인) → Route (이메일) → Respond (manual SSH login) → Notify (상태 페이지) → Learn (없음)
+B) Detect (the on-call engineer checks the console by hand) → Route (email) → Respond (manual SSH login) → Notify (status page) → Learn (none)
 
-C) Respond만 자동화하고 나머지는 수동
+C) Automate only Respond and leave the rest manual
 
-D) 알람은 무시하고 고객 불만으로 판단
+D) Ignore the alarm and judge by customer complaints
 
 **Answer: A**
 
-Explanation: 5단계 파이프라인은 감지→라우팅→대응→알림→학습의 완전한 자동화된 흐름이다. B는 레거시 모델(느리고 휴먼 에러), C는 불완전(모니터링이나 학습 없음), D는 무책임.
+Explanation: The 5-stage pipeline is a fully automated flow of detect → route → respond → notify → learn. B is the legacy model (slow and prone to human error), C is incomplete (no monitoring or learning), and D is irresponsible.
 
 ---
 
-**Question 2.** 다음 중 **Tier 1 (재시작)** 대신 **Tier 2 (스케일 아웃)**을 시도해야 하는 상황은?
+**Question 2.** In which of the following situations should you try **Tier 2 (scale out)** instead of **Tier 1 (restart)**?
 
-A) ECS 태스크 프로세스 크래시 (한 번만 터짐)
+A) An ECS task process crash (happened only once)
 
-B) API 평균 지연 500ms, CPU 92%, 요청 큐 계속 증가 (부하 문제)
+B) API average latency 500 ms, CPU 92%, request queue keeps growing (a load problem)
 
-C) 데이터베이스 인덱스 손상 (구조적 문제)
+C) Database index corruption (a structural problem)
 
-D) 인증 서비스 완전 다운 (의존성)
+D) The authentication service is completely down (a dependency)
 
 **Answer: B**
 
-Explanation: Tier 1(재시작)은 한 번의 크래시나 상태 문제 해결 (A). B는 "부하가 높아서" 문제이므로 용량 추가(Tier 2)가 맞다. C와 D는 재시작이나 스케일로 안 되므로 더 높은 tier 또는 수동 개입 필요.
+Explanation: Tier 1 (restart) fixes a one-time crash or a state problem (A). B is a problem of "high load," so adding capacity (Tier 2) is right. C and D cannot be solved by restarting or scaling, so a higher tier or manual intervention is needed.
 
 ---
 
-**Question 3.** Automation이 같은 문제로 계속 반복 재시도하고 있다 (5회, 10회, 15회…). 어떤 안전망이 필요한가?
+**Question 3.** An Automation keeps retrying repeatedly for the same problem (5 times, 10 times, 15 times...). Which safety net is needed?
 
-A) Exponential backoff — 재시도 대기 시간을 점차 증가 (30s → 60s → 120s…)
+A) Exponential backoff — gradually increase the wait time between retries (30s → 60s → 120s...)
 
-B) Bounded execution count — 같은 IssueId 하루에 5회 이상이면 인간에게 에스컬레이션
+B) Bounded execution count — if the same IssueId occurs 5 or more times a day, escalate to a human
 
-C) Circuit breaker for Automation — 조건 체크 (예: 헬스 체크 통과하면 탈출) 안 되면 인간 요청
+C) Circuit breaker for Automation — a condition check (for example, exit if the health check passes), and request a human if it does not
 
-D) A, B, C 모두 필요
+D) A, B, and C are all needed
 
 **Answer: D**
 
-Explanation: 각각 다른 각도에서 폭주를 막는다. A는 transient 에러에 시간을 주고, B는 persistent 에러의 횟수 한계선, C는 상태 기반 탈출. 모두 적용해야 견고하다.
+Explanation: Each prevents a runaway from a different angle. A gives transient errors time, B sets a limit on the count for persistent errors, and C provides state-based exit. All should be applied to be robust.
 
 ---
 
-**Question 4.** "데이터 삭제 지명 — 잘못된 쿼리가 프로덕션 테이블을 지웠다"는 SEV-1 인시던트가 발생했다. 대응 단계는?
+**Question 4.** A SEV-1 incident has occurred: "Data deletion — a wrong query deleted a production table." What are the response steps?
 
-A) 자동 치유로 "테이블 복원" Automation 실행
+A) Run a "restore table" Automation as self-healing
 
-B) 데이터 복구는 자동화 불가능 — 즉시 war room 개설, IC 할당, 백업에서 복구 수동 절차 시작, 동시에 법률팀/규제팀 통보
+B) Data recovery cannot be automated — immediately open a war room, assign an IC, start the manual procedure to recover from backup, and at the same time notify the legal/regulatory teams
 
-C) 알람만 울리고 조용히 해결
+C) Only sound the alarm and resolve it quietly
 
-D) AWS 지원에만 연락
+D) Contact only AWS Support
 
 **Answer: B**
 
-Explanation: 데이터 삭제(Tier 5)는 자동화 불가능한 작업이다. 즉각 war room → IC → 전문가 동원 → 백업 복구 시작 → 영향도 평가 → 규제 보고. 이는 절차적, 법적 문제이므로 구조화된 대응이 필수.
+Explanation: Data deletion (Tier 5) is a task that cannot be automated. Immediately: war room → IC → mobilize experts → start recovery from backup → assess impact → regulatory reporting. This is a procedural and legal matter, so a structured response is essential.
 
 ---
 
-**Question 5.** Post-mortem에서 "또 같은 문제다 — 2개월 전에도 있었다"는 지적이 나왔다. RCA 질문은?
+**Question 5.** In a post-mortem, someone points out, "It's the same problem again — it happened 2 months ago too." What is the RCA question?
 
-A) 지난번 예방 액션이 완료되지 않았는가?
+A) Were the preventive actions from last time not completed?
 
-B) 예방 액션이 완료됐는데 효과가 없었는가?
+B) Were the preventive actions completed but ineffective?
 
-C) 예방 액션이 완료됐지만 새로운 코드 경로에서 문제가 재발했는가?
+C) Were the preventive actions completed, but the problem recurred in a new code path?
 
-D) A, B, C 중 하나 — 어느 것이든 개선 필요
+D) One of A, B, or C — improvement is needed in any case
 
 **Answer: D**
 
-Explanation: 반복되는 문제(Class B)는 지난번 예방이 뭔가 잘못됐다는 신호다. 세 경우 모두 가능하고 모두 개선 필요. 그러나 "같은 문제 또 발생했다"고 해서 팀을 비난하는 건 문제 해결이 아니다 (blameless 원칙).
+Explanation: A recurring problem (Class B) is a signal that something went wrong with the prevention last time. All three cases are possible and all need improvement. However, blaming the team because "the same problem occurred again" is not problem solving (the blameless principle).
 
 ---
 
-**Question 6.** 의사결정 테이블에서 "단일 서비스 재시작" 행의 모든 셀을 채우면?
+**Question 6.** If you fill in all the cells of the "single service restart" row in the decision table, which is correct?
 
-| 셀 | 내용 |
+| Cell | Content |
 |----|------|
-| Severity | SEV-3 (고객에게 영향 없거나 미미) |
-| Detection | CloudWatch Alarm (CPU/메모리/크래시) |
+| Severity | SEV-3 (no or minimal customer impact) |
+| Detection | CloudWatch Alarm (CPU/memory/crash) |
 | Response | Tier 1: ECS UpdateService ForceNewDeployment |
-| Notification | Slack 알림 (war room X) |
-| Learning | 반복되면 자동 재시작 Automation 추가 |
+| Notification | Slack notification (no war room) |
+| Learning | If it recurs, add an automatic restart Automation |
 
-A) 모두 맞다
+A) All are correct
 
-B) Notification이 war room이어야 한다
+B) Notification should be a war room
 
-C) Response는 승인 필요 (aws:approve)
+C) Response needs approval (aws:approve)
 
-D) Learning이 불필요 (Tier 1은 자명한 fix)
+D) Learning is unnecessary (Tier 1 is an obvious fix)
 
 **Answer: A**
 
-Explanation: 단일 서비스 재시작은 낮은 위험 작업으로, SEV-3, CloudWatch, Tier 1 자동화, Slack 통지, 반복 시 자동화 추가의 경로가 표준이다.
+Explanation: A single service restart is a low-risk action, and the standard path is SEV-3, CloudWatch, Tier 1 automation, Slack notification, and adding automation if it recurs.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 세 가지다. 첫째, **5단계 파이프라인**(Detect → Route → Respond → Notify → Learn)은 모든 인시던트의 구조를 제공하고, 각 단계에서 도구 선택이 성패를 결정한다. 둘째, **의사결정 트리**는 severity·detectability·scope에 따라 어떤 tier의 자동화와 어떤 level의 인간 개입이 필요한지 가이드한다. 셋째, **안전망**(bounded count, circuit breaker, approval gate, change window)은 자동화 폭주와 과도한 에스컬레이션 모두를 방지해 안정성 있는 자동화를 가능하게 한다. 이 구조가 확립되면, 운영팀은 반복되는 문제를 고치는 대신 시스템을 개선하는 데 집중할 수 있다.
+There are three key takeaways today. First, the **5-stage pipeline** (Detect → Route → Respond → Notify → Learn) provides the structure of every incident, and tool selection at each stage determines success or failure. Second, the **decision tree** guides which tier of automation and which level of human intervention are needed depending on severity, detectability, and scope. Third, **safety nets** (bounded count, circuit breaker, approval gate, change window) prevent both automation runaways and excessive escalation, enabling stable automation. Once this structure is established, the operations team can focus on improving the system instead of fixing recurring problems.

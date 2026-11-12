@@ -120,62 +120,62 @@ Connectors run on Lambda; deploy and register per source. Useful for analyzing h
 
 ## 📝 Practice Questions
 
-**Question 1.** Athena 비용을 줄이는 방법으로 가장 효과가 큰 조합은?
+**Question 1.** Which combination is the most effective for reducing Athena cost?
 
-A) SELECT * 사용 + CSV 포맷  
-B) 파티셔닝 + Parquet + 압축 + 필요 컬럼만 SELECT  
-C) 모든 데이터를 단일 대용량 파일로 저장  
-D) 페더레이션 쿼리로 모든 소스를 매번 조인  
+A) Use SELECT * + CSV format  
+B) Partitioning + Parquet + compression + SELECT only the needed columns  
+C) Store all data as a single large file  
+D) Join all sources every time with federated queries  
 
 **Answer: B**  
-Explanation: Athena는 스캔량으로 과금하므로 파티션 프루닝, 컬럼형 Parquet, 압축, 컬럼 프로젝션이 스캔량을 직접 줄여 비용·속도를 동시에 개선합니다. SELECT *와 CSV는 스캔량을 늘리고, 단일 거대 파일은 병렬성을 해치며, 페더레이션 남용은 비용과 무관하게 비효율적입니다.
+Explanation: Athena charges by the amount scanned, so partition pruning, columnar Parquet, compression, and column projection directly reduce the amount scanned and improve both cost and speed. SELECT * and CSV increase the amount scanned, a single huge file harms parallelism, and overusing federation is inefficient regardless of cost.
 
 ---
 
-**Question 2.** Athena에서 CSV 원본을 파티셔닝된 Parquet 테이블로 변환하는 가장 적절한 방법은?
+**Question 2.** What is the most appropriate way to convert a CSV source into a partitioned Parquet table in Athena?
 
 A) MSCK REPAIR TABLE  
 B) ALTER TABLE ADD PARTITION  
 C) CREATE TABLE AS SELECT (CTAS)  
-D) 페더레이션 쿼리  
+D) Federated query  
 
 **Answer: C**  
-Explanation: CTAS는 쿼리 결과를 지정 포맷(Parquet)·압축·파티션으로 새 S3 테이블에 물질화해 경량 ETL을 수행합니다. MSCK/ADD PARTITION은 파티션 메타데이터 관리, 페더레이션 쿼리는 이종 소스 조인용입니다.
+Explanation: CTAS materializes the query result into a new S3 table with the specified format (Parquet), compression, and partitions, performing lightweight ETL. MSCK/ADD PARTITION manage partition metadata, and federated queries are for joining heterogeneous sources.
 
 ---
 
-**Question 3.** 파티션이 수만 개로 많아 MSCK REPAIR와 Glue 카탈로그 조회가 병목일 때 가장 적절한 해결책은?
+**Question 3.** What is the most appropriate solution when there are tens of thousands of partitions and MSCK REPAIR and Glue catalog lookups have become a bottleneck?
 
-A) 파티션 프로젝션 활성화  
-B) DISTSTYLE ALL 적용  
-C) 워크그룹 스캔 한도 설정  
-D) ORC 대신 CSV 사용  
+A) Enable partition projection  
+B) Apply DISTSTYLE ALL  
+C) Set a workgroup scan limit  
+D) Use CSV instead of ORC  
 
 **Answer: A**  
-Explanation: 파티션 프로젝션은 파티션을 카탈로그에 등록하지 않고 범위·포맷 규칙으로 계산해 대량 파티션 환경의 조회 병목을 제거합니다. DISTSTYLE은 Redshift 개념, 워크그룹 한도는 비용 통제, CSV 전환은 오히려 스캔량을 늘립니다.
+Explanation: Partition projection computes partitions from range and format rules without registering them in the catalog, eliminating the lookup bottleneck in environments with a large number of partitions. DISTSTYLE is a Redshift concept, workgroup limits are cost control, and switching to CSV actually increases the amount scanned.
 
 ---
 
-**Question 4.** S3에 있는 주문 데이터와 RDS PostgreSQL의 고객 마스터를 데이터 이동 없이 한 SQL로 조인하려면?
+**Question 4.** How can you join order data in S3 with the customer master in RDS PostgreSQL in a single SQL statement without moving the data?
 
-A) Redshift COPY 명령  
-B) Athena 페더레이션 쿼리(데이터 소스 커넥터)  
-C) Glue 크롤러  
+A) Redshift COPY command  
+B) Athena federated query (data source connector)  
+C) Glue crawler  
 D) DynamoDB Streams  
 
 **Answer: B**  
-Explanation: Athena 페더레이션 쿼리는 Lambda 기반 데이터 소스 커넥터로 RDS·DynamoDB 등 이종 소스를 S3 데이터와 동일 SQL로 조인합니다. COPY는 적재, 크롤러는 스키마 추론, Streams는 변경 캡처입니다.
+Explanation: Athena federated queries use Lambda-based data source connectors to join heterogeneous sources such as RDS and DynamoDB with S3 data in the same SQL. COPY is for loading, a crawler is for schema inference, and Streams is for change capture.
 
 ---
 
-**Question 5.** 특정 팀의 폭주 쿼리가 한 번에 막대한 데이터를 스캔하는 것을 방지하려면 Athena에서 무엇을 사용하는가?
+**Question 5.** What do you use in Athena to prevent a runaway query from a particular team from scanning a huge amount of data at once?
 
-A) 머티리얼라이즈드 뷰  
-B) 동시성 스케일링  
-C) 워크그룹의 쿼리당 스캔 한도(BytesScannedCutoffPerQuery)  
+A) Materialized view  
+B) Concurrency Scaling  
+C) The per-query data scan limit of a workgroup (BytesScannedCutoffPerQuery)  
 D) MSCK REPAIR TABLE  
 
 **Answer: C**  
-Explanation: 워크그룹에 쿼리당 데이터 스캔 한도를 설정하면 임계 초과 쿼리를 자동 취소해 비용 폭주를 막습니다. 동시성 스케일링은 Redshift 기능, MSCK는 파티션 관리, 머티리얼라이즈드 뷰는 사전 집계입니다.
+Explanation: Setting a per-query data scan limit on a workgroup automatically cancels queries that exceed the threshold, preventing cost overruns. Concurrency Scaling is a Redshift feature, MSCK is partition management, and a materialized view is pre-aggregation.
 
 ---

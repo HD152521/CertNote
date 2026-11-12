@@ -95,62 +95,62 @@ Lake Formation can share LF-Tags or named resources with other AWS accounts and 
 
 ## 📝 Practice Questions
 
-**Question 1.** 분석가가 S3 버킷에 직접 IAM 권한이 없어도 Lake Formation을 통해 등록된 위치의 데이터를 읽을 수 있게 하는 메커니즘은?
+**Question 1.** Which mechanism allows an analyst to read data in a location registered through Lake Formation even without direct IAM permissions on the S3 bucket?
 
-A) S3 버킷 정책 와일드카드  
-B) 자격 증명 벤딩(credential vending)  
-C) STS 페더레이션 토큰 직접 발급  
-D) VPC 엔드포인트 정책  
+A) S3 bucket policy wildcard  
+B) Credential vending  
+C) Directly issuing STS federation tokens  
+D) VPC endpoint policy  
 
 **Answer: B**  
-Explanation: 위치를 Lake Formation에 register하면, 지정된 서비스 역할로 Lake Formation이 임시 자격 증명을 벤딩해 사용자를 대신해 S3에 접근합니다. 분석가에게 S3 직접 권한이 없어도 됩니다. 나머지는 권한 일원화 메커니즘과 다릅니다.
+Explanation: When you register a location with Lake Formation, Lake Formation vends temporary credentials using the designated service role and accesses S3 on behalf of the user. The analyst does not need direct S3 permissions. The others differ from a centralized permission mechanism.
 
 ---
 
-**Question 2.** 데이터레이크 테이블이 수천 개로 늘었을 때, 리소스에 `classification=pii` 같은 태그를 붙이고 태그 조건으로 권한을 부여해 확장성을 높이는 Lake Formation 방식은?
+**Question 2.** When the number of data lake tables grows to thousands, which Lake Formation approach improves scalability by attaching tags such as `classification=pii` to resources and granting permissions based on tag conditions?
 
-A) 명명형 리소스 권한  
+A) Named resource permissions  
 B) S3 ACL  
-C) LF-Tags 기반 TBAC  
-D) IAM 인라인 정책  
+C) LF-Tags based TBAC  
+D) IAM inline policy  
 
 **Answer: C**  
-Explanation: LF-Tags 기반 TBAC는 태그 조건으로 권한을 부여해 리소스가 많아도 정책 폭증 없이 관리됩니다. 명명형은 리소스를 일일이 지정해야 하고, S3 ACL/IAM 인라인 정책은 세분화·확장성 면에서 부적합합니다.
+Explanation: LF-Tags based TBAC grants permissions through tag conditions, so it can be managed without an explosion of policies even when there are many resources. The named method requires specifying each resource individually, and S3 ACLs/IAM inline policies are unsuitable in terms of granularity and scalability.
 
 ---
 
-**Question 3.** Lake Formation에서 특정 사용자에게 `region = 'us-east-1'` 행만 노출하려면 무엇을 사용하는가?
+**Question 3.** What do you use in Lake Formation to expose only the rows where `region = 'us-east-1'` to a specific user?
 
-A) 컬럼 와일드카드  
-B) 데이터 필터(행 수준 필터)  
-C) 블루프린트  
-D) 워크그룹  
+A) Column wildcard  
+B) Data filter (row-level filter)  
+C) Blueprint  
+D) Workgroup  
 
 **Answer: B**  
-Explanation: 행 수준 보안은 데이터 필터(data cells filter)의 RowFilter 표현식으로 구현합니다. 컬럼 와일드카드는 컬럼 선택, 블루프린트는 수집 워크플로우 생성, 워크그룹은 Athena 비용·격리 개념입니다.
+Explanation: Row-level security is implemented with the RowFilter expression of a data filter (data cells filter). A column wildcard is for selecting columns, a blueprint creates ingestion workflows, and a workgroup is an Athena cost and isolation concept.
 
 ---
 
-**Question 4.** RDS 같은 JDBC 소스를 북마크 컬럼 기준으로 증분 적재하는 Glue 워크플로우를 자동 생성하려면 어떤 Lake Formation 블루프린트를 사용하는가?
+**Question 4.** Which Lake Formation blueprint do you use to automatically create a Glue workflow that incrementally loads a JDBC source such as RDS based on a bookmark column?
 
-A) Incremental database 블루프린트  
-B) Database snapshot 블루프린트  
-C) Log file 블루프린트  
-D) Streaming 블루프린트  
+A) Incremental database blueprint  
+B) Database snapshot blueprint  
+C) Log file blueprint  
+D) Streaming blueprint  
 
 **Answer: A**  
-Explanation: Incremental database 블루프린트는 북마크 컬럼 기준 증분 적재 워크플로우를 만듭니다. Database snapshot은 전체 스냅샷, Log file은 로그 적재용이며, Streaming은 표준 블루프린트 유형이 아닙니다.
+Explanation: The Incremental database blueprint creates a workflow that loads incrementally based on a bookmark column. Database snapshot is for a full snapshot, Log file is for loading logs, and Streaming is not a standard blueprint type.
 
 ---
 
-**Question 5.** 분석가가 Athena로 Lake Formation 관리 테이블을 쿼리할 때 반드시 필요한 권한 조합은?
+**Question 5.** What combination of permissions is required for an analyst to query a Lake Formation-managed table with Athena?
 
-A) S3 버킷 정책만  
-B) Lake Formation 권한만  
-C) KMS 키 정책만  
-D) IAM 권한(Athena/Glue API)과 Lake Formation 데이터 권한 모두  
+A) S3 bucket policy only  
+B) Lake Formation permissions only  
+C) KMS key policy only  
+D) Both IAM permissions (Athena/Glue API) and Lake Formation data permissions  
 
 **Answer: D**  
-Explanation: Lake Formation 권한과 IAM 권한은 함께 평가됩니다. Athena/Glue API 호출용 IAM 권한과 데이터 접근용 Lake Formation 권한을 모두 가져야 쿼리가 성공합니다. 어느 한쪽만으로는 부족합니다.
+Explanation: Lake Formation permissions and IAM permissions are evaluated together. The query succeeds only if you have both the IAM permissions for Athena/Glue API calls and the Lake Formation permissions for data access. Either one alone is not enough.
 
 ---

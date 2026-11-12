@@ -109,62 +109,62 @@ Over 12 weeks you have worked through all four domains: data engineering, EDA, m
 
 ## 📝 Practice Questions
 
-**Question 1.** MLS-C01 시험 구성에 대한 설명으로 옳은 것은?
+**Question 1.** Which statement about the structure of the MLS-C01 exam is correct?
 
-A) 65문항 중 15문항은 채점되지 않으며 어느 것인지 표시되지 않는다  
-B) 65문항을 90분 안에 풀어야 한다  
-C) 도메인별 과락 기준이 있어 각 도메인에서 일정 점수를 넘어야 한다  
-D) 합격 점수는 1000점 만점에 600점이다  
+A) Of the 65 questions, 15 are unscored and it is not indicated which ones they are  
+B) You must answer 65 questions within 90 minutes  
+C) There is a cutoff per domain, so you must exceed a certain score in each domain  
+D) The passing score is 600 out of 1000  
 
 **Answer: A**  
-Explanation: 65문항 중 15문항은 비채점이며 표시되지 않으므로 모든 문항을 성실히 풀어야 한다. 시간은 180분(B 오답), 도메인별 과락은 없고 전체 스케일 점수로 판정하며(C 오답), 합격선은 750점이다(D 오답).
+Explanation: Of the 65 questions, 15 are unscored and are not indicated, so you must answer every question diligently. The time is 180 minutes (B is wrong), there is no per-domain cutoff and the result is determined by the overall scaled score (C is wrong), and the passing score is 750 (D is wrong).
 
 ---
 
-**Question 2.** 시험 시간 배분 전략으로 가장 권장되는 것은?
+**Question 2.** Which exam time allocation strategy is MOST recommended?
 
-A) 어려운 문항 하나에 10분 이상 써서 반드시 맞힌다  
-B) 확실한 문항을 빠르게 처리하고, 헷갈리면 즉답 후 플래그해 2패스에서 재검토한다  
-C) 모르는 문항은 빈칸으로 두고 넘어간다  
-D) 모든 문항에 정확히 같은 시간을 강제 배분한다  
+A) Spend 10 minutes or more on a single difficult question to be sure to get it right  
+B) Handle certain questions quickly, and if unsure, answer immediately, flag the question, and review it in a second pass  
+C) Leave questions you do not know blank and move on  
+D) Force exactly the same amount of time on every question  
 
 **Answer: B**  
-Explanation: 쉬운 문항을 빠르게 끝내 어려운 시나리오에 시간을 몰아주고, 헷갈리면 즉답+플래그로 페이스를 지키는 것이 정석이다. 한 문항에 10분(A)은 기대 손실이 크고, 빈칸(C)은 0점이라 반드시 추정 답을 채워야 하며, 시간 균등 강제(D)는 비효율적이다.
+Explanation: The standard approach is to finish easy questions quickly, concentrate time on difficult scenarios, and keep pace by answering immediately and flagging when unsure. Spending 10 minutes on one question (A) has a large expected loss, a blank answer (C) scores zero so you must always fill in an estimated answer, and forcing equal time (D) is inefficient.
 
 ---
 
-**Question 3.** 다음 중 "요구사항 → 서비스" 번역이 잘못된 것은?
+**Question 3.** Which of the following "requirement → service" translations is incorrect?
 
-A) "운영을 최소화하며 스트림을 S3로 적재" → Kinesis Data Firehose  
-B) "배포 후 입력 분포 변화 자동 감지" → Model Monitor  
-C) "사용자에게 영향 없이 프로덕션 트래픽으로 신모델 검증" → Canary 배포  
-D) "집단 공정성 측정과 SHAP 설명" → SageMaker Clarify  
+A) "Deliver a stream to S3 with minimal operations" → Kinesis Data Firehose  
+B) "Automatically detect input distribution changes after deployment" → Model Monitor  
+C) "Validate a new model with production traffic without affecting users" → Canary deployment  
+D) "Group fairness measurement and SHAP explanations" → SageMaker Clarify  
 
 **Answer: C**  
-Explanation: 사용자 영향 없이 트래픽을 복제해 검증하는 것은 Shadow 테스트이며, Canary는 실제 사용자에게 일부 신모델 응답이 가는 점진 전환이다. A·B·D는 모두 올바른 번역이다.
+Explanation: Replicating traffic to validate without affecting users is Shadow testing, whereas Canary is a gradual rollout in which some real users receive the new model's responses. A, B, and D are all correct translations.
 
 ---
 
-**Question 4.** 다음 중 시험에서 자주 등장하는 함정에 대한 올바른 판단은?
+**Question 4.** Which of the following is the correct judgment about traps that frequently appear on the exam?
 
-A) 클래스가 95:5로 불균형해도 정확도(Accuracy)만으로 충분히 평가할 수 있다  
-B) XGBoost 학습 전에는 모든 수치 피처의 표준화가 반드시 필요하다  
-C) 다중 클래스 분류의 출력 활성화 함수로 Sigmoid를 써야 한다  
-D) 전처리 스케일러는 학습셋으로만 fit하고 검증·테스트에는 transform만 적용한다  
+A) Even if classes are imbalanced at 95:5, accuracy alone is sufficient for evaluation  
+B) Standardizing all numeric features is always required before training XGBoost  
+C) Sigmoid should be used as the output activation function for multiclass classification  
+D) Fit the preprocessing scaler only on the training set and apply only transform to validation and test sets  
 
 **Answer: D**  
-Explanation: 데이터 누수를 막으려면 스케일러·인코더를 학습셋으로만 fit하고 검증/테스트에는 transform만 적용해야 한다. 불균형에 정확도 단독(A)은 부적절하고, 트리 기반 XGBoost는 스케일 불변이라 표준화가 사실상 불필요하며(B), 다중 클래스 출력은 Softmax가 맞다(C).
+Explanation: To prevent data leakage, scalers and encoders must be fit only on the training set and only transform applied to validation/test. Accuracy alone under imbalance (A) is inappropriate, tree-based XGBoost is scale-invariant so standardization is effectively unnecessary (B), and Softmax is correct for multiclass output (C).
 
 ---
 
-**Question 5.** 점수 기대값을 가장 효과적으로 높이는 학습 우선순위로 옳은 것은?
+**Question 5.** Which study priority MOST effectively raises the expected score?
 
-A) 비중이 가장 작은 도메인 1·4만 집중한다  
-B) 모든 도메인을 버리고 한 도메인만 100% 만든다  
-C) 비중이 가장 큰 도메인 3(모델링, 36%)의 정확도를 끌어올린다  
-D) 비채점 문항을 찾아내 그 문항만 건너뛴다  
+A) Focus only on Domains 1 and 4, which have the smallest weights  
+B) Abandon all domains and perfect just one domain  
+C) Raise the accuracy in Domain 3 (Modeling, 36%), which has the largest weight  
+D) Identify the unscored questions and skip only those  
 
 **Answer: C**  
-Explanation: 합격은 전체 스케일 점수로 판정되므로, 비중이 가장 큰 도메인 3(36%)의 정확도를 높이는 것이 기대 점수를 가장 크게 끌어올린다. 작은 도메인만 집중(A)·단일 도메인 올인(B)은 비효율적이고, 비채점 문항은 표시되지 않아 식별·건너뛰기(D)가 불가능하다.
+Explanation: Because passing is determined by the overall scaled score, raising accuracy in Domain 3 (36%), which has the largest weight, raises the expected score the most. Focusing only on small domains (A) or going all in on a single domain (B) is inefficient, and unscored questions are not indicated, so identifying and skipping them (D) is impossible.
 
 ---

@@ -62,7 +62,7 @@ The core of **in-exam strategy** is the **2-minute rule** — if you exceed 2 mi
 
 ---
 
-## 📝 최종 모의고사 (시나리오 12문항)
+## 📝 Final Mock Exam (12 Scenario Questions)
 
 **Question 1.** A global multiplayer game provides UDP-based real-time communication to players worldwide. It must minimize latency and needs a fixed entry IP for clients to reference. What is the most appropriate service?
 

@@ -109,82 +109,82 @@ Next: Trusted Advisor—five auto-checks across account (security, performance, 
 
 ## 📝 Practice Questions
 
-**Question 1.** Compute Optimizer가 메모리 집약적 워크로드(Redis 캐시)를 운영 중인 인스턴스에 대해 "Over-provisioned, 더 작은 타입으로 줄이라"고 권장했다. 이 권장을 의심해야 하는 가장 큰 이유는?
+**Question 1.** Compute Optimizer recommended downsizing an instance running a memory-intensive workload (a Redis cache), saying it is "Over-provisioned, reduce to a smaller type." What is the main reason to doubt this recommendation?
 
-A) Compute Optimizer는 캐시 워크로드를 지원하지 않는다
-B) EC2 표준 메트릭에 메모리 사용률이 없어, CloudWatch Agent가 없으면 메모리를 모른 채 CPU·네트워크만으로 권장하므로 메모리 바운드 워크로드를 오판할 수 있다
-C) 14일은 너무 짧은 분석 기간이다
-D) Redis는 다운사이즈할 수 없다
-
-**Answer: B**
-
-Explanation: EC2의 표준 CloudWatch 메트릭에는 CPU·네트워크·디스크는 있지만 메모리 사용률이 없다. 하이퍼바이저가 게스트 OS 내부 메모리 사용을 들여다볼 수 없기 때문이다. 메모리 메트릭을 얻으려면 게스트 OS 안에 CloudWatch Agent를 설치해 `mem_used_percent`를 푸시해야 한다. Agent가 없으면 Compute Optimizer는 메모리를 "모르는 값"으로 두고 CPU만으로 권장하는데, Redis 같은 메모리 바운드 워크로드는 CPU 사용률이 낮아도 메모리가 꽉 차 있을 수 있어 다운사이즈가 위험하다. 권장의 신뢰도는 Agent 설치 여부에 직결된다.
-
----
-
-**Question 2.** 컴퓨팅 집약적 동영상 인코딩 배치 작업을 위한 인스턴스 패밀리를 골라야 한다. 작업은 CPU를 거의 100%까지 쓰지만 메모리는 적게 쓴다. 가장 적합한 패밀리는?
-
-A) R (메모리 최적화)
-B) C (컴퓨팅 최적화) — vCPU:메모리 비율이 1:2로 CPU가 풍부
-C) T (버스터블)
-D) X (초고메모리)
+A) Compute Optimizer does not support cache workloads
+B) EC2 standard metrics do not include memory utilization, so without the CloudWatch Agent it makes recommendations from CPU and network alone without knowing memory, and can misjudge memory-bound workloads
+C) 14 days is too short an analysis period
+D) Redis cannot be downsized
 
 **Answer: B**
 
-Explanation: 패밀리 선택은 병목 자원에 풍부한 자원을 매칭하는 문제다. CPU 바운드 워크로드는 C 패밀리(컴퓨팅 최적화)가 맞는다 — vCPU 대비 메모리 비율이 약 1:2로, 같은 가격에 더 많은 CPU를 준다. R(A)은 메모리가 풍부한 대신 CPU당 단가가 비싸 CPU 바운드 작업엔 낭비다. T(C)는 꾸준한 고부하에 크레딧이 고갈된다. X(D)는 초대형 인메모리 DB용이다.
+Explanation: EC2 standard CloudWatch metrics include CPU, network, and disk, but not memory utilization, because the hypervisor cannot see memory usage inside the guest OS. To get a memory metric, you must install the CloudWatch Agent inside the guest OS and push `mem_used_percent`. Without the Agent, Compute Optimizer treats memory as an "unknown value" and recommends from CPU alone; a memory-bound workload such as Redis can have its memory full even when CPU utilization is low, so downsizing is risky. The reliability of the recommendation depends directly on whether the Agent is installed.
 
 ---
 
-**Question 3.** Node.js 마이크로서비스 클러스터의 컴퓨팅 비용을 약 20% 줄이라는 지시를 받았다. 코드 변경은 최소화하고 싶다. 가장 효과적인 첫 시도는?
+**Question 2.** You must pick an instance family for a compute-intensive video encoding batch job. The job uses CPU at nearly 100% but uses little memory. Which family is the best fit?
 
-A) 인스턴스 크기를 한 단계 키운다
-B) Graviton(예: c6g/c7g) 기반 인스턴스로 전환 — ARM 기반으로 약 20% 저렴하고, Node 같은 인터프리터/런타임 언어는 대부분 재컴파일 없이 동작
-C) 모든 인스턴스를 Spot으로 바꾼다
-D) Lambda로 전부 재작성한다
+A) R (memory optimized)
+B) C (compute optimized) — a vCPU:memory ratio of 1:2 gives plenty of CPU
+C) T (burstable)
+D) X (extreme memory)
 
 **Answer: B**
 
+Explanation: Family selection is about matching abundant resources to the bottleneck resource. For a CPU-bound workload, the C family (compute optimized) is correct: its memory-to-vCPU ratio is about 1:2, giving more CPU for the same price. R (A) has abundant memory but a higher price per CPU, so it is wasteful for CPU-bound work. T (C) exhausts its credits under sustained high load. X (D) is for very large in-memory databases.
+
 ---
 
-**Question 4.** t3.medium에서 운영 중인 API 서버가 매일 오후가 되면 응답이 급격히 느려지고 CPU 그래프가 20%에 천장을 친 듯 눌린다. AWS 장애는 없다. 원인과 올바른 해결은?
+**Question 3.** You have been told to cut the compute cost of a Node.js microservice cluster by about 20%. You want to minimize code changes. What is the most effective first step?
 
-A) 네트워크 대역폭 부족
-B) CPU 크레딧 고갈로 baseline(20%)에 묶인 것 — M/C 패밀리로 변경이 정석
-C) 디스크 IOPS 부족 — gp3로 변경
-D) 메모리 누수 — 인스턴스 재시작
+A) Increase the instance size by one step
+B) Switch to Graviton-based instances (e.g., c6g/c7g) — ARM-based and about 20% cheaper, and interpreted/runtime languages such as Node mostly run without recompilation
+C) Switch all instances to Spot
+D) Rewrite everything in Lambda
 
 **Answer: B**
 
 ---
 
-**Question 5.** 수백 개의 gp2 EBS 볼륨이 있는 계정에서, 다운타임 없이 즉시 스토리지 비용을 약 20% 줄이고 성능도 개선하려 한다. 무엇을 해야 하나?
+**Question 4.** An API server running on a t3.medium slows down sharply every afternoon, and its CPU graph looks flattened as if capped at 20%. There is no AWS outage. What is the cause and the correct fix?
 
-A) 모든 볼륨의 스냅샷을 찍어 더 작은 볼륨으로 복원
-B) `modify-volume`으로 gp2 → gp3 무중단 전환 — GB당 약 20% 저렴하고 기본 3,000 IOPS·125MB/s를 크기와 무관하게 보장
-C) 볼륨을 io2로 변경
-D) 볼륨을 S3로 이전
-
-**Answer: B**
-
----
-
-**Question 6.** Compute Optimizer가 한 인스턴스를 "Optimized"로 판정했지만, 다음 달 대규모 프로모션으로 트래픽이 5배 증가할 예정이다. 이 권장을 어떻게 다뤄야 하나?
-
-A) Compute Optimizer 권장은 항상 정확하므로 그대로 신뢰한다
-B) Compute Optimizer는 과거 14일 데이터만 보고 미래 부하 증가를 모르므로, 예정된 트래픽 급증을 감안해 권장을 보정해야 한다
-C) 권장을 무시하고 인스턴스를 종료한다
-D) 14일을 1일로 줄여 재분석한다
+A) Insufficient network bandwidth
+B) CPU credits are exhausted and it is held at the baseline (20%) — changing to the M/C family is the standard fix
+C) Insufficient disk IOPS — change to gp3
+D) Memory leak — restart the instance
 
 **Answer: B**
 
 ---
 
-**Question 7.** 100개의 독립적인 서비스를 큰 공용 인스턴스 풀에 모아 운영하면, 각 서비스를 단독 인스턴스에 격리할 때보다 평균 사용률을 더 높게 안전하게 가져갈 수 있다. 그 이론적 근거는?
+**Question 5.** In an account with hundreds of gp2 EBS volumes, you want to immediately cut storage cost by about 20% and also improve performance, with no downtime. What should you do?
 
-A) AWS가 풀이 크면 자동 할인을 준다
-B) 통계적 다중화 — 독립 워크로드가 많을수록 전체 동시 피크 확률이 낮아져(대수의 법칙) 전체 피크가 개별 피크의 합보다 작다
-C) 큰 인스턴스가 항상 더 빠르다
-D) Auto Scaling은 사용률을 무시한다
+A) Take snapshots of all volumes and restore them to smaller volumes
+B) Convert gp2 to gp3 with no downtime using `modify-volume` — about 20% cheaper per GB, and it guarantees a baseline of 3,000 IOPS and 125 MB/s regardless of size
+C) Change the volumes to io2
+D) Move the volumes to S3
+
+**Answer: B**
+
+---
+
+**Question 6.** Compute Optimizer rated an instance "Optimized," but traffic is expected to increase 5x next month because of a large promotion. How should this recommendation be handled?
+
+A) Trust it as is, because Compute Optimizer recommendations are always accurate
+B) Compute Optimizer looks only at the past 14 days of data and does not know about future load increases, so the recommendation must be adjusted to account for the planned traffic spike
+C) Ignore the recommendation and terminate the instance
+D) Reduce the 14 days to 1 day and re-analyze
+
+**Answer: B**
+
+---
+
+**Question 7.** Running 100 independent services together in one large shared instance pool can safely achieve a higher average utilization than isolating each service on its own instance. What is the theoretical basis for this?
+
+A) AWS gives an automatic discount when the pool is large
+B) Statistical multiplexing — the more independent workloads there are, the lower the probability of simultaneous peaks (law of large numbers), so the overall peak is smaller than the sum of the individual peaks
+C) Larger instances are always faster
+D) Auto Scaling ignores utilization
 
 **Answer: B**
 

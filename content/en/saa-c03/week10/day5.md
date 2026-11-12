@@ -102,7 +102,7 @@ The exam ultimately tests your ability to quickly convert keywords in a scenario
 
 > 🔍 **Going deeper**: There's one meta-pattern running through this entire table — nearly every AWS cost tool divides on **"who bears the uncertainty."** Spot: the customer bears reclaim uncertainty in exchange for a 90% discount. SP: the customer removes future-usage uncertainty via commitment in exchange for a discount. Intelligent-Tiering: AWS bears access-pattern uncertainty and takes a small fee. Budgets: future-cost uncertainty is controlled with a limit. When you meet a cost question, ask "in this scenario, which uncertainty is central, and who is it reasonable to have bear it?" and the structure of the answer becomes visible.
 
-## 시나리오 연습 문제 12
+## Scenario Practice Questions 12
 
 **Question 1.** A company runs a fleet of 24/7 web servers and may in the future move freely to newer-generation instances, OS, and regions. To get the maximum discount while keeping this flexibility, what should it use?
 

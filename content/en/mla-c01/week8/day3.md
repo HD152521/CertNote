@@ -83,55 +83,55 @@ Next: What happens when monitoring detects drift or degradation—auto-retrainin
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 엔드포인트의 응답이 갑자기 느려졌다. `ModelLatency`는 평소와 같은데 전체 응답 시간만 급증했다. 다음 중 원인을 좁히는 데 가장 적절한 도구는?
+**Question 1.** An endpoint's responses suddenly became slow. `ModelLatency` is the same as usual, but only the overall response time spiked. Which of the following is the most appropriate tool for narrowing down the cause?
 
-A) Model Monitor 데이터 품질 베이스라인  
-B) AWS X-Ray로 요청 구간별 지연 추적  
-C) Clarify 편향 드리프트 모니터  
-D) S3 버전 관리  
+A) Model Monitor Data Quality baseline  
+B) Trace per-segment request latency with AWS X-Ray  
+C) Clarify Bias Drift monitor  
+D) S3 versioning  
 
 **Answer: B**  
-Explanation: ModelLatency는 정상인데 전체 지연만 늘었다면 모델 외부 구간(앞단 Lambda·네트워크·외부 API)이 병목이다. X-Ray는 요청이 거치는 각 구간의 소요 시간을 추적해 어디서 지연이 나는지 특정해준다. A·C는 모델/데이터 드리프트용이고, D는 모니터링과 무관하다.
+Explanation: If ModelLatency is normal but only overall latency increased, the bottleneck is in a segment outside the model (upstream Lambda, network, external API). X-Ray traces the time taken in each segment a request passes through and pinpoints where the delay occurs. A and C are for model/data drift, and D is unrelated to monitoring.
 
 ---
 
-**Question 2.** 엔드포인트에서 `Invocation5XXErrors`가 급증했다. 가장 가능성 높은 원인 영역은?
+**Question 2.** `Invocation5XXErrors` spiked on an endpoint. What is the most likely cause area?
 
-A) 클라이언트가 잘못된 형식의 페이로드를 보냄  
-B) 엔드포인트 인스턴스 과부하·컨테이너 충돌·자원 부족  
-C) 모델 아티팩트가 S3에 없음  
-D) 엔드포인트 생성 시 잘못된 이름  
+A) The client sent a payload in the wrong format  
+B) Endpoint instance overload, container crashes, or resource exhaustion  
+C) The model artifact is missing from S3  
+D) A wrong name was used when creating the endpoint  
 
 **Answer: B**  
-Explanation: 5XX(서버) 오류는 서버 측 문제(과부하·충돌·자원 부족)를 나타낸다. A는 4XX(클라이언트) 오류, C·D는 배포 단계 문제로 5XX 급증과는 무관하다.
+Explanation: 5XX (server) errors indicate server-side problems (overload, crashes, resource exhaustion). A is a 4XX (client) error, and C and D are deployment-stage problems unrelated to a 5XX spike.
 
 ---
 
-**Question 3.** CloudWatch Alarm에서 `EvaluationPeriods=3`은 무엇을 의미하는가?
+**Question 3.** In a CloudWatch Alarm, what does `EvaluationPeriods=3` mean?
 
-A) 3초마다 평가한다  
-B) 3번 연속 임계치 위반 시 ALARM 상태로 변경  
-C) 3개의 별도 알람을 만든다  
-D) 3분마다 리셋된다  
+A) Evaluate every 3 seconds  
+B) Change to the ALARM state after 3 consecutive threshold violations  
+C) Create 3 separate alarms  
+D) Reset every 3 minutes  
 
 **Answer: B**  
-Explanation: `EvaluationPeriods`는 몇 번 연속 조건을 만족해야 ALARM으로 전환할지를 정의한다. 3으로 설정하면 3번 연속 위반 후 알람이 발생해 일시적 스파이크에 의한 오탐을 줄인다. A는 `Period`, C는 별개 알람, D는 누적 개념과 무관하다.
+Explanation: `EvaluationPeriods` defines how many consecutive times the condition must be met before transitioning to ALARM. Setting it to 3 raises the alarm after 3 consecutive violations, reducing false positives caused by momentary spikes. A describes `Period`, C is separate alarms, and D has nothing to do with the accumulation concept.
 
 ---
 
-**Question 4.** 트래픽이 급증해 응답 지연이 늘었다. CloudWatch 알람을 설정했지만 인스턴스는 여전히 부하가 높다. 가장 필요한 조치는?
+**Question 4.** Traffic surged and response latency increased. You set up a CloudWatch alarm, but the instances are still under heavy load. What action is most needed?
 
-A) 더 낮은 임계치로 알람을 조정  
-B) Application Auto Scaling 정책으로 인스턴스를 자동 증설  
-C) 모델을 재학습한다  
-D) 엔드포인트를 삭제했다가 다시 만든다  
+A) Adjust the alarm to a lower threshold  
+B) Automatically scale out instances with an Application Auto Scaling policy  
+C) Retrain the model  
+D) Delete the endpoint and recreate it  
 
 **Answer: B**  
-Explanation: 알람은 알림만 보낼 뿐 자동 대응하지 않는다. 트래픽 변동에 인스턴스를 자동으로 증감하려면 Application Auto Scaling 정책이 필요하다. A는 알림 빈도만 조정하고 대응이 없고, C·D는 상황과 무관하다.
+Explanation: An alarm only sends notifications and does not respond automatically. To automatically add or remove instances as traffic fluctuates, you need an Application Auto Scaling policy. A only adjusts the notification frequency with no response, and C and D are unrelated to the situation.
 
 ---
 
-**Question 5.** CloudWatch Logs에서 엔드포인트 컨테이너의 stderr 메시지를 보려 할 때, 로그 그룹 이름은?
+**Question 5.** When you want to view the stderr messages of an endpoint container in CloudWatch Logs, what is the log group name?
 
 A) /aws/lambda/inference  
 B) /aws/sagemaker/Endpoints/{endpoint-name}  
@@ -139,6 +139,6 @@ C) /aws/ecs/services
 D) /aws/ec2/instances  
 
 **Answer: B**  
-Explanation: SageMaker 엔드포인트 컨테이너의 로그는 `/aws/sagemaker/Endpoints/{endpoint-name}` 로그 그룹에 저장된다. A는 Lambda, C는 ECS, D는 EC2로 다른 서비스다.
+Explanation: The logs of a SageMaker endpoint container are stored in the `/aws/sagemaker/Endpoints/{endpoint-name}` log group. A is Lambda, C is ECS, and D is EC2, all different services.
 
 ---

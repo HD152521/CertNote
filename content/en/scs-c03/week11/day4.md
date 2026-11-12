@@ -127,62 +127,62 @@ This creates the closed loop of "detect → alert → auto-remediate" operating 
 
 ## 📝 Practice Questions
 
-**Question 1.** 200개 계정의 모든 ALB에 공통 WAF 관리형 규칙을 적용하고, 앞으로 새로 생기는 ALB도 자동으로 보호되게 하려 한다. 가장 적절한 서비스는?
+**Question 1.** We want to apply a common WAF managed rule to all ALBs across 200 accounts, and also have newly created ALBs automatically protected going forward. What is the most appropriate service?
 
-A) 각 계정에서 WAF Web ACL을 수동으로 ALB에 연결  
-B) AWS Firewall Manager로 WAF 정책을 정의해 조직 전역 ALB에 자동 배포·교정하고 신규 리소스도 자동 적용  
-C) Security Group으로 HTTP를 제한  
-D) CloudFront만 사용  
+A) Manually associate a WAF Web ACL with the ALB in each account  
+B) Define a WAF policy with AWS Firewall Manager to automatically deploy and remediate across organization-wide ALBs and automatically apply to new resources  
+C) Restrict HTTP with a Security Group  
+D) Use only CloudFront  
 
 **Answer: B**  
-Explanation: 조직 전역에 방화벽 정책을 일관 배포·강제하고 신규 리소스를 자동 보호하는 것은 Firewall Manager의 핵심 기능이다. WAF 정책으로 관리형 규칙 그룹을 정의하면 범위 내 모든 ALB에 자동 연결되고, 교정을 켜면 비준수도 자동 수정된다. 계정별 수동 연결은 누락·드리프트가 불가피하고, SG는 7계층 WAF 통제를 못 하며, CloudFront 단독은 ALB 보호 일괄화와 무관하다.
+Explanation: Consistently deploying and enforcing firewall policies across the organization and automatically protecting new resources is the core function of Firewall Manager. When you define a managed rule group in a WAF policy, it is automatically associated with all in-scope ALBs, and turning on remediation automatically fixes noncompliance. Manual per-account association inevitably leads to omissions and drift, an SG cannot perform layer 7 WAF control, and CloudFront alone is unrelated to bulk ALB protection.
 
 ---
 
-**Question 2.** Firewall Manager 정책을 만들었는데 일부 계정에서 준수 평가·자동 교정이 동작하지 않는다. 가장 가능성 높은 전제 조건 누락은?
+**Question 2.** You created a Firewall Manager policy, but compliance evaluation and automatic remediation do not work in some accounts. What is the most likely missing prerequisite?
 
-A) 해당 계정에서 AWS Config가 비활성 상태  
-B) CloudFront가 비활성  
-C) Route 53이 비활성  
-D) S3 버킷이 없음  
+A) AWS Config is inactive in that account  
+B) CloudFront is inactive  
+C) Route 53 is inactive  
+D) There is no S3 bucket  
 
 **Answer: A**  
-Explanation: Firewall Manager는 AWS Config로 리소스를 평가해 준수 여부를 판단하고 교정한다. 대상 계정에서 Config가 꺼져 있으면 평가·교정이 동작하지 않는다. FMS의 전제는 Organizations·FMS 관리자 지정·Config 활성화이며, CloudFront·Route 53·S3 존재 여부는 정책 유형에 따른 부수 사항일 뿐 보편적 전제 조건이 아니다.
+Explanation: Firewall Manager evaluates resources with AWS Config to determine compliance and remediate. If Config is off in the target account, evaluation and remediation do not work. The prerequisites for FMS are Organizations, designating an FMS administrator, and enabling Config; whether CloudFront, Route 53, or S3 exist is only incidental to the policy type and not a universal prerequisite.
 
 ---
 
-**Question 3.** 모든 EC2/RDS 생성 시 CostCenter 태그를 반드시 갖도록 *강제(차단)*하려 한다. 가장 직접적인 방법은?
+**Question 3.** We want to *enforce (block)* that every EC2/RDS creation must have a CostCenter tag. What is the most direct method?
 
-A) Tag Policies로 보고만 한다  
-B) SCP로 RunInstances/CreateDBInstance에서 aws:RequestTag/CostCenter가 없으면 Deny  
-C) Config 규칙으로 탐지만 한다  
-D) IAM 사용자에게 교육한다  
+A) Only report with Tag Policies  
+B) Use an SCP to Deny RunInstances/CreateDBInstance when aws:RequestTag/CostCenter is absent  
+C) Only detect with a Config rule  
+D) Train the IAM users  
 
 **Answer: B**  
-Explanation: 생성 시점에 태그 부재를 차단하는 예방 통제는 SCP의 Null 조건으로 구현한다. 필수 태그가 없으면 생성 액션 자체가 거부된다. Tag Policies와 Config 규칙은 표준화·탐지 중심이라 생성을 막지는 않고, 교육은 강제력이 없다. 실무에서는 셋을 함께 쓰되 "강제 차단"의 직접 수단은 SCP다.
+Explanation: A preventive control that blocks missing tags at creation time is implemented with a Null condition in an SCP. If the required tag is missing, the creation action itself is denied. Tag Policies and Config rules focus on standardization and detection and do not block creation, and training has no enforcement power. In practice you use all three together, but the direct means of "enforced blocking" is the SCP.
 
 ---
 
-**Question 4.** 한 계정에서 평소의 10배에 달하는 GPU 인스턴스 비용이 갑자기 발생했다. 보안 운영 관점의 가장 적절한 해석과 통제 조합은?
+**Question 4.** GPU instance costs suddenly appeared in one account at 10 times the usual level. From a security operations perspective, what is the most appropriate interpretation and combination of controls?
 
-A) 정상적인 사용 증가이므로 무시  
-B) 침해(예: 채굴) 신호일 수 있으므로 Cost Anomaly Detection/Budgets 경보로 조기 탐지하고, SCP로 대형 GPU 인스턴스 타입을 제한해 피해 한계를 줄인다  
-C) 인스턴스를 더 늘려 처리량을 높인다  
-D) 비용은 보안과 무관하므로 재무팀에만 통보  
+A) Ignore it since it is normal usage growth  
+B) It may be a sign of compromise (for example, mining), so detect early with Cost Anomaly Detection/Budgets alerts and limit the damage by restricting large GPU instance types with an SCP  
+C) Add more instances to increase throughput  
+D) Cost is unrelated to security, so notify only the finance team  
 
 **Answer: B**  
-Explanation: 비정상 비용 급증, 특히 대형 GPU 인스턴스 급증은 탈취된 자격증명에 의한 암호화폐 채굴 같은 침해의 전형적 신호다. Cost Anomaly Detection·Budgets로 조기 탐지하고, SCP로 채굴용 대형 인스턴스 타입 생성을 차단해 blast radius를 줄이는 것이 보안 운영의 정석이다. 무시·확장은 위험을 키우고, 비용을 보안과 분리해 재무팀에만 넘기는 것은 탐지 기회를 놓친다.
+Explanation: An abnormal cost spike, especially a surge in large GPU instances, is a typical sign of compromise such as cryptocurrency mining with stolen credentials. Detecting early with Cost Anomaly Detection and Budgets and reducing the blast radius by blocking creation of large instance types used for mining with an SCP is the standard of security operations. Ignoring or scaling up increases the risk, and separating cost from security and handing it only to the finance team misses the chance to detect.
 
 ---
 
-**Question 5.** 신규로 조직에 합류하는 모든 계정에서 GuardDuty·Security Hub·Config가 자동으로 켜지고, 발견된 비준수가 자동 교정되게 하려 한다. 가장 적절한 설계는?
+**Question 5.** We want GuardDuty, Security Hub, and Config to be turned on automatically in every account newly joining the organization, and detected noncompliance to be remediated automatically. What is the most appropriate design?
 
-A) 계정마다 수동으로 서비스를 켠다  
-B) 위임 관리자에서 자동 등록(auto-enable)을 켜고, findings를 EventBridge 규칙으로 받아 Lambda/SSM Automation으로 자동 격리·교정하는 닫힌 루프를 구성  
-C) 보안 도구를 끄고 비용을 절감한다  
-D) 루트 사용자로 각 계정을 점검한다  
+A) Manually turn on the services in each account  
+B) Turn on auto-enable in the delegated administrator, receive findings with EventBridge rules, and build a closed loop that automatically isolates and remediates with Lambda/SSM Automation  
+C) Turn off the security tools to save cost  
+D) Inspect each account as the root user  
 
 **Answer: B**  
-Explanation: 위임 관리자에서 auto-enable을 켜면 신규 계정이 조직에 들어오는 즉시 보안 서비스가 활성화되고, findings를 EventBridge→Lambda/SSM으로 연결하면 탐지·알림·자동 교정의 닫힌 루프가 완성된다. 계정별 수동 활성화는 누락이 생기고, 보안 도구 비활성화는 거버넌스를 무너뜨리며, 루트 점검은 직무 분리·최소 권한에 반한다.
+Explanation: Turning on auto-enable in the delegated administrator activates the security services as soon as a new account joins the organization, and connecting findings through EventBridge to Lambda/SSM completes a closed loop of detection, notification, and automatic remediation. Manual per-account activation leaves omissions, disabling security tools undermines governance, and root inspection goes against separation of duties and least privilege.
 
 ---

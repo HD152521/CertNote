@@ -500,79 +500,79 @@ Stage conditions (beforeEntry) implement Circuit Breaker pattern for automated d
 
 ## 📝 Practice Questions
 
-**Question 1.** V2 Pipeline에서 Build Action(CodeBuild)이 출력한 IMAGE_TAG 값을 같은 실행의 Deploy Action에서 사용하려면?
+**Question 1.** In a V2 pipeline, how can the IMAGE_TAG value output by a build action (CodeBuild) be used in the deploy action of the same execution?
 
-A) S3에 저장하고 Deploy Action이 읽는다  
-B) buildspec.yml의 env.exported-variables에 IMAGE_TAG를 선언하고 Deploy Action 설정에서 `#{BuildVariables.IMAGE_TAG}`로 참조한다  
-C) Pipeline 입력 변수에 미리 선언한다  
-D) Lambda Invoke Action으로 중간에 S3에 저장한다  
+A) Store it in S3 and have the deploy action read it  
+B) Declare IMAGE_TAG in env.exported-variables of buildspec.yml and reference it in the deploy action configuration as `#{BuildVariables.IMAGE_TAG}`  
+C) Declare it in advance in the pipeline input variables  
+D) Store it in S3 in between with a Lambda invoke action  
 
 **Answer: B**  
-Explanation: CodeBuild의 `env.exported-variables`에 선언된 환경 변수는 V2 Pipeline의 Action 출력 변수로 자동 노출된다. 참조 형식은 `#{ActionNamespace.VARIABLE_NAME}`이다. 이 변수는 파이프라인 실행 내에서 이후 모든 Action에서 참조 가능하다. S3(A, D)나 입력 변수(C)를 사용하면 빌드 전에 값을 알 수 없으므로 동적으로 생성되는 IMAGE_TAG에는 적합하지 않다.
+Explanation: Environment variables declared in `env.exported-variables` of CodeBuild are automatically exposed as action output variables of the V2 pipeline. The reference format is `#{ActionNamespace.VARIABLE_NAME}`. This variable can be referenced by all subsequent actions within the pipeline execution. With S3 (A, D) or input variables (C), the value cannot be known before the build, so they are not suitable for a dynamically generated IMAGE_TAG.
 
 ---
 
-**Question 2.** 모노레포에서 `services/payment/` 변경만 payment-pipeline을 트리거하고, `shared/lib/` 변경은 모든 서비스 파이프라인을 트리거해야 한다. 가장 적절한 구성은?
+**Question 2.** In a monorepo, only changes to `services/payment/` should trigger payment-pipeline, and changes to `shared/lib/` should trigger all service pipelines. What is the most appropriate configuration?
 
-A) 각 서비스 파이프라인에 Lambda Invoke Action을 추가해 변경 파일을 확인한다  
-B) payment-pipeline의 트리거에 `filePaths.includes: ["services/payment/**", "shared/lib/**"]`를 설정하고, 다른 서비스 파이프라인도 동일하게 각각 서비스 경로와 shared/lib/**를 포함한다  
-C) 단일 파이프라인에 조건 분기를 추가한다  
-D) GitHub Actions의 path filter를 사용하고 CodePipeline은 GitHub Actions 완료 후 시작한다  
+A) Add a Lambda invoke action to each service pipeline to check the changed files  
+B) Set `filePaths.includes: ["services/payment/**", "shared/lib/**"]` in the trigger of payment-pipeline, and likewise include each service path and shared/lib/** in the other service pipelines  
+C) Add conditional branching to a single pipeline  
+D) Use the GitHub Actions path filter and start CodePipeline after GitHub Actions completes  
 
 **Answer: B**  
-Explanation: V2 filePaths 필터를 각 서비스 파이프라인에 독립적으로 설정하는 것이 표준이다. `shared/lib/**`를 모든 서비스 파이프라인의 includes에 추가하면, shared/lib 변경 시 모든 서비스 파이프라인이 동시에 시작된다. 각 파이프라인이 독립적이므로 하나가 실패해도 다른 서비스에 영향 없다. A는 불필요한 실행을 먼저 시작한 후 중단하는 비효율적 방식이다.
+Explanation: The standard is to set the V2 filePaths filter independently on each service pipeline. If you add `shared/lib/**` to the includes of all service pipelines, all service pipelines start at the same time when shared/lib changes. Because each pipeline is independent, a failure in one does not affect the other services. A is an inefficient approach that starts unnecessary executions first and then stops them.
 
 ---
 
-**Question 3.** "모든 commit을 빌드해야 하지만 prod 배포는 가장 최근 commit만 해야 한다"는 요구사항을 구현하는 방법은?
+**Question 3.** How do you implement the requirement "every commit must be built, but only the most recent commit should be deployed to prod"?
 
 A) Execution Mode SUPERSEDED  
-B) Execution Mode QUEUED + Deploy Stage의 beforeEntry 조건에서 이 실행이 큐의 마지막인지 확인하는 Lambda Rule  
-C) Execution Mode PARALLEL + 별도 조율 Lambda  
-D) 두 개의 파이프라인 (빌드 파이프라인 + 배포 파이프라인)  
+B) Execution mode QUEUED + a Lambda rule in the Deploy stage beforeEntry condition that checks whether this execution is the last in the queue  
+C) Execution mode PARALLEL + a separate coordination Lambda  
+D) Two pipelines (a build pipeline + a deploy pipeline)  
 
 **Answer: B**  
-Explanation: QUEUED는 모든 commit을 순서대로 빌드(완전한 이력 보존)하면서, Deploy Stage에서 "큐의 마지막 실행인지" 확인하는 자동 게이트를 추가한다. 마지막 실행이 아니면 SKIP하고, 마지막 실행만 실제 배포를 진행한다. SUPERSEDED(A)는 새 commit이 이전 실행을 취소하므로 모든 commit 빌드가 보장되지 않는다. D의 두 파이프라인 방식도 가능하지만 더 복잡하다.
+Explanation: QUEUED builds every commit in order (preserving a complete history) while adding an automatic gate in the Deploy stage that checks whether it is "the last execution in the queue." If it is not the last execution, it is skipped, and only the last execution actually proceeds with the deployment. With SUPERSEDED (A), a new commit cancels the previous execution, so building every commit is not guaranteed. The two-pipeline approach in D is also possible but more complex.
 
 ---
 
-**Question 4.** PARALLEL Execution Mode를 사용할 때 가장 주의해야 할 점은?
+**Question 4.** What is the most important thing to watch out for when using the PARALLEL execution mode?
 
-A) 실행 비용이 2배가 된다  
-B) 여러 실행이 동시에 같은 prod 리소스(ECS Service, CloudFormation Stack)를 수정하려 하면 충돌이 발생한다  
-C) IAM 권한이 자동으로 제한된다  
-D) Artifact 저장 용량이 부족해진다  
+A) Execution cost doubles  
+B) Conflicts occur when multiple executions try to modify the same prod resource (ECS service, CloudFormation stack) at the same time  
+C) IAM permissions are automatically restricted  
+D) Artifact storage capacity runs out  
 
 **Answer: B**  
-Explanation: PARALLEL 모드에서 두 실행이 동시에 같은 CloudFormation 스택을 업데이트하려 하면 "UPDATE_IN_PROGRESS: Another update is in progress" 오류가 발생한다. PARALLEL은 각 실행이 독립된 대상(예: 각 PR이 별도 스테이징 환경, 스택 이름에 PR 번호 포함)에 배포할 때만 안전하다. 공유 리소스가 있는 환경에서는 QUEUED나 SUPERSEDED를 사용해야 한다.
+Explanation: In PARALLEL mode, if two executions try to update the same CloudFormation stack at the same time, the error "UPDATE_IN_PROGRESS: Another update is in progress" occurs. PARALLEL is safe only when each execution deploys to an independent target (for example, each PR gets a separate staging environment, with the PR number in the stack name). In environments with shared resources, use QUEUED or SUPERSEDED.
 
 ---
 
-**Question 5.** CDK Pipelines의 self-mutating 특성이 실제로 해결하는 문제는?
+**Question 5.** What problem does the self-mutating nature of CDK Pipelines actually solve?
 
-A) 파이프라인 비용을 자동으로 최적화한다  
-B) 파이프라인 정의 코드(CDK 코드)가 변경됐을 때 파이프라인이 스스로를 업데이트해서 콘솔에서 수동으로 파이프라인 구조를 변경할 필요가 없다  
-C) 자동으로 보안 취약점을 수정한다  
-D) CloudFormation 스택 드리프트를 감지한다  
+A) It automatically optimizes pipeline cost  
+B) When the pipeline definition code (CDK code) changes, the pipeline updates itself, so there is no need to manually change the pipeline structure in the console  
+C) It automatically fixes security vulnerabilities  
+D) It detects CloudFormation stack drift  
 
 **Answer: B**  
-Explanation: Self-mutating은 파이프라인 코드 자체(CDK 코드)가 git commit으로 관리되고, 그 변경이 자동으로 실제 파이프라인에 반영된다는 의미다. 예를 들어 CDK 코드에 새 Stage를 추가하면 git push → 기존 파이프라인 실행 → synth → 자신의 CloudFormation 스택 업데이트 → 파이프라인이 새 Stage를 포함한 상태로 재실행된다. 파이프라인 구조 변경이 코드 리뷰 프로세스를 거치게 된다는 것이 핵심 가치다.
+Explanation: Self-mutating means the pipeline code itself (CDK code) is managed through git commits, and those changes are automatically reflected in the actual pipeline. For example, if you add a new stage to the CDK code: git push → the existing pipeline runs → synth → updates its own CloudFormation stack → the pipeline re-runs with the new stage included. The key value is that changes to the pipeline structure go through the code review process.
 
 ---
 
-**Question 6.** V2 Pipeline에서 Stage 진입 전 CloudWatch 알람 상태를 자동으로 확인하고 ALARM 상태면 Stage를 건너뛰려면?
+**Question 6.** In a V2 pipeline, how do you automatically check the CloudWatch alarm state before entering a stage and skip the stage if it is in the ALARM state?
 
-A) Lambda Invoke Action을 Stage 앞에 추가  
-B) Stage의 beforeEntry 조건에 CloudWatch Alarm Rule Provider를 설정하고 result를 SKIP으로 설정  
-C) Manual Approval Action으로 사람이 알람 상태를 확인 후 승인  
-D) EventBridge Rule로 알람 상태를 모니터링하고 파이프라인을 중단  
+A) Add a Lambda invoke action before the stage  
+B) Set the CloudWatch alarm rule provider in the stage beforeEntry condition and set the result to SKIP  
+C) A person checks the alarm state with a manual approval action and approves  
+D) Monitor the alarm state with an EventBridge rule and stop the pipeline  
 
 **Answer: B**  
-Explanation: V2의 Stage 조건(`beforeEntry`) + CloudWatch Alarm Rule Provider 조합이 이 요구사항의 정확한 구현이다. SKIP으로 설정하면 알람이 ALARM 상태일 때 해당 Stage를 건너뛰고 다음 Stage로 진행한다(파이프라인이 중단되지 않음). FAIL로 설정하면 파이프라인 전체가 실패한다. CloudWatch Alarm Rule Provider는 Lambda 없이 직접 알람 상태를 체크하는 단순한 방법이다.
+Explanation: The combination of the V2 stage condition (`beforeEntry`) + the CloudWatch alarm rule provider is the exact implementation of this requirement. If set to SKIP, the stage is skipped when the alarm is in the ALARM state and the pipeline proceeds to the next stage (the pipeline is not stopped). If set to FAIL, the entire pipeline fails. The CloudWatch alarm rule provider is a simple way to check the alarm state directly without Lambda.
 
 ---
 
-**Question 7.** V2 Pipeline에서 지원하는 트리거 이벤트 유형 중 지원하지 않는 것은?
+**Question 7.** Which of the trigger event types supported by a V2 pipeline is not supported?
 
 A) git push to specific branch with file path filter  
 B) git tag push with pattern matching  
@@ -580,4 +580,4 @@ C) pull request opened or updated
 D) git push with commit message containing a specific keyword  
 
 **Answer: D**  
-Explanation: V2 트리거는 (A) 브랜치 패턴 + 파일 경로 패턴, (B) 태그 패턴, (C) PR 이벤트(OPEN, UPDATED, CLOSED)를 지원한다. 커밋 메시지 내용(D)을 기반으로 트리거하는 기능은 CodePipeline V2에서 지원하지 않는다. 커밋 메시지 기반 트리거가 필요하면 Lambda가 push 이벤트를 받아 메시지를 파싱한 후 조건부로 `start-pipeline-execution`을 호출하는 커스텀 트리거 패턴이 필요하다.
+Explanation: V2 triggers support (A) branch patterns + file path patterns, (B) tag patterns, and (C) PR events (OPEN, UPDATED, CLOSED). Triggering based on the content of the commit message (D) is not supported in CodePipeline V2. If a commit message-based trigger is needed, you need a custom trigger pattern in which Lambda receives the push event, parses the message, and conditionally calls `start-pipeline-execution`.

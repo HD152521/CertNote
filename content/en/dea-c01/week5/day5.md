@@ -89,7 +89,7 @@ Next week we enter data storage and serving — data warehouses and catalog spac
 
 ## 📝 Practice Questions
 
-**Question 1.** 다음 요구를 모두 만족하는 변환 엔진은? "수십 TB를 처리, Hive와 HBase를 함께 사용, 스팟 인스턴스로 비용을 극단적으로 제어, 클러스터를 세밀히 튜닝."
+**Question 1.** Which transformation engine satisfies all of the following requirements? "Process tens of TB, use Hive and HBase together, control cost aggressively with Spot Instances, and finely tune the cluster."
 
 A) Amazon EMR on EC2  
 B) AWS Lambda  
@@ -97,54 +97,54 @@ C) AWS Glue
 D) Amazon Athena  
 
 **Answer: A**  
-Explanation: 다양한 빅데이터 생태계 도구(Hive/HBase), 스팟을 통한 비용 제어, 세밀한 클러스터 튜닝은 모두 EMR on EC2의 강점이다. Lambda는 15분 한계, Glue는 서버리스 추상화로 세밀 제어가 제한적, Athena는 쿼리 서비스로 이 요구와 맞지 않는다.
+Explanation: Support for a variety of big data ecosystem tools (Hive/HBase), cost control through Spot, and fine-grained cluster tuning are all strengths of EMR on EC2. Lambda has the 15-minute limit, Glue is a serverless abstraction with limited fine-grained control, and Athena is a query service that does not fit this requirement.
 
 ---
 
-**Question 2.** "S3 파일 도착 → Glue 변환 → 검증 → 통과 시 Redshift 적재, 실패 시 알림"을 분기·재시도와 함께 서버리스로 조율하려 한다. 가장 적합한 오케스트레이터는?
+**Question 2.** You want to orchestrate "S3 file arrives → Glue transformation → validation → load into Redshift if it passes, notify on failure" in a serverless way with branching and retries. Which orchestrator is the most suitable?
 
 A) Amazon MWAA  
-B) 단일 Lambda 함수  
+B) A single Lambda function  
 C) Amazon Kinesis  
 D) AWS Step Functions  
 
 **Answer: D**  
-Explanation: 전부 AWS 서비스로 구성되고 분기(Choice)·재시도(Retry/Catch)를 선언적으로 처리하며 서버리스 저운영을 원하므로 Step Functions가 최적이다. MWAA는 Airflow 자산·멀티 환경이 단서일 때 선택하고, 단일 Lambda는 15분 한계와 가시성 부족, Kinesis는 스트리밍 수집 도구다.
+Explanation: Everything consists of AWS services, branching (Choice) and retries (Retry/Catch) are handled declaratively, and low-operations serverless is desired, so Step Functions is optimal. Choose MWAA when Airflow assets or multi-environment coordination are the clue; a single Lambda has the 15-minute limit and lacks visibility; and Kinesis is a streaming ingestion tool.
 
 ---
 
-**Question 3.** EMR 비용 최적화를 위한 설명 중 옳은 것은?
+**Question 3.** Which statement about EMR cost optimization is correct?
 
-A) 영구 데이터를 Core 노드 HDFS에 저장하고 클러스터를 24시간 유지한다  
-B) Task 노드에 스팟을 적용하고 영구 데이터는 S3(EMRFS)에 두며 Transient 클러스터로 작업 시에만 띄운다  
-C) Primary 노드를 스팟으로 구성해 비용을 줄인다  
-D) 모든 노드를 온디맨드로 고정한다  
+A) Store persistent data in HDFS on the Core nodes and keep the cluster running 24 hours a day  
+B) Apply Spot to Task nodes, keep persistent data in S3 (EMRFS), and launch a transient cluster only when running jobs  
+C) Configure the Primary node with Spot to reduce cost  
+D) Fix all nodes as On-Demand  
 
 **Answer: B**  
-Explanation: Task 노드는 HDFS를 저장하지 않아 스팟 회수에 안전하고, 영구 데이터는 S3(EMRFS)에 두어 컴퓨트-스토리지를 분리하며, Transient 클러스터로 작업 시에만 띄우는 것이 정석이다. HDFS는 임시 저장소이고, Primary를 스팟으로 두면 회수 시 클러스터 전체가 멈춘다.
+Explanation: Task nodes do not store HDFS and are therefore safe from Spot reclamation, persistent data is kept in S3 (EMRFS) to separate compute from storage, and launching a transient cluster only when running jobs is the standard approach. HDFS is temporary storage, and putting the Primary on Spot would stop the entire cluster when it is reclaimed.
 
 ---
 
-**Question 4.** Athena 스캔 비용이 급증했다. 데이터는 단일 Gzip CSV로 저장돼 있고 쿼리는 최근 며칠·특정 컬럼만 본다. 다음 중 비용 절감에 도움이 되지 않는 조치는?
+**Question 4.** Athena scan costs have spiked. The data is stored as a single Gzip CSV, and queries look only at the last few days and specific columns. Which of the following actions would NOT help reduce cost?
 
-A) Parquet 같은 열 기반 포맷으로 변환  
-B) year/month/day로 파티셔닝  
-C) user_id 같은 고카디널리티 컬럼으로 잘게 파티셔닝하고 파일을 더 쪼갠다  
-D) 작은 파일을 128MB~1GB로 컴팩션하고 분할 가능한 Snappy 압축 사용  
+A) Convert to a columnar format such as Parquet  
+B) Partition by year/month/day  
+C) Partition finely by a high-cardinality column such as user_id and split the files further  
+D) Compact small files to 128 MB to 1 GB and use splittable Snappy compression  
 
 **Answer: C**  
-Explanation: 고카디널리티 컬럼으로 파티셔닝하고 파일을 더 쪼개면 파티션 폭증과 작은 파일 문제로 오히려 성능·비용이 악화된다. 열 포맷 전환, 날짜 파티셔닝, 컴팩션과 분할 가능 압축은 모두 스캔량을 줄이는 올바른 처방이다.
+Explanation: Partitioning by a high-cardinality column and splitting files further causes an explosion of partitions and the small-file problem, which actually worsens performance and cost. Converting to a columnar format, date partitioning, compaction, and splittable compression are all correct remedies for reducing the amount scanned.
 
 ---
 
-**Question 5.** 다음 중 도구와 대표 용도의 연결이 잘못된 것은?
+**Question 5.** Which of the following pairs of a tool and its typical use is INCORRECT?
 
-A) Lambda — S3에 도착한 작은 파일을 즉시 정제하는 이벤트 기반 경량 변환  
-B) MWAA — 기존 Airflow DAG를 재사용하며 멀티 클라우드를 조율하는 복잡한 워크플로  
-C) Glue Workflows — 다양한 비-Glue 서비스를 복잡한 분기와 함께 조율하는 범용 오케스트레이션  
-D) Parquet — 분석 쿼리에서 컬럼 프루닝으로 스캔량을 줄이는 열 기반 포맷  
+A) Lambda — lightweight event-driven transformation that immediately cleanses small files arriving in S3  
+B) MWAA — complex workflows that reuse existing Airflow DAGs and coordinate multi-cloud environments  
+C) Glue Workflows — general-purpose orchestration that coordinates a variety of non-Glue services with complex branching  
+D) Parquet — a columnar format that reduces the amount scanned through column pruning in analytical queries  
 
 **Answer: C**  
-Explanation: Glue Workflows는 Glue 크롤러·작업에 거의 국한된 경량 오케스트레이션으로, 다양한 비-Glue 서비스와 복잡한 분기 조율에는 약하다. 그 역할은 Step Functions나 MWAA가 맡는다. 나머지 연결(Lambda·MWAA·Parquet)은 모두 올바르다.
+Explanation: Glue Workflows is lightweight orchestration almost entirely limited to Glue crawlers and jobs, and is weak at coordinating a variety of non-Glue services with complex branching. Step Functions or MWAA take that role. The other pairings (Lambda, MWAA, Parquet) are all correct.
 
 ---

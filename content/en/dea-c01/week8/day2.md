@@ -97,7 +97,7 @@ invalid.write.json("s3://lake-quarantine/orders/dt=2026-06-26/")
 
 ## 📝 Practice Questions
 
-**Question 1.** AWS Glue Data Quality에서 데이터셋의 품질 규칙을 선언형으로 정의하는 데 사용하는 언어는?
+**Question 1.** In AWS Glue Data Quality, which language is used to declaratively define the quality rules of a dataset?
 
 A) HiveQL  
 B) PartiQL  
@@ -105,54 +105,54 @@ C) JSONPath
 D) DQDL(Data Quality Definition Language)  
 
 **Answer: D**  
-Explanation: Glue Data Quality는 DQDL로 RowCount, IsComplete, IsUnique 등 규칙을 선언형으로 정의합니다. HiveQL/PartiQL은 쿼리 언어, JSONPath는 JSON 경로 표현식으로 품질 규칙 정의 용도가 아닙니다.
+Explanation: Glue Data Quality defines rules such as RowCount, IsComplete, and IsUnique declaratively with DQDL. HiveQL/PartiQL are query languages and JSONPath is a JSON path expression, and none is used to define quality rules.
 
 ---
 
-**Question 2.** 데이터 양이 요일·계절에 따라 크게 변하는 파이프라인에서, 고정 임계값보다 오탐이 적게 비정상을 탐지하려면 어떤 방식이 가장 적절한가?
+**Question 2.** In a pipeline where the data volume varies greatly by day of the week and season, which approach is most appropriate for detecting anomalies with fewer false positives than a fixed threshold?
 
-A) RowCount > 1000 같은 절대 임계값만 사용  
-B) 과거 추세를 학습하는 이상 탐지(anomaly detection)  
-C) 모든 레코드에 IsUnique 적용  
-D) 품질 검증을 비활성화  
+A) Use only absolute thresholds such as RowCount > 1000  
+B) Anomaly detection that learns past trends  
+C) Apply IsUnique to every record  
+D) Disable quality validation  
 
 **Answer: B**  
-Explanation: 이상 탐지는 지표의 과거 추세·정상 범위를 학습해 "평소와 다른" 값을 잡으므로 계절성·성장에 따른 변동에 강합니다. 고정 임계값은 트래픽 변동 시 오탐이 많고, IsUnique는 중복 검사일 뿐이며, 검증 비활성화는 품질 보장을 포기하는 것입니다.
+Explanation: Anomaly detection learns the historical trend and normal range of a metric to catch values that are "different from usual," so it is robust to variation caused by seasonality and growth. A fixed threshold produces many false positives when traffic varies, IsUnique is only a duplicate check, and disabling validation gives up on quality assurance.
 
 ---
 
-**Question 3.** 데이터 품질 검증 게이트에서 점수가 기준에 미달한 데이터를 처리할 때 권장되는 동작은?
+**Question 3.** What is the recommended action for data whose score falls below the standard at a data quality validation gate?
 
-A) curated 존에 그대로 적재하고 나중에 정정  
-B) 무시하고 삭제한다  
-C) 격리(quarantine) 영역에 보관하고 다운스트림 진행을 막는다  
-D) 임계값을 자동으로 낮춰 통과시킨다  
+A) Load it into the curated zone as is and correct it later  
+B) Ignore and delete it  
+C) Keep it in a quarantine area and block downstream progress  
+D) Automatically lower the threshold so that it passes  
 
 **Answer: C**  
-Explanation: 미달 데이터는 격리 영역에 원본·실패 사유와 함께 보관하고 다운스트림 진행을 차단해, 원인 분석과 재처리에 대비합니다. curated 덮어쓰기·삭제는 데이터를 오염·소실시키고, 임계값을 낮추는 것은 품질 게이트의 목적을 무력화합니다.
+Explanation: Data that fails is stored in a quarantine area along with the original and the failure reason, and downstream progress is blocked to prepare for root cause analysis and reprocessing. Overwriting curated or deleting corrupts or loses data, and lowering the threshold defeats the purpose of the quality gate.
 
 ---
 
-**Question 4.** 격리된 불량 데이터를 수정 후 다시 처리할 때, 같은 입력을 여러 번 처리해도 결과가 동일하도록 보장하는 속성은?
+**Question 4.** When reprocessing quarantined bad data after fixing it, which property guarantees that processing the same input multiple times produces the same result?
 
-A) 멱등성(Idempotency)  
-B) 휘발성(Volatility)  
-C) 카디널리티(Cardinality)  
-D) 직렬화 가능성(Serializability)  
+A) Idempotency  
+B) Volatility  
+C) Cardinality  
+D) Serializability  
 
 **Answer: A**  
-Explanation: 멱등성은 동일 입력을 반복 처리해도 결과가 변하지 않는 속성으로, 업서트(MERGE)나 파티션 단위 결정적 덮어쓰기로 구현해 재처리 시 중복을 방지합니다. 나머지는 재처리 중복 방지와 직접 관련된 개념이 아닙니다.
+Explanation: Idempotency is the property that repeatedly processing the same input does not change the result, and it is implemented with upserts (MERGE) or deterministic partition-level overwrites to prevent duplicates on reprocessing. The others are not concepts directly related to preventing duplicates on reprocessing.
 
 ---
 
-**Question 5.** 데이터 품질 검증을 파이프라인의 앞쪽(수집 직후)에 두는 것이 권장되는 주된 이유는?
+**Question 5.** What is the main reason it is recommended to place data quality validation early in the pipeline (right after ingestion)?
 
-A) 스토리지 비용이 절감되기 때문  
-B) 쿼리 성능이 향상되기 때문  
-C) IAM 권한이 단순해지기 때문  
-D) 불량 데이터가 curated까지 흘러간 뒤 발견 시 영향·재처리 비용이 폭증하기 때문  
+A) Because storage cost is reduced  
+B) Because query performance improves  
+C) Because IAM permissions become simpler  
+D) Because if bad data flows through to curated before being discovered, the impact and reprocessing cost explode  
 
 **Answer: D**  
-Explanation: shift-left 원칙에 따라 검증을 앞단에 두면 불량 데이터가 하류로 전파되기 전에 차단해 영향 범위와 재처리 비용을 최소화합니다. 비용·성능·권한도 부수적으로 좋아질 수 있지만 핵심 이유는 오염 전파 차단입니다.
+Explanation: Under the shift-left principle, placing validation at the front blocks bad data before it propagates downstream, minimizing the scope of impact and reprocessing cost. Cost, performance, and permissions may also incidentally improve, but the core reason is stopping the spread of contamination.
 
 ---

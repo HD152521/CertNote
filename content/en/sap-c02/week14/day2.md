@@ -97,7 +97,7 @@ SAP exam frequent mappings: (1) "Unified backup policy across services, accounts
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 금융사가 규제(SEC Rule 17a-4)에 따라 거래 백업을 7년간 **누구도 — AWS root 사용자조차 — 삭제·변경할 수 없게** 보관해야 한다. 가장 적합한 구성은?
+**Question 1.** Under regulation (SEC Rule 17a-4), a financial firm must retain transaction backups for 7 years so that **no one — not even the AWS root user — can delete or modify them**. What is the most appropriate configuration?
 
 A) Backup Vault Governance Lock
 
@@ -105,90 +105,90 @@ B) Backup Vault Compliance Lock
 
 C) S3 Glacier Deep Archive
 
-D) RDS 자동 백업 35일 + Manual Snapshot
+D) RDS automated backups for 35 days + Manual Snapshot
 
 **Answer: B**
 
-Explanation: Compliance 모드만이 유예 기간 종료 후 root를 포함한 누구도 백업을 삭제·변경할 수 없는 진짜 WORM을 보장하며, 이것이 SEC 17a-4·FINRA 4511 같은 규제 요구를 법적으로 충족한다. A(Governance)는 적절한 IAM 권한을 가진 관리자가 해제할 수 있어 "누구도 불가" 요건을 못 맞춘다. C(Glacier)는 저렴한 저장 계층일 뿐 변경 불가 정책 자체를 강제하지 않는다(Glacier에 Vault Lock을 별도로 걸 수는 있으나 보기의 의도는 저장소). D는 35일 한계와 변경 가능성 때문에 7년 불가역 요건에 부적합하다. 함정: "root도 불가·규제 준수"는 Compliance 모드의 직답이다.
+Explanation: Only Compliance mode guarantees true WORM, in which no one, including root, can delete or modify backups after the grace period ends, and this legally satisfies regulatory requirements such as SEC 17a-4 and FINRA 4511. A (Governance) can be lifted by an administrator with the appropriate IAM permissions, so it fails the "no one can" requirement. C (Glacier) is merely an inexpensive storage tier and does not itself enforce an immutability policy (Vault Lock can be applied to Glacier separately, but the intent of the choice is the storage). D is unsuitable for the 7-year irreversible requirement because of the 35-day limit and the possibility of modification. Trap: "even root cannot + regulatory compliance" is the direct answer for Compliance mode.
 
 ---
 
-**Question 2.** 한 기업이 200개 계정으로 구성된 Organization에서 모든 production 계정이 동일한 백업 정책(매일 백업·35일 보존·Cross-Region 복사)을 따르도록 일괄 강제하려 한다. 가장 효율적인 방법은?
+**Question 2.** In an Organization of 200 accounts, a company wants to enforce, across all accounts at once, that every production account follows the same backup policy (daily backups, 35-day retention, Cross-Region copy). What is the most efficient method?
 
-A) 각 계정 관리자가 수동으로 Backup Plan을 생성한다
+A) Each account administrator creates a Backup Plan manually
 
-B) AWS Organizations Backup Policy를 정의해 Production OU에 부착한다
+B) Define an AWS Organizations Backup Policy and attach it to the Production OU
 
-C) 계정마다 Lambda로 백업을 트리거한다
+C) Trigger backups with a Lambda in each account
 
-D) Trusted Advisor로 백업 누락을 점검한다
+D) Check for missing backups with Trusted Advisor
 
 **Answer: B**
 
-Explanation: Organizations Backup Policy는 관리 계정(또는 위임 관리자)이 정책을 정의해 OU에 부착하면 그 아래 모든 계정이 백업 정책을 강제 상속하는 메커니즘으로, SCP와 같은 정책 상속 구조를 따른다. 200개 계정을 중앙에서 일괄 통제하므로 가장 효율적이다. A는 200번 수동 작업으로 누락·드리프트가 불가피하고, C는 백업 인프라를 손수 재구현하는 안티패턴이며, D는 점검 도구일 뿐 정책을 강제하지 못한다. 함정: "수백 계정에 표준 일괄 강제"는 Organizations Backup Policy의 직답이다.
+Explanation: An Organizations Backup Policy is a mechanism in which the management account (or a delegated administrator) defines a policy and attaches it to an OU, and all accounts under it inherit the backup policy by force, following the same policy inheritance structure as SCPs. It controls 200 accounts centrally and at once, so it is the most efficient. A means 200 manual tasks, so omissions and drift are inevitable; C is an anti-pattern that reimplements the backup infrastructure by hand; and D is a checking tool that cannot enforce policy. Trap: "enforcing a standard at once across hundreds of accounts" is the direct answer for Organizations Backup Policy.
 
 ---
 
-**Question 3.** 한 회사가 워크로드 계정이 랜섬웨어로 탈취되더라도 백업만은 복구 가능하도록 보호하려 한다. 가장 견고한 아키텍처는?
+**Question 3.** A company wants to protect its backups so they remain recoverable even if a workload account is taken over by ransomware. What is the most robust architecture?
 
-A) 같은 계정의 다른 리전에 Cross-Region Copy만 한다
+A) Only a Cross-Region Copy within the same account
 
-B) Backup을 별도 백업 계정으로 Cross-Account Copy하고 대상 Vault에 Compliance Lock을 적용한다
+B) Cross-Account Copy the backups to a separate backup account and apply Compliance Lock to the destination Vault
 
-C) S3 Versioning을 켠다
+C) Turn on S3 Versioning
 
-D) Governance Lock을 적용한다
+D) Apply a Governance Lock
 
 **Answer: B**
 
-Explanation: 랜섬웨어가 워크로드 계정의 관리자 권한을 탈취해도, 백업이 **별도 계정(Cross-Account)**에 있고 그 Vault가 **Compliance Lock(root도 삭제 불가)**이면 공격자가 백업에 손댈 수 없어 몸값 없이 복구할 수 있다. A는 같은 계정이라 계정이 탈취되면 다른 리전 백업도 함께 노출된다. C(Versioning)는 객체 덮어쓰기 보호일 뿐 계정 탈취 시 삭제를 막지 못한다. D(Governance)는 권한 있는(탈취된) 관리자가 해제할 수 있어 부족하다. 함정: "계정 탈취·랜섬웨어 대비"는 Cross-Account + Compliance Lock의 조합 신호다.
+Explanation: Even if ransomware steals administrator privileges in the workload account, if the backups are in a **separate account (Cross-Account)** and that Vault has a **Compliance Lock (not even root can delete)**, the attacker cannot touch the backups and you can recover without paying a ransom. With A, the backups in other Regions are also exposed if the account is taken over because they are in the same account. C (Versioning) only protects against overwrites and cannot prevent deletion when the account is compromised. D (Governance) is insufficient because a privileged (compromised) administrator can lift it. Trap: "preparing for account takeover and ransomware" is the combination signal of Cross-Account + Compliance Lock.
 
 ---
 
-**Question 4.** 한 팀이 AWS Backup의 Cross-Account Copy를 설정했으나 복사가 계속 실패한다. 가장 가능성 높은 원인과 해법은?
+**Question 4.** A team set up AWS Backup Cross-Account Copy, but the copy keeps failing. What is the most likely cause and solution?
 
-A) IAM 사용자에게 AdministratorAccess를 부여한다
+A) Grant the IAM user AdministratorAccess
 
-B) 대상 계정 Vault의 KMS 키 정책과 Vault 액세스 정책에 소스 계정 권한을 추가한다
+B) Add the source account's permissions to the destination account Vault's KMS key policy and Vault access policy
 
-C) Backup Plan의 cron 일정을 변경한다
+C) Change the cron schedule of the Backup Plan
 
-D) 소스 리전을 us-east-1로 바꾼다
+D) Change the source Region to us-east-1
 
 **Answer: B**
 
-Explanation: Cross-Account Copy는 백업이 대상 Vault의 KMS 키로 암호화되므로, 대상 계정의 KMS 키 정책에 소스 계정의 복호화·복사 권한을, 대상 Vault의 액세스(리소스 기반) 정책에 소스 계정의 복사 허용을 명시해야 한다. 이 리소스 기반 정책 체인 중 하나라도 빠지면 복사가 조용히 실패한다. A는 IAM 사용자 권한일 뿐 리소스 기반 정책 문제를 해결하지 못하고, C·D는 무관하다. 함정: Cross-Account Copy 실패는 "IAM 권한"이 아니라 "KMS 키 정책·Vault 액세스 정책(리소스 기반)" 문제다.
+Explanation: In Cross-Account Copy, the backup is encrypted with the destination Vault's KMS key, so you must explicitly grant the source account decrypt and copy permissions in the destination account's KMS key policy and allow the source account to copy in the destination Vault's access (resource-based) policy. If any one link in this chain of resource-based policies is missing, the copy fails silently. A is only an IAM user permission and does not solve the resource-based policy problem, and C and D are unrelated. Trap: a Cross-Account Copy failure is a problem with the "KMS key policy and Vault access policy (resource-based)," not "IAM permissions."
 
 ---
 
-**Question 5.** 한 조직이 "모든 prod 리소스가 매일 백업되고 35일 보존되며 Cross-Region 복사되는지" 자동으로 검증하고 미준수 리소스를 식별하려 한다. 가장 적합한 도구는?
+**Question 5.** An organization wants to automatically verify that "all prod resources are backed up daily, retained for 35 days, and copied Cross-Region" and to identify noncompliant resources. What is the most appropriate tool?
 
 A) Trusted Advisor
 
 B) Backup Audit Manager
 
-C) AWS Config 수동 규칙
+C) AWS Config manual rules
 
 D) CloudTrail
 
 **Answer: B**
 
-Explanation: Backup Audit Manager는 "매일 백업 + 35일 보존 + Cross-Region 복사" 같은 컨트롤을 정의하면 실제 백업 상태를 이 컨트롤과 대조해 미준수 리소스를 자동 식별하고 리포트를 생성하며, Security Hub로 알림을 통합할 수 있다. A(Trusted Advisor)는 백업 정책 준수 평가 기능이 없고, C(Config)는 일반 구성 평가 도구로 백업 전용 컨트롤을 직접 제공하지 않으며, D(CloudTrail)는 API 감사 로그일 뿐이다. 함정: "백업 정책 준수 자동 평가·미준수 식별"은 Backup Audit Manager의 직답이다.
+Explanation: When you define controls such as "daily backup + 35-day retention + Cross-Region copy," Backup Audit Manager compares the actual backup state against these controls, automatically identifies noncompliant resources, generates reports, and can integrate alerts with Security Hub. A (Trusted Advisor) has no capability to assess backup policy compliance, C (Config) is a general configuration evaluation tool that does not directly provide backup-specific controls, and D (CloudTrail) is merely an API audit log. Trap: "automatic assessment of backup policy compliance and identification of noncompliance" is the direct answer for Backup Audit Manager.
 
 ---
 
-**Question 6.** 한 회사가 새로 생성되는 모든 EBS·RDS 리소스가 사람의 개입 없이 자동으로 백업 정책에 포함되기를 원한다. 가장 적합한 접근은?
+**Question 6.** A company wants all newly created EBS and RDS resources to be included in the backup policy automatically, without human intervention. What is the most appropriate approach?
 
-A) 리소스가 생길 때마다 관리자가 수동으로 Backup Plan에 추가한다
+A) An administrator manually adds each new resource to the Backup Plan
 
-B) Backup Plan에서 태그 기반 리소스 선택(예: Environment=prod)을 사용한다
+B) Use tag-based resource selection in the Backup Plan (for example, Environment=prod)
 
-C) 각 서비스의 네이티브 백업을 개별 설정한다
+C) Configure each service's native backup individually
 
-D) CloudFormation으로 매번 백업을 명시한다
+D) Specify the backup explicitly in CloudFormation every time
 
 **Answer: B**
 
-Explanation: AWS Backup의 태그 기반 리소스 선택은 "Environment=prod 태그를 가진 모든 리소스"를 Plan에 자동 편입하는 선언적 정책이다. 새 리소스가 생겨도 태그만 맞으면 자동으로 백업 대상이 되어, 명령형 백업의 고질적 문제인 "누락"을 구조적으로 방지한다(Kubernetes·Terraform과 같은 desired-state 사상). A는 매번 수동 작업으로 누락 위험이 크고, C·D는 리소스마다 손수 설정해야 해 자동 편입이 안 된다. 함정: "새 리소스도 자동으로 백업 정책에 포함"은 태그 기반 선택의 직답이다.
+Explanation: AWS Backup's tag-based resource selection is a declarative policy that automatically includes "all resources with the Environment=prod tag" in the Plan. Even when new resources are created, they automatically become backup targets as long as the tag matches, structurally preventing the chronic "omission" problem of imperative backups (the same desired-state philosophy as Kubernetes and Terraform). A relies on manual work every time and has a high risk of omission, and C and D require configuring each resource by hand, so automatic inclusion does not happen. Trap: "new resources are also automatically included in the backup policy" is the direct answer for tag-based selection.
 
 ---

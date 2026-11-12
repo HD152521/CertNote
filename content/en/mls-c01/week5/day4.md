@@ -122,62 +122,62 @@ Next post reviews this entire week — statistics foundations through validation
 
 ## 📝 Practice Questions
 
-**Question 1.** 하이퍼파라미터를 튜닝하면서 테스트셋 점수를 보고 모델을 반복 수정했다. 이때 발생하는 문제는?
+**Question 1.** While tuning hyperparameters, you repeatedly modified the model while looking at the test set score. What problem occurs?
 
-A) 테스트셋이 사실상 검증셋이 되어 최종 성능 추정이 낙관적으로 오염된다  
-B) 학습이 더 빨라진다  
-C) 모델이 과소적합된다  
-D) 클래스 불균형이 해소된다  
+A) The test set effectively becomes a validation set, and the final performance estimate becomes optimistically contaminated  
+B) Training becomes faster  
+C) The model underfits  
+D) Class imbalance is resolved  
 
 **Answer: A**  
-Explanation: 테스트셋은 모든 결정이 끝난 뒤 단 한 번만 봐야 한다. 테스트 점수를 보며 모델을 수정하면 테스트셋이 검증셋 역할을 하게 되어 선택 편향이 누적되고, 최종 성능 추정이 일반화 성능을 과대평가한다. 학습 속도(B), 과소적합(C), 불균형(D)과는 무관하다.
+Explanation: The test set should be looked at only once, after all decisions are made. If you modify the model while looking at test scores, the test set acts as a validation set, selection bias accumulates, and the final performance estimate overestimates generalization performance. It is unrelated to training speed (B), underfitting (C), or imbalance (D).
 
 ---
 
-**Question 2.** 데이터가 매우 적은 분류 문제에서 단일 분할의 점수가 분할마다 크게 흔들린다. 더 안정적인 성능 추정을 위한 방법은?
+**Question 2.** In a classification problem with very little data, the score of a single split fluctuates greatly from split to split. Which method provides a more stable performance estimate?
 
-A) 테스트셋 비율을 90%로 늘린다  
-B) k-fold 교차검증으로 모든 데이터를 검증에 활용하고 점수의 평균·분산을 본다  
-C) 검증을 생략하고 학습 점수만 본다  
-D) 데이터를 무작위로 복제한다  
+A) Increase the test set proportion to 90%  
+B) Use k-fold cross-validation to use all the data for validation and look at the mean and variance of the scores  
+C) Skip validation and look only at the training score  
+D) Randomly duplicate the data  
 
 **Answer: B**  
-Explanation: k-fold 교차검증은 각 fold를 한 번씩 검증셋으로 사용해 모든 행을 검증에 활용하고, k개 점수의 평균과 분산으로 안정적이고 신뢰할 수 있는 성능 추정을 제공한다. 테스트 비율을 키우면(A) 학습 데이터가 부족해지고, 학습 점수만 보거나(C) 데이터를 복제(D)하면 일반화 추정이 왜곡된다.
+Explanation: k-fold cross-validation uses each fold as the validation set once, so every row is used for validation, and the mean and variance of the k scores provide a stable, reliable performance estimate. Increasing the test proportion (A) leaves too little training data, and looking only at the training score (C) or duplicating data (D) distorts the generalization estimate.
 
 ---
 
-**Question 3.** 사기 거래가 전체의 1%인 극도로 불균형한 데이터를 분할할 때 가장 적절한 방법은?
+**Question 3.** What is the MOST appropriate way to split an extremely imbalanced dataset in which fraud transactions are 1% of the total?
 
-A) 무작위 분할로 충분하다  
-B) 시간 순으로만 나눈다  
-C) 층화 분할(stratified)로 각 분할에 클래스 비율을 유지한다  
-D) 소수 클래스를 모두 제거한다  
+A) A random split is sufficient  
+B) Split only chronologically  
+C) Use a stratified split to maintain the class ratio in each split  
+D) Remove all of the minority class  
 
 **Answer: C**  
-Explanation: 불균형 데이터에서 무작위 분할은 일부 분할에 소수 클래스가 거의 또는 전혀 없는 위험이 있다. 층화 분할은 각 분할에서 원본 클래스 비율을 유지해 소수 클래스가 모든 분할에 적절히 포함되게 한다. 무작위 분할(A)은 위험하고, 시간 순 분할(B)은 시계열 전용이며, 소수 클래스 제거(D)는 예측 대상 자체를 없애는 잘못된 조치다.
+Explanation: With imbalanced data, a random split risks some splits having few or no minority-class samples. A stratified split maintains the original class ratio in each split so the minority class is properly included in every split. A random split (A) is risky, a chronological split (B) is only for time series, and removing the minority class (D) is a wrong action that eliminates the prediction target itself.
 
 ---
 
-**Question 4.** 일별 수요 시계열을 검증할 때 누수를 막는 올바른 교차검증 방식은?
+**Question 4.** When validating a daily demand time series, which cross-validation method correctly prevents leakage?
 
-A) 일반 KFold로 무작위 분할  
+A) Random split with plain KFold  
 B) StratifiedKFold  
-C) TimeSeriesSplit으로 학습이 항상 검증보다 과거가 되게 한다  
+C) Use TimeSeriesSplit so that training always precedes validation in time  
 D) LeaveOneOut  
 
 **Answer: C**  
-Explanation: 시계열은 순서가 정보이므로 무작위 분할(A)이나 층화(B)·LOO(D)는 미래 데이터로 과거를 예측하는 누수를 일으킨다. TimeSeriesSplit은 forward-chaining 방식으로 학습 구간이 항상 검증 구간보다 과거가 되도록 보장해, 실제 배포 상황을 모사하고 누수를 차단한다.
+Explanation: In time series, order is information, so a random split (A), stratification (B), or LOO (D) causes leakage by predicting the past with future data. TimeSeriesSplit uses a forward-chaining approach to guarantee that the training period is always earlier than the validation period, mimicking the real deployment situation and blocking leakage.
 
 ---
 
-**Question 5.** k-fold 교차검증에서 k를 결정할 때의 트레이드오프로 옳은 것은?
+**Question 5.** Which statement about the trade-off in choosing k for k-fold cross-validation is correct?
 
-A) k가 클수록 항상 더 좋고 비용도 줄어든다  
-B) k는 클래스 수와 항상 같아야 한다  
-C) k가 작을수록 분산이 항상 커진다  
-D) k가 작으면 학습셋이 작아져 추정이 비관적으로 편향되고, k가 매우 크면 분산과 계산 비용이 커진다  
+A) A larger k is always better and also reduces cost  
+B) k must always equal the number of classes  
+C) A smaller k always increases variance  
+D) A small k makes the training sets smaller and biases the estimate pessimistically, while a very large k increases variance and computational cost  
 
 **Answer: D**  
-Explanation: k가 작으면 각 fold의 학습셋이 작아 성능을 비관적으로 과소추정(편향)하고, k가 매우 크면(LOO 등) 편향은 줄지만 fold 간 결과가 비슷해 분산이 커지고 계산 비용이 급증한다. 그래서 k=5~10이 균형점으로 널리 쓰인다. k가 항상 클수록 좋거나 비용이 주는 것은 아니며(A), 클래스 수와 같아야 할 이유도 없다(B). C는 방향이 반대다.
+Explanation: With a small k, each fold's training set is small, so performance is underestimated pessimistically (bias); with a very large k (such as LOO), bias decreases but results across folds are similar, so variance grows and computational cost rises sharply. That is why k=5-10 is widely used as a balance point. A larger k is not always better and does not reduce cost (A), and there is no reason for it to equal the number of classes (B). C has the direction reversed.
 
 ---

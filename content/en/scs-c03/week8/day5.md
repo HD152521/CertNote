@@ -109,7 +109,7 @@ Week 8 in one sentence: **"Logs are not just accumulated — they are *converted
 
 ## 📝 Practice Questions
 
-**Question 1.** "S3에 PII가 저장되어 있는지 발견", "EC2의 CVE 취약점 스캔", "악성 IP와의 통신 탐지"에 각각 대응하는 서비스 조합으로 옳은 것은?
+**Question 1.** Which service combination correctly maps to "discover whether PII is stored in S3," "scan EC2 for CVE vulnerabilities," and "detect communication with malicious IPs," respectively?
 
 A) Macie / Inspector / GuardDuty  
 B) GuardDuty / Macie / Inspector  
@@ -117,55 +117,55 @@ C) Inspector / GuardDuty / Macie
 D) Config / CloudWatch / Athena  
 
 **Answer: A**  
-Explanation: 민감데이터(PII) 발견은 Macie, 소프트웨어 취약점(CVE) 스캔은 Inspector, 위협 인텔·행위 기반 악성 통신 탐지는 GuardDuty다. 각 도구는 *무엇을* 탐지하느냐로 분담이 명확하며, Config/CloudWatch/Athena는 이 세 가지 탐지 역할과 다른 계층이다.
+Explanation: Sensitive data (PII) discovery is Macie, software vulnerability (CVE) scanning is Inspector, and threat-intelligence and behavior-based malicious communication detection is GuardDuty. Each tool's division is clear by *what* it detects, and Config/CloudWatch/Athena are at a different layer from these three detection roles.
 
 ---
 
-**Question 2.** 로그가 CloudWatch Logs에 있고, 사고 대응 중 별도 적재 없이 즉시 질의해 AccessDenied 추세를 보려 한다. 가장 적합한 도구는?
+**Question 2.** The logs are in CloudWatch Logs, and during incident response you want to query them immediately, without separate ingestion, to see the AccessDenied trend. What is the most suitable tool?
 
 A) Athena  
-B) Amazon OpenSearch에 새 도메인을 만들어 적재  
+B) Create a new domain in Amazon OpenSearch and ingest into it  
 C) CloudWatch Logs Insights  
 D) Security Lake  
 
 **Answer: C**  
-Explanation: 데이터가 이미 CloudWatch Logs에 있고 즉시성이 요구되면 Logs Insights가 정답이다. Athena/Security Lake는 S3 데이터 대상이고, 사고 대응 중 OpenSearch 도메인을 새로 만들어 적재하는 것은 즉시성이 없다.
+Explanation: If the data is already in CloudWatch Logs and immediacy is required, Logs Insights is the answer. Athena/Security Lake target S3 data, and creating a new OpenSearch domain and ingesting into it during incident response lacks immediacy.
 
 ---
 
-**Question 3.** 여러 탐지 서비스(GuardDuty, Inspector, Macie)의 결과를 단일 포맷으로 집계하고 CIS/FSBP 표준 합격률을 보안 점수로 보려 한다. 그리고 별개로, 조직 전역 *원시 로그*를 OCSF 표준으로 정규화해 SIEM이 질의하게 하려 한다. 각각의 서비스는?
+**Question 3.** You want to aggregate the findings of multiple detection services (GuardDuty, Inspector, Macie) into a single format and view the CIS/FSBP standards pass rate as a security score. Separately, you also want to normalize organization-wide *raw logs* into the OCSF standard so a SIEM can query them. Which service is each?
 
-A) 둘 다 Security Hub  
-B) 결과 집계·점수는 Security Hub(ASFF), 원시 로그 OCSF 정규화는 Security Lake  
-C) 결과 집계는 Security Lake, 원시 로그는 Security Hub  
-D) 둘 다 AWS Config  
+A) Both are Security Hub  
+B) Findings aggregation and scoring is Security Hub (ASFF), and OCSF normalization of raw logs is Security Lake  
+C) Findings aggregation is Security Lake, and raw logs are Security Hub  
+D) Both are AWS Config  
 
 **Answer: B**  
-Explanation: 탐지기 결과의 집계·정규화(ASFF)·표준 점검·보안 점수는 Security Hub, 원시 보안 로그의 OCSF 정규화 데이터 레이크는 Security Lake다. 포맷 이름(ASFF vs OCSF)과 대상(결과 vs 원시 로그)이 구분 단서이며, Config는 구성 평가 엔진으로 둘 다 아니다.
+Explanation: Aggregation and normalization (ASFF) of detector findings, standards checks, and security scores belong to Security Hub, and the OCSF-normalized data lake of raw security logs belongs to Security Lake. The format name (ASFF vs OCSF) and the target (findings vs raw logs) are the distinguishing clues, and Config is a configuration evaluation engine and is neither.
 
 ---
 
-**Question 4.** CloudTrail 로그로 5분 동안 콘솔 로그인 실패 5회 이상을 탐지하는 알람이 동작하지 않는다. 구성에서 함께 점검해야 할 두 가지는?
+**Question 4.** An alarm that detects 5 or more failed console logins in 5 minutes from CloudTrail logs does not work. Which two things should be checked together in the configuration?
 
-A) Metric Filter에 defaultValue=0 설정 여부와, Alarm Statistic이 Sum인지  
-B) SNS 암호화와 KMS 키 정책  
-C) 로그 그룹 보존 기간과 리전  
-D) OpenSearch 인덱스 상태와 파티션  
+A) Whether defaultValue=0 is set on the Metric Filter, and whether the Alarm Statistic is Sum  
+B) SNS encryption and the KMS key policy  
+C) The log group retention period and the Region  
+D) OpenSearch index status and partitions  
 
 **Answer: A**  
-Explanation: 카운트 기반 탐지는 Alarm Statistic이 Sum이어야 기간 내 발생 합을 임계와 비교할 수 있고, Metric Filter에 defaultValue=0이 없으면 결측 구간이 생겨 평가가 흔들린다. 이 둘은 짝으로 점검한다. SNS 암호화·보존 기간·OpenSearch는 이 카운트 탐지 동작과 무관하다.
+Explanation: For count-based detection, the Alarm Statistic must be Sum so that the total occurrences within the period can be compared with the threshold, and without defaultValue=0 on the Metric Filter, gaps appear in missing intervals and evaluation becomes unreliable. These two are checked as a pair. SNS encryption, the retention period, and OpenSearch are unrelated to how this count-based detection works.
 
 ---
 
-**Question 5.** GuardDuty가 EC2 크립토마이닝을 탐지하면 자동으로 인스턴스를 격리하고 포렌식용 EBS 스냅샷을 만든 뒤 보안팀에 알리는 파이프라인을 구성한다. 운영 위생상 반드시 고려할 것을 모두 고른 묶음은?
+**Question 5.** You build a pipeline in which, when GuardDuty detects EC2 cryptomining, it automatically isolates the instance, creates a forensic EBS snapshot, and notifies the security team. Which set includes everything that must be considered for operational hygiene?
 
-A) 자동 대응 역할에 Administrator 부여, 핸들러는 단발 실행 가정  
-B) 핸들러를 멱등하게 설계, 대상 실패 시 DLQ로 보존, 최소 권한 역할 + 리소스 조건  
-C) EventBridge 대신 매분 폴링하는 cron  
-D) 모든 결과를 무시 처리(SUPPRESSED)  
+A) Grant Administrator to the automatic response role, and assume the handler runs only once  
+B) Design the handler to be idempotent, preserve events in a DLQ when the target fails, and use a least-privilege role + resource conditions  
+C) A cron that polls every minute instead of EventBridge  
+D) Treat all findings as ignored (SUPPRESSED)  
 
 **Answer: B**  
-Explanation: EventBridge는 at-least-once 전달이라 핸들러는 멱등해야 하고, 대상 호출 실패 대비 DLQ로 이벤트를 보존하며, 자동 대응 역할은 최소 권한과 리소스 조건으로 공격 표면을 줄여야 한다. Administrator 부여·단발 가정은 위험하고, 폴링 cron은 비효율·지연이며, 결과 일괄 억제는 탐지를 무력화한다.
+Explanation: EventBridge delivers at least once, so the handler must be idempotent, events should be preserved in a DLQ in case a target invocation fails, and the automatic response role must reduce its attack surface with least privilege and resource conditions. Granting Administrator and assuming a single run are dangerous, a polling cron is inefficient and delayed, and suppressing all findings in bulk neutralizes detection.
 
 ---
 

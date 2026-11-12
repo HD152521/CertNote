@@ -110,62 +110,62 @@ Key policy (required/permanent), IAM (delegated), and grant (temporary/granular)
 
 ## 📝 Practice Questions
 
-**Question 1.** AWS 서비스가 사용자를 대신해 *특정 암호화 컨텍스트에 한해, 임시로, 나중에 취소 가능하게* 키를 쓰도록 허용하되 키 정책 문서는 건드리지 않으려 한다. 가장 적절한 메커니즘은?
+**Question 1.** You want to allow an AWS service to use a key on a user's behalf *only for a specific encryption context, temporarily, and revocably later*, without touching the key policy document. What is the most appropriate mechanism?
 
-A) 키 정책에 새 Statement 추가  
-B) IAM 인라인 정책 추가  
-C) KMS grant 생성(operations·encryption context constraint 지정, 이후 revoke/retire 가능)  
-D) 새 KMS 키 생성  
+A) Add a new statement to the key policy  
+B) Add an IAM inline policy  
+C) Create a KMS grant (specify operations and an encryption context constraint; it can later be revoked/retired)  
+D) Create a new KMS key  
 
 **Answer: C**  
-Explanation: grant는 프로그래밍적으로 생성·취소되는 임시·세밀 권한으로, 허용 작업과 암호화 컨텍스트 제약을 지정할 수 있고 RevokeGrant/retire로 회수된다. 정책 문서를 수정하지 않아 키 정책이 비대해지지 않는다. 키 정책/IAM은 영구적·광범위 권한에 적합하고, 새 키 생성은 이 요구와 무관하다.
+Explanation: A grant is a temporary, fine-grained permission that is created and revoked programmatically; you can specify the allowed operations and an encryption context constraint, and it is withdrawn with RevokeGrant/retire. Because it does not modify the policy document, the key policy does not become bloated. Key policies/IAM suit permanent, broad permissions, and creating a new key is unrelated to this requirement.
 
 ---
 
-**Question 2.** 키 정책에서 특정 역할이 KMS를 *직접* 호출하는 것은 막고, 오직 S3가 그 역할을 대신해 호출할 때만 복호화를 허용하려 한다. 어떤 조건 키를 써야 하는가?
+**Question 2.** You want a key policy to prevent a specific role from calling KMS *directly* and to allow decryption only when S3 calls on that role's behalf. Which condition key should be used?
 
 A) `aws:SourceIp`  
-B) `kms:ViaService`를 `s3.<region>.amazonaws.com`으로 지정  
+B) Specify `kms:ViaService` as `s3.<region>.amazonaws.com`  
 C) `aws:MultiFactorAuthPresent`  
 D) `kms:GrantIsForAWSResource`  
 
 **Answer: B**  
-Explanation: `kms:ViaService` 조건은 KMS 작업이 지정한 AWS 서비스 엔드포인트를 통해 요청될 때만 허용하므로, S3를 통한 복호화만 허용하고 직접 호출은 거부한다. `aws:SourceIp`는 IP 기반, MFA 조건은 다중 인증, GrantIsForAWSResource는 grant 관련 조건으로 이 요구와 맞지 않는다.
+Explanation: The `kms:ViaService` condition allows a KMS operation only when it is requested through the specified AWS service endpoint, so it permits decryption only through S3 and denies direct calls. `aws:SourceIp` is IP-based, the MFA condition is multi-factor authentication, and GrantIsForAWSResource is a grant-related condition, so none of them fit this requirement.
 
 ---
 
-**Question 3.** 계정 B가 계정 A 소유 KMS 키로 암호화된 데이터를 복호화하려 하는데 접근이 거부된다. 올바른 해결 절차는?
+**Question 3.** Account B tries to decrypt data encrypted with a KMS key owned by Account A, but access is denied. What is the correct resolution procedure?
 
-A) 계정 B의 IAM 정책만 수정하면 된다  
-B) 계정 A의 키 정책에서 B에게 작업을 허용하고, 동시에 계정 B의 IAM 정책에서 A의 키 ARN에 대한 작업을 허용한다(양측 모두)  
-C) 키를 public으로 설정한다  
-D) 계정 A에서 키를 비활성화한다  
+A) Modifying only Account B's IAM policy is enough  
+B) Allow the action for B in Account A's key policy, and at the same time allow the action on A's key ARN in Account B's IAM policy (both sides)  
+C) Set the key to public  
+D) Disable the key in Account A  
 
 **Answer: B**  
-Explanation: 교차계정 KMS 접근은 리소스 기반 정책(A의 키 정책)이 허용하고 동시에 사용 계정(B)의 IAM이 허용해야 성립한다. 어느 한쪽만으로는 실패한다. IAM만 수정하면 키 정책의 위임이 없어 거부되고, 키를 public으로 만드는 옵션은 존재하지 않으며, 비활성화는 데이터를 못 읽게 만든다.
+Explanation: Cross-account KMS access works only when the resource-based policy (A's key policy) allows it and the IAM policy of the using account (B) also allows it. Either one alone fails. Modifying only IAM is denied because there is no delegation in the key policy, there is no option to make a key public, and disabling makes the data unreadable.
 
 ---
 
-**Question 4.** 유출이 의심되는 KMS 키를 *즉시*, 그리고 필요하면 되돌릴 수 있게 무력화해야 한다. 가장 적절한 조치는?
+**Question 4.** You must neutralize a KMS key suspected of being compromised *immediately* and in a way that can be reversed if necessary. What is the most appropriate action?
 
-A) `ScheduleKeyDeletion`으로 즉시 삭제  
-B) 키를 disable(비활성화)하고, 필요 시 키 정책·grant를 회수하며 조사한다(disable은 즉시·가역적)  
-C) 키 별칭만 삭제  
-D) 30일 대기 후 자동 삭제되도록 둔다  
+A) Delete it immediately with `ScheduleKeyDeletion`  
+B) Disable the key, revoke key policies and grants as needed, and investigate (disable is immediate and reversible)  
+C) Delete only the key alias  
+D) Leave it to be automatically deleted after a 30-day wait  
 
 **Answer: B**  
-Explanation: 키 disable은 즉시 효력이 있고 가역적이어서 의심 상황의 긴급 무력화에 적합하다. `ScheduleKeyDeletion`은 7~30일 대기 후 비가역 삭제이므로 "즉시·되돌릴 수 있게"라는 요구에 맞지 않고, 삭제되면 데이터가 영구 복호화 불가가 된다. 별칭 삭제는 키 사용을 막지 못하고, 자동 삭제 방치는 위험하다.
+Explanation: Disabling a key takes effect immediately and is reversible, so it suits emergency neutralization in a suspected-compromise situation. `ScheduleKeyDeletion` is an irreversible deletion after a 7-30 day waiting period, so it does not meet the "immediately and reversibly" requirement, and once deleted the data can never be decrypted. Deleting an alias does not stop key usage, and leaving it to be deleted automatically is risky.
 
 ---
 
-**Question 5.** 조직 전체에서 일반 계정이 KMS 키를 삭제하거나 키 정책을 변경하지 못하게 막고, 보안 OU의 역할만 키를 관리하게 하려 한다. 가장 적절한 조합은?
+**Question 5.** You want to prevent regular accounts across the organization from deleting KMS keys or changing key policies, and let only roles in the security OU manage keys. What is the most appropriate combination?
 
-A) 각 계정에서 IAM 사용자에게만 권한 부여  
-B) Organizations SCP로 `kms:ScheduleKeyDeletion`·`kms:PutKeyPolicy`를 보안 OU 외 계정에서 Deny하고, 키 정책에서 관리 권한을 보안팀 역할로 한정  
-C) 모든 키를 AWS managed key로 전환  
-D) CloudTrail만 활성화  
+A) Grant permissions only to IAM users in each account  
+B) Use an Organizations SCP to Deny `kms:ScheduleKeyDeletion` and `kms:PutKeyPolicy` for accounts outside the security OU, and limit administrative permissions in the key policy to the security team role  
+C) Convert all keys to AWS managed keys  
+D) Enable only CloudTrail  
 
 **Answer: B**  
-Explanation: SCP는 조직 차원 가드레일로 일반 계정의 삭제·정책 변경 작업을 Deny하고, 키 정책으로 실제 관리 권한을 보안팀 역할에 한정하는 가드레일+세밀 통제 조합이 정답이다. IAM 사용자 권한만으로는 조직 가드레일이 없고, AWS managed key 전환은 거버넌스 통제력을 오히려 잃으며, CloudTrail은 감사만 할 뿐 행위를 막지 못한다.
+Explanation: The correct answer is the combination of a guardrail plus fine-grained control: an SCP as an organization-wide guardrail that Denies deletion and policy-change actions for regular accounts, and the key policy limiting actual administrative permissions to the security team role. IAM user permissions alone provide no organization guardrail, converting to AWS managed keys actually loses governance control, and CloudTrail only audits and does not prevent actions.
 
 ---

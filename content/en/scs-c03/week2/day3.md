@@ -155,60 +155,60 @@ Next we'll shift perspective to the "granting" side: how to safely provide acces
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 보안팀이 조직의 모든 계정에서 CloudTrail이 절대 비활성화되지 않도록 강제하려 한다. 가장 적절한 방법은?
+**Question 1.** A security team wants to ensure that CloudTrail is never disabled in any account of the organization. What is the most appropriate method?
 
-A) 각 계정에 IAM 정책으로 CloudTrail 보호를 배포한다  
-B) Root 또는 상위 OU에 `cloudtrail:StopLogging`과 `cloudtrail:DeleteTrail`을 Deny하는 SCP를 적용한다  
-C) AWS Config Rule로 CloudTrail 상태를 모니터링한다  
-D) 관리 계정에만 SCP를 적용한다  
+A) Deploy CloudTrail protection to each account with IAM policies  
+B) Apply an SCP that Denies `cloudtrail:StopLogging` and `cloudtrail:DeleteTrail` at the Root or a higher-level OU  
+C) Monitor CloudTrail status with an AWS Config Rule  
+D) Apply the SCP only to the management account  
 
 **Answer: B**  
-Explanation: SCP는 OU/Root에 한 번 적용하면 하위 모든 계정에 상속되는 예방적 통제다. CloudTrail 비활성화 액션을 Deny하면 어떤 계정에서도, root조차도 끄지 못한다. IAM 배포는 새 계정 누락 위험이 있고, Config는 사후 탐지일 뿐 차단하지 못한다. 관리 계정에는 SCP가 적용되지 않으므로 D는 틀리다.
+Explanation: An SCP is a preventive control that, once applied to an OU/Root, is inherited by all accounts below. If you Deny the CloudTrail disabling actions, no account, not even root, can turn it off. IAM deployment risks missing new accounts, and Config is only after-the-fact detection and cannot block. SCPs do not apply to the management account, so D is wrong.
 
 ---
 
-**Question 2.** Prod OU에 `Deny ec2:*` SCP가 걸려 있다. Prod OU 하위의 한 계정에서 IAM 관리자가 `Allow ec2:*` IAM 정책을 만들고, 그 계정에 추가 SCP로 `Allow ec2:RunInstances`도 적용했다. EC2 인스턴스를 시작할 수 있는가?
+**Question 2.** A `Deny ec2:*` SCP is attached to the Prod OU. In an account under the Prod OU, an IAM administrator created an `Allow ec2:*` IAM policy, and an additional SCP that also applies `Allow ec2:RunInstances` was applied to that account. Can it launch EC2 instances?
 
-A) 가능하다, 하위 SCP가 상위 OU SCP를 덮어쓰므로  
-B) 가능하다, IAM 정책이 Allow하므로  
-C) 불가능하다, 상위 OU의 명시적 Deny가 상속되어 이기므로  
-D) 조건에 따라 다르다  
+A) Yes, because the lower SCP overrides the upper OU SCP  
+B) Yes, because the IAM policy Allows it  
+C) No, because the explicit Deny of the upper OU is inherited and wins  
+D) It depends on the conditions  
 
 **Answer: C**  
-Explanation: SCP 상속은 누적적으로 제한이 강해진다. 상위 OU의 명시적 Deny는 하위로 상속되며, 하위에서 SCP나 IAM으로 다시 열 수 없다. 명시적 Deny는 모든 Allow를 이긴다. 하위 SCP가 상위를 덮어쓰지 않으며, IAM Allow도 SCP Deny를 뚫지 못한다.
+Explanation: SCP inheritance makes restrictions cumulatively stronger. An explicit Deny at the upper OU is inherited downward and cannot be reopened from below with an SCP or IAM. An explicit Deny beats every Allow. A lower SCP does not override the upper one, and an IAM Allow cannot break through an SCP Deny either.
 
 ---
 
-**Question 3.** 리전 제한 SCP를 적용한 직후 사용자들이 콘솔 로그인과 STS 토큰 발급에 실패하기 시작했다. 가장 가능성 높은 원인은?
+**Question 3.** Right after applying a Region-restriction SCP, users started failing to log in to the console and to get STS tokens. What is the most likely cause?
 
-A) SCP가 관리 계정에 적용되었다  
-B) IAM·STS 같은 글로벌 서비스를 `NotAction` 예외로 처리하지 않아 함께 차단되었다  
-C) 리전 제한은 원래 로그인을 막는다  
-D) MFA가 활성화되지 않았다  
+A) The SCP was applied to the management account  
+B) Global services such as IAM and STS were not exempted with a `NotAction` exception, so they were blocked as well  
+C) A Region restriction inherently blocks login  
+D) MFA is not enabled  
 
 **Answer: B**  
-Explanation: 글로벌 서비스(IAM, STS, CloudFront, Route 53 등)는 특정 리전 엔드포인트에 묶이지 않고 내부적으로 us-east-1 등으로 라우팅된다. 리전 제한 Deny에서 이들을 `NotAction`으로 예외하지 않으면 로그인과 토큰 발급까지 막혀 계정이 사용 불능이 된다. 이는 리전 제한 SCP의 대표적 실수다.
+Explanation: Global services (IAM, STS, CloudFront, Route 53, and so on) are not tied to a specific Region endpoint and are routed internally to us-east-1 and similar. If they are not exempted with `NotAction` in the Region-restriction Deny, even login and token issuance are blocked and the account becomes unusable. This is a classic mistake with Region-restriction SCPs.
 
 ---
 
-**Question 4.** SCP의 예방적 통제(preventive control)와 AWS Config Rule의 탐지적 통제(detective control)의 차이로 옳은 것은?
+**Question 4.** Which statement about the difference between the preventive control of an SCP and the detective control of an AWS Config Rule is correct?
 
-A) SCP는 위반을 사후 감지하고, Config는 위반을 사전 차단한다  
-B) SCP는 위반 행위를 사전에 차단하고, Config는 위반 상태를 사후 감지·알림한다  
-C) 둘 다 동일하게 작동한다  
-D) Config가 SCP보다 항상 강력하다  
+A) An SCP detects violations after the fact, and Config blocks violations in advance  
+B) An SCP blocks violating actions in advance, and Config detects and alerts on violating states after the fact  
+C) Both work the same way  
+D) Config is always stronger than an SCP  
 
 **Answer: B**  
-Explanation: SCP는 액션 자체를 거부해 사건 발생 전에 차단하는 예방적 통제다. Config Rule은 이미 만들어진 리소스의 준수 여부를 평가해 위반을 감지·알림하는 탐지적 통제다. 막을 수 있으면 막는 SCP가 비용 효율적이며, 탐지가 필요한 영역을 Config가 보완한다.
+Explanation: An SCP is a preventive control that denies the action itself and blocks it before the event occurs. A Config Rule is a detective control that evaluates the compliance of resources already created and detects and alerts on violations. Where blocking is possible, an SCP is more cost-effective, and Config complements the areas where detection is needed.
 
 ---
 
-**Question 5.** 한 조직이 관리 계정(Management Account)에서 프로덕션 워크로드를 운영하고 있다. 보안 관점에서 이것이 문제인 이유로 가장 적절한 것은?
+**Question 5.** An organization is running production workloads in the Management Account. From a security perspective, what is the most appropriate reason this is a problem?
 
-A) 관리 계정은 비용이 더 비싸다  
-B) 관리 계정에는 SCP가 적용되지 않아 가드레일로 보호할 수 없고, 손상 시 조직 전체가 위험해진다  
-C) 관리 계정에서는 EC2를 띄울 수 없다  
-D) 관리 계정은 CloudTrail을 지원하지 않는다  
+A) The management account costs more  
+B) SCPs do not apply to the management account, so it cannot be protected by guardrails, and if it is compromised the entire organization is at risk  
+C) EC2 cannot be launched in the management account  
+D) The management account does not support CloudTrail  
 
 **Answer: B**  
-Explanation: SCP는 멤버 계정에만 적용되고 관리 계정에는 효과가 없다. 따라서 관리 계정에 워크로드를 두면 SCP 가드레일의 보호를 받지 못하며, 조직 전체를 통제하는 계정이 손상될 경우 모든 멤버 계정이 위험에 노출된다. 모범 사례는 관리 계정을 결제·조직 관리 전용으로만 사용하는 것이다.
+Explanation: SCPs apply only to member accounts and have no effect on the management account. Therefore, placing workloads in the management account means they do not get the protection of SCP guardrails, and if the account that controls the entire organization is compromised, all member accounts are exposed to risk. The best practice is to use the management account only for billing and organization management.

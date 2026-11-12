@@ -108,37 +108,37 @@ SAP exam frequent mappings: (1) "Access via IAM without SSH/RDP + session loggin
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 회사가 관리자들이 production EC2에 디버깅을 위해 접속해야 하지만, SSH 포트(22)를 인터넷에 열거나 Bastion 호스트를 운영하고 싶지 않다. 또한 모든 접속 세션을 감사 로그로 남겨야 한다. 가장 적합한 솔루션은?
+**Question 1.** A company's administrators need to connect to production EC2 instances for debugging, but the company does not want to open the SSH port (22) to the internet or operate a Bastion host. In addition, all connection sessions must be kept in audit logs. What is the most appropriate solution?
 
-A) Bastion 호스트에 SSH 키 배포
+A) Distribute SSH keys to a Bastion host
 
-B) SSM Session Manager로 IAM 권한 기반 접속, 세션을 CloudTrail·S3에 기록
+B) Connect with IAM permission-based access through SSM Session Manager, and record sessions to CloudTrail and S3
 
-C) Client VPN으로 VPC 접속 후 SSH
+C) Connect to the VPC with Client VPN and then SSH
 
-D) Direct Connect 전용선 구성
+D) Set up a Direct Connect dedicated line
 
 **Answer: B**
-Explanation: SSM Session Manager는 22 포트 개방이나 Bastion 없이 IAM 권한으로 셸을 열고, 모든 세션 로그를 CloudTrail·S3·CloudWatch Logs에 기록한다. 공격 표면이 0이고 감사가 자동이다. A(Bastion)는 22 포트와 SSH 키 관리 부담·공격 표면을 만든다. C(Client VPN)도 결국 SSH 포트가 필요하고 세션 기록이 자동이 아니다. D(Direct Connect)는 네트워크 연결 수단이지 접속·감사 솔루션이 아니다. 함정: "SSH 없이 + 세션 기록"은 Session Manager의 직답이다.
+Explanation: SSM Session Manager opens a shell with IAM permissions without opening port 22 or using a Bastion, and records all session logs to CloudTrail, S3, and CloudWatch Logs. The attack surface is zero and auditing is automatic. A (Bastion) creates port 22, the burden of managing SSH keys, and an attack surface. C (Client VPN) also ultimately requires the SSH port and does not record sessions automatically. D (Direct Connect) is a means of network connectivity, not a connection and auditing solution. Trap: "without SSH + session recording" is the direct answer for Session Manager.
 
 ---
 
-**Question 2.** 한 애플리케이션이 RDS를 사용하며, 보안 정책상 DB 비밀번호를 30일마다 자동으로 교체하되 애플리케이션 중단이 없어야 한다. 가장 적합한 솔루션은?
+**Question 2.** An application uses RDS, and the security policy requires the DB password to be rotated automatically every 30 days without any application downtime. What is the most appropriate solution?
 
-A) SSM Parameter Store(SecureString)에 비밀번호 저장
+A) Store the password in SSM Parameter Store (SecureString)
 
-B) Secrets Manager에 비밀번호 저장 후 RDS 네이티브 통합으로 자동 로테이션 활성화
+B) Store the password in Secrets Manager and enable automatic rotation with the native RDS integration
 
-C) KMS로 비밀번호 암호화 후 S3에 저장
+C) Encrypt the password with KMS and store it in S3
 
-D) IAM 데이터베이스 인증으로 비밀번호 제거
+D) Remove the password with IAM database authentication
 
 **Answer: B**
-Explanation: Secrets Manager는 로테이션 Lambda를 스케줄로 자동 호출해 RDS 비밀번호를 무중단으로 교체하며(createSecret→setSecret→testSecret→finishSecret), 앱은 항상 AWSCURRENT 버전을 조회하므로 끊김이 없다. A(Parameter Store)는 비밀 저장은 되지만 자동 로테이션을 네이티브로 지원하지 않는다. C는 수동 관리로 자동 교체가 없다. D(IAM DB 인증)는 유효한 대안이나 "비밀번호 30일 자동 교체"라는 명시 요건에는 Secrets Manager가 직접 답이다. 함정: 자동 로테이션은 Parameter Store가 아니라 Secrets Manager다.
+Explanation: Secrets Manager automatically invokes the rotation Lambda on a schedule to rotate the RDS password without downtime (createSecret→setSecret→testSecret→finishSecret), and the app always queries the AWSCURRENT version, so there is no interruption. A (Parameter Store) can store secrets but does not natively support automatic rotation. C is manual management with no automatic rotation. D (IAM DB authentication) is a valid alternative, but for the explicit requirement of "automatic password rotation every 30 days," Secrets Manager is the direct answer. Trap: automatic rotation is Secrets Manager, not Parameter Store.
 
 ---
 
-**Question 3.** 한 운영팀이 장애 발생 시 "EBS 스냅샷 생성 → AMI 빌드 → 새 인스턴스 교체 → 헬스 검증"의 여러 단계를 사람 개입 없이 자동 실행하는 런북을 만들고 싶다. Systems Manager의 어떤 기능이 적합한가?
+**Question 3.** An operations team wants to build a runbook that automatically executes multiple steps without human intervention when a failure occurs: "create an EBS snapshot → build an AMI → replace with a new instance → verify health." Which Systems Manager capability is appropriate?
 
 A) Run Document(Command document)
 
@@ -149,51 +149,51 @@ C) Session Manager
 D) Parameter Store
 
 **Answer: B**
-Explanation: Automation Document는 여러 AWS API를 순서대로 엮는 다단계 워크플로(스냅샷→AMI→교체→검증)를 코드로 정의해 사고 대응·운영을 자동화한다. A(Run Document)는 EC2 안에서 단일 명령(셸 스크립트 등)을 실행하는 용도로 다단계 AWS API 오케스트레이션이 아니다. C는 셸 접속, D는 파라미터 저장이다. 함정: "여러 단계 워크플로 자동화"는 Automation Document, "인스턴스 내부 명령 실행"은 Run Document다.
+Explanation: An Automation Document defines, as code, a multi-step workflow that chains multiple AWS APIs in order (snapshot → AMI → replace → verify) to automate incident response and operations. A (Run Document) is for running a single command (such as a shell script) inside EC2 and is not multi-step AWS API orchestration. C is shell access, and D is parameter storage. Trap: "multi-step workflow automation" is Automation Document; "running a command inside an instance" is Run Document.
 
 ---
 
-**Question 4.** 2019년 Capital One 데이터 유출 사고의 근본 원인과 AWS의 대응으로 가장 정확한 것은?
+**Question 4.** Which is the most accurate description of the root cause of the 2019 Capital One data breach and AWS's response?
 
-A) AWS 데이터센터 물리 침입 → AWS가 펜스를 강화
+A) Physical intrusion into an AWS data center → AWS strengthened the fences
 
-B) SSRF로 EC2 메타데이터(v1)에서 IAM 자격증명 탈취 → IMDSv2(token 기반) 도입·권장
+B) Theft of IAM credentials from the EC2 metadata service (v1) via SSRF → IMDSv2 (token-based) introduced and recommended
 
-C) RDS 엔진 취약점 → AWS가 자동 패치
+C) RDS engine vulnerability → AWS patched it automatically
 
-D) KMS 키 유출 → AWS가 키를 회전
+D) KMS key leak → AWS rotated the key
 
 **Answer: B**
-Explanation: 공격자는 잘못 구성된 WAF(고객 책임)를 통한 SSRF로 token 불필요한 메타데이터 서비스 v1에서 과도한 권한의 IAM 자격증명을 탈취해 S3를 읽었다. AWS 인프라(AWS 책임)는 뚫리지 않았다. 대응으로 token 기반 IMDSv2가 도입·권장됐고 GuardDuty에 탐지 패턴이 추가됐다. A·C·D는 사실과 다르며, 이 사고는 "고객 책임" 영역(WAF·IAM 구성)의 실패다. 함정: 책임 공유 모델에서 구성 실패는 고객 책임이며, 메타데이터 v1 → IMDSv2 전환이 핵심 교훈이다.
+Explanation: The attacker used SSRF through a misconfigured WAF (a customer responsibility) to steal over-privileged IAM credentials from the metadata service v1, which requires no token, and read S3. AWS infrastructure (AWS's responsibility) was not breached. In response, token-based IMDSv2 was introduced and recommended, and detection patterns were added to GuardDuty. A, C, and D are not factual, and this incident was a failure in the "customer responsibility" area (WAF and IAM configuration). Trap: under the shared responsibility model, a configuration failure is the customer's responsibility, and the key lesson is the move from metadata v1 to IMDSv2.
 
 ---
 
-**Question 5.** 한 Organization이 50개 계정을 운영한다. 모든 계정의 위협 탐지(GuardDuty)와 보안 점수(Security Hub)를 중앙 보안팀이 한곳에서 보고, 위협 발생 시 자동으로 리소스를 격리하려 한다. 가장 적합한 설계는?
+**Question 5.** An Organization operates 50 accounts. The central security team wants to view threat detection (GuardDuty) and security scores (Security Hub) for all accounts in one place and to isolate resources automatically when a threat occurs. What is the most appropriate design?
 
-A) 각 멤버 계정이 개별적으로 GuardDuty·Security Hub를 보고 수동 대응
+A) Each member account views GuardDuty and Security Hub individually and responds manually
 
-B) 전용 Security 계정을 GuardDuty·Security Hub 위임 관리자로 설정해 전 계정 결과를 중앙 집계하고, EventBridge + Lambda/SSM Automation으로 자동 격리
+B) Set a dedicated Security account as the delegated administrator for GuardDuty and Security Hub to aggregate results from all accounts centrally, and isolate automatically with EventBridge + Lambda/SSM Automation
 
-C) 관리 계정에서만 GuardDuty를 켜고 멤버 계정은 비활성
+C) Turn on GuardDuty only in the management account and leave member accounts disabled
 
-D) CloudTrail 로그를 수동으로 검토
+D) Review CloudTrail logs manually
 
 **Answer: B**
-Explanation: 멀티 계정 보안의 표준은 전용 Security 계정을 위임 관리자로 지정해 GuardDuty·Security Hub·Macie 결과를 중앙 집계하고, EventBridge 규칙이 위협 이벤트를 받아 Lambda/SSM Automation으로 자동 격리(SG 교체·인스턴스 격리)하는 것이다. A는 사각지대·운영 부담이 크고, C는 멤버 계정 위협을 놓치며, D는 자동 대응이 없다. 함정: "중앙 집계 + 자동 대응"이 멀티 계정 보안 Pro 정답의 전형이며, 각 계정 분산 관리는 오답이다.
+Explanation: The standard for multi-account security is to designate a dedicated Security account as the delegated administrator to aggregate GuardDuty, Security Hub, and Macie results centrally, and to have EventBridge rules receive threat events and isolate automatically (replacing SGs, isolating instances) with Lambda/SSM Automation. A has blind spots and a large operational burden, C misses threats in member accounts, and D has no automated response. Trap: "central aggregation + automated response" is the typical Pro answer for multi-account security, and managing each account separately is wrong.
 
 ---
 
-**Question 6.** 한 회사가 새 애플리케이션 버전을 배포할 때 위험을 최소화하고, 문제가 발견되면 즉시 이전 버전으로 전체 롤백하고 싶다. 두 환경을 동시에 운영할 비용 여력은 있다. 가장 적합한 배포 전략은?
+**Question 6.** A company wants to minimize risk when deploying a new application version and to roll back the entire deployment to the previous version immediately if a problem is found. It can afford the cost of running both environments at the same time. What is the most appropriate deployment strategy?
 
-A) Rolling 배포
+A) Rolling deployment
 
-B) Blue/Green 배포 (CodeDeploy)
+B) Blue/Green deployment (CodeDeploy)
 
-C) In-place 단일 배포
+C) In-place single deployment
 
-D) 수동 콘솔 배포
+D) Manual console deployment
 
 **Answer: B**
-Explanation: Blue/Green은 새 환경(Green)을 통째로 띄우고 트래픽을 전환하며, 문제 시 Blue로 즉시 전체 롤백한다(가역성 최대, 두 환경 동시 운영 비용 발생). "위험 최소화 + 즉시 전체 롤백 + 비용 여력 있음" 요건에 정확히 맞는다. A(Rolling)는 순차 교체라 롤백이 느리다. C·D는 가역성·안전성이 낮다. 함정: "즉시 전체 롤백"은 Blue/Green, "소수 트래픽 점진 검증"은 Canary로 갈린다.
+Explanation: Blue/Green launches the new environment (Green) as a whole and switches traffic, and in case of a problem it rolls everything back to Blue immediately (maximum reversibility, at the cost of running both environments at once). It fits exactly the requirements "minimize risk + immediate full rollback + cost headroom available." A (Rolling) replaces instances sequentially, so rollback is slow. C and D have low reversibility and safety. Trap: it splits into "immediate full rollback" = Blue/Green and "gradual validation with a small share of traffic" = Canary.
 
 ---

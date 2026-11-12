@@ -96,62 +96,62 @@ A typical exam scenario flow:
 
 ## 📝 Practice Questions
 
-**Question 1.** 스케줄로 매시간 실행되는 Glue 잡이 S3의 신규 파일만 처리해야 하는데, 매번 전체 데이터를 다시 읽어 비용과 시간이 과도하다. 가장 적절한 해결책은?
+**Question 1.** A Glue job runs hourly on a schedule and must process only the new files in S3, but it re-reads all of the data every time, which makes cost and run time excessive. What is the most appropriate solution?
 
-A) EMR 클러스터로 전환한다  
-B) Glue 잡 북마크를 활성화하고 transformation_ctx와 job.commit()을 사용한다  
-C) S3 버킷을 매시간 비운다  
-D) Athena CTAS로 매번 전체를 다시 만든다  
+A) Switch to an EMR cluster  
+B) Enable Glue job bookmarks and use transformation_ctx and job.commit()  
+C) Empty the S3 bucket every hour  
+D) Rebuild everything every time with Athena CTAS  
 
 **Answer: B**  
-Explanation: Glue 북마크는 이미 처리한 데이터를 추적해 증분 처리를 지원합니다. transformation_ctx로 상태를 추적하고 job.commit() 시점에 저장합니다. 나머지는 증분 처리를 해결하지 못하거나 비용·복잡도를 키웁니다.
+Explanation: Glue bookmarks track data that has already been processed and support incremental processing. transformation_ctx tracks the state, and the state is saved when job.commit() is called. The other options do not solve incremental processing or increase cost and complexity.
 
 ---
 
-**Question 2.** 여러 분석 팀이 동일한 S3 데이터레이크를 공유하면서, 특정 테이블의 일부 컬럼(예: 주민번호)은 일부 팀에게만 보이도록 중앙에서 통제하려 한다. 가장 적합한 서비스는?
+**Question 2.** Multiple analytics teams share the same S3 data lake, and you want to centrally control access so that some columns of a particular table (for example, a national ID number) are visible only to certain teams. Which service is the most suitable?
 
-A) S3 버킷 정책에 팀별 컬럼 규칙을 작성  
-B) AWS Lake Formation의 컬럼 수준 권한  
-C) EC2 보안 그룹  
-D) CloudFront 서명 URL  
+A) Write per-team column rules in the S3 bucket policy  
+B) Column-level permissions in AWS Lake Formation  
+C) EC2 security groups  
+D) CloudFront signed URLs  
 
 **Answer: B**  
-Explanation: Lake Formation은 테이블·컬럼·행·셀 수준의 세분화 권한을 중앙에서 관리합니다. S3 버킷 정책은 객체 수준까지만 제어하므로 컬럼 단위 통제가 불가능합니다. 보안 그룹·CloudFront는 데이터 권한과 무관합니다.
+Explanation: Lake Formation centrally manages fine-grained permissions at the table, column, row, and cell level. S3 bucket policies control access only down to the object level, so column-level control is not possible. Security groups and CloudFront are unrelated to data permissions.
 
 ---
 
-**Question 3.** 초당 수만 건의 IoT 이벤트를 실시간으로 받아 추가 인프라 관리 없이 자동으로 S3에 Parquet으로 버퍼링·변환·적재하려 한다. 가장 적합한 서비스는?
+**Question 3.** You need to receive tens of thousands of IoT events per second in real time and automatically buffer, convert, and load them into S3 as Parquet without managing additional infrastructure. Which service is the most suitable?
 
 A) Amazon Data Firehose  
 B) Amazon RDS  
 C) AWS Batch  
-D) Amazon SQS 표준 큐  
+D) Amazon SQS standard queue  
 
 **Answer: A**  
-Explanation: Data Firehose는 완전관리형으로 스트리밍 데이터를 버퍼링하고 포맷 변환(예: Parquet) 후 S3/Redshift 등에 자동 배달합니다. 샤드·컨슈머 관리가 없습니다. RDS/Batch는 스트리밍 적재 용도가 아니며, SQS는 변환·적재 기능이 없습니다.
+Explanation: Data Firehose is fully managed; it buffers streaming data, converts the format (for example, to Parquet), and automatically delivers it to S3, Redshift, and other destinations. There are no shards or consumers to manage. RDS and Batch are not intended for streaming ingestion, and SQS has no transformation or loading capability.
 
 ---
 
-**Question 4.** 페타바이트급 팩트 테이블을 작은 날짜 차원 테이블과 자주 조인한다. 노드 간 데이터 이동(셔플)을 최소화하기 위한 Redshift 분배 설정으로 가장 적절한 것은?
+**Question 4.** A petabyte-scale fact table is frequently joined with a small date dimension table. Which Redshift distribution setting is the most appropriate for minimizing data movement (shuffling) between nodes?
 
-A) 두 테이블 모두 DISTSTYLE EVEN  
-B) 모든 테이블에 SORTKEY만 지정  
-C) 작은 차원 테이블에 DISTSTYLE ALL  
-D) 팩트 테이블을 DynamoDB로 이전  
+A) DISTSTYLE EVEN for both tables  
+B) Specify only a SORTKEY on all tables  
+C) DISTSTYLE ALL on the small dimension table  
+D) Migrate the fact table to DynamoDB  
 
 **Answer: C**  
-Explanation: 작은 차원 테이블을 DISTSTYLE ALL로 모든 노드에 복제하면 조인 시 셔플 없이 로컬에서 조인할 수 있습니다. EVEN은 셔플을 유발하고, SORTKEY는 분배가 아닌 스캔 최적화이며, DynamoDB는 대규모 분석 조인에 부적합합니다.
+Explanation: If the small dimension table is replicated to all nodes with DISTSTYLE ALL, joins can be performed locally without shuffling. EVEN causes shuffling, SORTKEY optimizes scans rather than distribution, and DynamoDB is unsuitable for large-scale analytical joins.
 
 ---
 
-**Question 5.** 데이터 분석가가 S3에 저장된 로그를 클러스터나 서버를 띄우지 않고 표준 SQL로 즉석 조회하려 한다. 비용은 스캔한 데이터량 기준으로만 내고 싶다. 가장 적합한 서비스는?
+**Question 5.** A data analyst wants to run ad hoc queries against logs stored in S3 using standard SQL without launching a cluster or servers. They want to pay only based on the amount of data scanned. Which service is the most suitable?
 
 A) Amazon EMR  
-B) Amazon EC2에 직접 설치한 Presto  
-C) AWS Glue 크롤러  
+B) Presto installed directly on Amazon EC2  
+C) AWS Glue crawler  
 D) Amazon Athena  
 
 **Answer: D**  
-Explanation: Athena는 서버리스로 S3 데이터를 표준 SQL로 쿼리하며 스캔한 데이터량 기준으로 과금합니다. EMR/EC2는 클러스터 운영이 필요하고, Glue 크롤러는 쿼리 엔진이 아니라 스키마 추론 도구입니다.
+Explanation: Athena is serverless, queries S3 data with standard SQL, and charges based on the amount of data scanned. EMR and EC2 require cluster operations, and a Glue crawler is a schema inference tool, not a query engine.
 
 ---

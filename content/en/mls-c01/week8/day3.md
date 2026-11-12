@@ -110,62 +110,62 @@ Today covered generalization failure diagnosis and fixes. Key: **learning curves
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 모델이 학습 정확도 98%, 검증 정확도 71%로 큰 격차를 보인다. 이 상황의 진단과 1차 대응으로 가장 적절한 것은?
+**Question 1.** A model shows a large gap: 98% training accuracy and 71% validation accuracy. Which diagnosis and first response are MOST appropriate for this situation?
 
-A) 정상 — 추가 조치 불필요  
-B) 데이터 누수 — 학습률을 높인다  
-C) 과소적합 — 모델 복잡도를 더 키운다  
-D) 과적합 — 정규화를 강화하거나 데이터를 더 모은다  
+A) Normal - no further action needed  
+B) Data leakage - increase the learning rate  
+C) Underfitting - increase model complexity further  
+D) Overfitting - strengthen regularization or collect more data  
 
 **Answer: D**  
-Explanation: 학습 성능은 높은데 검증 성능이 크게 낮은 격차는 전형적 과적합이며, 정규화 강화·데이터 추가·드롭아웃·조기종료 등이 대응이다. 과소적합(C)은 둘 다 낮을 때이고, 학습률 인상(B)은 과적합을 더 악화시킬 수 있으며, 큰 격차는 정상이 아니다(A).
+Explanation: A gap where training performance is high but validation performance is much lower is classic overfitting, and the responses include stronger regularization, more data, dropout, and early stopping. Underfitting (C) is when both are low, raising the learning rate (B) can worsen overfitting, and a large gap is not normal (A).
 
 ---
 
-**Question 2.** 입력 특징이 500개로 많고, 그중 불필요한 특징을 모델이 스스로 0으로 만들어 희소한 모델을 얻고 싶다. 가장 적합한 정규화는?
+**Question 2.** There are many input features (500), and you want the model to set unnecessary ones to 0 by itself to obtain a sparse model. Which regularization is MOST suitable?
 
 A) L2(Ridge)  
 B) L1(Lasso)  
-C) 드롭아웃  
-D) 배치 정규화  
+C) Dropout  
+D) Batch normalization  
 
 **Answer: B**  
-Explanation: L1 정규화는 가중치 절댓값 페널티로 일부 가중치를 정확히 0으로 만들어 특징 선택·희소성을 유도한다. L2(A)는 가중치를 0에 가깝게 줄이지만 0으로 만들진 않고, 드롭아웃(C)·배치 정규화(D)는 특징 선택용 희소화 기법이 아니다.
+Explanation: L1 regularization uses an absolute-value penalty on the weights that sets some weights to exactly 0, inducing feature selection and sparsity. L2 (A) shrinks weights close to 0 but does not make them 0, and dropout (C) and batch normalization (D) are not sparsification techniques for feature selection.
 
 ---
 
-**Question 3.** 이미지 분류 모델이 과적합되는데, 라벨링된 추가 데이터를 모으는 비용이 매우 크다. 가장 비용 효율적인 대응은?
+**Question 3.** An image classification model overfits, and collecting additional labeled data is very expensive. What is the most cost-effective response?
 
-A) 회전·반전·크롭 등 데이터 증강을 적용  
-B) 학습 에폭 수를 두 배로 늘린다  
-C) 모델의 층 수를 크게 늘린다  
-D) 검증 세트를 학습에 합친다  
+A) Apply data augmentation such as rotation, flipping, and cropping  
+B) Double the number of training epochs  
+C) Greatly increase the number of layers in the model  
+D) Merge the validation set into the training set  
 
 **Answer: A**  
-Explanation: 추가 수집이 어려울 때 데이터 증강(회전·반전·크롭 등)은 기존 데이터를 변형해 학습 분포를 넓혀 과적합을 줄이는 비용 효율적 방법이다. 에폭 증가(B)·모델 확대(C)는 과적합을 악화시키고, 검증 세트를 학습에 합치면(D) 일반화 측정이 불가능해진다.
+Explanation: When additional collection is difficult, data augmentation (rotation, flipping, cropping, etc.) is a cost-effective way to reduce overfitting by transforming existing data to broaden the training distribution. Increasing epochs (B) and enlarging the model (C) worsen overfitting, and merging the validation set into training (D) makes it impossible to measure generalization.
 
 ---
 
-**Question 4.** 신경망 모델에서 학습이 진행될수록 학습 손실은 계속 내려가지만 검증 손실은 어느 시점 이후 다시 올라간다. 잡음 암기를 막기 위한 가장 직접적인 기법은?
+**Question 4.** In a neural network, as training proceeds the training loss keeps going down, but the validation loss rises again after some point. What is the most direct technique for preventing the memorization of noise?
 
-A) 학습률을 0으로 고정  
-B) 배치 크기를 1로 설정  
-C) 검증 손실이 개선되지 않으면 학습을 멈추는 조기 종료  
-D) 특징을 모두 제거  
+A) Fix the learning rate at 0  
+B) Set the batch size to 1  
+C) Early stopping, which halts training when the validation loss stops improving  
+D) Remove all features  
 
 **Answer: C**  
-Explanation: 검증 손실이 다시 오르는 지점이 과적합 시작점이며, 조기 종료는 검증 손실이 더 개선되지 않을 때 학습을 멈춰 그 지점을 넘지 않게 한다. 학습률 0(A)은 학습을 막고, 배치 1(B)은 관련 해법이 아니며, 특징 전부 제거(D)는 비현실적이다.
+Explanation: The point where the validation loss rises again is where overfitting begins, and early stopping halts training when the validation loss no longer improves so that training does not go past that point. A learning rate of 0 (A) prevents learning, a batch size of 1 (B) is not a relevant solution, and removing all features (D) is impractical.
 
 ---
 
-**Question 5.** 전처리에서 표준화(StandardScaler)를 적용할 때 데이터 누수를 막는 올바른 방법은?
+**Question 5.** When applying standardization (StandardScaler) in preprocessing, what is the correct way to prevent data leakage?
 
-A) 전체 데이터(train+test)로 fit한 뒤 분할한다  
-B) train으로 fit하고 그 통계로 train·validation·test를 transform한다  
-C) test로 fit하고 train을 transform한다  
-D) 매 배치마다 새로 fit한다  
+A) Fit on the entire dataset (train + test), then split  
+B) Fit on train and use those statistics to transform train, validation, and test  
+C) Fit on test and transform train  
+D) Fit anew on every batch  
 
 **Answer: B**  
-Explanation: 스케일러는 학습 데이터(train)로만 fit하고, 그때 얻은 평균·표준편차로 validation·test를 transform해야 테스트 정보가 학습에 새지 않는다. 전체 데이터로 fit(A)하거나 test로 fit(C)하면 누수가 발생하고, 매 배치 재fit(D)은 일관성을 깬다.
+Explanation: The scaler must be fit only on the training data, and the resulting mean and standard deviation must be used to transform validation and test so that test information does not leak into training. Fitting on the entire dataset (A) or fitting on test (C) causes leakage, and refitting on every batch (D) breaks consistency.
 
 ---

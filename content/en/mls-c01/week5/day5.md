@@ -117,62 +117,62 @@ This week in one sentence: **"Honest validation scores rest only on good statist
 
 ## 📝 Practice Questions
 
-**Question 1.** 오른쪽으로 치우친 변수를 표준화(StandardScaler)했더니 평균이 0, 표준편차가 1이 됐다. 분포의 치우침은 어떻게 됐는가?
+**Question 1.** After standardizing (StandardScaler) a right-skewed variable, the mean became 0 and the standard deviation 1. What happened to the skew of the distribution?
 
-A) 왜도가 그대로 유지된다 — 선형 변환은 모양을 바꾸지 않는다  
-B) 치우침이 사라지고 정규분포가 됐다  
-C) 왼쪽 치우침으로 뒤집힌다  
-D) 첨도만 0이 된다  
+A) Skewness is preserved - a linear transformation does not change the shape  
+B) The skew disappeared and it became a normal distribution  
+C) It flipped to a left skew  
+D) Only the kurtosis became 0  
 
 **Answer: A**  
-Explanation: 표준화는 선형 변환으로 위치와 척도만 바꾸고 왜도·첨도 같은 분포의 모양은 보존한다. 따라서 치우침은 그대로다. 치우침을 완화하려면 로그·Box-Cox 같은 비선형 변환이 필요하다. 정규화된다(B)거나 뒤집힌다(C), 첨도만 변한다(D)는 모두 선형 변환의 성질에 어긋난다.
+Explanation: Standardization is a linear transformation that changes only location and scale, and it preserves distribution shape such as skewness and kurtosis. Therefore the skew remains. To reduce skew, nonlinear transformations such as log or Box-Cox are needed. Becoming normal (B), flipping (C), or only kurtosis changing (D) all contradict the properties of a linear transformation.
 
 ---
 
-**Question 2.** 검증 정확도와 테스트 정확도는 모두 98%인데 프로덕션 성능은 60%로 떨어졌다. 분할은 깨끗했다. 가장 유력한 원인은?
+**Question 2.** Validation accuracy and test accuracy are both 98%, but production performance dropped to 60%. The split was clean. What is the MOST likely cause?
 
-A) 데이터가 너무 많다  
-B) k가 너무 크다  
-C) 특성에 결과 정보가 포함된 타깃 누수  
-D) 학습률이 낮다  
+A) There is too much data  
+B) k is too large  
+C) Target leakage, where outcome information is contained in the features  
+D) The learning rate is low  
 
 **Answer: C**  
-Explanation: 분할이 깨끗한데도 검증·테스트가 모두 높고 프로덕션만 낮다면, 누수가 특성 안에 들어 있어 모든 분할이 똑같이 오염된 타깃 누수가 가장 유력하다. 타깃 누수는 분할로 잡히지 않으며 각 특성의 생성 시점을 점검해야 한다. 데이터 양(A), k(B), 학습률(D)로는 이 패턴이 설명되지 않는다.
+Explanation: If the split is clean yet validation and test are both high and only production is low, the most likely cause is target leakage, in which the leak is inside the features and all splits are contaminated equally. Target leakage is not caught by splitting, and you must check when each feature is generated. The amount of data (A), k (B), and the learning rate (D) do not explain this pattern.
 
 ---
 
-**Question 3.** 두 변수의 Pearson 상관이 0.9로 매우 높다. 올바른 해석은?
+**Question 3.** The Pearson correlation between two variables is very high at 0.9. What is the correct interpretation?
 
-A) 한 변수가 다른 변수의 원인임이 입증됐다  
-B) 강한 선형 관계가 있으나 인과는 별개이며 교란변수·역인과를 의심해야 한다  
-C) 두 변수는 반드시 독립이다  
-D) 비선형 관계가 강하다  
+A) It has been proven that one variable causes the other  
+B) There is a strong linear relationship, but causation is a separate matter, and you should suspect confounders or reverse causation  
+C) The two variables are necessarily independent  
+D) The nonlinear relationship is strong  
 
 **Answer: B**  
-Explanation: 높은 Pearson 상관은 강한 선형 관계를 의미할 뿐 인과를 입증하지 못한다. 교란변수·역인과·우연 가능성을 따져야 한다(A는 오류). 상관이 높으므로 독립이 아니며(C), Pearson은 선형 관계를 측정하므로 비선형이 강하다는 해석(D)도 틀리다.
+Explanation: A high Pearson correlation only indicates a strong linear relationship and does not prove causation. You must consider confounders, reverse causation, and chance (A is wrong). Because the correlation is high, the variables are not independent (C), and since Pearson measures linear relationships, interpreting it as a strong nonlinear relationship (D) is also wrong.
 
 ---
 
-**Question 4.** 클래스가 95:5로 불균형한 분류 데이터를 5-fold 교차검증한다. 일부 fold에서 소수 클래스가 거의 없어 지표가 왜곡됐다. 해결책은?
+**Question 4.** You run 5-fold cross-validation on classification data with a 95:5 class imbalance. In some folds the minority class is almost absent, distorting the metrics. What is the solution?
 
-A) 일반 KFold를 그대로 쓴다  
-B) TimeSeriesSplit으로 바꾼다  
-C) StratifiedKFold로 각 fold에 클래스 비율을 유지한다  
-D) fold 수를 2로 줄인다  
+A) Keep using plain KFold  
+B) Switch to TimeSeriesSplit  
+C) Use StratifiedKFold to maintain the class ratio in each fold  
+D) Reduce the number of folds to 2  
 
 **Answer: C**  
-Explanation: 불균형 데이터의 교차검증은 각 fold에서 클래스 비율을 원본과 동일하게 유지하는 StratifiedKFold가 정답이다. 일반 KFold(A)는 소수 클래스가 일부 fold에 부족해지는 문제를 그대로 두고, TimeSeriesSplit(B)은 시계열 전용이며, fold 수를 줄이는 것(D)은 비율 문제를 해결하지 못한다.
+Explanation: For cross-validation on imbalanced data, StratifiedKFold, which keeps the class ratio in each fold identical to the original, is the answer. Plain KFold (A) leaves the problem of the minority class being scarce in some folds, TimeSeriesSplit (B) is only for time series, and reducing the number of folds (D) does not solve the ratio problem.
 
 ---
 
-**Question 5.** scikit-learn에서 결측 대치와 스케일링을 교차검증 시 누수 없이 적용하려 한다. 가장 적절한 구성은?
+**Question 5.** You want to apply missing-value imputation and scaling in scikit-learn during cross-validation without leakage. Which configuration is MOST appropriate?
 
-A) 전체 데이터로 대치·스케일링한 뒤 cross_val_score 호출  
-B) 테스트 fold의 통계로 전처리한다  
-C) 전처리를 생략하고 원본으로 학습한다  
-D) 대치·스케일링·분류기를 Pipeline에 넣어 cross_val_score에 전달  
+A) Impute and scale with the entire dataset, then call cross_val_score  
+B) Preprocess using the statistics of the test fold  
+C) Skip preprocessing and train on the raw data  
+D) Put imputation, scaling, and the classifier in a Pipeline and pass it to cross_val_score  
 
 **Answer: D**  
-Explanation: 전처리 단계를 Pipeline으로 묶어 교차검증에 전달하면 각 fold의 학습 부분에서만 `fit`이 일어나고 검증 부분에는 `transform`만 적용돼 누수가 차단된다. 전체 데이터로 미리 전처리(A)하거나 테스트 fold 통계를 쓰면(B) 누수가 발생하고, 전처리 생략(C)은 해결책이 아니다.
+Explanation: When the preprocessing steps are bundled into a Pipeline and passed to cross-validation, `fit` happens only on the training portion of each fold and only `transform` is applied to the validation portion, blocking leakage. Preprocessing in advance with the entire dataset (A) or using test-fold statistics (B) causes leakage, and skipping preprocessing (C) is not a solution.
 
 ---

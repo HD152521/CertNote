@@ -123,39 +123,39 @@ The next article examines **X-Ray's sampling and cost tuning at operational scal
 
 ## 📝 Practice Questions
 
-**Question 1.** 초당 2건만 들어오는 결제 API에 FixedRate 5%만 걸었더니, 장애가 난 시점의 trace가 통째로 안 잡혔다. 저트래픽 엔드포인트의 추적 가시성을 보장하는 메커니즘은?
+**Question 1.** After applying only FixedRate 5% to a payment API receiving just 2 requests per second, the traces from the time of an outage were not captured at all. What mechanism guarantees tracing visibility for low-traffic endpoints?
 
-A) FixedRate를 100%로 올린다
+A) Raise FixedRate to 100%
 
-B) ReservoirSize를 설정해 비율과 무관하게 초당 최소 N건을 무조건 수집하도록 보장한다
+B) Set ReservoirSize to guarantee that at least N requests per second are always collected regardless of the rate
 
-C) X-Ray Group을 만든다
+C) Create an X-Ray Group
 
-D) Priority를 9000으로 올린다
-
-**Answer: B**
-
-Explanation: 순수 비율 샘플링(FixedRate)만 쓰면 트래픽이 적은 엔드포인트는 표본이 거의 안 잡혀 장애 순간을 놓칠 수 있다. ReservoirSize는 "매 초 최소 N건은 비율과 무관하게 무조건 수집"을 보장해 저트래픽 구간의 가시성을 확보한다. FixedRate 100%(A)는 가능하지만 트래픽이 높아지면 비용이 폭증하므로 reservoir로 보장량만 확보하는 것이 경제적이다. Group(C)은 Service Map 슬라이싱, Priority(D)는 규칙 평가 순서로 무관하다.
-
----
-
-**Question 2.** "정상 trace는 1%만, 그러나 에러가 난 trace와 p99로 느린 trace는 100% 유지"하고 싶다. X-Ray 네이티브 head-based 샘플링만으로 이게 어려운 이유와 해결은?
-
-A) 가능하다 — FixedRate를 1%로 하면 된다
-
-B) head-based는 요청 입구에서 결과를 모른 채 결정하므로 "에러/느린 것만 골라 유지"가 불가능하다 — ADOT Collector의 tail-based 샘플링으로 trace 완성 후 결과 기반 선택을 얹는다
-
-C) Reservoir를 0으로 한다
-
-D) Priority를 조정하면 된다
+D) Raise Priority to 9000
 
 **Answer: B**
 
-Explanation: X-Ray 네이티브 샘플링은 head-based로, 요청이 들어오는 순간 수집 여부를 정하고 전파한다. 이 시점엔 그 요청이 에러를 낼지 느릴지 모르므로 "결과가 흥미로운 trace만 유지"가 구조적으로 불가능하다. tail-based 샘플링은 모든 trace를 일단 수집한 뒤 trace가 완성되는 시점에 선택하므로 "에러·고지연 100% 유지, 정상 1%"가 가능하다. ADOT Collector의 tail_sampling processor가 이를 제공한다. FixedRate 1%(A)는 에러 trace의 99%를 무작위로 버린다.
+Explanation: With pure rate sampling (FixedRate) alone, a low-traffic endpoint gets almost no samples and may miss the moment of an outage. ReservoirSize guarantees "at least N requests every second are always collected regardless of the rate," securing visibility in low-traffic periods. FixedRate 100% (A) is possible but costs explode as traffic grows, so securing only the guaranteed amount with a reservoir is economical. A Group (C) slices the Service Map and Priority (D) is the rule evaluation order, so both are unrelated.
 
 ---
 
-**Question 3.** 다음 샘플링 규칙들이 있다. `/checkout/payment` 요청에 적용되는 규칙은?
+**Question 2.** You want to keep only 1% of normal traces, but keep 100% of traces with errors and traces that are slow at p99. Why is this difficult with X-Ray's native head-based sampling alone, and what is the solution?
+
+A) It is possible — just set FixedRate to 1%
+
+B) Head-based sampling decides at the request entry point without knowing the outcome, so "selecting and keeping only errors/slow ones" is impossible — layer outcome-based selection on top with tail-based sampling in the ADOT Collector after the trace is complete
+
+C) Set Reservoir to 0
+
+D) Just adjust Priority
+
+**Answer: B**
+
+Explanation: X-Ray's native sampling is head-based: it decides whether to collect at the moment the request arrives and propagates that decision. At that point it is not known whether the request will produce an error or be slow, so "keeping only traces whose outcome is interesting" is structurally impossible. Tail-based sampling collects all traces first and then makes the selection when the trace is complete, so "keep 100% of errors and high latency, 1% of normal" becomes possible. The tail_sampling processor of the ADOT Collector provides this. FixedRate 1% (A) randomly discards 99% of error traces.
+
+---
+
+**Question 3.** The following sampling rules exist. Which rule applies to a `/checkout/payment` request?
 
 ```
 Priority 100: URLPath=/checkout/*  (Reservoir 100, Rate 1.0)
@@ -163,84 +163,84 @@ Priority 200: URLPath=/health      (Reservoir 0,   Rate 0.0)
 Priority 9000: URLPath=*           (Reservoir 1,   Rate 0.05)
 ```
 
-A) Priority 9000 (Default) — 가장 포괄적이므로
+A) Priority 9000 (Default) — because it is the most comprehensive
 
-B) Priority 100 — 가장 낮은 숫자가 먼저 평가되고 `/checkout/*`에 매칭되어 적용 후 종료
+B) Priority 100 — the lowest number is evaluated first, matches `/checkout/*`, is applied, and evaluation ends
 
-C) 세 규칙이 모두 합산 적용
+C) All three rules are applied in combination
 
 D) Priority 200
 
 **Answer: B**
 
-Explanation: 샘플링 규칙은 Priority 오름차순(낮은 숫자 먼저)으로 평가되고, 매칭되는 첫 규칙이 적용된 뒤 종료된다. `/checkout/payment`는 Priority 100의 `/checkout/*`에 매칭되므로 Reservoir 100 + Rate 1.0(전수 추적)이 적용되고, 그 아래 규칙들은 평가되지 않는다. 구체적 규칙을 낮은 Priority로, 포괄 규칙(`*`)을 높은 Priority로 두는 것이 정석이다(ACL·라우팅의 구체적 우선 원리와 동일). 규칙은 합산(C)이 아니라 첫 매칭만 적용된다.
+Explanation: Sampling rules are evaluated in ascending Priority order (lowest number first), and the first matching rule is applied and evaluation ends. `/checkout/payment` matches `/checkout/*` at Priority 100, so Reservoir 100 + Rate 1.0 (trace everything) is applied, and the rules below it are not evaluated. The standard practice is to give specific rules a low Priority and the catch-all rule (`*`) a high Priority (the same principle as specific-first precedence in ACLs and routing). Rules are not combined (C); only the first match is applied.
 
 ---
 
-**Question 4.** ReservoirSize를 10으로 설정했는데, 같은 서비스가 100개 인스턴스에서 돈다. 실제 수집되는 reservoir trace는 초당 몇 건에 가까운가?
+**Question 4.** ReservoirSize is set to 10, and the same service runs on 100 instances. About how many reservoir traces per second are actually collected?
 
-A) 약 1000건 (10 × 100 인스턴스)
+A) About 1000 (10 × 100 instances)
 
-B) 약 10건 — reservoir는 계정·리전 전체에서 분산 조율되어 인스턴스 수와 무관하게 전체 합이 reservoir 크기로 유지된다
+B) About 10 — the reservoir is coordinated in a distributed manner across the whole account and Region, so the overall total stays at the reservoir size regardless of the number of instances
 
-C) 0건
+C) 0
 
-D) 인스턴스당 10건씩 독립
+D) 10 per instance, independently
 
 **Answer: B**
 
-Explanation: X-Ray의 reservoir는 인스턴스마다 독립적이지 않다. 각 SDK 인스턴스가 `GetSamplingTargets`로 X-Ray에 자기 몫의 reservoir 할당량을 요청하고, X-Ray가 전체 reservoir(10)를 인스턴스들에 분배한다. 따라서 100대가 돌아도 전체 reservoir 수집은 약 10건/초로 유지되지 10×100=1000이 되지 않는다. 이 분산 조율을 모르면 "왜 예상보다 적게/많이 잡히나"를 오해하게 된다.
+Explanation: X-Ray's reservoir is not independent per instance. Each SDK instance requests its share of the reservoir quota from X-Ray through `GetSamplingTargets`, and X-Ray distributes the overall reservoir (10) among the instances. Therefore, even with 100 instances running, the total reservoir collection stays at about 10 per second and does not become 10×100=1000. Without understanding this distributed coordination, you would misunderstand "why fewer/more are captured than expected."
 
 ---
 
-**Question 5.** 평균 응답시간(p50)은 100ms로 정상인데 일부 사용자가 "느리다"고 호소한다. 어느 subsegment가 꼬리 지연을 만드는지 찾으려면?
+**Question 5.** The average response time (p50) is a healthy 100 ms, but some users complain that the service is "slow." How can you find which subsegment creates the tail latency?
 
-A) 평균 메트릭에 알람을 더 건다
+A) Add more alarms on the average metric
 
-B) 검색 표현식 `duration > 2`로 느린 trace를 골라 개별 trace의 subsegment 타임라인을 분석한다
+B) Pick out slow traces with the search expression `duration > 2` and analyze the subsegment timeline of individual traces
 
-C) Reservoir를 늘린다
+C) Increase the Reservoir
 
-D) Group을 만든다
+D) Create a Group
 
 **Answer: B**
 
-Explanation: 평균은 tail latency를 숨긴다 — p50이 좋아도 p99가 나쁘면 일부 사용자는 끔찍한 경험을 한다("The Tail at Scale", Jeff Dean 2013). 메트릭(집계)은 "느리다"를 알려주지만 "왜 느린지"는 개별 trace를 봐야 안다. `duration > 2` 같은 검색으로 느린 trace를 골라내고, 그 trace의 subsegment 타임라인에서 어느 다운스트림 호출이 시간을 잡아먹었는지 본다. 평균 알람 추가(A)는 꼬리를 못 보고, Reservoir·Group은 무관하다.
+Explanation: The average hides tail latency — even if p50 is good, if p99 is bad some users have a terrible experience ("The Tail at Scale", Jeff Dean, 2013). Metrics (aggregates) tell you "it is slow," but to know "why it is slow" you must look at individual traces. Use a search such as `duration > 2` to pick out the slow traces, and in their subsegment timelines see which downstream call consumed the time. Adding average alarms (A) cannot see the tail, and Reservoir and Group are unrelated.
 
 ---
 
-**Question 6.** 한 다운스트림 서비스의 fault rate가 평소 0.1%에서 서서히 올랐지만 고정 임계값(5%) 아래라 CloudWatch 알람이 안 울렸다. 이 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 잡는 도구는?
+**Question 6.** The fault rate of a downstream service slowly rose from the usual 0.1%, but it stayed below the fixed threshold (5%), so no CloudWatch alarm fired. Which tool catches this early degradation that is "low in absolute terms but abnormal compared with normal"?
 
-A) 고정 임계값을 1%로 낮춘다
+A) Lower the fixed threshold to 1%
 
-B) X-Ray Insights — baseline(평소 fault rate)을 학습해 비정상 상승을 탐지하고 EventBridge로 알림
+B) X-Ray Insights — learns a baseline (the usual fault rate), detects abnormal increases, and notifies through EventBridge
 
-C) Reservoir 증설
+C) Increase the Reservoir
 
-D) Service Map을 더 자주 새로고침
+D) Refresh the Service Map more often
 
 **Answer: B**
 
-Explanation: 고정 임계값 알람은 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 놓친다. X-Ray Insights는 서비스별 정상 baseline(fault rate)을 학습해 baseline 대비 이상 상승을 탐지하고 Insight를 생성, EventBridge로 발행해 자동 알림·대응을 연결한다. 임계값을 무작정 낮추면(A) 정상 변동에도 거짓 알람이 폭증한다. baseline 학습 탐지가 고정 임계값의 사각지대를 보완하며, 둘은 보완 관계다.
+Explanation: A fixed-threshold alarm misses early degradation that is "low in absolute terms but abnormal compared with normal." X-Ray Insights learns each service's normal baseline (fault rate), detects anomalous increases relative to the baseline, generates an Insight, and publishes it to EventBridge to connect automated notification and response. Lowering the threshold indiscriminately (A) causes a surge of false alarms from normal fluctuations. Baseline-learning detection complements the blind spots of fixed thresholds, and the two are complementary.
 
 ---
 
-**Question 7.** Powertools Tracer에서 `POWERTOOLS_TRACER_CAPTURE_RESPONSE=false`로 설정하는 주된 이유는?
+**Question 7.** What is the main reason for setting `POWERTOOLS_TRACER_CAPTURE_RESPONSE=false` in the Powertools Tracer?
 
-A) 추적을 완전히 끈다
+A) To turn tracing off completely
 
-B) 큰 응답 페이로드를 metadata로 캡처하지 않아 trace 크기와 비용을 줄인다
+B) To avoid capturing large response payloads as metadata, reducing trace size and cost
 
-C) annotation 검색을 빠르게 한다
+C) To make annotation search faster
 
-D) 샘플링 비율을 높인다
+D) To raise the sampling rate
 
 **Answer: B**
 
-Explanation: 기본적으로 Powertools Tracer는 함수 응답을 metadata로 캡처하는데, 응답 페이로드가 크면 trace 크기가 부풀어 저장·전송 비용이 는다. `CAPTURE_RESPONSE=false`는 이 캡처를 꺼서 비용을 줄인다. "검색하지 않을 큰 데이터는 굳이 trace에 싣지 마라"는 원리의 비용 측면이다. 추적을 끄는 것(A)이 아니라 응답 캡처만 끄며, annotation 검색(C)·샘플링(D)과는 무관하다.
+Explanation: By default, the Powertools Tracer captures the function response as metadata, and if the response payload is large, the trace size balloons and storage and transmission costs increase. `CAPTURE_RESPONSE=false` turns this capture off to reduce cost. This is the cost aspect of the principle "do not put large data you will not search into the trace." It does not turn tracing off (A); it turns off only response capture, and it is unrelated to annotation search (C) and sampling (D).
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, 샘플링은 추적의 필수 전제이고 X-Ray는 Reservoir(초당 최소 보장, 통계학의 reservoir sampling에서 유래) + FixedRate(초과분 비율)로 저트래픽 가시성과 비용을 동시에 잡는다. 둘째, X-Ray는 head-based 샘플링(입구에서 결정·전파)이라 단순·저오버헤드지만 결과 기반 선택이 불가능하며, "에러·느린 trace만 100% 유지"는 ADOT의 tail-based 샘플링으로 보완한다. 셋째, Priority는 규칙 평가 순서(낮은 숫자 먼저, 구체적 규칙 우선, Default 9000은 마지막)이고 reservoir는 계정·리전 전체에서 분산 조율되어 인스턴스 수와 무관하게 총합이 유지된다. 넷째, Group으로 거대한 Service Map을 슬라이스하고 검색 표현식으로 outlier(tail latency·에러 trace)를 질의하되 annotation으로 넣은 필드만 검색된다. 다섯째, X-Ray Insights는 baseline 학습으로 "절대값은 낮지만 비정상"인 초기 열화를 탐지해 고정 임계값의 사각지대를 메운다.
+There are five key takeaways today. First, sampling is a prerequisite of tracing, and X-Ray secures low-traffic visibility and cost at the same time with Reservoir (a guaranteed minimum per second, derived from reservoir sampling in statistics) + FixedRate (a rate for the excess). Second, X-Ray uses head-based sampling (decided and propagated at the entry point), which is simple and low-overhead but cannot select by outcome, and "keep 100% of only error/slow traces" is supplemented by ADOT's tail-based sampling. Third, Priority is the rule evaluation order (lowest number first, specific rules first, Default 9000 last), and the reservoir is coordinated in a distributed manner across the whole account and Region so the total is maintained regardless of the number of instances. Fourth, use Groups to slice a huge Service Map and search expressions to query outliers (tail-latency and error traces), but only fields put in as annotations are searchable. Fifth, X-Ray Insights learns a baseline to detect early degradation that is "low in absolute terms but abnormal," filling the blind spot of fixed thresholds.

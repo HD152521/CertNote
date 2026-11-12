@@ -102,55 +102,55 @@ Next week (Week 7) moves to actually **training and tuning** models — training
 
 ## 📝 Practice Questions
 
-**Question 1.** 다음 중 "데이터 형태와 알고리즘"의 짝이 가장 적절한 것은?
+**Question 1.** Which of the following is the MOST appropriate pairing of "data type and algorithm"?
 
-A) 시계열 수요 예측 → BlazingText  
-B) 정형 데이터 비선형 분류 → PCA  
-C) 라벨 있는 이미지 분류 → Image Classification(전이학습)  
-D) 단어 임베딩 → DeepAR  
+A) Time series demand forecasting -> BlazingText  
+B) Nonlinear classification of structured data -> PCA  
+C) Labeled image classification -> Image Classification (transfer learning)  
+D) Word embedding -> DeepAR  
 
 **Answer: C**  
-Explanation: 라벨 있는 이미지 분류는 전이학습 기반 Image Classification이 정석이다. 시계열은 DeepAR(A는 틀림), 정형 비선형 분류는 XGBoost(B의 PCA는 차원축소), 단어 임베딩은 BlazingText Word2Vec(D의 DeepAR는 시계열)이다.
+Explanation: Labeled image classification is the standard use of transfer learning-based Image Classification. Time series uses DeepAR (A is wrong), nonlinear classification of structured data uses XGBoost (the PCA in B is dimensionality reduction), and word embedding uses BlazingText Word2Vec (the DeepAR in D is for time series).
 
 ---
 
-**Question 2.** 한 팀이 XGBoost로 정형 데이터 분류 모델을 만들면서 "거리 왜곡을 막기 위해 반드시 표준화해야 한다"고 주장한다. 이 주장에 대한 평가로 옳은 것은?
+**Question 2.** A team building a structured-data classification model with XGBoost claims that "you must standardize to prevent distance distortion." Which evaluation of this claim is correct?
 
-A) 옳다. 모든 알고리즘은 스케일링이 필수다  
-B) 틀리다. XGBoost는 트리 기반이라 스케일에 불변이므로 스케일링이 필수가 아니다  
-C) 옳다. XGBoost는 거리 기반 알고리즘이다  
-D) 틀리다. XGBoost는 텍스트 전용이라 스케일 개념이 없다  
+A) Correct. Scaling is mandatory for all algorithms  
+B) Incorrect. XGBoost is tree-based and scale-invariant, so scaling is not mandatory  
+C) Correct. XGBoost is a distance-based algorithm  
+D) Incorrect. XGBoost is text-only, so it has no concept of scale  
 
 **Answer: B**  
-Explanation: XGBoost는 피처를 독립적으로 임계값 분할하는 트리 기반이라 스케일에 불변이며 스케일링이 필수가 아니다. 모든 알고리즘이 필수(A)는 거짓이고, XGBoost는 거리 기반이 아니며(C), 텍스트 전용(D)도 아니다.
+Explanation: XGBoost is tree-based and splits features independently on thresholds, so it is scale-invariant and scaling is not mandatory. "Mandatory for all algorithms" (A) is false, XGBoost is not distance-based (C), and it is not text-only (D).
 
 ---
 
-**Question 3.** "레이블이 거의 없고 계속 새로운 형태로 나타나는 네트워크 트래픽 이상을, 일반 수치 메트릭에서 비지도로 탐지"하려 한다. 가장 적합한 빌트인은?
+**Question 3.** You want to detect, in an unsupervised way on general numeric metrics, network traffic anomalies that have almost no labels and keep appearing in new forms. Which built-in algorithm is MOST suitable?
 
 A) Random Cut Forest  
 B) Factorization Machines  
-C) Linear Learner 분류  
-D) K-Means로 2개 군집  
+C) Linear Learner classification  
+D) K-Means with 2 clusters  
 
 **Answer: A**  
-Explanation: 레이블 없는 일반 수치 데이터의 이상 탐지는 RCF가 정석이며, 새로운 형태의 이상에도 점수로 반응한다. FM(B)은 추천, Linear Learner 분류(C)는 레이블이 필요하고, K-Means 2군집(D)은 이상 탐지 목적과 맞지 않는다.
+Explanation: Anomaly detection on unlabeled general numeric data is the standard use of RCF, which also responds with a score to new forms of anomalies. FM (B) is for recommendation, Linear Learner classification (C) requires labels, and K-Means with 2 clusters (D) does not match the goal of anomaly detection.
 
 ---
 
-**Question 4.** 다음 비교 중 설명이 틀린 것은?
+**Question 4.** Which of the following comparisons has an INCORRECT description?
 
-A) K-Means는 비지도 군집, KNN은 지도 예측이다  
-B) DeepAR는 다수 관련 시계열을 함께 학습하고 확률적 예측을 제공한다  
-C) BlazingText supervised는 문서 분류, Word2Vec은 단어 임베딩이다  
-D) IP Insights는 일반 수치 스트림의 스파이크 탐지에 특화된 알고리즘이다  
+A) K-Means is unsupervised clustering, and KNN is supervised prediction  
+B) DeepAR trains on many related time series together and provides probabilistic forecasts  
+C) BlazingText supervised is document classification, and Word2Vec is word embedding  
+D) IP Insights is an algorithm specialized for detecting spikes in general numeric streams  
 
 **Answer: D**  
-Explanation: IP Insights는 "엔티티-IP" 관계 이상에 특화돼 있고, 일반 수치 스트림 스파이크는 RCF가 담당한다. A·B·C는 모두 올바른 설명이다.
+Explanation: IP Insights specializes in "entity-IP" relationship anomalies, while spikes in general numeric streams are handled by RCF. A, B, and C are all correct descriptions.
 
 ---
 
-**Question 5.** 사용자-아이템 상호작용이 매우 희소한 추천 데이터에서 2차 상호작용을 효율적으로 학습하려 한다. 알고리즘과 권장 입력 포맷의 올바른 짝은?
+**Question 5.** You want to efficiently learn second-order interactions on recommendation data in which user-item interactions are very sparse. Which is the correct pairing of algorithm and recommended input format?
 
 A) XGBoost, CSV  
 B) PCA, BoW  
@@ -158,6 +158,6 @@ C) Factorization Machines, RecordIO-protobuf
 D) DeepAR, JSON Lines  
 
 **Answer: C**  
-Explanation: 초고차원·희소 상호작용 추천은 Factorization Machines가 적합하며 희소 데이터에 최적화된 RecordIO-protobuf를 권장한다. XGBoost+CSV(A)는 초고차원 희소에 비효율적, PCA(B)는 차원축소, DeepAR(D)는 시계열 예측이다.
+Explanation: Recommendation with ultra-high-dimensional sparse interactions suits Factorization Machines, and RecordIO-protobuf, optimized for sparse data, is recommended. XGBoost with CSV (A) is inefficient for ultra-high-dimensional sparse data, PCA (B) is dimensionality reduction, and DeepAR (D) is time series forecasting.
 
 ---

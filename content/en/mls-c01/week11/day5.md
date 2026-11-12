@@ -90,31 +90,31 @@ Next week: comprehensive wrap-up and exam prep to finish the full course.
 
 ## 📝 Practice Questions
 
-**Question 1.** 운영 모델이 시간이 지나며 정확도가 떨어진다고 의심되지만 정답 레이블은 즉시 얻을 수 없다. 또한 입력 피처 일부의 통계가 학습 시점과 달라 보인다. 가장 먼저 적용할 모니터링은?
+**Question 1.** You suspect that a production model's accuracy is degrading over time, but ground-truth labels cannot be obtained immediately. In addition, the statistics of some input features appear different from those at training time. Which monitoring should you apply FIRST?
 
-A) Model Quality 모니터링  
-B) Data Quality 모니터링  
-C) CloudTrail 분석  
-D) A/B 프로덕션 변형  
+A) Model Quality monitoring  
+B) Data Quality monitoring  
+C) CloudTrail analysis  
+D) A/B production variants  
 
 **Answer: B**  
-Explanation: 정답 없이 입력 분포 변화를 감지하는 Data Quality 모니터링이 1차 방어선이다. Model Quality(A)는 정답이 필요하고, CloudTrail(C)은 API 감사, A/B(D)는 배포 비교용이다.
+Explanation: Data Quality monitoring, which detects changes in the input distribution without ground truth, is the first line of defense. Model Quality (A) requires ground truth, CloudTrail (C) is for API auditing, and A/B (D) is for comparing deployments.
 
 ---
 
-**Question 2.** 자동화된 ML 파이프라인에서 평가 지표가 임계값 미달인 모델이 절대 운영에 배포되지 않도록 하려 한다. 필요한 조합으로 가장 적절한 것은?
+**Question 2.** In an automated ML pipeline, you want to ensure that a model whose evaluation metric falls below the threshold is never deployed to production. Which combination is MOST appropriate?
 
-A) ConditionStep + Model Registry 승인(Approved) 게이트  
+A) ConditionStep + Model Registry approval (Approved) gate  
 B) Multi-Model Endpoint + Auto Scaling  
 C) Serverless Inference + Async Inference  
-D) KMS CMK + VPC 엔드포인트  
+D) KMS CMK + VPC endpoint  
 
 **Answer: A**  
-Explanation: ConditionStep으로 지표 미달 시 등록을 막고, Model Registry 승인 게이트로 사람이 최종 통제하면 나쁜 모델의 자동 배포를 이중으로 차단한다. B·C는 추론 비용/호스팅, D는 보안 구성으로 품질 게이트와 무관하다.
+Explanation: Blocking registration when the metric falls short with a ConditionStep, and keeping final human control with the Model Registry approval gate, blocks automatic deployment of a bad model twice over. B and C relate to inference cost/hosting and D to security configuration, so they are unrelated to a quality gate.
 
 ---
 
-**Question 3.** 보안 사고 조사에서 "어떤 IAM 주체가 언제 SageMaker 엔드포인트 구성을 변경했는가"를 추적해야 한다. 올바른 서비스는?
+**Question 3.** In a security incident investigation, you must trace "which IAM principal changed the SageMaker endpoint configuration, and when." Which is the correct service?
 
 A) CloudWatch Metrics  
 B) SageMaker Debugger  
@@ -122,30 +122,30 @@ C) AWS CloudTrail
 D) Amazon Macie  
 
 **Answer: C**  
-Explanation: CloudTrail은 API 호출 주체·시각·소스 IP를 기록해 변경 감사를 지원한다. CloudWatch Metrics(A)는 성능 지표, Debugger(B)는 학습 분석, Macie(D)는 PII 탐지로 API 감사 용도가 아니다.
+Explanation: CloudTrail records the principal, time, and source IP of API calls, supporting change auditing. CloudWatch Metrics (A) are performance metrics, Debugger (B) is for training analysis, and Macie (D) is for PII detection; none is intended for API auditing.
 
 ---
 
-**Question 4.** 학습 데이터가 절대 인터넷을 거치지 않아야 하고, 팀별로 모델 아티팩트 복호화를 격리해야 한다. 가장 적절한 구성은?
+**Question 4.** Training data must never traverse the internet, and decryption of model artifacts must be isolated by team. Which configuration is MOST appropriate?
 
-A) 퍼블릭 서브넷 + 공유 KMS 관리형 키  
-B) 프라이빗 서브넷 + S3 VPC 엔드포인트 + 팀별 KMS CMK와 키 정책  
-C) NAT 게이트웨이 + 평문 저장  
-D) 인터넷 게이트웨이 + IAM 사용자 분리만  
+A) Public subnet + shared KMS managed key  
+B) Private subnet + S3 VPC endpoint + per-team KMS CMK and key policy  
+C) NAT gateway + plaintext storage  
+D) Internet gateway + only separating IAM users  
 
 **Answer: B**  
-Explanation: 프라이빗 서브넷과 S3 VPC 엔드포인트로 인터넷을 배제하고, 팀별 CMK·키 정책으로 복호화 주체를 격리한다. 퍼블릭/NAT/IGW(A·C·D)는 인터넷 경로를 만들고 공유 키·평문은 격리 요건을 못 지킨다.
+Explanation: A private subnet and S3 VPC endpoint exclude the internet, and per-team CMKs and key policies isolate who can decrypt. Public subnet/NAT/IGW (A, C, D) create an internet path, and a shared key or plaintext cannot meet the isolation requirement.
 
 ---
 
-**Question 5.** 트래픽이 하루 중 일부 시간에만 몰리고 나머지는 거의 없는 추론 워크로드의 유휴 비용을 줄이면서, 동시에 트래픽 급증 시에도 견디게 하려 한다. 가장 적절한 조합은?
+**Question 5.** For an inference workload whose traffic is concentrated in only part of the day and is nearly absent the rest of the time, you want to reduce idle cost while also withstanding traffic spikes. Which combination is MOST appropriate?
 
-A) 단일 대형 GPU 인스턴스를 항상 가동  
-B) Serverless Inference 또는 Auto Scaling이 적용된 실시간 엔드포인트  
-C) Managed Spot Training으로 추론  
-D) 엔드포인트를 수동으로 매일 켜고 끄기  
+A) Run a single large GPU instance at all times  
+B) Serverless Inference, or a real-time endpoint with Auto Scaling applied  
+C) Run inference with Managed Spot Training  
+D) Manually turn the endpoint on and off every day  
 
 **Answer: B**  
-Explanation: 간헐 트래픽은 Serverless로 유휴 비용을 없애거나, 변동이 크면 Auto Scaling으로 급증을 흡수하는 실시간 엔드포인트가 적합하다. 항상 가동(A)은 낭비, Spot Training(C)은 학습용, 수동 운영(D)은 신뢰성이 낮다.
+Explanation: For intermittent traffic, Serverless eliminates idle cost, and if traffic fluctuates widely, a real-time endpoint with Auto Scaling that absorbs spikes is appropriate. Always-on (A) is wasteful, Spot Training (C) is for training, and manual operation (D) has low reliability.
 
 ---

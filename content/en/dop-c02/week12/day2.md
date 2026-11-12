@@ -260,118 +260,118 @@ The next article explores **auto-healing and control theory** — how to feedbac
 
 ## 📝 Practice Questions
 
-**Question 1.** Automation Document의 단계(step)들 간에 데이터를 전달하는 메커니즘은?
+**Question 1.** What is the mechanism for passing data between the steps of an Automation Document?
 
-A) 전역 변수
+A) Global variables
 
-B) 각 step의 outputs를 이름으로 선언하고, 다음 step은 `{{ StepName.OutputVariable }}` 형태로 참조
+B) Declare each step's outputs by name, and the next step references them in the form `{{ StepName.OutputVariable }}`
 
-C) 환경 변수
+C) Environment variables
 
-D) 중앙 결과 저장소(DynamoDB)에 저장
-
-**Answer: B**
-
-Explanation: Automation Document는 DAG의 단계 간에 outputs → inputs 연결로 데이터를 전달한다. 각 step에서 선언한 output이 다음 step에서 `{{ StepName.OutputName }}` 문법으로 참조되며, SSM이 값을 주입한다. 전역 변수(A)나 환경 변수(C)는 이 구조에 없고, DynamoDB(D)는 오버헤드다.
-
----
-
-**Question 2.** `aws:approve` 스텝의 핵심 특징 3가지는?
-
-A) 동기적으로 on-call이 대기할 때까지 블로킹, 브라우저 팝업으로 승인
-
-B) 비동기적으로 SNS 알림 + 승인 큐에 등록 + MinRequiredApprovals로 쿼럼 검사, 승인 시 다음 step 재개
-
-C) 승인 거부 시 자동 롤백
-
-D) 승인 타임아웃 설정 불가
+D) Store in a central result store (DynamoDB)
 
 **Answer: B**
 
-Explanation: `aws:approve`는 비동기 인-루프 단계로, 승인자들에게 SNS 메시지를 보내고 Systems Manager 승인 큐에 요청을 등록한 뒤 대기한다. MinRequiredApprovals는 분리된 의무(SOD) 원칙으로, "2명 이상 서명 필요"같은 쿼럼 검사다. 다른 병렬화 가능한 step은 동시 실행되고, 승인 시 해당 step에서 재개된다. 승인 거부는 workflow를 실패로 종료하지만(C처럼 자동 롤백은 아니고) 선택적 rollbackSteps으로 명시적 롤백은 가능하다.
+Explanation: An Automation Document passes data between the steps of a DAG by connecting outputs → inputs. An output declared in each step is referenced by the next step with the `{{ StepName.OutputName }}` syntax, and SSM injects the value. Global variables (A) and environment variables (C) do not exist in this structure, and DynamoDB (D) is overhead.
 
 ---
 
-**Question 3.** Automation Document의 이상적 특성은 **멱등성**이다. 다음 중 아닌 것은?
+**Question 2.** What are the 3 key characteristics of the `aws:approve` step?
 
-A) AuthorizeSecurityGroupIngress — 규칙이 이미 있으면 무시하고 성공
+A) Synchronously blocks until the on-call engineer is waiting, with approval via a browser popup
 
-B) SetDesiredCapacity = 2 — 원하는 용량을 2로 고정(멱등)
+B) Asynchronously sends an SNS notification + registers in the approval queue + checks a quorum with MinRequiredApprovals, and resumes the next step on approval
 
-C) 이전 값에서 1을 뺀다 (DesiredCapacity - 1) — 재실행 시마다 또 빠진다(멱등 X)
+C) Automatically rolls back when approval is denied
 
-D) ModifyInstanceAttribute SourceDestCheck = false — 이미 false면 무시하고 성공
+D) Approval timeout cannot be configured
+
+**Answer: B**
+
+Explanation: `aws:approve` is an asynchronous in-the-loop step that sends an SNS message to the approvers, registers the request in the Systems Manager approval queue, and then waits. MinRequiredApprovals is a quorum check, such as "signatures from 2 or more people required," following the separation of duties (SOD) principle. Other parallelizable steps run concurrently, and execution resumes from that step on approval. A rejection terminates the workflow as failed (it is not an automatic rollback as in C), but explicit rollback is possible through the optional rollbackSteps.
+
+---
+
+**Question 3.** The ideal property of an Automation Document is **idempotency**. Which of the following is NOT idempotent?
+
+A) AuthorizeSecurityGroupIngress — if the rule already exists, it is ignored and succeeds
+
+B) SetDesiredCapacity = 2 — fixes the desired capacity at 2 (idempotent)
+
+C) Subtract 1 from the previous value (DesiredCapacity - 1) — it is subtracted again on every re-run (not idempotent)
+
+D) ModifyInstanceAttribute SourceDestCheck = false — if already false, it is ignored and succeeds
 
 **Answer: C**
 
-Explanation: 멱등성은 f(f(x)) = f(x) — 동일한 상태로 수렴해야 한다. 상태(목표값) 기반 API는 멱등(A, B, D)이지만, 상대적 변경(C)은 멱등이 아니다. 자동화의 재시도나 재실행에 대비해야 하므로, 상태 기반 설정이 필수다.
+Explanation: Idempotency means f(f(x)) = f(x) — execution must converge to the same state. State-based (target-value) APIs are idempotent (A, B, D), but relative changes (C) are not. Because automation must be prepared for retries and re-runs, state-based configuration is essential.
 
 ---
 
-**Question 4.** GuardDuty가 심각한 보안 발견을 보고했다. 즉시 EC2 인스턴스를 격리하되, 법무팀 승인 없이는 계정 정지까지 가면 안 된다는 정책이 있다. 가장 적합한 설계는?
+**Question 4.** GuardDuty has reported a severe security finding. You must isolate the EC2 instance immediately, but policy states that it must not go as far as suspending the account without legal team approval. Which design is MOST suitable?
 
-A) Automation: GuardDuty → 격리 step → 계정 정지 step (순차)
+A) Automation: GuardDuty → isolation step → account suspension step (sequential)
 
-B) Automation: GuardDuty → 격리 step → aws:approve (법무팀) → 계정 정지 step (분기)
+B) Automation: GuardDuty → isolation step → aws:approve (legal team) → account suspension step (branching)
 
-C) 격리는 Lambda 직접 호출, 법무팀은 이메일로 체크
+C) Call Lambda directly for isolation, and check with the legal team by email
 
-D) 계정 정지를 빼고 격리만 자동
+D) Drop the account suspension and automate only isolation
 
 **Answer: B**
 
-Explanation: 위험한 작업(계정 정지)은 인가된 결정이 필요하고, 빠른 containment(격리)는 지체 없어야 한다. 따라서 격리 step은 자동으로 즉시, 이후 ap승인 gate를 거쳐야 한다. aws:approve는 비동기이므로, 격리 이후 다른 추적 step을 병렬로 실행할 수도 있다. 이메일 체크(C)는 비자동화, 격리만(D)은 미완성.
+Explanation: A risky action (account suspension) requires an authorized decision, while fast containment (isolation) must happen without delay. Therefore, the isolation step runs automatically and immediately, and then an approval gate must follow. Since aws:approve is asynchronous, other investigation steps can also run in parallel after isolation. An email check (C) is not automated, and isolation only (D) is incomplete.
 
 ---
 
-**Question 5.** Automation Document에서 step 재실행 시 다시 같은 step을 두 번 호출하게 되는데, 부작용이 없도록 하려면?
+**Question 5.** When an Automation Document step is re-run, the same step gets called twice. How can you ensure there are no side effects?
 
-A) 각 step을 하나의 Lambda로 래핑해 내부에 중복 검사 로직 추가
+A) Wrap each step in a Lambda function and add duplicate-check logic inside
 
-B) 재시도 자체를 비활성화
+B) Disable retries altogether
 
-C) Step action 자체가 멱등(상태 기반)하도록 설계 (SetDesiredCapacity, PutItem with if-not-exists 등)
+C) Design the step action itself to be idempotent (state-based) (SetDesiredCapacity, PutItem with if-not-exists, and so on)
 
-D) 불가능 — EventBridge 전달처럼 at-least-once는 필연적
+D) Impossible — at-least-once, like EventBridge delivery, is unavoidable
 
 **Answer: C**
 
-Explanation: 멱등성은 step action의 설계에서 나온다. AWS API 대부분이 상태 기반이므로(이미 상태 X면 no-op), 제대로 사용하면 자동으로 멱등이다. Lambda 래핑(A)은 추가 복잡도고, 재시도 비활성화(B)는 과도한 실패, at-least-once(D)는 일부 맞지만 실제로는 멱등하게 설계 가능하다.
+Explanation: Idempotency comes from the design of the step action. Since most AWS APIs are state-based (a no-op if the state is already X), they are automatically idempotent when used properly. Lambda wrapping (A) adds complexity, disabling retries (B) causes excessive failures, and at-least-once (D) is partly true, but in practice you can design for idempotency.
 
 ---
 
-**Question 6.** 복잡한 Automation이 중간에 실패했다 — 일부 step은 성공했다. 실패 전 상태로 되돌려야 한다. 메커니즘은?
+**Question 6.** A complex Automation failed midway — some steps succeeded. You must return to the state before the failure. What is the mechanism?
 
-A) Automation 전체를 다시 처음부터 실행
+A) Re-run the whole Automation from the beginning
 
-B) 선택적 rollbackSteps을 Automation Document에 정의하고, SSM이 역순으로 실행
+B) Define optional rollbackSteps in the Automation Document, and SSM runs them in reverse order
 
-C) CloudFormation 스택 롤백처럼 자동 수행 (명시 불필요)
+C) It happens automatically like a CloudFormation stack rollback (no explicit definition needed)
 
-D) 수동으로 EC2 콘솔에서 되돌리기
+D) Manually revert in the EC2 console
 
 **Answer: B**
 
-Explanation: Automation Document는 선택적 `rollbackSteps` 블록을 가지며, 실패 시 SSM이 롤백 단계를 역순으로 실행한다. 이는 명시적 정의가 필요하고(A, C 아님), 복잡한 작업의 안전망이다.
+Explanation: An Automation Document can have an optional `rollbackSteps` block, and on failure SSM runs the rollback steps in reverse order. This requires explicit definition (not A or C) and is a safety net for complex operations.
 
 ---
 
-**Question 7.** EventBridge 규칙이 Automation Document를 Target으로 가리킬 때, 매번 Automation을 호출한다. 각 호출마다 새로운 ExecutionId가 생기고, 또 다른 개별 실행인가?
+**Question 7.** When an EventBridge rule points to an Automation Document as its Target, it invokes the Automation each time. Each invocation gets a new ExecutionId — is each one a separate, individual execution?
 
-A) 아니다 — 같은 호출이 재시도되는 것뿐
+A) No — it is just the same invocation being retried
 
-B) 맞다 — 각 호출마다 독립적인 Automation 실행(ExecutionId 다름)
+B) Yes — each invocation is an independent Automation execution (a different ExecutionId)
 
-C) 주기적 트리거면 yes, 단발 이벤트면 no
+C) Yes for periodic triggers, no for one-off events
 
-D) Execution ID는 중요하지 않음
+D) The Execution ID does not matter
 
 **Answer: B**
 
-Explanation: EventBridge 이벤트 하나당 Automation 실행 하나다. 각 실행은 독립적 ExecutionId를 가지고, 로그·모니터링·재시도도 개별적으로 추적된다. "재시도"는 Automation 내부의 step-level 재시도(aws:waitForAwsResourceProperty에 지정된 재시도)와 다르다.
+Explanation: One EventBridge event produces one Automation execution. Each execution has an independent ExecutionId, and logs, monitoring, and retries are tracked individually. A "retry" is different from step-level retries inside the Automation (the retries specified for aws:waitForAwsResourceProperty).
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, Automation Document는 운영 절차를 코드로 선언하는 스키마로, 절차 로직을 인프라 배관에서 분리한다. 둘째, step action(executeAwsApi, executeScript, approve, branch 등)은 절차의 어휘로, API부터 인간 게이트까지 스펙트럼을 제공한다. 셋째, aws:approve는 쿼럼 기반 인사 승인으로 분리된 의무(SOD) 원칙을 구현한다. 넷째, EventBridge 트리거된 Automation은 절차를 반응 루프에 연결해 인간의 손가락 움직임 없이 자동 대응을 이룬다. 다섯째, 멱등성과 선택적 롤백 step은 절차 재실행과 복구를 안전하게 만든다.
+There are five key takeaways today. First, an Automation Document is a schema that declares operational procedures as code, separating procedural logic from infrastructure plumbing. Second, step actions (executeAwsApi, executeScript, approve, branch, and so on) are the vocabulary of a procedure, offering a spectrum from APIs to human gates. Third, aws:approve implements the separation of duties (SOD) principle through quorum-based human approval. Fourth, Automation triggered by EventBridge connects procedures to a reaction loop and achieves automated response without human intervention. Fifth, idempotency and optional rollback steps make procedure re-runs and recovery safe.

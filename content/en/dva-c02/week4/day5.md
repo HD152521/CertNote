@@ -116,7 +116,7 @@ If `Latency - IntegrationLatency` is large, API GW internal processing (auth, VT
 
 ---
 
-## 📝 시나리오 연습 문제 (10문제)
+## 📝 Scenario Practice Questions (10 questions)
 
 **Question 1.**  
 A startup provides an API to external partners. Partner A must be limited to 100,000 calls per month and Partner B to 500,000 per month. Also, Partner B needs a rate limit of 100 requests/second and Partner A 20 requests/second. What is the most appropriate configuration?

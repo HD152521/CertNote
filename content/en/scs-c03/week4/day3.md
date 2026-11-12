@@ -103,62 +103,62 @@ Network Firewall sends **flow logs** (connection metadata) and **alert logs** (s
 
 ## 📝 Practice Questions
 
-**Question 1.** AWS Network Firewall에서 stateless 규칙 그룹과 stateful 규칙 그룹의 차이로 옳은 것은?
+**Question 1.** Which statement about the difference between stateless rule groups and stateful rule groups in AWS Network Firewall is correct?
 
-A) stateless는 연결 상태를 추적하고, stateful은 패킷 단위로만 본다  
-B) stateless는 5-tuple로 패킷을 독립 평가(연결 미추적)하고, stateful은 연결·세션을 추적하며 Suricata 규칙으로 도메인·시그니처 검사를 한다  
-C) 둘 다 동일하며 성능 차이만 있다  
-D) stateful은 인바운드만, stateless는 아웃바운드만 검사한다  
+A) Stateless tracks connection state, and stateful looks only at individual packets  
+B) Stateless evaluates packets independently by 5-tuple (no connection tracking), and stateful tracks connections and sessions and performs domain and signature inspection with Suricata rules  
+C) Both are identical and differ only in performance  
+D) Stateful inspects only inbound, and stateless inspects only outbound  
 
 **Answer: B**  
-Explanation: stateless 규칙 그룹은 각 패킷을 5-tuple(소스/대상 IP·포트, 프로토콜)로 독립 평가해 빠른 pass/drop/forward를 수행하며 연결 상태를 추적하지 않는다. stateful 규칙 그룹은 연결 테이블을 유지하고 Suricata 호환 규칙으로 SNI/Host 도메인, 프로토콜 이상, IPS 시그니처를 검사한다. 상태 추적 주체가 반대로 서술되거나 방향을 한정한 보기는 틀렸다.
+Explanation: A stateless rule group evaluates each packet independently by 5-tuple (source/destination IP and port, protocol) to perform fast pass/drop/forward and does not track connection state. A stateful rule group maintains a connection table and inspects SNI/Host domains, protocol anomalies, and IPS signatures with Suricata-compatible rules. Choices that reverse which one tracks state, or that limit direction, are wrong.
 
 ---
 
-**Question 2.** 도메인 허용 리스트(`example.com`만 아웃바운드 허용)를 stateful 규칙으로 만들었는데 다른 도메인이 여전히 나간다. 가장 가능성 높은 원인은?
+**Question 2.** You created a domain allow list (allowing only `example.com` outbound) as a stateful rule, but other domains still get out. What is the most likely cause?
 
-A) Suricata 문법 오류  
-B) workload subnet의 라우트 테이블이 트래픽을 firewall endpoint로 보내지 않아 검사 자체가 일어나지 않음  
-C) DNS Firewall이 비활성화됨  
-D) WCU 부족  
+A) Suricata syntax error  
+B) The workload subnet's route table does not send traffic to the firewall endpoint, so no inspection happens at all  
+C) DNS Firewall is disabled  
+D) Insufficient WCU  
 
 **Answer: B**  
-Explanation: Network Firewall는 firewall endpoint를 통과하는 트래픽만 검사한다. 라우트 테이블이 workload subnet의 트래픽을 firewall subnet으로 향하게 하지 않으면 규칙이 아무리 정확해도 검사가 일어나지 않는다. 흔한 실수가 바로 라우팅 누락이다. 문법 오류라면 규칙 배포가 실패하고, DNS Firewall는 다른 계층이며, WCU는 WAF 개념이다.
+Explanation: Network Firewall inspects only traffic that passes through the firewall endpoint. If the route table does not direct the workload subnet's traffic to the firewall subnet, no inspection happens no matter how accurate the rules are. A missing route is exactly the common mistake. With a syntax error, rule deployment would fail, DNS Firewall is a different layer, and WCU is a WAF concept.
 
 ---
 
-**Question 3.** Transit Gateway 허브와 중앙 inspection VPC로 모든 VPC 간 트래픽을 Network Firewall로 검사하려 한다. stateful 검사가 깨지지 않게 하려면 반드시 필요한 TGW 설정은?
+**Question 3.** We want to inspect all inter-VPC traffic with Network Firewall through a Transit Gateway hub and a central inspection VPC. Which TGW setting is absolutely required so that stateful inspection does not break?
 
-A) ECMP 비활성화  
-B) appliance mode 활성화 — 같은 흐름의 패킷이 항상 동일 AZ의 firewall endpoint로 가도록 보장  
-C) DNS 지원 비활성화  
-D) MTU를 9001로 설정  
+A) Disable ECMP  
+B) Enable appliance mode — guarantees that packets of the same flow always go to the firewall endpoint in the same AZ  
+C) Disable DNS support  
+D) Set the MTU to 9001  
 
 **Answer: B**  
-Explanation: TGW appliance mode는 한 연결 흐름의 양방향 패킷이 항상 동일 AZ의 어플라이언스(firewall endpoint)로 라우팅되도록 해 대칭성을 보장한다. 이게 없으면 흐름이 AZ를 가로질러 비대칭이 되고, 연결 상태를 추적하는 stateful 검사가 응답 패킷을 알아보지 못해 오작동한다. ECMP·DNS·MTU 설정은 stateful 대칭성과 직접 관련이 없다.
+Explanation: TGW appliance mode ensures symmetry by making bidirectional packets of one connection flow always route to the appliance (firewall endpoint) in the same AZ. Without it, the flow crosses AZs and becomes asymmetric, and stateful inspection that tracks connection state fails to recognize the response packets and malfunctions. ECMP, DNS, and MTU settings are not directly related to stateful symmetry.
 
 ---
 
-**Question 4.** 멀웨어가 데이터를 DNS 질의의 서브도메인에 인코딩해 외부로 유출(DNS exfiltration)하는 것을 막으려 한다. 가장 적절한 서비스·기능은?
+**Question 4.** We want to prevent malware from exfiltrating data out by encoding it in subdomains of DNS queries (DNS exfiltration). What is the most appropriate service/feature?
 
-A) Security Group으로 53번 포트 차단  
-B) Route 53 Resolver DNS Firewall로 알려진 악성/C2 도메인을 BLOCK하고 비정상 질의를 ALERT  
+A) Block port 53 with a Security Group  
+B) Use Route 53 Resolver DNS Firewall to BLOCK known malicious/C2 domains and ALERT on anomalous queries  
 C) CloudFront OAC  
-D) NACL 인바운드 거부  
+D) Deny inbound with a NACL  
 
 **Answer: B**  
-Explanation: DNS Firewall는 VPC 내부의 DNS 질의를 Resolver 단계에서 도메인 기준으로 필터링하며, AWS 관리형 악성·봇넷 C2 도메인 목록 차단과 알림으로 DNS 터널링/exfiltration을 완화한다. 53번 포트를 전면 차단하면 정상 DNS도 막혀 서비스가 깨지고, OAC·NACL은 DNS 질의 내용 기반 통제가 아니다.
+Explanation: DNS Firewall filters DNS queries inside the VPC by domain at the Resolver stage, and mitigates DNS tunneling/exfiltration by blocking and alerting on AWS managed malicious and botnet C2 domain lists. Blocking port 53 entirely also blocks legitimate DNS and breaks services, and OAC and NACLs are not controls based on DNS query content.
 
 ---
 
-**Question 5.** 관리 부담 없이 VPC 아웃바운드 트래픽에 IPS(침입 방지)와 도메인 필터링을 적용하려 한다. 서드파티 어플라이언스 운영은 피하고 싶다. 가장 적절한 선택은?
+**Question 5.** We want to apply IPS (intrusion prevention) and domain filtering to VPC outbound traffic without management burden. We want to avoid operating third-party appliances. What is the most appropriate choice?
 
-A) Gateway Load Balancer + 서드파티 방화벽 어플라이언스  
-B) AWS Network Firewall(관리형 stateful 규칙으로 IPS·도메인 필터링)  
-C) Security Group 규칙만 강화  
-D) AWS WAF를 VPC에 직접 연결  
+A) Gateway Load Balancer + third-party firewall appliance  
+B) AWS Network Firewall (IPS and domain filtering with managed stateful rules)  
+C) Only strengthen Security Group rules  
+D) Attach AWS WAF directly to the VPC  
 
 **Answer: B**  
-Explanation: AWS Network Firewall는 관리형 서비스로, Suricata 호환 stateful 규칙으로 IPS/IDS와 SNI/Host 도메인 필터링을 어플라이언스 운영 부담 없이 제공한다. GWLB(A)는 서드파티 어플라이언스를 삽입할 때 쓰는 방식으로 운영 부담이 따른다. Security Group은 IP/포트 수준이라 IPS·도메인 필터링을 못 하고, WAF는 HTTP(L7) 애플리케이션용이라 VPC 일반 트래픽 검사에 직접 붙이는 통제가 아니다.
+Explanation: AWS Network Firewall is a managed service that provides IPS/IDS and SNI/Host domain filtering with Suricata-compatible stateful rules without the burden of operating appliances. GWLB (A) is the approach used when inserting third-party appliances and brings operational burden. A Security Group is at the IP/port level and cannot do IPS or domain filtering, and WAF is for HTTP (L7) applications, so it is not a control attached directly to inspect general VPC traffic.
 
 ---

@@ -190,7 +190,7 @@ Is cold start a problem?
 
 ---
 
-## 📝 Week 3 종합 시나리오 문제
+## 📝 Week 3 Comprehensive Scenario Questions
 
 **Question 1.** A payment API Lambda function shows high latency during traffic surges. CloudWatch `ConcurrentExecutions` is in the normal range, and `Duration` P99 exceeds 3,000ms. What is the most likely cause and solution?
 

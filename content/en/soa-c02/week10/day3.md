@@ -101,93 +101,93 @@ In the next article, we'll transcend databases, exploring S3 Replication, Storag
 
 ## 📝 Practice Questions
 
-**Question 1.** "단일 AZ 장애에서 데이터 손실 없이 자동 복구"가 목표다. 어떤 RDS 기능이 정확한가?
+**Question 1.** The goal is "automatic recovery from a single-AZ failure with no data loss." Which RDS feature is correct?
 
-A) Read Replica 추가
-B) Multi-AZ — 다른 AZ의 Standby에 동기 복제, 자동 페일오버(60~120초), RPO 0
-C) Manual Snapshot 주기 생성
+A) Add a Read Replica
+B) Multi-AZ: synchronous replication to a Standby in another AZ, automatic failover (60 to 120 seconds), RPO 0
+C) Create manual snapshots periodically
 D) Cross-Region Read Replica
 
 **Answer: B**
 
-Explanation: Multi-AZ는 같은 리전 다른 AZ의 Standby에 모든 커밋을 동기 복제하고 Standby의 ack를 받은 뒤에야 커밋을 완료하므로, Primary가 죽어도 마지막 커밋까지 Standby에 있어 데이터 손실(RPO)이 0이다. 장애 감지 시 자동으로 Standby를 승격하고 endpoint를 전환한다. Read Replica(A)는 비동기라 지연만큼 손실 가능하고 읽기 확장용이며, Cross-Region RR(D)은 리전 DR용으로 수동 promote다.
+Explanation: Multi-AZ synchronously replicates every commit to a Standby in a different AZ of the same Region and completes the commit only after receiving the Standby's ack, so even if the Primary dies, everything up to the last commit exists on the Standby and data loss (RPO) is 0. When a failure is detected, it automatically promotes the Standby and switches the endpoint. A Read Replica (A) is asynchronous, so data up to the replication lag may be lost, and it is for read scaling; a Cross-Region RR (D) is for Region-level DR and is promoted manually.
 
 ---
 
-**Question 2.** 운영 중 DB 읽기 부하(분석·리포트)가 폭증한다. 비용 효율적으로 읽기를 분산하려면?
+**Question 2.** Read load (analytics and reports) on a production DB is surging. How can you distribute reads cost-effectively?
 
-A) DB 인스턴스 크기를 키운다
-B) Read Replica를 추가하고 별도 endpoint로 읽기 트래픽을 분산한다
-C) Multi-AZ를 활성화한다
-D) Manual Snapshot을 더 자주 만든다
+A) Increase the DB instance size
+B) Add Read Replicas and distribute read traffic through a separate endpoint
+C) Enable Multi-AZ
+D) Take manual snapshots more often
 
 **Answer: B**
 
-Explanation: Read Replica는 비동기 복제로 읽기 전용 사본을 만들고 별도 endpoint로 노출해 읽기 부하를 분산하는 정확한 도구다. Multi-AZ(C)의 Standby는 클라이언트가 읽기조차 보낼 수 없어 읽기 분산에 전혀 도움이 안 된다. 인스턴스 크기 키우기(A)는 비용이 크고 읽기/쓰기를 분리하지 못한다. 분석·리포트처럼 약간의 복제 지연을 견디는 읽기에 Read Replica가 적합하다.
+Explanation: A Read Replica creates a read-only copy through asynchronous replication and exposes it through a separate endpoint, making it the right tool for distributing read load. The Standby of Multi-AZ (C) cannot even receive reads from clients, so it does nothing for read distribution. Increasing the instance size (A) is expensive and does not separate reads from writes. Read Replicas suit reads that can tolerate slight replication lag, such as analytics and reports.
 
 ---
 
-**Question 3.** Multi-AZ를 켰는데도 us-east-1 리전 전체 장애 때 DB가 함께 멈췄다. 리전 단위 장애까지 견디려면 무엇이 필요한가?
+**Question 3.** Even with Multi-AZ enabled, the DB went down along with a full us-east-1 Region outage. What is needed to survive a Region-level failure?
 
-A) Multi-AZ를 두 번 적용
-B) Cross-Region Read Replica 또는 Aurora Global Database로 다른 리전에 사본을 두고 장애 시 promote
-C) 더 큰 인스턴스 타입
+A) Apply Multi-AZ twice
+B) Keep a copy in another Region using a Cross-Region Read Replica or Aurora Global Database, and promote it during an outage
+C) A larger instance type
 D) Manual Snapshot
 
 **Answer: B**
 
-Explanation: Multi-AZ는 같은 리전 내 AZ 장애만 견딘다 — 동기 복제라 리전을 넘으면 지연이 커져 같은 리전에만 둔다. 리전 전체 장애에 대비하려면 다른 리전에 비동기 복제 사본(Cross-Region Read Replica)이나 Aurora Global Database를 두고, Primary 리전 장애 시 Secondary를 promote해야 한다. Aurora Global DB는 RPO<1초, RTO<1분으로 가장 빠른 리전 DR을 제공한다.
+Explanation: Multi-AZ survives only AZ failures within the same Region; because replication is synchronous, latency would grow across Regions, so it is kept within one Region. To prepare for a full Region outage, you keep an asynchronously replicated copy in another Region (a Cross-Region Read Replica) or an Aurora Global Database, and promote the Secondary when the Primary Region fails. Aurora Global DB provides the fastest Region-level DR, with RPO under 1 second and RTO under 1 minute.
 
 ---
 
-**Question 4.** 글로벌 사용자(아시아·미국·유럽)에게 가까운 리전에서 빠른 읽기를 제공하면서 리전 단위 DR도 필요하다. 가장 적합한 도구는?
+**Question 4.** You need to serve fast reads from Regions close to global users (Asia, US, Europe) and also need Region-level DR. Which tool is most suitable?
 
 A) RDS Multi-AZ
-B) Aurora Global Database — 1 Primary + 최대 5 Secondary 리전, 스토리지 계층 복제로 RPO<1초·RTO<1분
-C) 단일 리전 Read Replica 여러 개
+B) Aurora Global Database: 1 Primary plus up to 5 Secondary Regions, storage-layer replication, RPO under 1 second and RTO under 1 minute
+C) Multiple Read Replicas in a single Region
 D) DynamoDB Multi-AZ
 
 **Answer: B**
 
-Explanation: Aurora Global Database는 Primary 리전의 변경을 전용 인프라로 최대 5개 Secondary 리전 스토리지에 복제해, 각 지역 사용자에게 가까운 리전에서 수십 ms 지연으로 읽기를 제공하고 동시에 리전 DR(promote 60초 이내)을 제공한다. 스토리지 계층 복제라 인스턴스 단위 복제(RDS Cross-Region RR)보다 지연과 RTO가 작다. 글로벌 읽기 + 리전 DR의 표준 답이다.
+Explanation: Aurora Global Database replicates changes from the Primary Region to the storage of up to 5 Secondary Regions over dedicated infrastructure, serving reads with tens of milliseconds of latency from the Region closest to each user while also providing Region DR (promotion within 60 seconds). Because replication happens at the storage layer, latency and RTO are lower than with instance-level replication (RDS Cross-Region RR). It is the standard answer for global reads plus Region DR.
 
 ---
 
-**Question 5.** Lambda 함수가 트래픽 폭증 시 RDS에 동시 수천 개 커넥션을 열어 DB 최대 커넥션 한도를 초과한다. 근본 해결책은?
+**Question 5.** During traffic spikes, a Lambda function opens thousands of concurrent connections to RDS, exceeding the DB's maximum connection limit. What is the fundamental solution?
 
-A) RDS 인스턴스를 더 큰 타입으로 변경
-B) RDS Proxy — DB 앞에 커넥션 풀을 두고 소수의 실제 커넥션을 재사용(multiplexing)
-C) Multi-AZ 활성화
-D) Read Replica 추가
+A) Change the RDS instance to a larger type
+B) RDS Proxy: place a connection pool in front of the DB and reuse a small number of real connections (multiplexing)
+C) Enable Multi-AZ
+D) Add a Read Replica
 
 **Answer: B**
 
-Explanation: Lambda는 동시 요청에 따라 함수 인스턴스가 수천 개로 폭증하고 각자 DB에 직접 커넥션을 열어 Connection Storm을 일으킨다. RDS Proxy는 DB 앞에 커넥션 풀을 둬 수천 Lambda가 와도 DB가 보는 실제 커넥션을 풀 크기로 제한하고 재사용한다. 인스턴스 키우기(A)는 Lambda 스케일을 따라잡지 못하고 커넥션 생성 오버헤드도 남아 근본 해결이 아니다. Lambda+RDS는 RDS Proxy가 사실상 필수다.
+Explanation: With concurrent requests, Lambda function instances can surge into the thousands and each opens a connection directly to the DB, causing a connection storm. RDS Proxy places a connection pool in front of the DB so that even with thousands of Lambda invocations, the number of real connections the DB sees is limited to the pool size and reused. Enlarging the instance (A) cannot keep up with Lambda scaling and still leaves the connection-creation overhead, so it is not a fundamental fix. For Lambda with RDS, RDS Proxy is practically essential.
 
 ---
 
-**Question 6.** Aurora 클러스터에서 잘못된 마이그레이션을 10분 전 상태로 가장 빠르게 되돌리려 한다. 새 인스턴스 생성 없이 같은 클러스터를 되감을 수 있는 기능은?
+**Question 6.** You want to undo a bad migration on an Aurora cluster to its state 10 minutes ago as fast as possible. Which feature can rewind the same cluster without creating a new instance?
 
 A) PITR(Point-in-Time Recovery)
-B) Aurora Backtrack — 같은 클러스터를 설정한 윈도우 내 과거 시점으로 되감기(rewind)
+B) Aurora Backtrack: rewind the same cluster to a past point in time within the configured window
 C) Read Replica promote
-D) Manual Snapshot 복원
+D) Restore from a manual snapshot
 
 **Answer: B**
 
-Explanation: PITR(A)은 베이스 스냅샷+로그 재생으로 임의 시점의 새 인스턴스를 만들어 수십 분이 걸린다. Aurora Backtrack은 로그 중심 스토리지 구조를 이용해 기존 클러스터 자체를 과거 시점으로 되감아 수 초~수 분 만에 끝난다. 단 Backtrack은 미리 활성화하고 되감기 윈도우를 설정해 둬야 하며, 되감으면 그 시점 이후 데이터는 사라진다. 빠른 무르기에는 Backtrack, 임의 시점의 별도 복원에는 PITR이다.
+Explanation: PITR (A) restores a base snapshot and replays logs to create a new instance at any point in time, taking tens of minutes. Aurora Backtrack uses the log-structured storage design to rewind the existing cluster itself to a past point in time, finishing in seconds to minutes. However, Backtrack must be enabled in advance with a rewind window configured, and rewinding discards data after that point in time. Use Backtrack for a quick undo, and PITR for a separate restore to an arbitrary point in time.
 
 ---
 
-**Question 7.** Multi-AZ 구성인데 "읽기 부하도 분산하고 싶다"는 요구가 추가됐다. MySQL/PostgreSQL 환경에서 HA와 읽기 분산을 동시에 얻는 RDS 구성은?
+**Question 7.** A Multi-AZ setup now has an added requirement to "also distribute read load." Which RDS configuration provides both HA and read distribution in a MySQL/PostgreSQL environment?
 
-A) 일반 Multi-AZ Instance만으로 충분하다
-B) Multi-AZ DB Cluster — Primary 1 + Reader 2 구조로 Reader가 읽기 트래픽을 처리하고 페일오버도 35초 이하
-C) Cross-Region Read Replica만 추가
-D) Snapshot을 더 자주 생성
+A) A regular Multi-AZ Instance alone is sufficient
+B) Multi-AZ DB Cluster: a structure of 1 Primary plus 2 Readers, where the Readers serve read traffic and failover takes 35 seconds or less
+C) Add only a Cross-Region Read Replica
+D) Create snapshots more often
 
 **Answer: B**
 
-Explanation: 일반 Multi-AZ Instance(A)의 Standby는 클라이언트 접근 불가라 읽기 분산이 안 된다. Multi-AZ DB Cluster는 Primary 1개 + Reader 2개의 3노드 구조로, 두 Reader가 읽기 트래픽을 처리해 HA와 읽기 분산을 동시에 제공하고 페일오버도 35초 이하로 더 빠르다(MySQL/PostgreSQL 전용). 일반 Multi-AZ에 Read Replica를 별도로 붙여도 되지만, DB Cluster는 이를 하나의 구성으로 통합한 것이다.
+Explanation: The Standby of a regular Multi-AZ Instance (A) cannot be accessed by clients, so reads cannot be distributed. A Multi-AZ DB Cluster is a 3-node structure of 1 Primary plus 2 Readers; the two Readers serve read traffic, providing HA and read distribution together, and failover is faster at 35 seconds or less (MySQL/PostgreSQL only). You can also attach a Read Replica separately to a regular Multi-AZ, but the DB Cluster integrates this into a single configuration.
 
 ---

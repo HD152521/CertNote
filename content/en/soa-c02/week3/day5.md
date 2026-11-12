@@ -171,123 +171,123 @@ When actual incidents occur, the order in which to use CloudWatch tools is organ
 
 ## 📝 Practice Questions
 
-**Question 1.** EC2 인스턴스가 OOM으로 강제 종료됐다. 메모리 알람은 Treat Missing Data = missing이고 EvaluationPeriods=5다. 현재 데이터 포인트 2개가 누락됐다. 알람 상태는?
+**Question 1.** An EC2 instance was forcibly terminated by OOM. The memory alarm has Treat Missing Data = missing and EvaluationPeriods=5. Currently 2 data points are missing. What is the alarm state?
 
-A) ALARM — 인스턴스가 OOM으로 종료돼 메트릭이 끊겼으므로 missing 설정과 무관하게 자동으로 ALARM 전이
-B) INSUFFICIENT_DATA — 데이터가 충분히 누락되지 않아 판단 불가
-C) OK — Treat Missing Data = missing은 누락 구간을 정상으로 간주해 마지막 상태를 OK로 유지
-D) DISABLED — 데이터 소스가 사라지면 CloudWatch가 알람을 자동으로 비활성화 처리
+A) ALARM — because the instance was terminated by OOM and the metric stopped, it transitions to ALARM automatically regardless of the missing setting
+B) INSUFFICIENT_DATA — not enough data is missing, so it cannot be determined
+C) OK — Treat Missing Data = missing treats the missing interval as normal and keeps the last state as OK
+D) DISABLED — when the data source disappears, CloudWatch automatically disables the alarm
 
 **Answer: B**
-Explanation: Treat Missing Data = missing은 누락된 데이터 포인트를 무시하고 남은 데이터포인트(3개)로 평가한다. 마지막 3개 포인트가 정상이었다면 알람은 OK 또는 INSUFFICIENT_DATA 상태를 유지한다. "인스턴스가 죽었으니 자동 ALARM"은 틀린 가정이다. 핵심 가용성 서버는 Treat Missing Data = breaching으로 설정해야 인스턴스 소실 시 ALARM으로 전이된다.
+Explanation: Treat Missing Data = missing ignores the missing data points and evaluates with the remaining data points (3). If the last 3 points were normal, the alarm stays in the OK or INSUFFICIENT_DATA state. The assumption "the instance died, so it automatically goes to ALARM" is wrong. For servers where availability is critical, you must set Treat Missing Data = breaching so that the alarm transitions to ALARM when the instance disappears.
 
 ---
 
-**Question 2.** 운영팀이 한 사고에서 EC2/RDS/ALB/ElastiCache 알람 20개가 동시에 울려 PagerDuty가 20번 울렸다. 이를 해결하는 가장 구조적인 방법은?
+**Question 2.** In one incident, the operations team had 20 alarms for EC2/RDS/ALB/ElastiCache fire at the same time, so PagerDuty paged 20 times. What is the most structural way to solve this?
 
-A) 20개 알람의 임계값을 모두 높여 동시 발화 가능성을 낮추고, 한 번에 울리는 알람 수를 줄인다
-B) 20개 알람의 EvaluationPeriods·DatapointsToAlarm을 모두 늘려 일시적 동시 spike에 의한 다중 발화를 억제한다
-C) 자식 알람 20개에 Actions Suppressor 적용 + Composite Alarm으로 논리 조합 → 부모만 PagerDuty
-D) 상관관계 높은 알람을 묶어 20개를 10개로 통합하고, 나머지는 SNS 대신 대시보드로만 노출한다
+A) Raise the thresholds of all 20 alarms to lower the chance of simultaneous firing and reduce the number of alarms that fire at once
+B) Increase EvaluationPeriods and DatapointsToAlarm on all 20 alarms to suppress multiple firings caused by a temporary simultaneous spike
+C) Apply an Actions Suppressor to the 20 child alarms + combine them logically with a Composite Alarm → only the parent pages PagerDuty
+D) Group highly correlated alarms to consolidate 20 into 10, and expose the rest only on a dashboard instead of through SNS
 
 **Answer: C**
-Explanation: Composite Alarm의 핵심 사용 사례다. 자식 알람 20개는 각각 메트릭을 추적하되 액션을 비활성화한다. Composite Alarm이 "ALB 5xx AND (EC2 CPU OR RDS CPU)" 같은 논리 조합으로 "실제 서비스 저하" 상태를 판단하면, 그 하나만 PagerDuty에 연결한다. 임계값을 높이거나 EvaluationPeriods를 늘리면 탐지 자체가 느려지는 다른 문제가 생긴다.
+Explanation: This is the core use case for a Composite Alarm. The 20 child alarms each track their metric but have their actions disabled. When the Composite Alarm judges the "real service degradation" state with a logical combination such as "ALB 5xx AND (EC2 CPU OR RDS CPU)," only that one is connected to PagerDuty. Raising thresholds or increasing EvaluationPeriods creates a different problem, since detection itself becomes slower.
 
 ---
 
-**Question 3.** EC2 메모리 사용률 90% 알람을 만들었는데 CloudWatch에서 해당 메트릭을 찾을 수 없다. 원인과 해결책은?
+**Question 3.** You created an alarm for 90% EC2 memory utilization, but you cannot find that metric in CloudWatch. What is the cause and the fix?
 
-A) Detailed Monitoring을 활성화하면 수집 간격이 1분으로 줄면서 메모리 메트릭이 AWS/EC2에 추가된다
-B) 메모리는 EC2 기본 메트릭에 없다. CloudWatch Agent 설치 + mem 플러그인 설정 + Custom Namespace에서 알람 생성
-C) 메모리는 AWS/EC2가 아니라 AWS/EC2/MemoryUtilization 같은 별도 시스템 네임스페이스에 발행되므로 그곳에서 찾는다
-D) 메트릭이 인스턴스 home Region이 아닌 us-east-1에 발행되므로 콘솔 리전을 us-east-1로 바꿔 검색한다
+A) Enabling Detailed Monitoring reduces the collection interval to 1 minute and adds the memory metric to AWS/EC2
+B) Memory is not among the EC2 default metrics. Install the CloudWatch Agent + configure the mem plugin + create the alarm in the custom namespace
+C) Memory is published not in AWS/EC2 but in a separate system namespace such as AWS/EC2/MemoryUtilization, so look for it there
+D) The metric is published in us-east-1 rather than the instance's home Region, so switch the console Region to us-east-1 and search
 
 **Answer: B**
-Explanation: EC2 메모리는 하이퍼바이저가 볼 수 없는 게스트 OS 내부 정보다. CloudWatch Agent를 설치하고 설정 파일에 `mem` 섹션을 추가하면 `CWAgent` 네임스페이스(또는 설정한 커스텀 네임스페이스)에 `mem_used_percent` 메트릭이 발행된다. 알람 생성 시 `AWS/EC2`가 아닌 그 네임스페이스를 선택해야 한다.
+Explanation: EC2 memory is information inside the guest OS that the hypervisor cannot see. If you install the CloudWatch Agent and add a `mem` section to the configuration file, the `mem_used_percent` metric is published to the `CWAgent` namespace (or the custom namespace you configured). When creating the alarm, you must select that namespace rather than `AWS/EC2`.
 
 ---
 
-**Question 4.** 회사가 5개 AWS 계정을 운영한다. 모든 계정의 EC2 CPU를 단일 대시보드에서 보고 싶다. 올바른 구성은?
+**Question 4.** A company operates 5 AWS accounts. It wants to see EC2 CPU for all accounts on a single dashboard. What is the correct configuration?
 
-A) Organizations 관리 계정의 대시보드는 멤버 계정 메트릭을 자동 상속하므로 추가 설정 없이 모든 계정 CPU가 보인다
-B) CloudWatch Cross-Account Observability: Monitoring Account에 OAM Sink + 각 계정에 Link 생성 → 대시보드 위젯에 accountId 명시
-C) CloudFormation StackSet으로 동일한 대시보드를 5개 계정에 배포하고, 각 계정 콘솔에서 자기 EC2 CPU를 본다
-D) 각 계정 EventBridge 룰로 CPU 메트릭 변경 이벤트를 중앙 계정 버스에 복사한 뒤 PutMetricData로 재발행해 통합한다
+A) The dashboard in the Organizations management account automatically inherits member account metrics, so CPU for all accounts is visible with no additional setup
+B) CloudWatch Cross-Account Observability: create an OAM Sink in the Monitoring Account + create a Link in each account → specify accountId in the dashboard widgets
+C) Deploy the same dashboard to the 5 accounts with a CloudFormation StackSet, and view each account's own EC2 CPU in its own console
+D) Copy CPU metric change events to the central account bus with an EventBridge rule in each account, then republish with PutMetricData to consolidate
 
 **Answer: B**
-Explanation: OAM(Observability Access Manager) Sink+Link 구조가 CloudWatch Cross-Account Observability의 표준이다. Monitoring Account에 Sink를 만들고 Sink 정책으로 어느 계정이 Link를 만들 수 있는지 제어한다. 각 Source Account에서 Link를 생성하면 Monitoring Account 콘솔에서 다른 계정 메트릭이 보인다. 대시보드 위젯의 메트릭 정의에 `accountId`와 `region`을 명시해야 한다.
+Explanation: The OAM (Observability Access Manager) Sink + Link structure is the standard for CloudWatch Cross-Account Observability. Create a Sink in the Monitoring Account and use the Sink policy to control which accounts can create a Link. When a Link is created in each Source Account, the other accounts' metrics become visible in the Monitoring Account console. You must specify `accountId` and `region` in the metric definitions of the dashboard widgets.
 
 ---
 
-**Question 5.** 새벽 2시에 API가 다운됐는데 트래픽이 없어서 RUM에도 데이터가 없고 알람도 안 울렸다. 이 문제를 예방하는 가장 적합한 도구는?
+**Question 5.** The API went down at 2 AM, but because there was no traffic, RUM had no data and no alarm fired. What is the most appropriate tool to prevent this problem?
 
-A) CloudWatch Agent의 수집 간격을 1초 해상도로 줄여 새벽 다운 구간을 더 촘촘히 포착한다
-B) RUM 스니펫을 모든 페이지에 추가하고 세션 샘플링률을 100%로 올려 새벽 트래픽까지 빠짐없이 수집한다
-C) Synthetics Canary로 1분 주기 Heartbeat Canary를 설정한다
-D) X-Ray 샘플링률을 100%로 올려 새벽 시간대 요청까지 모두 추적해 다운을 감지한다
+A) Reduce the CloudWatch Agent collection interval to 1-second resolution to capture the early-morning downtime more finely
+B) Add the RUM snippet to all pages and raise the session sampling rate to 100% to collect all traffic, including early morning
+C) Set up a Heartbeat Canary with a 1-minute schedule using Synthetics Canary
+D) Raise the X-Ray sampling rate to 100% to trace all requests, including early-morning hours, and detect the outage
 
 **Answer: C**
-Explanation: RUM은 실제 사용자가 없는 새벽엔 데이터가 없다. Synthetics Canary는 합성 사용자(봇)가 정해진 주기로 API를 호출하므로 트래픽과 무관하게 24/7 가용성을 측정한다. 실패 시 `SuccessPercent` 메트릭이 떨어지고 알람 → SNS로 즉시 통보된다. X-Ray 샘플링률은 비용과 추적 정밀도에 관한 것이며 가용성 탐지와 무관하다.
+Explanation: RUM has no data in the early morning when there are no real users. A Synthetics Canary has synthetic users (bots) call the API on a set schedule, so it measures 24/7 availability regardless of traffic. On failure the `SuccessPercent` metric drops, and the alarm notifies immediately via SNS. The X-Ray sampling rate is about cost and tracing precision and is unrelated to availability detection.
 
 ---
 
-**Question 6.** Anomaly Detection 알람을 새로 활성화했는데 2주가 지나도 한 번도 알람이 울리지 않았다. 정상인가, 문제인가?
+**Question 6.** You newly enabled an Anomaly Detection alarm, but it has not fired even once in 2 weeks. Is this normal or a problem?
 
-A) 권한 문제다. 알람 역할에 `cloudwatch:GetMetricData`·`PutAnomalyDetector` 권한이 없으면 밴드 평가가 조용히 실패한다
-B) 정상이다. 서비스가 2주간 안정적으로 동작하고 있는 것이다. Anomaly Detection은 최소 2주 학습 후 밴드가 안정화된다
-C) `ANOMALY_DETECTION_BAND` 수식이 알람 조건에 연결되지 않아 모델은 학습하지만 알람이 메트릭을 평가하지 못한다
-D) 학습 기간 동안 소스 메트릭이 결측이라 알람이 INSUFFICIENT_DATA에 머물러 한 번도 발화하지 못한다
+A) It is a permissions issue. If the alarm role lacks `cloudwatch:GetMetricData` and `PutAnomalyDetector` permissions, band evaluation fails silently
+B) It is normal. The service has been running stably for 2 weeks. Anomaly Detection bands stabilize after a minimum of 2 weeks of learning
+C) The `ANOMALY_DETECTION_BAND` expression is not connected to the alarm condition, so the model learns but the alarm cannot evaluate the metric
+D) The source metric was missing during the learning period, so the alarm stays in INSUFFICIENT_DATA and never fires
 
 **Answer: B**
-Explanation: Anomaly Detection의 ML 모델은 최소 2주 데이터로 학습한다. 학습 기간 동안 밴드가 불안정하거나 넓게 잡혀 위반이 감지되지 않는 것이 정상이다. 2주 이후부터 주간 계절성(월-금 패턴)을 반영한 더 정확한 밴드가 형성된다. 2주 동안 알람이 안 울렸다면 서비스가 정상적으로 동작하고 있을 가능성이 높다.
+Explanation: The Anomaly Detection ML model learns from a minimum of 2 weeks of data. During the learning period, it is normal for the band to be unstable or set wide so that no violations are detected. After 2 weeks, a more accurate band that reflects weekly seasonality (Monday-to-Friday pattern) forms. If the alarm did not fire for 2 weeks, the service is most likely operating normally.
 
 ---
 
-**Question 7.** Lambda 함수 내 DynamoDB 쿼리의 지연 시간을 X-Ray로 추적하려 한다. 필요한 조치 두 가지는?
+**Question 7.** You want to trace the latency of a DynamoDB query inside a Lambda function with X-Ray. What are the two required actions?
 
-A) Lambda 함수의 Active Tracing 활성화 + X-Ray SDK의 captureAWS()로 AWS SDK 래핑
-B) Lambda 함수의 Active Tracing만 활성화하면 런타임이 모든 AWS SDK 호출을 자동 계측해 DynamoDB Subsegment까지 보인다
-C) Lambda 실행 환경에 CloudWatch Agent를 설치하고 X-Ray Daemon을 사이드카로 띄워 DynamoDB 호출 지연을 수집한다
-D) EventBridge로 DynamoDB API 이벤트를 받아 CloudTrail Data Event와 조인해 쿼리 지연을 재구성한다
+A) Enable Active Tracing on the Lambda function + wrap the AWS SDK with the X-Ray SDK's captureAWS()
+B) Just enable Active Tracing on the Lambda function, and the runtime automatically instruments all AWS SDK calls so even the DynamoDB Subsegment appears
+C) Install the CloudWatch Agent in the Lambda execution environment and run the X-Ray Daemon as a sidecar to collect DynamoDB call latency
+D) Receive DynamoDB API events with EventBridge and join them with CloudTrail Data Events to reconstruct query latency
 
 **Answer: A**
-Explanation: Lambda Active Tracing은 Lambda 실행 자체를 Segment로 추적한다. Lambda 내부 DynamoDB 호출을 Subsegment로 추적하려면 추가로 X-Ray SDK를 사용해 `const AWS = AWSXRay.captureAWS(require('aws-sdk'))`로 AWS SDK를 래핑해야 한다. 이 래핑이 없으면 DynamoDB 호출은 X-Ray Service Map에서 보이지 않는다. B는 Active Tracing만으로 SDK 호출이 자동 계측되지 않으므로 부족하고, C의 X-Ray Daemon은 Lambda에선 AWS가 관리해 별도 설치가 불가하며, D는 추적이 아니라 감사 로그라 Subsegment 지연을 줄 수 없다.
+Explanation: Lambda Active Tracing traces the Lambda execution itself as a Segment. To trace DynamoDB calls inside Lambda as Subsegments, you must additionally use the X-Ray SDK to wrap the AWS SDK with `const AWS = AWSXRay.captureAWS(require('aws-sdk'))`. Without this wrapping, DynamoDB calls do not appear in the X-Ray Service Map. B is insufficient because Active Tracing alone does not automatically instrument SDK calls; for C, the X-Ray Daemon is managed by AWS in Lambda and cannot be installed separately; D is an audit log, not tracing, so it cannot provide Subsegment latency.
 
 ---
 
-**Question 8.** 100대 EC2에 CloudWatch Agent를 배포했는데 일부 인스턴스에서 Agent 설정이 초기화됐다(다른 설정으로 덮어써짐). 이를 방지하는 방법은?
+**Question 8.** You deployed the CloudWatch Agent to 100 EC2 instances, but on some instances the Agent configuration was reset (overwritten with a different configuration). How do you prevent this?
 
-A) 설정이 틀어진 인스턴스를 모두 재시작해 User Data 부트스트랩으로 Agent 설정을 다시 적용한다
-B) SSM State Manager Association으로 원하는 설정을 주기적으로 강제 적용(desired state enforcement)
-C) CloudFormation으로 인스턴스를 immutable하게 재배포해 변경된 설정을 새 AMI 기준으로 초기화한다
-D) IAM 정책으로 EC2 인스턴스 내 Agent 설정 파일(`amazon-cloudwatch-agent.json`) 쓰기를 Deny해 수정을 원천 차단한다
+A) Restart all instances with the broken configuration and reapply the Agent configuration through User Data bootstrapping
+B) Periodically enforce the desired configuration with an SSM State Manager Association (desired state enforcement)
+C) Redeploy the instances immutably with CloudFormation to reset the changed configuration based on a new AMI
+D) Use an IAM policy to Deny writes to the Agent configuration file (`amazon-cloudwatch-agent.json`) on the EC2 instance, blocking modification at the source
 
 **Answer: B**
-Explanation: SSM State Manager의 핵심 기능이 "Drift 자동 교정"이다. Association을 rate(24 hours)로 설정하면 24시간마다 SSM Parameter Store의 설정으로 Agent를 재구성한다. 누군가 설정을 변경해도 다음 Association 실행 시 원래 설정으로 자동 복구된다. IAM 정책으로 파일 수정을 막는 것은 EC2 내 프로세스 수준에서 어렵다.
+Explanation: The core feature of SSM State Manager is "automatic drift correction." If you set the Association to rate(24 hours), it reconfigures the Agent from the configuration in SSM Parameter Store every 24 hours. Even if someone changes the configuration, it is automatically restored to the original on the next Association run. Blocking file modification with an IAM policy is difficult at the process level inside EC2.
 
 ---
 
-**Question 9.** ServiceLens를 사용하는 가장 큰 실무 이점은?
+**Question 9.** What is the biggest practical benefit of using ServiceLens?
 
-A) Trace와 Logs를 단일 뷰로 묶어 중복 저장을 제거하므로 X-Ray·Logs 보관 비용이 자동으로 절감된다
-B) X-Ray Service Map에서 에러 Trace를 선택하면 해당 Lambda/ECS의 CloudWatch Logs로 즉시 점프할 수 있다
-C) Service Map의 트래픽 패턴을 분석해 X-Ray Sampling Rule의 Reservoir·Fixed Rate를 자동으로 최적화해준다
-D) Synthetics Canary의 합성 트래픽 결과가 Service Map 노드에 자동 병합돼 외부 가용성까지 한 화면에 표시된다
+A) It combines Traces and Logs into a single view and removes duplicate storage, so X-Ray and Logs retention costs are reduced automatically
+B) When you select an error Trace in the X-Ray Service Map, you can jump immediately to the CloudWatch Logs of that Lambda/ECS
+C) It analyzes Service Map traffic patterns and automatically optimizes the Reservoir and Fixed Rate of X-Ray Sampling Rules
+D) Synthetic traffic results from Synthetics Canary are automatically merged into Service Map nodes, showing even external availability on one screen
 
 **Answer: B**
-Explanation: ServiceLens의 핵심 가치는 "Correlated telemetry(상관 원격 측정)"다. 에러가 있는 Trace ID에서 "View logs"를 클릭하면 해당 Lambda 함수의 CloudWatch Logs에서 그 실행의 로그가 즉시 열린다. 수동으로 Log Group에서 request_id를 검색하는 과정을 건너뛰어 장애 분석 시간(MTTD)을 크게 줄인다.
+Explanation: The core value of ServiceLens is "correlated telemetry." When you click "View logs" from a Trace ID with an error, the logs for that execution open immediately in the CloudWatch Logs of that Lambda function. It skips the process of manually searching the Log Group for the request_id, greatly reducing incident analysis time (MTTD).
 
 ---
 
-**Question 10.** X-Ray 비용이 급증했다. 트래픽이 초당 2000 RPS인 API에서 현재 기본 샘플링(Reservoir=1, Fixed Rate=5%)을 사용 중이다. 비용을 줄이면서 에러 발생 시에는 반드시 추적하게 하려면?
+**Question 10.** X-Ray cost has spiked. An API with traffic of 2000 RPS currently uses the default sampling (Reservoir=1, Fixed Rate=5%). How can you reduce cost while ensuring that requests are always traced when errors occur?
 
-A) X-Ray를 전 구간 비활성화하고, 에러는 CloudWatch Logs의 ERROR 로그로만 사후 분석한다
-B) 기본 Sampling Rule의 Fixed Rate를 1%로 낮추고, 에러/Fault가 있는 요청은 별도 Rule(Priority 1, FixedRate 1.0)로 우선 처리
-C) X-Ray 추적을 끄고 모든 요청 경로를 EMF 구조화 로그 + Logs Insights로 대체해 Trace 비용을 0으로 만든다
-D) X-Ray 단가가 더 낮은 리전으로 워크로드를 이전해 동일 100% 샘플링을 유지하면서 청구액만 낮춘다
+A) Disable X-Ray everywhere and analyze errors after the fact only through ERROR logs in CloudWatch Logs
+B) Lower the Fixed Rate of the default Sampling Rule to 1%, and handle requests with errors/Faults first through a separate Rule (Priority 1, FixedRate 1.0)
+C) Turn off X-Ray tracing and replace all request paths with EMF structured logs + Logs Insights, bringing Trace cost to 0
+D) Move the workload to a Region with a lower X-Ray unit price, keeping the same 100% sampling while only lowering the bill
 
 **Answer: B**
-Explanation: X-Ray Sampling Rule에서 에러/Fault 조건으로 요청을 필터링하면 정상 트래픽의 샘플링률은 줄이면서 에러는 100% 추적할 수 있다. Advanced Sampling Rule에서 `errorCode`, `faultCode` 조건을 추가하면 HTTP 5xx 응답에는 Fixed Rate 1.0을 적용할 수 있다. 정상 트래픽 1% + 에러 100%로 비용과 정밀도를 모두 확보하는 표준 패턴이다.
+Explanation: If you filter requests by error/Fault conditions in an X-Ray Sampling Rule, you can lower the sampling rate for normal traffic while tracing errors at 100%. In an Advanced Sampling Rule, adding `errorCode` and `faultCode` conditions lets you apply a Fixed Rate of 1.0 to HTTP 5xx responses. Normal traffic at 1% + errors at 100% is the standard pattern that secures both cost savings and precision.
 
 ---
 

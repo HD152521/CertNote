@@ -84,7 +84,7 @@ Session Manager in particular is an exam regular — it's the answer to the requ
 
 The gist of this picture is that the "detect → diagnose → respond" flow never breaks. When metrics detect an anomaly, a trace narrows the service, logs confirm the cause, CloudTrail reveals the responsible party, and Config/SSM remediates the state. If any one tool is missing, this chain breaks and the "expensive time of not knowing the cause" grows.
 
-## 시나리오 연습 문제 12
+## Scenario Practice Questions 12
 
 **Question 1.** In a security audit, you must track "who, when, and which IAM user opened a particular security group to 0.0.0.0/0." Which is the most appropriate tool?
 

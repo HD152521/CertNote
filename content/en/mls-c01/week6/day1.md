@@ -107,62 +107,62 @@ Today we covered the first gate of modeling — problem type identification and 
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 통신사가 "다음 달 해지할 가능성이 높은 고객을 미리 식별"하려 한다. 과거 고객의 해지 여부 레이블이 충분히 있다. 이 문제의 ML 유형으로 가장 적절한 것은?
+**Question 1.** A telecom company wants to "identify in advance the customers likely to cancel next month." There are sufficient labels of whether past customers canceled. Which ML type is MOST appropriate for this problem?
 
-A) 비지도 군집  
-B) 이진 분류  
-C) 시계열 예측  
-D) 토픽 모델링  
+A) Unsupervised clustering  
+B) Binary classification  
+C) Time series forecasting  
+D) Topic modeling  
 
 **Answer: B**  
-Explanation: 출력이 "해지/유지"라는 두 범주이고 레이블이 있으므로 지도학습 이진 분류다. 레이블이 있으므로 비지도 군집(A)·토픽(D)이 아니며, 출력이 연속 수치가 아니므로 시계열 예측(C)도 아니다.
+Explanation: The output is two categories, "cancel/retain," and labels exist, so this is supervised binary classification. Because labels exist, it is not unsupervised clustering (A) or topic modeling (D), and because the output is not a continuous number, it is not time series forecasting (C) either.
 
 ---
 
-**Question 2.** 신용카드 거래에서 사기를 잡으려 한다. 사기 레이블은 거의 없고, 사기 수법은 계속 새로운 형태로 바뀐다. 가장 적합한 접근은?
+**Question 2.** You want to catch fraud in credit card transactions. Fraud labels are almost nonexistent, and fraud techniques keep changing into new forms. Which approach is MOST suitable?
 
-A) 정상/사기 레이블로 다중 분류 학습  
-B) K-Means로 고객을 5개 그룹으로 군집  
-C) Random Cut Forest 같은 비지도 이상 탐지  
-D) DeepAR로 거래 금액을 예측  
+A) Train multiclass classification with normal/fraud labels  
+B) Cluster customers into 5 groups with K-Means  
+C) Unsupervised anomaly detection such as Random Cut Forest  
+D) Predict transaction amounts with DeepAR  
 
 **Answer: C**  
-Explanation: 레이블이 거의 없고 패턴이 계속 변하므로, 정상에서 벗어남을 측정하는 비지도 이상 탐지가 견고하다. 레이블이 부족해 지도 분류(A)는 어렵고, 군집(B)은 사기 식별 목적과 맞지 않으며, DeepAR(D)는 시계열 값 예측용이다.
+Explanation: Because labels are almost nonexistent and patterns keep changing, unsupervised anomaly detection, which measures deviation from normal, is robust. Supervised classification (A) is difficult because labels are scarce, clustering (B) does not match the goal of identifying fraud, and DeepAR (D) is for forecasting time series values.
 
 ---
 
-**Question 3.** "수천 개 뉴스 기사를 사람이 라벨을 달지 않은 상태에서 자동으로 주제별로 묶고, 각 주제를 구성하는 단어를 알고 싶다." 가장 적절한 알고리즘 부류는?
+**Question 3.** "I want to automatically group thousands of news articles by topic without human labels, and learn the words that make up each topic." Which algorithm family is MOST appropriate?
 
 A) Image Classification  
 B) Factorization Machines  
-C) Linear Learner 회귀  
-D) 토픽 모델링(LDA/NTM)  
+C) Linear Learner regression  
+D) Topic modeling (LDA/NTM)  
 
 **Answer: D**  
-Explanation: 레이블 없이 문서에서 주제를 발견하고 주제별 단어 분포를 얻는 것은 토픽 모델링(LDA/NTM)의 전형적 과제다. 이미지(A), 추천(B), 연속값 회귀(C)는 텍스트 주제 발견과 무관하다.
+Explanation: Discovering topics in documents without labels and obtaining the word distribution for each topic is the classic task of topic modeling (LDA/NTM). Images (A), recommendation (B), and continuous-value regression (C) are unrelated to discovering text topics.
 
 ---
 
-**Question 4.** 다음 중 "출력이 연속 수치인 회귀 문제"에 해당하는 것은?
+**Question 4.** Which of the following is a "regression problem whose output is a continuous number"?
 
-A) 내일의 매장 매출 금액 예측  
-B) 이메일을 스팸/정상으로 분류  
-C) 고객을 비슷한 군집으로 묶기  
-D) 평소와 다른 로그인 패턴 탐지  
+A) Predicting tomorrow's store sales amount  
+B) Classifying emails as spam/legitimate  
+C) Grouping customers into similar clusters  
+D) Detecting login patterns that differ from usual  
 
 **Answer: A**  
-Explanation: 매출 "금액"은 연속 수치이므로 회귀다. 스팸/정상(B)은 분류, 군집(C)은 비지도 클러스터링, 비정상 패턴 탐지(D)는 이상 탐지에 해당한다.
+Explanation: The sales "amount" is a continuous number, so this is regression. Spam/legitimate (B) is classification, clustering (C) is unsupervised clustering, and detecting abnormal patterns (D) is anomaly detection.
 
 ---
 
-**Question 5.** 알고리즘을 좁히는 1차 기준으로 시험에서 가장 먼저 확인해야 할 단서는?
+**Question 5.** As the first criterion for narrowing down the algorithm, which clue should you check first on the exam?
 
-A) 사용할 인스턴스 타입  
-B) 팀이 선호하는 프로그래밍 언어  
-C) 모델의 출력 형태(범주/수치/그룹/추천/이상)와 레이블 유무  
-D) 리전별 서비스 가용성  
+A) The instance type to use  
+B) The programming language the team prefers  
+C) The model's output form (category/number/group/recommendation/anomaly) and whether labels exist  
+D) Service availability by Region  
 
 **Answer: C**  
-Explanation: 출력 형태와 레이블 유무가 ML 문제 유형을 결정하고, 유형이 정해지면 후보 알고리즘이 크게 좁혀진다. 인스턴스 타입(A)·언어(B)·리전(D)은 알고리즘 부류 선택의 1차 기준이 아니다.
+Explanation: The output form and the presence of labels determine the ML problem type, and once the type is set, the candidate algorithms narrow greatly. Instance type (A), language (B), and Region (D) are not the primary criteria for choosing an algorithm family.
 
 ---

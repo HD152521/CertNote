@@ -225,7 +225,7 @@ Currently recommended: via EventBridge
 | CORS | Cross-Origin Resource Sharing | Needed for direct S3 access from the browser |
 | ACM | AWS Certificate Manager | HTTPS certificate management |
 
-## 📝 Week 5 종합 연습 문제
+## 📝 Week 5 Comprehensive Practice Questions
 
 **Question 1.** A company's medical imaging data must be retained for 10 years per regulations. It is accessed frequently for the first year, then almost never, but requires immediate lookup during an audit. What is the most cost-effective lifecycle design?
 

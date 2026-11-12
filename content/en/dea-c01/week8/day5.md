@@ -68,62 +68,62 @@ Cost operations:
 
 ## 📝 Practice Questions
 
-**Question 1.** 다음 중 "어제 누가 prod Glue 테이블을 삭제했는지"와 "어젯밤 Kinesis 컨슈머가 얼마나 지연됐는지"를 각각 확인하기 위한 올바른 도구 조합은?
+**Question 1.** Which combination of tools is correct for finding out "who deleted the prod Glue table yesterday" and "how far behind the Kinesis consumer was last night," respectively?
 
-A) 둘 다 CloudWatch Logs  
-B) 삭제는 CloudTrail, 지연은 CloudWatch IteratorAgeMilliseconds  
-C) 삭제는 X-Ray, 지연은 CloudTrail  
-D) 둘 다 Cost Explorer  
+A) CloudWatch Logs for both  
+B) CloudTrail for the deletion, CloudWatch IteratorAgeMilliseconds for the lag  
+C) X-Ray for the deletion, CloudTrail for the lag  
+D) Cost Explorer for both  
 
 **Answer: B**  
-Explanation: API 호출 감사("누가 삭제")는 CloudTrail, 스트리밍 지연 측정은 CloudWatch의 IteratorAgeMilliseconds 지표입니다. CloudWatch Logs만으로는 감사가 부족하고, X-Ray는 추적, Cost Explorer는 비용 분석 도구입니다.
+Explanation: Auditing API calls ("who deleted") is done with CloudTrail, and streaming lag is measured with the CloudWatch IteratorAgeMilliseconds metric. CloudWatch Logs alone is insufficient for auditing, X-Ray is for tracing, and Cost Explorer is a cost analysis tool.
 
 ---
 
-**Question 2.** 야간 ETL에서 Glue Data Quality 점수가 임계값 미만일 때 권장되는 파이프라인 동작은?
+**Question 2.** What is the recommended pipeline behavior when the Glue Data Quality score is below the threshold in a nightly ETL?
 
-A) curated에 그대로 적재하고 나중에 정정  
-B) 임계값을 자동으로 낮춰 통과시킴  
-C) Step Functions Choice로 다운스트림을 막고 데이터를 격리 + 통보  
-D) 잡을 즉시 삭제  
+A) Load it into curated as is and correct it later  
+B) Automatically lower the threshold so it passes  
+C) Block downstream with a Step Functions Choice, quarantine the data, and notify  
+D) Delete the job immediately  
 
 **Answer: C**  
-Explanation: 검증 게이트는 미달 데이터의 다운스트림 진행을 막고 격리 버킷으로 보낸 뒤 통보해 오염 전파를 차단합니다. 그대로 적재·임계값 하향은 품질 게이트를 무력화하고, 잡 삭제는 재처리 기회를 잃습니다.
+Explanation: A validation gate blocks failing data from proceeding downstream, sends it to a quarantine bucket, and notifies, stopping the spread of contamination. Loading as is or lowering the threshold defeats the quality gate, and deleting the job loses the chance to reprocess.
 
 ---
 
-**Question 3.** 비용을 절감하기 위해 EMR 태스크 노드를 Spot으로 전환할 때 함께 적용해야 하는 원칙으로 가장 적절한 것은?
+**Question 3.** Which principle is the most appropriate to apply together when switching EMR task nodes to Spot to reduce cost?
 
-A) HDFS 데이터를 보유하는 코어 노드는 안정적인 옵션으로 유지  
-B) 코어 노드도 모두 Spot으로 전환  
-C) 자동 스케일링을 비활성화  
-D) 모든 데이터를 태스크 노드 로컬에 저장  
+A) Keep the core nodes that hold HDFS data on a stable option  
+B) Switch the core nodes to Spot as well  
+C) Disable automatic scaling  
+D) Store all data locally on the task nodes  
 
 **Answer: A**  
-Explanation: 태스크 노드는 상태가 없어 Spot 회수에 견딜 수 있지만, HDFS 데이터를 보유한 코어 노드는 On-Demand/약정으로 유지해야 회수 시 데이터 손실을 막습니다. 코어 Spot 전환·로컬 저장은 데이터 손실 위험을 키웁니다.
+Explanation: Task nodes are stateless and can tolerate Spot reclamation, but core nodes that hold HDFS data must be kept On-Demand/committed to prevent data loss when reclaimed. Switching core nodes to Spot or storing data locally increases the risk of data loss.
 
 ---
 
-**Question 4.** 일시적 오류가 잦은 외부 API 호출 태스크를 자동 재시도하도록 구성할 때, 안전성을 위해 반드시 전제되어야 하는 조건은?
+**Question 4.** When configuring an external API call task with frequent transient errors to be retried automatically, which condition must be satisfied for safety?
 
-A) 태스크가 비멱등이어야 한다  
-B) 재시도 간격이 항상 0이어야 한다  
-C) 로그를 비활성화해야 한다  
-D) 태스크가 멱등(idempotent)이어야 한다  
+A) The task must be non-idempotent  
+B) The retry interval must always be 0  
+C) Logging must be disabled  
+D) The task must be idempotent  
 
 **Answer: D**  
-Explanation: 재시도는 같은 작업이 여러 번 실행될 수 있으므로, 멱등 작업에서만 안전합니다. 비멱등 작업은 중복 적용으로 데이터가 오염되고, 재시도 간격 0은 폭주를 유발하며, 로그 비활성화는 디버깅을 어렵게 합니다.
+Explanation: Because a retry can cause the same operation to run multiple times, it is safe only for idempotent operations. A non-idempotent operation corrupts data through duplicate application, a retry interval of 0 causes a storm, and disabling logging makes debugging difficult.
 
 ---
 
-**Question 5.** 자동 스케일링을 도입했는데도 평소 비용이 여전히 과도하다면 가장 먼저 점검해야 할 것은?
+**Question 5.** Even after introducing automatic scaling, the baseline cost is still excessive. What should be checked first?
 
-A) 더 많은 알람을 추가한다  
-B) 모든 태그를 제거한다  
-C) 베이스라인 리소스 사이징(워커/인스턴스/메모리)이 적정한지 점검한다  
-D) 자동 스케일링 상한을 무한대로 올린다  
+A) Add more alarms  
+B) Remove all tags  
+C) Check whether the baseline resource sizing (workers/instances/memory) is appropriate  
+D) Raise the automatic scaling upper limit to infinity  
 
 **Answer: C**  
-Explanation: 자동 스케일링은 변동을 흡수할 뿐 잘못된 베이스라인을 고치지 못하므로, 평상시 비용이 높으면 베이스라인 사이징을 먼저 재조정해야 합니다. 알람 추가·태그 제거·스케일링 상한 상향은 근본 원인인 과대 베이스라인을 해결하지 못합니다.
+Explanation: Automatic scaling only absorbs fluctuations and cannot fix a wrong baseline, so if the everyday cost is high, you should first readjust the baseline sizing. Adding alarms, removing tags, and raising the scaling upper limit do not address the root cause, an oversized baseline.
 
 ---

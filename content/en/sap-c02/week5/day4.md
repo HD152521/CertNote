@@ -432,7 +432,7 @@ Explanation: On-premises → AWS DNS resolution = Inbound Endpoint. Inbound EP c
 
 ---
 
-**문서 6.** Route 53 Multi-Value Answer vs ALB: which better "distribute connections per real-time server load, maintain session (Sticky Session)"?
+**Question 6.** Route 53 Multi-Value Answer vs ALB: which better "distribute connections per real-time server load, maintain session (Sticky Session)"?
 
 A) Multi-Value Answer — Route 53 understands server load, distributes
 B) ALB — L7 features + Sticky Session + real-time load-balancing

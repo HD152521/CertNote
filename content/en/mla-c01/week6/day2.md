@@ -126,55 +126,55 @@ Next: multi-model/multi-container to cut cost, inference pipelines, Inferentia/E
 
 ## 📝 Practice Questions
 
-**Question 1.** 운영 중인 실시간 엔드포인트에 새 모델 버전을 배포하되 호출자가 다운타임을 겪지 않게 하려 한다. 올바른 방법은?
+**Question 1.** You want to deploy a new model version to a live real-time endpoint without callers experiencing downtime. What is the correct method?
 
-A) 기존 엔드포인트를 삭제하고 새 엔드포인트를 만든다  
-B) 새 EndpointConfig를 만들고 update_endpoint를 호출해 blue/green으로 전환한다  
-C) 인스턴스에 SSH로 접속해 모델 파일을 교체한다  
-D) Model 리소스만 바꾸면 자동 반영된다  
+A) Delete the existing endpoint and create a new one  
+B) Create a new EndpointConfig and call update_endpoint to switch over with blue/green  
+C) SSH into the instance and replace the model file  
+D) Just changing the Model resource is applied automatically  
 
 **Answer: B**  
-Explanation: 새 EndpointConfig를 만들어 `update_endpoint`를 호출하면 SageMaker가 새 인스턴스를 띄워 헬스 체크 후 트래픽을 옮기고 옛 인스턴스를 내리는 blue/green 전환을 수행해 다운타임이 없다. A는 엔드포인트 URL이 끊겨 다운타임이 생기고, C는 SageMaker 관리형 인스턴스에 직접 접속하는 안티패턴이며, D는 Model만 바꿔도 기존 엔드포인트에 자동 반영되지 않는다.
+Explanation: When you create a new EndpointConfig and call `update_endpoint`, SageMaker launches new instances, performs a health check, shifts traffic, and brings down the old instances in a blue/green switch, so there is no downtime. A breaks the endpoint URL and causes downtime, C is an anti-pattern of connecting directly to SageMaker-managed instances, and D is wrong because changing only the Model is not automatically reflected in the existing endpoint.
 
 ---
 
-**Question 2.** 트래픽이 시간대별로 크게 변하는 실시간 엔드포인트에 오토스케일링을 적용하려 한다. 가장 일반적으로 쓰는 타깃 추적 지표는?
+**Question 2.** You want to apply autoscaling to a real-time endpoint whose traffic varies greatly by time of day. What is the most commonly used target tracking metric?
 
-A) CPUUtilization만  
-B) SageMakerVariantInvocationsPerInstance(인스턴스당 호출 수)  
-C) 디스크 사용량  
-D) S3 객체 수  
+A) CPUUtilization only  
+B) SageMakerVariantInvocationsPerInstance (invocations per instance)  
+C) Disk usage  
+D) Number of S3 objects  
 
 **Answer: B**  
-Explanation: 실시간 엔드포인트 오토스케일링의 표준 타깃 추적 지표는 인스턴스당 초당 호출 수(`SageMakerVariantInvocationsPerInstance`)로, 부하를 직접 반영해 인스턴스 수를 조절한다. A의 CPU는 보조 지표로 쓸 수 있으나 호출 기반 부하를 가장 정확히 반영하는 표준은 아니고, C·D는 추론 부하와 무관한 지표다.
+Explanation: The standard target tracking metric for real-time endpoint autoscaling is invocations per instance per minute (`SageMakerVariantInvocationsPerInstance`), which directly reflects load and adjusts the number of instances. A's CPU can be used as a supplementary metric but is not the standard that most accurately reflects invocation-based load, and C and D are metrics unrelated to inference load.
 
 ---
 
-**Question 3.** XGBoost 기반 이탈 예측 모델을 실시간 배포한다. 지연 요구는 일반적이고 비용을 아끼고 싶다. 인스턴스 선택으로 가장 적절한 것은?
+**Question 3.** You deploy an XGBoost-based churn prediction model in real time. The latency requirement is typical and you want to save cost. What is the most appropriate instance choice?
 
-A) ml.p4d 고성능 GPU  
-B) ml.m5/ml.c5 같은 CPU 인스턴스  
+A) ml.p4d high-performance GPU  
+B) CPU instances such as ml.m5/ml.c5  
 C) ml.inf2 Inferentia  
-D) GPU가 많을수록 항상 빠르므로 ml.g5.48xlarge  
+D) ml.g5.48xlarge, because more GPUs are always faster  
 
 **Answer: B**  
-Explanation: XGBoost 같은 트리 기반 전통 ML은 GPU 병렬화 이득이 거의 없어 CPU 인스턴스(m5/c5)가 비용 대비 가장 합리적이다. A는 학습용 고성능 GPU로 추론에 과도한 비용이고, C의 Inferentia는 딥러닝 추론 가속용이라 트리 모델엔 이점이 없으며, D는 비싼 대형 GPU를 불필요하게 쓰는 낭비다.
+Explanation: Tree-based traditional ML such as XGBoost gains almost nothing from GPU parallelization, so CPU instances (m5/c5) are the most reasonable for the cost. A is a high-performance training GPU and excessive cost for inference, C's Inferentia is for accelerating deep learning inference and offers no benefit for tree models, and D is a waste that unnecessarily uses an expensive large GPU.
 
 ---
 
-**Question 4.** 신규 모델을 프로덕션 트래픽에서 검증하되, 실사용자 응답에는 영향을 주지 않고 신모델의 성능만 관찰하고 싶다. 적절한 기능은?
+**Question 4.** You want to validate a new model on production traffic while observing only the new model's performance, without affecting real users' responses. What is the appropriate feature?
 
-A) ProductionVariant 가중치를 50:50으로 둔 A/B 테스트  
-B) Shadow testing(섀도 변형)으로 트래픽 사본을 신모델에 보내고 응답은 폐기  
-C) 배치 변환으로 과거 데이터를 재처리  
-D) 엔드포인트를 둘로 나눠 사용자를 절반씩 보낸다  
+A) An A/B test with ProductionVariant weights of 50:50  
+B) Shadow testing (shadow variant): send a copy of the traffic to the new model and discard the responses  
+C) Reprocess historical data with batch transform  
+D) Split the endpoint in two and send half of the users to each  
 
 **Answer: B**  
-Explanation: Shadow testing은 프로덕션 트래픽의 사본을 신모델로 보내되 그 응답을 사용자에게 반환하지 않고 폐기하므로, 실사용자 경험에 영향 없이 신모델 성능을 검증할 수 있다. A·D는 실제 사용자 일부가 신모델 응답을 받게 되어 "영향 없음" 조건을 위반하고, C는 실시간 프로덕션 트래픽 검증이 아니다.
+Explanation: Shadow testing sends a copy of production traffic to the new model but discards its responses instead of returning them to users, so you can validate the new model's performance without affecting the real user experience. A and D cause some real users to receive the new model's responses, violating the "no impact" condition, and C is not validation on real-time production traffic.
 
 ---
 
-**Question 5.** 어떤 인스턴스 타입과 개수가 비용·지연·처리량 기준으로 최적인지 데이터에 근거해 결정하고 싶다. SageMaker에서 쓸 도구는?
+**Question 5.** You want to decide, based on data, which instance type and count are optimal in terms of cost, latency, and throughput. Which SageMaker tool should you use?
 
 A) Inference Recommender  
 B) Data Wrangler  
@@ -182,6 +182,6 @@ C) Feature Store
 D) Ground Truth  
 
 **Answer: A**  
-Explanation: Inference Recommender는 여러 인스턴스 타입에 모델을 배포하고 부하 테스트를 수행해 비용·지연·처리량을 비교한 추천 구성을 제공한다. B는 특성 공학/데이터 준비 도구, C는 특성 저장소, D는 데이터 라벨링 서비스로 모두 인스턴스 선택과 무관하다.
+Explanation: Inference Recommender deploys the model on multiple instance types and runs load tests to provide recommended configurations comparing cost, latency, and throughput. B is a feature engineering/data preparation tool, C is a feature store, and D is a data labeling service, all unrelated to instance selection.
 
 ---

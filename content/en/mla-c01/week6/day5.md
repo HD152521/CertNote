@@ -77,62 +77,62 @@ Next week: deployed model operations—orchestration and monitoring.
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 추론 워크로드가 "개별 요청, 입력 페이로드 300MB, 처리 약 10분, 결과는 완료 후 S3에서 수령"이라는 요구를 가진다. 가장 적절한 옵션은?
+**Question 1.** An inference workload has the requirements "individual requests, 300 MB input payload, about 10 minutes of processing, and results retrieved from S3 after completion." What is the most appropriate option?
 
-A) 실시간 엔드포인트  
-B) 서버리스 추론  
-C) 비동기 추론  
-D) 배치 변환  
+A) Real-time endpoint  
+B) Serverless inference  
+C) Asynchronous inference  
+D) Batch transform  
 
 **Answer: C**  
-Explanation: 페이로드 300MB와 처리 10분은 실시간/서버리스 한계(6MB·4MB / 60초)를 초과하고, 개별 요청을 큐로 받아 결과를 S3에 저장하는 패턴은 비동기 추론(최대 1GB·60분)과 정확히 일치한다. A·B는 페이로드·시간 제약으로 탈락하고, D는 전체 데이터셋 일괄 방식이라 "개별 요청" 패턴과 다르다.
+Explanation: A 300 MB payload and 10 minutes of processing exceed the real-time/serverless limits (6 MB / 4 MB payload, 60 seconds), and the pattern of receiving individual requests in a queue and storing results in S3 exactly matches asynchronous inference (up to 1 GB, 60 minutes). A and B are eliminated by the payload and time constraints, and D processes a whole dataset in bulk, which differs from the "individual request" pattern.
 
 ---
 
-**Question 2.** 멀티모델 엔드포인트(MME)와 멀티컨테이너 엔드포인트(MCE)의 핵심 구분 기준으로 가장 정확한 것은?
+**Question 2.** Which is the most accurate key criterion distinguishing a multi-model endpoint (MME) from a multi-container endpoint (MCE)?
 
-A) MME는 콜드 스타트가 없고 MCE는 있다  
-B) MME는 동일 컨테이너로 수백~수천 모델을 동적 로드하고, MCE는 서로 다른 프레임워크 컨테이너를 최대 15개 둔다  
-C) MME는 배치 전용, MCE는 실시간 전용이다  
-D) 둘 다 전처리→추론 순차 체인을 실행한다  
+A) MME has no cold start and MCE does  
+B) MME dynamically loads hundreds to thousands of models in the same container, and MCE hosts up to 15 containers of different frameworks  
+C) MME is batch-only and MCE is real-time-only  
+D) Both run a sequential preprocessing-to-inference chain  
 
 **Answer: B**  
-Explanation: MME는 같은 컨테이너를 공유하며 다수 모델을 S3에서 동적 로드(`TargetModel`)하고, MCE는 서로 다른 프레임워크 컨테이너를 한 엔드포인트에 최대 15개 배치(`TargetContainerHostname`)하는 점이 핵심 구분이다. A는 잘못된 일반화이고, C는 둘 다 실시간 엔드포인트 변형이며, D는 순차 체인 실행은 추론 파이프라인의 특성이다.
+Explanation: The key distinction is that MME shares the same container and dynamically loads many models from S3 (`TargetModel`), while MCE places up to 15 containers of different frameworks on one endpoint (`TargetContainerHostname`). A is an incorrect generalization, C is wrong because both are real-time endpoint variants, and D is wrong because running a sequential chain is a characteristic of an inference pipeline.
 
 ---
 
-**Question 3.** 실시간 엔드포인트에 오토스케일링을 적용했는데도 예측 가능한 대규모 트래픽 급증(연말 세일) 시 지연이 튄다. 가장 적절한 보완책은?
+**Question 3.** Even with autoscaling applied to a real-time endpoint, latency spikes during a predictable large traffic surge (a year-end sale). What is the most appropriate complement?
 
-A) MaxCapacity를 1로 줄인다  
-B) 예약 스케일링(scheduled scaling)으로 세일 전 미리 용량을 확보하거나 MinCapacity를 높인다  
-C) 서버리스로 전환한다  
-D) 인스턴스 타입을 CPU로 낮춘다  
+A) Reduce MaxCapacity to 1  
+B) Use scheduled scaling to secure capacity ahead of the sale, or raise MinCapacity  
+C) Switch to serverless  
+D) Downgrade the instance type to CPU  
 
 **Answer: B**  
-Explanation: 오토스케일링은 새 인스턴스 기동·헬스체크에 시간이 걸려 급격한 스파이크를 즉시 못 따라가므로, 예측 가능한 급증에는 예약 스케일링으로 미리 용량을 늘리거나 `MinCapacity`를 높여 대비한다. A는 용량을 줄여 악화시키고, C는 콜드 스타트로 스파이크에 더 취약하며, D는 성능을 낮춰 지연을 키운다.
+Explanation: Autoscaling takes time to launch new instances and pass health checks, so it cannot immediately keep up with a sudden spike; for predictable surges, prepare by increasing capacity in advance with scheduled scaling or by raising `MinCapacity`. A makes it worse by reducing capacity, C is more vulnerable to spikes because of cold starts, and D lowers performance and increases latency.
 
 ---
 
-**Question 4.** 다음 중 추론 비용을 줄이려는 시나리오와 적절한 기법의 연결로 잘못된 것은?
+**Question 4.** Which of the following pairings of an inference cost reduction scenario and an appropriate technique is incorrect?
 
-A) 같은 종류 모델 수백 개 → 멀티모델 엔드포인트(MME)  
-B) 트래픽이 0까지 떨어지는 간헐적 워크로드 → 서버리스/비동기  
-C) 대규모 딥러닝 추론의 GPU 비용 부담 → AWS Inferentia  
-D) XGBoost 추론 비용 절감 → GPU(p4d) 인스턴스로 전환  
+A) Hundreds of models of the same kind → multi-model endpoint (MME)  
+B) Intermittent workload whose traffic drops to 0 → serverless/asynchronous  
+C) GPU cost burden of large-scale deep learning inference → AWS Inferentia  
+D) Reduce XGBoost inference cost → switch to GPU (p4d) instances  
 
 **Answer: D**  
-Explanation: XGBoost 같은 트리 기반 모델은 GPU 병렬화 이득이 거의 없어 고성능 GPU(p4d)로 전환하면 비용만 늘고 효과가 없다 — CPU 인스턴스가 적절하다. A·B·C는 각각 다수 모델 통합(MME), 유휴 0 스케일(서버리스/비동기), 딥러닝 추론 가속(Inferentia)으로 모두 올바른 비용 절감 연결이다.
+Explanation: Tree-based models such as XGBoost gain almost nothing from GPU parallelization, so switching to a high-performance GPU (p4d) only increases cost with no benefit; CPU instances are appropriate. A, B, and C are all correct cost-saving pairings: consolidating many models (MME), scaling to 0 when idle (serverless/asynchronous), and accelerating deep learning inference (Inferentia), respectively.
 
 ---
 
-**Question 5.** 운영 중인 실시간 엔드포인트에 새 모델을 배포하면서, 신모델 응답을 사용자에게 노출하지 않고 프로덕션 트래픽으로 성능을 먼저 검증하려 한다. 가장 적절한 방법은?
+**Question 5.** While deploying a new model to a live real-time endpoint, you want to validate its performance on production traffic first, without exposing the new model's responses to users. What is the most appropriate method?
 
-A) ProductionVariant 가중치를 50:50으로 둔 A/B 테스트  
-B) Shadow testing으로 트래픽 사본을 신모델에 보내고 응답은 폐기  
-C) 엔드포인트를 삭제 후 재생성  
-D) 배치 변환으로 과거 데이터를 재처리  
+A) An A/B test with ProductionVariant weights of 50:50  
+B) Shadow testing: send a copy of the traffic to the new model and discard the responses  
+C) Delete and recreate the endpoint  
+D) Reprocess historical data with batch transform  
 
 **Answer: B**  
-Explanation: Shadow testing은 프로덕션 트래픽 사본을 신모델로 보내되 응답을 사용자에게 반환하지 않고 폐기하므로, 실사용자 영향 없이 신모델 성능을 검증할 수 있다. A는 사용자 절반이 신모델 응답을 실제로 받으므로 "노출 없음" 조건을 위반하고, C는 다운타임을 유발하며, D는 실시간 프로덕션 트래픽 검증이 아니다.
+Explanation: Shadow testing sends a copy of production traffic to the new model but discards its responses instead of returning them to users, so you can validate the new model's performance without affecting real users. A violates the "no exposure" condition because half of the users actually receive the new model's responses, C causes downtime, and D is not validation on real-time production traffic.
 
 ---

@@ -246,7 +246,7 @@ Today's core — RCU/WCU mathematics appears almost every exam as calculation pr
 
 ## 📝 Practice Questions
 
-**Question 1.** DynamoDB에서 7KB 항목을 강력한 일관성으로 초당 30번 읽는다. 필요한 프로비저닝 RCU는?
+**Question 1.** You read a 7 KB item from DynamoDB with strong consistency 30 times per second. What is the required provisioned RCU?
 
 A) 30 RCU
 B) 60 RCU
@@ -254,11 +254,11 @@ C) 90 RCU
 D) 120 RCU
 
 **Answer: B**
-Explanation: 강력한 일관성 RCU = ceil(항목 크기 / 4KB) × 1 × 초당 요청 수. ceil(7/4) = ceil(1.75) = 2. 2 × 1 × 30 = 60 RCU. 최종 일관성이었다면 30 RCU(절반)였을 것이다. 트랜잭션 읽기였다면 120 RCU(2배)였을 것이다. 항목 크기가 8KB였다면 ceil(8/4)=2로 동일하지만, 9KB였다면 ceil(9/4)=3이 되어 90 RCU가 된다.
+Explanation: Strongly consistent RCU = ceil(item size / 4 KB) × 1 × requests per second. ceil(7/4) = ceil(1.75) = 2. 2 × 1 × 30 = 60 RCU. With eventual consistency it would have been 30 RCU (half). With transactional reads it would have been 120 RCU (double). If the item size were 8 KB, ceil(8/4)=2 would be the same, but at 9 KB, ceil(9/4)=3 would make it 90 RCU.
 
 ---
 
-**Question 2.** DynamoDB에서 3.5KB 항목을 트랜잭션 쓰기로 초당 20번 쓴다. 필요한 WCU는?
+**Question 2.** You write a 3.5 KB item to DynamoDB with transactional writes 20 times per second. What is the required WCU?
 
 A) 20 WCU
 B) 80 WCU
@@ -266,54 +266,54 @@ C) 140 WCU
 D) 160 WCU
 
 **Answer: D**
-Explanation: 트랜잭션 쓰기 WCU = ceil(항목 크기 / 1KB) × 2 × 초당 요청 수. ceil(3.5/1) = 4. 4 × 2 × 20 = 160 WCU. 일반 쓰기라면 ceil(3.5/1)×1×20 = 80 WCU였다.
+Explanation: Transactional write WCU = ceil(item size / 1 KB) × 2 × requests per second. ceil(3.5/1) = 4. 4 × 2 × 20 = 160 WCU. For a standard write it would have been ceil(3.5/1)×1×20 = 80 WCU.
 
 ---
 
-**Question 3.** DAX를 사용할 때 강력한 일관성 읽기 요청은 어떻게 처리되는가?
+**Question 3.** When using DAX, how is a strongly consistent read request handled?
 
-A) DAX 캐시에서 즉시 반환된다
-B) DAX가 DynamoDB에 직접 쿼리하여 최신 데이터를 반환한다
-C) 오류가 발생한다 (DAX는 강력한 일관성 미지원)
-D) 최종 일관성으로 자동 변환되어 캐시에서 반환된다
+A) It is returned immediately from the DAX cache
+B) DAX queries DynamoDB directly and returns the latest data
+C) An error occurs (DAX does not support strong consistency)
+D) It is automatically converted to eventual consistency and returned from the cache
 
 **Answer: B**
-Explanation: DAX는 강력한 일관성 읽기 요청을 캐시에서 처리하지 않는다. `ConsistentRead: true`로 설정된 읽기는 DAX를 통과하여 DynamoDB에 직접 쿼리된다. 이는 캐시가 최신 데이터를 보장할 수 없기 때문이다 — 최근 쓰기가 캐시에 반영되기 전에 읽을 경우 오래된 데이터를 반환할 수 있다. 강력한 일관성이 필요한 경우 DAX의 성능 혜택을 받지 못한다는 단점이 있다.
+Explanation: DAX does not serve strongly consistent read requests from its cache. Reads with `ConsistentRead: true` pass through DAX and are queried directly against DynamoDB. This is because the cache cannot guarantee the latest data — a read made before a recent write is reflected in the cache could return stale data. The drawback is that when strong consistency is required, you do not get DAX's performance benefit.
 
 ---
 
-**Question 4.** DynamoDB Streams를 Lambda와 연동할 때 순서 보장은 어떻게 이루어지는가?
+**Question 4.** When integrating DynamoDB Streams with Lambda, how is ordering guaranteed?
 
-A) 테이블 전체 수준에서 모든 이벤트의 순서가 보장된다
-B) 파티션 키 단위로 이벤트 순서가 보장된다
-C) 순서 보장이 전혀 없다
-D) Lambda가 처리하는 순서와 DynamoDB 이벤트 순서는 무관하다
+A) The order of all events is guaranteed at the whole-table level
+B) Event order is guaranteed per partition key
+C) There is no ordering guarantee at all
+D) The order in which Lambda processes events is unrelated to the DynamoDB event order
 
 **Answer: B**
-Explanation: DynamoDB Streams는 파티션 키 단위로 이벤트 순서를 보장한다. 같은 파티션 키(같은 항목)에 대한 변경은 발생 순서대로 Stream 샤드에 기록되고, Lambda는 이 순서대로 처리한다. 하지만 서로 다른 파티션 키에 대한 이벤트 간의 순서는 보장되지 않는다. 테이블 전체 수준의 전역 순서 보장은 없다. 이것이 Streams를 통한 데이터 처리에서 상태를 파티션 키 단위로 관리해야 하는 이유다.
+Explanation: DynamoDB Streams guarantees event order per partition key. Changes to the same partition key (the same item) are written to the Stream shard in the order they occurred, and Lambda processes them in that order. However, the order between events for different partition keys is not guaranteed. There is no global ordering guarantee at the whole-table level. This is why, when processing data through Streams, state must be managed per partition key.
 
 ---
 
-**Question 5.** DynamoDB 변경 이력을 2년 동안 보존하고 분석해야 한다. 가장 적합한 아키텍처는?
+**Question 5.** You need to retain and analyze DynamoDB change history for 2 years. What is the most suitable architecture?
 
-A) DynamoDB Streams + Lambda로 S3에 직접 저장
-B) DynamoDB Kinesis Data Streams 연동 → Kinesis Firehose → S3
-C) DynamoDB PITR로 35일 백업 보존
-D) DynamoDB On-Demand Backup을 매일 수동으로 생성
+A) Store directly to S3 with DynamoDB Streams + Lambda
+B) DynamoDB Kinesis Data Streams integration -> Kinesis Firehose -> S3
+C) Retain 35 days of backups with DynamoDB PITR
+D) Manually create a DynamoDB On-Demand Backup every day
 
 **Answer: B**
-Explanation: DynamoDB Streams는 24시간만 보존하므로 2년 보존에 부적합하다. Kinesis Data Streams는 최대 365일 보존이 가능하지만 2년에는 부족하다. 그러나 Kinesis Firehose를 통해 S3에 영구 저장하면 2년 이상 보존이 가능하다. DynamoDB 테이블을 Kinesis Data Streams에 직접 연결하고, Kinesis Firehose가 S3에 배치로 저장한다. PITR은 35일 한도, On-Demand Backup은 분석에 적합하지 않다.
+Explanation: DynamoDB Streams retains data for only 24 hours, so it is unsuitable for 2-year retention. Kinesis Data Streams can retain up to 365 days, which is still not enough for 2 years. However, storing permanently in S3 through Kinesis Firehose enables retention of 2 years or more. Connect the DynamoDB table directly to Kinesis Data Streams, and Kinesis Firehose stores the data to S3 in batches. PITR is limited to 35 days, and On-Demand Backup is not suitable for analysis.
 
 ---
 
-**Question 6.** DynamoDB 테이블에서 온디맨드 모드로 전환한 직후 트래픽이 갑자기 20배 증가했다. 어떤 현상이 발생하는가?
+**Question 6.** Right after switching a DynamoDB table to on-demand mode, traffic suddenly increases 20-fold. What happens?
 
-A) 온디맨드는 무한 확장이므로 문제없이 처리된다
-B) throttling이 발생한다 — 온디맨드는 이전 피크의 2배까지만 즉시 대응 가능
-C) 자동으로 프로비저닝 모드로 전환된다
-D) 오류 없이 처리되지만 비용이 20배 청구된다
+A) On-demand scales infinitely, so it is handled without any problem
+B) Throttling occurs — on-demand can immediately accommodate only up to 2x the previous peak
+C) It automatically switches to provisioned mode
+D) It is handled without errors, but you are billed 20 times as much
 
 **Answer: B**
-Explanation: 온디맨드 모드는 "무한 확장"이 아니다. 이전에 처리한 트래픽 피크의 2배까지만 즉시 대응한다. 신규 테이블이거나 오랫동안 낮은 트래픽이었다면 최소값에서 시작하므로 갑작스러운 트래픽 급증에서 throttling이 발생한다. 이를 방지하려면 ① 프로비저닝 모드로 충분한 트래픽을 처리한 후 온디맨드로 전환하거나, ② 프로비저닝 모드에서 Auto Scaling으로 점진적으로 확장하는 방법을 사용한다.
+Explanation: On-demand mode is not "infinite scaling". It immediately accommodates only up to 2x the previous traffic peak it has handled. For a new table, or one that had low traffic for a long time, it starts from the minimum, so throttling occurs on a sudden traffic spike. To prevent this, either (1) handle sufficient traffic in provisioned mode and then switch to on-demand, or (2) scale gradually using Auto Scaling in provisioned mode.
 
 ---

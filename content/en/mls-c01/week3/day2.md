@@ -116,62 +116,62 @@ Next, we'll explore feature engineering for specialized data types like dates an
 
 ## 📝 Practice Questions
 
-**Question 1.** 다음 중 입력 피처 스케일링이 **필요 없는** 알고리즘은?
+**Question 1.** Which of the following algorithms does **NOT** require input feature scaling?
 
-A) K-최근접 이웃(KNN)  
-B) 서포트 벡터 머신(SVM)  
-C) XGBoost (트리 부스팅)  
-D) 로지스틱 회귀  
+A) K-nearest neighbors (KNN)  
+B) Support vector machine (SVM)  
+C) XGBoost (tree boosting)  
+D) Logistic regression  
 
 **Answer: C**  
-Explanation: 트리 기반 모델(XGBoost, Random Forest 등)은 각 피처 내에서 분할 기준점만 찾으므로 단조 변환에 불변이라 스케일링이 불필요하다. KNN(A)·SVM(B)은 거리 기반, 로지스틱 회귀(D)는 기울기 기반이라 모두 스케일에 민감해 스케일링이 권장된다.
+Explanation: Tree-based models (XGBoost, Random Forest, and so on) only look for split points within each feature, so they are invariant to monotonic transformations and scaling is unnecessary. KNN (A) and SVM (B) are distance-based and logistic regression (D) is gradient-based, so all are sensitive to scale and scaling is recommended.
 
 ---
 
-**Question 2.** "색깔(빨강/파랑/초록)"처럼 순서가 없는 명목형 변수를 선형 회귀에 넣으려 한다. 가장 적절한 인코딩은?
+**Question 2.** You want to feed an unordered nominal variable such as "color (red/blue/green)" into linear regression. Which encoding is MOST appropriate?
 
-A) Label Encoding (빨강=0, 파랑=1, 초록=2)  
+A) Label Encoding (red=0, blue=1, green=2)  
 B) One-Hot Encoding  
-C) 그대로 문자열 입력  
-D) Min-Max 정규화  
+C) Input the strings as they are  
+D) Min-Max normalization  
 
 **Answer: B**  
-Explanation: 명목형에 Label Encoding을 쓰면 "초록 > 파랑 > 빨강" 같은 존재하지 않는 순서를 부여해 선형 모델을 오도한다(A). One-Hot은 각 범주를 독립 0/1 컬럼으로 만들어 가짜 순서를 없앤다. 선형 회귀는 문자열을 받지 못하고(C), 정규화(D)는 수치형 스케일링 기법이라 범주형 인코딩이 아니다.
+Explanation: Using Label Encoding on a nominal variable assigns a nonexistent order such as "green > blue > red," misleading linear models (A). One-Hot creates an independent 0/1 column for each category and removes the false order. Linear regression cannot accept strings (C), and normalization (D) is a numeric scaling technique, not categorical encoding.
 
 ---
 
-**Question 3.** 우편번호처럼 수천 개의 고유값을 가진 고카디널리티 범주형 변수를 인코딩할 때, 차원 폭발을 피하지만 데이터 누수에 주의해야 하는 기법은?
+**Question 3.** When encoding a high-cardinality categorical variable with thousands of unique values, such as postal code, which technique avoids dimension explosion but requires attention to data leakage?
 
 A) One-Hot Encoding  
 B) Target Encoding  
-C) Ordinal Encoding (무작위 정수)  
+C) Ordinal Encoding (random integers)  
 D) Standard Scaling  
 
 **Answer: B**  
-Explanation: 타깃 인코딩은 범주를 타깃 평균값으로 치환해 고카디널리티를 한 컬럼으로 압축하지만, 같은 데이터의 타깃으로 피처를 만들면 타깃 누수가 생기므로 K-fold/스무딩이 필요하다. One-Hot(A)은 수천 컬럼으로 차원이 폭발하고, 무작위 정수 ordinal(C)은 가짜 순서를 만들며, 스케일링(D)은 범주형 인코딩이 아니다.
+Explanation: Target encoding replaces each category with the mean of the target, compressing high cardinality into a single column, but building features from the same data's target causes target leakage, so K-fold/smoothing is required. One-Hot (A) explodes the dimensionality into thousands of columns, ordinal encoding with random integers (C) creates a false order, and scaling (D) is not categorical encoding.
 
 ---
 
-**Question 4.** Min-Max 정규화를 사용할 때 한 변수에 극단적 이상치가 존재한다. 이때 발생하는 문제와 대안으로 옳은 것은?
+**Question 4.** When using Min-Max normalization, one variable has an extreme outlier. Which statement of the resulting problem and alternative is correct?
 
-A) 이상치가 max를 끌어올려 나머지 값이 0 근처로 압축됨 → RobustScaler 사용  
-B) 정규화 결과 범위가 [0,1]을 벗어남 → 표준화 사용  
-C) 이상치가 자동 제거됨 → 추가 처리 불필요  
-D) 평균이 1이 됨 → Min-Max 재적용  
+A) The outlier raises the max so the remaining values are compressed near 0 → use RobustScaler  
+B) The normalized range falls outside [0,1] → use standardization  
+C) The outlier is automatically removed → no additional handling needed  
+D) The mean becomes 1 → reapply Min-Max  
 
 **Answer: A**  
-Explanation: Min-Max는 max에 의존하므로 큰 이상치 하나가 분모를 키워 다른 값들을 0 부근으로 압축한다. 중앙값과 IQR을 쓰는 RobustScaler가 이상치에 강건한 대안이다. Min-Max는 정상적으로 [0,1]에 매핑하고(B 오류), 이상치를 제거하지 않으며(C 오류), 평균을 1로 만들지 않는다(D 오류).
+Explanation: Min-Max depends on the max, so a single large outlier enlarges the denominator and compresses the other values toward 0. RobustScaler, which uses the median and IQR, is the outlier-robust alternative. Min-Max normally maps to [0,1] (B is wrong), does not remove outliers (C is wrong), and does not make the mean 1 (D is wrong).
 
 ---
 
-**Question 5.** 선형 모델이 "나이가 특정 구간에서 구매율이 급변하는" 비선형 관계를 포착하도록 돕는 특성 공학 기법은?
+**Question 5.** Which feature engineering technique helps a linear model capture a nonlinear relationship such as "the purchase rate changes sharply in a certain age range"?
 
-A) 표준화  
-B) 비닝(구간화)  
-C) 행 삭제  
+A) Standardization  
+B) Binning (discretization)  
+C) Row deletion  
 D) Label Encoding  
 
 **Answer: B**  
-Explanation: 비닝은 연속형 나이를 구간으로 나눠 각 구간을 더미 변수로 만들므로, 선형 모델도 구간별 독립 효과를 학습해 비선형 관계를 표현할 수 있다. 표준화(A)는 스케일만 바꿀 뿐 선형성을 유지하고, 행 삭제(C)는 데이터 정제이며, Label Encoding(D)은 범주형 인코딩이라 무관하다.
+Explanation: Binning divides continuous age into intervals and turns each interval into a dummy variable, so even a linear model can learn the independent effect of each interval and express a nonlinear relationship. Standardization (A) only changes the scale and preserves linearity, row deletion (C) is data cleaning, and Label Encoding (D) is categorical encoding and therefore unrelated.
 
 ---

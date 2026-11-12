@@ -246,38 +246,38 @@ Execution flow: ValidateOrder Lambda → on success ProcessPayment → ShipOrder
 
 ## 📝 Practice Questions
 
-**Question 1.** Lambda 함수를 무중단 배포하고 새 버전으로 트래픽을 점진적으로 전환하려면?
+**Question 1.** How do you deploy a Lambda function with zero downtime and gradually shift traffic to the new version?
 
-A) Lambda 함수를 업데이트하고 즉시 배포  
-B) 새 버전을 발행 → Alias를 새 버전으로 업데이트하되 트래픽 가중치 설정 (예: 10% 신규, 90% 기존)  
-C) S3에서 새 코드 배포  
-D) Lambda를 삭제하고 재생성  
+A) Update the Lambda function and deploy immediately  
+B) Publish a new version → update the alias to the new version with traffic weights set (for example, 10% new, 90% existing)  
+C) Deploy new code from S3  
+D) Delete and recreate the Lambda function  
 
 **Answer: B**
-Explanation: Lambda 버전은 불변 스냅샷이고 별칭은 가변 포인터다. Alias를 새 버전으로 업데이트하되 routing-config로 가중치를 설정하면 (예: 90% version 1, 10% version 2) 무중단 트래픽 전환이 가능하다.
+Explanation: A Lambda version is an immutable snapshot and an alias is a mutable pointer. If you update the alias to the new version and set weights with routing-config (for example, 90% version 1, 10% version 2), a zero-downtime traffic shift is possible.
 
 ---
 
-**Question 2.** AWS SAM 템플릿에서 Lambda 함수 버전을 자동으로 발행하고 CodeDeploy로 배포하려면?
+**Question 2.** How do you automatically publish Lambda function versions and deploy with CodeDeploy in an AWS SAM template?
 
-A) SAM 템플릿에 `AutoPublishAlias` 설정, CodeDeploy AppSpec에 Hooks 정의  
-B) CloudFormation 콘솔에서 수동 배포  
-C) Lambda 콘솔에서 일일이 버전 발행  
-D) 버전 관리 없이 $LATEST만 사용  
+A) Set `AutoPublishAlias` in the SAM template and define hooks in the CodeDeploy AppSpec  
+B) Deploy manually from the CloudFormation console  
+C) Publish versions one by one from the Lambda console  
+D) Use only $LATEST without version management  
 
 **Answer: A**
-Explanation: SAM의 `AutoPublishAlias` 속성이 배포 시 자동으로 새 버전을 발행하고 Alias를 업데이트한다. CodeDeploy AppSpec의 `BeforeAllowTraffic`/`AfterAllowTraffic` Hooks가 배포 검증을 담당한다.
+Explanation: The SAM `AutoPublishAlias` property automatically publishes a new version and updates the alias at deployment. The `BeforeAllowTraffic`/`AfterAllowTraffic` hooks in the CodeDeploy AppSpec handle deployment validation.
 
 ---
 
-**Question 3.** CodeDeploy Lambda 배포 중 테스트가 실패하면?
+**Question 3.** What happens if a test fails during a CodeDeploy Lambda deployment?
 
-A) 배포가 진행되고 모든 트래픽이 새 버전으로 전환  
-B) Alias가 이전 버전으로 자동 롤백  
-C) 수동으로 Alias 롤백 필요  
-D) CloudWatch에만 로그 기록, 배포 계속  
+A) The deployment proceeds and all traffic shifts to the new version  
+B) The alias is automatically rolled back to the previous version  
+C) The alias must be rolled back manually  
+D) It is only logged in CloudWatch and the deployment continues  
 
 **Answer: B**
-Explanation: CodeDeploy 배포 중 BeforeAllowTraffic 또는 AfterAllowTraffic 테스트 실패 시 자동으로 Alias가 이전 버전으로 롤백된다. 클라이언트는 영향을 받지 않는다.
+Explanation: If a BeforeAllowTraffic or AfterAllowTraffic test fails during a CodeDeploy deployment, the alias is automatically rolled back to the previous version. Clients are not affected.
 
 ---

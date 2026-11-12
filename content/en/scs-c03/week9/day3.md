@@ -98,62 +98,62 @@ Management Account ──designate──▶ Inspector Delegated Admin (Security 
 
 ## 📝 Practice Questions
 
-**Question 1.** 보안팀이 EC2 인스턴스를 Amazon Inspector에 등록했지만 일부 인스턴스가 스캔되지 않는다. 에이전트 기반 스캔을 사용 중일 때 가장 먼저 확인할 것은?
+**Question 1.** The security team registered EC2 instances with Amazon Inspector, but some instances are not being scanned. When using agent-based scanning, what should be checked first?
 
-A) 인스턴스의 보안 그룹이 모든 포트를 열고 있는지  
-B) 인스턴스가 SSM Agent 실행 + 적절한 IAM 인스턴스 프로파일로 Systems Manager 관리 상태인지  
-C) 인스턴스에 퍼블릭 IP가 있는지  
-D) 인스턴스가 us-east-1에 있는지  
+A) Whether the instance's security group opens all ports  
+B) Whether the instance is in a Systems Manager managed state, with the SSM Agent running and an appropriate IAM instance profile  
+C) Whether the instance has a public IP  
+D) Whether the instance is in us-east-1  
 
 **Answer: B**  
-Explanation: Inspector의 EC2 에이전트 기반 스캔은 인스턴스가 SSM으로 관리되어야 패키지 인벤토리를 수집할 수 있다. 따라서 SSM Agent 실행 여부와 SSM 권한을 가진 인스턴스 프로파일, SSM 연결 상태를 먼저 점검한다(또는 agentless 스캔으로 대체). 보안 그룹 개방·퍼블릭 IP·특정 리전은 스캔 가능 여부의 핵심 조건이 아니다.
+Explanation: Inspector's agent-based EC2 scanning can collect the package inventory only if the instance is managed by SSM. Therefore, first check whether the SSM Agent is running, the instance profile with SSM permissions, and the SSM connection status (or substitute agentless scanning). Open security groups, public IPs, and specific Regions are not key conditions for scannability.
 
 ---
 
-**Question 2.** ECR에 저장된 컨테이너 이미지가 푸시 당시에는 취약점이 없었으나, 이후 새로 공시된 CVE에 취약해졌다. 이를 자동으로 따라잡으려면?
+**Question 2.** A container image stored in ECR had no vulnerabilities when pushed but has since become vulnerable to a newly published CVE. How can this be caught up automatically?
 
-A) ECR 스캔을 on-push(1회)만 활성화한다  
-B) ECR continuous(지속) 스캔을 활성화해 새 CVE 공시 시 기존 이미지를 자동 재평가한다  
-C) 이미지를 매번 수동으로 다시 푸시한다  
-D) GuardDuty Malware Protection을 켠다  
+A) Enable ECR scanning on-push only (one time)  
+B) Enable ECR continuous scanning so that existing images are automatically re-evaluated when a new CVE is published  
+C) Manually push the image again each time  
+D) Turn on GuardDuty Malware Protection  
 
 **Answer: B**  
-Explanation: on-push 스캔은 푸시 시점만 평가하므로 사후 공시 CVE를 놓친다. continuous 스캔은 새 CVE가 나올 때 이미 푸시된 이미지를 자동 재평가해 사후 취약점을 따라잡는다. 수동 재푸시는 비현실적이고, GuardDuty Malware Protection은 멀웨어 스캔이지 CVE 취약점 관리가 아니다.
+Explanation: On-push scanning evaluates only at push time, so it misses CVEs published afterward. Continuous scanning automatically re-evaluates already-pushed images when a new CVE appears, catching up with post-push vulnerabilities. Manual re-pushing is impractical, and GuardDuty Malware Protection is malware scanning, not CVE vulnerability management.
 
 ---
 
-**Question 3.** 동일하게 CVSS 9.0인 두 취약점 중 하나만 우선 패치하라는 요구가 있다. Amazon Inspector가 우선순위를 더 높게 매기는 쪽은?
+**Question 3.** Of two vulnerabilities that both have a CVSS of 9.0, you are asked to patch only one first. Which one does Amazon Inspector rank at a higher priority?
 
-A) 격리된 프라이빗 서브넷에 있어 인터넷에서 도달 불가능한 취약점  
-B) 인터넷에서 도달 가능한 포트에 노출되고 공개 익스플로잇이 존재하는 취약점  
-C) 두 취약점의 우선순위는 항상 동일하다  
-D) 최근에 발견된 취약점이 무조건 우선이다  
+A) A vulnerability in an isolated private subnet that cannot be reached from the internet  
+B) A vulnerability exposed on a port reachable from the internet with a public exploit available  
+C) The priority of the two vulnerabilities is always the same  
+D) The more recently discovered vulnerability always takes priority  
 
 **Answer: B**  
-Explanation: Inspector score는 CVSS 기본 점수에 네트워크 도달성과 익스플로잇 가능성 등 환경 컨텍스트를 곱해 위험을 가중한다. 같은 CVSS라도 인터넷 도달 가능 + 공개 exploit이 있는 취약점이 실제 위험이 훨씬 크므로 우선순위가 높다. 도달 불가능한 취약점은 후순위이고, 단순 발견 시점만으로 우선순위가 정해지지 않는다.
+Explanation: The Inspector score weights risk by multiplying the CVSS base score by environmental context such as network reachability and exploitability. Even with the same CVSS, a vulnerability that is internet-reachable and has a public exploit carries much greater real risk, so it has higher priority. An unreachable vulnerability is lower priority, and priority is not determined merely by when it was discovered.
 
 ---
 
-**Question 4.** Inspector 취약점 발견을 받아 영향받는 EC2 인스턴스에 자동으로 패치를 적용하는 교정 파이프라인을 구성하려 한다. 가장 적절한 연계는?
+**Question 4.** You want to build a remediation pipeline that receives Inspector vulnerability findings and automatically applies patches to the affected EC2 instances. What is the most appropriate integration?
 
-A) Inspector 발견 → EventBridge → SSM Patch Manager로 자동 패치 적용  
-B) Inspector가 직접 인스턴스를 패치한다  
-C) Inspector 발견 → Macie → 자동 패치  
-D) Inspector → Detective → 자동 패치  
+A) Inspector finding → EventBridge → automatic patching with SSM Patch Manager  
+B) Inspector patches the instance directly  
+C) Inspector finding → Macie → automatic patching  
+D) Inspector → Detective → automatic patching  
 
 **Answer: A**  
-Explanation: Inspector는 발견(진단)만 하고 교정은 다른 서비스가 한다. 발견을 EventBridge로 받아 SSM Patch Manager(또는 Lambda)로 자동 패치를 적용하는 것이 정석적인 교정 자동화 파이프라인이다. Inspector가 직접 패치하지 않으며, Macie는 데이터 분류, Detective는 조사 도구로 패치 교정과 무관하다.
+Explanation: Inspector only discovers (diagnoses); remediation is done by other services. The canonical remediation automation pipeline receives the finding through EventBridge and applies patches automatically with SSM Patch Manager (or Lambda). Inspector does not patch directly, and Macie is data classification and Detective is an investigation tool, both unrelated to patch remediation.
 
 ---
 
-**Question 5.** Amazon Inspector와 GuardDuty의 역할 차이를 가장 정확히 설명한 것은?
+**Question 5.** Which statement most accurately describes the difference between the roles of Amazon Inspector and GuardDuty?
 
-A) 둘 다 동일하게 실시간 악성 트래픽을 차단한다  
-B) Inspector는 악용 가능한 취약점(CVE 등)을 사전에 발견하고, GuardDuty는 실제 악성 활동(위협)을 탐지한다  
-C) Inspector는 위협을, GuardDuty는 취약점을 다룬다  
-D) Inspector는 S3 PII를 분류하고 GuardDuty는 CVE를 스캔한다  
+A) Both block malicious traffic in real time in the same way  
+B) Inspector proactively discovers exploitable vulnerabilities (CVEs, etc.), and GuardDuty detects actual malicious activity (threats)  
+C) Inspector handles threats, and GuardDuty handles vulnerabilities  
+D) Inspector classifies S3 PII, and GuardDuty scans for CVEs  
 
 **Answer: B**  
-Explanation: Inspector는 EC2/ECR/Lambda의 취약점(약점)을 사전에 찾아 우선순위화하고, GuardDuty는 자격증명 오남용·악성 통신 등 실제 위협 활동을 탐지한다 — 예방(약점 축소)과 탐지(공격 포착)의 보완 관계다. C는 역할이 뒤바뀌었고, 둘 다 트래픽을 차단하지 않으며, PII 분류는 Macie의 몫이다.
+Explanation: Inspector proactively finds and prioritizes vulnerabilities (weaknesses) in EC2/ECR/Lambda, while GuardDuty detects actual threat activity such as credential misuse and malicious communication - a complementary relationship of prevention (reducing weaknesses) and detection (catching attacks). C has the roles reversed, neither blocks traffic, and PII classification belongs to Macie.
 
 ---

@@ -78,62 +78,62 @@ Data protection must also be *proven*. **CloudTrail** logs all KMS operations (E
 
 ## 📝 Practice Questions
 
-**Question 1.** 멀티테넌트 SaaS가 S3에 테넌트별 대용량 파일을 저장한다. 테넌트별 복호화 격리, KMS 비용 관리, 전체 감사, 정기 회전을 모두 만족하는 설계는?
+**Question 1.** A multi-tenant SaaS stores large per-tenant files in S3. Which design satisfies per-tenant decryption isolation, KMS cost management, full auditing, and regular rotation?
 
-A) SSE-S3 + 객체마다 별도 KMS 키  
-B) SSE-KMS(customer managed key) + 객체별 암호화 컨텍스트 `tenant=<id>`와 `kms:EncryptionContext` 조건 + S3 Bucket Key + 자동 회전 + CloudTrail  
-C) 클라이언트가 평문으로 업로드하고 IAM으로만 통제  
-D) 모든 테넌트가 AWS managed key 공유  
+A) SSE-S3 + a separate KMS key for each object  
+B) SSE-KMS (customer managed key) + per-object encryption context `tenant=<id>` with a `kms:EncryptionContext` condition + S3 Bucket Key + automatic rotation + CloudTrail  
+C) Clients upload in plaintext and control access with IAM only  
+D) All tenants share an AWS managed key  
 
 **Answer: B**  
-Explanation: customer managed key 기반 SSE-KMS가 감사·통제·회전을 제공하고, 암호화 컨텍스트의 테넌트 조건으로 복호화를 테넌트별 격리하며, S3 Bucket Key가 KMS 호출 비용·throttling을 완화하고, 자동 회전이 운영 부담 없이 정기 교체를, CloudTrail이 전체 감사를 담당한다. SSE-S3는 감사·통제가 없고, 평문 업로드는 저장 암호화를 포기하며, AWS managed key 공유는 정책·격리 통제가 불가능하다.
+Explanation: SSE-KMS based on a customer managed key provides auditing, control, and rotation; the tenant condition on the encryption context isolates decryption per tenant; the S3 Bucket Key eases KMS call cost and throttling; automatic rotation provides regular replacement without operational burden; and CloudTrail handles full auditing. SSE-S3 has no auditing or control, plaintext upload gives up encryption at rest, and sharing an AWS managed key makes policy and isolation control impossible.
 
 ---
 
-**Question 2.** 보안 계정이 KMS 키를 소유·관리하고 워크로드 계정들이 사용하되, 일반 계정이 키를 삭제하거나 정책을 변경하지 못하게 하려 한다. 가장 적절한 조합은?
+**Question 2.** A security account owns and manages a KMS key and workload accounts use it, but regular accounts must be prevented from deleting the key or changing its policy. What is the most appropriate combination?
 
-A) 워크로드 계정 IAM 정책만 설정  
-B) 보안 계정 키 정책 허용 + 워크로드 계정 IAM 허용(양측) + `aws:PrincipalOrgID` 한정 + SCP로 삭제·정책변경 Deny  
-C) 키를 모든 계정에 복제  
-D) AWS managed key로 전환  
+A) Configure only the workload accounts' IAM policies  
+B) Security account key policy allow + workload account IAM allow (both sides) + restriction with `aws:PrincipalOrgID` + SCP that Denies deletion and policy changes  
+C) Replicate the key to all accounts  
+D) Switch to an AWS managed key  
 
 **Answer: B**  
-Explanation: 교차계정 사용은 키 정책과 사용 계정 IAM 양측이 모두 허용해야 하고, `aws:PrincipalOrgID`로 조직 내부로 한정하며, SCP로 일반 계정의 `kms:ScheduleKeyDeletion`·`kms:PutKeyPolicy`를 Deny하는 가드레일을 더하는 3층 거버넌스가 정답이다. IAM만으로는 위임이 없어 실패하고, 키 복제·AWS managed key 전환은 중앙 통제 요구와 어긋난다.
+Explanation: The correct answer is three-layer governance: cross-account use requires both the key policy and the using account's IAM to allow it, `aws:PrincipalOrgID` limits it to within the organization, and an SCP adds a guardrail that Denies `kms:ScheduleKeyDeletion` and `kms:PutKeyPolicy` for regular accounts. IAM alone fails because there is no delegation, and replicating the key or switching to an AWS managed key conflicts with the central control requirement.
 
 ---
 
-**Question 3.** KMS 호출 권한이 없는 외부 파트너가 데이터를 암호화해 보내야 하고, 동시에 우리가 발행하는 문서의 무결성을 파트너가 검증할 수 있어야 한다. 가장 적절한 키 구성은?
+**Question 3.** An external partner without KMS call permission must encrypt data and send it to us, and at the same time the partner must be able to verify the integrity of documents we issue. What is the most appropriate key configuration?
 
-A) 대칭 키 하나를 공유  
-B) 암호화/복호화용 비대칭 키(퍼블릭 키를 파트너에 배포) + 서명/검증용 비대칭 키(우리가 프라이빗 서명, 파트너가 퍼블릭 검증)  
+A) Share a single symmetric key  
+B) An asymmetric key for encryption/decryption (public key distributed to the partner) + an asymmetric key for signing/verification (we sign with the private key, the partner verifies with the public key)  
 C) SSE-S3  
-D) grant를 파트너 계정에 부여  
+D) Grant a grant to the partner's account  
 
 **Answer: B**  
-Explanation: 파트너에게 KMS 호출 권한 없이 암호화만 시키려면 비대칭 키(퍼블릭 배포, 프라이빗은 KMS 내부)를, 문서 무결성 검증에는 서명용 비대칭 키(프라이빗 서명·퍼블릭 검증)를 쓴다. 대칭 키 공유는 복호화 권한까지 노출되고, SSE-S3는 외부 암호화·서명과 무관하며, grant는 KMS 호출 권한 자체가 없는 파트너에게는 부적합하다.
+Explanation: To let the partner only encrypt without KMS call permission, use an asymmetric key (public key distributed, private key inside KMS), and for document integrity verification use an asymmetric signing key (private-key signing, public-key verification). Sharing a symmetric key exposes decryption permission as well, SSE-S3 is unrelated to external encryption and signing, and a grant is unsuitable for a partner who has no KMS call permission at all.
 
 ---
 
-**Question 4.** 다음 중 이번 주 데이터 보호 설계에서 *함정*으로 자주 지적되는 항목이 아닌 것은?
+**Question 4.** Which of the following is NOT frequently cited as a *pitfall* in this week's data protection design?
 
-A) 기존 미암호화 RDS를 "암호화 토글"로 켜려 함  
-B) 자동 회전이 기존 데이터를 새 키로 재암호화한다고 오해  
-C) 교차계정에서 키 정책과 사용 계정 IAM을 *둘 다* 설정함  
-D) 암호화 컨텍스트에 비밀번호를 넣어 CloudTrail에 평문 노출  
+A) Trying to turn on encryption for an existing unencrypted RDS instance with an "encryption toggle"  
+B) Mistakenly believing that automatic rotation re-encrypts existing data with the new key  
+C) Configuring *both* the key policy and the using account's IAM in a cross-account setup  
+D) Putting a password in the encryption context so it is exposed in plaintext in CloudTrail  
 
 **Answer: C**  
-Explanation: 교차계정 KMS 접근은 키 정책 허용과 사용 계정 IAM 허용이 *둘 다* 필요하므로, 둘 다 설정하는 것은 함정이 아니라 올바른 설계다. 나머지는 모두 실제 빈출 함정이다: RDS는 토글로 암호화할 수 없고(스냅샷 경유), 자동 회전은 기존 데이터를 재암호화하지 않으며, 암호화 컨텍스트는 암호화되지 않아 비밀을 넣으면 평문 노출된다. 함정이 *아닌* 것을 고르는 문제이므로 정답은 양측 설정이다.
+Explanation: Cross-account KMS access requires *both* the key policy allow and the using account's IAM allow, so configuring both is not a pitfall but the correct design. The rest are all genuinely frequent pitfalls: RDS cannot be encrypted with a toggle (it must go through a snapshot), automatic rotation does not re-encrypt existing data, and the encryption context is not encrypted, so putting secrets in it exposes them in plaintext. Because the question asks you to choose what is *not* a pitfall, the answer is configuring both sides.
 
 ---
 
-**Question 5.** 유출이 의심되는 customer managed key를 즉시 무력화하되 오탐일 경우 신속히 복구할 수 있어야 한다. 가장 적절한 조치는?
+**Question 5.** You must neutralize a customer managed key suspected of being compromised immediately, while being able to recover quickly if it turns out to be a false positive. What is the most appropriate action?
 
-A) `ScheduleKeyDeletion`으로 7일 후 삭제 예약  
-B) 키를 disable(비활성화)하고 관련 grant·정책을 회수하며 조사 — disable은 즉시 효력·가역적  
-C) 키 별칭만 삭제  
-D) 멀티 리전 복제본을 만든다  
+A) Schedule deletion in 7 days with `ScheduleKeyDeletion`  
+B) Disable the key, revoke related grants and policies, and investigate - disable takes effect immediately and is reversible  
+C) Delete only the key alias  
+D) Create a multi-Region replica  
 
 **Answer: B**  
-Explanation: 키 disable은 즉시 효력이 있고 가역적이어서 의심 상황의 긴급·복구 가능 무력화에 적합하며, grant·정책 회수를 병행해 노출을 줄인다. `ScheduleKeyDeletion`은 대기 후 비가역 삭제라 데이터가 영구 복호화 불가가 되고, 별칭 삭제는 키 사용을 막지 못하며, 복제본 생성은 무력화와 무관하다.
+Explanation: Disabling a key takes effect immediately and is reversible, so it suits emergency, recoverable neutralization in a suspected-compromise situation, and revoking grants and policies in parallel reduces exposure. `ScheduleKeyDeletion` is an irreversible deletion after a waiting period, so the data can never be decrypted; deleting an alias does not stop key usage; and creating a replica is unrelated to neutralization.
 
 ---

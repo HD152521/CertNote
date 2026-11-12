@@ -8,7 +8,7 @@ Successfully completed English translation of **35 AWS Certified Machine Learnin
 
 **Completion Date:** July 13, 2026  
 **Total Content:** 0.31 MB  
-**Target Directory:** `C:\Users\안용식\webapp\content\en\mla-c01\`
+**Target Directory:** `C:\Users\user\webapp\content\en\mla-c01\`
 
 ---
 
@@ -32,7 +32,7 @@ Successfully completed English translation of **35 AWS Certified Machine Learnin
 Each file was translated following strict quality standards:
 
 ### 1. **Split Point Identification**
-- Located `## 📝 연습 문제` marker in each file
+- Located `## 📝 Practice Questions` marker in each file
 - This marker precisely divides content into two sections
 
 ### 2. **Translation Scope**
@@ -126,7 +126,7 @@ Each file was translated following strict quality standards:
 ## File Structure
 
 ```
-C:\Users\안용식\webapp\content\en\mla-c01\
+C:\Users\user\webapp\content\en\mla-c01\
 ├── week4/
 │   ├── day1.md
 │   ├── day2.md
@@ -195,7 +195,7 @@ C:\Users\안용식\webapp\content\en\mla-c01\
 
 1. **Study Path:** Follow week4 → week10 in order
 2. **Per File:** Read the English-translated content for learning
-3. **Practice:** Work through the Korean practice problems (연습 문제)
+3. **Practice:** Work through the Korean practice problems (practice questions)
 4. **Reference:** Use code examples and AWS patterns as reference
 5. **Exam Prep:** Week 10 contains exam strategies and comprehensive review
 

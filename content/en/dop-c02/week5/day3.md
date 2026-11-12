@@ -486,84 +486,84 @@ Custom Action Provider integrates internal-network systems via Poll-based method
 
 ## 📝 Practice Questions
 
-**Question 1.** Lambda Invoke Action에서 Lambda 함수가 정상 완료됐는데 파이프라인이 "In Progress" 상태로 멈춰 있다. 가장 가능성 높은 원인은?
+**Question 1.** In a Lambda invoke action, the Lambda function completed normally but the pipeline is stuck in the "In Progress" state. What is the most likely cause?
 
-A) Lambda 함수의 실행 시간이 너무 길다  
-B) Lambda 함수가 codepipeline.put_job_success_result()를 호출하지 않았다  
-C) Lambda 함수에 IAM 권한이 부족하다  
-D) Pipeline Execution Mode가 QUEUED이다  
+A) The Lambda function execution time is too long  
+B) The Lambda function did not call codepipeline.put_job_success_result()  
+C) The Lambda function lacks IAM permissions  
+D) The pipeline execution mode is QUEUED  
 
 **Answer: B**  
-Explanation: CodePipeline은 Lambda 함수의 실행 결과(return value, exception)를 직접 받지 않는다. 파이프라인 Job의 성공/실패는 오직 `put_job_success_result` 또는 `put_job_failure_result` API 호출로만 보고된다. 함수가 정상 완료해도 이 호출이 없으면 파이프라인은 응답을 기다리다 기본 24시간(또는 설정된 timeout) 후 실패한다.
+Explanation: CodePipeline does not directly receive the execution result (return value, exception) of the Lambda function. The success or failure of a pipeline job is reported only by calling the `put_job_success_result` or `put_job_failure_result` API. Even if the function completes normally, without this call the pipeline waits for a response and fails after the default 24 hours (or the configured timeout).
 
 ---
 
-**Question 2.** 멀티 리전 배포 워크플로에서 한 리전이 실패하면 이미 배포된 다른 리전을 롤백해야 한다. 가장 적절한 구현은?
+**Question 2.** In a multi-Region deployment workflow, if one Region fails, the other Regions that have already been deployed must be rolled back. What is the most appropriate implementation?
 
-A) Lambda Invoke Action에서 직접 롤백 로직 구현  
-B) Step Functions Action의 Saga 패턴 — Parallel State 안에서 실패 시 보상 트랜잭션(rollback task) 실행  
-C) Manual Approval Action으로 사람이 롤백 결정  
-D) CodeDeploy의 자동 롤백  
+A) Implement the rollback logic directly in a Lambda invoke action  
+B) The Saga pattern with a Step Functions action — run compensating transactions (rollback tasks) on failure inside a Parallel state  
+C) A person decides on the rollback with a manual approval action  
+D) CodeDeploy automatic rollback  
 
 **Answer: B**  
-Explanation: 멀티 리전 배포 + 부분 실패 시 롤백은 Saga 패턴의 교과서적 사례다. Step Functions의 Parallel State + Catch 조합으로 각 리전 배포를 병렬로 진행하면서, 특정 리전이 실패하면 이미 성공한 리전에 보상 롤백을 실행할 수 있다. Lambda(A)로도 구현할 수 있지만 15분 한도와 상태 관리 복잡성이 문제다. CodeDeploy(D)는 해당 서비스 내 롤백만 담당하고 멀티 리전 조율이 불가하다.
+Explanation: A multi-Region deployment with rollback on partial failure is a textbook case of the Saga pattern. With a combination of the Step Functions Parallel state + Catch, you can deploy to each Region in parallel and, if a particular Region fails, run a compensating rollback on the Regions that already succeeded. It can be implemented with Lambda (A) as well, but the 15-minute limit and state management complexity are problems. CodeDeploy (D) handles rollback only within that service and cannot coordinate across Regions.
 
 ---
 
-**Question 3.** Slack 채널에서 팀원이 직접 prod 배포를 승인하도록 하려면 어떤 구성이 필요한가?
+**Question 3.** What configuration is required so that team members can approve a prod deployment directly from a Slack channel?
 
-A) Manual Approval Action → SNS Topic → AWS Chatbot → Slack 채널. Chatbot에 codepipeline:PutApprovalResult 권한 부여  
-B) Lambda Invoke Action에서 Slack API 직접 호출  
-C) EventBridge Rule로 Slack Webhook 연결  
-D) Step Functions waitForTaskToken으로 Slack 봇 연결  
+A) Manual approval action → SNS topic → AWS Chatbot → Slack channel. Grant the codepipeline:PutApprovalResult permission to Chatbot  
+B) Call the Slack API directly from a Lambda invoke action  
+C) Connect a Slack webhook with an EventBridge rule  
+D) Connect a Slack bot with Step Functions waitForTaskToken  
 
 **Answer: A**  
-Explanation: Manual Approval Action이 SNS에 알림을 발행하고, Chatbot이 이를 Slack 채널에 표시한다. Slack에서 `/aws codepipeline approve` 명령을 실행하면 Chatbot이 CodePipeline API를 호출해 승인을 처리한다. 이를 위해 Chatbot IAM Role에 `codepipeline:PutApprovalResult` 권한이 필요하다. D의 Step Functions 방식도 가능하지만 더 복잡하고, 표준 Manual Approval + Chatbot 조합이 AWS가 권장하는 패턴이다.
+Explanation: The manual approval action publishes a notification to SNS, and Chatbot displays it in the Slack channel. When the `/aws codepipeline approve` command is run in Slack, Chatbot calls the CodePipeline API to process the approval. For this, the Chatbot IAM role needs the `codepipeline:PutApprovalResult` permission. The Step Functions approach in D is also possible, but more complex, and the standard manual approval + Chatbot combination is the pattern AWS recommends.
 
 ---
 
-**Question 4.** Lambda Invoke Action에서 작업 시간이 20분 필요하다. 어떻게 처리해야 하는가?
+**Question 4.** A Lambda invoke action needs 20 minutes of work time. How should this be handled?
 
-A) Lambda timeout을 20분으로 설정한다  
-B) Step Functions Action으로 변경하고 State Machine 안에서 Lambda 호출  
-C) CodeBuild Action으로 변경  
-D) 두 개의 Lambda Invoke Action으로 분리  
+A) Set the Lambda timeout to 20 minutes  
+B) Change to a Step Functions action and call Lambda inside the state machine  
+C) Change to a CodeBuild action  
+D) Split it into two Lambda invoke actions  
 
 **Answer: B**  
-Explanation: Lambda의 최대 실행 시간은 15분이다. 20분 작업은 Lambda 단독으로 불가능하다(A는 불가). Step Functions는 이론상 최대 1년의 워크플로를 처리할 수 있다. State Machine 안에서 Lambda를 여러 번 호출하거나, ECS Task, Batch Job 등을 직접 통합할 수 있다. D는 두 Lambda 사이에 상태를 전달하는 방법이 없어서 실용적이지 않다.
+Explanation: The maximum Lambda execution time is 15 minutes. A 20-minute job is not possible with Lambda alone (A is not possible). Step Functions can in theory handle workflows of up to 1 year. Inside the state machine you can call Lambda multiple times, or integrate directly with ECS tasks, Batch jobs, and so on. D is not practical because there is no way to pass state between the two Lambda functions.
 
 ---
 
-**Question 5.** 파이프라인 실패 시 PagerDuty와 Jira에 자동으로 알림을 보내야 한다. 가장 확장 가능한 패턴은?
+**Question 5.** You must automatically send notifications to PagerDuty and Jira when a pipeline fails. What is the most scalable pattern?
 
-A) 각 파이프라인마다 Lambda Invoke Action을 마지막 Stage에 추가  
-B) EventBridge Rule이 CodePipeline 실패 이벤트를 감지 → Lambda → PagerDuty/Jira API  
-C) Manual Approval Action의 SNS Topic으로 PagerDuty/Jira 구독  
-D) CloudWatch Alarm으로 Pipeline 실패 감지  
+A) Add a Lambda invoke action to the last stage of every pipeline  
+B) An EventBridge rule detects the CodePipeline failure event → Lambda → PagerDuty/Jira API  
+C) Subscribe PagerDuty/Jira to the SNS topic of the manual approval action  
+D) Detect pipeline failures with a CloudWatch alarm  
 
 **Answer: B**  
-Explanation: EventBridge 기반 패턴이 확장성에서 유리하다. 새 파이프라인이 추가될 때마다 EventBridge Rule의 패턴에 파이프라인 이름만 추가하면 되고, Lambda 함수는 하나를 공유한다. A는 파이프라인마다 Stage를 수정해야 하는 관리 부담이 있다. Manual Approval SNS(C)는 승인 관련 이벤트에만 발행되고 모든 실패를 커버하지 못한다. CloudWatch Alarm(D)은 메트릭 기반이고 CodePipeline 실패를 실시간으로 감지하기 어렵다.
+Explanation: The EventBridge-based pattern is better for scalability. Each time a new pipeline is added, you only need to add the pipeline name to the EventBridge rule pattern, and one Lambda function is shared. A has the management burden of modifying the stages of every pipeline. The manual approval SNS topic (C) publishes only for approval-related events and does not cover all failures. A CloudWatch alarm (D) is metric-based and has difficulty detecting CodePipeline failures in real time.
 
 ---
 
-**Question 6.** Step Functions WaitForTaskToken 패턴을 사용하는 가장 적절한 시나리오는?
+**Question 6.** What is the most appropriate scenario for using the Step Functions WaitForTaskToken pattern?
 
-A) 30초짜리 API 호출이 필요할 때  
-B) 외부 승인 시스템(ServiceNow, 사내 ITSM)이 완료를 콜백으로 알려줄 때까지 파이프라인을 대기시켜야 할 때  
-C) 멀티 리전 배포에서 병렬 실행이 필요할 때  
-D) CodeBuild 작업을 모니터링해야 할 때  
+A) When a 30-second API call is needed  
+B) When the pipeline must wait until an external approval system (ServiceNow, an internal ITSM) notifies completion through a callback  
+C) When parallel execution is needed in a multi-Region deployment  
+D) When a CodeBuild job needs to be monitored  
 
 **Answer: B**  
-Explanation: WaitForTaskToken은 "파이프라인이 외부 시스템의 콜백을 기다려야 하는" 패턴에 최적화되어 있다. 작업 토큰을 외부 시스템에 전달하고, 외부 시스템이 완료되면 SendTaskSuccess/Failure를 호출해 파이프라인을 재개한다. 24시간, 48시간 등 임의의 시간 동안 대기할 수 있어서 사람의 승인이나 느린 외부 프로세스를 기다리는 데 적합하다. 병렬 실행(C)은 WaitForTaskToken과 관계없이 Parallel State로 구현한다.
+Explanation: WaitForTaskToken is optimized for the pattern where "the pipeline must wait for a callback from an external system." You pass the task token to the external system, and when the external system finishes, it calls SendTaskSuccess/Failure to resume the pipeline. It can wait for an arbitrary time such as 24 or 48 hours, which makes it suitable for waiting on human approval or slow external processes. Parallel execution (C) is implemented with a Parallel state, regardless of WaitForTaskToken.
 
 ---
 
-**Question 7.** CodeStar Notifications와 EventBridge를 사용한 알림 패턴의 주요 차이는?
+**Question 7.** What is the main difference between CodeStar Notifications and a notification pattern using EventBridge?
 
-A) CodeStar Notifications는 빌드 이벤트만 지원한다  
-B) CodeStar Notifications는 개발자 도구(CodePipeline, CodeBuild 등) 이벤트를 SNS/Chatbot으로 쉽게 라우팅하는 데 특화됐고, EventBridge는 Lambda/SQS/HTTP Endpoint 등 다양한 대상으로 모든 AWS 서비스 이벤트를 라우팅하는 범용 이벤트 버스다  
-C) EventBridge는 실시간이 아니다  
-D) 동일한 기능이다  
+A) CodeStar Notifications supports only build events  
+B) CodeStar Notifications is specialized for easily routing developer tool (CodePipeline, CodeBuild, and so on) events to SNS/Chatbot, while EventBridge is a general-purpose event bus that routes events from all AWS services to various targets such as Lambda/SQS/HTTP endpoints  
+C) EventBridge is not real-time  
+D) They are the same feature  
 
 **Answer: B**  
-Explanation: CodeStar Notifications는 개발자 도구 이벤트에 특화된 알림 서비스다—SNS와 AWS Chatbot이 지원 대상이며, Slack/Teams 알림 구성이 쉽다. EventBridge는 훨씬 범용적이다—Lambda, SQS, HTTP Endpoint, Step Functions, EventBridge API Destination(외부 HTTP) 등 다양한 대상을 지원하고, 필터 패턴도 더 세밀하게 설정할 수 있다. PagerDuty, Jira 같은 외부 시스템 통합에는 EventBridge → Lambda 조합, Slack/Teams 알림에는 CodeStar Notifications + Chatbot이 더 간단하다.
+Explanation: CodeStar Notifications is a notification service specialized for developer tool events — SNS and AWS Chatbot are the supported targets, and Slack/Teams notifications are easy to configure. EventBridge is far more general-purpose — it supports various targets such as Lambda, SQS, HTTP endpoints, Step Functions, and EventBridge API destinations (external HTTP), and its filter patterns can be set more finely. For integrating external systems such as PagerDuty and Jira, the EventBridge → Lambda combination is better, and for Slack/Teams notifications, CodeStar Notifications + Chatbot is simpler.

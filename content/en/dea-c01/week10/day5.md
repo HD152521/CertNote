@@ -67,62 +67,62 @@ Example: "Ingest tens of thousands of events/sec with minimal ops, store as Parq
 
 ## 📝 Practice Questions
 
-**Question 1.** DEA-C01 시험의 구성으로 옳은 것은?
+**Question 1.** Which of the following correctly describes the structure of the DEA-C01 exam?
 
-A) 100문항, 180분, 합격 600점  
-B) 40문항, 90분, 합격 800점  
-C) 65문항(채점 50 + 비채점 15), 130분, 합격 720점  
-D) 75문항, 120분, 합격 700점  
+A) 100 questions, 180 minutes, passing score 600  
+B) 40 questions, 90 minutes, passing score 800  
+C) 65 questions (50 scored + 15 unscored), 130 minutes, passing score 720  
+D) 75 questions, 120 minutes, passing score 700  
 
 **Answer: C**  
-Explanation: DEA-C01은 총 65문항(채점 50, 비채점 15)을 130분 동안 풀며 1000점 척도에서 720점이 합격선입니다. 나머지는 실제 구성과 다릅니다.
+Explanation: DEA-C01 has a total of 65 questions (50 scored, 15 unscored) to be completed in 130 minutes, and the passing score is 720 on a scale of 1000. The others do not match the actual structure.
 
 ---
 
-**Question 2.** 시험 중 한 문항에서 4분째 고민하고 있다. 가장 바람직한 행동은?
+**Question 2.** During the exam, you have been stuck on one question for 4 minutes. What is the best course of action?
 
-A) 답을 찾을 때까지 계속 머문다  
-B) 그 문항을 비워 둔다  
-C) 남은 문항을 모두 같은 보기로 찍는다  
-D) 잠정 답을 고르고 검토 표시 후 다음 문항으로 넘어간다  
+A) Stay on it until you find the answer  
+B) Leave the question blank  
+C) Guess the same option for all remaining questions  
+D) Select a tentative answer, flag it for review, and move on to the next question  
 
 **Answer: D**  
-Explanation: 문항당 평균 2분 페이스를 지키려면 막히는 문항은 잠정 답을 표시하고 넘어간 뒤 2차 검토에서 다시 봅니다. 무한정 머물면 쉬운 문항을 놓치고, 비워 두면 회수 기회를 잃습니다.
+Explanation: To keep an average pace of 2 minutes per question, mark a tentative answer for a question you are stuck on, move on, and revisit it during a second review. Staying indefinitely makes you miss easy questions, and leaving it blank forfeits the chance to recover.
 
 ---
 
-**Question 3.** "다음 중 두 가지를 고르시오"라는 복수응답 문항에서 한 가지만 확신할 때 가장 적절한 대응은?
+**Question 3.** In a multiple-response question that says "Choose TWO," what is the most appropriate response when you are confident about only one answer?
 
-A) 한 가지만 선택해 제출한다  
-B) 나머지 보기들을 독립적으로 참/거짓 판단해 가장 타당한 두 번째를 함께 고른다  
-C) 무조건 세 개를 고른다  
-D) 그 문항을 비운다  
+A) Select only one and submit  
+B) Evaluate each of the remaining options independently as true or false and also select the most plausible second one  
+C) Always select three  
+D) Leave the question blank  
 
 **Answer: B**  
-Explanation: 복수응답은 요구된 개수를 정확히 채워야 점수가 인정됩니다. 보기를 각각 독립적으로 평가해 가장 타당한 조합을 만들어야 하며, 개수 미달·초과나 미응답은 오답 처리됩니다.
+Explanation: A multiple-response question receives credit only if you select exactly the required number of options. You should evaluate each option independently to build the most plausible combination, and selecting too few or too many options, or leaving it unanswered, is scored as incorrect.
 
 ---
 
-**Question 4.** 긴 시나리오 문제를 가장 효율적으로 분해하는 순서로 옳은 것은?
+**Question 4.** What is the correct order for breaking down a long scenario question most efficiently?
 
-A) 질문(마지막 문장) 먼저 → 제약 키워드 추출 → 명백한 오답 소거 → 제약 최적화 선택  
-B) 본문을 처음부터 끝까지 정독한 뒤 보기를 본다  
-C) 보기를 먼저 외운다  
-D) 가장 긴 보기를 정답으로 고른다  
+A) Read the question (last sentence) first → extract constraint keywords → eliminate clearly wrong answers → choose the option that best optimizes for the constraints  
+B) Read the passage thoroughly from beginning to end, then look at the options  
+C) Memorize the options first  
+D) Choose the longest option as the answer  
 
 **Answer: A**  
-Explanation: 질문을 먼저 읽어 채점 기준(비용·운영·실시간 등)을 파악하고, 제약 키워드로 오답을 소거한 뒤 제약을 가장 잘 만족하는 보기를 고르는 것이 시간 효율과 정확도를 높입니다. 보기 길이는 정답과 무관합니다.
+Explanation: Reading the question first to identify the scoring criteria (cost, operations, real-time, and so on), eliminating wrong answers using constraint keywords, and then choosing the option that best satisfies the constraints improves time efficiency and accuracy. The length of an option has nothing to do with the correct answer.
 
 ---
 
-**Question 5.** 시험 종료 5분 전 미응답 문항이 3개 남았다. 가장 합리적인 행동은?
+**Question 5.** There are 3 unanswered questions left with 5 minutes remaining in the exam. What is the most reasonable action?
 
-A) 시간이 없으니 그대로 제출한다  
-B) 한 문항만 신중히 풀고 나머지는 비운다  
-C) 남은 문항에 가장 그럴듯한 보기를 골라 모두 답을 채운다  
-D) 이미 푼 답을 모두 지운다  
+A) There is no time, so submit as is  
+B) Carefully solve only one question and leave the rest blank  
+C) Fill in answers for all remaining questions by choosing the most plausible option for each  
+D) Erase all the answers you have already given  
 
 **Answer: C**  
-Explanation: 빈 답은 확정 오답이므로 시간이 부족해도 미응답 문항은 가장 그럴듯한 보기로 모두 채워 기대 점수를 높입니다. 비워 두거나 기존 답을 지우는 것은 점수를 잃는 행동입니다.
+Explanation: A blank answer is a guaranteed wrong answer, so even when time is short you should fill in every unanswered question with the most plausible option to raise your expected score. Leaving them blank or erasing existing answers loses points.
 
 ---

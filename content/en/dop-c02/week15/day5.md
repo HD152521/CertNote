@@ -73,7 +73,7 @@ Next: Week 16 continues domain 3 (resilience) and domain 4 (monitoring).
 
 ---
 
-## 📝 시나리오 종합 12문항
+## 📝 Scenario Review: 12 Questions
 
 **Question 1.** [full scenario with 12 problems in Korean, following the same structure as Day4]
 

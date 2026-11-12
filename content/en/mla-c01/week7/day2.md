@@ -139,7 +139,7 @@ Using this ARN to create a model object and deploy to an endpoint completes the 
 
 ## 📝 Practice Questions
 
-**Question 1.** SageMaker Model Registry에서 "사기 탐지"라는 한 가지 목적의 모델들을 여러 버전으로 묶어 관리하는 최상위 컨테이너는?
+**Question 1.** In SageMaker Model Registry, what is the top-level container that groups multiple versions of models for a single purpose, such as "fraud detection"?
 
 A) Model Package (Version)  
 B) Model Package Group  
@@ -147,23 +147,23 @@ C) Endpoint Config
 D) Training Job  
 
 **Answer: B**  
-Explanation: Model Package Group은 동일 목적의 모델 버전들을 묶는 컨테이너이고, 그 안의 개별 버전이 Model Package다. C는 엔드포인트 배포 구성, D는 학습 작업으로 카탈로그 묶음과 무관하다.
+Explanation: A Model Package Group is the container that groups model versions with the same purpose, and each individual version inside it is a Model Package. C is an endpoint deployment configuration and D is a training job, neither related to catalog grouping.
 
 ---
 
-**Question 2.** 새 모델을 같은 Model Package Group에 등록할 때 버전 번호는 어떻게 되는가?
+**Question 2.** When you register a new model in the same Model Package Group, what happens to the version number?
 
-A) 항상 1로 고정된다  
-B) 등록할 때마다 1씩 자동 증가한다  
-C) 사용자가 직접 임의 문자열을 지정해야 한다  
-D) 이전 버전을 덮어쓴다  
+A) It is always fixed at 1  
+B) It automatically increases by 1 with each registration  
+C) The user must specify an arbitrary string  
+D) It overwrites the previous version  
 
 **Answer: B**  
-Explanation: 같은 그룹에 모델을 등록하면 버전이 1씩 자동 증가해 누적된다. A·D는 버전 누적 개념과 반대이고, C는 버전이 시스템에 의해 자동 부여되므로 틀리다.
+Explanation: When you register a model in the same group, the version increases by 1 automatically and accumulates. A and D are the opposite of the concept of accumulating versions, and C is wrong because versions are assigned automatically by the system.
 
 ---
 
-**Question 3.** 모델 버전이 등록 직후 가지는 기본 승인 상태와, 배포 대상이 되기 위해 필요한 상태를 올바르게 짝지은 것은?
+**Question 3.** Which option correctly pairs the default approval status a model version has right after registration with the status required for it to become a deployment target?
 
 A) Approved → Rejected  
 B) PendingManualApproval → Approved  
@@ -171,30 +171,30 @@ C) Rejected → PendingManualApproval
 D) Approved → PendingManualApproval  
 
 **Answer: B**  
-Explanation: 모델은 보통 PendingManualApproval로 등록되고, 검토 후 Approved가 되어야 배포 대상이 된다. A·C·D는 상태 전이 방향이 거버넌스 흐름과 맞지 않는다.
+Explanation: Models are usually registered as PendingManualApproval and must become Approved after review to become a deployment target. In A, C, and D, the direction of the status transition does not match the governance flow.
 
 ---
 
-**Question 4.** 모델 승인 상태가 Approved로 변경될 때 이를 감지해 자동으로 엔드포인트 배포 파이프라인을 트리거하려 한다. 가장 적절한 연결은?
+**Question 4.** You want to detect when a model's approval status changes to Approved and automatically trigger an endpoint deployment pipeline. What is the most appropriate connection?
 
-A) 승인 상태 변경 → EventBridge 이벤트 → CodePipeline/Lambda 배포  
-B) 승인 상태 변경 → S3 버전 관리만으로 자동 배포  
-C) 승인 상태 변경 → CloudFront 캐시 무효화  
-D) 승인 상태 변경 → Athena 쿼리 실행  
+A) Approval status change → EventBridge event → CodePipeline/Lambda deployment  
+B) Approval status change → automatic deployment with S3 versioning alone  
+C) Approval status change → CloudFront cache invalidation  
+D) Approval status change → run an Athena query  
 
 **Answer: A**  
-Explanation: 승인 상태 변경은 EventBridge 이벤트를 발생시키며, 이를 CodePipeline이나 Lambda가 받아 배포를 자동화하는 것이 표준 CI/CD 트리거 패턴이다. B·C·D는 배포 트리거와 직접 관련이 없다.
+Explanation: An approval status change emits an EventBridge event, and having CodePipeline or Lambda receive it to automate deployment is the standard CI/CD trigger pattern. B, C, and D have no direct relation to a deployment trigger.
 
 ---
 
-**Question 5.** 규제 산업에서 "프로덕션에 배포된 모델이 어떤 데이터·학습 작업에서 나왔고 누가 승인했는지" 감사할 수 있어야 한다. Model Registry가 이를 지원하는 방식은?
+**Question 5.** In a regulated industry, you must be able to audit "which data and training job the model deployed to production came from and who approved it." How does Model Registry support this?
 
-A) 모델 아티팩트를 암호화만 한다  
-B) 각 모델 버전에 메트릭·승인 이력을 담고 SageMaker Lineage와 연결해 추적성을 제공한다  
-C) 모델을 매번 새 그룹으로 등록한다  
-D) 승인된 모델만 삭제한다  
+A) It only encrypts model artifacts  
+B) It stores metrics and approval history in each model version and links to SageMaker Lineage to provide traceability  
+C) It registers the model in a new group every time  
+D) It deletes only approved models  
 
 **Answer: B**  
-Explanation: Model Registry는 버전별 메트릭·승인 이력을 보관하고 SageMaker Lineage와 연결해 데이터→학습→모델→배포의 추적성과 거버넌스를 제공한다. A는 보안의 일부일 뿐 추적성과 무관하고, C·D는 거버넌스 목적에 어긋난다.
+Explanation: Model Registry keeps per-version metrics and approval history and links to SageMaker Lineage to provide traceability and governance from data → training → model → deployment. A is only part of security and unrelated to traceability, and C and D run counter to the governance goal.
 
 ---

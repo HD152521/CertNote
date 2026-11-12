@@ -327,4 +327,4 @@ Explanation: IRSA is the standard pattern for scoping IAM permissions per Pod, a
 
 ---
 
-해설 보강: Secrets Manager, Parameter Store, and CloudHSM are quickly solved by keyword matching on the exam, but in practice the design is decided along four axes — "secret classification (real secret vs. simple config) + rotation automation + multi-region + caching." Remember the division-of-labor principle — Secrets Manager for secrets that need rotation, Parameter Store for general configuration, CloudHSM when compliance forces it — and 90% of scenarios solve themselves automatically.
+Additional Explanation: Secrets Manager, Parameter Store, and CloudHSM are quickly solved by keyword matching on the exam, but in practice the design is decided along four axes — "secret classification (real secret vs. simple config) + rotation automation + multi-region + caching." Remember the division-of-labor principle — Secrets Manager for secrets that need rotation, Parameter Store for general configuration, CloudHSM when compliance forces it — and 90% of scenarios solve themselves automatically.

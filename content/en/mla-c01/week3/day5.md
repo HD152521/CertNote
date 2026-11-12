@@ -106,7 +106,7 @@ Next week (Week 4) we begin full model training, tuning, and evaluation with the
 
 ## 📝 Practice Questions
 
-**Question 1.** 데이터 과학자가 코드를 거의 작성하지 않고 S3·Athena 데이터를 임포트해 결측·인코딩·스케일링을 시각적으로 적용하고, 그 변환 흐름을 재현 가능한 Processing Job으로 내보내려 한다. 가장 적합한 도구는?
+**Question 1.** A data scientist wants to import data from S3 and Athena with almost no coding, visually apply missing-value handling, encoding, and scaling, and export that transformation flow as a reproducible Processing Job. What is the most suitable tool?
 
 A) Amazon Athena  
 B) SageMaker Data Wrangler  
@@ -114,11 +114,11 @@ C) Amazon Kinesis
 D) AWS DMS  
 
 **Answer: B**  
-Explanation: Data Wrangler는 코드 없이 데이터 임포트·변환·분석을 시각적으로 수행하고, 그 흐름을 Processing Job·Pipeline·Feature Store로 내보내 재현성을 보장한다. Athena(A)는 SQL 쿼리 도구, Kinesis(C)는 스트림 수집, DMS(D)는 DB 복제로 시각적 특성 변환 용도가 아니다.
+Explanation: Data Wrangler performs data import, transformation, and analysis visually without code and ensures reproducibility by exporting the flow to a Processing Job, Pipeline, or Feature Store. Athena (A) is a SQL query tool, Kinesis (C) is stream ingestion, and DMS (D) is database replication, none of which is for visual feature transformation.
 
 ---
 
-**Question 2.** 학습 파이프라인과 추론 서버가 "최근 30일 평균 구매액"을 각각 계산하다 미묘한 차이로 성능이 저하됐다. 두 곳이 동일한 특성 정의를 공유하게 해 이를 근본적으로 막는 서비스는?
+**Question 2.** The training pipeline and the inference server each compute "average purchase amount over the last 30 days," and subtle differences degraded performance. Which service fundamentally prevents this by having both share the same feature definition?
 
 A) Amazon Athena  
 B) SageMaker Feature Store  
@@ -126,42 +126,42 @@ C) SageMaker Model Monitor
 D) AWS Glue Crawler  
 
 **Answer: B**  
-Explanation: Feature Store는 특성을 한 번 정의·저장해 학습(오프라인)과 추론(온라인)이 같은 값을 공유하게 함으로써 training/serving skew를 원천 차단한다. Athena(A)는 쿼리, Model Monitor(C)는 배포 후 드리프트 감지, Glue Crawler(D)는 스키마 추론으로 특성 일관성 보장과 목적이 다르다.
+Explanation: Feature Store defines and stores a feature once so that training (offline) and inference (online) share the same values, eliminating training/serving skew at the source. Athena (A) is for queries, Model Monitor (C) detects post-deployment drift, and Glue Crawler (D) infers schemas, so their purposes differ from guaranteeing feature consistency.
 
 ---
 
-**Question 3.** 수치 특성에 StandardScaler를 적용할 때 데이터 누수를 막는 올바른 방법은?
+**Question 3.** When applying StandardScaler to numeric features, what is the correct way to prevent data leakage?
 
-A) train과 test 전체에 함께 fit한다  
-B) train에만 fit하고 test에는 transform만 적용한다  
-C) test에 fit하고 train에 transform한다  
-D) 매번 새로 fit한다  
+A) Fit on train and test together  
+B) Fit on train only and apply only transform to test  
+C) Fit on test and transform train  
+D) Fit anew every time  
 
 **Answer: B**  
-Explanation: 스케일러는 train 데이터의 통계(평균·표준편차)로만 fit하고 test에는 그 통계로 transform만 해야, test 정보가 학습에 새는 누수를 막는다. 전체에 fit(A)이나 test에 fit(C)은 누수를 일으키고, 매번 새로 fit(D)하면 train/test 변환 기준이 달라진다.
+Explanation: The scaler must be fit only with the statistics (mean and standard deviation) of the train data and then only transform test with them, which prevents test information from leaking into training. Fitting on everything (A) or fitting on test (C) causes leakage, and fitting anew every time (D) makes the train/test transformation basis differ.
 
 ---
 
-**Question 4.** SageMaker Clarify가 학습 전(pre-training)에 수행하는 분석으로 옳은 것은?
+**Question 4.** Which of the following is correct about the analysis SageMaker Clarify performs before training (pre-training)?
 
-A) 엔드포인트 지연시간 측정  
-B) 민감 속성(facet) 기준으로 그룹 간 데이터 편향(CI, DPL 등)을 측정  
-C) 모델을 자동으로 배포  
-D) 인스턴스 비용을 계산  
+A) Measures endpoint latency  
+B) Measures data bias between groups (CI, DPL, etc.) based on a sensitive attribute (facet)  
+C) Deploys the model automatically  
+D) Calculates instance costs  
 
 **Answer: B**  
-Explanation: Clarify의 학습 전 분석은 성별·인종 같은 민감 속성(facet)을 지정해 그룹 간 표본 불균형(Class Imbalance)과 긍정 레이블 비율 차이(DPL) 등 데이터 편향 지표를 측정한다. 지연시간(A)·비용(D) 측정이나 자동 배포(C)는 Clarify의 편향 분석 기능이 아니다.
+Explanation: Clarify's pre-training analysis specifies a sensitive attribute (facet) such as gender or race and measures data bias metrics such as sample imbalance between groups (Class Imbalance) and the difference in positive label proportions (DPL). Measuring latency (A) or cost (D) and automatic deployment (C) are not Clarify's bias analysis features.
 
 ---
 
-**Question 5.** 이번 주 전반에서 "평가는 좋은데 배포 시 성능이 무너지는" 문제의 공통 원인으로 가장 적절한 것은?
+**Question 5.** Across this week, what is the most appropriate common cause of the problem where "evaluation looks good but performance collapses at deployment"?
 
-A) 인스턴스 타입이 작아서  
-B) 데이터 누수(변환 누수, 분할 전 리샘플링, 미래 값 사용 등)  
-C) 모델 파라미터 수가 적어서  
-D) S3 버킷 이름이 길어서  
+A) The instance type is too small  
+B) Data leakage (transformation leakage, resampling before splitting, using future values, etc.)  
+C) The model has too few parameters  
+D) The S3 bucket name is too long  
 
 **Answer: B**  
-Explanation: test에 fit하는 변환 누수, 분할 전 리샘플링, 미래 값을 특성에 쓰는 미래 누수 등 데이터 누수는 모두 학습·검증에서는 높은 성능을 보이나 배포에서 무너지는 같은 증상을 낳는다. 인스턴스 타입(A)·파라미터 수(C)·버킷 이름(D)은 이 일반화 실패의 원인과 무관하다.
+Explanation: Data leakage, such as transformation leakage from fitting on test, resampling before splitting, and future leakage from using future values as features, all produce the same symptom of high performance in training and validation that collapses at deployment. Instance type (A), parameter count (C), and bucket name (D) are unrelated to the cause of this generalization failure.
 
 ---

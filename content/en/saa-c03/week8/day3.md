@@ -346,4 +346,4 @@ Explanation: Adaptive Authentication in Cognito Advanced Security uses ML to eva
 
 ---
 
-해설 보강: On the exam, Cognito's most frequent trap is the "User Pool vs Identity Pool distinction." User authentication and JWT issuance → User Pool; credentials for calling AWS APIs directly → Identity Pool; need both → combine them. For external SSO (SAML/OIDC), adding the IdP to the User Pool is the answer, and remember the precise division of labor: IAM Identity Center is exclusively for employee SSO into the AWS console.
+Additional Explanation: On the exam, Cognito's most frequent trap is the "User Pool vs Identity Pool distinction." User authentication and JWT issuance → User Pool; credentials for calling AWS APIs directly → Identity Pool; need both → combine them. For external SSO (SAML/OIDC), adding the IdP to the User Pool is the answer, and remember the precise division of labor: IAM Identity Center is exclusively for employee SSO into the AWS console.

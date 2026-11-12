@@ -206,7 +206,7 @@ From Week 3 on, the DVA-specific layers — IAM, Lambda, DynamoDB, API Gateway, 
 
 ---
 
-## 📝 Week 2 종합 연습 문제 (시나리오 12문항)
+## 📝 Week 2 Comprehensive Practice Questions (12 scenario questions)
 
 **Question 1.** An e-commerce company's ALB + ASG production system spikes to 20x its normal RPS during the first 5 minutes of a sale that starts at 7 PM daily. It uses a Target Tracking (CPU 60%) scaling policy, but users are getting 5xx. What is the most appropriate improvement?
 

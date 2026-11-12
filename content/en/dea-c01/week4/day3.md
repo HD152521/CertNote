@@ -95,62 +95,62 @@ Today's core is choosing the right tool. Glue Studio is an engineer's tool for v
 
 ## 📝 Practice Questions
 
-**Question 1.** 코드를 작성할 줄 모르는 데이터 분석가가 데이터를 샘플로 대화식 미리보기하며 결측값 채우기·형식 표준화를 클릭으로 적용하고, 데이터 프로파일링까지 하려고 한다. 가장 적합한 서비스는?
+**Question 1.** A data analyst who cannot write code wants to interactively preview a sample of the data, apply missing-value filling and format standardization with clicks, and also perform data profiling. Which service is the most suitable?
 
 A) Glue ETL Job (PySpark)  
 B) Glue DataBrew  
 C) EMR Spark  
-D) Glue 크롤러  
+D) Glue crawler  
 
 **Answer: B**  
-Explanation: 완전 노코드, 대화식 미리보기, 프로파일링, PII 탐지는 DataBrew의 핵심 기능이며 데이터 분석가를 주 사용자로 한다. PySpark Job과 EMR은 코드가 필요하고, 크롤러는 메타데이터 등록 도구로 변환·정제와 무관하다.
+Explanation: Fully no-code operation, interactive preview, profiling, and PII detection are core features of DataBrew, whose primary users are data analysts. PySpark jobs and EMR require code, and a crawler is a metadata registration tool unrelated to transformation or cleansing.
 
 ---
 
-**Question 2.** Glue Studio에 대한 설명으로 가장 정확한 것은?
+**Question 2.** Which statement about Glue Studio is the most accurate?
 
-A) 드래그 앤 드롭으로 ETL을 설계하면 뒤에서 Spark 코드를 생성하며, 필요 시 코드로 직접 편집할 수 있다  
-B) Recipe라는 변환 목록만 만들고 코드로 전환할 수 없다  
-C) 메타데이터만 다루고 데이터는 변환하지 않는다  
-D) 실시간 스트림 윈도우 집계 전용 도구다  
+A) When you design an ETL job with drag and drop, it generates Spark code behind the scenes, and you can edit the code directly if needed  
+B) It only creates a list of transformations called a Recipe and cannot switch to code  
+C) It only handles metadata and does not transform data  
+D) It is a tool dedicated to real-time stream window aggregation  
 
 **Answer: A**  
-Explanation: Glue Studio는 비주얼 그래프로 ETL을 설계하면 PySpark/Scala 코드를 자동 생성하고, 양방향 전환으로 코드 편집도 가능하다. Recipe는 DataBrew 개념이고, 메타데이터 전용은 크롤러/Catalog, 스트림 윈도우 집계는 Managed Flink다.
+Explanation: When you design an ETL job as a visual graph in Glue Studio, it automatically generates PySpark/Scala code, and two-way switching also allows code editing. Recipe is a DataBrew concept, metadata-only is the role of the crawler/Catalog, and stream window aggregation is Managed Flink.
 
 ---
 
-**Question 3.** Glue DataBrew의 "Recipe"가 의미하는 것은?
+**Question 3.** What does a Glue DataBrew "Recipe" mean?
 
-A) 데이터가 저장된 S3 버킷  
-B) Spark 클러스터의 노드 구성  
-C) 적용한 변환 단계들의 순서 있는 재사용 가능한 목록  
-D) IAM 권한 정책 문서  
+A) The S3 bucket where the data is stored  
+B) The node configuration of a Spark cluster  
+C) An ordered, reusable list of the transformation steps that were applied  
+D) An IAM permission policy document  
 
 **Answer: C**  
-Explanation: Recipe는 DataBrew에서 적용한 변환 단계(결측 채우기, 형식 변환 등)를 순서대로 기록한 재사용·버전 관리 가능한 목록이다. 샘플로 만든 Recipe를 Recipe Job으로 전체 데이터에 일괄 적용한다. 나머지는 Recipe와 무관한 개념이다.
+Explanation: A Recipe is a reusable, versionable list that records, in order, the transformation steps applied in DataBrew (such as filling missing values and converting formats). A Recipe created on a sample is applied in bulk to the full dataset with a Recipe job. The other options are concepts unrelated to a Recipe.
 
 ---
 
-**Question 4.** 데이터 엔지니어가 복잡한 조인과 분산 변환을 포함하는 프로덕션 ETL 파이프라인을 비주얼로 설계하되, 일부 변환은 커스텀 코드로 정밀 제어하고 싶다. 가장 적합한 선택은?
+**Question 4.** A data engineer wants to visually design a production ETL pipeline that includes complex joins and distributed transformations, while precisely controlling some transformations with custom code. What is the most suitable choice?
 
-A) Glue DataBrew Recipe만 사용  
-B) Glue Studio (비주얼 + 코드 전환)  
-C) Athena 쿼리 저장  
-D) QuickSight 대시보드  
+A) Use only a Glue DataBrew Recipe  
+B) Glue Studio (visual + code switching)  
+C) Save an Athena query  
+D) QuickSight dashboard  
 
 **Answer: B**  
-Explanation: 프로덕션 ETL을 비주얼로 짜면서 필요 시 커스텀 코드로 전환하는 유연성은 Glue Studio의 강점이다. DataBrew는 탐색적 정제용으로 복잡한 분산 변환·파이프라인 통합에 부적합하고, Athena/QuickSight는 ETL 구축 도구가 아니다.
+Explanation: The flexibility to build a production ETL visually while switching to custom code when needed is a strength of Glue Studio. DataBrew is for exploratory cleansing and is unsuitable for complex distributed transformations and pipeline integration, and Athena and QuickSight are not ETL building tools.
 
 ---
 
-**Question 5.** Glue Studio와 DataBrew의 비용에 대한 설명으로 옳은 것은?
+**Question 5.** Which statement about the cost of Glue Studio and DataBrew is correct?
 
-A) 둘 다 완전 무료다  
-B) DataBrew만 유료이고 Studio는 무료다  
-C) 데이터 저장 용량에만 비례한다  
-D) Studio는 DPU×실행시간으로, DataBrew는 세션 시간과 Job 노드 시간으로 과금된다  
+A) Both are completely free  
+B) Only DataBrew is paid and Studio is free  
+C) It is proportional only to the amount of data stored  
+D) Studio is billed by DPU × run time, and DataBrew is billed by session time and job node time  
 
 **Answer: D**  
-Explanation: Glue Studio Job은 Spark Job이므로 DPU와 실행 시간 기반으로, DataBrew는 대화식 세션 시간과 Recipe/Profile Job의 노드 시간 기반으로 과금된다. 서버리스라 클러스터 관리는 없지만 무료는 아니며, 저장 용량 단일 기준도 아니다.
+Explanation: A Glue Studio job is a Spark job, so it is billed based on DPUs and run time, while DataBrew is billed based on interactive session time and the node time of Recipe/Profile jobs. Although they are serverless and have no cluster management, they are not free, and storage capacity is not the sole billing basis.
 
 ---

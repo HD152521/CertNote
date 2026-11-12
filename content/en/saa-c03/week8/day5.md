@@ -85,7 +85,7 @@ Before working the scenario questions, let's flag the five security anti-pattern
 
 > ⚠️ **Pitfall**: Even when a scenario says "minimize cost," you must not downgrade security. For example, when the wording is "I want to reduce S3 SSE-KMS cost," "switch to SSE-S3" is almost never the answer. The correct answer is usually "enable S3 Bucket Keys," which keeps the security level intact while cutting KMS call costs by 99%.
 
-## 📝 시나리오 연습 문제 12
+## Scenario Practice Questions 12
 
 **Question 1.** A mobile game went global and then got hit by a DDoS attack. CloudFront traffic spiked to 200x normal, and the AWS bill came in $80,000 higher than expected. The company wants a refund for the extra cost in future incidents like this. What is the most suitable solution?
 
@@ -259,4 +259,4 @@ In particular, since the GuardDuty, Inspector, and Macie findings we saw this we
 
 ---
 
-해설 보강: The security domain of SAA-C03 (30%) is the largest area on the exam, but 90% of scenarios are solved by keyword → service mapping. ① "auto rotation" = Secrets Manager, ② "PII detection" = Macie, ③ "behavior-based threat" = GuardDuty, ④ "CVE scan" = Inspector, ⑤ "L7 attack" = WAF, ⑥ "L3/L4 DDoS + Cost Protection" = Shield Advanced, ⑦ "direct mobile S3 upload" = Cognito Identity Pool, ⑧ "enterprise SAML SSO" = User Pool + SAML, ⑨ "Multi-Region encryption" = Multi-Region Keys, ⑩ "org-wide security in bulk" = Firewall Manager, ⑪ "integrated compliance score" = Security Hub, ⑫ "root-cause graph" = Detective. Memorize these 12 mappings and you can answer nearly every security-domain scenario quickly. And remember just two additional traps — ① "minimize cost" does not mean downgrading security (a cost-optimization option like S3 Bucket Keys is the answer), and ② in scenarios that require a combination of two services (like User Pool + Identity Pool), don't pick a single-service answer.
+Additional Explanation: The security domain of SAA-C03 (30%) is the largest area on the exam, but 90% of scenarios are solved by keyword → service mapping. ① "auto rotation" = Secrets Manager, ② "PII detection" = Macie, ③ "behavior-based threat" = GuardDuty, ④ "CVE scan" = Inspector, ⑤ "L7 attack" = WAF, ⑥ "L3/L4 DDoS + Cost Protection" = Shield Advanced, ⑦ "direct mobile S3 upload" = Cognito Identity Pool, ⑧ "enterprise SAML SSO" = User Pool + SAML, ⑨ "Multi-Region encryption" = Multi-Region Keys, ⑩ "org-wide security in bulk" = Firewall Manager, ⑪ "integrated compliance score" = Security Hub, ⑫ "root-cause graph" = Detective. Memorize these 12 mappings and you can answer nearly every security-domain scenario quickly. And remember just two additional traps — ① "minimize cost" does not mean downgrading security (a cost-optimization option like S3 Bucket Keys is the answer), and ② in scenarios that require a combination of two services (like User Pool + Identity Pool), don't pick a single-service answer.

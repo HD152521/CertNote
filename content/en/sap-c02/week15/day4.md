@@ -12,16 +12,16 @@ Key mappings: (1) "PB-scale CDN, minimal origin requests" → **CloudFront + S3 
 
 ## 📝 Practice Questions
 
-**Question 1.** 수십억 요청 origin 최소화 → **CloudFront S3 Intelligent-Tiering**
+**Question 1.** Minimize origin requests for billions of requests → **CloudFront S3 Intelligent-Tiering**
 
-**Question 2.** 바이럴 영상 업로드 썸네일→미디엄→HD 자동 생성 → **Lambda SQS Kinesis 파이프라인**
+**Question 2.** Automatically generate thumbnail → medium → HD for viral video uploads → **Lambda SQS Kinesis pipeline**
 
-**Question 3.** PB 저장 비용 최소 → **S3 Glacier transition 90일**
+**Question 3.** Minimize PB storage cost → **S3 Glacier transition after 90 days**
 
-**Question 4.** 실시간 시청 분석 집계 → **Kinesis Firehose + S3 + Athena**
+**Question 4.** Real-time viewing analytics aggregation → **Kinesis Firehose + S3 + Athena**
 
-**Question 5.** Regional CDN 성능 최적화 → **CloudFront geolocation + regional caching**
+**Question 5.** Optimize regional CDN performance → **CloudFront geolocation + regional caching**
 
-**Question 6.** 트래픽 스파이크 고정 비용 방지 → **Serverless autoscale vs provisioned**
+**Question 6.** Avoid fixed costs during traffic spikes → **Serverless autoscale vs provisioned**
 
 ---

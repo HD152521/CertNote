@@ -97,62 +97,62 @@ Governance is not one service but four planes (permission boundary, baseline, pr
 
 ## 📝 Practice Questions
 
-**Question 1.** 신규 핀테크가 PCI 대상 다계정 환경을 빠르게 세우고 안전한 베이스라인(로그 계정, 조직 CloudTrail/Config, 표준 OU)을 자동으로 갖추려 한다. 출발점으로 가장 적절한 것은?
+**Question 1.** A new fintech wants to quickly stand up a PCI-scoped multi-account environment and automatically have a secure baseline (log account, organization CloudTrail/Config, standard OUs). What is the most appropriate starting point?
 
-A) 수동으로 Organizations·CloudTrail·Config를 하나씩 구성  
-B) AWS Control Tower로 랜딩 존을 구성해 Audit·Log Archive 계정과 조직 CloudTrail/Config, 컨트롤 베이스라인을 자동으로 깐다  
-C) 단일 계정에 모든 워크로드를 모은다  
-D) GuardDuty만 켠다  
+A) Manually configure Organizations, CloudTrail, and Config one by one  
+B) Set up a landing zone with AWS Control Tower to automatically lay down the Audit and Log Archive accounts, organization CloudTrail/Config, and the control baseline  
+C) Gather all workloads in a single account  
+D) Turn on only GuardDuty  
 
 **Answer: B**  
-Explanation: 표준 멀티계정 보안 베이스라인을 빠르고 일관되게 까는 출발점은 Control Tower 랜딩 존이다. Audit·Log Archive 계정, 조직 CloudTrail/Config, 컨트롤이 자동 구성된다. 수동 구성은 느리고 누락 위험이 크며, 단일 계정 통합은 격리·blast radius 원칙에 반하고, GuardDuty 단독은 탐지 한 조각일 뿐 베이스라인 전체가 아니다.
+Explanation: The starting point for quickly and consistently laying down a standard multi-account security baseline is the Control Tower landing zone. The Audit and Log Archive accounts, organization CloudTrail/Config, and controls are configured automatically. Manual configuration is slow and carries a high risk of omissions, consolidating into a single account goes against the isolation and blast radius principles, and GuardDuty alone is only one piece of detection, not the whole baseline.
 
 ---
 
-**Question 2.** "계정 관리자가 CloudTrail 로깅을 중지하거나 GuardDuty 탐지기를 삭제하지 못하게" 하려 한다. 가장 직접적인 통제는?
+**Question 2.** We want to "prevent account administrators from stopping CloudTrail logging or deleting the GuardDuty detector." What is the most direct control?
 
-A) IAM 정책으로 관리자에게 권한을 더 준다  
-B) SCP로 cloudtrail:StopLogging·guardduty:DeleteDetector 등을 Deny하되 보안 유지보수 역할만 Condition으로 예외  
-C) Security Hub 점수를 높인다  
-D) Audit Manager 보고서를 만든다  
+A) Grant administrators more permissions with IAM policies  
+B) Use an SCP to Deny cloudtrail:StopLogging, guardduty:DeleteDetector, and so on, with an exception through Condition only for the security maintenance role  
+C) Raise the Security Hub score  
+D) Create an Audit Manager report  
 
 **Answer: B**  
-Explanation: 보안 서비스 비활성화·로그 삭제를 막는 직접 통제는 SCP의 명시적 Deny다. 유지보수 자동화를 위해 특정 보안 역할만 Condition으로 예외하면 운영성과 강제력을 동시에 확보한다. IAM으로 권한을 더 주는 것은 반대 방향이고, Security Hub 점수·Audit Manager 보고서는 탐지·증명 도구일 뿐 행위를 차단하지 않는다.
+Explanation: The direct control that prevents disabling security services and deleting logs is an explicit Deny in an SCP. Exempting only a specific security role through Condition for maintenance automation secures both operability and enforcement. Granting more permissions through IAM goes in the opposite direction, and Security Hub scores and Audit Manager reports are only detection and attestation tools that do not block actions.
 
 ---
 
-**Question 3.** 다음 요구-도구 매칭 중 옳지 않은 것은?
+**Question 3.** Which of the following requirement-tool matches is NOT correct?
 
-A) "여러 계정 ALB에 WAF 일관 배포·신규 자동 보호" → Firewall Manager  
-B) "감사자 제출용 증거를 프레임워크별 자동 수집·보고" → Audit Manager  
-C) "리소스가 규칙을 지키는지 지속 평가" → AWS Config  
-D) "권한의 최대 경계 정의·리전 차단" → Security Hub  
+A) "Consistently deploy WAF to ALBs across multiple accounts and automatically protect new ones" -> Firewall Manager  
+B) "Automatically collect and report evidence for auditors by framework" -> Audit Manager  
+C) "Continuously evaluate whether resources comply with rules" -> AWS Config  
+D) "Define maximum permission boundaries and block Regions" -> Security Hub  
 
 **Answer: D**  
-Explanation: 권한의 최대 경계 정의와 리전 차단은 SCP(Organizations)의 역할이지 Security Hub가 아니다. Security Hub는 보안 findings 집계·점수 도구다. 나머지 매칭은 정확하다: 조직 전역 방화벽 배포는 Firewall Manager, 증거 수집·보고는 Audit Manager, 구성 평가는 Config다. 따라서 잘못된 매칭은 권한 경계를 Security Hub에 귀속시킨 것이다.
+Explanation: Defining maximum permission boundaries and blocking Regions is the role of SCPs (Organizations), not Security Hub. Security Hub is a tool for aggregating security findings and scoring. The other matches are accurate: organization-wide firewall deployment is Firewall Manager, evidence collection and reporting is Audit Manager, and configuration evaluation is Config. So the incorrect match is the one that attributes permission boundaries to Security Hub.
 
 ---
 
-**Question 4.** Control Tower로 운영 중인 조직에서 한 운영자가 콘솔로 SCP를 직접 수정했다. 이후 새 컨트롤 적용이 막힌다. 무슨 일이 일어났고 어떻게 대응하는가?
+**Question 4.** In an organization operated with Control Tower, an operator directly modified an SCP in the console. Afterward, applying new controls is blocked. What happened and how should it be handled?
 
-A) 정상이며 그대로 둔다  
-B) 드리프트가 발생했다 — 랜딩 존을 재적용해 선언 상태로 복구하고, Control Tower 관리 리소스를 콘솔에서 직접 수정하지 않는 규율을 지킨다  
-C) 모든 컨트롤을 영구 비활성화한다  
-D) 조직을 삭제하고 다시 만든다  
+A) It is normal; leave it as is  
+B) Drift occurred — re-apply the landing zone to restore the declared state, and keep the discipline of not modifying Control Tower managed resources directly in the console  
+C) Permanently disable all controls  
+D) Delete the organization and recreate it  
 
 **Answer: B**  
-Explanation: Control Tower가 관리하는 SCP를 콘솔에서 직접 수정하면 선언 상태와 실제 상태가 어긋나는 드리프트가 발생해 후속 작업이 막힌다. 올바른 대응은 랜딩 존 재적용으로 선언 상태를 복구하고, 관리 리소스를 수동으로 손대지 않는 운영 규율을 세우는 것이다. 방치·전체 비활성화·조직 재생성은 모두 과하거나 위험하다.
+Explanation: Directly modifying an SCP managed by Control Tower in the console causes drift, where the declared state and actual state diverge, blocking subsequent operations. The correct response is to restore the declared state by re-applying the landing zone and to establish the operating discipline of not manually touching managed resources. Leaving it, disabling everything, and recreating the organization are all excessive or dangerous.
 
 ---
 
-**Question 5.** 한 계정에서 평소의 수십 배 GPU 인스턴스 비용이 급증했다. 여러 계층이 함께 작동해야 한다면 가장 적절한 심층 방어 조합은?
+**Question 5.** GPU instance costs in one account surged to tens of times the usual level. If multiple layers must work together, what is the most appropriate defense-in-depth combination?
 
-A) 인스턴스를 더 늘려 대응  
-B) SCP로 대형 GPU 타입 생성 차단(피해 한계) + Cost Anomaly Detection/Budgets로 조기 탐지 + GuardDuty 채굴 탐지 + EventBridge로 키 비활성화·격리 자동 대응  
-C) 비용은 보안과 무관하므로 무시  
-D) 루트 키를 새로 발급해 계속 사용  
+A) Respond by adding more instances  
+B) Block creation of large GPU types with an SCP (damage limit) + early detection with Cost Anomaly Detection/Budgets + mining detection with GuardDuty + automatic response with EventBridge to disable keys and isolate  
+C) Ignore it since cost is unrelated to security  
+D) Issue a new root key and keep using it  
 
 **Answer: B**  
-Explanation: 비용 급증, 특히 GPU 인스턴스 급증은 탈취 자격증명에 의한 채굴 침해의 신호일 수 있다. SCP로 피해 한계를 두고, Cost Anomaly Detection·Budgets로 조기 탐지하며, GuardDuty로 채굴을 탐지하고, EventBridge 자동 대응으로 키 비활성화·격리까지 묶는 것이 권한 경계·비용·탐지·대응을 가로지르는 심층 방어다. 확장·무시·루트 키 재사용은 위험을 키우거나 침해를 방치한다.
+Explanation: A cost surge, especially a surge in GPU instances, can be a sign of a mining compromise with stolen credentials. Setting a damage limit with an SCP, detecting early with Cost Anomaly Detection and Budgets, detecting mining with GuardDuty, and tying in key deactivation and isolation through EventBridge automatic response is defense in depth that spans permission boundaries, cost, detection, and response. Scaling up, ignoring, and reusing the root key either raise the risk or leave the compromise unaddressed.
 
 ---

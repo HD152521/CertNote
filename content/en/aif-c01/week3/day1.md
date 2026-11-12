@@ -86,7 +86,7 @@ Tomorrow we'll explore when LLM "predicts the next token," what that token reall
 
 ## 📝 Practice Questions
 
-**Question 1.** 다음 중 생성형 AI와 전통 머신러닝의 가장 본질적인 차이를 가장 잘 설명한 것은?
+**Question 1.** Which of the following best describes the most fundamental difference between generative AI and traditional machine learning?
 
 A) Generative AI uses GPUs while traditional ML uses only CPUs  
 B) Generative AI creates new content, while traditional ML mainly makes judgments/predictions  
@@ -98,7 +98,7 @@ Explanation: The core difference is the nature of output. Traditional ML (especi
 
 ---
 
-**Question 2.** 파운데이션 모델(Foundation Model)의 핵심 경제적 이점은 무엇인가?
+**Question 2.** What is the core economic advantage of a foundation model?
 
 A) Must train new models from scratch for each task  
 B) Expensively pre-train one model once, then reuse for many downstream tasks  
@@ -110,7 +110,7 @@ Explanation: Foundation Model's core is pre-training one large model on internet
 
 ---
 
-**Question 3.** LLM(대규모 언어 모델)이 문장을 생성하는 기본 원리는 무엇인가?
+**Question 3.** What is the basic principle by which an LLM (large language model) generates sentences?
 
 A) Searches database for pre-written answers  
 B) Repeatedly predicts probabilistically what token comes next based on text so far  
@@ -122,7 +122,7 @@ Explanation: LLM's essence is predicting "probability of next token given previo
 
 ---
 
-**Question 4.** 여러 회사의 파운데이션 모델(Claude, Titan, Llama 등)을 인프라 관리 없이 단일 API로 호출하고 싶다. 가장 적합한 AWS 서비스는?
+**Question 4.** You want to call foundation models from multiple companies (Claude, Titan, Llama, and others) through a single API without managing infrastructure. Which AWS service is the best fit?
 
 A) Install models directly on Amazon EC2  
 B) Amazon Bedrock  
@@ -134,7 +134,7 @@ Explanation: Amazon Bedrock is a fully managed service that calls FMs from multi
 
 ---
 
-**Question 5.** 다음 중 생성형 AI보다 전통 ML이 더 적합한 작업은?
+**Question 5.** Which of the following is a task for which traditional ML is more suitable than generative AI?
 
 A) Writing natural reply sentences to customer inquiries  
 B) Generating marketing images  

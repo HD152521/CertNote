@@ -66,67 +66,67 @@ Drift is the real exam point: correctly encrypted/locked once doesn't persist if
 
 ## 📝 Practice Questions
 
-**Question 1.** 규제 요건상 키 자료를 조직이 단독 소유·통제하고(전용 FIPS 140-2 L3 HSM), 그 키로 S3를 암호화하며, 키 사용 내역을 감사해야 한다. 가장 적절한 조합은?
+**Question 1.** Due to regulatory requirements, the organization must solely own and control the key material (a dedicated FIPS 140-2 Level 3 HSM), encrypt S3 with that key, and audit key usage. What is the most appropriate combination?
 
-A) SSE-S3 + 기본 키 + Macie  
-B) CloudHSM 기반 KMS custom key store의 CMK + S3 SSE-KMS + CloudTrail로 KMS API 감사  
-C) SSE-C(고객 제공 키)만 사용  
-D) AWS managed key + 자동 로테이션  
-
-**Answer: B**
-
----
-
-**Question 2.** KMS가 대용량 S3 객체를 직접 암호화하지 않고 데이터 키를 발급하는 방식의 이름과 이유는?
-
-A) 대칭 키 회전 — 비용 절감  
-B) envelope encryption — KMS가 데이터 키(DEK)를 마스터 키로 암호화하고, 실제 데이터는 평문 DEK로 로컬 암호화해 대용량을 KMS에 보내지 않으면서도 키를 KMS가 통제  
-C) client-side hashing — 무결성 확보  
-D) TLS 터널링 — 전송 보호  
+A) SSE-S3 + default key + Macie  
+B) A CMK in a CloudHSM-backed KMS custom key store + S3 SSE-KMS + auditing KMS API calls with CloudTrail  
+C) Use only SSE-C (customer-provided keys)  
+D) AWS managed key + automatic rotation  
 
 **Answer: B**
 
 ---
 
-**Question 3.** 조직의 모든 계정에서 누구도 CloudTrail을 끄지 못하게 하려 한다. 가장 효과적인 예방 통제는?
+**Question 2.** What is the name of the approach in which KMS issues data keys instead of directly encrypting large S3 objects, and why is it used?
 
-A) Config 규칙으로 사후 탐지만 한다  
-B) SCP로 `cloudtrail:StopLogging`·`cloudtrail:DeleteTrail`을 Deny해 애초에 불가능하게 한다  
-C) IAM 사용자마다 정책을 수동으로 붙인다  
-D) GuardDuty로 모니터링한다  
-
-**Answer: B**
-
----
-
-**Question 4.** S3 버킷의 평문 HTTP 접근을 거부하고 TLS만 허용하려 한다. 올바른 방법은?
-
-A) 버킷을 퍼블릭으로 설정  
-B) 버킷 정책에 `aws:SecureTransport`가 false면 Deny하는 조건을 추가  
-C) NACL로 80 포트를 차단  
-D) SSE-KMS만 켜면 자동으로 TLS가 강제된다  
+A) Symmetric key rotation — cost savings  
+B) Envelope encryption — KMS encrypts the data key (DEK) with the master key, and the actual data is encrypted locally with the plaintext DEK, so large data is not sent to KMS while KMS still controls the key  
+C) Client-side hashing — ensuring integrity  
+D) TLS tunneling — transport protection  
 
 **Answer: B**
 
 ---
 
-**Question 5.** 신규로 추가되는 계정들에도 표준 가드레일(로깅·암호화·리전 제한)이 자동 적용되는 landing zone을 빠르게 구축하려 한다. 가장 적절한 서비스는?
+**Question 3.** We want to ensure that no one in any account of the organization can turn off CloudTrail. What is the most effective preventive control?
 
-A) 계정마다 수동으로 Config·SCP를 설정  
-B) AWS Control Tower — landing zone·가드레일·계정 팩토리로 신규 계정에 통제를 자동 적용  
-C) CloudFormation StackSets만 사용  
-D) IAM Identity Center만 사용  
+A) Only detect after the fact with a Config rule  
+B) Deny `cloudtrail:StopLogging` and `cloudtrail:DeleteTrail` with an SCP so it is impossible in the first place  
+C) Manually attach policies to each IAM user  
+D) Monitor with GuardDuty  
 
 **Answer: B**
 
 ---
 
-**Question 6.** 실수로 KMS CMK 삭제를 요청했다가 그 키로 암호화된 데이터가 남아 있음을 알았다. 데이터 손실을 막는 올바른 조치는?
+**Question 4.** We want to deny plaintext HTTP access to an S3 bucket and allow only TLS. What is the correct method?
 
-A) 즉시 새 키를 만들어 같은 ID로 교체한다  
-B) 키 삭제는 7~30일 대기 기간이 있으므로, 그 기간 내에 삭제를 취소(cancel)하거나 disable로 되돌린다  
-C) 데이터를 복구할 수 없으므로 포기한다  
-D) IAM 정책을 수정한다  
+A) Set the bucket to public  
+B) Add a condition to the bucket policy that Denies when `aws:SecureTransport` is false  
+C) Block port 80 with a NACL  
+D) Turning on only SSE-KMS automatically enforces TLS  
+
+**Answer: B**
+
+---
+
+**Question 5.** We want to quickly build a landing zone where standard guardrails (logging, encryption, Region restriction) are automatically applied to newly added accounts as well. What is the most appropriate service?
+
+A) Manually configure Config and SCPs in each account  
+B) AWS Control Tower — automatically apply controls to new accounts with a landing zone, guardrails, and Account Factory  
+C) Use only CloudFormation StackSets  
+D) Use only IAM Identity Center  
+
+**Answer: B**
+
+---
+
+**Question 6.** You mistakenly requested deletion of a KMS CMK and then realized that data encrypted with that key still remains. What is the correct action to prevent data loss?
+
+A) Immediately create a new key and replace it with the same ID  
+B) Key deletion has a 7 to 30 day waiting period, so cancel the deletion within that period or revert it to disabled  
+C) Give up, since the data cannot be recovered  
+D) Modify the IAM policy  
 
 **Answer: B**
 

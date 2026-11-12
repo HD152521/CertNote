@@ -96,7 +96,7 @@ Rules = [
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 팀이 기존에 사용하던 Apache Airflow DAG을 거의 수정 없이 AWS에서 관리형으로 운영하고자 한다. 가장 적합한 서비스는?
+**Question 1.** A team wants to run its existing Apache Airflow DAGs as a managed service on AWS with almost no modification. Which service is the most suitable?
 
 A) AWS Step Functions  
 B) Amazon EventBridge Scheduler  
@@ -104,11 +104,11 @@ C) AWS Batch
 D) Amazon MWAA  
 
 **Answer: D**  
-Explanation: Amazon MWAA(Managed Workflows for Apache Airflow)는 관리형 Airflow로 기존 DAG을 거의 그대로 운영할 수 있습니다. Step Functions는 상태 기계 기반으로 DAG 문법이 다르고, EventBridge·Batch는 Airflow 호환 워크플로 엔진이 아닙니다.
+Explanation: Amazon MWAA (Managed Workflows for Apache Airflow) is managed Airflow and can run existing DAGs almost as they are. Step Functions is based on state machines and uses a different syntax from DAGs, and EventBridge and Batch are not Airflow-compatible workflow engines.
 
 ---
 
-**Question 2.** 보안 감사 결과 "특정 IAM 사용자가 언제 어떤 Glue API를 호출했는지" 추적할 수 있어야 한다는 요구가 나왔다. 가장 적합한 서비스는?
+**Question 2.** A security audit requires the ability to trace "when a specific IAM user called which Glue API." Which service is the most suitable?
 
 A) Amazon CloudWatch Alarm  
 B) AWS CloudTrail  
@@ -116,23 +116,23 @@ C) AWS X-Ray
 D) Amazon Macie  
 
 **Answer: B**  
-Explanation: CloudTrail은 계정 내 API 호출(누가·언제·무엇을)을 기록하는 감사 로그 서비스입니다. CloudWatch Alarm은 지표 임계치 알림, X-Ray는 분산 추적, Macie는 민감정보 탐지로 목적이 다릅니다.
+Explanation: CloudTrail is an audit logging service that records API calls in the account (who, when, and what). CloudWatch Alarms notify on metric thresholds, X-Ray provides distributed tracing, and Macie detects sensitive data, so their purposes differ.
 
 ---
 
-**Question 3.** S3에 저장하는 데이터를 암호화하되 키 회전, 키별 접근 통제, 키 사용 내역 감사가 모두 필요하다. 가장 적합한 방식은?
+**Question 3.** You must encrypt data stored in S3 and also need key rotation, per-key access control, and auditing of key usage. Which approach is the most suitable?
 
-A) 암호화하지 않고 버킷을 프라이빗으로만 둔다  
-B) SSE-S3(S3 관리형 키)  
-C) SSE-KMS(고객 관리 KMS 키)  
-D) 클라이언트가 평문으로 업로드 후 IAM으로만 보호  
+A) Do not encrypt and just keep the bucket private  
+B) SSE-S3 (S3-managed keys)  
+C) SSE-KMS (customer managed KMS key)  
+D) The client uploads in plaintext and protection relies on IAM only  
 
 **Answer: C**  
-Explanation: SSE-KMS의 고객 관리 키(CMK)는 키 정책으로 접근을 통제하고 자동 회전을 지원하며 CloudTrail로 키 사용을 감사할 수 있습니다. SSE-S3는 키 통제·감사가 제한적이고, 나머지는 암호화 요구를 충족하지 못합니다.
+Explanation: With SSE-KMS, a customer managed key (CMK) controls access through the key policy, supports automatic rotation, and allows key usage to be audited with CloudTrail. SSE-S3 offers limited key control and auditing, and the other options do not meet the encryption requirement.
 
 ---
 
-**Question 4.** 여러 S3 버킷에 고객 PII가 어디에 얼마나 있는지 파악되지 않아 컴플라이언스 위험이 있다. 민감 데이터를 자동으로 발견·분류하려 한다. 가장 적합한 서비스는?
+**Question 4.** There is compliance risk because it is unclear where and how much customer PII exists across multiple S3 buckets. You want to automatically discover and classify the sensitive data. Which service is the most suitable?
 
 A) Amazon Macie  
 B) AWS Config  
@@ -140,18 +140,18 @@ C) Amazon GuardDuty
 D) AWS Trusted Advisor  
 
 **Answer: A**  
-Explanation: Amazon Macie는 머신러닝으로 S3 내 PII·금융정보 등 민감 데이터를 자동 발견·분류합니다. Config는 리소스 구성 추적, GuardDuty는 위협 탐지, Trusted Advisor는 모범 사례 점검으로 민감정보 분류 기능이 없습니다.
+Explanation: Amazon Macie uses machine learning to automatically discover and classify sensitive data such as PII and financial information in S3. Config tracks resource configuration, GuardDuty detects threats, and Trusted Advisor checks best practices, so none of them can classify sensitive data.
 
 ---
 
-**Question 5.** Glue ETL 잡이 적재 전에 "order_id가 비어 있지 않고 amount가 0 이상이며 order_id가 거의 고유한지"를 자동 검증하고, 규칙 위반 데이터는 격리하려 한다. 가장 적합한 기능은?
+**Question 5.** You want a Glue ETL job to automatically validate before loading that "order_id is not empty, amount is greater than or equal to 0, and order_id is nearly unique," and to quarantine data that violates the rules. Which feature is the most suitable?
 
 A) CloudWatch Logs Insights  
-B) S3 수명주기 정책  
+B) S3 lifecycle policy  
 C) Redshift VACUUM  
-D) Glue Data Quality 규칙(DQDL)  
+D) Glue Data Quality rules (DQDL)  
 
 **Answer: D**  
-Explanation: Glue Data Quality는 DQDL로 완전성(IsComplete)·유효성(ColumnValues)·고유성(Uniqueness) 등 규칙을 정의해 검증하고 위반 데이터를 격리할 수 있습니다. 나머지는 로그 조회·스토리지 관리·테이블 정리 용도로 품질 검증 기능이 아닙니다.
+Explanation: Glue Data Quality lets you define and validate rules such as completeness (IsComplete), validity (ColumnValues), and uniqueness (Uniqueness) with DQDL, and can quarantine data that violates them. The others are for log queries, storage management, and table cleanup, and are not data quality validation features.
 
 ---

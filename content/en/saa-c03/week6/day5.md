@@ -245,7 +245,7 @@ B) API Gateway WebSocket + Lambda (store connectionId on $connect, push to all c
 C) AppSync GraphQL + Subscription
 D) SNS + clients doing HTTP Long Polling
 
-**Answer: C 또는 B**
+**Answer: C or B**
 AppSync GraphQL Subscription (C) provides managed real-time WebSocket connections and can automatically push DynamoDB changes to clients. It has less infrastructure to manage and unifies GraphQL queries with real-time. API Gateway WebSocket (B) is also valid, but you have to implement connectionId management and push logic yourself. Polling (A, D) isn't real-time and involves many unnecessary requests.
 
 ---

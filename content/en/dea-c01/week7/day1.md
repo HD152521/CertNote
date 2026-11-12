@@ -110,62 +110,62 @@ SET query_group TO 'critical_dashboards';
 
 ## 📝 Practice Questions
 
-**Question 1.** 두 큰 테이블을 customer_id로 자주 조인할 때, 네트워크 재분배 없이 조인(co-located join)되도록 하려면 어떤 설정이 가장 적절한가?
+**Question 1.** When two large tables are frequently joined on customer_id, which setting is the most appropriate for performing the join without network redistribution (a co-located join)?
 
-A) 두 테이블 모두 DISTSTYLE EVEN  
-B) 두 테이블 모두 customer_id를 DISTKEY로 지정  
-C) 두 테이블 모두 DISTSTYLE ALL  
-D) 한 테이블만 customer_id를 SORTKEY로 지정  
+A) DISTSTYLE EVEN for both tables  
+B) Specify customer_id as the DISTKEY for both tables  
+C) DISTSTYLE ALL for both tables  
+D) Specify customer_id as the SORTKEY for only one table  
 
 **Answer: B**  
-Explanation: 같은 DISTKEY(customer_id)를 가지면 동일 키 값이 같은 슬라이스에 위치해 재분배 없이 조인됩니다. EVEN은 재분배가 발생하고, 큰 테이블에 ALL은 저장·쓰기 비용이 폭증하며, SORTKEY는 정렬용으로 분산과 무관합니다.
+Explanation: With the same DISTKEY (customer_id), identical key values are located on the same slice, so the join happens without redistribution. EVEN causes redistribution, ALL on large tables causes a surge in storage and write cost, and SORTKEY is for sorting and unrelated to distribution.
 
 ---
 
-**Question 2.** 작은 차원 테이블을 큰 팩트 테이블과 조인할 때 재분배를 없애기 위한 분산 스타일로 가장 적절한 것은?
+**Question 2.** Which distribution style is the most appropriate for eliminating redistribution when joining a small dimension table with a large fact table?
 
 A) DISTSTYLE ALL  
 B) DISTSTYLE EVEN  
-C) DISTSTYLE KEY (팩트 키 기준)  
-D) 분산 스타일 미지정  
+C) DISTSTYLE KEY (based on the fact key)  
+D) No distribution style specified  
 
 **Answer: A**  
-Explanation: ALL 분산은 작은 테이블을 모든 노드에 복제해 조인 시 데이터 이동을 없앱니다. 큰 테이블에는 비용 문제로 부적합하지만 작은 차원 테이블에는 이상적입니다. EVEN/KEY는 재분배가 발생할 수 있습니다.
+Explanation: ALL distribution replicates the small table to all nodes, eliminating data movement during joins. It is unsuitable for large tables because of cost, but ideal for small dimension tables. EVEN/KEY can cause redistribution.
 
 ---
 
-**Question 3.** Redshift에서 데이터를 클러스터에 적재하지 않고 S3에 저장된 외부 테이블을 직접 쿼리하며, 스캔한 데이터량 기준으로 과금되는 기능은?
+**Question 3.** Which Redshift feature queries external tables stored in S3 directly, without loading the data into the cluster, and is billed based on the amount of data scanned?
 
-A) 동시성 스케일링  
-B) 머티리얼라이즈드 뷰  
+A) Concurrency Scaling  
+B) Materialized view  
 C) Redshift Spectrum  
-D) 자동 WLM  
+D) Auto WLM  
 
 **Answer: C**  
-Explanation: Redshift Spectrum은 Glue Data Catalog를 메타스토어로 사용해 S3의 외부 테이블을 직접 쿼리하고 스캔량으로 과금합니다. 동시성 스케일링은 읽기 동시성 확장, 머티리얼라이즈드 뷰는 사전 집계, WLM은 큐 관리입니다.
+Explanation: Redshift Spectrum uses the Glue Data Catalog as its metastore to query external tables in S3 directly and is billed by the amount scanned. Concurrency Scaling expands read concurrency, materialized views are pre-aggregation, and WLM is queue management.
 
 ---
 
-**Question 4.** 정렬 키와 zone map이 쿼리 성능을 높이는 원리로 가장 정확한 것은?
+**Question 4.** Which option most accurately describes how sort keys and zone maps improve query performance?
 
-A) 데이터를 모든 노드에 복제해 조인을 없앤다  
-B) 쿼리를 짧은 큐로 분류해 우선 처리한다  
-C) 컬럼 인코딩을 자동으로 선택한다  
-D) 블록의 최소/최대값을 기록해 범위 조건과 무관한 블록을 스킵한다  
+A) They replicate data to all nodes to eliminate joins  
+B) They classify queries into a short queue for priority handling  
+C) They automatically choose column encodings  
+D) They record the minimum/maximum values of each block so blocks unrelated to the range condition are skipped  
 
 **Answer: D**  
-Explanation: 정렬 키로 데이터를 정렬 저장하고 각 블록의 min/max를 zone map에 기록하면, 범위 필터 시 관련 없는 블록을 통째로 스킵해 스캔량을 줄입니다. A는 ALL 분산, B는 SQA, C는 압축 인코딩에 대한 설명입니다.
+Explanation: When data is stored sorted by the sort key and the min/max of each block is recorded in the zone map, entire blocks irrelevant to a range filter are skipped, reducing the amount scanned. A describes ALL distribution, B describes SQA, and C describes compression encoding.
 
 ---
 
-**Question 5.** 매일 새벽 대시보드 갱신으로 읽기 쿼리가 일시적으로 폭증해 큐 대기가 길어진다. 추가 비용을 최소화하면서 대기를 줄이는 가장 적절한 기능은?
+**Question 5.** Every early morning, dashboard refreshes cause read queries to spike temporarily and queue wait times grow long. Which feature is the most appropriate for reducing the wait while minimizing additional cost?
 
-A) DC2 노드로 전환  
-B) 동시성 스케일링 활성화  
-C) 모든 테이블을 DISTSTYLE ALL로 변경  
-D) INTERLEAVED 정렬 키로 변경  
+A) Switch to DC2 nodes  
+B) Enable Concurrency Scaling  
+C) Change all tables to DISTSTYLE ALL  
+D) Change to an INTERLEAVED sort key  
 
 **Answer: B**  
-Explanation: 동시성 스케일링은 읽기 폭증 시 임시 클러스터를 자동 기동해 큐 대기를 없애고 사용한 만큼만 과금(일부 무료 크레딧)합니다. DC2 전환은 분리형 이점을 잃고, ALL/INTERLEAVED 변경은 동시성 문제 해결과 무관합니다.
+Explanation: Concurrency Scaling automatically spins up temporary clusters during read spikes to eliminate queue waits and charges only for what is used (with some free credits). Switching to DC2 loses the benefits of decoupled architecture, and changing to ALL/INTERLEAVED is unrelated to solving the concurrency problem.
 
 ---

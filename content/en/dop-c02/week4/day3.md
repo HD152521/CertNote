@@ -446,86 +446,86 @@ Automating from CodePipeline?
 
 ## 📝 Practice Questions
 
-**Question 1.** Lambda Canary 배포에서 실제로 트래픽이 시프트되는 메커니즘은?
+**Question 1.** What is the mechanism by which traffic is actually shifted in a Lambda canary deployment?
 
-A) 새 Lambda 함수가 생성되어 Load Balancer가 두 함수로 분배
-B) Alias의 weighted routing config — 하나의 Alias가 두 Version 사이 가중치 비율로 라우팅
-C) Route 53 가중 레코드
-D) API Gateway Stage Variable 전환
+A) A new Lambda function is created and a load balancer distributes traffic across the two functions
+B) The alias weighted routing config — one alias routes between two versions according to a weight ratio
+C) Route 53 weighted records
+D) Switching an API Gateway stage variable
 
 **Answer: B**
-Explanation: Lambda Blue/Green은 인프라 변경 없이 Alias의 `AdditionalVersionWeights`로 구현된다. 같은 Alias("live")가 Version 5(90%)와 Version 6(10%)으로 호출을 분배한다. 호출자는 Alias ARN만 알면 되고 버전 전환은 투명하게 일어난다. 새 함수 생성(A)이나 Route 53(C)은 Lambda 배포 메커니즘이 아니다.
+Explanation: Lambda Blue/Green is implemented with the alias `AdditionalVersionWeights`, without any infrastructure change. The same alias ("live") distributes invocations between version 5 (90%) and version 6 (10%). Callers only need to know the alias ARN, and the version switch happens transparently. Creating a new function (A) or Route 53 (C) is not a Lambda deployment mechanism.
 
 ---
 
-**Question 2.** `LambdaCanary10Percent5Minutes` 배포에서 3분이 지난 시점의 트래픽 분배는?
+**Question 2.** In a `LambdaCanary10Percent5Minutes` deployment, what is the traffic distribution at 3 minutes in?
 
-A) 30% 새 버전, 70% 구 버전
-B) 10% 새 버전, 90% 구 버전 (5분 관찰 기간 중)
-C) 50% 새 버전
-D) 100% 새 버전 (이미 완전 전환)
+A) 30% new version, 70% old version
+B) 10% new version, 90% old version (during the 5-minute observation period)
+C) 50% new version
+D) 100% new version (already fully shifted)
 
 **Answer: B**
-Explanation: Canary는 2단계다. 처음 10%를 지정한 시간(5분) 동안 관찰한다. 3분은 5분 관찰 기간 중이므로 여전히 10%/90% 분배다. 5분이 지나고 알람이 없으면 그때 100%로 전환된다. Linear와 혼동하지 않는 것이 핵심이다. Linear10PercentEvery1Minute이었다면 3분 후 30%가 된다.
+Explanation: Canary has two steps. The first 10% is observed for the specified time (5 minutes). Three minutes is within the 5-minute observation period, so the split is still 10%/90%. After 5 minutes pass with no alarm, it then shifts to 100%. The key is not to confuse it with Linear. With Linear10PercentEvery1Minute, it would be 30% after 3 minutes.
 
 ---
 
-**Question 3.** PreTrafficHook이 `PutLifecycleEventHookExecutionStatus`를 호출하지 않고 함수가 정상 종료되면?
+**Question 3.** What happens if a PreTrafficHook function exits normally without calling `PutLifecycleEventHookExecutionStatus`?
 
-A) 배포가 성공으로 처리된다
-B) CodeDeploy는 Hook 결과를 받지 못해 대기 상태를 유지하다 Timeout(기본 3600초) 후 배포 실패 처리
-C) 자동으로 Succeeded로 처리된다
-D) 배포가 즉시 롤백된다
+A) The deployment is treated as successful
+B) CodeDeploy does not receive the hook result, keeps waiting, and marks the deployment as failed after the timeout (default 3600 seconds)
+C) It is automatically treated as Succeeded
+D) The deployment is rolled back immediately
 
 **Answer: B**
-Explanation: CodeDeploy는 Hook 함수의 Lambda 실행 결과(성공/실패)가 아니라, Hook 함수가 `PutLifecycleEventHookExecutionStatus` API를 호출하여 보고하는 결과를 기다린다. 이 API 호출이 없으면 CodeDeploy는 Hook이 응답하지 않는 것으로 보고, 설정된 Timeout(기본 3600초)까지 기다린 후 배포 실패로 처리한다.
+Explanation: CodeDeploy waits not for the Lambda execution result (success/failure) of the hook function, but for the result that the hook function reports by calling the `PutLifecycleEventHookExecutionStatus` API. Without this API call, CodeDeploy considers the hook unresponsive, waits until the configured timeout (default 3600 seconds), and then treats the deployment as failed.
 
 ---
 
-**Question 4.** SAM `AutoPublishAlias: live`가 자동으로 처리하는 것은?
+**Question 4.** What does SAM `AutoPublishAlias: live` handle automatically?
 
-A) IAM Role 생성만
-B) Lambda Version 게시 + Alias 생성/업데이트 + CodeDeploy Application/Deployment Group 자동 생성 + 배포 실행
-C) CloudWatch Alarm 생성만
-D) ECR 이미지 push만
+A) Only IAM role creation
+B) Publishing a Lambda version + creating/updating the alias + automatically creating the CodeDeploy application/deployment group + running the deployment
+C) Only CloudWatch alarm creation
+D) Only the ECR image push
 
 **Answer: B**
-Explanation: `AutoPublishAlias`는 SAM이 제공하는 강력한 추상화다. `sam deploy` 실행 시 자동으로: (1) 새 Lambda Version 게시, (2) 지정한 이름의 Alias 생성 또는 업데이트, (3) `DeploymentPreference`가 있으면 CodeDeploy Application + Deployment Group 자동 생성, (4) Canary/Linear 배포 자동 실행. 개발자가 CodeDeploy API를 직접 다루지 않아도 된다.
+Explanation: `AutoPublishAlias` is a powerful abstraction provided by SAM. When you run `sam deploy`, it automatically: (1) publishes a new Lambda version, (2) creates or updates an alias with the specified name, (3) if `DeploymentPreference` is present, automatically creates a CodeDeploy application + deployment group, and (4) automatically runs the canary/linear deployment. Developers do not need to work with the CodeDeploy API directly.
 
 ---
 
-**Question 5.** Provisioned Concurrency가 설정된 Lambda를 Canary 10% 30분으로 배포하는 중 비용 영향은?
+**Question 5.** What is the cost impact while deploying a Lambda function with provisioned concurrency using Canary 10% over 30 minutes?
 
-A) 배포 중 비용 변화 없음
-B) 30분 동안 구 버전(90%)과 새 버전(10%) 양쪽 모두 PC 비용 발생 — 일시적으로 PC 비용이 약 2배
-C) 새 버전 PC만 비용 발생
-D) PC가 자동 비활성화되어 비용 없음
+A) No cost change during the deployment
+B) For 30 minutes, PC cost is incurred for both the old version (90%) and the new version (10%) — PC cost is temporarily about double
+C) Only the new version PC is charged
+D) PC is automatically deactivated, so there is no cost
 
 **Answer: B**
-Explanation: Canary 기간 동안 두 Version이 동시에 활성화되므로, 두 Version 모두 PC(워밍업된 실행 환경)를 유지해야 한다. 30분의 Canary 기간 동안 PC 비용이 약 2배 발생한다. 새 버전으로 100% 전환 완료 후 구 버전 PC를 수동으로 해제해야 정상 비용으로 돌아온다. 자동 해제되지 않는다.
+Explanation: During the canary period, two versions are active at the same time, so both versions must keep PC (warmed-up execution environments). During the 30-minute canary period, PC cost is about double. After the 100% shift to the new version completes, you must manually release the old version PC to return to normal cost. It is not released automatically.
 
 ---
 
-**Question 6.** 한 Lambda Alias에서 동시에 트래픽을 받을 수 있는 최대 Version 수는?
+**Question 6.** What is the maximum number of versions that can receive traffic at the same time from one Lambda alias?
 
-A) 무제한
-B) 2개 (Primary + Secondary 1개)
-C) 5개
-D) 10개
+A) Unlimited
+B) 2 (primary + 1 secondary)
+C) 5
+D) 10
 
 **Answer: B**
-Explanation: Lambda Alias의 `routing-config.AdditionalVersionWeights`에는 단 하나의 추가 Version만 지정할 수 있다. Primary(function-version)과 Secondary(routing-config) 합쳐 최대 2개다. A/B/C 세 버전 동시 테스트는 단일 Alias로 불가능하다. 시험에서 "세 버전 동시 테스트" 요구사항이 나오면 별도 Alias를 여러 개 만들거나 Application Load Balancer의 가중치 라우팅을 사용하는 대안을 검토해야 한다.
+Explanation: Only one additional version can be specified in the Lambda alias `routing-config.AdditionalVersionWeights`. The maximum is 2, combining the primary (function-version) and the secondary (routing-config). Testing three versions A/B/C at once is not possible with a single alias. If an exam requirement calls for "testing three versions at once," consider alternatives such as creating several separate aliases or using weighted routing on an Application Load Balancer.
 
 ---
 
-**Question 7.** Canary 배포 10분 경과 후 CloudWatch Alarm이 ALARM 상태가 됐다. CodeDeploy의 자동 동작은?
+**Question 7.** 10 minutes into a canary deployment, a CloudWatch alarm enters the ALARM state. What does CodeDeploy do automatically?
 
-A) 10분을 더 기다린 후 판단
-B) 배포를 즉시 중단하고 Alias 가중치를 구 Version 100%로 복원 (즉시 롤백)
-C) 새 버전으로 100% 전환 후 알람 해제를 기다림
-D) SNS로 알림만 발송
+A) Waits another 10 minutes before deciding
+B) Immediately stops the deployment and restores the alias weights to 100% on the old version (instant rollback)
+C) Shifts 100% to the new version and waits for the alarm to clear
+D) Only sends a notification through SNS
 
 **Answer: B**
-Explanation: Deployment Group의 `auto-rollback-configuration`에 `DEPLOYMENT_STOP_ON_ALARM`이 설정되어 있고, 배포 중 연결된 CloudWatch Alarm이 ALARM 상태가 되면 CodeDeploy는 즉시 배포를 중단하고 Alias 가중치를 이전 Version(100%)으로 복원한다. 이것이 "자동 롤백"의 실제 동작이다. 롤백 완료까지 수초면 충분하다 — Alias 가중치 변경만으로 트래픽이 즉시 구 버전으로 전환된다.
+Explanation: If `DEPLOYMENT_STOP_ON_ALARM` is set in the deployment group `auto-rollback-configuration` and the associated CloudWatch alarm enters the ALARM state during the deployment, CodeDeploy immediately stops the deployment and restores the alias weights to the previous version (100%). This is the actual behavior of "automatic rollback." A few seconds are enough to complete the rollback — changing only the alias weights shifts traffic back to the old version instantly.
 
 ---

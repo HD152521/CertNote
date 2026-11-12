@@ -165,118 +165,118 @@ Next: expanding this standard to on-prem datacenters, **hybrid CI/CD** at depth.
 
 ## 📝 Practice Questions
 
-**Question 1.** 조직이 단일 계정에서 수십 개 계정으로 분리하는 가장 근본적인 보안·운영상 이유는?
+**Question 1.** What is the most fundamental security and operational reason for an organization to split from a single account into dozens of accounts?
 
-A) 계정이 많을수록 AWS 할인율이 높아져서
+A) The more accounts, the higher the AWS discount rate
 
-B) AWS 계정이 IAM·결제·서비스 한도·보안의 가장 강력한 격리 경계이므로, 계정 분리가 격벽(bulkhead)·폭발 반경 축소를 기본값으로 만들어 한 워크로드의 침해·한도 고갈이 다른 워크로드로 번지지 않게 하기 때문
+B) An AWS account is the strongest isolation boundary for IAM, billing, service limits, and security, so splitting accounts makes bulkheads and blast-radius reduction the default, keeping a compromise or limit exhaustion in one workload from spreading to others
 
-C) 계정마다 다른 region을 강제로 쓰게 하려고
+C) To force each account to use a different Region
 
-D) 단일 계정은 CloudFormation을 쓸 수 없어서
+D) A single account cannot use CloudFormation
 
 **Answer: B**
 
-Explanation: 한 계정 안의 분리는 사람이 IAM 정책을 정확히 쓴다는 전제에 의존하지만, 계정을 쪼개면 분리가 기본값이 된다 — 다른 계정 리소스는 명시적 cross-account 신뢰 없이는 보이지도 않는다. 이는 분산 시스템의 격벽 패턴과 shared-nothing 사상의 조직 단위 적용으로, 폭발 반경(blast radius)을 한 계정 안으로 한정한다. 할인율(A)·region 강제(C)·CloudFormation(D)은 근거가 없다.
+Explanation: Separation within a single account depends on people writing IAM policies correctly, but splitting accounts makes separation the default — resources in another account are not even visible without explicit cross-account trust. This is an organizational-level application of the bulkhead pattern and shared-nothing philosophy from distributed systems, confining the blast radius to one account. Discount rate (A), forcing Regions (C), and CloudFormation (D) have no basis.
 
 ---
 
-**Question 2.** SCP(Service Control Policy)에 대한 설명으로 가장 정확한 것은?
+**Question 2.** Which statement about SCPs (Service Control Policies) is MOST accurate?
 
-A) SCP는 계정에 직접 권한을 부여한다
+A) An SCP grants permissions directly to an account
 
-B) SCP는 권한을 부여하지 않고 권한의 상한(ceiling)만 정하는 Deny 가드레일이며, 유효 권한은 SCP ∩ Permission Boundary ∩ Identity 정책의 교집합이고, Management 계정에는 적용되지 않는다
+B) An SCP does not grant permissions but sets only a ceiling on permissions as a Deny guardrail, effective permissions are the intersection of SCP ∩ Permission Boundary ∩ Identity policy, and it does not apply to the Management account
 
-C) SCP는 IAM 정책을 대체한다
+C) An SCP replaces IAM policies
 
-D) SCP는 Management 계정에 가장 먼저 적용된다
+D) An SCP is applied first to the Management account
 
 **Answer: B**
 
-Explanation: SCP는 권한을 주지 못하고 상한만 정한다 — `Allow *`를 써도 IAM 정책이 별도로 허용하지 않으면 아무 권한도 생기지 않는다. 진짜 역할은 Root 사용 금지·CloudTrail 비활성화 금지 같은 Deny 가드레일이다. 같은 계정 내 유효 권한은 SCP·Permission Boundary·Identity 정책 셋 모두가 Allow해야 하는 교집합이며, Management 계정에는 SCP가 적용되지 않으므로 그 계정은 결제·조직 구조만 다뤄야 한다. 권한 직접 부여(A)·IAM 대체(C)·Management 우선 적용(D)은 모두 틀리다.
+Explanation: An SCP cannot grant permissions and only sets a ceiling — even if you write `Allow *`, no permissions arise unless an IAM policy separately allows them. Its real role is as a Deny guardrail, such as prohibiting Root use or prohibiting disabling CloudTrail. Effective permissions within an account are the intersection that requires all three of the SCP, Permission Boundary, and Identity policy to Allow, and since SCPs do not apply to the Management account, that account should handle only billing and the organization structure. Granting permissions directly (A), replacing IAM (C), and applying to Management first (D) are all wrong.
 
 ---
 
-**Question 3.** 100명 개발자가 수백 개 계정을 필요로 하는 환경에서, 신규 계정을 표준 베이스라인(VPC/Config/CloudTrail/GuardDuty)과 함께 자동 프로비저닝하려면?
+**Question 3.** In an environment where 100 developers need hundreds of accounts, how can you automatically provision new accounts together with a standard baseline (VPC/Config/CloudTrail/GuardDuty)?
 
-A) 플랫폼 팀이 콘솔에서 계정마다 수동 생성
+A) The platform team manually creates each account in the console
 
-B) Landing Zone/Control Tower + Account Factory(AFT)로 요청을 받아 파이프라인이 계정을 선언적으로 프로비저닝하고 표준 베이스라인을 자동 부착
+B) Receive requests with Landing Zone/Control Tower + Account Factory (AFT), and have a pipeline provision accounts declaratively and attach the standard baseline automatically
 
-C) 각 개발자가 자기 신용카드로 계정 가입
+C) Each developer signs up for an account with their own credit card
 
-D) Lambda로 매일 계정을 무작위 생성
+D) Create accounts randomly every day with Lambda
 
 **Answer: B**
 
-Explanation: Account Factory(특히 AFT)는 계정 생성 요청을 받아 파이프라인으로 계정을 프로비저닝하고 그 위에 표준 베이스라인을 자동으로 심는다. 이는 불변 인프라·선언적 패러다임을 계정 수준으로 끌어올린 것으로, "계정의 표준 상태"가 Git에 코드로 남아 감사·재현·롤백이 가능하다. 수동 생성(A)은 누락·확장 불가, 개발자 개별 가입(C)·무작위 생성(D)은 거버넌스 붕괴다.
+Explanation: Account Factory (especially AFT) receives an account-creation request, provisions the account through a pipeline, and automatically installs the standard baseline on top of it. This lifts the immutable infrastructure and declarative paradigm to the account level: the "standard state of an account" remains as code in Git, enabling auditing, reproduction, and rollback. Manual creation (A) leads to omissions and cannot scale, and individual developer sign-ups (C) and random creation (D) mean the collapse of governance.
 
 ---
 
-**Question 4.** Tooling 계정 Hub-Spoke 구조에서 cross-account 파이프라인 배포가 "Access Denied (KMS)" 오류로 실패한다. 가장 흔한 원인과 해결은?
+**Question 4.** In a Tooling-account Hub-Spoke structure, a cross-account pipeline deployment fails with an "Access Denied (KMS)" error. What are the most common cause and fix?
 
-A) S3 버킷 정책만 수정하면 된다
+A) Just modify the S3 bucket policy
 
-B) 아티팩트가 KMS로 암호화돼 있는데 배포 대상(Spoke) 계정/Role의 복호화 권한이 KMS 키 정책에 없어서다 — S3 버킷 정책과 KMS 키 정책 둘 다 Spoke를 허용해야 한다
+B) The artifact is encrypted with KMS, but the KMS key policy lacks decrypt permission for the target (Spoke) account/Role — both the S3 bucket policy and the KMS key policy must allow the Spoke
 
-C) 파이프라인을 재시작하면 해결된다
+C) Restarting the pipeline fixes it
 
-D) ECR을 비활성화하면 된다
+D) Disabling ECR fixes it
 
 **Answer: B**
 
-Explanation: Tooling 계정의 암호화된 S3 아티팩트를 Spoke의 CloudFormation이 읽으려면 S3 버킷 정책과 KMS 키 정책 둘 다 Spoke의 접근/복호화를 허용해야 한다. 초심자는 S3만 고치고 KMS를 잊어 배포가 깨진다. 멀티 리전 DR까지 고려하면 Multi-Region Key로 같은 키 ID를 양쪽 region에서 참조하게 해 정책을 단순화한다. S3만 수정(A)·재시작(C)·ECR 비활성화(D)는 근본 원인을 못 짚는다.
+Explanation: For the Spoke's CloudFormation to read the encrypted S3 artifacts in the Tooling account, both the S3 bucket policy and the KMS key policy must allow the Spoke's access/decryption. Beginners fix only S3 and forget KMS, so the deployment breaks. Considering multi-Region DR as well, using a Multi-Region Key lets both Regions reference the same key ID and simplifies the policies. Modifying only S3 (A), restarting (C), and disabling ECR (D) do not identify the root cause.
 
 ---
 
-**Question 5.** 개발자에게 IAM Role 생성을 셀프서비스로 위임하되, 만든 Role이 회사 정책 상한(예: 특정 region만)을 넘지 못하게 안전하게 강제하려면?
+**Question 5.** You want to delegate IAM Role creation to developers as self-service while safely enforcing that the Roles they create cannot exceed the company policy ceiling (for example, specific Regions only). How?
 
-A) 개발자에게 AdministratorAccess를 준다
+A) Give developers AdministratorAccess
 
-B) Permission Boundary 정책을 정의하고, Role 생성 권한에 `iam:PermissionsBoundary` 조건으로 새 Role에 반드시 그 Boundary를 부착해야만 생성 가능하도록 강제한다
+B) Define a Permission Boundary policy and enforce, with the `iam:PermissionsBoundary` condition on the Role-creation permission, that a new Role can be created only if that Boundary is attached to it
 
-C) 모든 Role 생성을 금지한다
+C) Prohibit all Role creation
 
-D) SCP만으로 개별 Role을 제어한다
+D) Control individual Roles with SCPs alone
 
 **Answer: B**
 
-Explanation: Permission Boundary는 주체(principal) 수준의 권한 상한이다. Role 생성 권한을 줄 때 `iam:PermissionsBoundary` 조건으로 새 Role에 Boundary 부착을 강제하면, 개발자가 만드는 모든 Role이 Boundary를 넘을 수 없어 권한 상승이 차단된다 — 셀프서비스 위임을 안전하게 만든다. Admin 부여(A)는 권한 상승 구멍, 전면 금지(C)는 셀프서비스 포기, SCP(D)는 계정·OU 상한이지 개별 Role 생성 시점의 강제 메커니즘이 아니다.
+Explanation: A Permission Boundary is a permission ceiling at the principal level. If you enforce Boundary attachment on new Roles with the `iam:PermissionsBoundary` condition when granting Role-creation permission, every Role a developer creates cannot exceed the Boundary, so privilege escalation is blocked — making self-service delegation safe. Granting Admin (A) is a privilege-escalation hole, a blanket prohibition (C) gives up self-service, and SCPs (D) are an account/OU ceiling, not an enforcement mechanism at the moment of creating an individual Role.
 
 ---
 
-**Question 6.** Organizations 환경에서 GuardDuty·Config 베이스라인을 모든 계정에 배포하고, 앞으로 OU에 새로 들어올 계정에도 자동 적용되게 하려면?
+**Question 6.** In an Organizations environment, how can you deploy the GuardDuty and Config baselines to all accounts and have them applied automatically to accounts that join the OU in the future?
 
-A) Self-Managed StackSets로 각 계정에 Role을 수동 생성
+A) Manually create Roles in each account with Self-Managed StackSets
 
-B) Service-Managed StackSets + Auto-Deployment(Enabled)를 OU 타깃으로 배포하면 신규 계정에도 자동 적용되며, GuardDuty/Security Hub/Config는 위임 관리자(Audit 계정)로 집계
+B) Deploy Service-Managed StackSets + Auto-Deployment (Enabled) targeting the OU, which applies automatically to new accounts too, with GuardDuty/Security Hub/Config aggregated by a delegated administrator (the Audit account)
 
-C) Lambda 스크립트로 매일 신규 계정을 스캔
+C) Scan for new accounts daily with a Lambda script
 
-D) 각 계정 관리자가 콘솔에서 수동으로 켠다
+D) Each account administrator turns them on manually in the console
 
 **Answer: B**
 
-Explanation: Service-Managed StackSets는 Organizations와 통합해 실행 Role을 AWS가 관리하고 OU 타깃팅과 Auto-Deployment를 지원한다 — OU에 새 계정이 들어오면 자동으로 베이스라인이 배포된다. "신규 계정에도 자동 적용"은 항상 Service-Managed + Auto-Deployment다. Self-Managed(A)는 Role 수동 셋업 필요, 스크립트(C)·수동(D)은 누락 위험의 안티패턴이다.
+Explanation: Service-Managed StackSets integrate with Organizations so that AWS manages the execution Role, and they support OU targeting and Auto-Deployment — when a new account joins the OU, the baseline is deployed automatically. "Automatically applied to new accounts too" is always Service-Managed + Auto-Deployment. Self-Managed (A) requires manual Role setup, and scripts (C) and manual operation (D) are anti-patterns with the risk of omissions.
 
 ---
 
-**Question 7.** Platform Engineering의 "Golden Path" 개념과 Service Catalog의 관계로 가장 정확한 것은?
+**Question 7.** Which statement MOST accurately describes the relationship between the Platform Engineering concept of the "Golden Path" and Service Catalog?
 
-A) Golden Path는 개발자에게 표준을 강제로 막는 차단 장치다
+A) The Golden Path is a blocking mechanism that forces standards on developers
 
-B) Golden Path는 "가장 쉽고 빠른 권장 경로"로, 따라가면 보안·관찰성·배포가 공짜로 따라오게 만들어 개발자가 자발적으로 표준을 택하게 하는 넛지(nudge)이며, Service Catalog가 그 경로를 클릭 한 번으로 제공하고 Permission Boundary·SCP가 이탈에 가드레일을 친다
+B) The Golden Path is the "easiest and fastest recommended route" — a nudge that makes security, observability, and deployment come for free when followed, so developers voluntarily choose the standard; Service Catalog provides that route with a single click, and Permission Boundaries and SCPs put guardrails on deviations
 
-C) Golden Path는 비용 최적화 전용 기능이다
+C) The Golden Path is a feature solely for cost optimization
 
-D) Golden Path는 Service Catalog 없이는 존재할 수 없다
+D) The Golden Path cannot exist without Service Catalog
 
 **Answer: B**
 
-Explanation: Golden Path의 핵심 통찰은 "강제보다 유인이 강하다"이다 — 표준 경로가 가장 쉽고 빠르면 개발자가 자발적으로 그 길을 택한다(행동경제학의 넛지). Service Catalog는 검증된 파이프라인 템플릿을 셀프서비스로 제공해 Golden Path를 구현하고, Permission Boundary·SCP는 경로를 벗어나려는 시도에 가드레일을 친다. "유인 + 가드레일"이 셀프서비스 거버넌스의 정수다. 강제 차단(A)·비용 전용(C)·Service Catalog 종속(D)은 개념을 좁게 오해한 것이다.
+Explanation: The key insight of the Golden Path is that "incentives are stronger than enforcement" — if the standard route is the easiest and fastest, developers choose it voluntarily (a nudge from behavioral economics). Service Catalog implements the Golden Path by providing validated pipeline templates as self-service, and Permission Boundaries and SCPs put guardrails on attempts to leave the path. "Incentives + guardrails" is the essence of self-service governance. Forced blocking (A), cost-only (C), and dependence on Service Catalog (D) are narrow misunderstandings of the concept.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, 계정 분리는 격벽·폭발 반경 축소라는 분산 시스템 회복성 원칙의 조직 적용이며, OU 트리로 SCP(권한 상한·Deny 가드레일)를 상속시킨다. 둘째, Landing Zone/Account Factory(AFT)가 계정을 코드로 찍어내 선언적·불변 인프라 사상을 계정 수준으로 끌어올리고 표준 베이스라인을 자동 부착한다. 셋째, Tooling 계정 Hub-Spoke가 파이프라인을 중앙화하고 cross-account AssumeRole로 권한만 빌려주며, KMS 키 정책 누락(SolarWinds류 공급망 위험과 함께)이 핵심 함정이다. 넷째, Service Catalog(Golden Path)·Permission Boundary(`iam:PermissionsBoundary` 강제)·SCP가 셀프서비스와 거버넌스를 동시에 만족시킨다. 다섯째, Service-Managed StackSets + Auto-Deployment + 위임 관리자가 "모든 계정 + 신규 계정"에 보안 베이스라인을 자동 적용하는 정답이다.
+There are five key takeaways today. First, account separation is the organizational application of the distributed-systems resilience principles of bulkheads and blast-radius reduction, and SCPs (permission ceilings and Deny guardrails) are inherited through the OU tree. Second, Landing Zone/Account Factory (AFT) stamps out accounts as code, lifting the declarative and immutable infrastructure philosophy to the account level and automatically attaching the standard baseline. Third, a Tooling-account Hub-Spoke centralizes pipelines and lends only permissions through cross-account AssumeRole, and a missing KMS key policy (along with SolarWinds-style supply chain risk) is the key pitfall. Fourth, Service Catalog (Golden Path), Permission Boundaries (enforcing `iam:PermissionsBoundary`), and SCPs satisfy both self-service and governance. Fifth, Service-Managed StackSets + Auto-Deployment + a delegated administrator is the right answer for automatically applying the security baseline to "all accounts + new accounts."

@@ -102,62 +102,62 @@ Tomorrow we will cover **how to efficiently store and read large-scale data duri
 
 ## 📝 Practice Questions
 
-**Question 1.** 양성 0.2%로 극도로 불균형한 사기 탐지 데이터에서, 모델 성능을 평가하는 지표로 가장 부적절한 것은?
+**Question 1.** In fraud detection data that is extremely imbalanced with 0.2% positives, which metric is MOST inappropriate for evaluating model performance?
 
-A) 재현율(Recall)  
+A) Recall  
 B) PR-AUC  
-C) 정확도(Accuracy)  
-D) F1 점수  
+C) Accuracy  
+D) F1 score  
 
 **Answer: C**  
-Explanation: 1:499 수준의 불균형에서는 "전부 음성"이라 답해도 정확도가 99% 이상으로 높게 나와 소수 클래스 성능을 전혀 반영하지 못하는 거짓 안심을 준다. 따라서 정확도가 가장 부적절하다. 재현율·PR-AUC·F1은 소수 클래스 검출 성능을 적절히 드러내므로 불균형 상황에 알맞다.
+Explanation: With an imbalance on the order of 1:499, even answering "all negative" yields accuracy above 99%, giving false reassurance that does not reflect minority-class performance at all. Therefore accuracy is the most inappropriate. Recall, PR-AUC, and F1 appropriately reveal minority-class detection performance and are therefore suitable for imbalanced situations.
 
 ---
 
-**Question 2.** SMOTE 기법이 단순 복제(중복 오버샘플링)와 구별되는 핵심 특징은?
+**Question 2.** What is the key characteristic that distinguishes the SMOTE technique from simple duplication (duplicate oversampling)?
 
-A) 소수 클래스 샘플과 최근접 이웃 사이를 보간해 새로운 합성 샘플을 생성한다  
-B) 다수 클래스를 무작위로 삭제한다  
-C) 손실 함수의 가중치만 조정한다  
-D) 평가 지표를 정확도로 고정한다  
+A) It generates new synthetic samples by interpolating between a minority-class sample and its nearest neighbors  
+B) It randomly deletes majority-class samples  
+C) It only adjusts the weights of the loss function  
+D) It fixes the evaluation metric to accuracy  
 
 **Answer: A**  
-Explanation: SMOTE는 소수 클래스 샘플과 그 최근접 이웃 사이를 보간(interpolation)해 새로운 점을 합성하므로, 단순 복제와 달리 다양성을 더해 과적합 위험을 줄인다. 다수 클래스 삭제(B)는 언더샘플링이고, 가중치 조정(C)은 알고리즘 수준 기법이며, D는 평가에 관한 것으로 SMOTE의 정의와 무관하다.
+Explanation: SMOTE synthesizes new points by interpolating between a minority-class sample and its nearest neighbors, so unlike simple duplication it adds diversity and reduces the risk of overfitting. Deleting majority-class samples (B) is undersampling, weight adjustment (C) is an algorithm-level technique, and D concerns evaluation and is unrelated to the definition of SMOTE.
 
 ---
 
-**Question 3.** 데이터 증강을 적용할 때 반드시 지켜야 하는 원칙으로 가장 옳은 것은?
+**Question 3.** Which is the most correct principle that must be followed when applying data augmentation?
 
-A) 변형 강도를 최대로 높여 레이블이 바뀌어도 무방하다  
-B) 항상 모든 종류의 변형을 동시에 적용한다  
-C) 증강 데이터로만 검증하고 실데이터는 쓰지 않는다  
-D) 도메인 의미와 레이블을 보존하는 범위 안에서 변형해야 한다  
+A) Maximize the transformation strength, even if the label changes  
+B) Always apply all kinds of transformations at the same time  
+C) Validate only with augmented data and do not use real data  
+D) Transform only within the range that preserves the domain meaning and the label  
 
 **Answer: D**  
-Explanation: 증강은 입력은 다양화하되 정답(레이블)은 유지해야 한다. 예컨대 숫자 "6"을 180도 회전하면 "9"가 되어 레이블이 깨지고, 의료 영상 좌우 반전은 진단 의미를 훼손할 수 있으므로 도메인 의미를 보존하는 범위에서만 적용해야 한다. A·D는 레이블을 망가뜨릴 수 있고, C는 검증 원칙에 어긋난다.
+Explanation: Augmentation must diversify the input while keeping the answer (label) intact. For example, rotating the digit "6" by 180 degrees turns it into "9", breaking the label, and horizontally flipping a medical image can corrupt its diagnostic meaning, so augmentation must be applied only within a range that preserves the domain meaning. A and D can ruin the label, and C violates validation principles.
 
 ---
 
-**Question 4.** 실데이터가 극히 부족하거나 프라이버시 제약으로 실데이터를 직접 쓸 수 없을 때, 새로운 가상 데이터를 생성하는 접근으로 가장 적절한 것은?
+**Question 4.** When real data is extremely scarce or cannot be used directly because of privacy constraints, which approach to generating new virtual data is MOST appropriate?
 
-A) 언더샘플링  
-B) GAN이나 시뮬레이션 기반 데이터 합성  
-C) 결정 임계값 조정  
-D) 정확도 지표 사용  
+A) Undersampling  
+B) GAN- or simulation-based data synthesis  
+C) Decision threshold adjustment  
+D) Using the accuracy metric  
 
 **Answer: B**  
-Explanation: GAN, 시뮬레이션, 합성 정형 데이터 생성은 기존 데이터의 단순 변형을 넘어 새로운 가상 데이터를 만들어 내므로 실데이터 부족·프라이버시 제약 상황에 적합하다. 언더샘플링(A)은 다수 클래스를 줄이는 기법, 임계값 조정(C)은 알고리즘 수준 보정, 정확도(D)는 평가 지표로 데이터 합성과 무관하다.
+Explanation: GANs, simulation, and synthetic structured data generation go beyond simple transformations of existing data to create new virtual data, so they suit situations of real-data scarcity or privacy constraints. Undersampling (A) is a technique that reduces the majority class, threshold adjustment (C) is an algorithm-level correction, and accuracy (D) is an evaluation metric unrelated to data synthesis.
 
 ---
 
-**Question 5.** 합성 데이터로 학습한 모델을 운영에 투입하기 전 가장 중요하게 고려할 위험은?
+**Question 5.** What is the most important risk to consider before putting a model trained on synthetic data into production?
 
-A) 합성 데이터와 실제 분포 간 갭(distribution gap)으로 실세계 성능이 떨어질 수 있다  
-B) 합성 데이터는 항상 실데이터보다 우수하므로 위험이 없다  
-C) 합성 데이터는 레이블이 필요 없으므로 평가가 불가능하다  
-D) 합성 데이터는 저장 비용이 0이라 무한 생성해도 된다  
+A) A gap between the synthetic data and the real distribution (distribution gap) can degrade real-world performance  
+B) Synthetic data is always better than real data, so there is no risk  
+C) Synthetic data does not need labels, so evaluation is impossible  
+D) Synthetic data has zero storage cost, so it can be generated without limit  
 
 **Answer: A**  
-Explanation: 합성 데이터가 실제 데이터 분포를 완벽히 재현하지 못하면 거기서 학습한 모델이 실세계에서 성능이 떨어지는 distribution gap 위험이 있다. 그래서 합성 데이터는 실데이터를 보완하는 용도로 쓰고 검증은 실데이터로 해야 한다. A·D는 잘못된 단정이고, 합성 데이터도 레이블·검증이 필요하므로 C도 틀렸다.
+Explanation: If synthetic data cannot perfectly reproduce the real data distribution, there is a distribution gap risk that a model trained on it performs worse in the real world. Therefore synthetic data should be used to supplement real data, and validation should be done with real data. A and D are incorrect assertions, and synthetic data also needs labels and validation, so C is also wrong.
 
 ---

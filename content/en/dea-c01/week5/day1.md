@@ -115,62 +115,62 @@ EMR is a managed big-data cluster where the Core/Task node distinction is key to
 
 ## 📝 Practice Questions
 
-**Question 1.** EMR 클러스터에서 비용을 절감하기 위해 스팟 인스턴스를 적용하려 한다. 데이터 손실 위험 없이 스팟을 쓰기에 가장 적합한 노드는?
+**Question 1.** You want to use Spot Instances on an EMR cluster to reduce cost. Which node is the most suitable for using Spot without risk of data loss?
 
-A) Primary(마스터) 노드  
-B) Core 노드  
-C) Task 노드  
-D) 모든 노드에 동일하게  
+A) Primary (master) node  
+B) Core node  
+C) Task node  
+D) All nodes equally  
 
 **Answer: C**  
-Explanation: Task 노드는 HDFS 데이터를 저장하지 않고 연산만 수행하므로, 스팟 회수로 갑자기 사라져도 데이터 손실이 없다. Core 노드는 HDFS 블록을 보관하므로 스팟 회수 시 데이터 재계산이 필요할 수 있고, Primary는 클러스터 조정을 담당해 사라지면 전체가 멈춘다.
+Explanation: Task nodes do not store HDFS data and only perform computation, so there is no data loss even if they suddenly disappear due to Spot reclamation. Core nodes hold HDFS blocks, so data may need to be recomputed if Spot is reclaimed, and the Primary node handles cluster coordination, so if it disappears the entire cluster stops.
 
 ---
 
-**Question 2.** 매일 새벽에 1~2시간만 도는 대규모 배치 ETL을 가장 비용 효율적으로 EMR에서 운영하려 한다. 적절하지 않은 설계는?
+**Question 2.** You want to run a large batch ETL that runs for only 1 to 2 hours every early morning on EMR in the most cost-effective way. Which design is NOT appropriate?
 
-A) 작업이 끝나면 자동 종료되는 Transient 클러스터 사용  
-B) 데이터를 S3(EMRFS)에 영구 저장  
-C) 영구 데이터를 Core 노드의 HDFS에 보관하고 클러스터를 계속 켜둔다  
-D) Task 노드를 Instance Fleets + 스팟으로 확장  
+A) Use a transient cluster that terminates automatically when the job finishes  
+B) Store the data persistently in S3 (EMRFS)  
+C) Keep persistent data in HDFS on the Core nodes and leave the cluster running all the time  
+D) Scale Task nodes using Instance Fleets + Spot  
 
 **Answer: C**  
-Explanation: HDFS는 클러스터 종료 시 소멸하는 임시 저장소이고, 클러스터를 계속 켜두면 간헐적 작업에 비해 비용이 크다. 영구 데이터는 S3(EMRFS)에 두고 Transient 클러스터로 작업 시에만 띄우는 것이 정석이다. 나머지는 모두 올바른 비용 최적화 패턴이다.
+Explanation: HDFS is temporary storage that disappears when the cluster terminates, and keeping the cluster running all the time is costly for intermittent jobs. The standard approach is to keep persistent data in S3 (EMRFS) and launch a transient cluster only when running jobs. The rest are all correct cost-optimization patterns.
 
 ---
 
-**Question 3.** Apache Spark가 전통 MapReduce보다 반복 연산(머신러닝 등)에서 훨씬 빠른 핵심 이유는?
+**Question 3.** What is the key reason Apache Spark is much faster than traditional MapReduce for iterative computation (such as machine learning)?
 
-A) 모든 데이터를 항상 HDFS에 저장하기 때문  
-B) 중간 결과를 메모리에 유지하고 지연 평가로 DAG를 최적화하기 때문  
-C) 단일 노드에서만 실행되기 때문  
-D) 데이터를 압축하지 않기 때문  
+A) Because it always stores all data in HDFS  
+B) Because it keeps intermediate results in memory and optimizes the DAG with lazy evaluation  
+C) Because it runs only on a single node  
+D) Because it does not compress data  
 
 **Answer: B**  
-Explanation: Spark는 단계마다 디스크에 쓰는 MapReduce와 달리 중간 결과를 인메모리로 유지하고, 변환을 지연 평가하여 액션 시점에 전체 실행 계획(DAG)을 최적화한다. 이 두 특성이 반복 연산 성능의 핵심이다. Spark는 분산 처리 엔진이며 HDFS·S3 등 다양한 스토리지를 쓴다.
+Explanation: Unlike MapReduce, which writes to disk at every stage, Spark keeps intermediate results in memory and lazily evaluates transformations, optimizing the entire execution plan (DAG) at the time of an action. These two characteristics are the key to its performance on iterative computation. Spark is a distributed processing engine and uses various storage systems such as HDFS and S3.
 
 ---
 
-**Question 4.** 운영팀이 클러스터 사이징과 스팟 전략을 관리할 인력이 없고, 워크로드는 간헐적이며 예측이 어렵다. 클러스터 프로비저닝 없이 Spark 작업을 제출하고 사용량만큼 과금받고 싶다. 가장 적합한 것은?
+**Question 4.** An operations team has no staff to manage cluster sizing and Spot strategy, and the workload is intermittent and hard to predict. They want to submit Spark jobs without provisioning a cluster and be billed only for usage. What is the most suitable option?
 
 A) EMR Serverless  
-B) EMR on EC2 (Instance Groups, 24시간 상시)  
+B) EMR on EC2 (Instance Groups, running 24 hours a day)  
 C) Redshift  
 D) DynamoDB  
 
 **Answer: A**  
-Explanation: EMR Serverless는 클러스터를 직접 띄우지 않고 Spark/Hive 애플리케이션을 제출하면 필요한 워커를 자동 프로비저닝·회수하며 사용한 vCPU·메모리·시간만큼 과금한다. 간헐적·예측 불가 워크로드와 운영 최소화 요구에 부합한다. EMR on EC2 상시 클러스터는 운영 부담과 유휴 비용이 크다.
+Explanation: With EMR Serverless, you do not launch a cluster yourself; when you submit a Spark/Hive application, the required workers are automatically provisioned and released, and you are billed for the vCPU, memory, and time used. This fits intermittent, unpredictable workloads and the requirement to minimize operations. An always-on EMR on EC2 cluster has a heavy operational burden and idle cost.
 
 ---
 
-**Question 5.** 다음 중 Glue 대신 EMR을 선택할 가장 타당한 이유는?
+**Question 5.** Which of the following is the most valid reason to choose EMR instead of Glue?
 
-A) 가장 빠르게 서버리스로 단순 ETL을 개발하고 싶다  
-B) Hive, HBase, Presto 등 다양한 빅데이터 생태계 도구를 함께 쓰고 Spark를 세밀히 튜닝하며 스팟으로 비용을 극단적으로 제어해야 한다  
-C) 운영 오버헤드를 최소화하고 인프라를 전혀 다루고 싶지 않다  
-D) DPU 단위의 자동 과금만 원한다  
+A) You want to develop a simple ETL as quickly as possible in a serverless manner  
+B) You need to use a variety of big data ecosystem tools such as Hive, HBase, and Presto together, finely tune Spark, and control cost aggressively with Spot  
+C) You want to minimize operational overhead and not deal with infrastructure at all  
+D) You only want automatic DPU-based billing  
 
 **Answer: B**  
-Explanation: EMR은 다양한 빅데이터 프레임워크 지원, 클러스터 완전 제어, 스팟 활용을 통한 비용 제어, 세밀한 Spark 튜닝이 강점이다. 서버리스·빠른 개발·운영 최소화·DPU 과금은 모두 Glue의 강점이므로 Glue를 택할 이유에 해당한다.
+Explanation: EMR's strengths are support for a wide range of big data frameworks, full control of the cluster, cost control through Spot usage, and fine-grained Spark tuning. Serverless, fast development, minimal operations, and DPU billing are all strengths of Glue, so they are reasons to choose Glue.
 
 ---

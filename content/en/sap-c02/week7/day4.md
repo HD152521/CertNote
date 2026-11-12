@@ -271,11 +271,11 @@ Tomorrow synthesizes Week 7 with 12-scenario questions. Knowledge accumulated—
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 핀테크가 ECS Fargate 위 마이크로서비스 30개를 운영한다. 다음을 모두 만족해야 한다. ① 모든 통신 mTLS ② 새 버전을 5% 트래픽 카나리 ③ 서비스별 서킷 브레이커. 어떤 도구를 쓰는가?
+**Question 1.** A fintech runs 30 microservices on ECS Fargate. It must satisfy all of the following. (1) mTLS for all communication. (2) A 5% traffic canary for new versions. (3) A circuit breaker per service. Which tool should it use?
 
 A) ALB Weighted Target Group + ACM Public Certificate
 B) AWS App Mesh + ACM Private CA
-C) Cloud Map만
+C) Cloud Map only
 D) Route 53 Weighted Routing
 
 **Answer: B**
@@ -285,11 +285,11 @@ Three full-mesh features (mTLS, weighted canary, circuit breaker) = App Mesh dom
 
 ---
 
-**Question 2.** ECS Cluster내 마이크로서비스 간 단순 디스커버리·재시도·CloudWatch 메트릭이 자동 제공되고 운영 부담이 최소인 옵션은?
+**Question 2.** Which option automatically provides simple discovery, retries, and CloudWatch metrics between microservices in an ECS Cluster, with minimal operational burden?
 
 A) AWS App Mesh
 B) ECS Service Connect
-C) Cloud Map + 수동 클라이언트 LB
+C) Cloud Map + manual client LB
 D) ALB per Service
 
 **Answer: B**
@@ -299,7 +299,7 @@ Service Connect: Single ECS Service block enables Envoy auto-inject, Cloud Map a
 
 ---
 
-**Question 3.** 외부 사용자가 HTTPS로 진입하고 JWT 인증·rate limiting이 필요. 내부 East-West는 메시. 외부 진입에 가장 적합한 서비스는?
+**Question 3.** External users enter over HTTPS, and JWT authentication and rate limiting are required. Internal East-West traffic uses a mesh. Which service is most appropriate for external ingress?
 
 A) AWS App Mesh
 B) API Gateway + Cognito
@@ -313,10 +313,10 @@ External ingress + auth + rate-limiting = API Gateway domain. Cognito integratio
 
 ---
 
-**Question 4.** App Mesh의 Virtual Router에서 v1=100, v2=0으로 시작해 매시간 v2 비율을 10%씩 올린다. 이 패턴의 이름은?
+**Question 4.** In an App Mesh Virtual Router, you start with v1=100, v2=0 and raise the v2 share by 10% every hour. What is the name of this pattern?
 
 A) Blue/Green
-B) 카나리(Canary)
+B) Canary
 C) A/B Test
 D) Shadow Deployment
 
@@ -327,12 +327,12 @@ Gradual weight increase = canary. Blue/Green: 0% → 100% one switch (fast rollb
 
 ---
 
-**Question 5.** Cloud Map Private DNS Namespace의 동작은?
+**Question 5.** What is the behavior of a Cloud Map Private DNS Namespace?
 
-A) 공개 인터넷에서 조회 가능
-B) Route 53 Private Hosted Zone 자동 생성, 연결된 VPC 내부에서만 조회
-C) IPv6 전용
-D) AWS 전체 모든 VPC에서 자동 조회
+A) It can be queried from the public internet
+B) Route 53 Private Hosted Zone is created automatically and can be queried only from within the associated VPCs
+C) IPv6 only
+D) Automatically queryable from all VPCs across AWS
 
 **Answer: B**
 Cloud Map Private DNS Namespace behavior?
@@ -341,11 +341,11 @@ Private Namespace auto-creates internal Route 53 Private Hosted Zone, connected 
 
 ---
 
-**Question 6.** 모든 마이크로서비스 통신을 mTLS로 보호하고 인증서는 24시간 단명으로 자동 회전. 가장 적합한 조합은?
+**Question 6.** You want to protect all microservice communication with mTLS and automatically rotate certificates that live for only 24 hours. What is the most appropriate combination?
 
 A) ACM Public Certificate + ALB Listener
 B) ACM Private CA + App Mesh
-C) Self-signed 인증서 수동 회전
+C) Manual rotation of self-signed certificates
 D) IAM Access Key
 
 **Answer: B**
@@ -355,12 +355,12 @@ ACM Private CA issues short-lived certs with auto-rotation; App Mesh injects Env
 
 ---
 
-**Question 7.** ECS Service Connect가 직접 지원하지 **않는** 기능은?
+**Question 7.** Which feature does ECS Service Connect **not** support directly?
 
-A) Cloud Map 자동 등록
-B) Envoy 사이드카 자동 주입
-C) 1% 단위 가중치 기반 카나리 라우팅
-D) CloudWatch 메트릭 자동 emit
+A) Automatic Cloud Map registration
+B) Automatic Envoy sidecar injection
+C) Canary routing based on 1% weight increments
+D) Automatic emission of CloudWatch metrics
 
 **Answer: C**
 Which feature does ECS Service Connect NOT directly support?

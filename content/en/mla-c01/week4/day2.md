@@ -119,7 +119,7 @@ Next we see SageMaker AutoML, which automatically optimizes this chosen algorith
 
 ## 📝 Practice Questions
 
-**Question 1.** 100개의 특성을 가진 정형 테이블 데이터로 고객 이탈 여부(이진 분류)를 예측하려 한다. 별도 코드 작성 없이 빠르게 강력한 모델을 만들려면 가장 적합한 빌트인 알고리즘은?
+**Question 1.** You want to predict customer churn (binary classification) from structured tabular data with 100 features. Which built-in algorithm is most suitable for quickly building a strong model without writing custom code?
 
 A) Semantic Segmentation  
 B) XGBoost  
@@ -127,11 +127,11 @@ C) BlazingText
 D) DeepAR  
 
 **Answer: B**  
-Explanation: XGBoost는 정형 테이블 데이터의 분류·회귀에서 사실상 기본 선택으로, 비선형 관계와 결측치를 잘 다루며 코드 작성 없이 빌트인으로 쓸 수 있다. A는 이미지 픽셀 분할, C는 텍스트, D는 시계열 예측용이라 정형 분류 문제에 부적합하다.
+Explanation: XGBoost is effectively the default choice for classification and regression on structured tabular data, handles nonlinear relationships and missing values well, and can be used as a built-in without writing code. A is for image pixel segmentation, C is for text, and D is for time series forecasting, so they are unsuitable for a structured classification problem.
 
 ---
 
-**Question 2.** 수백 GB의 학습 데이터를 Pipe 모드로 스트리밍하면서 가장 효율적으로 빌트인 알고리즘에 입력하려 한다. 권장 데이터 포맷은?
+**Question 2.** You want to feed hundreds of GB of training data into a built-in algorithm as efficiently as possible while streaming it in Pipe mode. What is the recommended data format?
 
 A) CSV  
 B) JSON  
@@ -139,11 +139,11 @@ C) RecordIO-protobuf
 D) XML  
 
 **Answer: C**  
-Explanation: RecordIO-protobuf는 데이터를 이진으로 압축 직렬화해 대용량 데이터를 Pipe 모드로 스트리밍할 때 가장 효율적이며 다수 빌트인 알고리즘이 권장한다. A는 텍스트라 크고 파싱 비용이 있으며, B·D는 빌트인 학습 입력 포맷으로 부적합하다.
+Explanation: RecordIO-protobuf compresses and serializes data in binary, making it the most efficient for streaming large data in Pipe mode, and many built-in algorithms recommend it. A is text, so it is large and incurs parsing cost, and B and D are unsuitable as built-in training input formats.
 
 ---
 
-**Question 3.** 이미지 안에 등장하는 여러 객체의 위치(bounding box)와 각 객체의 클래스를 동시에 알아내야 한다. 적합한 빌트인 알고리즘은?
+**Question 3.** You need to determine both the locations (bounding boxes) of multiple objects appearing in an image and the class of each object. Which built-in algorithm is suitable?
 
 A) Image Classification  
 B) Object Detection  
@@ -151,23 +151,23 @@ C) K-Means
 D) PCA  
 
 **Answer: B**  
-Explanation: Object Detection은 이미지 내 여러 객체의 위치와 클래스를 함께 예측하므로 이 요구에 정확히 부합한다. A는 이미지 전체에 라벨 하나만 부여하고, C는 군집화, D는 차원 축소로 객체 위치 탐지와 무관하다.
+Explanation: Object Detection predicts the locations and classes of multiple objects in an image together, so it exactly matches this requirement. A assigns only a single label to the whole image, C is clustering, and D is dimensionality reduction, all unrelated to detecting object locations.
 
 ---
 
-**Question 4.** XGBoost 빌트인 알고리즘에 CSV 형식으로 학습 데이터를 제공할 때 올바른 형식 규칙은?
+**Question 4.** When providing training data in CSV format to the XGBoost built-in algorithm, what is the correct format rule?
 
-A) 첫 번째 열이 타깃(label)이고 헤더 행이 없어야 한다  
-B) 마지막 열이 타깃이고 헤더가 반드시 있어야 한다  
-C) 타깃 열을 별도 파일로 분리해야 한다  
-D) 모든 값을 이진으로 변환해야 한다  
+A) The first column must be the target (label) and there must be no header row  
+B) The last column must be the target and a header must be present  
+C) The target column must be split into a separate file  
+D) All values must be converted to binary  
 
 **Answer: A**  
-Explanation: XGBoost는 CSV 입력 시 첫 번째 열을 타깃으로 간주하며 헤더 행이 없어야 한다. B는 위치와 헤더 규칙이 모두 반대이고, C는 빌트인 XGBoost의 입력 방식이 아니며, D는 CSV가 아닌 다른 포맷에 대한 설명이다.
+Explanation: For CSV input, XGBoost treats the first column as the target and requires that there be no header row. B reverses both the position and the header rule, C is not how built-in XGBoost takes input, and D describes a format other than CSV.
 
 ---
 
-**Question 5.** 대규모 텍스트 코퍼스로부터 단어 임베딩(Word2Vec)을 매우 빠르게 학습하려 한다. 가장 적합한 빌트인 알고리즘은?
+**Question 5.** You want to train word embeddings (Word2Vec) from a large text corpus very quickly. Which built-in algorithm is most suitable?
 
 A) Linear Learner  
 B) Random Cut Forest  
@@ -175,6 +175,6 @@ C) BlazingText
 D) Factorization Machines  
 
 **Answer: C**  
-Explanation: BlazingText는 Word2Vec 임베딩 학습과 텍스트 분류를 고도로 최적화해 매우 빠르게 처리하는 빌트인 알고리즘이다. A는 선형 모델, B는 이상 탐지, D는 희소 추천용으로 단어 임베딩 학습 목적과 맞지 않는다.
+Explanation: BlazingText is a built-in algorithm highly optimized for Word2Vec embedding training and text classification, processing them very quickly. A is a linear model, B is anomaly detection, and D is for sparse recommendation, none of which matches the goal of training word embeddings.
 
 ---

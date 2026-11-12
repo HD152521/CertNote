@@ -137,7 +137,7 @@ Next: Week 10 synthesis. How these tools weave—detecting (Synthetics, alarms) 
 
 ## 📝 Practice Questions
 
-**Question 1.** "외부에서 API의 5분 단위 가용성을 트래픽 유무와 무관하게 측정"하려는 도구는?
+**Question 1.** Which tool measures "the API's availability every 5 minutes from outside, regardless of whether there is traffic"?
 
 A) CloudWatch Synthetics Canary
 B) RUM
@@ -146,88 +146,88 @@ D) Container Insights
 
 **Answer: A**
 
-Explanation: Synthetics Canary는 시스템이 직접 시뮬레이션 트래픽을 만들어 외부에서 점검하는 능동(active) 모니터링이라, 실제 사용자가 없는 시간에도 가용성을 선제적으로 확인한다. RUM(B)은 실사용자 트래픽이 있어야 데이터가 모이는 수동 모니터링이고, Evidently(C)는 A/B 실험, Container Insights(D)는 컨테이너 자원 메트릭이다.
+Explanation: A Synthetics Canary is active monitoring in which the system generates simulated traffic and checks from the outside, so it proactively verifies availability even at times when there are no real users. RUM (B) is passive monitoring that collects data only when real user traffic exists, Evidently (C) is for A/B experiments, and Container Insights (D) provides container resource metrics.
 
 ---
 
-**Question 2.** 실제 사용자가 페이지 로딩에 체감하는 시간(LCP)을 지역·디바이스·브라우저별로 측정하려면?
+**Question 2.** How can you measure the page load time (LCP) that real users actually experience, broken down by region, device, and browser?
 
 A) Synthetics
-B) RUM — 실사용자 브라우저에서 Web Vitals 수집
+B) RUM — collect Web Vitals from real users' browsers
 C) X-Ray
 D) Logs Insights
 
 **Answer: B**
 
-Explanation: RUM은 실사용자 브라우저에 심은 JS 스니펫으로 LCP/INP/CLS 같은 Web Vitals를 실측하고 지역·디바이스·브라우저별로 분리해 본다. 로봇이 흉내 못 내는 실제 사용자의 다양한 환경 경험을 포착하는 수동 모니터링이다. Synthetics(A)는 외부 프로브라 실사용자 체감이 아니고, X-Ray(C)는 백엔드 분산 추적, Logs Insights(D)는 로그 검색이다.
+Explanation: RUM measures Web Vitals such as LCP/INP/CLS from real users' browsers using a JS snippet embedded in the page, and lets you view them separated by region, device, and browser. It is passive monitoring that captures the experience of real users in diverse environments that a robot cannot imitate. Synthetics (A) is an external probe and does not reflect what real users experience, X-Ray (C) is backend distributed tracing, and Logs Insights (D) is log search.
 
 ---
 
-**Question 3.** API Heartbeat는 정상인데 "로그인→장바구니→결제" 마지막 단계에서만 장애가 난다. 이 멀티스텝 여정을 검증하려면?
+**Question 3.** The API heartbeat is healthy, but failures occur only at the last step of the "login → cart → checkout" flow. How can you verify this multi-step journey?
 
-A) 단일 URL Heartbeat Canary
-B) Synthetics GUI Workflow Canary로 전체 여정을 시뮬레이션
-C) RUM 샘플링 100%
+A) A single-URL Heartbeat Canary
+B) Simulate the entire journey with a Synthetics GUI Workflow Canary
+C) 100% RUM sampling
 D) Metric Filter
 
 **Answer: B**
 
-Explanation: 단일 엔드포인트 Heartbeat는 각 단계가 개별적으로 응답하는지만 보고 단계 간 전이(결제 위젯 로드 등)를 못 잡는다. GUI Workflow Canary는 로그인→담기→결제의 전체 멀티스텝 플로를 실제 브라우저로 끝까지 시뮬레이션해 여정 중간의 장애를 탐지한다. critical user journey는 단계의 합이 아니라 끝까지 가는 워크플로로 검증해야 한다.
+Explanation: A single-endpoint Heartbeat only checks whether each step responds individually and cannot catch transitions between steps (such as the checkout widget loading). A GUI Workflow Canary simulates the entire multi-step flow of login → add to cart → checkout end to end in a real browser, detecting failures in the middle of the journey. A critical user journey must be verified not as the sum of its steps but as a workflow that runs all the way through.
 
 ---
 
-**Question 4.** RUM이 익명 웹 방문자 브라우저에서 안전하게 데이터를 전송받는 메커니즘은?
+**Question 4.** What is the mechanism by which RUM safely receives data from anonymous web visitors' browsers?
 
-A) 페이지에 IAM 액세스 키 하드코딩
-B) Cognito Identity Pool의 익명 자격으로 최소권한·단기 임시 자격 발급
-C) API Key를 JS에 노출
-D) OIDC 로그인 강제
+A) Hardcode an IAM access key in the page
+B) Issue least-privilege, short-lived temporary credentials with anonymous access through a Cognito Identity Pool
+C) Expose an API Key in the JS
+D) Force OIDC login
 
 **Answer: B**
 
-Explanation: 브라우저 JS는 신뢰할 수 없는 환경이라 장기 비밀(IAM 키·API Key)을 절대 박으면 안 된다. Cognito Identity Pool은 STS를 통해 수명이 짧고 권한이 RUM 이벤트 전송으로만 제한된 익명(guest) 임시 자격을 발급해, 로그인 없는 방문자도 안전하게 텔레메트리를 보낸다. IAM 키(A)·API Key(C) 노출은 심각한 보안 위험이고, OIDC 강제(D)는 익명 사용자 측정을 막는다.
+Explanation: Browser JS is an untrusted environment, so long-lived secrets (IAM keys, API Keys) must never be embedded in it. A Cognito Identity Pool issues, through STS, anonymous (guest) temporary credentials that are short-lived and restricted to sending RUM events only, so even visitors who are not logged in can safely send telemetry. Exposing an IAM key (A) or an API Key (C) is a serious security risk, and forcing OIDC (D) prevents measuring anonymous users.
 
 ---
 
-**Question 5.** 새 체크아웃 UI가 전환율을 실제로 높이는지 10% 사용자에 노출해 통계적으로 비교하려면?
+**Question 5.** You want to expose a new checkout UI to 10% of users and statistically compare whether it actually increases the conversion rate. How?
 
 A) Synthetics
-B) Evidently의 Experiment (또는 AppConfig Feature Flag + 자체 분석)
-C) RUM만
+B) An Evidently Experiment (or an AppConfig Feature Flag + custom analysis)
+C) RUM only
 D) Lambda Insights
 
 **Answer: B**
 
-Explanation: Evidently Experiment는 control/treatment에 트래픽을 나눠 지표를 베이지안 통계로 비교해 "어느 쪽이 더 나은지"를 추측이 아닌 데이터로 판단한다. 단순 노출 측정인 RUM(C)이나 외부 프로브 Synthetics(A)와 달리, 변경의 효과를 가설 검증한다. Evidently가 deprecation 예고라 실무에서는 AppConfig Feature Flag + 별도 분석으로 대체하는 흐름이다.
+Explanation: An Evidently Experiment splits traffic between control and treatment and compares metrics using Bayesian statistics, deciding "which side is better" based on data rather than guesswork. Unlike RUM (C), which merely measures exposure, or Synthetics (A), an external probe, it tests the hypothesis about the effect of the change. Because Evidently has been announced for deprecation, in practice the trend is to replace it with an AppConfig Feature Flag + separate analysis.
 
 ---
 
-**Question 6.** 서버 메트릭(CPU·지연)은 정상인데 특정 국가 사용자만 "느리다"고 한다. 진단 조합은?
+**Question 6.** Server metrics (CPU, latency) are normal, but users in a specific country report that the service is "slow." What combination of diagnostics should you use?
 
-A) 서버 CPU를 더 모니터링
-B) RUM 지역별 분리 + Internet Monitor로 ISP·인터넷 경로 도달성 + 해당 지역 Synthetics Canary
-C) Lambda 메모리 증설
-D) retention 단축
+A) Monitor server CPU more
+B) RUM split by region + Internet Monitor for ISP and internet path reachability + a Synthetics Canary in that region
+C) Increase Lambda memory
+D) Shorten retention
 
 **Answer: B**
 
-Explanation: 서버는 정상인데 특정 지역만 느린 건 애플리케이션 밖(네트워크 경로·CDN·DNS) 문제일 가능성이 높다. RUM 지역별 데이터로 어느 환경이 느린지 실측하고, Internet Monitor로 그 지역 ISP·경로 도달성 문제를 확인하며, 해당 리전에서 Synthetics Canary로 외부 재현한다. 사용자가 느낄 때는 시스템 메트릭이 아니라 사용자·네트워크 관점 도구로 봐야 한다.
+Explanation: When the server is healthy but only a specific region is slow, the problem is likely outside the application (network path, CDN, or DNS). Use RUM regional data to measure which environments are slow, use Internet Monitor to check ISP and path reachability issues in that region, and reproduce the issue externally with a Synthetics Canary in that Region. When users feel slowness, you must look through tools that take the user and network perspective, not system metrics.
 
 ---
 
-**Question 7.** Synthetics Canary를 모든 검사에 1분 주기로 두는 것의 문제와 올바른 접근은?
+**Question 7.** What is the problem with running a Synthetics Canary at a 1-minute interval for every check, and what is the correct approach?
 
-A) 문제없다 — 전부 1분이 최선
-B) 월 약 43,200회/Canary 실행 비용 — critical path만 1분, 일반은 5/15분으로 MTTD 목표에 맞춰 차등
-C) 1분 주기는 불가능
-D) 주기는 비용과 무관
+A) No problem — 1 minute for everything is best
+B) Execution cost of about 43,200 runs per Canary per month — use 1 minute only for critical paths and 5/15 minutes for the rest, differentiated according to the MTTD target
+C) A 1-minute interval is not possible
+D) The interval is unrelated to cost
 
 **Answer: B**
 
-Explanation: Canary는 실행마다 Lambda 비용이 들어 1분 주기면 월 약 43,200회다. 주기는 탐지 시간(MTTD)과 비용의 트레이드오프이므로, 결제·로그인 같은 critical path만 1분으로 촘촘히 보고 일반 페이지는 5/15분으로 늘려 SLO의 탐지 지연 목표에서 역산해 정한다. "무조건 1분"은 과잉 비용이다.
+Explanation: A Canary incurs Lambda cost on every run, so a 1-minute interval means about 43,200 runs per month. The interval is a trade-off between detection time (MTTD) and cost, so only critical paths such as checkout and login are checked densely at 1 minute, while general pages are relaxed to 5/15 minutes, set by working backward from the SLO's detection-delay target. "Always 1 minute" is excessive cost.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 네 가지다. 첫째, 능동(Synthetics)과 수동(RUM) 모니터링은 보완 관계로 — Synthetics는 트래픽 없이 선제적으로 가용성을 보는 블랙박스 프로브, RUM은 실사용자의 현실 경험을 보는 진짜 블랙박스다. 둘째, Synthetics Canary 5종(Heartbeat/API/Broken Link/Visual/GUI Workflow)은 사용자를 흉내 내며, 주기는 MTTD와 비용의 트레이드오프라 critical path만 촘촘히 본다. 셋째, RUM은 Cognito Identity Pool 익명 자격으로 신뢰 없는 브라우저에 단기·최소권한을 위임해 Web Vitals를 수집하고 샘플링으로 비용을 통제한다. 넷째, Evidently는 A/B 실험(베이지안 통계)으로 가설을 검증하지만 deprecation 예고로 AppConfig Feature Flag로 통합되는 방향이며, Internet Monitor/Network Monitor가 2023-24 추가 진단 도구다.
+There are four key takeaways today. First, active (Synthetics) and passive (RUM) monitoring are complementary — Synthetics is a black-box probe that proactively checks availability without traffic, while RUM is the true black box that looks at real users' real experience. Second, the five Synthetics Canary types (Heartbeat/API/Broken Link/Visual/GUI Workflow) imitate users, and the interval is a trade-off between MTTD and cost, so only critical paths are checked densely. Third, RUM collects Web Vitals by delegating short-lived, least-privilege credentials to untrusted browsers through Cognito Identity Pool anonymous access, and controls cost through sampling. Fourth, Evidently validates hypotheses through A/B experiments (Bayesian statistics), but with its deprecation announced the direction is consolidation into AppConfig Feature Flags, and Internet Monitor/Network Monitor are additional diagnostic tools added in 2023-24.

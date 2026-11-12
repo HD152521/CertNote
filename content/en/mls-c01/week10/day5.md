@@ -108,62 +108,62 @@ Week 10 moved beyond "making models work" to "operating them efficiently and saf
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 회사가 온라인 추천 API를 운영한다. 트래픽은 지속적이고 저지연이 필수이며, 추론 지연을 더 줄이기 위해 학습된 PyTorch 모델을 대상 인스턴스에 맞게 컴파일하려 한다. 추론 방식과 최적화 도구의 올바른 조합은?
+**Question 1.** A company operates an online recommendation API. Traffic is continuous and low latency is essential, and to reduce inference latency further it wants to compile the trained PyTorch model for the target instance. Which is the correct combination of inference method and optimization tool?
 
 A) Batch Transform + Trainium  
 B) Real-time Endpoint + SageMaker Neo  
 C) Serverless + Elastic Inference  
-D) Asynchronous + 멀티모델 엔드포인트  
+D) Asynchronous + multi-model endpoint  
 
 **Answer: B**  
-Explanation: 지속 트래픽·저지연은 Real-time, 정확도 유지하며 지연을 줄이는 컴파일은 Neo다. Batch+Trainium(A)은 오프라인·학습칩으로 어긋나고, Serverless(C)는 콜드스타트로 저지연 부적합, Asynchronous(D)는 준실시간이라 즉시 응답 요구에 맞지 않는다.
+Explanation: Continuous traffic and low latency call for Real-time, and compilation that reduces latency while maintaining accuracy is Neo. Batch + Trainium (A) is mismatched because it is offline and a training chip, Serverless (C) is unsuitable for low latency because of cold starts, and Asynchronous (D) is near-real-time and does not meet a requirement for immediate responses.
 
 ---
 
-**Question 2.** 학습 시 Scikit-learn 전처리 후 XGBoost로 예측했고, 동일 프레임워크의 고객별 모델이 수천 개다. (a) 전처리-예측 정합성 보장과 (b) 수천 모델의 비용 효율 호스팅에 각각 알맞은 기능은?
+**Question 2.** During training, data was preprocessed with Scikit-learn and predictions were made with XGBoost, and there are thousands of per-customer models on the same framework. Which features are suited to (a) guaranteeing preprocessing-prediction consistency and (b) cost-efficient hosting of thousands of models, respectively?
 
-A) (a) 추론 파이프라인, (b) 멀티모델 엔드포인트  
-B) (a) 멀티모델 엔드포인트, (b) 추론 파이프라인  
-C) (a) 블루/그린, (b) 카나리  
+A) (a) Inference pipeline, (b) multi-model endpoint  
+B) (a) Multi-model endpoint, (b) inference pipeline  
+C) (a) Blue/green, (b) canary  
 D) (a) Neo, (b) Inferentia  
 
 **Answer: A**  
-Explanation: 전처리→예측을 한 요청으로 묶어 학습-서빙 스큐를 막는 것은 추론 파이프라인이고, 동일 프레임워크 모델 수천 개를 공유 인스턴스에 동적 로딩해 비용을 줄이는 것은 멀티모델 엔드포인트다. 나머지 조합은 역할이 뒤바뀌거나(B) 배포 전략·최적화 도구(C, D)로 목적이 다르다.
+Explanation: Bundling preprocessing and prediction into one request to prevent training-serving skew is an inference pipeline, and dynamically loading thousands of same-framework models onto shared instances to reduce cost is a multi-model endpoint. The other combinations have the roles swapped (B) or have different purposes as deployment strategies and optimization tools (C, D).
 
 ---
 
-**Question 3.** 새 모델을 프로덕션 트래픽으로 검증하되 사용자에게는 절대 그 응답을 보여주지 않으려 한다. 적절한 배포 전략은?
+**Question 3.** You want to validate a new model with production traffic but never show its responses to users. Which deployment strategy is appropriate?
 
-A) A/B 테스트  
-B) 블루/그린  
-C) 섀도 배포  
-D) 카나리  
+A) A/B testing  
+B) Blue/green  
+C) Shadow deployment  
+D) Canary  
 
 **Answer: C**  
-Explanation: 섀도 배포는 트래픽을 복제해 새 모델에도 보내지만 응답을 반환하지 않아 사용자 노출이 0이다. A/B(A)·블루그린(B)·카나리(D)는 모두 어느 정도 새 모델 응답을 실제 사용자에게 제공한다.
+Explanation: Shadow deployment replicates traffic and sends it to the new model as well but does not return its responses, so user exposure is zero. A/B (A), blue/green (B), and canary (D) all serve the new model's responses to real users to some degree.
 
 ---
 
-**Question 4.** 매일 밤 전체 고객 대상 일괄 예측을 수행하며, 상시 엔드포인트 비용을 없애고 싶다. 또한 별도 배포 전략이나 트래픽 분할은 필요 없다. 올바른 선택은?
+**Question 4.** Every night you run batch predictions for all customers and want to eliminate the cost of an always-on endpoint. In addition, no separate deployment strategy or traffic splitting is needed. What is the correct choice?
 
-A) Real-time Endpoint + 카나리 배포  
+A) Real-time Endpoint + canary deployment  
 B) Batch Transform  
-C) Serverless Inference + A/B 테스트  
-D) Asynchronous + 섀도 배포  
+C) Serverless Inference + A/B testing  
+D) Asynchronous + shadow deployment  
 
 **Answer: B**  
-Explanation: 실시간 응답이 불필요한 대량 일괄 처리 + 상시 비용 제거는 Batch Transform이다(잡 실행 시간만 과금). 나머지는 온라인 추론 방식에 불필요한 배포 전략을 결합한 것으로 시나리오와 맞지 않는다.
+Explanation: Large-volume bulk processing that does not need real-time responses, plus eliminating always-on cost, is Batch Transform (billed only for job run time). The rest combine online inference methods with unnecessary deployment strategies and do not fit the scenario.
 
 ---
 
-**Question 5.** 다음 매칭 중 잘못된 것은?
+**Question 5.** Which of the following matches is incorrect?
 
-A) 새 버전을 5%→100%로 점진 확대하며 알람 시 자동 복귀 — 배포 가드레일 Canary  
-B) 인스턴스당 호출 수를 일정하게 유지 — Target Tracking 오토스케일링  
-C) 500MB 페이로드·8분 처리 온라인 추론 — Real-time Endpoint  
-D) 추론 전용 커스텀 칩으로 고처리량·비용 효율 — Inferentia  
+A) Gradually expanding a new version from 5% to 100% with automatic reversion on alarm — deployment guardrails Canary  
+B) Keeping invocations per instance constant — Target Tracking autoscaling  
+C) Online inference with a 500 MB payload and 8-minute processing — Real-time Endpoint  
+D) High throughput and cost efficiency with an inference-specific custom chip — Inferentia  
 
 **Answer: C**  
-Explanation: 500MB·8분은 Real-time의 6MB·60초 제한을 크게 초과하므로 Real-time이 아니라 Asynchronous(1GB·1시간)가 맞다. 따라서 C가 잘못된 매칭이다. A(카나리 자동 롤백), B(Target Tracking), D(Inferentia)는 모두 올바른 매칭이다.
+Explanation: 500 MB and 8 minutes far exceed Real-time's 6 MB and 60-second limits, so the correct choice is Asynchronous (1 GB, 1 hour), not Real-time. Therefore C is the incorrect match. A (canary automatic rollback), B (Target Tracking), and D (Inferentia) are all correct matches.
 
 ---

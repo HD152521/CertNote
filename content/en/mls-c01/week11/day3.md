@@ -111,55 +111,55 @@ Tomorrow: the other half of operations — cost optimization, CloudWatch/CloudTr
 
 ## 📝 Practice Questions
 
-**Question 1.** 규제 요건상 학습 작업이 인터넷에 절대 접근하지 못하게 하고, 학습 데이터가 든 S3에는 인터넷을 거치지 않고 접근해야 한다. 가장 적절한 구성은?
+**Question 1.** Due to regulatory requirements, a training job must never have access to the internet, and it must access the S3 bucket holding the training data without traversing the internet. Which configuration is MOST appropriate?
 
-A) 퍼블릭 서브넷에 배치하고 보안 그룹만 강화  
-B) 모든 트래픽을 NAT 게이트웨이로 라우팅  
-C) 프라이빗 서브넷 + S3용 VPC(게이트웨이) 엔드포인트 + 네트워크 격리  
-D) 엔드포인트에 퍼블릭 IP를 부여  
+A) Place it in a public subnet and only strengthen the security group  
+B) Route all traffic through a NAT gateway  
+C) Private subnet + VPC (gateway) endpoint for S3 + network isolation  
+D) Assign a public IP to the endpoint  
 
 **Answer: C**  
-Explanation: 프라이빗 서브넷에 두고 S3 VPC 엔드포인트로 사설 접근하며 네트워크 격리로 외부 호출을 차단하는 조합이 인터넷 비접근 요건을 충족한다. 퍼블릭 서브넷/IP(A·D)와 NAT(B)는 모두 인터넷 경로를 만든다.
+Explanation: Placing the job in a private subnet, accessing S3 privately through an S3 VPC endpoint, and blocking outbound calls with network isolation together satisfy the no-internet-access requirement. Public subnets/IPs (A, D) and NAT (B) all create an internet path.
 
 ---
 
-**Question 2.** SageMaker 학습 작업이 S3 버킷 접근에서 AccessDenied를 받는다. 사용자는 콘솔에서 같은 버킷을 잘 읽는다. 가장 가능성 높은 원인은?
+**Question 2.** A SageMaker training job receives AccessDenied when accessing an S3 bucket. The user can read the same bucket in the console without problems. What is the MOST likely cause?
 
-A) 사용자 IAM 권한 부족  
-B) 학습 작업의 실행 역할(Execution Role)에 해당 S3 권한이 없음  
-C) 리전이 잘못됨  
-D) 인스턴스 타입이 너무 작음  
+A) The user's IAM permissions are insufficient  
+B) The training job's execution role does not have the relevant S3 permissions  
+C) The Region is wrong  
+D) The instance type is too small  
 
 **Answer: B**  
-Explanation: 학습 작업은 사용자 자격이 아니라 실행 역할 권한으로 동작하므로, 사용자가 접근 가능해도 실행 역할에 권한이 없으면 거부된다. 사용자 권한(A)은 작업 실행과 무관, 리전(C)·인스턴스(D)는 AccessDenied 원인이 아니다.
+Explanation: A training job runs with the permissions of its execution role, not the user's credentials, so even if the user has access, the job is denied if the execution role lacks permissions. User permissions (A) are unrelated to job execution, and the Region (C) and instance (D) are not causes of AccessDenied.
 
 ---
 
-**Question 3.** 프로젝트 팀별로 학습 데이터와 모델 아티팩트를 서로 복호화하지 못하도록 격리하려 한다. 가장 효과적인 접근은?
+**Question 3.** You want to isolate training data and model artifacts by project team so that teams cannot decrypt each other's data. Which approach is MOST effective?
 
-A) 모든 팀이 같은 AWS 관리형 키를 공유  
-B) 암호화를 끄고 버킷 정책만 사용  
-C) 데이터를 평문으로 두되 IAM 사용자만 분리  
-D) 팀별 KMS 고객 관리형 키(CMK)를 두고 키 정책으로 접근을 분리  
+A) All teams share the same AWS managed key  
+B) Turn off encryption and use only bucket policies  
+C) Leave the data in plaintext but only separate IAM users  
+D) Use a separate KMS customer managed key (CMK) for each team and separate access with key policies  
 
 **Answer: D**  
-Explanation: 팀별 CMK와 키 정책으로 누가 복호화할 수 있는지까지 분리하면 IAM 권한이 있어도 키 정책에서 막혀 데이터 격리가 강제된다. 공유 키(A)는 격리 실패, 암호화 해제(B·C)는 저장 데이터 보호를 포기한다.
+Explanation: Separating even who can decrypt with per-team CMKs and key policies enforces data isolation, because access is blocked by the key policy even if IAM permissions exist. A shared key (A) fails isolation, and disabling encryption (B, C) gives up protection of data at rest.
 
 ---
 
-**Question 4.** 분산 학습에서 여러 노드 간에 오가는 학습 데이터가 네트워크에서 평문으로 흐르지 않게 하려 한다. SageMaker Estimator에서 설정할 옵션은?
+**Question 4.** In distributed training, you want to ensure that training data passing between nodes does not flow over the network in plaintext. Which option should you set on the SageMaker Estimator?
 
 A) enable_network_isolation=True  
-B) output_kms_key 지정  
+B) Specify output_kms_key  
 C) encrypt_inter_container_traffic=True  
 D) sampling_percentage=100  
 
 **Answer: C**  
-Explanation: encrypt_inter_container_traffic은 분산 학습 컨테이너 간 트래픽을 암호화한다. network_isolation(A)은 외부 네트워크 차단, output_kms_key(B)는 저장 아티팩트 암호화, sampling(D)은 Data Capture 옵션이다.
+Explanation: encrypt_inter_container_traffic encrypts traffic between distributed training containers. network_isolation (A) blocks external network access, output_kms_key (B) encrypts stored artifacts, and sampling (D) is a Data Capture option.
 
 ---
 
-**Question 5.** S3에 저장된 학습 데이터셋 안에 의도치 않게 신용카드 번호 같은 PII가 포함됐는지 자동으로 탐지·분류하려 한다. 가장 적합한 서비스는?
+**Question 5.** You want to automatically detect and classify whether PII such as credit card numbers is unintentionally included in a training dataset stored in S3. Which service is MOST appropriate?
 
 A) Amazon Macie  
 B) AWS KMS  
@@ -167,6 +167,6 @@ C) Amazon Comprehend Medical
 D) AWS Shield  
 
 **Answer: A**  
-Explanation: Macie는 머신러닝으로 S3의 PII·민감정보를 자동 탐지·분류하는 데이터 보안 서비스다. KMS(B)는 암호화 키 관리, Comprehend Medical(C)은 의료 텍스트 추출, Shield(D)는 DDoS 방어다.
+Explanation: Macie is a data security service that uses machine learning to automatically detect and classify PII and sensitive information in S3. KMS (B) manages encryption keys, Comprehend Medical (C) extracts medical text, and Shield (D) provides DDoS protection.
 
 ---

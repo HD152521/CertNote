@@ -365,4 +365,4 @@ Explanation: Detective is a dedicated service that integrates GuardDuty findings
 
 ---
 
-해설 보강: AWS's 5 security pillars are cleanly divided as "WAF (L7 prevention), Shield (L3/L4 DDoS), GuardDuty (behavior detection), Inspector (vulnerabilities), Macie (PII)," and mapping the exam keywords precisely gets you to the answer fast. In practice, the standard is to build not a single service but a pipeline: GuardDuty → EventBridge → Lambda automated response → Detective analysis → Security Hub integrated score. Also keep in mind that Firewall Manager is the one and only answer for org-wide guardrails.
+Additional Explanation: AWS's 5 security pillars are cleanly divided as "WAF (L7 prevention), Shield (L3/L4 DDoS), GuardDuty (behavior detection), Inspector (vulnerabilities), Macie (PII)," and mapping the exam keywords precisely gets you to the answer fast. In practice, the standard is to build not a single service but a pipeline: GuardDuty → EventBridge → Lambda automated response → Detective analysis → Security Hub integrated score. Also keep in mind that Firewall Manager is the one and only answer for org-wide guardrails.

@@ -195,19 +195,19 @@ The essence of Storage Gateway is "same protocol on-premises, cloud backend only
 
 ## 📝 Practice Questions
 
-**Question 1.** 글로벌 컨설팅 회사가 15개 지사에서 Windows 파일 서버를 운영한다. 직원이 본사와 지사에서 동일한 파일을 편집하며 Windows AD 그룹 정책으로 파일 접근을 제어한다. 지사 직원의 파일 접근 지연을 줄이고 중앙 백업을 AWS에서 관리하고 싶다. 적합한 AWS 솔루션은?
+**Question 1.** A global consulting firm operates Windows file servers at 15 branch offices. Employees edit the same files at headquarters and at branches, and file access is controlled by Windows AD group policy. The firm wants to reduce file access latency for branch employees and manage central backups in AWS. What is an appropriate AWS solution?
 
-A) S3 File Gateway (각 지사에 배포)
-B) FSx File Gateway (각 지사에 배포) + 중앙 FSx for Windows File Server
-C) Storage Gateway Volume (Cached Mode) + AD 정책
-D) DataSync로 일 1회 동기화
+A) S3 File Gateway (deployed at each branch)
+B) FSx File Gateway (deployed at each branch) + central FSx for Windows File Server
+C) Storage Gateway Volume (Cached Mode) + AD policy
+D) Synchronize once a day with DataSync
 
 **Answer: B**
-Explanation: Windows AD ACL과 파일 잠금(동시 편집 충돌 방지)을 요구하는 환경에서 FSx File Gateway가 필요하다. 각 지사에 FSx File Gateway를 배포하면 자주 쓰는 파일이 로컬 캐시에 유지되어 지연이 낮고, 실제 데이터는 중앙 FSx for Windows File Server에 저장된다. AD 통합으로 기존 그룹 정책이 그대로 적용된다. S3 File Gateway(A)는 Windows ACL과 파일 잠금을 완전히 지원하지 않는다. Volume Gateway(C)는 블록 스토리지(iSCSI)이지 파일 공유 프로토콜(SMB)이 아니다. DataSync(D)는 배치 동기화로 실시간 파일 공유에 부적합하다.
+Explanation: In an environment that requires Windows AD ACLs and file locking (to prevent concurrent-edit conflicts), FSx File Gateway is needed. Deploying FSx File Gateway at each branch keeps frequently used files in the local cache for low latency, while the actual data is stored in the central FSx for Windows File Server. With AD integration, the existing group policy applies as is. S3 File Gateway (A) does not fully support Windows ACLs and file locking. Volume Gateway (C) is block storage (iSCSI), not a file sharing protocol (SMB). DataSync (D) is batch synchronization and is unsuitable for real-time file sharing.
 
 ---
 
-**Question 2.** 방송사가 물리 LTO 테이프 4만 개로 30년치 방송 아카이브를 보관한다. 테이프 운반, 복원 시간(평균 3일), 관리 인력 비용이 문제다. 기존 NetBackup 소프트웨어를 그대로 유지하면서 클라우드로 이전하려 한다. 가장 적합한 솔루션은?
+**Question 2.** A broadcaster keeps 30 years of broadcast archives on 40,000 physical LTO tapes. Tape transport, restore time (3 days on average), and administrative staffing costs are problems. It wants to migrate to the cloud while keeping its existing NetBackup software as is. What is the most appropriate solution?
 
 A) S3 File Gateway + S3 Glacier Deep Archive
 B) Tape Gateway (VTL) + S3 Glacier Deep Archive
@@ -215,11 +215,11 @@ C) DataSync + Glacier
 D) Snowball + S3
 
 **Answer: B**
-Explanation: "기존 NetBackup 소프트웨어를 그대로 유지"가 핵심이다. Tape Gateway는 iSCSI VTL 인터페이스를 제공해 NetBackup이 물리 테이프처럼 인식한다. 소프트웨어 변경 없이 백업 job이 그대로 실행된다. 데이터는 S3 VTL에 저장되고 Archive 명령 시 Glacier Deep Archive로 이동한다. S3 File Gateway(A)는 NFS/SMB 파일 공유이지 VTL 인터페이스가 없어 NetBackup이 인식하지 못한다. DataSync(C)는 배치 전송으로 백업 소프트웨어 통합이 없다. Snowball(D)은 일회성 물리 데이터 이동으로 지속적인 백업에 부적합하다.
+Explanation: "Keep the existing NetBackup software as is" is the key. Tape Gateway provides an iSCSI VTL interface so NetBackup recognizes it like physical tapes. Backup jobs run as they are with no software changes. Data is stored in the S3 VTL and moves to Glacier Deep Archive on an Archive command. S3 File Gateway (A) is an NFS/SMB file share without a VTL interface, so NetBackup does not recognize it. DataSync (C) is batch transfer with no backup software integration. Snowball (D) is a one-time physical data move and is unsuitable for ongoing backups.
 
 ---
 
-**Question 3.** 지방 의원이 의료 영상(DICOM) 총 80TB를 저장한다. 로컬 스토리지는 10TB만 있다. 최근 6개월 영상은 자주 접근하고 오래된 영상은 가끔만 접근한다. 온프레미스 PACS 시스템이 iSCSI로 스토리지에 접근한다. 비용 최적화하면서 로컬 스토리지 한계를 극복하는 방법은?
+**Question 3.** A regional clinic stores a total of 80 TB of medical images (DICOM). Local storage is only 10 TB. Images from the last 6 months are accessed frequently, and older images are accessed only occasionally. The on-premises PACS system accesses storage over iSCSI. How can you overcome the local storage limit while optimizing cost?
 
 A) Volume Gateway Stored Mode
 B) Volume Gateway Cached Mode
@@ -227,40 +227,40 @@ C) S3 File Gateway
 D) FSx File Gateway
 
 **Answer: B**
-Explanation: iSCSI 접근 방식이므로 Volume Gateway가 필요하다(C, D는 파일 프로토콜). Cached Mode는 주 저장소를 S3로 두고 로컬에는 자주 쓰는 데이터만 캐시로 유지한다. 10TB 로컬로 80TB 전체를 처리할 수 있다. 최근 6개월 영상이 10TB 이하라면 캐시 히트율이 높아 지연도 낮다. Stored Mode(A)는 전체 데이터(80TB)를 로컬에 저장해야 하므로 10TB 로컬로는 불가능하다.
+Explanation: Because access is through iSCSI, Volume Gateway is required (C and D are file protocols). Cached Mode keeps the primary storage in S3 and keeps only frequently used data locally as a cache. 10 TB of local storage can handle the whole 80 TB. If the last 6 months of images are 10 TB or less, the cache hit rate is high and latency is low. Stored Mode (A) must store the entire data set (80 TB) locally, which is impossible with 10 TB of local storage.
 
 ---
 
-**Question 4.** 온프레미스에서 3개월치 로그 파일(2TB)을 S3로 이전한다. 이전 후에는 온프레미스 시스템이 계속 S3에 새 로그를 저장해야 한다. 가장 적합한 조합은?
+**Question 4.** You are moving 3 months of log files (2 TB) from on premises to S3. After the move, the on-premises systems must keep storing new logs in S3. What is the most appropriate combination?
 
-A) DataSync로 초기 3TB 이전 + Storage Gateway(S3 File Gateway)로 이후 상시 저장
-B) Snowball로 초기 이전 + Storage Gateway
-C) Storage Gateway만으로 전체 진행
-D) DataSync만 사용 (매일 정기 실행)
+A) DataSync for the initial 3 TB transfer + Storage Gateway (S3 File Gateway) for ongoing storage afterward
+B) Snowball for the initial transfer + Storage Gateway
+C) Do everything with Storage Gateway only
+D) Use DataSync only (scheduled to run daily)
 
 **Answer: A**
-Explanation: 두 단계 요구사항이 있다: (1) 기존 2TB 빠른 이전, (2) 이후 지속적 로그 저장. DataSync는 NFS/SMB 소스를 S3로 빠르고 효율적으로 전송하는 배치 도구다(초기 마이그레이션). S3 File Gateway는 온프레미스 시스템이 NFS로 마운트해 지속적으로 파일을 쓸 수 있는 상시 솔루션이다(이후 운영). 이 두 가지를 조합하는 것이 마이그레이션 + 지속 운영의 표준 패턴이다. Storage Gateway만으로(C) 초기 2TB를 이전하면 느리고 비효율적이다. DataSync만으로(D) 지속적 실시간 쓰기가 불가능하다.
+Explanation: There are two stages of requirements: (1) a fast transfer of the existing 2 TB, and (2) continuous log storage afterward. DataSync is a batch tool that transfers NFS/SMB sources to S3 quickly and efficiently (initial migration). S3 File Gateway is an always-on solution that on-premises systems can mount over NFS and write files to continuously (ongoing operation). Combining the two is the standard pattern for migration plus ongoing operation. Transferring the initial 2 TB with Storage Gateway alone (C) is slow and inefficient. DataSync alone (D) cannot do continuous real-time writes.
 
 ---
 
-**Question 5.** S3 File Gateway를 사용하는 온프레미스 서버가 업로드한 파일이 같은 버킷을 쓰는 다른 사이트의 S3 File Gateway에서 바로 보이지 않는다. 원인과 해결책은?
+**Question 5.** Files uploaded by an on-premises server using an S3 File Gateway do not appear immediately in the S3 File Gateway at another site that uses the same bucket. What are the cause and the solution?
 
-A) S3 강력한 일관성 문제 — 잠시 기다리면 해결됨
-B) 각 게이트웨이가 독립 캐시를 유지하므로 캐시 무효화(RefreshCache) 필요
-C) S3 버킷 정책 문제 — 교차 계정 접근 허용 필요
-D) NFS 버전 불일치 — NFS v4.1로 통일
+A) An S3 strong consistency issue — it resolves itself after waiting a moment
+B) Each gateway maintains an independent cache, so cache invalidation (RefreshCache) is needed
+C) An S3 bucket policy issue — cross-account access must be allowed
+D) NFS version mismatch — standardize on NFS v4.1
 
 **Answer: B**
-Explanation: S3 File Gateway는 각 사이트에서 독립적인 로컬 캐시를 운영한다. 사이트 A의 게이트웨이가 파일을 S3에 업로드해도 사이트 B의 게이트웨이는 자신의 캐시에 그 정보가 없어 파일이 보이지 않는다. RefreshCache API를 호출하거나 S3 이벤트 알림 → Lambda → RefreshCache를 자동화하면 해결된다. S3는 2020년 12월부터 강력한 일관성을 제공하므로 일관성 자체는 문제가 아니다(A 오답). 버킷 정책(C)은 접근 권한 문제이지 가시성 지연 문제가 아니다. NFS 버전(D)은 관련 없다.
+Explanation: S3 File Gateway runs an independent local cache at each site. Even if the gateway at site A uploads a file to S3, the gateway at site B does not have that information in its own cache, so the file does not appear. This is solved by calling the RefreshCache API or by automating S3 event notification → Lambda → RefreshCache. Since December 2020 S3 provides strong consistency, so consistency itself is not the problem (A is wrong). A bucket policy (C) is an access permission issue, not a visibility delay issue. The NFS version (D) is irrelevant.
 
 ---
 
-**Question 6.** Storage Gateway(S3 File)와 DataSync 중 온프레미스 파일 서버를 AWS로 최종 이전(마이그레이션)하기 위한 일회성 대량 복사에 더 적합한 서비스는?
+**Question 6.** Between Storage Gateway (S3 File) and DataSync, which service is more suitable for a one-time bulk copy to finally migrate an on-premises file server to AWS?
 
 A) Storage Gateway S3 File Gateway
 B) AWS DataSync
-C) 두 서비스 모두 동일하게 적합
+C) Both services are equally suitable
 D) AWS Transfer Family
 
 **Answer: B**
-Explanation: DataSync는 대량 데이터의 고속 배치 전송에 최적화되어 있다. 네트워크 가속, 병렬 처리, 체크섬 검증, 변경 파일만 전송하는 증분 동기화를 지원한다. 1Gbps DX 환경에서 DataSync가 일반 cp 또는 Storage Gateway보다 30% 이상 높은 실효 처리량을 달성한다. Storage Gateway(A)는 상시 하이브리드 접근을 위한 서비스이고, 대량 일회성 전송보다 일상 운영에 최적화되어 있다. Transfer Family(D)는 SFTP/FTP 엔드포인트 제공 서비스로 마이그레이션 도구가 아니다.
+Explanation: DataSync is optimized for high-speed batch transfer of large amounts of data. It supports network acceleration, parallel processing, checksum verification, and incremental synchronization that transfers only changed files. In a 1 Gbps DX environment, DataSync achieves an effective throughput more than 30% higher than a plain cp or Storage Gateway. Storage Gateway (A) is a service for ongoing hybrid access and is optimized for day-to-day operation rather than one-time bulk transfer. Transfer Family (D) is a service that provides SFTP/FTP endpoints and is not a migration tool.

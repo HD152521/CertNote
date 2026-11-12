@@ -122,39 +122,39 @@ Common SAP exam mappings: (1) "direct control over key policy, rotation, audit" 
 
 ## 📝 Practice Questions
 
-**Question 1.** us-east-1에서 암호화한 RDS 스냅샷을 ap-northeast-2로 복사해 DR 환경을 구성한다. 장애 시 추가 KMS 호출이나 re-encrypt 없이 즉시 복원해야 하고, 두 리전의 키 접근 권한은 각각 다르게 통제하고 싶다. 가장 적합한 것은?
+**Question 1.** You copy an encrypted RDS snapshot from us-east-1 to ap-northeast-2 to build a DR environment. You must be able to restore immediately during an outage without additional KMS calls or re-encryption, and you want to control key access permissions differently in each Region. Which is the most appropriate?
 
-A) 단일 리전 CMK + Cross-Region Snapshot Copy 시 매번 re-encrypt
+A) Single-Region CMK + re-encrypt every time during Cross-Region Snapshot Copy
 
 B) Multi-Region Key (Primary + Replica)
 
-C) Imported Key Material을 두 리전에 각각 import
+C) Import Key Material separately into each of the two Regions
 
 D) AWS Managed Key
 
 **Answer: B**
-Explanation: MRK는 같은 키 머터리얼을 여러 리전에 복제하고 키 ID가 동일해, 한 리전에서 암호화한 ciphertext를 다른 리전의 Replica로 별도 호출 없이 직접 복호화한다. 리전별 Key Policy를 따로 둬 접근 통제도 분리된다. A는 일반 CMK가 리전 종속이라 Cross-Region 복호화에 추가 호출·재암호화가 필요해 비효율적이다. C는 두 import 키가 서로 다른 키가 되어(동일 ciphertext를 양쪽에서 복호화 불가) DR에 부적합하고 자동 로테이션도 안 된다. D는 정책·회전을 통제할 수 없고 리전 종속이다. 함정: "Cross-Region 동일 키 복호화 + DR"은 MRK.
+Explanation: An MRK replicates the same key material across multiple Regions and has the same key ID, so ciphertext encrypted in one Region can be decrypted directly by the Replica in another Region without a separate call. Per-Region Key Policies keep access control separate as well. A is inefficient because a regular CMK is Region-bound, so cross-Region decryption requires additional calls and re-encryption. C is unsuitable for DR because the two imported keys become different keys (the same ciphertext cannot be decrypted on both sides) and automatic rotation does not work. D cannot control policy or rotation and is Region-bound. Trap: "same-key decryption across Regions + DR" is MRK.
 
 ---
 
-**Question 2.** Lambda 함수가 KMS CMK로 데이터를 복호화해야 한다. Lambda 실행 역할 IAM에 `kms:Decrypt`를 부여했는데도 AccessDenied가 발생한다. 가장 가능성 높은 원인과 해결은?
+**Question 2.** A Lambda function must decrypt data with a KMS CMK. Although `kms:Decrypt` was granted in the Lambda execution role's IAM, AccessDenied still occurs. What is the most likely cause and fix?
 
-A) Lambda는 KMS를 호출할 수 없다
+A) Lambda cannot call KMS
 
-B) Key Policy에 계정 루트로의 IAM 위임이 없어 IAM 권한이 무효 — Key Policy에 위임을 추가
+B) The Key Policy lacks IAM delegation to the account root, so the IAM permission is ineffective — add the delegation to the Key Policy
 
-C) Grant를 반드시 먼저 생성해야 한다
+C) A Grant must be created first
 
-D) SCP가 모든 KMS를 차단하고 있다
+D) An SCP is blocking all KMS actions
 
 **Answer: B**
-Explanation: KMS는 Key Policy가 권한의 루트다. Key Policy에 `Principal: {AWS: account-root}` + `kms:*` 같은 IAM 위임 구문이 없으면, IAM에서 아무리 `kms:Decrypt`를 허용해도 효력이 없다. 해결은 Key Policy에 IAM 위임을 명시하거나 Lambda 역할을 Key Policy에서 직접 허용하는 것이다. A는 틀림(Lambda는 KMS 호출 가능). C는 Grant가 필수는 아니다(IAM 위임으로 충분). D는 일반적 원인이 아니며 단서가 없다. 함정: "IAM만 줬는데 거부"의 전형적 원인은 Key Policy 위임 누락.
+Explanation: In KMS, the Key Policy is the root of permissions. If the Key Policy lacks an IAM delegation statement such as `Principal: {AWS: account-root}` + `kms:*`, allowing `kms:Decrypt` in IAM has no effect no matter how much you grant. The fix is to state the IAM delegation explicitly in the Key Policy or to allow the Lambda role directly in the Key Policy. A is wrong (Lambda can call KMS). C is wrong because a Grant is not required (IAM delegation is enough). D is not a typical cause and there is no clue for it. Trap: the classic cause of "granted only IAM but denied" is a missing Key Policy delegation.
 
 ---
 
-**Question 3.** 규제상 암호화 키 머터리얼을 자사 온프레미스에서 생성하고, AWS가 키를 영구 보관하지 않으며, 키에 만료일을 설정해야 한다. 자동 로테이션은 요구되지 않는다. 가장 적합한 것은?
+**Question 3.** Regulations require that the encryption key material be generated on the company's own premises, that AWS not store the key permanently, and that the key have an expiration date. Automatic rotation is not required. Which is the most appropriate?
 
-A) Customer Managed Key (KMS 생성) + 자동 로테이션
+A) Customer Managed Key (created by KMS) + automatic rotation
 
 B) Imported Key Material (BYOK)
 
@@ -163,67 +163,67 @@ C) AWS Managed Key
 D) Multi-Region Key
 
 **Answer: B**
-Explanation: BYOK(Imported Key Material)는 키 머터리얼을 외부(자사 HSM)에서 생성해 KMS로 import하며, 만료일을 설정하면 KMS가 캐시만 보관하다 만료 시 삭제한다. A는 키를 KMS가 생성하므로 "자사 생성" 요건에 맞지 않고, BYOK는 자동 로테이션이 불가하다(문제에서 자동 로테이션 불요이므로 BYOK가 적합). C는 통제권이 없다. D는 키 출처·만료 요건과 무관. 함정: "외부 생성 + 만료 설정"은 Imported, 단 "자동 로테이션 필요"가 함께 나오면 모순이므로 그 선택지는 오답.
+Explanation: BYOK (Imported Key Material) generates the key material externally (in the company's own HSM) and imports it into KMS; when an expiration date is set, KMS keeps only a cache and deletes it at expiration. A does not meet the "self-generated" requirement because KMS generates the key, and BYOK does not support automatic rotation (since the question does not require automatic rotation, BYOK fits). C gives no control. D is unrelated to the key origin and expiration requirements. Trap: "externally generated + expiration set" is Imported, but if "automatic rotation required" appears alongside it, that is contradictory, so that choice is wrong.
 
 ---
 
-**Question 4.** 단일 테넌트 전용 HSM에서 FIPS 140-2 Level 3 인증된 키 관리가 필요하면서, 개발팀은 기존 KMS API(`Encrypt`/`Decrypt`)를 그대로 쓰고 싶다. 가장 적합한 것은?
+**Question 4.** You need FIPS 140-2 Level 3 certified key management on a single-tenant dedicated HSM, while the development team wants to keep using the existing KMS APIs (`Encrypt`/`Decrypt`). Which is the most appropriate?
 
-A) 순수 KMS CMK (멀티 테넌트)
+A) Plain KMS CMK (multi-tenant)
 
-B) KMS Custom Key Store + CloudHSM 클러스터
+B) KMS Custom Key Store + CloudHSM cluster
 
 C) Secrets Manager
 
 D) Imported Key Material
 
 **Answer: B**
-Explanation: Custom Key Store는 KMS의 익숙한 API를 유지하면서 실제 키 머터리얼은 고객 전용 CloudHSM 클러스터(단일 테넌트, FIPS 140-2 Level 3) 안에만 보관한다. A는 멀티 테넌트라 "단일 테넌트 L3" 요건 미달. C는 비밀 저장소이지 HSM 키 관리가 아니다. D는 import한 키도 KMS의 멀티 테넌트 HSM에 저장되어 단일 테넌트 요건을 충족하지 못한다. 함정: "단일 테넌트 + FIPS L3 + KMS API 유지"는 Custom Key Store + CloudHSM.
+Explanation: A Custom Key Store keeps the familiar KMS API while storing the actual key material only inside the customer's dedicated CloudHSM cluster (single-tenant, FIPS 140-2 Level 3). A is multi-tenant and does not meet the "single-tenant L3" requirement. C is a secret store, not HSM key management. D fails the single-tenant requirement because imported keys are also stored in KMS's multi-tenant HSMs. Trap: "single-tenant + FIPS L3 + keep the KMS API" is Custom Key Store + CloudHSM.
 
 ---
 
-**Question 5.** AWS 서비스(예: EBS)가 당신의 CMK를 볼륨 암호화에 일시적으로 사용한 뒤, 작업이 끝나면 그 위임이 즉시 회수되어야 한다. 세분화된 임시 위임이 필요하다. 어떤 메커니즘인가?
+**Question 5.** An AWS service (for example, EBS) temporarily uses your CMK to encrypt a volume, and that delegation must be revoked immediately when the operation finishes. You need fine-grained temporary delegation. Which mechanism should you use?
 
-A) Key Policy에 서비스 Principal 영구 추가
+A) Permanently add the service Principal to the Key Policy
 
-B) IAM Role 추가
+B) Add an IAM Role
 
 C) KMS Grant
 
 D) STS AssumeRole
 
 **Answer: C**
-Explanation: Grant는 프로그래밍적으로 생성·회수 가능한 임시·세분화 위임으로, 특정 작업만 허용하고 `RetireGrant`/`RevokeGrant`로 즉시 회수된다. AWS 서비스 통합(EBS·RDS 등)이 내부적으로 Grant를 쓴다. A는 영구 위임이라 "즉시 회수" 요건에 맞지 않고 Key Policy가 비대해진다. B(IAM Role)는 KMS 권한의 임시 회수 메커니즘이 아니다. D(STS)는 자격 증명 발급이지 KMS 키 위임이 아니다. 함정: "서비스의 임시·취소 가능 세분화 위임"은 Grant.
+Explanation: A Grant is a temporary, fine-grained delegation that can be created and revoked programmatically; it allows only specific operations and is revoked immediately with `RetireGrant`/`RevokeGrant`. AWS service integrations (EBS, RDS, and others) use Grants internally. A is a permanent delegation, so it does not meet the "immediate revocation" requirement and bloats the Key Policy. B (IAM Role) is not a mechanism for temporarily revoking KMS permissions. D (STS) issues credentials and is not KMS key delegation. Trap: "temporary, revocable, fine-grained delegation to a service" is a Grant.
 
 ---
 
-**Question 6.** 보안팀이 실수로 운영 중인 CMK를 삭제 예약했다. 이 키로 수 TB의 S3 데이터가 암호화돼 있다. 어떤 일이 일어나는가?
+**Question 6.** The security team accidentally scheduled deletion of a CMK that is in production. Several TB of S3 data are encrypted with this key. What happens?
 
-A) 키가 즉시 삭제되고 데이터는 영구 복구 불가
+A) The key is deleted immediately and the data is permanently unrecoverable
 
-B) 7~30일 PendingDeletion 대기 기간이 있어 그 안에 삭제를 취소할 수 있다
+B) There is a 7-30 day PendingDeletion waiting period during which the deletion can be canceled
 
-C) 키 삭제는 불가능하다
+C) Key deletion is not possible
 
-D) 데이터가 자동으로 AWS Managed Key로 재암호화된다
+D) The data is automatically re-encrypted with an AWS Managed Key
 
 **Answer: B**
-Explanation: KMS 키 삭제는 최소 7일~최대 30일의 PendingDeletion 대기 기간을 강제하며, 그 안에는 `CancelKeyDeletion`으로 복구할 수 있다. 키를 삭제하면 그 키로 암호화한 모든 데이터가 영구 복구 불가능해지므로, 실수 방지를 위한 강제 유예다. A는 틀림(즉시 삭제 안 됨). C도 틀림(대기 후 삭제는 가능). D는 그런 자동 재암호화 메커니즘이 없다. 함정: KMS 키는 "즉시 삭제 불가, 7~30일 유예 후 삭제"가 핵심.
+Explanation: KMS key deletion enforces a PendingDeletion waiting period of a minimum of 7 days and a maximum of 30 days, during which it can be recovered with `CancelKeyDeletion`. Deleting a key makes all data encrypted with it permanently unrecoverable, so this is a mandatory grace period to prevent mistakes. A is wrong (the key is not deleted immediately). C is also wrong (deletion is possible after the waiting period). D is wrong because there is no such automatic re-encryption mechanism. Trap: the key point is that a KMS key "cannot be deleted immediately; it is deleted after a 7-30 day grace period."
 
 ---
 
-**Question 7.** KMS의 `Encrypt` API는 최대 4KB만 받는다. 수 GB의 S3 객체를 KMS로 효율적으로 암호화하려면 어떤 방식이 표준인가?
+**Question 7.** The KMS `Encrypt` API accepts at most 4 KB. What is the standard approach for efficiently encrypting an S3 object of several GB with KMS?
 
-A) 객체를 4KB씩 쪼개 KMS Encrypt를 수백만 번 호출
+A) Split the object into 4 KB pieces and call KMS Encrypt millions of times
 
-B) 봉투 암호화 — GenerateDataKey로 받은 평문 DEK로 객체를 로컬 암호화하고, 암호화된 DEK만 객체와 함께 저장
+B) Envelope encryption — encrypt the object locally with the plaintext DEK returned by GenerateDataKey, and store only the encrypted DEK with the object
 
-C) CloudHSM에 직접 객체 전송
+C) Send the object directly to CloudHSM
 
-D) KMS는 큰 객체를 암호화할 수 없으므로 평문 저장
+D) Store it in plaintext because KMS cannot encrypt large objects
 
 **Answer: B**
-Explanation: 봉투 암호화에서 GenerateDataKey는 평문 DEK와 암호화된 DEK를 돌려준다. 평문 DEK로 큰 객체를 로컬에서 빠르게(AES-256) 암호화하고 평문 DEK는 즉시 폐기하며, 암호화된 DEK만 객체와 함께 저장한다. 복호화 시 암호화된 DEK를 KMS로 풀어 평문 DEK를 얻는다. A는 네트워크 왕복이 폭증해 비효율적이고 비용이 크다(안티패턴). C는 동작 방식이 아니다. D는 보안 위반. 함정: "큰 데이터 + KMS"는 항상 봉투 암호화이며, KMS는 마스터 키로 작은 DEK만 보호한다.
+Explanation: In envelope encryption, GenerateDataKey returns a plaintext DEK and an encrypted DEK. You use the plaintext DEK to quickly encrypt the large object locally (AES-256), discard the plaintext DEK immediately, and store only the encrypted DEK with the object. To decrypt, you decrypt the encrypted DEK with KMS to obtain the plaintext DEK. A is inefficient and costly because network round trips explode (an anti-pattern). C is not how it works. D is a security violation. Trap: "large data + KMS" is always envelope encryption, and KMS uses the master key to protect only the small DEK.
 
 ---
 

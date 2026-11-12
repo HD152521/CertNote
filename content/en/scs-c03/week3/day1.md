@@ -102,62 +102,62 @@ The ability to answer "does the Internet reach this resource?" by examining rout
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 보안 감사에서 RDS 인스턴스가 인터넷에서 접근 가능한지 의심된다. RDS가 실제로 인터넷에서 도달 가능하려면 반드시 충족돼야 하는 조건의 조합은?
+**Question 1.** In a security audit, it is suspected that an RDS instance is reachable from the internet. What combination of conditions must be met for the RDS to actually be reachable from the internet?
 
-A) 보안 그룹 인바운드에 0.0.0.0/0만 열려 있으면 충분하다  
-B) 서브넷 라우팅 테이블에 IGW 경로 + RDS에 Public IP + SG/NACL 허용이 모두 필요하다  
-C) NACL이 모든 트래픽을 허용하면 라우팅과 무관하게 도달 가능하다  
-D) RDS의 PubliclyAccessible 플래그만 켜져 있으면 SG와 무관하게 도달 가능하다  
+A) Having only 0.0.0.0/0 open on the security group inbound is enough  
+B) An IGW route in the subnet route table + a Public IP on the RDS + SG/NACL allow are all required  
+C) If the NACL allows all traffic, it is reachable regardless of routing  
+D) If only the RDS PubliclyAccessible flag is on, it is reachable regardless of the SG  
 
 **Answer: B**  
-Explanation: 인터넷 도달 가능성은 여러 레이어가 동시에 충족돼야 성립한다. 인터넷으로 향하는 IGW 라우팅 경로, 리소스의 퍼블릭 주소, 그리고 보안 그룹과 NACL의 허용이 모두 있어야 한다. 보안 그룹만 열려 있어도 라우팅 경로가 없으면 패킷이 인터넷으로 나갈 수 없다. 라우팅이 빠지면 다른 통제가 열려 있어도 도달 불가다.
+Explanation: Internet reachability holds only when multiple layers are satisfied at the same time. There must be an IGW route toward the internet, a public address on the resource, and allows in both the security group and NACL. Even if only the security group is open, packets cannot go out to the internet without a route. If routing is missing, it is unreachable even if the other controls are open.
 
 ---
 
-**Question 2.** 새로 만든 서브넷을 라우팅 테이블에 명시적으로 연결하지 않았다. 이 서브넷의 라우팅 동작은?
+**Question 2.** A newly created subnet was not explicitly associated with a route table. What is the routing behavior of this subnet?
 
-A) 인터넷 접근이 완전히 차단된 격리 서브넷이 된다  
-B) VPC의 Main Route Table을 자동으로 사용한다  
-C) 라우팅 테이블이 없으므로 VPC 내부 통신도 불가능하다  
-D) 가장 가까운 AZ의 라우팅 테이블을 상속한다  
+A) It becomes an isolated subnet with internet access completely blocked  
+B) It automatically uses the VPC's Main Route Table  
+C) With no route table, even communication inside the VPC is impossible  
+D) It inherits the route table of the nearest AZ  
 
 **Answer: B**  
-Explanation: 명시적으로 라우팅 테이블에 연결되지 않은 서브넷은 VPC의 메인 라우팅 테이블을 사용한다. 따라서 메인 라우팅 테이블에 인터넷 게이트웨이 경로가 들어 있으면 새 서브넷이 의도치 않게 인터넷에 노출된다. 이 때문에 메인 라우팅 테이블에는 인터넷 경로를 두지 않는 것이 안전한 기본값이다.
+Explanation: A subnet that is not explicitly associated with a route table uses the VPC's main route table. Therefore, if the main route table contains an internet gateway route, a new subnet is unintentionally exposed to the internet. For this reason, not putting an internet route in the main route table is the safe default.
 
 ---
 
-**Question 3.** Data Tier 서브넷(RDS 전용)의 라우팅 설계로 가장 적절한 것은?
+**Question 3.** What is the most appropriate routing design for the Data Tier subnet (RDS only)?
 
-A) 0.0.0.0/0 → NAT Gateway 경로를 두어 OS 패치를 받게 한다  
-B) 0.0.0.0/0 → IGW 경로를 두어 외부 모니터링을 허용한다  
-C) 로컬 경로만 두고 인터넷 경로를 두지 않는다  
-D) 0.0.0.0/0 → Egress-only IGW 경로를 두어 IPv6 아웃바운드를 허용한다  
+A) Add a 0.0.0.0/0 -> NAT Gateway route so it can receive OS patches  
+B) Add a 0.0.0.0/0 -> IGW route to allow external monitoring  
+C) Keep only the local route and no internet route  
+D) Add a 0.0.0.0/0 -> Egress-only IGW route to allow IPv6 outbound  
 
 **Answer: C**  
-Explanation: 데이터 계층은 인터넷 경로 자체를 두지 않는 것이 가장 강한 격리다. 관리형 RDS의 패치는 AWS가 처리하므로 인터넷 경로가 필요 없다. 인터넷으로 향하는 경로를 추가하면 데이터 유출 경로가 생기므로, 외부 연결이 필요하면 NAT가 아니라 VPC 엔드포인트로 특정 서비스만 사설 연결하는 것이 표준이다.
+Explanation: The strongest isolation for the data tier is to have no internet route at all. AWS handles patching of managed RDS, so no internet route is needed. Adding a route toward the internet creates a data exfiltration path, so if external connectivity is needed, the standard is to privately connect only specific services through VPC endpoints rather than NAT.
 
 ---
 
-**Question 4.** 민감 데이터를 다루는 App Tier에서 인터넷으로 데이터가 유출되는 것을 막으면서도 AWS 서비스(S3, DynamoDB) 접근은 허용하고 싶다. NAT Gateway 대비 더 안전한 접근은?
+**Question 4.** We want to prevent data from leaking to the internet from the App Tier that handles sensitive data while still allowing access to AWS services (S3, DynamoDB). What is a safer approach than a NAT Gateway?
 
-A) NAT Gateway의 아웃바운드를 모두 허용하되 SG로 목적지 IP를 제한한다  
-B) VPC Endpoint(Gateway/Interface)로 해당 서비스만 사설 연결하고 인터넷 경로를 제거한다  
-C) Internet Gateway를 두되 NACL로 아웃바운드 포트를 443만 허용한다  
-D) Bastion Host를 통해서만 외부 통신을 중계하도록 강제한다  
+A) Allow all NAT Gateway outbound but restrict destination IPs with an SG  
+B) Privately connect only those services with VPC Endpoints (Gateway/Interface) and remove the internet route  
+C) Have an Internet Gateway but allow only port 443 outbound with a NACL  
+D) Force external communication to be relayed only through a Bastion Host  
 
 **Answer: B**  
-Explanation: NAT는 아웃바운드를 폭넓게 허용하므로 데이터 유출 경로가 될 수 있다. 필요한 AWS 서비스만 VPC 엔드포인트로 사설 연결하고 인터넷 경로를 제거하면, 트래픽이 AWS 백본 내부에 머물고 외부로 데이터를 빼낼 경로 자체가 사라진다. 보안 그룹으로 목적지 IP를 제한하는 방식은 AWS 서비스 IP 범위가 광범위하게 변동해 실효성이 떨어진다.
+Explanation: NAT allows outbound broadly, so it can become a data exfiltration path. If you privately connect only the needed AWS services through VPC endpoints and remove the internet route, traffic stays inside the AWS backbone and the path to take data outside disappears entirely. Restricting destination IPs with a security group is ineffective because AWS service IP ranges are broad and change.
 
 ---
 
-**Question 5.** 기본(default) NACL과 기본 보안 그룹의 동작 차이로 옳은 것은?
+**Question 5.** Which statement about the behavioral difference between the default NACL and the default security group is correct?
 
-A) 기본 NACL은 모든 인/아웃바운드를 허용하고, 기본 SG는 같은 SG 멤버 간만 허용한다  
-B) 기본 NACL과 기본 SG 모두 모든 트래픽을 차단한다  
-C) 기본 NACL은 모든 트래픽을 차단하고, 기본 SG는 모두 허용한다  
-D) 둘 다 같은 SG/서브넷 멤버 간 통신만 허용한다  
+A) The default NACL allows all inbound/outbound, and the default SG allows only between members of the same SG  
+B) Both the default NACL and the default SG block all traffic  
+C) The default NACL blocks all traffic, and the default SG allows everything  
+D) Both allow communication only between members of the same SG/subnet  
 
 **Answer: A**  
-Explanation: 기본 네트워크 ACL은 인바운드와 아웃바운드를 모두 허용해 사실상 무통제 상태다. 반면 기본 보안 그룹은 동일 보안 그룹에 속한 리소스 간 통신만 허용하고 그 외 인바운드는 차단하며 아웃바운드는 전체 허용한다. 따라서 실질적 격리는 라우팅과 보안 그룹으로 만들고, 네트워크 ACL은 보조적인 서브넷 단위 통제로 쓰는 것이 일반적이다.
+Explanation: The default network ACL allows all inbound and outbound, so it is effectively uncontrolled. The default security group, on the other hand, allows only communication between resources belonging to the same security group, blocks other inbound, and allows all outbound. Therefore, practical isolation is created with routing and security groups, and the network ACL is generally used as a supplementary subnet-level control.
 
 ---

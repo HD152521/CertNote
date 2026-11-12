@@ -152,55 +152,55 @@ EventBridge is the router distributing detection signals to alerts, remediation,
 
 ## 📝 Practice Questions
 
-**Question 1.** GuardDuty 결과를 EventBridge 규칙으로 직접 잡으려는데 `"detail": { "severity": ["HIGH"] }` 패턴이 한 번도 매칭되지 않는다. 원인은?
+**Question 1.** You are trying to catch GuardDuty findings directly with an EventBridge rule, but the pattern `"detail": { "severity": ["HIGH"] }` never matches. What is the cause?
 
-A) GuardDuty는 EventBridge로 이벤트를 보내지 않는다  
-B) GuardDuty의 severity는 숫자(0.1~8.9)이므로 numeric 비교 연산자를 써야 하며 문자열 "HIGH"로는 매칭되지 않는다  
-C) 규칙에 대상이 없어서다  
-D) default bus가 아닌 custom bus를 써야 한다  
+A) GuardDuty does not send events to EventBridge  
+B) GuardDuty severity is a number (0.1 to 8.9), so a numeric comparison operator must be used, and the string "HIGH" will not match  
+C) The rule has no target  
+D) You must use a custom bus rather than the default bus  
 
 **Answer: B**  
-Explanation: GuardDuty 결과의 severity는 숫자 값이므로 `{ "numeric": [">=", 7.0] }` 형태로 매칭해야 한다. 문자열 라벨(HIGH/CRITICAL)은 Security Hub로 집계된 결과의 `Severity.Label`에서 쓰는 형식이다. GuardDuty는 default bus로 이벤트를 보내며, 대상 유무는 매칭 여부와 무관하다.
+Explanation: The severity of a GuardDuty finding is a numeric value, so you must match it in the form `{ "numeric": [">=", 7.0] }`. String labels (HIGH/CRITICAL) are the format used in `Severity.Label` of findings aggregated into Security Hub. GuardDuty sends events to the default bus, and whether a target exists is irrelevant to matching.
 
 ---
 
-**Question 2.** GuardDuty가 EC2 인스턴스 침해를 탐지하면 자동으로 (1) 인스턴스를 격리하고 (2) EBS 스냅샷을 보존하고 (3) 보안팀에 알리는 다단계 대응을 구성하려 한다. 가장 적합한 대상은?
+**Question 2.** You want to configure a multi-step response in which, when GuardDuty detects an EC2 instance compromise, it automatically (1) isolates the instance, (2) preserves an EBS snapshot, and (3) notifies the security team. What is the most suitable target?
 
-A) SNS 토픽 하나  
-B) EventBridge 규칙 → Step Functions(또는 Lambda)로 격리·스냅샷·알림을 오케스트레이션  
+A) A single SNS topic  
+B) EventBridge rule → Step Functions (or Lambda) to orchestrate isolation, snapshot, and notification  
 C) CloudWatch Alarm  
-D) Athena 쿼리  
+D) Athena query  
 
 **Answer: B**  
-Explanation: 격리·스냅샷·알림처럼 순서·분기가 있는 다단계 대응은 Step Functions 오케스트레이션(또는 다단계 Lambda)이 적합하다. SNS는 단순 알림만 하고, CloudWatch Alarm은 메트릭 임계 탐지, Athena는 사후 쿼리 도구로 능동 교정 워크플로를 수행하지 못한다.
+Explanation: A multi-step response with ordering and branching, such as isolation, snapshot, and notification, suits Step Functions orchestration (or multi-step Lambda). SNS only sends simple notifications, a CloudWatch Alarm is metric threshold detection, and Athena is an after-the-fact query tool, so none can perform an active remediation workflow.
 
 ---
 
-**Question 3.** 자동 교정 Lambda를 설계할 때 보안 위생상 가장 중요한 원칙은?
+**Question 3.** When designing an automatic remediation Lambda, what is the most important principle for security hygiene?
 
-A) 대응 속도를 위해 Administrator 권한을 부여  
-B) 필요한 액션만 갖는 최소 권한 역할을 부여하고 가능하면 리소스 조건으로 범위를 좁힌다  
-C) Lambda를 퍼블릭 서브넷에 배치  
-D) 로그를 남기지 않는다  
+A) Grant Administrator permissions for response speed  
+B) Grant a least-privilege role with only the required actions and, where possible, narrow the scope with resource conditions  
+C) Place the Lambda in a public subnet  
+D) Do not write logs  
 
 **Answer: B**  
-Explanation: 자동 대응 핸들러의 과도한 권한은 그 자체가 공격 표면이 되므로, 격리·스냅샷 등 필요한 액션만 부여하고 태그·계정 등 조건으로 범위를 좁히는 최소 권한이 핵심이다. Administrator 부여는 위험하고, 퍼블릭 배치·로그 미작성은 보안을 약화시킨다.
+Explanation: Excessive permissions on an automatic response handler are themselves an attack surface, so the key is least privilege: grant only the needed actions such as isolation and snapshot, and narrow the scope with conditions such as tags and accounts. Granting Administrator is dangerous, and public placement and not writing logs weaken security.
 
 ---
 
-**Question 4.** 다계정 환경에서 모든 멤버 계정의 보안 이벤트를 중앙 보안 계정에서 일관 대응하려 한다. EventBridge 구성으로 옳은 것은?
+**Question 4.** In a multi-account environment, you want the central security account to respond consistently to security events from all member accounts. Which EventBridge configuration is correct?
 
-A) 각 멤버 계정에 동일한 대응 Lambda를 복제 배포  
-B) 멤버 계정 규칙의 대상을 중앙 계정 Event Bus로 지정하고, 중앙 버스의 리소스 정책으로 멤버의 PutEvents를 허용  
-C) 중앙 계정에서 멤버 계정 로그를 직접 폴링  
-D) SNS 토픽 하나를 모든 계정이 공유  
+A) Deploy copies of the same response Lambda to every member account  
+B) Set the target of the member account rules to the central account's event bus, and allow the members' PutEvents with the central bus's resource policy  
+C) Directly poll member account logs from the central account  
+D) Share a single SNS topic across all accounts  
 
 **Answer: B**  
-Explanation: cross-account 라우팅은 멤버 규칙의 대상을 중앙 버스 ARN으로 두고, 중앙 버스 리소스 정책(예: aws:PrincipalOrgID 조건)으로 멤버의 events:PutEvents를 허용하는 것이 표준이다. 대응 로직을 모든 계정에 복제하면 일관성·관리성이 떨어지고, 폴링·SNS 공유는 이벤트 라우팅의 정답 패턴이 아니다.
+Explanation: For cross-account routing, the standard is to set the target of the member rule to the central bus ARN and allow the members' events:PutEvents through the central bus resource policy (for example, with an aws:PrincipalOrgID condition). Replicating the response logic to all accounts reduces consistency and manageability, and polling or sharing SNS is not the correct pattern for event routing.
 
 ---
 
-**Question 5.** 여러 계정·리전의 CloudTrail, VPC Flow, Route 53 로그와 서드파티 데이터를 OCSF 표준 스키마로 정규화해 S3에 모으고 Athena·SIEM이 단일 스키마로 질의하게 하려 한다. 가장 적합한 서비스는?
+**Question 5.** You want to normalize CloudTrail, VPC Flow, and Route 53 logs from multiple accounts and Regions, plus third-party data, into the OCSF standard schema, collect them in S3, and let Athena and a SIEM query them with a single schema. What is the most suitable service?
 
 A) AWS Security Hub  
 B) Amazon Security Lake  
@@ -208,7 +208,7 @@ C) Amazon Macie
 D) AWS Config  
 
 **Answer: B**  
-Explanation: 다계정·다리전 원시 보안 로그를 OCSF 표준으로 정규화해 S3 데이터 레이크(Parquet)로 자동 수집하고 subscriber가 단일 스키마로 질의하게 하는 서비스는 Security Lake다. Security Hub는 결과를 ASFF로 집계·점수화하는 대시보드, Macie는 S3 민감데이터 발견, Config는 리소스 구성 평가로 역할이 다르다.
+Explanation: The service that normalizes raw security logs from multiple accounts and Regions into the OCSF standard, automatically collects them into an S3 data lake (Parquet), and lets subscribers query them with a single schema is Security Lake. Security Hub is a dashboard that aggregates and scores findings in ASFF, Macie is S3 sensitive data discovery, and Config is resource configuration evaluation, so their roles differ.
 
 ---
 

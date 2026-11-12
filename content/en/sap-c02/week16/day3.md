@@ -20,16 +20,16 @@ Key mappings: (1) "Multi-year commitment, predictable load" → **Savings Plans 
 
 ## 📝 Practice Questions
 
-**Question 1.** 3년 예측 안정적 부하 → **Savings Plans (Compute/DDB)**
+**Question 1.** Stable load predicted over 3 years → **Savings Plans (Compute/DDB)**
 
-**Question 2.** 스파이크 10배 트래픽 → **Spot 90% + On-Demand 안정**
+**Question 2.** 10x traffic spikes → **Spot 90% + On-Demand for stability**
 
-**Question 3.** NAT Gateway 데이터 처리 비용 높음 → **VPC Endpoint S3/DDB**
+**Question 3.** High NAT Gateway data processing cost → **VPC Endpoint S3/DDB**
 
-**Question 4.** 100TB 초기 → 90일 후 선택적 접근 → **S3 Intelligent-Tiering → Glacier**
+**Question 4.** 100 TB initially → selective access after 90 days → **S3 Intelligent-Tiering → Glacier**
 
-**Question 5.** DynamoDB 요금 최소 → **부하 패턴에 따라 On-Demand or Provisioned**
+**Question 5.** Minimize DynamoDB charges → **On-Demand or Provisioned depending on the load pattern**
 
-**Question 6.** Reserved Instance 초과 사용 → **Swap provisioned type or downgrade**
+**Question 6.** Reserved Instance over-usage → **Swap provisioned type or downgrade**
 
 ---

@@ -12,97 +12,97 @@ State Manager solves with **"desired state"** abstraction. Not "run this command
 
 (All practice problems in Korean as required by rules)
 
-**Question 1.** ASG가 인스턴스를 수시로 띄우고 내린다. 모든 인스턴스에 보안 에이전트가 항상 설치돼 있어야 하고, 누가 지워도 자동 복구되어야 한다. AMI 베이킹 외의 방법은?
+**Question 1.** An ASG launches and terminates instances constantly. A security agent must always be installed on every instance and must be automatically restored if anyone removes it. What is an approach other than AMI baking?
 
-A) 인스턴스마다 cron으로 설치 스크립트 실행
-B) State Manager Association으로 태그 기반 패키지 설치를 선언 + 주기 실행 — 새 인스턴스 자동 적용 + drift 자동 복구
-C) Run Command를 한 번 실행
-D) Lambda로 매시간 SSH 접속해 설치
+A) Run an install script with cron on each instance
+B) Declare a tag-based package installation with a State Manager association + periodic execution — automatically applied to new instances + automatic drift remediation
+C) Run Run Command once
+D) Connect over SSH hourly with Lambda to install
 
 **Answer: B**
 
-Explanation: State Manager는 desired state를 선언해 주기적으로 reconcile한다. 새 인스턴스는 태그만 맞으면 자동 포함되고, 누가 지워도 다음 주기에 다시 설치된다. cron(A)은 새 인스턴스에 자동 배포되지 않고 중앙 컴플라이언스가 없다. Run Command(C)는 일회성이라 새 인스턴스에 적용 안 됨. Lambda+SSH(D)는 SSM이 이미 제공하는 기능의 비효율적 재발명이다.
+Explanation: State Manager declares a desired state and reconciles it periodically. New instances are included automatically as long as the tags match, and if anyone removes it, it is reinstalled in the next cycle. Cron (A) is not automatically deployed to new instances and has no central compliance. Run Command (C) is one-time, so it does not apply to new instances. Lambda+SSH (D) is an inefficient reinvention of what SSM already provides.
 
 ---
 
-**Question 2.** Log4Shell 같은 긴급 취약점이 터졌다. "취약한 라이브러리 버전이 설치된 인스턴스가 fleet 어디에 있는지"를 수십만 대 규모에서 즉시 답하려면 미리 준비할 것은?
+**Question 2.** An urgent vulnerability like Log4Shell has been disclosed. To instantly answer "where in the fleet are the instances with the vulnerable library version installed" at a scale of hundreds of thousands of instances, what should be prepared in advance?
 
-A) 모든 인스턴스에 SSH 접속해 grep
-B) SSM Inventory 수집 + Resource Data Sync → S3 → Athena, 인시던트 시 SQL 질의
+A) SSH into every instance and grep
+B) Collect SSM Inventory + Resource Data Sync → S3 → Athena, and query with SQL during an incident
 C) CloudWatch Logs Insights
 D) Trusted Advisor
 
 **Answer: B**
 
-Explanation: Inventory가 애플리케이션·라이브러리 버전을 미리 수집해 S3 데이터 레이크에 적재해두면, 인시던트 시 `WHERE name='log4j-core' AND version<'2.17.0'` 같은 Athena SQL 한 줄로 영향 인스턴스를 즉시 추려낸다. 평시 데이터 수집이 인시던트 대응 속도를 좌우한다. SSH grep(A)은 규모에서 불가능, Logs Insights(C)는 로그 분석용이지 인벤토리 질의가 아님, Trusted Advisor(D)는 모범사례 점검이지 fleet 인벤토리가 아니다.
+Explanation: If Inventory collects application and library versions in advance and loads them into an S3 data lake, then during an incident a single line of Athena SQL such as `WHERE name='log4j-core' AND version<'2.17.0'` immediately narrows down the affected instances. Data collection in peacetime determines incident response speed. SSH grep (A) is impossible at scale, Logs Insights (C) is for log analysis and not inventory queries, and Trusted Advisor (D) is a best practice check, not a fleet inventory.
 
 ---
 
-**Question 3.** State Manager Association이 cron과 다른 결정적 차이가 아닌 것은?
+**Question 3.** Which of the following is not a decisive difference between a State Manager association and cron?
 
-A) 새 인스턴스가 태그 일치 시 자동 적용
-B) 성공/실패가 중앙 Compliance로 자동 보고
-C) drift 발생 시 다음 주기에 자동 복구
-D) 인스턴스 타입을 자동으로 변경
+A) New instances are applied automatically when tags match
+B) Success/failure is reported automatically to central compliance
+C) Drift is automatically remediated in the next cycle
+D) Instance types are changed automatically
 
 **Answer: D**
 
-Explanation: State Manager는 소프트웨어 상태(패키지 설치, 구성)를 강제하는 도구이지 인스턴스 타입 같은 인프라 속성을 바꾸지 않는다. A(새 인스턴스 자동 적용), B(중앙 컴플라이언스), C(drift 자동 복구)는 모두 cron 대비 State Manager의 핵심 장점이다. 인스턴스 타입 변경은 EC2/CloudFormation/ASG의 영역이다.
+Explanation: State Manager is a tool that enforces software state (package installation, configuration) and does not change infrastructure attributes such as the instance type. A (automatic application to new instances), B (central compliance), and C (automatic drift remediation) are all key advantages of State Manager over cron. Changing instance types is in the domain of EC2/CloudFormation/ASG.
 
 ---
 
-**Question 4.** SSM Inventory가 수집하지 않는 것은?
+**Question 4.** What does SSM Inventory not collect?
 
-A) 설치된 애플리케이션과 버전
-B) 실행 중인 서비스
-C) 네트워크 인터페이스 정보
-D) 계정의 IAM 사용자·역할 목록
+A) Installed applications and versions
+B) Running services
+C) Network interface information
+D) The list of IAM users and roles in the account
 
 **Answer: D**
 
-Explanation: Inventory는 관리 대상 인스턴스 "내부"의 소프트웨어·서비스·네트워크 정보를 수집한다. IAM 사용자·역할 같은 계정 수준 AWS 리소스는 Inventory 영역이 아니다 — AWS Config나 IAM Access Analyzer가 담당한다. Inventory는 인스턴스 내부, Config는 AWS 리소스라는 경계가 시험 포인트다.
+Explanation: Inventory collects software, service, and network information "inside" the managed instances. Account-level AWS resources such as IAM users and roles are not in the scope of Inventory — AWS Config or IAM Access Analyzer handles those. The boundary that Inventory is inside the instance and Config is AWS resources is an exam point.
 
 ---
 
-**Question 5.** Resource Data Sync → S3 → Athena 파이프라인이 따르는 데이터 패턴은?
+**Question 5.** What data pattern does the Resource Data Sync → S3 → Athena pipeline follow?
 
-A) schema-on-write 데이터 웨어하우스
-B) schema-on-read 데이터 레이크(ELT) — raw JSON을 S3에 적재하고 질의 시점에 스키마 적용
-C) 인메모리 캐시
-D) 그래프 데이터베이스
+A) A schema-on-write data warehouse
+B) A schema-on-read data lake (ELT) — load raw JSON into S3 and apply the schema at query time
+C) An in-memory cache
+D) A graph database
 
 **Answer: B**
 
-Explanation: 인벤토리 JSON을 일단 S3에 raw로 적재(Load)하고, Athena 질의 시점에 스키마를 적용(schema-on-read)해 분석한다. 전형적인 데이터 레이크 + ELT 패턴이다. 같은 구조가 CloudTrail·VPC Flow Logs·ALB 로그 분석에도 쓰인다. 대규모에서는 Parquet 변환 + 파티셔닝으로 Athena 스캔 비용을 줄인다.
+Explanation: The inventory JSON is first loaded raw into S3 (Load), and the schema is applied at Athena query time (schema-on-read) for analysis. It is a typical data lake + ELT pattern. The same structure is used for CloudTrail, VPC Flow Logs, and ALB log analysis. At large scale, Parquet conversion + partitioning reduce Athena scan cost.
 
 ---
 
-**Question 6.** 자체 개발한 보안 에이전트를 전 fleet에 배포하고 버전을 통일 관리하려면?
+**Question 6.** How do you deploy a self-developed security agent to the entire fleet and manage its version uniformly?
 
-A) 각 인스턴스에 수동 설치
-B) Distributor로 패키지 정의 후 State Manager Association으로 version 고정 배포 — 버전이 fleet의 single source of truth
-C) S3에 올리고 알아서 받게 함
-D) AMI에만 굽기
+A) Install manually on each instance
+B) Define the package with Distributor, then deploy with the version pinned through a State Manager association — the version becomes the fleet single source of truth
+C) Upload it to S3 and let instances fetch it on their own
+D) Bake it into the AMI only
 
 **Answer: B**
 
-Explanation: Distributor가 자체 소프트웨어를 SSM 패키지로 정의하고, State Manager가 version을 고정해 desired state로 배포한다. version을 바꾸면 다음 주기에 fleet 전체가 롤링 업그레이드되고 새 인스턴스도 자동 포함된다. AMI 베이킹(D)만으로는 런타임 강제와 버전 갱신이 어렵다.
+Explanation: Distributor defines your own software as an SSM package, and State Manager pins the version and deploys it as the desired state. When you change the version, the entire fleet is rolling-upgraded in the next cycle and new instances are included automatically. AMI baking alone (D) makes runtime enforcement and version updates difficult.
 
 ---
 
-**Question 7.** SSM Patch Compliance를 다른 보안 Finding과 한 대시보드에서 보고 자동 대응까지 연결하려면?
+**Question 7.** How do you view SSM patch compliance on the same dashboard as other security findings and even connect it to automated response?
 
-A) Lambda로 매번 폴링
-B) Security Hub의 SSM Patch 통합 활성화 → Finding 집계 → Custom Action으로 EventBridge → Lambda 자동 대응
-C) S3에 결과 저장 후 수동 검토
-D) CloudWatch Dashboard 위젯
+A) Poll with Lambda each time
+B) Enable the SSM Patch integration in Security Hub → aggregate findings → EventBridge through a custom action → automated response with Lambda
+C) Save results to S3 and review manually
+D) A CloudWatch dashboard widget
 
 **Answer: B**
 
-Explanation: SSM Compliance는 Security Hub로 네이티브 통합되어 GuardDuty·Inspector·Config Finding과 한 대시보드에 모인다. Security Hub Custom Action이 EventBridge를 트리거하고 Lambda가 자동 대응하면 detect-assess-respond 폐루프가 완성된다. 각 단계(평가/집계/대응)가 책임 분리되어 확장이 쉽다. 수동 폴링(A)이나 수동 검토(C)는 자동화의 이점을 잃는다.
+Explanation: SSM compliance is natively integrated with Security Hub and gathers on the same dashboard as GuardDuty, Inspector, and Config findings. If a Security Hub custom action triggers EventBridge and Lambda responds automatically, the detect-assess-respond closed loop is complete. Each stage (assess/aggregate/respond) has separated responsibilities, so it is easy to scale. Manual polling (A) or manual review (C) loses the benefit of automation.
 
 ---
 
 ## 📌 Today's Summary
 
-오늘 본 핵심은 다섯 가지다. 첫째, State Manager Association은 desired state(선언형·멱등성) 추상화로 Kubernetes·Puppet과 같은 뿌리이며, 새 인스턴스 자동 적용과 drift 자동 복구가 cron 대비 결정적 차이다. 둘째, Inventory는 인스턴스 내부의 소프트웨어·서비스·네트워크를 수집하고 Custom Inventory로 기업 고유 항목까지 담되, IAM 같은 계정 자원은 포함하지 않는다(그건 Config의 영역). 셋째, Resource Data Sync → S3 → Athena는 schema-on-read 데이터 레이크 패턴으로, 인시던트 때 SQL 한 줄로 영향 인스턴스를 추린다. 넷째, Distributor는 자체 패키지를 State Manager로 배포해 버전을 fleet의 single source of truth로 삼는다. 다섯째, Compliance → Security Hub → EventBridge → Lambda는 detect-assess-respond를 책임 분리한 거버넌스 폐루프이고, Change Calendar가 시간 축의 freeze를 코드화한다.
+The five key takeaways from today are as follows. First, the State Manager association is a desired state abstraction (declarative and idempotent) with the same roots as Kubernetes and Puppet, and automatic application to new instances and automatic drift remediation are the decisive differences over cron. Second, Inventory collects software, services, and network information inside the instances and can capture company-specific items with custom inventory, but it does not include account resources such as IAM (that is Config's domain). Third, Resource Data Sync → S3 → Athena is a schema-on-read data lake pattern that narrows down the affected instances with a single line of SQL during an incident. Fourth, Distributor deploys your own packages through State Manager so that the version becomes the fleet single source of truth. Fifth, Compliance → Security Hub → EventBridge → Lambda is a governance closed loop that separates the responsibilities of detect-assess-respond, and Change Calendar codifies freezes on the time axis.

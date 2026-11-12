@@ -161,59 +161,59 @@ Next we'll extend compliance into **automated audit evidence collection, data cl
 
 ## 📝 Practice Questions
 
-**Question 1.** AWS Config가 구현하는 "목표 상태(Rule)와 실제 상태(Recorder)를 비교해 오차(NON_COMPLIANT)를 검출하고 자동으로 되돌린다(Remediation)"는 구조의 제어 이론적 이름은?
+**Question 1.** What is the control-theoretic name for the structure that AWS Config implements: "compare the desired state (Rule) with the actual state (Recorder), detect the error (NON_COMPLIANT), and automatically correct it (Remediation)"?
 
-A) 개루프(open-loop) 제어
+A) Open-loop control
 
-B) 폐루프(closed-loop / feedback) 제어 — 온도조절기처럼 목표와 측정을 비교해 오차를 줄이는 방향으로 조작
+B) Closed-loop (feedback) control — like a thermostat, comparing target and measurement and acting to reduce the error
 
-C) 무상태(stateless) 처리
+C) Stateless processing
 
-D) 배치 처리
+D) Batch processing
 
 **Answer: B**
 
-Explanation: Config는 폐루프(피드백) 제어를 인프라에 적용한다. 목표 상태(Config Rule), 측정(Configuration Recorder), 오차 판정(COMPLIANT/NON_COMPLIANT 평가), 조작(Remediation)이 온도조절기 모델 그대로다 — 드리프트가 생기면 오차가 검출되고 Remediation이 실제 상태를 목표로 수렴시킨다. 이는 선언형·멱등 형상 관리(Puppet/Chef/Ansible 계보)의 사상이다. 개루프(A)는 피드백이 없는 제어이고, 무상태(C)·배치(D)는 무관하다.
+Explanation: Config applies closed-loop (feedback) control to infrastructure. The desired state (Config Rule), measurement (Configuration Recorder), error determination (COMPLIANT/NON_COMPLIANT evaluation), and actuation (Remediation) map directly onto the thermostat model — when drift occurs the error is detected and Remediation converges the actual state to the desired state. This is the philosophy of declarative, idempotent configuration management (the Puppet/Chef/Ansible lineage). Open-loop (A) is control without feedback, and stateless (C) and batch (D) are unrelated.
 
 ---
 
-**Question 2.** "누가 이 보안 그룹을 언제 바꿨나"와 "그 보안 그룹이 6개월 전 어떤 규칙을 가졌나"를 각각 답하는 서비스는?
+**Question 2.** Which services answer, respectively, "who changed this security group and when" and "what rules did that security group have 6 months ago"?
 
-A) 둘 다 CloudTrail
+A) CloudTrail for both
 
-B) 둘 다 Config
+B) Config for both
 
-C) "누가 바꿨나"는 CloudTrail(API 호출·행위 감사), "과거 상태가 어땠나"는 Config(리소스 상태·형상 기록)
+C) "Who changed it" is CloudTrail (API call and action auditing); "what was the past state" is Config (resource state and configuration recording)
 
-D) 둘 다 GuardDuty
+D) GuardDuty for both
 
 **Answer: C**
 
-Explanation: CloudTrail은 "누가 무슨 API를 언제 호출했나"(행위·감사 로그)를, Config는 "리소스가 그 결과 어떤 상태가 됐나"(상태·형상, Configuration History)를 기록한다. 둘은 보완 관계로, Config의 CI는 변경을 일으킨 CloudTrail 이벤트를 연결해 "누가→무엇을→어떤 상태로"의 전체 그림을 준다. "리소스 상태 변화·컴플라이언스"는 Config, "API 호출·사용자 추적"은 CloudTrail이다. 둘을 한 서비스로 보는 A·B·D는 틀리다.
+Explanation: CloudTrail records "who called which API and when" (action and audit logs), and Config records "what state the resource ended up in as a result" (state and configuration, Configuration History). The two are complementary: Config's CI links the CloudTrail event that caused the change, giving the full picture of "who → did what → resulting in which state." "Resource state changes and compliance" is Config, and "API calls and user tracking" is CloudTrail. A, B, and D, which treat them as a single service, are wrong.
 
 ---
 
-**Question 3.** Lambda 함수를 작성하지 않고, 정책을 선언적 코드로 표현해 Config Rule로 평가하려 한다. 올바른 선택과 그 계보는?
+**Question 3.** You want to express policy as declarative code and evaluate it with a Config Rule without writing a Lambda function. What is the correct choice and its lineage?
 
 A) Custom Lambda Rule
 
-B) Custom Policy Rule (CloudFormation Guard DSL) — OPA/Rego, HashiCorp Sentinel과 같은 policy-as-code 계보로, 배포 전(cfn-guard) 검사와 런타임 평가에 같은 룰 재사용 가능
+B) Custom Policy Rule (CloudFormation Guard DSL) — in the same policy-as-code lineage as OPA/Rego and HashiCorp Sentinel, the same rules can be reused for pre-deployment checks (cfn-guard) and runtime evaluation
 
-C) Managed Rule만 가능
+C) Only Managed Rules are possible
 
 D) Conformance Pack
 
 **Answer: B**
 
-Explanation: Custom Policy Rule은 CloudFormation Guard DSL로 정책을 선언적으로 기술한다(`Resources.*[Type=="AWS::S3::Bucket"]{Properties.BucketEncryption EXISTS}`). 이는 Kubernetes의 OPA/Rego, HashiCorp Sentinel과 같은 policy-as-code 계보로, Lambda 코드(명령형) 없이 사람이 읽고 버전 관리할 수 있다. 같은 Guard 룰을 배포 전 템플릿 검사(cfn-guard, shift-left)와 배포 후 런타임 평가에 재사용한다. Custom Lambda(A)는 코드 작성이 필요하고, Conformance Pack(D)은 규칙 묶음 배포 단위이지 평가 방식이 아니다.
+Explanation: A Custom Policy Rule describes policy declaratively with the CloudFormation Guard DSL (`Resources.*[Type=="AWS::S3::Bucket"]{Properties.BucketEncryption EXISTS}`). It belongs to the same policy-as-code lineage as Kubernetes' OPA/Rego and HashiCorp Sentinel, and can be read by people and version-controlled without Lambda code (imperative). The same Guard rules are reused for pre-deployment template checks (cfn-guard, shift-left) and post-deployment runtime evaluation. Custom Lambda (A) requires writing code, and a Conformance Pack (D) is a deployment unit for bundles of rules, not an evaluation method.
 
 ---
 
-**Question 4.** PCI DSS·NIST 800-53 같은 컴플라이언스 규칙 묶음을 조직 전체(OU)에 일괄 배포하려 한다. 올바른 도구와 그 내부 메커니즘은?
+**Question 4.** You want to deploy a bundle of compliance rules such as PCI DSS and NIST 800-53 to the entire organization (OU) at once. What is the correct tool and its internal mechanism?
 
-A) 규칙을 계정마다 하나씩 수동 생성
+A) Manually create the rules one by one in each account
 
-B) Conformance Pack — 여러 Config Rule + Remediation을 YAML로 묶어 내부적으로 CloudFormation StackSets를 통해 OU 전체에 배포
+B) Conformance Pack — bundles multiple Config Rules + Remediations in YAML and internally deploys to the entire OU through CloudFormation StackSets
 
 C) Aggregator
 
@@ -221,55 +221,55 @@ D) Advanced Query
 
 **Answer: B**
 
-Explanation: Conformance Pack은 여러 Config Rule과 Remediation을 하나의 YAML로 묶어 배포하는 단위로, 사전 정의 팩(PCI/NIST/HIPAA/FedRAMP 등)과 사용자 정의 모두 지원한다. 내부적으로 CloudFormation StackSets를 사용해 각 계정·리전에 동일하게 푸시하므로 StackSets의 배포 모델을 물려받는다. "컴플라이언스 묶음을 OU 전체에"는 Conformance Pack, "임의 인프라 리소스 멀티 계정 배포"는 StackSets다. 수동 생성(A)은 비현실적이고, Aggregator(C)는 조회 통합, Advanced Query(D)는 SQL 질의로 배포 도구가 아니다.
+Explanation: A Conformance Pack is a unit that bundles multiple Config Rules and Remediations into a single YAML for deployment, supporting both predefined packs (PCI/NIST/HIPAA/FedRAMP, etc.) and custom ones. Internally it uses CloudFormation StackSets to push identically to each account and Region, so it inherits the StackSets deployment model. "A compliance bundle to the whole OU" is a Conformance Pack, while "multi-account deployment of arbitrary infrastructure resources" is StackSets. Manual creation (A) is impractical, an Aggregator (C) consolidates queries, and Advanced Query (D) is SQL querying, not a deployment tool.
 
 ---
 
-**Question 5.** 자동 Remediation을 켰는데 같은 리소스가 끊임없이 수정-재위반을 반복(flapping)하며 API 스로틀과 비용 폭증이 일어난다. 원인과 안전장치는?
+**Question 5.** After enabling automatic Remediation, the same resource repeatedly cycles between being fixed and violating again (flapping), causing API throttling and a cost surge. What are the cause and the safeguard?
 
-A) 정상 동작이므로 무시
+A) It is normal behavior, so ignore it
 
-B) 외부 프로세스가 계속 리소스를 NON_COMPLIANT로 되돌리는 상황 + MaximumAutomaticAttempts 미설정이 원인 — MaximumAutomaticAttempts·RetryAttemptSeconds로 재시도를 제한하고, 정당한 예외엔 제외 태그를 둔다
+B) The cause is an external process that keeps reverting the resource to NON_COMPLIANT combined with MaximumAutomaticAttempts not being set — limit retries with MaximumAutomaticAttempts and RetryAttemptSeconds, and use an exclusion tag for legitimate exceptions
 
-C) Config를 끈다
+C) Turn off Config
 
-D) 리전을 바꾼다
+D) Change the Region
 
 **Answer: B**
 
-Explanation: 어떤 외부 자동화가 계속 리소스를 위반 상태로 되돌리면 Config가 무한 수정을 시도해 flapping이 발생한다. MaximumAutomaticAttempts와 RetryAttemptSeconds가 이 루프를 끊는 안전장치다. 또 Remediation이 정당한 리소스(예: 의도된 퍼블릭 웹사이트 버킷)를 망가뜨리지 않도록 예외 태그를 두거나, 파괴적 수정은 Automatic:false로 사람 승인을 끼운다. "자동 수정이 무한 반복"의 답은 보통 "외부에서 계속 위반 + MaximumAutomaticAttempts 미설정"이다. Config 비활성화(C)·리전 변경(D)은 해결이 아니다.
+Explanation: If some external automation keeps reverting a resource to a violating state, Config tries to fix it endlessly and flapping occurs. MaximumAutomaticAttempts and RetryAttemptSeconds are the safeguards that break this loop. Also, to keep Remediation from breaking legitimate resources (for example, an intentionally public website bucket), use an exception tag, or insert human approval with Automatic:false for destructive fixes. The answer to "automatic fixing repeats endlessly" is usually "an external process keeps violating + MaximumAutomaticAttempts not set." Disabling Config (C) or changing Regions (D) is not a solution.
 
 ---
 
-**Question 6.** 50개 계정 × 모든 리전의 NON_COMPLIANT 리소스를 Audit 계정 한 화면에서 조회하고, "암호화 안 된 EBS가 어느 계정에 몇 개인가"를 한 쿼리로 답하려 한다. 올바른 조합은?
+**Question 6.** You want to view NON_COMPLIANT resources across 50 accounts × all Regions on a single screen in the Audit account, and answer "how many unencrypted EBS volumes are in which account" with one query. What is the correct combination?
 
-A) 각 계정 콘솔을 일일이 확인
+A) Check each account console one by one
 
-B) Audit 계정에 Organization Aggregator(AllAwsRegions) 설정 + Advanced Query(SQL DSL)로 cross-account 질의
+B) Set up an Organization Aggregator (AllAwsRegions) in the Audit account + cross-account queries with Advanced Query (SQL DSL)
 
-C) Conformance Pack만 배포
+C) Deploy only a Conformance Pack
 
-D) EventBridge 규칙만 생성
+D) Create only an EventBridge rule
 
 **Answer: B**
 
-Explanation: Config는 리전·계정별이라 통합 조회엔 Aggregator가 필요하다. Audit 계정에 Organization 소스 Aggregator를 만들고 AllAwsRegions로 모든 리전을 묶으면 전 계정·리전 데이터가 통합된다. 그 위에서 Advanced Query(SQL DSL)로 "complianceType='NON_COMPLIANT'인 리소스를 타입별 COUNT" 같은 cross-account 질의를 한 번에 실행한다. 이는 리소스 의존성 그래프(CMDB)를 질의 가능하게 만드는 인터페이스다. 수동 확인(A)은 비현실적, Conformance Pack(C)은 배포, EventBridge(D)는 라우팅으로 통합 조회 도구가 아니다.
+Explanation: Config is per Region and per account, so an Aggregator is needed for consolidated queries. Creating an Organization-source Aggregator in the Audit account and covering all Regions with AllAwsRegions consolidates the data from all accounts and Regions. On top of that, Advanced Query (SQL DSL) runs a cross-account query at once, such as "COUNT resources with complianceType='NON_COMPLIANT' by type." This is the interface that makes the resource dependency graph (CMDB) queryable. Manual checking (A) is impractical, a Conformance Pack (C) is for deployment, and EventBridge (D) is for routing, so none is a tool for consolidated querying.
 
 ---
 
-**Question 7.** AWS Config 비용이 예상보다 크게 나왔다. Auto Scaling으로 끊임없이 생성·삭제되는 EC2와 빈번히 갱신되는 메타데이터가 주범으로 보인다. 올바른 통제는?
+**Question 7.** The AWS Config bill came out much higher than expected. EC2 instances that are constantly created and deleted by Auto Scaling and frequently updated metadata appear to be the main culprits. What is the correct control?
 
-A) Config를 완전히 끈다
+A) Turn Config off completely
 
-B) recordingMode로 기록 범위를 조절 — 컴플라이언스가 강제되는 리소스(IAM·S3·SG)는 빠짐없이, 노이즈 많고 규제 무관한 자주 바뀌는 리소스는 제외하거나 일별로 묶기
+B) Adjust the recording scope with recordingMode — record resources subject to compliance enforcement (IAM, S3, SG) without gaps, and exclude noisy, regulation-irrelevant, frequently changing resources or batch them daily
 
-C) 인스턴스 타입을 키운다
+C) Increase the instance type
 
-D) 리전을 줄인다
+D) Reduce the number of Regions
 
 **Answer: B**
 
-Explanation: Config는 리소스 변경(CI 생성)당 과금되므로 자주 바뀌는 리소스가 비용을 키운다. 이는 관측 가능성의 근본 트레이드오프("더 많이 기록할수록 잘 보이지만 비싸다", 분산 추적의 샘플링과 같은 발상)다. recordingMode로 모든 리소스 기록 vs 선택 기록 vs 고빈도 리소스 일별 묶기를 골라, 규제 대상 리소스는 빠짐없이 기록하고 규제 무관 노이즈는 제외하는 선별이 실무 패턴이다. Config 비활성화(A)는 컴플라이언스 사각지대를 만들고, 인스턴스 타입(C)·리전 축소(D)는 근본 원인과 무관하다.
+Explanation: Config bills per resource change (CI creation), so frequently changing resources drive up cost. This is the fundamental trade-off of observability ("the more you record the better you see, but the more it costs," the same idea as sampling in distributed tracing). Using recordingMode to choose between recording all resources, selective recording, and batching high-frequency resources daily, the practical pattern is to record regulated resources without gaps and exclude regulation-irrelevant noise. Disabling Config (A) creates a compliance blind spot, and instance type (C) and reducing Regions (D) are unrelated to the root cause.
 
 ---
 

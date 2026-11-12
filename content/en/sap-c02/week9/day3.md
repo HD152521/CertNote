@@ -112,72 +112,72 @@ SAP exam recurring mappings: (1) "EMR Task cost optimal + Spot resilient" → In
 
 ## 📝 Practice Questions
 
-**Question 1.** 매일 페타바이트급 로그를 Spark로 배치 처리한다. 데이터는 S3에 영구 보관돼 있고, 처리는 하루 2~3시간만 한다. 비용을 최소화하면서 Spot 중단에도 잡이 죽지 않게 하려면?
+**Question 1.** You batch-process petabyte-scale logs with Spark every day. The data is retained permanently in S3, and processing takes only 2-3 hours a day. How can you minimize cost while making sure jobs do not die from Spot interruptions?
 
-A) 상시(long-running) EMR 클러스터를 On-Demand로 유지
-B) 잡 단위 transient EMR 클러스터 + Task 노드를 Instance Fleets Spot 다중 타입으로 구성, 끝나면 종료
-C) 모든 노드(Master·Core·Task)를 Spot으로 구성
-D) Redshift에 적재 후 SQL로 처리
+A) Keep a long-running EMR cluster on On-Demand
+B) A transient EMR cluster per job + Task nodes configured with Instance Fleets across multiple Spot types, terminated when finished
+C) Configure all nodes (Master, Core, Task) as Spot
+D) Load into Redshift and process with SQL
 
 **Answer: B**
 
-Explanation: 데이터가 S3에 있으므로 처리할 때만 클러스터를 띄우고 끝나면 종료하는 transient cluster가 비용 최적이다. Task 노드는 HDFS 데이터를 들고 있지 않아 Spot 중단에 안전하고, Instance Fleets로 여러 인스턴스 타입을 섞으면 한 타입의 Spot이 마르거나 중단돼도 다른 타입으로 자동 대체되어 강건하다. A는 안 쓰는 시간에도 비용이 계속 나간다. C는 Master/Core를 Spot으로 돌리는 치명적 실수 — Master가 중단되면 클러스터 전체가 죽고 Core가 중단되면 HDFS 데이터가 사라진다. D는 배치 Spark 처리를 위해 굳이 DW에 적재할 이유가 없고 변환 유연성도 떨어진다.
+Explanation: Because the data is in S3, a transient cluster that is launched only for processing and terminated afterward is the most cost-optimal. Task nodes do not hold HDFS data, so they are safe against Spot interruptions, and mixing multiple instance types with Instance Fleets makes the setup robust, since if Spot capacity for one type dries up or is interrupted, other types automatically substitute. A keeps incurring cost even during idle hours. C is a fatal mistake of running Master/Core on Spot — if the Master is interrupted the whole cluster dies, and if a Core node is interrupted the HDFS data disappears. For D, there is no reason to load into a DW for batch Spark processing, and transformation flexibility is lower.
 
 ---
 
-**Question 2.** 하루에 몇 번, 불규칙하게 도는 Spark 잡이 있다. 클러스터 사이징과 노드 관리를 하고 싶지 않고, 안 돌 때 비용을 최소화하려면?
+**Question 2.** There is a Spark job that runs a few times a day at irregular times. You do not want to size clusters or manage nodes, and you want to minimize cost when it is not running. What should you use?
 
-A) EMR on EC2 상시 클러스터
+A) A persistent EMR on EC2 cluster
 B) EMR Serverless
-C) EMR on EKS 전용 노드 풀
+C) A dedicated EMR on EKS node pool
 D) Glue Crawler
 
 **Answer: B**
 
-Explanation: EMR Serverless는 클러스터·노드 개념 없이 잡을 제출하면 필요한 워커를 자동으로 띄우고 끝나면 회수하며, 워커 실행 시간만 과금한다. 간헐적·가변 워크로드에서 용량 산정 실수와 유휴 비용을 없애준다. A는 안 쓰는 시간에 상시 비용이 발생하고 사이징 관리가 필요. C는 EKS 클러스터·노드 풀을 직접 관리해야 해 "관리하기 싫다"는 조건에 어긋남(이미 EKS 표준화된 조직의 통합용). D는 ETL 잡 실행이 아니라 스키마를 추론해 카탈로그에 등록하는 도구로 목적이 다르다.
+Explanation: EMR Serverless has no cluster or node concept; when you submit a job it automatically launches the workers it needs and reclaims them when finished, billing only for worker run time. It eliminates capacity estimation errors and idle cost for intermittent and variable workloads. A incurs a standing cost when idle and requires sizing management. C requires managing the EKS cluster and node pool yourself, which conflicts with the condition "do not want to manage" (it is for integration in organizations already standardized on EKS). D is a tool that infers schemas and registers them in the catalog, not one that runs ETL jobs, so its purpose is different.
 
 ---
 
-**Question 3.** 매일 도는 Glue ETL 잡이 어제 이미 처리한 S3 파일을 또 처리해 비용이 늘고 결과가 중복된다. 새로 들어온 데이터만 처리하게 하려면?
+**Question 3.** A daily Glue ETL job reprocesses S3 files it already processed yesterday, raising cost and duplicating results. How can you make it process only newly arrived data?
 
-A) Crawler를 매번 다시 실행
-B) Glue Job Bookmark 활성화
-C) Athena에서 WHERE로 필터
-D) S3 라이프사이클로 오래된 파일 삭제
+A) Rerun the Crawler every time
+B) Enable Glue Job Bookmark
+C) Filter with WHERE in Athena
+D) Delete old files with an S3 lifecycle policy
 
 **Answer: B**
 
-Explanation: Job Bookmark는 잡 실행마다 "어디까지 처리했는지"의 상태를 체크포인트로 저장하고, 다음 실행은 그 이후의 새 데이터만 처리한다(스트리밍 오프셋과 같은 발상의 배치 버전). A(Crawler)는 스키마·파티션을 카탈로그에 등록하는 도구로 증분 처리와 무관. C는 처리 자체는 매번 전체를 읽으므로 비용 절감이 안 됨. D는 데이터 손실 위험이 있고 증분 처리 문제를 해결하지 못한다.
+Explanation: Job Bookmark saves the state of "how far it has processed" as a checkpoint on each job run, and the next run processes only the new data after that (a batch version of the same idea as streaming offsets). A (Crawler) is a tool that registers schemas and partitions in the catalog and has nothing to do with incremental processing. C still reads everything each time, so it does not reduce cost. D risks data loss and does not solve the incremental processing problem.
 
 ---
 
-**Question 4.** 수십 개 단계가 의존성을 갖는 데이터 파이프라인을 오케스트레이션해야 한다. 팀은 이미 온프레미스에서 Apache Airflow를 쓰고 있고, 추후 다른 클라우드로 이전할 가능성도 고려해 이식성을 원한다. 가장 적합한 것은?
+**Question 4.** You need to orchestrate a data pipeline in which dozens of steps have dependencies. The team already uses Apache Airflow on premises and wants portability, considering a possible move to another cloud later. What is the most appropriate choice?
 
 A) Step Functions (ASL)
 B) MWAA
 C) Glue Workflow
-D) EventBridge 규칙 체인
+D) An EventBridge rule chain
 
 **Answer: B**
 
-Explanation: MWAA는 Apache Airflow 매니지드 서비스로, 기존 Airflow DAG(Python)를 거의 그대로 옮길 수 있고 Airflow가 OSS이므로 다른 클라우드(GCP Composer 등)나 온프렘으로의 이식성이 좋다. A(Step Functions)는 ASL JSON 기반으로 AWS 종속이라 이식성 조건에 어긋남. C(Glue Workflow)는 Glue 잡 위주의 단순 오케스트레이션으로 복잡한 다중 서비스 DAG·이식성에 부족. D는 단순 이벤트 연결이지 복잡한 의존성 그래프 오케스트레이션 도구가 아니다.
+Explanation: MWAA is a managed Apache Airflow service; existing Airflow DAGs (Python) can be moved almost as is, and because Airflow is OSS, portability to other clouds (such as GCP Composer) or on-premises is good. A (Step Functions) is based on ASL JSON and is tied to AWS, which conflicts with the portability condition. C (Glue Workflow) is simple orchestration centered on Glue jobs and falls short for complex multi-service DAGs and portability. D is merely simple event wiring and not a tool for orchestrating complex dependency graphs.
 
 ---
 
-**Question 5.** 순수 AWS 환경에서 이벤트 기반 워크플로우를 만든다. 간헐적으로만 실행되며, 워크플로우가 안 돌 때 상시 비용이 발생하지 않기를 원하고, 다수의 AWS 서비스를 세밀하게 통합해야 한다. 가장 적합한 것은?
+**Question 5.** You are building an event-driven workflow in a pure AWS environment. It runs only intermittently, you want no standing cost when the workflow is not running, and it must integrate closely with many AWS services. What is the most appropriate choice?
 
 A) MWAA
 B) Step Functions
-C) 상시 EC2에서 cron + 스크립트
+C) cron + scripts on an always-on EC2
 D) Jenkins on EC2
 
 **Answer: B**
 
-Explanation: Step Functions는 완전 서버리스로 상태 전이(state transition)당 과금되어 워크플로우가 안 돌면 비용이 0에 수렴하고, 200개 이상 AWS 서비스를 네이티브로 통합한다. 이벤트 기반·간헐적·AWS 종속 환경에 최적. A(MWAA)는 Airflow 환경(웹서버·스케줄러)이 잡이 없어도 상시 떠 있어 시간당 비용이 계속 발생하므로 "상시 비용 회피" 조건에 불리. C·D는 인프라를 직접 운영해야 하고 상시 비용·관리 부담이 크다. 함정: "간헐적 + 상시 비용 회피 + AWS 통합"은 Step Functions, "복잡 데이터 DAG + 기존 Airflow 자산 + 이식성"은 MWAA.
+Explanation: Step Functions is fully serverless and billed per state transition, so cost approaches zero when no workflow is running, and it integrates natively with 200+ AWS services. It is optimal for event-driven, intermittent, AWS-bound environments. A (MWAA) keeps the Airflow environment (web server, scheduler) running continuously even without jobs, so hourly costs keep accruing, which is a disadvantage under the "avoid standing costs" condition. C and D require you to operate the infrastructure yourself and carry large standing costs and management burden. Trap: "intermittent + avoiding standing cost + AWS integration" is Step Functions; "complex data DAG + existing Airflow assets + portability" is MWAA.
 
 ---
 
-**Question 6.** 데이터 분석가들이 엔지니어의 도움 없이 시각적으로 데이터를 정제·변환하고 싶어 한다. 코드 작성 없이 클렌징 레시피를 만들 수 있는 도구는?
+**Question 6.** Data analysts want to cleanse and transform data visually without help from engineers. Which tool lets them build cleansing recipes without writing code?
 
 A) EMR Notebooks
 B) Glue DataBrew
@@ -186,20 +186,20 @@ D) Athena CTAS
 
 **Answer: B**
 
-Explanation: Glue DataBrew는 코드 없이(노코드) 시각적 인터페이스로 데이터 프로파일링·정제·변환 레시피를 만드는 도구로, 데이터 분석가가 엔지니어 없이 클렌징을 수행하는 데 최적이다. A(EMR Notebooks)는 Jupyter 기반으로 코드 작성이 필요. C(Glue Job)는 PySpark/Scala 코드 작성이 필요. D(Athena CTAS)는 SQL 작성이 필요하다. "노코드·시각적·분석가 셀프서비스"는 DataBrew.
+Explanation: Glue DataBrew is a tool for creating data profiling, cleansing, and transformation recipes through a visual interface with no code (no-code), and it is optimal for data analysts to perform cleansing without engineers. A (EMR Notebooks) is Jupyter-based and requires writing code. C (Glue Job) requires writing PySpark/Scala code. D (Athena CTAS) requires writing SQL. "No-code, visual, analyst self-service" is DataBrew.
 
 ---
 
-**Question 7.** 한 조직이 이미 EKS로 컨테이너 플랫폼을 표준화했고, 앱 워크로드와 빅데이터 Spark 워크로드를 같은 Kubernetes 자원 풀·IAM·관측 도구로 통합해 자원 활용률을 높이려 한다. 가장 적합한 EMR 배포 모델은?
+**Question 7.** An organization has already standardized its container platform on EKS and wants to integrate application workloads and big data Spark workloads onto the same Kubernetes resource pool, IAM, and observability tools to raise resource utilization. What is the most appropriate EMR deployment model?
 
 A) EMR on EC2
 B) EMR on EKS
 C) EMR Serverless
-D) 별도 Hadoop 클러스터를 직접 구축
+D) Build a separate Hadoop cluster yourself
 
 **Answer: B**
 
-Explanation: EMR on EKS는 Spark 잡을 기존 EKS 클러스터 위에서 Pod로 실행해, 빅데이터 팀과 앱 팀이 같은 K8s 자원 풀·IAM·로깅/모니터링을 공유하고 자원 활용률을 높인다. 이미 EKS를 표준화한 조직의 통합 시나리오에 정확히 부합한다. A(on EC2)는 별도 EMR 전용 클러스터를 띄워 EKS 통합 이점이 없음. C(Serverless)는 K8s 자원 풀 공유·통합과 무관. D는 매니지드 이점을 버리는 선택이다.
+Explanation: EMR on EKS runs Spark jobs as Pods on an existing EKS cluster, so the big data team and the app team share the same K8s resource pool, IAM, and logging/monitoring, raising resource utilization. It exactly fits the integration scenario of an organization that has already standardized on EKS. A (on EC2) launches a separate dedicated EMR cluster and has no EKS integration benefits. C (Serverless) is unrelated to sharing and integrating a K8s resource pool. D gives up the benefits of managed services.
 
 ---
 

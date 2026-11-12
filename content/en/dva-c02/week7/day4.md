@@ -282,7 +282,7 @@ Explanation: Backtrack: Aurora MySQL feature, same cluster past-time in-place (s
 
 ---
 
-**문래 6.** Aurora Reader Endpoint load balance is?
+**Question 6.** Aurora Reader Endpoint load balance is?
 
 A) Application round-robin
 B) DNS: resolve same endpoint → different replica IP each time (TTL 5 sec)

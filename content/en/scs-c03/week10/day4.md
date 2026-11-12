@@ -125,62 +125,62 @@ mainSteps:
 
 ## 📝 Practice Questions
 
-**Question 1.** NIST IR 생명주기에서 근절(Eradication)을 복구(Recovery)보다 먼저 수행해야 하는 이유로 가장 적절한 것은?
+**Question 1.** Why is it most appropriate to perform Eradication before Recovery in the NIST IR lifecycle?
 
-A) 복구가 더 비싸므로 미뤄야 한다  
-B) 위협(백도어·멀웨어)을 완전히 제거하지 않고 정상 운영을 복원하면 즉시 재침해가 일어나기 때문  
-C) AWS가 그 순서만 허용하므로  
-D) 근절은 자동화할 수 없으므로  
+A) Recovery is more expensive, so it should be postponed  
+B) Because restoring normal operations without fully removing the threat (backdoors, malware) causes immediate re-compromise  
+C) Because AWS only allows that order  
+D) Because eradication cannot be automated  
 
 **Answer: B**  
-Explanation: 근절을 건너뛰고 복구하면 남은 백도어·멀웨어로 곧장 재침해된다. 그래서 봉쇄로 확산을 막고, 근절로 위협을 완전히 제거한 뒤, 복구로 정상 운영을 복원하는 순서가 필수다. 비용·AWS 강제·자동화 가능 여부는 순서의 근거가 아니다.
+Explanation: Recovering while skipping eradication leads to immediate re-compromise through the remaining backdoors and malware. That is why the order is mandatory: contain to stop the spread, eradicate to fully remove the threat, and then recover to restore normal operations. Cost, AWS enforcement, and whether it can be automated are not grounds for the order.
 
 ---
 
-**Question 2.** 어떤 대응 조치를 완전 자동화할지, 사람 승인 게이트를 둘지 판단하는 기준으로 가장 적절한 묶음은?
+**Question 2.** Which set of criteria is most appropriate for deciding which response actions to fully automate and which to put behind a human approval gate?
 
-A) 조치 이름의 길이와 알파벳 순서  
-B) 위협의 명확성, 조치의 가역성, 영향 범위, 속도 요구 — 명백·가역·저영향·고속이면 자동화, 모호·비가역·고영향이면 사람 승인  
-C) 무조건 모두 자동화하는 것이 항상 최선  
-D) 무조건 모두 수동이 항상 최선  
+A) The length and alphabetical order of the action name  
+B) Threat clarity, action reversibility, scope of impact, and speed requirement — automate if clear, reversible, low-impact, and high-speed; require human approval if ambiguous, irreversible, or high-impact  
+C) Automating everything unconditionally is always best  
+D) Making everything manual unconditionally is always best  
 
 **Answer: B**  
-Explanation: 자동화/사람 경계는 명확성·가역성·영향 범위·속도 요구로 판단한다. 명백하고 가역적이며 저영향이고 속도가 결정적이면 자동화하고, 모호·비가역·고영향이면 사람의 승인을 둔다. 과도한 자동화는 false positive로 서비스를 파괴하고, 전면 수동은 대응을 지연시킨다.
+Explanation: The automation/human boundary is decided by clarity, reversibility, scope of impact, and speed requirement. Automate when the action is clear, reversible, low-impact, and speed is decisive; put human approval on actions that are ambiguous, irreversible, or high-impact. Excessive automation destroys services through false positives, and fully manual response delays the response.
 
 ---
 
-**Question 3.** 자동 봉쇄는 즉시 실행하되 프로덕션 인스턴스 종료 같은 비가역 조치 전에는 IR 리드의 승인을 받게 하려 한다. SSM Automation에서 적절한 메커니즘은?
+**Question 3.** We want automated containment to run immediately, but require approval from the IR lead before irreversible actions such as terminating a production instance. What is the appropriate mechanism in SSM Automation?
 
-A) Lambda를 두 번 호출  
-B) 런북 중간에 aws:approve 단계를 삽입해 지정된 승인자의 승인 후 종료 단계가 진행되도록 구성  
-C) 보안 그룹 규칙 추가  
-D) CloudTrail 알람  
+A) Invoke Lambda twice  
+B) Insert an aws:approve step in the middle of the runbook so that the termination step proceeds only after the designated approver approves  
+C) Add a security group rule  
+D) A CloudTrail alarm  
 
 **Answer: B**  
-Explanation: SSM Automation의 aws:approve 액션은 런북 흐름 중간에 사람 승인 게이트를 삽입해, 지정 승인자가 승인해야 다음(고영향) 단계가 진행된다. 이것이 graduated automation에서 자동 봉쇄와 사람의 비가역 조치 승인을 결합하는 표준 메커니즘이다. 나머지는 승인 게이트 기능을 제공하지 않는다.
+Explanation: The aws:approve action in SSM Automation inserts a human approval gate in the middle of the runbook flow, so the next (high-impact) step proceeds only when the designated approver approves. This is the standard mechanism in graduated automation for combining automated containment with human approval of irreversible actions. The others do not provide an approval gate.
 
 ---
 
-**Question 4.** NIST IR의 준비(Preparation) 단계에서 클라우드 환경에 반드시 갖춰야 할 것으로 가장 적절한 것은?
+**Question 4.** What is most appropriate to have in place in a cloud environment during the Preparation phase of the NIST IR lifecycle?
 
-A) 사고가 난 뒤에 CloudTrail을 켠다  
-B) 사고 전에 CloudTrail·VPC Flow Logs·GuardDuty 등 로깅·탐지 기반, 격리 보안 그룹·포렌식 계정·증거 버킷, 런북과 break-glass 역할을 미리 구축  
-C) 준비 단계에는 아무것도 하지 않는다  
-D) 모든 인스턴스를 미리 종료한다  
+A) Turn on CloudTrail after an incident occurs  
+B) Build in advance, before incidents, the logging and detection foundation such as CloudTrail, VPC Flow Logs, and GuardDuty, the isolation security group, forensic account, and evidence bucket, and the runbooks and break-glass role  
+C) Do nothing in the Preparation phase  
+D) Terminate all instances in advance  
 
 **Answer: B**  
-Explanation: 준비는 사고 전에 대응 능력을 구축하는 단계다. 로그가 없으면 사고 후 분석 자체가 불가능하므로 CloudTrail·Flow Logs·GuardDuty와 격리·포렌식 인프라, 런북, break-glass 역할을 미리 갖춰야 한다. 사고 후 로깅 활성화나 무위·무차별 종료는 부적절하다.
+Explanation: Preparation is the phase of building response capability before an incident. Without logs, post-incident analysis is impossible, so you must have CloudTrail, Flow Logs, GuardDuty, the isolation and forensic infrastructure, runbooks, and a break-glass role in advance. Enabling logging after the incident, or doing nothing or terminating indiscriminately, is inappropriate.
 
 ---
 
-**Question 5.** 사후 활동(Post-Incident) 단계에서 IR 프로그램을 개선하기 위해 추적하는 핵심 지표와 활동으로 가장 적절한 것은?
+**Question 5.** In the Post-Incident phase, which key metrics and activities are most appropriate to track to improve the IR program?
 
-A) 인스턴스 시간당 비용만 본다  
-B) MTTD·MTTR·dwell time을 측정하고, CloudTrail/Detective로 타임라인·근본 원인을 분석하며 교훈을 런북·통제에 환류하고 규제 보고 의무를 이행  
-C) 사고를 잊고 다음 작업으로 넘어간다  
-D) 모든 로그를 즉시 삭제한다  
+A) Look only at the cost per instance hour  
+B) Measure MTTD, MTTR, and dwell time, analyze the timeline and root cause with CloudTrail/Detective, feed lessons back into runbooks and controls, and fulfill regulatory reporting obligations  
+C) Forget the incident and move on to the next task  
+D) Delete all logs immediately  
 
 **Answer: B**  
-Explanation: 사후 단계는 MTTD/MTTR/dwell time 같은 지표로 병목을 찾고, CloudTrail·Detective로 타임라인과 근본 원인을 분석해 교훈을 준비 단계(런북·통제)로 환류하며, 침해 통지 등 규제 의무를 이행한다. 비용만 보거나 사고를 잊거나 증거 로그를 삭제하는 것은 개선·법적 요구에 모두 어긋난다.
+Explanation: The post-incident phase finds bottlenecks with metrics such as MTTD/MTTR/dwell time, analyzes the timeline and root cause with CloudTrail and Detective, feeds lessons back into the Preparation phase (runbooks and controls), and fulfills regulatory obligations such as breach notification. Looking only at cost, forgetting the incident, or deleting evidence logs all run counter to improvement and legal requirements.
 
 ---

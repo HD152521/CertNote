@@ -230,31 +230,31 @@ Next day covers AppSync (GraphQL) and SQS/SNS messaging patterns. If EventBridge
 
 ## 📝 Practice Questions
 
-**Question 1.** 한 SaaS가 SQS 큐에 들어오는 메시지를 필터링해 특정 패턴만 Step Functions로 보내고, 나머지는 무시한다. Lambda 코드 작성 없이 가장 간단한 구성은?
+**Question 1.** A SaaS company wants to filter messages arriving in an SQS queue, send only a specific pattern to Step Functions, and ignore the rest. What is the simplest configuration without writing Lambda code?
 
-A) Lambda(필터) → Step Functions
+A) Lambda (filter) → Step Functions
 B) EventBridge Pipes (Source=SQS, Filter, Target=Step Functions)
 C) SQS Redrive Policy
 D) EventBridge Rule (Source=SQS)
 
 **Answer: B**
-Explanation: Pipes는 정확히 이 패턴(SQS/Kinesis/DDB Stream → 필터 → target)을 코드 없이 구성하기 위한 도구. A는 Lambda 운영 부담 추가. C(Redrive)는 실패 메시지 격리 용도이지 필터링이 아님. D(EventBridge Rule)는 EventBridge Bus에 들어온 이벤트를 매칭하지 SQS를 직접 source로 못 받음. 함정: "코드 없이"가 키워드면 Pipes. 추가: Pipes의 enrichment 단계로 Lambda나 Step Functions를 끼워 가벼운 변환 가능. 입출력 모두 EventBridge 패턴 매칭 가능.
+Explanation: Pipes is a tool built precisely to configure this pattern (SQS/Kinesis/DDB Stream → filter → target) without code. A adds the operational burden of Lambda. C (Redrive) is for isolating failed messages, not filtering. D (EventBridge Rule) matches events that arrive on an EventBridge Bus and cannot take SQS directly as a source. Trap: if "without code" is the keyword, it is Pipes. Additional note: you can insert Lambda or Step Functions in Pipes' enrichment stage for light transformation. EventBridge pattern matching is available for both input and output.
 
 ---
 
-**Question 2.** 한 글로벌 SaaS가 100만 사용자에게 각자 선호 시간(타임존 + 시각)에 일일 요약 이메일을 발송한다. 각 사용자의 스케줄을 개별 관리해야 한다. 가장 적합한 구성은?
+**Question 2.** A global SaaS company sends a daily summary email to 1 million users at each user's preferred time (time zone + time of day). Each user's schedule must be managed individually. What is the most appropriate configuration?
 
-A) EventBridge Rule 100만 개
-B) EventBridge Scheduler 100만 스케줄
+A) 1 million EventBridge Rules
+B) 1 million EventBridge Scheduler schedules
 C) Lambda + cron Worker
 D) Step Functions Wait State
 
 **Answer: B**
-Explanation: Scheduler는 계정당 100만+ 스케줄을 지원하고 타임존, cron, flexible time window를 제공. EventBridge Rule(A)은 계정당 한도(수천)에 막힌다. C(Lambda cron)는 자체 스케줄 저장·관리 인프라가 필요. D(Step Functions Wait)는 한 워크플로우 안 대기이지 100만 사용자 스케줄 관리가 아님. 함정: "사용자별 다른 시간"이면 Scheduler가 정답. 추가: Flexible time window(±15분)로 동시 부하 분산. Target은 200+ AWS API 직접 호출(Lambda 거치지 않고 SNS Publish 등).
+Explanation: Scheduler supports 1 million+ schedules per account and provides time zones, cron, and flexible time windows. EventBridge Rules (A) hit the per-account limit (a few thousand). C (Lambda cron) requires your own schedule storage and management infrastructure. D (Step Functions Wait) is waiting within a single workflow, not managing the schedules of 1 million users. Trap: if "a different time per user," Scheduler is the answer. Additional note: a flexible time window (±15 minutes) spreads out the simultaneous load. Targets call 200+ AWS APIs directly (for example, SNS Publish without going through Lambda).
 
 ---
 
-**Question 3.** Shopify에서 발생하는 주문 이벤트를 AWS 워크플로우에 통합한다. Webhook 인프라 운영 없이 직접 받으려면?
+**Question 3.** You want to integrate order events from Shopify into an AWS workflow. How can you receive them directly without operating webhook infrastructure?
 
 A) API Gateway + Lambda webhook receiver
 B) EventBridge Default Bus
@@ -262,65 +262,65 @@ C) EventBridge Partner Event Bus
 D) SNS HTTPS subscription
 
 **Answer: C**
-Explanation: Partner Bus는 AWS가 SaaS 파트너(Shopify, Stripe, Datadog, Auth0, MongoDB 등)와 직접 통합해 이벤트를 받는 매니지드 채널. 사용자는 partner 이벤트 source를 활성화하고 룰을 만들면 끝. A는 webhook receiver를 직접 운영해야 함(보안, 인증, 재시도, 스케일링). B(Default Bus)는 AWS 서비스용. D(SNS HTTPS)는 outbound 알림 용도. 함정: "SaaS partner 이벤트"는 거의 Partner Bus가 답. 추가: Stripe, Shopify, Datadog 등 메이저 SaaS가 모두 등록되어 있고 콘솔에서 한 번에 활성화.
+Explanation: A Partner Bus is a managed channel through which AWS integrates directly with SaaS partners (Shopify, Stripe, Datadog, Auth0, MongoDB, and others) to receive events. The user simply activates the partner event source and creates a rule. With A, you must operate the webhook receiver yourself (security, authentication, retries, scaling). B (Default Bus) is for AWS services. D (SNS HTTPS) is for outbound notifications. Trap: "SaaS partner events" is almost always Partner Bus. Additional note: major SaaS providers such as Stripe, Shopify, and Datadog are all registered and can be activated with a single step in the console.
 
 ---
 
-**Question 4.** EventBridge Bus의 1년치 이벤트를 보존하다가 특정 시간 범위(예: 2024-03-01~03)의 이벤트만 다시 흘려보내 새 다운스트림을 초기화한다. 가장 적합한 기능은?
+**Question 4.** You want to retain one year of events from an EventBridge Bus and later replay only the events in a specific time range (for example, 2024-03-01 to 03) to initialize a new downstream consumer. What is the most appropriate feature?
 
-A) S3 + Athena 쿼리
+A) S3 + Athena queries
 B) EventBridge Archive + Replay
 C) CloudTrail Lake
-D) Kinesis Firehose 백업
+D) Kinesis Firehose backup
 
 **Answer: B**
-Explanation: EventBridge Archive는 Bus 이벤트를 보존(최대 무기한), Replay는 시간 범위 + 필터로 다시 흘려보냄. A는 분석은 가능하지만 다운스트림에 재투입하려면 별도 로직 필요. C(CloudTrail Lake)는 API 활동 감사용이지 application 이벤트가 아님. D는 데이터 저장이지 재생 메커니즘이 아님. 함정: "이벤트 재처리·재생"이면 거의 Archive + Replay. 추가: Event Sourcing 패턴의 새 구독자 도입, bug fix 후 누락 이벤트 복구에 표준 패턴.
+Explanation: EventBridge Archive retains Bus events (up to indefinitely), and Replay re-sends them by time range + filter. A allows analysis, but re-injecting into a downstream requires separate logic. C (CloudTrail Lake) is for auditing API activity, not application events. D is data storage, not a replay mechanism. Trap: "event reprocessing or replay" is almost always Archive + Replay. Additional note: it is the standard pattern for introducing a new subscriber in Event Sourcing and for recovering missed events after a bug fix.
 
 ---
 
-**Question 5.** 한 e-commerce가 OrderPlaced 이벤트를 분석·배송·CRM·알림·audit 5개 다운스트림에 동일 메시지로 fan-out한다. 처리량은 초당 5,000건. 가장 적합한 구성은?
+**Question 5.** An e-commerce company fans out an OrderPlaced event as the same message to 5 downstream consumers: analytics, shipping, CRM, notifications, and audit. Throughput is 5,000 per second. What is the most appropriate configuration?
 
-A) EventBridge + 5개 Rule
-B) SNS Topic + 5개 SQS 구독
-C) Kinesis Data Streams + 5개 Consumer
+A) EventBridge + 5 Rules
+B) SNS Topic + 5 SQS subscriptions
+C) Kinesis Data Streams + 5 Consumers
 D) Step Functions Parallel state
 
 **Answer: B**
-Explanation: 단순 fan-out + 매우 높은 처리량은 SNS의 정확한 sweet spot. Topic당 100,000 TPS+를 지원하고 SQS subscription으로 다운스트림이 자체 폴 속도로 처리. A(EventBridge)도 가능하지만 5개 룰이 같은 패턴을 매칭해야 하고, EventBridge 단가가 더 비싸며 throughput 한도가 더 낮음. C(Kinesis)는 순서·재처리가 필요한 스트리밍 분석용이지 fan-out 최적이 아님. D는 한 워크플로우 안 병렬이지 다운스트림 fan-out이 아님. 함정: "단순 fan-out + 높은 처리량"이면 SNS, "풍부한 필터·다양한 target"이면 EventBridge.
+Explanation: Simple fan-out + very high throughput is exactly SNS's sweet spot. It supports 100,000+ TPS per Topic, and with SQS subscriptions each downstream processes at its own polling speed. A (EventBridge) is also possible, but the 5 rules would all need to match the same pattern, EventBridge's unit price is higher, and its throughput limit is lower. C (Kinesis) is for streaming analytics that needs ordering and reprocessing and is not optimal for fan-out. D is parallelism within a single workflow, not downstream fan-out. Trap: "simple fan-out + high throughput" is SNS; "rich filtering + diverse targets" is EventBridge.
 
 ---
 
-**Question 6.** 이벤트 발행 팀이 자주 새 필드를 추가한다. 구독 팀이 strongly-typed 코드(Java/Python)로 안전하게 이벤트를 처리하면서 스키마 진화를 추적하려면?
+**Question 6.** The event publishing team frequently adds new fields. How can the subscribing teams process events safely with strongly-typed code (Java/Python) while tracking schema evolution?
 
 A) Glue Schema Registry
 B) EventBridge Schema Registry + Code Binding
 C) OpenAPI Swagger
-D) Avro 직접 관리
+D) Manage Avro directly
 
 **Answer: B**
-Explanation: EventBridge Schema Registry는 Bus 이벤트 스키마를 auto-discovery로 추출·버전 관리하고, Java/Python/TypeScript code binding을 자동 생성. 구독 팀은 generated SDK로 strongly-typed로 처리. A(Glue Schema Registry)는 Kinesis·Kafka용으로 별도 서비스. C(OpenAPI)는 REST API용이지 이벤트 스키마 표준이 아님(다만 EventBridge가 OpenAPI 3로 export 가능). D는 자체 운영 부담이 큼. 함정: EventBridge 이벤트의 스키마는 EventBridge Schema Registry, Kafka/Kinesis는 Glue Schema Registry. 두 가지를 혼동 주의.
+Explanation: EventBridge Schema Registry extracts and versions the schemas of Bus events through auto-discovery and automatically generates Java/Python/TypeScript code bindings. Subscribing teams process events with strong typing using the generated SDK. A (Glue Schema Registry) is a separate service for Kinesis and Kafka. C (OpenAPI) is for REST APIs and is not an event schema standard (although EventBridge can export to OpenAPI 3). D carries a large operational burden of its own. Trap: the schema of EventBridge events goes in EventBridge Schema Registry, and Kafka/Kinesis use Glue Schema Registry. Be careful not to confuse the two.
 
 ---
 
-**Question 7.** Lambda가 EventBridge Rule의 target이고 Lambda 함수 실행 중 비즈니스 로직 오류로 예외가 발생한다. 실패한 이벤트를 격리해 분석하려면?
+**Question 7.** Lambda is the target of an EventBridge Rule, and an exception occurs because of a business logic error during Lambda function execution. How do you isolate and analyze the failed events?
 
-A) EventBridge Rule의 DLQ
-B) Lambda 함수의 비동기 Destinations (OnFailure)
+A) The EventBridge Rule's DLQ
+B) The Lambda function's asynchronous Destinations (OnFailure)
 C) CloudTrail
 D) EventBridge Archive
 
 **Answer: B**
-Explanation: EventBridge → Lambda 호출은 비동기 invoke이고, Lambda 함수 안의 실행 실패는 **Lambda 자체의 비동기 재시도 모델 + Destinations**가 처리. EventBridge Rule의 DLQ(A)는 **EventBridge가 Lambda Invoke 자체에 실패**(throttle, IAM 거부 등)할 때만 트리거되고, 함수 안의 비즈니스 오류는 잡지 못함. C는 API 활동 감사. D(Archive)는 이벤트 보존이지 실패 격리가 아님. 함정: 두 레이어(EventBridge의 target dispatch vs Lambda 함수 실행)를 혼동하면 시나리오를 잘못 푼다.
+Explanation: The EventBridge → Lambda invocation is an asynchronous invoke, and execution failures inside the Lambda function are handled by **Lambda's own asynchronous retry model + Destinations**. The EventBridge Rule's DLQ (A) is triggered only when **EventBridge itself fails to Invoke Lambda** (throttling, IAM denial, and so on) and cannot catch business errors inside the function. C is API activity auditing. D (Archive) retains events and is not failure isolation. Trap: if you confuse the two layers (EventBridge's target dispatch vs. Lambda function execution), you solve the scenario wrongly.
 
 ---
 
 ## 📌 Today's Summary
 
-1. **EDA 3대 디커플링**(시간/공간/동기화), Conway 법칙으로 조직 결합 영향
-2. **Bus 3종**: Default(AWS) / Custom(도메인) / Partner(SaaS) + Cross-account 정책
-3. **Rule = Pattern + 최대 5 Targets**, JSON 깊은 필드 매칭 + API Destination
-4. **Pipes**: SQS/Kinesis/DDB Stream/MQ/MSK → Filter → Enrich → Target, 코드 없이
-5. **Scheduler**: 100만+ 스케줄, time zone, flexible window, 200+ API 직접 호출
-6. **Schema Registry** + **Archive/Replay** — 진화 관리 + 시간 여행
-7. **SNS vs EventBridge**: 단순 fan-out·고처리량 vs 풍부 필터·다양 target
-8. **Pipes vs Step Functions**: 1:1 라우팅 vs 복잡 워크플로우 (자주 Pipes→SF 조합)
+1. **The three decouplings of EDA** (time/space/synchronization), and how Conway's law affects organizational coupling
+2. **Three kinds of Bus**: Default (AWS) / Custom (domain) / Partner (SaaS) + cross-account policies
+3. **Rule = Pattern + up to 5 Targets**, deep JSON field matching + API Destination
+4. **Pipes**: SQS/Kinesis/DDB Stream/MQ/MSK → Filter → Enrich → Target, without code
+5. **Scheduler**: 1M+ schedules, time zones, flexible window, direct calls to 200+ APIs
+6. **Schema Registry** + **Archive/Replay** — evolution management + time travel
+7. **SNS vs EventBridge**: simple fan-out and high throughput vs. rich filtering and diverse targets
+8. **Pipes vs Step Functions**: 1:1 routing vs. complex workflows (often a Pipes → SF combination)

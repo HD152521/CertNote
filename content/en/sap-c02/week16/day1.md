@@ -20,16 +20,16 @@ Key mappings: (1) "All 6 pillars, no context" → **Invalid question, need busin
 
 ## 📝 Practice Questions
 
-**Question 1.** 금융(Security) vs 게임(Performance) 우선순위 충돌 → **Business context first, then optimize**
+**Question 1.** Priority conflict between finance (Security) and gaming (Performance) → **Business context first, then optimize**
 
-**Question 2.** Aurora Global RTO<1min vs RDS Multi-AZ RTO 2min 선택 → **RPO/RTO 정량값 + cost ROI**
+**Question 2.** Choosing between Aurora Global RTO < 1 min and RDS Multi-AZ RTO 2 min → **Quantitative RPO/RTO values + cost ROI**
 
-**Question 3.** 6 기둥 WA Tool 리뷰 주기 → **분기별(매분기 Reliability·Security drill) + 연 1회 전체**
+**Question 3.** Review cadence of the six-pillar WA Tool → **Quarterly (Reliability and Security drills every quarter) + a full review once a year**
 
-**Question 4.** SCP vs IAM vs Resource Policy 구분 → **SCP(ceiling) > IAM(grant) > Resource(cross-account)**
+**Question 4.** Distinguishing SCP vs IAM vs Resource Policy → **SCP (ceiling) > IAM (grant) > Resource (cross-account)**
 
-**Question 5.** 멀티 리전 하나 죽었을 때 cascade 방지 → **Decoupled regions + 독립 failover**
+**Question 5.** Preventing cascade when one of multiple Regions goes down → **Decoupled Regions + independent failover**
 
-**Question 6.** Cost vs Reliability ROI 의사결정 → **Downtime cost ÷ 해결책 cost = ROI**
+**Question 6.** Cost vs Reliability ROI decision → **Downtime cost ÷ solution cost = ROI**
 
 ---

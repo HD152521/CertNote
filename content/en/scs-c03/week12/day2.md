@@ -65,67 +65,67 @@ Defense in depth: block at network (SG), then at IAM (least privilege), then at 
 
 ## 📝 Practice Questions
 
-**Question 1.** 프라이빗 서브넷의 EC2가 인터넷을 경유하지 않고 특정 S3 버킷에만 접근해야 하며, 자격증명 하드코딩은 금지다. 가장 적절한 설계는?
+**Question 1.** An EC2 instance in a private subnet must access only a specific S3 bucket without going through the internet, and hardcoding credentials is prohibited. What is the most appropriate design?
 
-A) NAT Gateway로 인터넷 경유 후 액세스 키를 EC2에 저장  
-B) S3 Gateway VPC Endpoint(엔드포인트 정책으로 해당 버킷만) + 버킷 정책 `aws:SourceVpce` 조건 + EC2 인스턴스 프로파일(역할)에 최소 권한  
-C) 퍼블릭 서브넷으로 옮기고 보안 그룹만 잠근다  
-D) IAM 사용자 액세스 키를 환경 변수로 주입  
-
-**Answer: B**
-
----
-
-**Question 2.** Organizations에서 SCP로 특정 리전 외 모든 서비스를 거부했는데, 한 계정의 관리자가 자신에게 IAM full-admin 정책을 붙여도 그 리전에서 동작하지 못한다. 이유는?
-
-A) IAM 정책이 손상됐다  
-B) SCP는 권한 상한선(guardrail)이므로, SCP가 허용하지 않으면 IAM Allow가 있어도 거부된다  
-C) Permission Boundary가 자동 적용됐다  
-D) STS 토큰이 만료됐다  
+A) Go through the internet via a NAT Gateway and store an access key on the EC2 instance  
+B) S3 Gateway VPC Endpoint (limited to that bucket only by the endpoint policy) + bucket policy `aws:SourceVpce` condition + least privilege on the EC2 instance profile (role)  
+C) Move it to a public subnet and only lock down the security group  
+D) Inject an IAM user access key as an environment variable  
 
 **Answer: B**
 
 ---
 
-**Question 3.** 서드파티 SaaS가 고객 계정의 리소스를 읽도록 교차 계정 접근을 부여할 때, confused deputy 공격을 방지하는 권장 메커니즘은?
+**Question 2.** In Organizations, an SCP denies all services outside a specific Region, yet even when an administrator of one account attaches an IAM full-admin policy to themselves, they cannot operate in that Region. Why?
 
-A) SaaS에 IAM 사용자 액세스 키를 발급  
-B) 교차 계정 역할의 trust policy에 SaaS 계정 Principal과 함께 External ID 조건을 추가  
-C) 버킷을 퍼블릭으로 공개  
-D) Security Group으로 SaaS IP를 허용  
+A) The IAM policy is corrupted  
+B) An SCP is a permissions guardrail (upper limit), so if the SCP does not allow it, it is denied even if there is an IAM Allow  
+C) A Permission Boundary was applied automatically  
+D) The STS token expired  
 
 **Answer: B**
 
 ---
 
-**Question 4.** 특정 악성 IP 대역을 서브넷 전체에서 차단해야 한다. 보안 그룹으로는 불가능했던 이유와 올바른 통제는?
+**Question 3.** When granting cross-account access so that a third-party SaaS can read resources in a customer account, what is the recommended mechanism to prevent a confused deputy attack?
 
-A) 보안 그룹에는 명시적 거부 규칙이 없어 화이트리스트만 가능 — 서브넷 단위 명시적 deny가 가능한 NACL을 사용  
-B) 보안 그룹이 stateless여서  
-C) NACL은 인스턴스 단위라 부적합하므로 보안 그룹 유지  
-D) 라우팅 테이블에서 IP를 차단  
+A) Issue an IAM user access key to the SaaS  
+B) Add an External ID condition together with the SaaS account Principal in the cross-account role's trust policy  
+C) Make the bucket public  
+D) Allow the SaaS IP with a Security Group  
+
+**Answer: B**
+
+---
+
+**Question 4.** A specific malicious IP range must be blocked across an entire subnet. Why was this not possible with a security group, and what is the correct control?
+
+A) Security groups have no explicit deny rules and only allow lists are possible — use a NACL, which allows an explicit deny at the subnet level  
+B) Because security groups are stateless  
+C) NACLs are instance-level and so unsuitable, so keep the security group  
+D) Block the IP in the route table  
 
 **Answer: A**
 
 ---
 
-**Question 5.** 다음 워크로드 유형과 권장 자격증명 메커니즘의 연결 중 잘못된 것은?
+**Question 5.** Which of the following pairings of a workload type and its recommended credential mechanism is incorrect?
 
-A) EC2 애플리케이션 → 인스턴스 프로파일(IAM 역할)  
-B) EKS 파드 → IRSA / Pod Identity(서비스 계정 ↔ IAM 역할)  
-C) 모바일 앱 최종 사용자 → IAM 사용자 액세스 키를 앱에 내장  
-D) 온프레미스 서버 → IAM Roles Anywhere(X.509 인증서)  
+A) EC2 application -> instance profile (IAM role)  
+B) EKS pod -> IRSA / Pod Identity (service account <-> IAM role)  
+C) Mobile app end user -> embed an IAM user access key in the app  
+D) On-premises server -> IAM Roles Anywhere (X.509 certificate)  
 
 **Answer: C**
 
 ---
 
-**Question 6.** NACL을 새로 구성해 인바운드 HTTPS(443)를 허용했는데, 응답 트래픽이 클라이언트에 도달하지 못한다. 가장 가능성 높은 원인은?
+**Question 6.** After newly configuring a NACL to allow inbound HTTPS (443), response traffic does not reach the client. What is the most likely cause?
 
-A) 보안 그룹이 잘못됐다  
-B) NACL은 stateless이므로 아웃바운드 임시 포트(1024-65535) 허용 규칙을 별도로 추가해야 한다  
-C) 라우팅 테이블에 인터넷 게이트웨이가 없다  
-D) DNS 해석이 실패했다  
+A) The security group is wrong  
+B) NACLs are stateless, so a separate outbound rule allowing ephemeral ports (1024-65535) must be added  
+C) There is no internet gateway in the route table  
+D) DNS resolution failed  
 
 **Answer: B**
 

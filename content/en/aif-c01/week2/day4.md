@@ -76,7 +76,7 @@ Tomorrow we recap all this week's content—the ML lifecycle and data—together
 
 ## 📝 Practice Questions
 
-**Question 1.** 지도 학습(Supervised Learning)에서 사람이 데이터에 "이것은 고양이/강아지"라는 정답을 붙이는 작업을 무엇이라 하는가?
+**Question 1.** In supervised learning, what is the task of attaching correct answers such as "this is a cat/dog" to data by humans called?
 
 A) Data Drift  
 B) Data Labeling  
@@ -88,7 +88,7 @@ Explanation: Attaching a label (correct answer showing "what this is") to raw da
 
 ---
 
-**Question 2.** 대규모 언어 모델(생성형 AI)을 사람이 선호하는 방향으로 다듬기 위해, 사람이 모델의 답변을 평가하고 그 평가를 학습에 반영하는 대표 기법은?
+**Question 2.** Which technique is representative for refining a large language model (generative AI) in the direction humans prefer, by having humans rate the model's responses and reflecting those ratings in training?
 
 A) Data Leakage  
 B) RLHF (Reinforcement Learning from Human Feedback)  
@@ -100,7 +100,7 @@ Explanation: RLHF is a technique where people evaluate which of several model re
 
 ---
 
-**Question 3.** 대출 거절처럼 사람의 삶에 큰 영향을 주는 고위험 결정에 대해, AI가 단독으로 자동 결정하지 않고 사람이 최종 검토·승인하도록 설계하는 접근을 무엇이라 하는가?
+**Question 3.** What is the approach called in which, for high-stakes decisions that greatly affect people's lives such as loan denials, AI does not make the decision on its own but is designed so that a human gives final review and approval?
 
 A) Data Labeling  
 B) Human-in-the-loop  
@@ -112,7 +112,7 @@ Explanation: Human-in-the-loop is a design that intentionally weaves human judgm
 
 ---
 
-**Question 4.** 데이터 라벨링 품질이 모델에 미치는 영향으로 가장 정확한 것은?
+**Question 4.** Which statement most accurately describes the effect of data labeling quality on a model?
 
 A) Even if labels are wrong, the model will learn correctly by itself  
 B) Incorrect labels cause the model to learn those wrong answers as is  
@@ -124,7 +124,7 @@ Explanation: Supervised learning models accept human-attached labels as correct 
 
 ---
 
-**Question 5.** "모델을 한 번 잘 만들면 더 이상 사람의 개입이 필요 없다"는 주장에 대한 가장 적절한 반박은?
+**Question 5.** What is the most appropriate rebuttal to the claim that "once a model is built well, no more human involvement is needed"?
 
 A) That's correct; well-built models remain accurate forever  
 B) Because data changes and models become outdated, continuous monitoring, feedback, and retraining are necessary  

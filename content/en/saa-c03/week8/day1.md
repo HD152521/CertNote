@@ -310,4 +310,4 @@ Explanation: A per-tenant independent key is the standard pattern for isolating 
 
 ---
 
-해설 보강: KMS is the security service that appears most often on the exam, and in practice every other AWS service's encryption goes through KMS, so if you accurately understand the four things — envelope encryption, key policy evaluation, rotation, and deletion safeguards — half the security domain is handled. The Secrets Manager, Parameter Store, and CloudHSM in the next article all work together with KMS, so if you're fuzzy on the KMS permission model, the entire next topic gets tangled.
+Additional Explanation: KMS is the security service that appears most often on the exam, and in practice every other AWS service's encryption goes through KMS, so if you accurately understand the four things — envelope encryption, key policy evaluation, rotation, and deletion safeguards — half the security domain is handled. The Secrets Manager, Parameter Store, and CloudHSM in the next article all work together with KMS, so if you're fuzzy on the KMS permission model, the entire next topic gets tangled.

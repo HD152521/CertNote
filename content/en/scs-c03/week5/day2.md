@@ -113,50 +113,50 @@ Envelope encryption is a two-stage structure: *data encrypted locally with data 
 
 ## 📝 Practice Questions
 
-**Question 1.** 애플리케이션이 수 GB의 파일을 KMS로 암호화하려 한다. 가장 적절한 방식은?
+**Question 1.** An application needs to encrypt multi-GB files with KMS. What is the most appropriate approach?
 
-A) 파일 전체를 `kms:Encrypt` API로 보내 암호화받는다  
-B) `GenerateDataKey`로 데이터 키를 받아 로컬에서 파일을 암호화하고, 평문 데이터 키는 폐기, 암호화된 데이터 키를 파일과 함께 저장한다  
-C) 파일을 4KB 조각으로 나눠 각각 `kms:Encrypt` 호출  
-D) KMS key 평문을 다운로드해 로컬에서 사용  
+A) Send the entire file to the `kms:Encrypt` API to be encrypted  
+B) Get a data key with `GenerateDataKey`, encrypt the file locally, discard the plaintext data key, and store the encrypted data key together with the file  
+C) Split the file into 4 KB pieces and call `kms:Encrypt` on each  
+D) Download the KMS key plaintext and use it locally  
 
 **Answer: B**  
-Explanation: KMS의 `Encrypt` API는 최대 4KB만 처리하므로 큰 데이터에는 봉투 암호화를 쓴다. `GenerateDataKey`로 받은 평문 데이터 키로 로컬에서 빠르게 대칭 암호화한 뒤 평문 키를 폐기하고, KMS로 암호화된 데이터 키만 데이터와 함께 저장한다. 파일을 4KB로 쪼개 호출하는 방식은 비현실적이고, KMS key 평문은 HSM 밖으로 다운로드할 수 없다.
+Explanation: The KMS `Encrypt` API handles at most 4 KB, so envelope encryption is used for large data. You quickly perform symmetric encryption locally with the plaintext data key obtained from `GenerateDataKey`, discard the plaintext key, and store only the data key encrypted by KMS together with the data. Splitting the file into 4 KB pieces and calling for each is impractical, and the KMS key plaintext cannot be downloaded outside the HSM.
 
 ---
 
-**Question 2.** 암호화 컨텍스트(encryption context)에 대한 설명으로 가장 정확한 것은?
+**Question 2.** Which statement about the encryption context is most accurate?
 
-A) 컨텍스트 값은 암호화되어 안전하므로 비밀번호를 넣어도 된다  
-B) 복호화 시 동일한 컨텍스트를 제시해야 하며, 컨텍스트는 암호화되지 않고 CloudTrail에 평문으로 기록되므로 비밀을 넣으면 안 된다  
-C) 컨텍스트는 선택사항이며 복호화에 영향을 주지 않는다  
-D) 컨텍스트는 데이터 키를 대체한다  
+A) Context values are encrypted and therefore safe, so a password may be included  
+B) The same context must be presented at decryption time, and because the context is not encrypted and is recorded in plaintext in CloudTrail, secrets must not be included  
+C) The context is optional and does not affect decryption  
+D) The context replaces the data key  
 
 **Answer: B**  
-Explanation: 암호화 컨텍스트는 AAD로서 무결성이 보장되어, 복호화 시 암호화 때와 정확히 동일하지 않으면 실패한다. 그러나 값 자체는 암호화되지 않고 CloudTrail에 평문으로 남으므로 비밀번호·PII를 넣으면 안 되고, 테넌트 ID 같은 맥락 식별자만 넣는다. 컨텍스트는 데이터 키를 대체하는 것이 아니라 권한 조건과 무결성 바인딩에 쓰인다.
+Explanation: The encryption context serves as AAD and its integrity is guaranteed, so decryption fails unless it is exactly identical to the one used at encryption time. However, the value itself is not encrypted and remains in plaintext in CloudTrail, so passwords and PII must not be included; include only contextual identifiers such as a tenant ID. The context does not replace the data key; it is used for permission conditions and integrity binding.
 
 ---
 
-**Question 3.** SSE-KMS를 쓰는 S3 버킷에 객체가 급증하면서 KMS `ThrottlingException`과 KMS 요청 비용이 크게 늘었다. 가장 효과적인 완화책은?
+**Question 3.** As objects surged in an S3 bucket that uses SSE-KMS, KMS `ThrottlingException` errors and KMS request costs increased significantly. What is the most effective mitigation?
 
-A) 버킷을 SSE-S3로 전환해 암호화를 끈다  
-B) S3 Bucket Key를 활성화해 버킷 수준에서 데이터 키를 파생, 객체별 KMS 호출을 대폭 줄인다  
-C) 객체마다 다른 KMS 키를 만든다  
-D) KMS 키를 비활성화한다  
+A) Switch the bucket to SSE-S3 to turn off encryption  
+B) Enable the S3 Bucket Key to derive data keys at the bucket level, greatly reducing per-object KMS calls  
+C) Create a different KMS key for each object  
+D) Disable the KMS key  
 
 **Answer: B**  
-Explanation: S3 Bucket Key는 S3가 버킷 수준 단기 키로 다수 객체의 데이터 키를 로컬 파생하게 해 KMS API 호출을 최대 99%까지 줄여 throttling과 비용을 완화한다. SSE-S3 전환은 KMS 기반 통제·감사를 포기하는 것이고, 객체마다 다른 키는 호출을 오히려 늘리며, 키 비활성화는 데이터를 못 읽게 만든다.
+Explanation: An S3 Bucket Key lets S3 locally derive data keys for many objects from a bucket-level short-lived key, reducing KMS API calls by up to 99% and easing throttling and cost. Switching to SSE-S3 gives up KMS-based control and auditing, a different key per object actually increases calls, and disabling the key makes the data unreadable.
 
 ---
 
-**Question 4.** 키를 생성하는 컴포넌트와 실제 암호화를 수행하는 컴포넌트가 분리되어 있고, 키 생성 시점에는 평문 데이터 키가 노출되지 않기를 원한다. 어떤 API가 적합한가?
+**Question 4.** The component that generates keys and the component that performs the actual encryption are separate, and you do not want the plaintext data key to be exposed at key generation time. Which API is appropriate?
 
-A) `GenerateDataKey` (평문 포함 반환)  
-B) `GenerateDataKeyWithoutPlaintext` — 암호문 키만 받아 저장하고, 실제 암호화 시점에 `Decrypt`로 평문을 얻는다  
+A) `GenerateDataKey` (returns the plaintext as well)  
+B) `GenerateDataKeyWithoutPlaintext` - receive and store only the ciphertext key, and obtain the plaintext with `Decrypt` at actual encryption time  
 C) `Encrypt`  
 D) `GenerateRandom`  
 
 **Answer: B**  
-Explanation: `GenerateDataKeyWithoutPlaintext`는 암호문 데이터 키만 반환하므로 키 생성 시점에 평문이 노출되지 않는다. 나중에 실제 암호화 주체가 `Decrypt`로 평문 키를 얻어 사용하는 지연 패턴에 적합하다. `GenerateDataKey`는 평문을 즉시 반환하고, `Encrypt`는 작은 데이터 직접 암호화용, `GenerateRandom`은 단순 난수 생성으로 봉투 패턴과 다르다.
+Explanation: `GenerateDataKeyWithoutPlaintext` returns only the ciphertext data key, so the plaintext is not exposed at key generation time. It suits a deferred pattern in which the entity that actually performs encryption later obtains the plaintext key with `Decrypt` and uses it. `GenerateDataKey` returns the plaintext immediately, `Encrypt` is for directly encrypting small data, and `GenerateRandom` simply generates random numbers, which differs from the envelope pattern.
 
 ---

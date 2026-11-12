@@ -148,38 +148,38 @@ aws lambda put-provisioned-concurrency-config \
 
 ## 📝 Practice Questions
 
-**Question 1.** Lambda 함수가 특정 S3 버킷에만 접근해야 한다면?
+**Question 1.** What should you do if a Lambda function must access only a specific S3 bucket?
 
-A) Lambda Execution Role의 IAM Policy에서 S3 버킷 ARN만 명시  
-B) S3 버킷 정책에서 Lambda 함수 허용  
-C) Lambda 콘솔에서 S3 설정  
-D) 환경 변수로 S3 접근 권한 지정  
+A) Specify only the S3 bucket ARN in the IAM policy of the Lambda execution role  
+B) Allow the Lambda function in the S3 bucket policy  
+C) Configure S3 in the Lambda console  
+D) Specify S3 access permissions with environment variables  
 
 **Answer: A**
-Explanation: Lambda Execution Role의 IAM Policy에서 특정 S3 버킷 ARN에만 접근 권한을 부여한다. 최소 권한 원칙에 따라 필요한 버킷만 지정해야 한다.
+Explanation: Grant access permissions only to the specific S3 bucket ARN in the IAM policy of the Lambda execution role. Following the principle of least privilege, specify only the buckets that are needed.
 
 ---
 
-**Question 2.** Lambda 함수 크기가 50MB를 초과한다면 가장 적절한 해결책은?
+**Question 2.** If a Lambda function size exceeds 50 MB, what is the most appropriate solution?
 
-A) Lambda를 여러 함수로 분리  
-B) Container Image 패키지 타입 사용 (10GB까지 지원)  
-C) 의존성을 Lambda Layer로 분리  
-D) EC2로 마이그레이션  
+A) Split the Lambda into multiple functions  
+B) Use the container image package type (supports up to 10 GB)  
+C) Separate the dependencies into a Lambda layer  
+D) Migrate to EC2  
 
 **Answer: B**
-Explanation: Container Image 타입은 10GB 제한으로 대규모 의존성을 지원한다. ZIP 패키지는 50MB 제한이 있으므로 큰 모델이나 복잡한 라이브러리가 필요한 경우 컨테이너 이미지를 선택한다.
+Explanation: The container image type supports large dependencies with a 10 GB limit. ZIP packages have a 50 MB limit, so choose a container image when large models or complex libraries are needed.
 
 ---
 
-**Question 3.** Lambda 함수에 Provisioned Concurrency를 설정하는 목적은?
+**Question 3.** What is the purpose of configuring provisioned concurrency on a Lambda function?
 
-A) 함수 실행 비용 절감  
-B) Cold start 제거, 일정 수의 인스턴스를 항상 준비 상태로 유지  
-C) 동시 실행 함수 제한  
-D) 함수 메모리 증가  
+A) Reducing function execution cost  
+B) Eliminating cold starts by keeping a set number of instances always ready  
+C) Limiting concurrently running functions  
+D) Increasing function memory  
 
 **Answer: B**
-Explanation: Provisioned Concurrency는 지정된 수의 concurrent execution을 항상 준비 상태 (warm)로 유지한다. Cold start 지연 제거로 일정하고 빠른 응답 보장. 비용 증가 ($0.015/시간)하지만 레이턴시 중요한 서비스에서 사용.
+Explanation: Provisioned concurrency keeps a specified number of concurrent executions always ready (warm). Eliminating cold start latency guarantees consistent, fast responses. It increases cost ($0.015/hour) but is used for latency-sensitive services.
 
 ---

@@ -87,7 +87,7 @@ Common SAP exam mappings: (1) "unknown pattern + auto-optimize + large objects" 
 
 ## 📝 Practice Questions
 
-**Question 1.** 액세스 패턴을 전혀 예측할 수 없는 대용량 미디어 객체들을 저장하면서 비용을 자동으로 최적화하려 한다. 가장 적합한 스토리지 클래스는?
+**Question 1.** You want to store large media objects whose access patterns are completely unpredictable while optimizing cost automatically. Which storage class is the most appropriate?
 
 A) Standard-IA
 B) S3 Intelligent-Tiering
@@ -96,7 +96,7 @@ D) One Zone-IA
 
 **Answer: B**
 
-**해설:** Intelligent-Tiering은 객체별 접근 패턴을 모니터링해 자동으로 적합한 계층(Frequent→Infrequent→Archive)으로 이동시키며 검색 비용이 없다(모니터링 fee만). 패턴 불명 + 큰 객체에 정확히 맞는다. A는 패턴이 명확히 "월 몇 회"일 때 적합하며 잘못 맞으면 retrieval 비용이 든다. C는 거의 안 꺼내는 장기 보관용으로 즉시 접근에 부적합하다. D는 단일 AZ라 가용성이 낮다. 함정: "패턴 불명 + 자동"은 Intelligent-Tiering이지만 수많은 작은(128KB 미만) 객체라면 모니터링 fee가 손해일 수 있다.
+**Explanation:** Intelligent-Tiering monitors access patterns per object and automatically moves it to the appropriate tier (Frequent → Infrequent → Archive), with no retrieval charges (only a monitoring fee). It fits exactly "unknown pattern + large objects." A is suitable when the pattern is clearly "a few times a month" and incurs retrieval costs if the guess is wrong. C is for long-term archives that are rarely retrieved and is unsuitable for immediate access. D is a single AZ and therefore has lower availability. Trap: "unknown pattern + automatic" is Intelligent-Tiering, but with many small objects (under 128 KB), the monitoring fee may be a loss.
 
 [Remaining 4 questions preserved exactly in Korean]
 

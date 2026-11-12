@@ -80,6 +80,6 @@ Tomorrow: Domains 3&4 — deployment/orchestration and monitoring/security same 
 
 ## 📝 Practice Questions
 
-**문제 1-5** [Practice questions in Korean follow after marker]
+**Questions 1-5** [Practice questions in Korean follow after marker]
 
 ---

@@ -111,62 +111,62 @@ Detection patterns:
 
 ## 📝 Practice Questions
 
-**Question 1.** "네트워크를 통해 들어온 패킷의 내용을 검사해 멀웨어 시그니처를 탐지하라"는 요구에 가장 적합한 것은?
+**Question 1.** Which is most suitable for the requirement "inspect the contents of packets arriving over the network and detect malware signatures"?
 
-A) VPC Flow Logs 기본 형식  
-B) VPC Traffic Mirroring으로 전체 패킷을 복제해 IDS/IPS로 분석  
-C) Route 53 Resolver 쿼리 로그  
-D) Config 규칙  
+A) VPC Flow Logs default format  
+B) Replicate full packets with VPC Traffic Mirroring and analyze them with an IDS/IPS  
+C) Route 53 Resolver query logs  
+D) Config rules  
 
 **Answer: B**  
-Explanation: VPC Flow Logs는 5-tuple·바이트 수 같은 *메타데이터*만 기록하고 패킷 페이로드는 캡처하지 않는다. 패킷 내용 검사가 필요하면 Traffic Mirroring으로 전체 패킷을 복제해 IDS/IPS 어플라이언스로 보내야 한다. Resolver 로그는 DNS 쿼리, Config는 구성 상태로 패킷 페이로드 분석과 무관하다.
+Explanation: VPC Flow Logs record only *metadata* such as the 5-tuple and byte counts and do not capture packet payloads. When packet content inspection is needed, you must replicate full packets with Traffic Mirroring and send them to an IDS/IPS appliance. Resolver logs are DNS queries and Config is configuration state, so neither relates to packet payload analysis.
 
 ---
 
-**Question 2.** NAT 게이트웨이 뒤의 여러 인스턴스가 같은 공인 IP로 외부와 통신한다. 데이터 유출을 일으킨 *원본 인스턴스*를 특정하려면 Flow Log에서 어떤 필드가 결정적인가?
+**Question 2.** Multiple instances behind a NAT gateway communicate externally using the same public IP. To identify the *source instance* that caused a data exfiltration, which field in the Flow Log is decisive?
 
 A) `srcaddr`  
-B) `pkt-srcaddr`(NAT 변환 이전의 원본 사설 IP)  
-C) `interface-id`만으로 충분  
+B) `pkt-srcaddr` (the original private IP before NAT translation)  
+C) `interface-id` alone is sufficient  
 D) `log-status`  
 
 **Answer: B**  
-Explanation: `srcaddr`는 ENI(NAT 게이트웨이) 기준 주소라 NAT 뒤 인스턴스들이 동일하게 보일 수 있다. custom format의 `pkt-srcaddr`는 NAT 변환 이전 원본 사설 IP를 담아 실제 출처 인스턴스를 특정하게 해준다. `log-status`는 캡처 상태이고, `interface-id`만으로는 공유 NAT 인터페이스 뒤를 구분하지 못한다.
+Explanation: `srcaddr` is the address from the ENI (NAT gateway) perspective, so instances behind NAT can all look the same. The custom format's `pkt-srcaddr` holds the original private IP before NAT translation, allowing you to identify the actual source instance. `log-status` is the capture status, and `interface-id` alone cannot distinguish what sits behind a shared NAT interface.
 
 ---
 
-**Question 3.** 인스턴스로의 인바운드는 `ACCEPT`로 들어오는데 응답 트래픽이 나가지 못해 연결이 실패한다. Flow Log에 outbound `REJECT`가 보인다. 가장 가능성 높은 원인은?
+**Question 3.** Inbound traffic to an instance arrives as `ACCEPT`, but response traffic cannot leave and the connection fails. The Flow Log shows outbound `REJECT`. What is the most likely cause?
 
-A) 보안 그룹이 stateful이라 자동으로 막혔다  
-B) NACL이 stateless라 outbound 임시 포트(1024-65535) 범위를 허용하지 않았다  
-C) Flow Logs가 SKIPDATA 상태다  
-D) Resolver query logging이 꺼져 있다  
+A) The security group is stateful, so it was blocked automatically  
+B) The NACL is stateless and did not allow the outbound ephemeral port range (1024-65535)  
+C) Flow Logs is in SKIPDATA status  
+D) Resolver query logging is turned off  
 
 **Answer: B**  
-Explanation: 보안 그룹은 stateful이라 인바운드를 허용하면 응답이 자동 허용되지만, NACL은 stateless라 인바운드·아웃바운드를 별도로 평가한다. 응답은 임시 포트(ephemeral, 1024-65535)로 나가므로 NACL outbound에서 이 범위를 허용하지 않으면 `REJECT`된다. SG가 stateful이라는 점은 오히려 SG가 원인이 아님을 시사하고, SKIPDATA·Resolver 로깅은 무관하다.
+Explanation: Security groups are stateful, so allowing inbound automatically allows the response, but NACLs are stateless and evaluate inbound and outbound separately. The response leaves on an ephemeral port (1024-65535), so if the NACL outbound does not allow this range, it is `REJECT`ed. The fact that SGs are stateful in fact suggests the SG is not the cause, and SKIPDATA and Resolver logging are irrelevant.
 
 ---
 
-**Question 4.** 내부 인스턴스가 비정상적으로 길고 무작위한 서브도메인에 대한 다량의 DNS TXT 쿼리를 보낸다. 어떤 위협이며 어떤 로그가 이를 드러내는가?
+**Question 4.** An internal instance sends a large number of DNS TXT queries for abnormally long, random subdomains. What threat is this, and which log reveals it?
 
-A) 포트 스캔 — VPC Flow Logs  
-B) DNS 터널링을 통한 데이터 유출 — Route 53 Resolver 쿼리 로그  
-C) SQL 인젝션 — WAF 로그  
-D) 브루트포스 — CloudTrail  
+A) Port scan - VPC Flow Logs  
+B) Data exfiltration through DNS tunneling - Route 53 Resolver query logs  
+C) SQL injection - WAF logs  
+D) Brute force - CloudTrail  
 
 **Answer: B**  
-Explanation: 엔트로피 높은 긴 서브도메인에 대한 다량 TXT 쿼리는 도메인 이름에 데이터를 인코딩해 빼내는 DNS 터널링의 전형적 패턴이다. Route 53 Resolver 쿼리 로그가 어느 인스턴스가 어떤 도메인을 조회했는지 기록해 이를 드러낸다. 능동 차단은 Resolver DNS Firewall로 한다. 포트 스캔·SQLi·브루트포스는 다른 계층의 위협이다.
+Explanation: A large number of TXT queries for long, high-entropy subdomains is the classic pattern of DNS tunneling, which encodes data into domain names to exfiltrate it. Route 53 Resolver query logs record which instance looked up which domain and reveal this. Active blocking is done with Resolver DNS Firewall. Port scans, SQLi, and brute force are threats at different layers.
 
 ---
 
-**Question 5.** Route 53 Resolver 쿼리 로깅을 켰는데 일부 인스턴스의 DNS 조회가 로그에 나타나지 않는다. 가장 가능성 높은 원인은?
+**Question 5.** You turned on Route 53 Resolver query logging, but the DNS lookups of some instances do not appear in the logs. What is the most likely cause?
 
-A) Flow Logs가 우선순위를 가져간다  
-B) 해당 인스턴스가 외부 DNS 서버(예: 8.8.8.8)를 직접 지정해 Route 53 Resolver를 우회한다  
-C) 쿼리 로그는 S3에만 저장된다  
-D) Resolver는 A 레코드만 기록한다  
+A) Flow Logs take priority  
+B) Those instances directly specify an external DNS server (for example 8.8.8.8) and bypass Route 53 Resolver  
+C) Query logs are stored only in S3  
+D) Resolver records only A records  
 
 **Answer: B**  
-Explanation: Resolver 쿼리 로깅은 VPC의 Route 53 Resolver를 *거치는* 쿼리만 기록한다. 인스턴스가 외부 공용 DNS를 직접 지정하면 Resolver를 우회해 로그에 남지 않는다. 그래서 베이스라인은 DNS를 Resolver로 강제하고 외부 DNS egress를 제한하는 것이다. 쿼리 로그는 CloudWatch/S3/Firehose로 보낼 수 있고 특정 레코드 타입만 기록하지 않으며, Flow Logs와 우선순위 경쟁 관계도 아니다.
+Explanation: Resolver query logging records only queries that *pass through* the VPC's Route 53 Resolver. If an instance directly specifies an external public DNS, it bypasses Resolver and is not logged. That is why the baseline is to force DNS to Resolver and restrict external DNS egress. Query logs can be sent to CloudWatch/S3/Firehose and do not record only specific record types, and there is no priority competition with Flow Logs.
 
 ---
