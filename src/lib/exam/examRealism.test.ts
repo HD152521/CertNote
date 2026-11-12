@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import { getExamInfo } from '../examInfo';
-import { PENDING_STYLE_SLUGS } from './examStyleRollout';
 import { getExamCertSlugs, getExamQuestionsByCert, type ExamBankQuestion } from './examBank';
 
 // 모의고사 실전화 회귀 테스트(P4 Step 3).
@@ -120,8 +119,8 @@ describe('모의고사 실전화 — AWS 자격증 은행', () => {
       const numbers = questions.map((q) => q.number);
       expect(new Set(numbers).size).toBe(numbers.length);
       for (const q of questions) {
-        // 단일 정답은 보기 4개, 복수 정답은 실제 시험처럼 보기 5개(새 틀로 옮기기 전 자격증은 4개 허용).
-        const expectedLabels = answerLabels(q).length > 1 && !PENDING_STYLE_SLUGS.has(slug) ? 'ABCDE' : 'ABCD';
+        // 단일 정답은 보기 4개, 복수 정답은 실제 시험처럼 보기 5개.
+        const expectedLabels = answerLabels(q).length > 1 ? 'ABCDE' : 'ABCD';
         expect(q.choices.map((c) => c.label).join(''), `#${q.number}`).toBe(expectedLabels);
         for (const label of answerLabels(q)) expect(expectedLabels, `#${q.number}`).toContain(label);
       }

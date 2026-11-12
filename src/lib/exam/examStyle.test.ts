@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import { getExamInfo } from '../examInfo';
-import { PENDING_STYLE_SLUGS } from './examStyleRollout';
 import { getExamCertSlugs, getExamQuestionsByCert, type ExamBankQuestion } from './examBank';
 
 // 모의고사 "실제 시험 방식" 회귀 테스트. 기준은 docs/exam-style-guide.md.
@@ -36,7 +35,7 @@ const ALL_OF_ABOVE = /위의? 모두|모두 맞|모두 해당|전부 맞/;
 const MULTI_HINT = /\((\d)개 선택\)\s*$/;
 
 const AWS_SLUGS = getExamCertSlugs().filter((slug) => !slug.startsWith('linux-') && slug !== 'sqld');
-const SLUGS = AWS_SLUGS.filter((slug) => !PENDING_STYLE_SLUGS.has(slug));
+
 
 const len = (s: string): number => [...s].length;
 const labelsOf = (q: ExamBankQuestion): string[] => q.answer.split(',').map((s) => s.trim()).filter(Boolean);
@@ -46,11 +45,11 @@ const median = (xs: number[]): number => {
 };
 
 describe('모의고사 틀 — AWS 자격증 은행', () => {
-  test('틀을 적용할 자격증이 하나 이상 있다', () => {
-    expect(SLUGS.length).toBeGreaterThan(0);
+  test('틀을 적용할 AWS 자격증이 11개다', () => {
+    expect(AWS_SLUGS.length).toBe(11);
   });
 
-  describe.each(SLUGS)('%s', (slug) => {
+  describe.each(AWS_SLUGS)('%s', (slug) => {
     const questions = getExamQuestionsByCert(slug);
     const info = getExamInfo(slug);
     const level = (info?.level ?? 'associate') as Level;
