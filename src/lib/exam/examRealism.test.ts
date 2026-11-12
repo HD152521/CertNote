@@ -115,12 +115,14 @@ describe('모의고사 실전화 — AWS 자격증 은행', () => {
     const questions = getExamQuestionsByCert(slug);
     const info = getExamInfo(slug);
 
-    test('문항 구조: 보기 A~D, 정답 라벨이 보기에 있다, number 중복 없음', () => {
+    test('문항 구조: 단일 A~D·복수 A~E, 정답 라벨이 보기에 있다, number 중복 없음', () => {
       const numbers = questions.map((q) => q.number);
       expect(new Set(numbers).size).toBe(numbers.length);
       for (const q of questions) {
-        expect(q.choices.map((c) => c.label).join(''), `#${q.number}`).toBe('ABCD');
-        for (const label of answerLabels(q)) expect('ABCD', `#${q.number}`).toContain(label);
+        // 단일 정답은 보기 4개, 복수 정답은 실제 시험처럼 보기 5개.
+        const expectedLabels = answerLabels(q).length > 1 ? 'ABCDE' : 'ABCD';
+        expect(q.choices.map((c) => c.label).join(''), `#${q.number}`).toBe(expectedLabels);
+        for (const label of answerLabels(q)) expect(expectedLabels, `#${q.number}`).toContain(label);
       }
     });
 
