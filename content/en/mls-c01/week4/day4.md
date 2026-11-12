@@ -1,41 +1,80 @@
-# Day 4 - Handling Class Imbalance: Over/Undersampling, SMOTE, Class Weights, Evaluation
+# Day 4 - Handling Class Imbalance: Oversampling, Undersampling, SMOTE, Class Weights, Evaluation
 
-Most real classification problems are **imbalanced**. Fraud is 0.1%, disease positive is 2%, churn is 5%—the minority class is what we actually want to catch. Training on raw imbalanced data causes models to achieve high accuracy just by predicting all majority class.
+## 📌 Key Takeaways
 
-Today we explore why imbalance is a trap, and how to handle it via **resampling (over/undersampling)**, **SMOTE**, **class weights**, and **metric selection**. This is a frequently-tested MLS-C01 domain.
+- **Accuracy paradox**: If positives are 2%, predicting "all negative" still gives 98% accuracy. On imbalanced data, accuracy is the most misleading metric.
+- Evaluate imbalance with **precision, recall, F1, and PR-AUC**. The rarer the positives, the more **PR-AUC > ROC-AUC** holds.
+- Data-level responses: **oversampling (SMOTE)** and **undersampling**. When the data is very large and speed matters, use undersampling.
+- Algorithm-level responses: **class weights** (`class_weight="balanced"`, XGBoost `scale_pos_weight`) and **threshold adjustment**.
+- Resampling must be applied **only to the training set after the split**, and in cross-validation **only inside the training portion of each fold**, to avoid leakage.
 
-## The Imbalance Trap: Accuracy Paradox
+## The Imbalance Trap: The Accuracy Paradox
 
-With 2% positive data, predicting "all negative" yields 98% accuracy—yet catches zero positives we care about. This is the **accuracy paradox**.
+Most real-world classification problems are **imbalanced**. Fraud is 0.1%, disease positives are 2%, churn is 5% — the very thing you want to catch is the minority class. If you train on the raw imbalanced data, a model can predict the majority class for everything and still get high accuracy.
 
-| Metric | Definition | Meaning in Imbalance |
+On data where positives are 2%, predicting "all negative" gives 98% accuracy. Yet it catches none of the positives you actually care about. This is the **accuracy paradox**.
+
+```
+                  Predicted
+              Positive    Negative
+          ┌───────────┬───────────┐
+ Positive │    TP     │    FN     │ ← missed positives. Cuts recall
+ Actual   ├───────────┼───────────┤
+ Negative │    FP     │    TN     │ ← false alarms. Cuts precision
+          └───────────┴───────────┘
+                                    ↑
+             With imbalance, TN is overwhelmingly large, so
+             accuracy = (TP+TN)/total is dominated by TN
+```
+
+| Metric | Definition | Meaning under imbalance |
 |------|------|-------------------|
-| Accuracy | (TP+TN)/total | Biased toward majority, misleading |
-| Precision | TP/(TP+FP) | Ratio of true among positive predictions |
-| Recall | TP/(TP+FN) | Ratio of positives caught |
-| F1 | Harmonic mean of precision/recall | Balanced tradeoff |
-| PR-AUC | Precision-recall curve area | More sensitive in imbalance than ROC |
+| Accuracy | (TP+TN)/total | Biased toward the majority class, so it misleads |
+| Precision | TP/(TP+FP) | Share of predicted positives that are actually positive |
+| Recall | TP/(TP+FN) | Share of actual positives that were caught |
+| F1 | Harmonic mean of precision and recall | Balance of the two in a single number |
+| PR-AUC | Area under the precision-recall curve | More sensitive than ROC under imbalance |
 
-> 💡 **Key Theory**: In imbalanced data, **PR-AUC is more useful than ROC-AUC**. ROC's x-axis (False Positive Rate) has a huge denominator of negatives (TN+FP), diluting minority class errors. PR curves focus on positives, so they're sensitive to minority class performance shifts. Thus "for sparse positives like fraud, evaluate with PR-AUC" is standard.
+### Interpreting Metrics: What to Look at in Which Situation
 
-## Data-Level Remedy: Resampling
+| Metric | What it means when it rises | Situation for choosing it | Pitfall |
+|---|---|---|---|
+| Accuracy | A high share of all predictions is correct | Only when classes are roughly balanced | Under imbalance, "all negative" gets the top score |
+| Precision | Few false alarms | FP cost is high (blocking legitimate mail as spam, unnecessary detailed inspections) | If you call only the near-certain ones positive, recall collapses |
+| Recall | Few missed positives | FN cost is high (missed cancer diagnosis, undetected fraud) | Calling everything positive gives recall 1.0 and rock-bottom precision |
+| F1 | Precision and recall are both decent | When you cannot give up on either | Does not tell you which one is more expensive |
+| ROC-AUC | Positive and negative ranks separate well across thresholds | When classes are relatively balanced | When negatives are overwhelming, FPR is diluted and looks optimistic |
+| PR-AUC | Positive detection performance is good across thresholds | **When positives are rare** | Values cannot be compared across datasets with different class ratios |
 
-### Oversampling (Increase Minority)
+For reference, regression metrics are a separate matter.
 
-- **Random oversampling**: Duplicate minority samples → overfitting risk (repeated points)
-- **SMOTE**: Interpolate between minority samples to create synthetic ones → diversity maintained
+| Metric | Property | When |
+|---|---|---|
+| RMSE | Squares errors before summing → a bigger penalty for large errors | When you especially need to avoid big mistakes |
+| MAE | Mean of the absolute errors | When there are outliers and you do not want to be oversensitive to large errors |
 
-### Undersampling (Reduce Majority)
+On imbalanced data, **PR-AUC is more useful than ROC-AUC**. The ROC x-axis (false positive rate) has all negatives (TN+FP) in its denominator, so the minority class's errors get diluted. The PR curve focuses on the positives, so it is sensitive to changes in minority-class performance. That is why "when positives are rare, as in fraud, evaluate with PR-AUC" is the standard answer.
 
-- **Random undersampling**: Remove some majority samples → information loss risk
-- For very large data, undersampling accelerates training
+> ⚠️ **Pitfall**: Work backward from the business cost to choose the metric. In fraud detection, a miss (FN) translates directly into losses, while a false alarm (FP) just needs a person to check once more → prioritize recall. Conversely, in mass marketing, a false alarm is itself a cost, so prioritize precision. Read "which mistake is more expensive?" first, not "which metric is good?"
+
+## Data-Level Responses: Resampling
+
+### Oversampling (increase the minority class)
+
+- **Random oversampling**: Duplicate minority samples → the same points repeat, so there is overfitting risk
+- **SMOTE**: Generate synthetic samples by interpolating between minority samples → preserves diversity
+
+### Undersampling (reduce the majority class)
+
+- **Random undersampling**: Remove some majority samples → risk of information loss
+- When the data is very large, undersampling speeds up training
 
 ```python
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.pipeline import Pipeline
 
-# SMOTE oversample then undersample majority (hybrid)
+# Oversample with SMOTE, then undersample the majority class (hybrid)
 pipe = Pipeline([
     ("over", SMOTE(sampling_strategy=0.3, random_state=42)),
     ("under", RandomUnderSampler(sampling_strategy=0.5, random_state=42)),
@@ -43,46 +82,138 @@ pipe = Pipeline([
 X_res, y_res = pipe.fit_resample(X_train, y_train)
 ```
 
-> 💡 **Key Theory**: SMOTE (Synthetic Minority Over-sampling Technique) finds k-nearest neighbors of minority samples and interpolates new points between them. Unlike simple duplication, it generalizes around decision boundaries, but has drawbacks—can create unrealistic samples in noise/overlap regions; doesn't work directly on categorical features (needs SMOTE-NC variant); interpolation loses meaning in high dimensions.
+### Choosing a Resampling Technique
 
-> ⚠️ **Pitfall**: Resampling must **apply only after train-test split, to training set only**. Applying SMOTE before split leaks synthetic positives into both train and validation, causing **data leakage** and inflated performance. Use imblearn's `Pipeline` with cross-validation to resample within each fold.
+| Technique | Change in data size | Strength | Weakness | When to choose |
+|---|---|---|---|---|
+| Random oversampling | Increases | Simple, no information loss | The same points repeat → overfitting | When the data is small and you cannot afford to discard any |
+| **SMOTE** | Increases | Generalizes around the decision boundary | Creates unrealistic samples in noisy or overlapping regions | When there are a fair number of minority samples and you need diversity |
+| Random undersampling | Decreases | Training gets faster | Loses majority-class information | When the data is very large and speed matters |
+| Hybrid (SMOTE + under) | Adjustable | Compromises between both weaknesses | Two ratios must be tuned | When finding a balance point under extreme imbalance |
 
-## Algorithm-Level Remedy: Class Weights
+SMOTE (Synthetic Minority Over-sampling Technique) finds the k-nearest neighbors of a minority-class sample and interpolates between them to create new points. Unlike plain duplication, it has the effect of generalizing around the decision boundary, but it has drawbacks too — in noisy or overlapping regions it can produce unrealistic samples, it does not apply directly to categorical features (the SMOTE-NC variant is needed), and in high dimensions interpolation loses meaning.
 
-Penalize minority class errors more heavily in the loss function without changing data.
+> ⚠️ **Pitfall**: Resampling must be applied **after the train/test split, only to the training set**. If you apply SMOTE before splitting, synthesized positives get mixed into both the training and validation sets, causing **data leakage** and inflated performance. In cross-validation, use imblearn's `Pipeline` so that resampling happens inside each fold.
+
+```
+[Wrong order — leakage]           [Correct order]
+ Entire dataset                    Entire dataset
+      │                                │
+   Apply SMOTE                      Split (train / valid)
+      │                                │
+   Split (train / valid)            SMOTE on train only
+      │                                │
+ ✗ Synthetic points from the       ✓ valid keeps the original distribution
+   same originals end up split        → the performance estimate is honest
+   across train and valid
+   → validation score is inflated
+```
+
+## Algorithm-Level Responses: Class Weights
+
+Without changing the data, you give a larger penalty to minority-class errors in the loss function.
 
 ```python
 from sklearn.linear_model import LogisticRegression
 
-# Auto-weight inversely to class frequency
+# Weight automatically by the inverse of class frequency
 clf = LogisticRegression(class_weight="balanced")
 
-# XGBoost: set scale_pos_weight by negative/positive ratio
-# scale_pos_weight = (negative count) / (positive count)
+# XGBoost: set scale_pos_weight from the negative/positive ratio
+# scale_pos_weight = (number of negatives) / (number of positives)
 import xgboost as xgb
 model = xgb.XGBClassifier(scale_pos_weight=49)  # negative:positive = 49:1
 ```
 
-| Method | Data Changed | Strength | Weakness |
+| Method | Changes the data | Strength | Weakness |
 |------|-------------|------|------|
-| Resampling | Yes | Intuitive, works with any model | Watch leakage, overfitting, information loss |
-| Class weights | No | Data unchanged, fast | Model must support it |
-| Threshold adjustment | No | Tune after training, in production | Finding right threshold takes work |
+| Resampling | Yes | Intuitive, applies to any model | Watch for leakage, overfitting, and information loss |
+| Class weights | No | Data stays as is, fast | The model must support it |
+| Threshold adjustment | No | Adjusted after training, possible even in production | Requires work to find an appropriate threshold |
 
-> 💡 **Key Theory**: Classifiers typically use 0.5 probability as threshold, but in imbalance this default fails. **Threshold moving** lets you adjust the recall-precision tradeoff by inspecting the PR curve or cost matrix without retraining. For fraud where false negatives (missed fraud) are costly, lower the threshold to raise recall.
+Classifiers usually use a probability of 0.5 as the threshold, but this default does not work under imbalance. **Threshold moving** lets you adjust the recall-precision trade-off by looking at the PR curve or a cost matrix, without retraining. When the cost of a miss (missing fraud) is high, lower the threshold to raise recall.
 
-## SageMaker Approaches
+```
+Moving the probability threshold moves the two metrics in opposite directions
 
-- Many built-in algorithms offer imbalance hyperparameters (e.g., XGBoost `scale_pos_weight`)
-- Use SageMaker Clarify to pre-check class distribution and bias before training
-- Monitor with F1/PR-AUC instead of accuracy
+ Lower threshold ←─────────── 0.5 ───────────→ Raise threshold
+ Range called positive widens          narrows
+      Recall ↑  Precision ↓          Recall ↓  Precision ↑
+      Missed positives ↓  False alarms ↑   Missed positives ↑  False alarms ↓
+      (fraud detection · disease screening)   (mass mailing · automatic blocking)
+```
 
-## Summary
+| How to set the threshold | What it does | When |
+|---|---|---|
+| The F1-maximizing point on the PR curve | Picks the precision-recall balance point | When neither side is especially expensive |
+| Fix a target recall | The lowest threshold that satisfies "catch 90% of positives" | When the detection rate is set by regulation or policy |
+| Cost-matrix based | Assign costs to FP and FN to minimize expected cost | When the cost of mistakes can be converted into money |
+| Operating-capacity based | Take only the top N cases to match how many can be reviewed per day | When people must do the follow-up review |
 
-- **Accuracy paradox**: Accuracy misleads in imbalance → use Precision/Recall/F1/PR-AUC
-- **Data-level**: Oversample (SMOTE), undersample; apply after split, train set only
-- **Algorithm-level**: Class weights (`class_weight`, `scale_pos_weight`), threshold tuning
-- **Evaluation**: For sparse minorities, PR-AUC > ROC-AUC
+The threshold must be **set on the validation set and confirmed on the test set**. If you pick the threshold by looking at the test set, that score is no longer a generalization estimate. It is the same kind of leakage as with resampling or scaling.
+
+### Choosing Among the Techniques Overall
+
+| Situation | Method to choose | Why |
+|---|---|---|
+| The data is small and minority samples are precious | SMOTE (oversampling) | Gains diversity without discarding anything |
+| Hundreds of millions of records, training speed matters | Random undersampling | Speeds things up by reducing the amount of data itself |
+| The data must not be touched (audit, reproducibility) | Class weights | Original data stays as is |
+| Adjusting an already-trained model in production | Threshold moving | Takes effect immediately without retraining |
+| Many categorical features | Class weights or SMOTE-NC | Basic SMOTE cannot be applied directly to categorical features |
+| Feature dimensionality is very high | Class weights | Interpolation loses meaning in high dimensions |
+| The cost of a miss is overwhelmingly large | Lower the threshold and prioritize recall | Reflects the cost asymmetry through the threshold |
+
+### When Imbalance Goes to the Extreme, the Approach Itself Changes
+
+| Positive ratio | Approach | Why |
+|---|---|---|
+| 30-50% | Plain supervised learning | Effectively balanced. Accuracy is usable too |
+| 1-10% | Supervised learning + class weights/resampling, evaluate with PR-AUC | The typical imbalance range |
+| 0.1-1% | Same as above, but threshold adjustment carries more weight | Few minority samples, so resampling has limited effect |
+| Under 0.1% or almost no labels | **Reframe as anomaly detection** | Model the positives not as a "class" but as "what deviates from normal" |
+
+## Approaches in SageMaker
+
+- Several built-in algorithms provide imbalance-related hyperparameters (e.g., XGBoost `scale_pos_weight`)
+- Before training, check class distribution and bias in advance with SageMaker Clarify
+- Set the monitoring metric to F1/PR-AUC instead of accuracy
+
+| Situation | Service/feature | Why |
+|---|---|---|
+| Check class distribution and bias before training | SageMaker Clarify | Computes pre-training bias metrics |
+| Give positives a weight in a boosting model | `scale_pos_weight` in SageMaker XGBoost | Algorithm-level imbalance correction |
+| Put resampling in a pipeline to block leakage | Notebook + imblearn `Pipeline` | Resample only inside each fold's training portion |
+| Watch for performance degradation in production | Monitor with F1/PR-AUC rather than accuracy | Under imbalance, accuracy cannot catch changes |
+
+## Stem Clue → Answer Mapping
+
+| Stem clue | Answer to choose | Why |
+|---|---|---|
+| "Positives are 1% but accuracy came out at 99%" | Accuracy paradox → evaluate with PR-AUC and recall | TN dominates the metric |
+| "Positives are very rare, like fraud" | PR-AUC | ROC's FPR is diluted by negatives |
+| "Penalize minority errors without changing the data" | `class_weight="balanced"` / `scale_pos_weight` | Algorithm-level response |
+| "Negative:positive = 49:1 in XGBoost" | `scale_pos_weight = 49` | Number of negatives / number of positives |
+| "Cross-validation together with SMOTE" | Only inside each fold, using imblearn `Pipeline` | Blocks validation-set leakage |
+| "The data is very large and training must be fast" | Random undersampling | Speeds up by reducing the amount of data |
+| "Raise recall without retraining" | Threshold moving | Can be adjusted after training |
+| "Check class distribution and bias before training" | SageMaker Clarify | Pre-training bias check |
+| "The minority class was simply duplicated" | Random oversampling (overfitting risk) | SMOTE interpolates rather than duplicates |
+
+In the next post, we tie together the four topics of Week 4 into one workflow and compare and summarize them.
+
+## 📖 Glossary
+
+- **Class imbalance**: A state in which the class you want to catch is only a few percent of the whole. Fraud, disease, and churn are typical examples.
+- **Accuracy paradox**: The illusion that a model looks good because accuracy comes out high even when it predicts the majority class for everything.
+- **Confusion matrix**: A table that crosses actual and predicted values into four cells: TP, FP, FN, and TN. It is the raw material for all classification metrics.
+- **Precision**: The share of "predicted positives that are truly positive." The fewer false alarms, the higher it is.
+- **Recall**: The share of "true positives that were caught." The fewer missed positives, the higher it is.
+- **PR-AUC**: The area under the precision-recall curve. When positives are rare, it reveals performance differences better than ROC-AUC.
+- **SMOTE**: An oversampling technique that creates new samples by interpolating between a minority-class sample and its neighbors. It is not duplication.
+- **Undersampling**: A method that balances the ratio by discarding part of the majority class. It is fast but loses information.
+- **Class weights**: A setting that makes the loss larger when the minority class is wrong. It does not touch the data.
+- **Threshold moving**: Shifting the probability cutoff away from 0.5 to change the balance between recall and precision. No retraining is needed.
 
 ## 📝 Practice Questions
 

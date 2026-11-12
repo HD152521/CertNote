@@ -1,48 +1,89 @@
 # Day 4 - SageMaker Overview: Studio, Training/Inference, Built-in Algorithms
 
-Yesterday we saw that SageMaker is the centerpiece of the AWS ML stack. Today we go inside. SageMaker isn't a single service but a collection of tools covering the entire ML lifecycle. It's where ML engineers spend their days, and most MLA-C01 questions ask "Which SageMaker feature do you use for this task?"
+## 📌 Key Takeaways
 
-Today we'll look at SageMaker's workspace (Studio) and its permission structure (domain and user profiles), how training and inference actually work, and the built-in algorithms you can use without writing model code yourself. The goal is to get the big picture — deeper details come in later weeks.
+- **Studio** is an ML-specific IDE that separates compute from storage — code lives on EFS, and a kernel (instance) is attached only when you run it.
+- The permission structure is **Domain (team boundary) → User Profile (individual/role)**. Permissions are divided by mapping a different IAM role to each profile.
+- Training happens in an **ephemeral container** — the instance shuts down automatically when it finishes, and Spot reduces cost.
+- Inference is chosen by **traffic pattern**: real-time / serverless / batch transform / asynchronous.
+- About 17 built-in algorithms let you skip writing model code. **Tabular classification and regression = XGBoost** is the default.
 
-## SageMaker Studio: Unified IDE for ML Work
+## SageMaker Studio: An Integrated IDE for ML Work
 
-**SageMaker Studio** is a browser-based integrated development environment. Notebooks, experiment tracking, pipelines, and model deployment all happen on one screen. If VS Code is the IDE for general development, Studio is the IDE for ML.
+SageMaker is not a single service but a collection of tools covering the entire ML lifecycle, and MLA-C01 questions come in the form of "which SageMaker feature do you use for this task?"
 
-The key difference from the old notebook instances is **separation of compute and storage**. Notebook code lives permanently in EFS, and you attach whatever instance (kernel) you want only when you run. You can code in CPU, switch to a GPU kernel for training, and shut down unused kernels to save costs.
+**SageMaker Studio** is a browser-based integrated development environment. You do notebooks, experiment tracking, pipelines, and model deployment on one screen. If VS Code is the IDE for general development, Studio is the IDE for ML.
+
+The key difference between Studio and the older notebook instances is the **separation of compute and storage**.
+
+| Category | Notebook instance | Studio |
+|------|---------------|--------|
+| Code storage | EBS attached to the instance | EFS (separate from the instance) |
+| Execution resources | Instance type fixed | Choose and swap an instance per kernel |
+| Changing type | Must restart the instance | Just swap the kernel |
+| Idle cost | Keeps accruing as long as it's on | Zero compute cost when the kernel is shut down |
+| Collaboration | Individual instances | Domain and shared spaces |
+
+You can write code on a CPU and swap to a GPU kernel only when training, and shut down kernels you aren't using to save cost.
 
 ```python
 # Start a SageMaker SDK session inside a Studio notebook
 import sagemaker
 session = sagemaker.Session()
 role = sagemaker.get_execution_role()    # IAM role assigned to the notebook
-bucket = session.default_bucket()        # Default S3 bucket
+bucket = session.default_bucket()        # default S3 bucket
 print(region := session.boto_region_name)
 ```
 
-The IAM role returned by `get_execution_role()` matters. Every SageMaker and S3 operation from the notebook runs with this role's permissions, so insufficient permissions cause training or deployment to fail with `AccessDenied`.
+The IAM role returned by `get_execution_role()` is important. Every SageMaker and S3 operation you do from the notebook runs with this role's permissions, so if permissions are insufficient, training or deployment fails with `AccessDenied`.
 
-> 💡 **Related Theory**: Compute-storage separation is a core cost principle in cloud ML. Training needs GPU for hours but code writing needs only CPU. Bundling them means you pay expensive GPU costs while writing code. Studio separates code (EFS) from execution (on-demand kernels), letting you "rent expensive resources only when used." This is Studio's cost advantage over notebook instances.
+The separation of compute and storage is a core cost principle of cloud ML. Training needs a GPU for several hours, but writing code is fine on a CPU. If you tie the two together, expensive GPU cost accrues even while you are writing code. Studio separates code (EFS) from execution (on-demand kernels) so that you borrow "expensive resources only when you use them." This is Studio's cost advantage over notebook instances.
 
-## Domain and User Profile: SageMaker's Permission Structure
+## Domains and User Profiles: SageMaker's Permission Structure
 
-To use SageMaker Studio, you first create a **Domain**. A domain is the top-level boundary for the Studio environment, bundling one VPC, authentication method, and shared storage (EFS). Usually one domain per organization (or team).
+To use SageMaker Studio, you must first create a **Domain**. A domain is the top-level boundary of a Studio environment, bundling one VPC, one authentication method, and shared storage (EFS). Usually there is one domain per organization (or team).
 
-Inside a domain are **User Profiles**. One per user (or persona), each with its own IAM role, home directory, and settings.
+Inside a domain are **User Profiles**. There is one per user (or persona), and each has its own IAM role, home directory, and default settings.
 
 ```
-Domain (organization/team boundary, shares VPC·EFS·authentication)
- ├─ User Profile: data-scientist-kim  (Role A: training permission)
- ├─ User Profile: ml-engineer-lee     (Role B: training + deployment permission)
- └─ User Profile: shared-space        (collaboration space)
+Domain (organization/team boundary, shares VPC, EFS, authentication)
+ ├─ User Profile: data-scientist-kim  (Role A: training permissions)
+ ├─ User Profile: ml-engineer-lee     (Role B: training + deployment permissions)
+ └─ Shared Space: team-collab         (shared space for collaboration)
 ```
 
-This hierarchy appears on the exam because of permission separation. Give data scientists training permissions only, ML engineers deployment permission too, by mapping different IAM roles to each user profile. When permission issues arise, you trace "What permissions does this user profile's role have?"
+| Layer | What it bundles | What it divides |
+|------|-----------|-------------|
+| Domain | VPC, authentication method, EFS, default settings | Isolation per organization/team |
+| User Profile | Personal IAM role, home directory | Permissions per person/role |
+| Shared Space | A workspace multiple users use together | Resources for collaboration |
 
-> 🔍 **Deeper Dive**: When creating a domain, choose a network mode. **VPC only** mode routes all traffic through the customer VPC, letting you block the internet and reach SageMaker APIs via PrivateLink — the standard for regulated/secure environments. **Public internet** mode uses AWS-managed networks, more convenient but less control. In finance/healthcare scenarios, when you see "data must never be exposed to the internet," VPC only is the answer.
+This hierarchy appears on the exam because of permission separation. You map a different IAM role to each user profile, for example granting only training permissions to a data scientist and deployment too to an ML engineer. When a permission problem arises, you must trace "which role of which user profile has what permissions."
 
-## Training: Happens in Ephemeral Containers
+When creating a domain you choose a network mode. **VPC only** mode sends all traffic through the customer VPC, so you can block the internet and reach the SageMaker API through PrivateLink — it is the standard for regulated and security-sensitive environments. **Public internet** mode runs over an AWS-managed network, which is convenient but offers weaker control. If "data must not be exposed to the internet" appears in a financial or healthcare scenario, VPC only is the answer.
 
-The core mechanism of SageMaker training is the **Training Job**. Request training and SageMaker will: ① spin up the specified instance, ② fetch data from S3, ③ run your training code inside a container, ④ save model artifacts to S3, then ⑤ auto-terminate the instance. When training ends, the instance disappears, so GPU costs are charged only for training time.
+## Training: It Happens in an Ephemeral Container
+
+The core mechanism of SageMaker training is the **Training Job**. When you request training, SageMaker processes it in the following order.
+
+```
+   [fit() call]
+        │
+        v
+  ① Provision instances (the specified type and count)
+        │
+        v
+  ② Download/stream training data from S3
+        │
+        v
+  ③ Run the training code inside the container
+        │
+        v
+  ④ Save the model artifact (model.tar.gz) to S3
+        │
+        v
+  ⑤ Instances shut down automatically  ← why GPU cost is billed only for the training time
+```
 
 ```python
 from sagemaker.estimator import Estimator
@@ -50,29 +91,44 @@ from sagemaker.estimator import Estimator
 estimator = Estimator(
     image_uri=sagemaker.image_uris.retrieve("xgboost", region, "1.7-1"),
     role=role,
-    instance_count=2,                 # 2+ instances for distributed training
+    instance_count=2,                 # 2 or more for distributed training
     instance_type="ml.m5.xlarge",
     output_path=f"s3://{bucket}/models/",
-    use_spot_instances=True,          # Cut training costs up to 90% with spot
+    use_spot_instances=True,          # cut training cost by up to 90% with Spot
     max_wait=7200, max_run=3600,
 )
 estimator.fit({"train": f"s3://{bucket}/train/"})
 ```
 
-`use_spot_instances=True` is a common ML engineering technique to reduce training costs. Training can resume from checkpoints if interrupted, making it suitable for cheap spot instances.
+`use_spot_instances=True` is a common technique for ML engineers to reduce training cost. Since training can resume from a checkpoint even if interrupted, it suits cheap Spot instances.
+
+| Parameter | Meaning | Caution |
+|---------|------|--------|
+| `instance_count` | Number of instances used for training | 2 or more means distributed training, effective only if the data is split into multiple files |
+| `use_spot_instances` | Use Spot instances | Can be interrupted — configuring checkpoints is practically mandatory |
+| `max_run` | Maximum run time of the training itself | The job is stopped if exceeded |
+| `max_wait` | Maximum time including the wait for Spot | Must be at least `max_run` when using Spot |
+| `output_path` | S3 location of the model artifact | The reference point for reproduction and deployment |
+
+> ⚠️ **Pitfall**: Spot is cheap, but it can be reclaimed at any time. Running a long training job on Spot without checkpoints means starting over from scratch on interruption, which is actually a loss. Choose Spot on seeing the clue "cost savings," but check whether interruption tolerance (checkpoints) is mentioned alongside it.
 
 ## Inference: Four Options
 
-Serving a trained model comes down to four options depending on traffic pattern. This is a frequent comparison on MLA-C01.
+There are four ways to serve a trained model depending on the traffic pattern. This is a comparison that is easy to confuse on MLA-C01.
 
-| Option | Suitable When | Characteristics |
-|--------|---------------|-----------------|
-| Real-time endpoint | Continuous low-latency requests | Always on (ongoing cost), ms response |
-| Serverless inference | Sporadic, unpredictable traffic | Auto-scales, cold start exists, no idle cost |
-| Batch transform | Bulk inference on large data | No endpoint needed, terminates when done |
-| Asynchronous inference | Large payloads, long processing | Queue-based, large/long-running jobs |
+| Option | Suitable situation | Idle cost | Latency | Characteristics |
+|------|-----------|----------|------|------|
+| Real-time endpoint | Continuous low-latency requests | Yes (always running) | Milliseconds | Always on |
+| Serverless inference | Intermittent, unpredictable traffic | None | Cold start present | Auto scaling |
+| Batch transform | Bulk inference on large data | None (job ends) | Not applicable | No endpoint needed |
+| Asynchronous inference | Large payloads, long processing | Can scale down to 0 | Includes queue wait | Queue-based, results go to S3 |
 
-Pick by traffic shape. "Thousands of requests/second, low latency" → Real-time. "Score entire customer base once a day" → Batch transform. "Requests come sporadically, don't want idle costs" → Serverless. "Large inputs like images/video, long processing" → Asynchronous.
+You decide by the shape of the traffic.
+
+- "Thousands of requests per second, low latency" → **real-time endpoint**
+- "Score all customers once a day" → **batch transform**
+- "Comes in occasionally and idle cost is wasteful" → **serverless inference**
+- "Large inputs such as images or video and processing takes long" → **asynchronous inference**
 
 ```python
 # Deploy a real-time endpoint
@@ -80,36 +136,108 @@ predictor = estimator.deploy(
     initial_instance_count=1, instance_type="ml.m5.large",
     endpoint_name="churn-endpoint",
 )
-result = predictor.predict(payload)   # ms-scale response
+result = predictor.predict(payload)   # response in milliseconds
 ```
 
-> 💡 **Related Theory**: Serverless inference is the classic tradeoff: "zero idle cost vs cold-start latency." With no traffic, instances scale to zero so you pay nothing. But the next request triggers a cold start (hundreds of ms to seconds) spinning up a new container. Services needing consistent low latency pick real-time endpoints (always running); cost-sensitive with sporadic traffic pick serverless. This mirrors Lambda's cold-start tradeoff.
+```
+              Do requests keep coming in?
+                   │
+        ┌──── Yes ─┴── No ────────┐
+        │                         │
+  Is latency important?     Is it a large batch at once?
+   │         │                │        │
+  Yes        No              Yes       No
+   │         │                │        │
+Real-time  Async (large     Batch      Serverless
+           inputs)          transform
+```
 
-## Built-in Algorithms: 17 Types You Don't Write Yourself
+Serverless inference is the classic trade-off of "zero idle cost vs cold-start latency." When there is no traffic, it scales instances down to zero and charges nothing, but on the next request a cold start occurs as a new container is brought up. For a service whose latency must be consistently low, choose a real-time endpoint (always running); if it is cost-sensitive and intermittent, choose serverless. This is the same structure as Lambda's cold-start trade-off.
 
-SageMaker provides about 17 validated algorithms as containers. No need to write model code — just pass data and hyperparameters. Remember the key ones by problem type to choose quickly on the exam.
+## Built-in Algorithms: 17 You Don't Have to Write Yourself
 
-| Problem Type | Built-in Algorithm |
-|--------------|-------------------|
-| Classification·Regression (tabular) | XGBoost, Linear Learner |
-| Clustering | K-Means |
-| Dimensionality reduction | PCA |
-| Anomaly detection | Random Cut Forest (RCF) |
-| Recommendation | Factorization Machines |
-| Image classification | Image Classification |
-| Object detection | Object Detection |
-| Time series forecasting | DeepAR |
-| Topic modeling | LDA, NTM |
+SageMaker provides about 17 proven algorithms as containers. You don't need to write model code; you only pass the data and hyperparameters. If you remember a representative one for each problem type, you can choose quickly on the exam.
 
-If built-in doesn't fit, go to **custom containers** (your own Docker image) or **script mode** (your training script + AWS-managed framework container). For "tabular data classification/regression," XGBoost is almost always the default answer.
+| Problem type | Built-in algorithm | Scenario keyword |
+|----------|---------------|----------------|
+| Classification/regression (tabular) | XGBoost, Linear Learner | "Predict from structured data" |
+| Clustering | K-Means | "Group without labels" |
+| Dimensionality reduction | PCA | "There are too many features" |
+| Anomaly detection | Random Cut Forest (RCF) | "Detect abnormal patterns" |
+| Recommendation | Factorization Machines | "Sparse user-item matrix" |
+| Image classification | Image Classification | "What the photo is" |
+| Object detection | Object Detection | "What is where in the photo" |
+| Time-series forecasting | DeepAR | "Forecast future demand/values" |
+| Topic modeling | LDA, NTM | "Automatically extract document topics" |
 
-## Summary
+**What if the built-in algorithms don't fit?** — The options widen in three steps.
 
-Three key takeaways for today. First, Studio is an integrated IDE for ML work with **compute-storage separation**, and the domain-user profile hierarchy manages permissions. Second, training happens in **ephemeral containers** that disappear when done, and you can cut costs with spot instances. Third, inference comes in **real-time/serverless/batch/asynchronous** options depending on traffic, and built-in algorithms let you skip model code.
+| Approach | What it provides | When |
+|------|---------------|------|
+| Built-in algorithm | Algorithm + container, all by AWS | A standard problem type applies |
+| Script mode | AWS-managed framework container + my training script | A model I wrote with TensorFlow, PyTorch, etc. |
+| Custom container | A Docker image I built | Special libraries or runtimes are needed |
 
-Next we'll review the ML fundamentals and AWS stack from this week, wrapping up Week 1.
+For "tabular data classification/regression," XGBoost is almost always the default answer.
 
----
+> ⚠️ **Pitfall**: Built-in algorithms have input format requirements. Several algorithms support RecordIO-protobuf in addition to CSV, and the latter is advantageous for large-scale sequential training. In a scenario where "a built-in algorithm is used but fails because the data isn't ready," you can suspect a format or content-type mismatch.
+
+## Running an Endpoint with Multiple Models
+
+When models grow to dozens or hundreds, it is inefficient to have an endpoint per model. SageMaker offers a way to host multiple models on a single endpoint.
+
+| Approach | Structure | Suitable situation |
+|------|------|------------|
+| Single-model endpoint | 1 endpoint = 1 model | A small number of main models with steady traffic |
+| Multi-model endpoint | Load many models onto 1 endpoint and load them on request | Dozens to hundreds of models per customer or region |
+| Production variant | Multiple versions on one endpoint, traffic split by weight | A/B testing, canary deployment |
+
+- Multi-model eliminates the waste of keeping instances always allocated even for rarely used models.
+- In exchange, a model that hasn't been invoked for a long time may incur a load delay on its first request.
+- Adjusting variant weights is the means of carrying out the canary deployment we saw on Day 1.
+
+## Model Artifacts and the Registry
+
+When a training job finishes, the artifact is saved to `output_path` in the form of `model.tar.gz`. This file is the material for deployment.
+
+```
+[Training Job] ──> s3://bucket/models/<job-name>/output/model.tar.gz
+                          │
+                          ├──> create [Model] (image + artifact + role)
+                          │        │
+                          │        ├──> real-time endpoint
+                          │        └──> batch transform job
+                          │
+                          └──> [Model Registry] register versions, manage approval status
+```
+
+The Model Registry manages "which model versions are approved and can go to production." This is the point where an automated retraining pipeline places an approval step.
+
+## Common Mistakes in Training and Inference Operations
+
+| Mistake | Symptom | Fix |
+|------|------|------|
+| Missing S3 permissions in the execution role | `AccessDenied` right after training starts | Add permissions for the target bucket to the role policy |
+| Using Spot without configuring checkpoints | Retrain from scratch on interruption | Specify a checkpoint path |
+| Setting `max_run` too short | Training is stopped before completion | Leave a margin over the expected training time |
+| Running a real-time endpoint around the clock for intermittent traffic | Wasted idle cost | Consider serverless inference |
+| Using an endpoint for bulk batch scoring | Unnecessary always-on cost | Switch to batch transform |
+| Data is a single huge file | Not distributed in distributed training | Shard into multiple objects |
+
+In the next post, we wrap up Week 1 with a comprehensive review of the ML fundamentals and the AWS stack learned this week.
+
+## 📖 Glossary
+
+- **SageMaker Studio** : A browser-based IDE specialized for ML that handles notebooks, experiments, pipelines, and deployment on one screen.
+- **Compute-storage separation** : A structure that keeps code in persistent storage and attaches execution resources only when needed. It eliminates idle cost.
+- **Kernel** : The instance that actually runs the notebook code. It can be swapped between CPU/GPU.
+- **Domain** : The top-level boundary of a Studio environment. A team-level fence bundling VPC, authentication, and shared storage.
+- **User Profile** : An individual account within a domain. Each has its own IAM role and home directory.
+- **VPC only mode** : A network setting that makes Studio traffic flow only through the customer VPC, preventing internet exposure.
+- **Training Job** : A one-off job that launches instances, trains, leaves the artifact in S3, and then shuts itself down.
+- **Spot instance** : An instance that uses spare capacity cheaply but can be reclaimed at any time. Used together with checkpoints.
+- **Cold start** : The initial delay when the first request arrives from an idle state because a container must be brought up anew.
+- **Batch Transform** : An inference method that scores large data in one go without an always-on endpoint and then finishes.
 
 ## 📝 Practice Questions
 

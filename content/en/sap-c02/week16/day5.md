@@ -1,28 +1,74 @@
-# Day 5 - Final Review & Exam Simulation — Full-Stack Scenario, Trade-off Decision Under Constraints
+# Day 5 - Final Review: Exam Scoring Mechanics, Item-Writer Psychology, Keyword Decoding, 12 Scenario Mock Questions + D-Day Strategy
 
-Last day: **synthesize all 16 weeks into one decision-making engine.** Exam is fundamentally: (1) **Read scenario** (time constraint, business goal, data volume), (2) **Identify pillar weight** (Security > all for regulated, Cost for startup, Reliability for SaaS), (3) **Find hidden constraint** (data sovereignty, compliance, performance SLA), (4) **Eliminate decoys** (shiny service, overkill, underestimate), (5) **Select best trade-off** (not perfect, but **right for context**).
+This is the last of the 80 days. Today we learn no new concepts. Instead, we dissect **how the exam is scored and the psychology the item writer uses when planting wrong answers (distractors)**, compress the knowledge of the four domains you have built up into "keyword → direct answer" reflexes, and finish with 12 exam-length scenario mock questions. SAP-C02 is not a knowledge exam but a **judgment exam** — it measures your ability to pick, among answers that all look correct, "the single one that meets the requirements most precisely with the lowest operational burden."
 
-Scenario type:
-- **Big Bang**: 100TB ERP migration, 6 months, multi-region, security-first → Rehost (MGN) + 3-month parallel refactor + FIS drills
-- **Greenfield**: Startup $0→1M ARR, 12 months → Serverless autoscale (Lambda/DDB) + cost monitoring + manual governance
-- **Hybrid**: Regulated financial with legacy monolith → Rehost compute, refactor data tier to Aurora Global + KMS + GuardDuty
-- **Edge case**: Sunset legacy app, 2 years runway → Retain (no migration cost beats refactor ROI)
+## Internal Mechanics of Exam Scoring and Structure
 
-Final exam calibration:
-- 130 questions, ~2 min average
-- Scenario = 1 min read, constraint identification
-- Pillar diagnosis = 20 sec
-- Tool selection = 40 sec
-- Decoy elimination = 10 sec
-- **Review buffer = 15 min (last 15 questions re-check)**
+> 🔍 **Going deeper**: SAP-C02 has **75 questions / 180 minutes**, and the passing line is **750 out of 1000 points** (about 75%). The key point is that it is a **scaled score** — not a simple percentage of correct answers but a score adjusted for item difficulty (based on IRT, Item Response Theory). Also, 10 of the 75 questions are **unscored questions** used to collect statistics on new items. Since you cannot tell which ones are unscored, you must treat every question the same way. There is no partial credit, and there is no penalty for a wrong answer (blank < guess). So **always guess on questions you do not know** — with four options the expected value is 25%, and if you eliminate two it becomes 50%.
 
-Confidence heuristics:
-- If two answers seem equally valid → **Hidden constraint exists**, re-read scenario
-- If cost + compliance conflict → **Always compliance (regulatory > cost)**
-- If performance + cost conflict → **Measure downtime cost; high margin → performance wins**
-- If SLA says RTO<15min, Multi-AZ sufficient; RTO<5min → Multi-Region; RTO=0 → Multi-Site Active-Active
+There are patterns in how distractors are designed for multiple-choice exams. **"Plausible but misses one condition"**, **"correct but excessive (over-engineering)"**, and **"correct but with a heavy operational burden"** are the typical ones. Most traps in SAP-C02 are one of these three — for example, the correct answer is a managed service but a "build it yourself on EC2" option (excessive operational burden) is planted, or the correct answer is an SCP but an "IAM Policy" option (missing the condition that it cannot restrict root) is planted. So the scoring strategy is to **eliminate options not as "answer candidates" but by "which condition they violate."**
 
-[6 EXERCISES: Full scenario 1 (ERP), Full scenario 2 (Startup), Full scenario 3 (Regulated), Hidden constraint extraction, confidence calibration, review strategy]
+## Exam-Day Strategy
+
+### One Week Before the Exam
+
+- Quickly run through only the key keywords in each day's "wrap-up/summary" of the 80-day notes
+- Pick one weak domain and concentrate on 30 scenario questions
+- Redo the official AWS sample questions + Exam Readiness
+- If your native language is not English, apply in advance for the **ESL +30 minute extension** (at the exam booking stage; it cannot be requested on the day)
+
+### One Day Before the Exam
+
+- No learning of new concepts — review only
+- Sleep at least 6 hours (cognitive performance translates directly into score)
+- Prepare two IDs (Pearson VUE: a government-issued photo ID + a secondary ID); for an online exam, complete the environment check beforehand
+
+### The 3-Pass Strategy on Exam Day
+
+1. **First pass**: Answer only what you can answer immediately, and if you hesitate, Mark for Review right away (do not burn time)
+2. **Second pass**: Work calmly through the marked questions — this time, narrow down to two options using elimination
+3. **Third pass**: Fill in blanks, and change answers carefully (your first instinct is statistically right more often — change only when you have clear grounds)
+4. **Time allocation**: 75 questions / 180 minutes = an average of **144 seconds per question**. Answer 60% in the first pass and spend the remaining time on the hard questions
+
+> ⚠️ **Trap**: Pro exam passages are **long and noisy**. They lay down irrelevant information such as "company revenue, headcount, history of past systems" and then ask about the key constraint. The strategy is to **read the actual question at the end of the passage first → extract the constraint keywords (RTO/RPO, operational burden, cost, isolation, regulation, downtime) → then scan the passage backward**. Reading every sentence in order will exceed 144 seconds.
+
+## Keyword Decoding — Exam Language → Answer Signal
+
+The Pro exam does not state the answer directly but signals it through **encoded keywords**. The decoding dictionary:
+
+| Exam keyword | Answer signal |
+|------------|----------|
+| "Minimize operational burden / without management overhead" | Managed/Serverless (Lambda, Fargate, Aurora Serverless) |
+| "Most cost-effective" | SP, Spot, Lifecycle, serverless, avoid On-Demand |
+| "Isolate failures" | The AZ → Region → Account ladder |
+| "Without human intervention / automatic recovery" | EventBridge, SSM Automation, Auto Scaling |
+| "Must block even the root user" | SCP (not an IAM Policy) |
+| "Absolutely no changes / regulation" | Object Lock/Vault Lock **Compliance** (not Governance) |
+| "RPO of seconds/minutes, global SQL" | Aurora Global Database |
+| "Local writes in each Region, eventual consistency OK" | DynamoDB Global Tables |
+| "Minimum downtime, entire OS, one-time" | MGN (DRS if it is ongoing DR) |
+| "Heterogeneous DB + schema conversion" | DMS + SCT |
+| "Tens to hundreds of TB + slow line" | Snow Family + online delta |
+| "SaaS → many customer VPCs, IP overlap irrelevant" | PrivateLink |
+| "Fail over within 1 second on a DX failure" | BGP + BFD |
+| "Highly reliable failover decided by a human" | Route 53 ARC Routing Control |
+
+> 🎯 **Scenario**: If a passage says "a startup is growing fast, has only 3 engineers, and cannot spend time on operations," that is not about cost or scale — it is a code telling you to pick **"minimize operational burden → the most managed/serverless option."** For the same architecture, if it says "we have a dedicated SRE team and need fine-grained control," the answer leans toward more controllable options like EC2 and EKS. **Organizational context is the weighting of the answer.**
+
+## The Four Domains Compressed Onto One Page
+
+| Domain | Weight | Key tools | Answer reflex |
+|--------|------|----------|----------|
+| 1. Organizational Complexity | 26% | Org, SCP, Control Tower, TGW, DX, PrivateLink, Outposts | Account = isolation, SCP = ceiling, TGW = O(N), Snow = bandwidth |
+| 2. New Solutions | 29% | Lambda, Fargate, Aurora, DynamoDB, EventBridge, Kinesis | CAP/PACELC, decoupling, fan-out |
+| 3. Migration & Modernization | 20% | MGN, DMS+SCT, Snow, App2Container, Strangler Fig | Rehost first, zero-downtime CDC, no big bang |
+| 4. Continuous Improvement | 25% | CloudWatch, SSM, CodeDeploy, FIS, Compute Optimizer | SRE, automate toil, gradual deployment, FinOps |
+
+## Wrap-Up
+
+SAP-C02 is an **"optimal solution" judgment exam**. All the depth of the 80 days converges into a single reflex — **read the question at the end of the passage first → extract constraint keywords → decode the keywords as answer signals → if two look equally correct, choose the one with lower operational burden**. Scoring is a scaled score (750/1000) and blanks are a loss, so always guess even on what you do not know. Passing is determined not by the amount of knowledge but by **the speed at which you read constraints and judge trade-offs**.
+
+Now we work through 12 exam-length scenario questions to close out the 80 days. Each explanation also breaks down why the other options are wrong.
 
 ---
 

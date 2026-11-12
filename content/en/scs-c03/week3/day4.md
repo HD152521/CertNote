@@ -1,30 +1,59 @@
-﻿# Day 4 - Private Connectivity: VPC Endpoints and Sealing Data Exfiltration
+﻿# Day 4 - Private Connectivity: VPC Endpoints and Sealing Off Data Exfiltration
 
-Day 1 said NAT Gateway can become an exfiltration path. App Tier reading objects from S3 usually exits to Internet via NAT. But NAT allows outbound broadly — whether to S3 or attacker''s server, it doesn''t distinguish. When a compromised instance using stolen creds exfiltrates company data to external S3 bucket, NAT can''t stop it.
+On Day 1 we said a NAT Gateway can become a data exfiltration path. For the App Tier to read objects from S3, it normally goes out to the Internet through NAT. But NAT permits outbound broadly — it cannot tell whether traffic is going to S3 or to an attacker's server. When a compromised instance uses stolen credentials to move company data into an external S3 bucket, NAT cannot stop it.
 
-VPC Endpoint solves this problem fundamentally. Connect to AWS services (S3, DynamoDB, KMS, Secrets Manager, etc.) **without the Internet**, privately inside the AWS backbone. Removing the Internet route removes the exfiltration path itself. Plus, endpoint policy can enforce "only our company bucket, only our organization account." Today we examine two endpoint types, PrivateLink, and design that seals exfiltration via endpoint policy. This is the peak of SCS-C03 Domain 3.
+VPC endpoints solve this problem at the root. They connect privately to AWS services (S3, DynamoDB, KMS, Secrets Manager, etc.) **without going through the Internet**, inside the AWS backbone. Since the Internet path can be removed altogether, the very road for data to escape disappears. On top of that, an endpoint policy lets you impose constraints such as "only our company's buckets, only our organization's accounts." Today we look at the two kinds of endpoints, PrivateLink, and a design that seals off exfiltration with endpoint policies. This is the pinnacle of SCS-C03 Domain 3.
 
-## Two Endpoint Types: Gateway vs Interface
+## Two Kinds of Endpoints: Gateway vs Interface
 
 | Item | Gateway Endpoint | Interface Endpoint (PrivateLink) |
 |------|------------------|----------------------------------|
-| Supported Services | **S3, DynamoDB only** | Most AWS services + custom services |
-| How It Works | Adds prefix list route to route table | Creates ENI in subnet (private IP) |
-| Cost | **Free** | Hourly + data processing charge |
-| Access From | VPC only | VPC + on-premises (DX/VPN) possible |
-| DNS | Public DNS as-is | Override service domain with Private DNS |
-| Security Group | Doesn''t apply (routing) | SG applicable to ENI |
+| Supported services | **Only S3 and DynamoDB** | Most AWS services + your own services |
+| How it works | Adds a prefix-list route to the route table | Creates an ENI (private IP) in the subnet |
+| Cost | **Free** | Hourly + data processing charges |
+| Access | Only from inside the VPC | Inside the VPC + on-premises (DX/VPN) possible |
+| DNS | Public DNS as is | Overrides the service domain with Private DNS |
+| Security group | Not applicable (routing) | SG can be applied to the ENI |
 
-> 💡 **Related Theory**: The difference comes from different **implementation layers**. Gateway Endpoint operates at the **routing layer** — add a route in the route table to S3''s prefix list (`pl-xxxx`), and traffic destined for that service flows through AWS internals, not Internet. Interface Endpoint operates at the **ENI layer** — create an actual network interface (private IP) in the subnet and connect to the service via that IP. So Interface has SG and on-premises access possible, but Gateway is routing-based so works only inside VPC.
+Looking at the table alone, it seems like a list to memorize, but if you draw **where the packet actually flows**, everything else follows.
+
+```
+[ The same "S3 access" can take three different paths ]
+
+(A) Via the Internet — NAT
+    EC2(10.0.10.5) ─▶ routing 0.0.0.0/0 → NAT ─▶ IGW ─▶ Internet ─▶ S3 public endpoint
+    · Cannot restrict the destination (NAT sends it anywhere)
+    · An exfiltration path is opened at the same time
+
+(B) Gateway Endpoint — routing layer
+    EC2(10.0.10.5) ─▶ routing pl-xxxx(S3) → vpce-xxxx ─▶ AWS backbone ─▶ S3
+                          └ a route expressed as a prefix list
+    · No ENI · no private IP · cannot attach an SG · free
+    · Works only inside the VPC (on-premises does not use this route table)
+
+(C) Interface Endpoint / PrivateLink — ENI layer
+    EC2(10.0.10.5) ─▶ DNS resolves to 10.0.10.240 ─▶ [ENI in subnet] ─▶ AWS backbone ─▶ service
+                                                     └ sg-vpce can be applied
+    · Creates an ENI (private IP) per subnet · hourly + processing charges
+    · Reachable from on-premises (DX/VPN) via that private IP too
+
+  ── The difference among the three is "what specifies the destination."
+     (A) is a public IP, (B) is a routing path, (C) is a private IP.
+     Only a private IP can be reached from on-premises, so only (C) works there.
+```
+
+This picture is the basis of related questions. The reason "private access to S3 from on-premises over Direct Connect" is an Interface Endpoint is that on-premises **does not use the VPC's route table**, and a Gateway Endpoint is a route that exists only in that route table. Conversely, the reason "a Lambda in the VPC accessing S3 privately" is a Gateway Endpoint is that in that case the route table applies as is and the cost is zero.
+
+The difference between the two comes from different **implementation layers**. A Gateway Endpoint works at the **routing layer** — if you add to the route table a route toward the S3 prefix list (`pl-xxxx`), traffic bound for that service flows inside AWS rather than over the Internet. An Interface Endpoint works at the **ENI layer** — it creates an actual network interface (private IP) in the subnet and connects to the service via that IP. So Interface can have an SG attached and is reachable from on-premises, while Gateway, being routing, works only inside the VPC.
 
 ```bash
-# Gateway Endpoint (S3) — add route to table, free
+# Gateway Endpoint (S3) — add a route to route tables, free
 aws ec2 create-vpc-endpoint \
   --vpc-id vpc-xxxx --service-name com.amazonaws.us-east-1.s3 \
   --vpc-endpoint-type Gateway \
   --route-table-ids rtb-app rtb-data
 
-# Interface Endpoint (KMS) — create ENI in subnet, enable Private DNS
+# Interface Endpoint (KMS) — create ENIs in subnets, Private DNS enabled
 aws ec2 create-vpc-endpoint \
   --vpc-id vpc-xxxx --service-name com.amazonaws.us-east-1.kms \
   --vpc-endpoint-type Interface \
@@ -33,17 +62,17 @@ aws ec2 create-vpc-endpoint \
   --private-dns-enabled
 ```
 
-> ⚠️ **Pitfall**: Exam mainstay — "S3 and DynamoDB are Gateway, everything else is Interface." "Lambda in VPC accessing S3 privately" uses Gateway (free), not Interface. Reverse: "on-premises accessing S3 privately via DX" — Gateway is VPC-only so won''t work, need **S3 Interface Endpoint** (added 2021). So S3 supports both but use cases differ — free Gateway for VPC-only, Interface for on-premises.
+> ⚠️ **Pitfall**: A distinction that is easy to confuse on the exam — "S3 and DynamoDB are Gateway; everything else is Interface." If it is "a Lambda in the VPC accessing S3 privately," the answer is the Gateway Endpoint (free), not Interface. Conversely, if it is "private access to S3 from on-premises over DX," a Gateway cannot do it because it is VPC-internal only, and you need an **S3 Interface Endpoint** (added in 2021). That is, S3 supports both but for different uses — free Gateway for inside the VPC, Interface for on-premises integration.
 
-## Private DNS: Send Privately Without Changing Code
+## Private DNS: Sending Traffic Privately Without Changing Code
 
-Interface Endpoint''s key feature is **Private DNS**. Normally apps call public domains like `kms.us-east-1.amazonaws.com`. Enable Private DNS and the domain resolves to the endpoint''s **private IP within VPC**. Traffic flows via private path without changing a line of code.
+The key feature of an Interface Endpoint is **Private DNS**. By default an application calls a public domain like `kms.us-east-1.amazonaws.com`. When Private DNS is on, this domain **resolves to the endpoint's private IP** inside the VPC. Traffic flows over the private path without changing a single line of code.
 
-> 🔍 **Deeper**: For Private DNS to work, VPC''s `enableDnsSupport` and `enableDnsHostnames` must both be enabled. If disabled, Private DNS won''t work — domain still resolves to public IP and traffic leaks to Internet. Troubleshooting "built endpoint but still going to Internet": check (1) Private DNS enable, (2) VPC DNS properties, (3) endpoint ENI subnet reachability to calling instances. From on-premises, need Route 53 Resolver Inbound Endpoint or conditional forwarding so public domain resolves to endpoint private IP at on-premises resolver.
+For Private DNS to work, both `enableDnsSupport` and `enableDnsHostnames` on the VPC must be on. If these are off, even with Private DNS on the domain still resolves to a public IP and traffic leaks to the Internet. When troubleshooting "I created the endpoint but it still goes out to the Internet," check (1) whether Private DNS is enabled, (2) the two VPC DNS attributes, and (3) whether the endpoint ENI's subnet is reachable by routing from the calling instance. When calling from on-premises, a Route 53 Resolver Inbound Endpoint or conditional forwarding is needed so that the public domain resolves to the endpoint's private IP in the on-premises resolver.
 
-## Endpoint Policy: Core Weapon to Seal Exfiltration
+## Endpoint Policies: The Key to Sealing Off Exfiltration
 
-Attach **resource-based policy (VPC Endpoint Policy)** to endpoints. This is the core tool to prevent data exfiltration. Limits "what can be accessed through this endpoint."
+You can attach a **resource-based policy (VPC Endpoint Policy)** to an endpoint. This is the key weapon for preventing data exfiltration. It restricts "what can be accessed through this endpoint."
 
 ```json
 {
@@ -61,47 +90,240 @@ Attach **resource-based policy (VPC Endpoint Policy)** to endpoints. This is the
 }
 ```
 
-This policy means: through this endpoint, **only `my-company-bucket`, only Principals from our organization (`o-myorg123`) can access**. Even if compromised instance steals creds and tries PutObject to attacker''s bucket, that bucket isn''t in Resource, so it''s blocked.
+The meaning of this policy: through this endpoint, **only `my-company-bucket`, and only Principals belonging to our organization (`o-myorg123`)**, can be accessed. Even if a compromised instance steals credentials and tries to PutObject data to an external attacker's bucket, that bucket is not in Resource, so it is blocked.
 
-> 💡 **Related Theory**: This is the **Data Perimeter** concept AWS established. Best practice on three axes — (1) "trust only these IDs" (`aws:PrincipalOrgID`), (2) "trust only these resources" (`aws:ResourceOrgID`), (3) "trust only from these networks" (`aws:SourceVpce`). Endpoint policy is the core tool of the network axis. If bucket policy enforces `aws:SourceVpce` condition "allow only through our VPC endpoint," direct access from Internet or other accounts is blocked.
+This is the **Data Perimeter** concept. A best practice established by AWS, it consists of three axes — (1) "only trusted identities" (`aws:PrincipalOrgID`), (2) "only trusted resources" (`aws:ResourceOrgID`), (3) "only from trusted networks" (`aws:SourceVpce`). The endpoint policy is the key tool for the network axis among these. If you enforce "only requests that went through our VPC endpoint are allowed on our bucket" in the bucket policy with an `aws:SourceVpce` condition, direct access from the Internet or other accounts is blocked.
 
-> 🎯 **Scenario**: "Sensitive S3 bucket. Completely block access from employee laptop or compromised external host. Allow only requests through company VPC." — Answer: (1) Create Gateway Endpoint, (2) **bucket policy** with `"Condition": {"StringEquals": {"aws:SourceVpce": "vpce-xxxx"}}` to allow only endpoint transit, (3) also add `aws:SourceVpc` or `aws:PrincipalOrgID`. Then console/CLI access from Internet = AccessDenied. Data stays trapped in network boundary.
+### Translating the Three Axes into Real Policies
 
-> ⚠️ **Pitfall**: Setting only `aws:SourceVpce` in bucket policy **blocks all other access** and can cut off CloudFront/service integration. Also VPC Endpoint policy, bucket policy, IAM policy are **AND-combined** — deny anywhere = deny overall; all must allow = allow. So narrowing endpoint policy sometimes breaks legitimate traffic. Endpoint policy defaults to "full access" — narrow incrementally with validation.
+Said in words it is abstract, so let us pair up where each of the three axes attaches. The key point is that **even the same condition key blocks something entirely different depending on which policy it is attached to**.
 
-## PrivateLink: Service Provider Pattern
+| Axis | What you want to block | Where to attach | Representative condition key |
+|------|------------------------|-----------------|------------------------------|
+| Trusted identities | An external account's principal touching our resources | Resource policy (bucket policy, etc.) | `aws:PrincipalOrgID` |
+| Trusted resources | Our principal sending data to an **external resource** | Endpoint policy / SCP | `aws:ResourceOrgID` |
+| Trusted network | Accessing our resources **from outside our network** | Resource policy | `aws:SourceVpce`, `aws:SourceVpc` |
 
-Generalizing Interface Endpoint is **PrivateLink**. Connect not just to AWS services but **custom services provided by other accounts**.
+What is decisive in exfiltration sealing is the **second axis**. The first and third block "outside in," but the scenario where a compromised instance **writes data to an attacker's bucket** with our credentials goes inside out, so neither catches it. The place that blocks this direction is the endpoint policy.
+
+```json
+// [Endpoint policy] Through this endpoint, one can go out only to "buckets owned by our organization"
+// — blocks exfiltration going inside out
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowRequestsFromOurOrgPrincipals",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "aws:PrincipalOrgID": "o-myorg123" }
+      }
+    },
+    {
+      "Sid": "DenyAccessToResourcesOutsideOurOrg",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": "*",
+      "Condition": {
+        "StringNotEqualsIfExists": { "aws:ResourceOrgID": "o-myorg123" }
+      }
+    }
+  ]
+}
+```
+
+```json
+// [Bucket policy] Into this bucket, only "requests that went through our endpoint" can enter
+// — blocks access going outside in
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyUnlessThroughOurVpcEndpoint",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::corp-sensitive",
+        "arn:aws:s3:::corp-sensitive/*"
+      ],
+      "Condition": {
+        "StringNotEqualsIfExists": {
+          "aws:SourceVpce": ["vpce-0aaa1111", "vpce-0bbb2222"]
+        },
+        "BoolIfExists": { "aws:PrincipalIsAWSService": "false" }
+      }
+    }
+  ]
+}
+```
+
+Putting the two policies side by side, you can see that **the directions are exactly opposite**. The endpoint policy decides "how far you can go out through this door," and the bucket policy decides "through which door you can enter this room." To seal off exfiltration you need both — put up only one and the opposite direction stays open.
+
+> ⚠️ **Pitfall**: Note that the bucket policy above uses `StringNotEqualsIfExists` rather than `StringNotEquals`, and that it includes an `aws:PrincipalIsAWSService` exception. `aws:SourceVpce` is a key that exists only on requests that went through a VPC endpoint, so if you apply `StringNotEquals` to requests that have no such condition key at all (for example, calls an AWS service makes on your behalf, access through CloudFront OAC, cross-Region replication), **they all fall to Deny.** Incidents in which this policy is applied in a hurry and CloudFront distributions, log delivery, and replication are cut off all at once are common. Always design data-perimeter policies with `IfExists`-type operators and service exceptions together, and **before turning on a Deny, pull the list of access origins from CloudTrail first.**
+
+### Policies Are Evaluated as an AND
+
+Let us fix in a picture how endpoint policies, resource policies, and IAM policies combine. The answer to the exam question "I got AccessDenied, where do I look?" comes from here.
+
+```
+[ Gates an S3 request through a VPC endpoint must pass ]
+
+   EC2's instance profile role
+        │
+   ① IAM policy (+ permission boundary / SCP)
+        │   "Is this principal allowed to do this action?"
+        ▼
+   ② VPC endpoint policy
+        │   "Is it allowed to go out through this door to this resource?"
+        ▼
+   ③ Resource policy (bucket policy / KMS key policy)
+        │   "Does this resource accept this request?"
+        ▼
+      Allowed
+
+  · All three gates must be Allow to pass (AND)
+  · An explicit Deny at any one is an immediate rejection (Deny wins)
+  · The endpoint policy does not "grant" permission — it only narrows
+    (even if the endpoint policy has an s3:* Allow, it is rejected if IAM blocks)
+  · The default endpoint policy is "allow all," so if you do nothing, ② passes
+```
+
+The third item is a frequently misunderstood point. The endpoint policy is **a filter, not a means of granting permission.** If "I put an allow in the endpoint policy but I still get AccessDenied," look at IAM or the bucket policy.
+
+> 🎯 **Scenario**: "There is an S3 bucket containing sensitive data. We want to completely block employees from accessing this bucket directly from a laptop, or from a compromised external host, and allow only requests that go through the corporate VPC." — Answer: (1) create a Gateway Endpoint, (2) in the **bucket policy** allow only access through that endpoint with `"Condition": {"StringEquals": {"aws:SourceVpce": "vpce-xxxx"}}`, (3) also add `aws:SourceVpc` or `aws:PrincipalOrgID`. Then direct access from the Internet via console or CLI gets AccessDenied. The data is confined within the network perimeter.
+
+If you attach only `aws:SourceVpce` to the bucket policy, **it blocks all other access**, which can cut off even CloudFront and other service integrations. Also, the VPC Endpoint policy, bucket policy, and IAM policy are **evaluated as an AND** — if any one of the three denies, it is denied, and all must allow for it to be allowed. So narrowing the endpoint policy too much often causes incidents in which even legitimate traffic is cut off. The default endpoint policy is "full access," and when narrowing, verify step by step.
+
+## The Order for Narrowing Down "EC2 Can't Reach S3"
+
+Introducing endpoints increases the points of failure. The network layer and policy layer overlap, so digging without an order takes double the time. If you fix the order below, the causes eliminated at each step become clear.
+
+```
+[ EC2 → S3 access failure, the order of narrowing down ]
+
+  0. Read the error message first  ★ most important
+       timeout / connection failure → 1-3 (network layer)
+       AccessDenied                 → 4-6 (policy layer)
+       Trying to connect to a strange IP → DNS problem (3-b)
+
+  1. Routing
+       Gateway EP: does that subnet's routing have a pl-xxxx → vpce route
+                   (did you include it in --route-table-ids when creating the endpoint)
+       Interface EP: is the subnet holding the endpoint ENI reachable
+  2. NACL
+       Inbound/outbound 443 of the subnet holding the endpoint ENI
+       (stateless, so the response ephemeral ports too)
+  3. Security group
+       3-a. Does the SG attached to the Interface EP's ENI allow 443 inbound
+            ★ A Gateway EP has no SG — don't waste time looking for one here
+       3-b. Private DNS: does the domain resolve to a private IP
+            (the VPC's enableDnsSupport / enableDnsHostnames, two attributes)
+  ── Up to here is the realm of timeouts ──
+  4. Endpoint policy
+       Default is allow all. If narrowed, look at Resource and Condition
+  5. Resource policy (bucket policy / KMS key policy)
+       Is this endpoint ID in the aws:SourceVpce condition
+       For an SSE-KMS bucket, also check the KMS key policy and the kms endpoint
+  6. IAM (instance profile role + permission boundary + SCP)
+       Is the s3:GetObject permission actually present
+
+  → Classifying the error type at step 0 alone halves the candidates.
+     Looking into the bucket policy for a timeout is the most common waste of time.
+```
+
+The KMS mention at step 5 is a trap often hit in practice. **Accessing an encrypted S3 bucket doesn't end with S3.** If the object is encrypted with SSE-KMS, the client must also call KMS, and in a zero-internet VPC a KMS Interface Endpoint must exist separately. A good share of cases like "I created the S3 Gateway Endpoint but GetObject fails" actually occur because the KMS call cannot go out. You need the habit of checking whether the error message points to KMS rather than S3.
+
+```bash
+# List the endpoints in this VPC with a summary of each
+aws ec2 describe-vpc-endpoints \
+  --filters "Name=vpc-id,Values=vpc-0abc1234" \
+  --query 'VpcEndpoints[].{Id:VpcEndpointId,Svc:ServiceName,Type:VpcEndpointType,
+             State:State,PrivateDns:PrivateDnsEnabled,RTs:RouteTableIds,
+             Subnets:SubnetIds,SGs:Groups[].GroupId}' \
+  --output json
+
+# Associate a Gateway Endpoint with additional route tables (rescue a missed subnet)
+aws ec2 modify-vpc-endpoint \
+  --vpc-endpoint-id vpce-0aaa1111 \
+  --add-route-table-ids rtb-data-a rtb-data-b
+
+# Replace the endpoint policy (narrow step by step)
+aws ec2 modify-vpc-endpoint \
+  --vpc-endpoint-id vpce-0aaa1111 \
+  --policy-document file://endpoint-policy.json
+
+# Check the actual CIDRs of the S3 prefix list — to see what went into the routing
+aws ec2 describe-prefix-lists \
+  --filters "Name=prefix-list-name,Values=com.amazonaws.us-east-1.s3"
+```
+
+When creating an Interface Endpoint, **which subnets you put the ENIs in** decides both availability and cost. If you place an ENI in only one AZ, instances in other AZs cannot reach the service when that AZ is shaky, and cross-AZ traffic occurs even in normal times. So the default is one in every AZ that has workloads. Conversely, as ENIs increase per endpoint, the hourly charge multiplies, so managing the list of "services that are truly needed" becomes the actual cost-management work. The compromise organizations commonly pick here is a **centralized shared-endpoint VPC** — a configuration that gathers endpoints in one VPC and lets other VPCs use them via Transit Gateway or Route 53 Resolver rules. However, in this configuration a single endpoint policy controls the traffic of multiple VPCs at once, so keep in mind that the blast radius when narrowing the policy grows too.
+
+## PrivateLink: The Service Provider Pattern
+
+The generalization of the Interface Endpoint is **PrivateLink**. You can connect privately not only to AWS services but also to **custom services provided by other accounts**.
 
 ```
 [Consumer VPC]                          [Provider VPC]
- Interface Endpoint (ENI) ──private──→ Endpoint Service ──→ NLB ──→ Backend
-   (connects via private IP)            (different account/org)
+ Interface Endpoint (ENI) ──private──→ Endpoint Service ──→ NLB ──→ backend
+   (connects via a private IP)         (another account/organization)
 ```
 
-- Provider exposes service behind NLB as **Endpoint Service**.
-- Consumer connects via Interface Endpoint. **CIDR overlap irrelevant**, no Peering needed.
-- Traffic one-way (consumer→provider), provider''s full VPC not exposed.
+- The provider places the service behind an NLB and exposes it as an **Endpoint Service**.
+- The consumer connects with an Interface Endpoint. **Unaffected by IP overlap**, no Peering needed.
+- Traffic is one-way (consumer→provider) and the provider's entire VPC is not exposed.
 
-> 🔍 **Deeper**: PrivateLink is more secure than VPC Peering for **attack surface difference**. Peering connects two VPCs bidirectionally via routing — full CIDR visible (SG narrows it). PrivateLink shows only the **single service (NLB endpoint)** provider exposes; rest of provider VPC fully hidden. That''s why SaaS serving many customers use PrivateLink — isolate from customer VPCs without mixing. No CIDR collision (ENI uses consumer VPC IPs).
+What makes PrivateLink superior to VPC Peering in security is **the difference in exposed surface**. Peering connects the two VPCs with two-way routing so the entire CIDRs are visible to each other (you must narrow with SGs). With PrivateLink only **the single service (the NLB endpoint)** the provider exposed is visible, and the rest of the provider VPC is completely hidden. So when a SaaS provider serves many customers, it is the standard way to connect while keeping customer VPCs and its own VPC isolated rather than mixed. There is no CIDR conflict either (the ENI uses consumer-VPC addresses).
 
-> 📚 **Case**: Snowflake, Datadog, MongoDB Atlas all offer PrivateLink for private connectivity. Customer data never touches Internet to reach SaaS, easing compliance (HIPAA, PCI). With Peering, provider''s entire VPC would be exposed to customer — risk. PrivateLink implements "expose only needed service privately" least-exposure principle at network level.
+SaaS such as Snowflake, Datadog, and MongoDB Atlas all offer private connectivity to customers via PrivateLink. From the customer's view, its data flows to the SaaS without crossing the Internet, so it is easier to satisfy compliance (HIPAA, PCI). With Peering, there would have been a risk of the SaaS provider's entire VPC being exposed to the customer. PrivateLink implements the minimal-exposure principle of "only the one service you need, privately" in the network.
 
-## Summary: Three Layers to Stop Exfiltration
+## Wrap-Up: Three Layers That Stop Exfiltration
 
 ```
-1. Remove NAT → block Internet egress path itself
-2. VPC Endpoint → private connection to only needed AWS services
-3. Endpoint Policy + bucket policy(aws:SourceVpce) → restrict who/where
+1. Remove NAT → block the Internet egress path itself
+2. VPC Endpoint → connect privately to only the AWS services you need
+3. Endpoint Policy + bucket policy (aws:SourceVpce) → allow only where to / who
 ```
 
-> 🔍 **Deeper**: Strongest isolation = completely remove NAT and route all AWS service access through Interface/Gateway Endpoints only. But then instances can''t get OS patches from Internet, so connect Systems Manager (SSM Agent) via Interface Endpoints (`ssm`, `ssmmessages`, `ec2messages`), container images via ECR Endpoint, logs via CloudWatch Logs Endpoint. Build "zero-internet VPC" and exfiltration paths vanish. Regulated workloads (finance, healthcare) adopt this.
+The strongest isolation is a configuration that removes NAT entirely and accesses all AWS services only through Interface/Gateway Endpoints. However, then instances cannot receive OS patches from the Internet, so Systems Manager (SSM Agent) is also connected via Interface Endpoints (`ssm`, `ssmmessages`, `ec2messages`), container images through the ECR Endpoint, and logs sent to the CloudWatch Logs Endpoint. Configuring a "zero-internet VPC" this way makes the data exfiltration path effectively disappear. It is the pattern adopted for regulated workloads (finance, healthcare).
 
-## Wrapping Up
+### The Minimum Endpoint List for a Zero-Internet VPC
 
-Three essentials. First, **Gateway Endpoint is S3/DynamoDB-only (free, routing-based)** and rest all **Interface Endpoint (PrivateLink, ENI-based, paid)**. Second, endpoint policy and bucket policy''s `aws:SourceVpce` condition build **data perimeter** blocking direct access from Internet/external accounts — even stolen creds can''t exfiltrate. Third, **PrivateLink smaller attack surface than Peering**, standard for SaaS/cross-account.
+The decision to "delete NAT" is the work of "standing up every needed endpoint without omission." If even one is missing, only that function fails silently, and it is usually discovered on the night of deployment. Here is a list of what is actually needed by workload type.
 
-Network isolation''s final goal is "leave only paths to data that were explicitly allowed." Next we integrate Week 3 — VPC design, SG/NACL, Flow Logs, private connectivity — into one scenario review.
+| What you want to do | Endpoint needed | Type |
+|---------------------|-----------------|------|
+| Access object storage | `s3` | Gateway (inside VPC) / Interface (on-premises) |
+| Access NoSQL tables | `dynamodb` | Gateway |
+| Instance management, patching, sessions | `ssm`, `ssmmessages`, `ec2messages` | Interface |
+| Use encryption keys (including SSE-KMS) | `kms` | Interface |
+| Retrieve secrets | `secretsmanager` | Interface |
+| Pull container images | `ecr.api`, `ecr.dkr` **+ s3** (layer storage) | Interface + Gateway |
+| Ship logs | `logs` | Interface |
+| Ship metrics | `monitoring` | Interface |
+| Call the EC2 API (tag lookup, etc.) | `ec2` | Interface |
+| Assume a role via STS | `sts` | Interface |
+
+The ECR row is especially often missed. **The image manifest is fetched through the ECR API, but the actual layers are downloaded from S3.** So if you create only `ecr.api` and `ecr.dkr` and omit the S3 endpoint, `docker pull` proceeds partway and then stalls. Likewise, without `sts`, every operation that needs a role assumption fails, and the error message usually points to the downstream service, making the cause hard to find.
+
+> 🎯 **Scenario**: "To meet regulatory requirements, we put a container workload in a VPC with no Internet path. The task does not start and stalls at the image pull. What is missing?" — Usually the **S3 Gateway Endpoint**. Even if you created both ECR-related interface endpoints, layer downloads go through S3, so without an S3 path it gets only as far as the manifest and then stops. In addition, if the log driver uses CloudWatch Logs, the `logs` endpoint is also needed, and if you use a task role, `sts` is needed too. Because of the property that **"if one endpoint is missing, only that function fails,"** symptoms appear partially, and so having the full list as a checklist is the fastest solution.
+
+### In Closing
+
+There are four key points. First, the **Gateway Endpoint is for S3 and DynamoDB only (free, routing-based)** and everything else is an **Interface Endpoint (PrivateLink, ENI-based, paid)**. The difference among the three is ultimately "what specifies the destination" — NAT is a public IP, Gateway is a routing path, Interface is a private IP — and since only a private IP can be reached from on-premises, in that case only Interface is the answer.
+
+Second, a data perimeter is built from **a pair of policies with opposite directions**. The endpoint policy decides "how far you can go out through this door" (`aws:ResourceOrgID`), and the resource policy decides "through which door you can enter this room" (`aws:SourceVpce`). The former is decisive for sealing exfiltration — the scenario where a compromised instance writes to an external bucket with our credentials goes in the outgoing direction and so is not caught by the latter. And when attaching condition keys, always design the `IfExists`-type operators and service exceptions together. Otherwise CloudFront, replication, and log delivery get cut off too.
+
+Third, policies are evaluated as **the AND of IAM ∩ endpoint policy ∩ resource policy**, and an explicit Deny takes priority. If you remember that the endpoint policy does not grant permission and only narrows, you won't flounder on "I put an Allow in the endpoint policy, so why AccessDenied?" Fix the diagnostic order too — **if the error is a timeout, routing → NACL → SG/DNS; if AccessDenied, endpoint policy → resource policy → IAM.**
+
+Fourth, **PrivateLink has a smaller exposed surface than Peering**, so it is the standard for SaaS and cross-account connections. And when you actually stand up a zero-internet VPC, the endpoint checklist becomes the work list — in particular, ECR needs, in addition to `ecr.api` and `ecr.dkr`, **the S3 that delivers the layers**, role assumption needs `sts`, and logs need `logs`. If one is missing, only that function fails silently.
+
+The ultimate goal of network isolation is to "leave only the paths along which data can flow that were explicitly allowed." In the next note, we review all of Week 3 — VPC design, SG/NACL, Flow Logs, private connectivity — integrated in a single scenario.
 
 ---
 
