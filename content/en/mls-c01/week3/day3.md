@@ -1,21 +1,28 @@
 # Day 3 - Time Series, Text Features, and High-Cardinality Categorical Handling
 
-Yesterday we covered numeric and general categorical data. Today we explore feature engineering for two specialized data types—**dates and times (time series)** and **text**—that require custom handling. Finally, we'll address the perpetual challenge in encoding: managing **high-cardinality categorical features** through dimensionality reduction and hashing techniques.
+## 📌 Key Takeaways
 
-This topic appears frequently in MLS-C01 exams in the form "which transformation is appropriate for what data?"
+- Don't feed a date in as-is; **decompose it into components** (year/month/day/day of week/hour/weekend-holiday flags, elapsed days).
+- Cyclical variables (hour, day of week, month) must be mapped onto the unit circle with **two axes, sine and cosine**, so that 23:00 and 00:00 become neighbors.
+- Text vectorization gains expressive power in the order **BoW → TF-IDF → embeddings**. TF-IDF suppresses common words.
+- One-hot on a high-cardinality categorical explodes dimensionality. Control it with **target/frequency encoding, hashing, or embeddings**.
+- Hashing needs no vocabulary, so it is **strong on unseen categories and streaming, but you accept collisions**.
 
 ## Derived Features from Dates and Times
 
-Using a date column as-is (e.g., `2026-06-26 14:30:00`) leaves the model unable to extract meaning. The date must be **decomposed** into meaningful components.
+Yesterday we covered numeric and general categorical data. Today we look at feature engineering for two specialized data types that need separate handling — **dates and times (time series)** and **text** — and at the perennial encoding problem of **high-cardinality categorical variables**. MLS-C01 often asks about this topic in the form "which transformation is appropriate for which data?"
 
-| Derived Feature | Example | Pattern Captured |
-|------|------|------|
-| year / month / day | 2026, 6, 26 | Long-term trends, seasonality |
-| dayofweek | 0 (Mon) – 6 (Sun) | Day-of-week effects |
-| hour | 0 – 23 | Intra-day patterns |
+Using a date column as-is (`2026-06-26 14:30:00`) leaves the model unable to read any meaning. A date must be **decomposed into components**.
+
+| Derived feature | Example | Pattern captured |
+|---|---|---|
+| year / month / day | 2026, 6, 26 | Long-term trend, seasonality |
+| dayofweek | 0 (Mon) – 6 (Sun) | Day-of-week effect |
+| hour | 0 – 23 | Intra-day pattern |
 | is_weekend | 0/1 | Weekend flag |
-| is_holiday | 0/1 | Holiday effects |
+| is_holiday | 0/1 | Holiday effect |
 | days_since_event | 90 | Elapsed time |
+| week_of_year / quarter | 26, Q2 | Weekly and quarterly cycles |
 
 ```python
 import pandas as pd
@@ -27,7 +34,7 @@ df["hour"] = df["ts"].dt.hour
 df["is_weekend"] = (df["dayofweek"] >= 5).astype(int)
 ```
 
-Cyclical variables present a hidden challenge. Hour 23 and hour 0 are actually 1 hour apart, but as integers they appear 23 units away. **Sine/cosine transformation** restores the circular structure.
+Cyclical variables hide a trap. Hour 23 and hour 0 are really 1 hour apart, but left as integers they look 23 apart. **Sine/cosine transformation** restores the circular structure.
 
 ```python
 import numpy as np
@@ -36,21 +43,40 @@ df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
 df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
 ```
 
-> 💡 **Key Theory**: The essence of sine/cosine encoding is to "preserve periodic distance." By mapping hours as angles on the unit circle, hour 23 (345°) and hour 0 (0°) become adjacent on the circle—the model now treats them as close. Using only sine creates ambiguity (hours 12 and 0 get the same value), so both sine and cosine are necessary to give all 24 hours unique (x, y) coordinates. This universal technique applies to any periodic variable (days, months, etc.).
+```
+[Integer encoding]   0 ─ 1 ─ 2 ─ ... ─ 22 ─ 23        distance between 23 and 0 = 23 (wrong)
+
+[sin/cos]            0:00
+                  23 ╱ ╲ 1              23:00 and 00:00 are neighbors on the unit circle
+                    │   │
+                  18 ╲ ╱ 6              distance = short (correct)
+                     12:00
+```
+
+The essence of sine/cosine encoding is to "**preserve periodic distance**." When you map hours as angles on the unit circle, 23:00 (345°) and 00:00 (0°) become adjacent on the circle, so the model treats them as close. Using sine alone creates ambiguity (12:00 and 00:00 get the same value), so sine and cosine must be used together for all 24 hours to have unique (x, y) coordinates. This technique applies to every cyclical variable, such as day of week and month.
+
+### Features Specific to Time Series
+
+- **Lag features**: Use past values directly as features, such as yesterday's sales or sales 7 days ago.
+- **Rolling statistics**: Window statistics such as the 7-day moving average and moving standard deviation.
+- **Difference**: The change from the previous day. Removes the trend to achieve stationarity.
+- **Seasonal indicators**: Week of the year, quarter, promotion-period flags.
+
+> ⚠️ **Pitfall**: Lag and rolling features are **instant leakage if data after the prediction time gets mixed in**. If a "last 7 days average" includes the prediction day itself or later values, you have trained on information that would not have been known in actual operation. Time series must also always be split in chronological order.
 
 ## Text Features: BoW, TF-IDF, Embeddings
 
-Converting text to numeric vectors is called **vectorization**. Let's review approaches from simplest to most sophisticated.
+Converting text into numeric vectors is called **vectorization**. Let's go through approaches from simplest to most sophisticated.
 
 | Technique | Representation | Strengths | Limitations |
-|------|------|------|------|
-| **Bag of Words (BoW)** | Word frequency counts | Simple, fast | Ignores order/meaning; overweights common words |
-| **TF-IDF** | Frequency × sparsity weight | Suppresses common words | Still ignores order/meaning |
-| **N-gram** | Consecutive word groups | Captures some order | Dimensionality explosion |
-| **Word Embedding** | Dense vectors (Word2Vec/GloVe) | Captures semantics and similarity | Requires pretrained models |
-| **Contextual Embedding** | BERT, etc. | Context-aware semantics | Computationally heavy |
+|---|---|---|---|
+| **Bag of Words (BoW)** | Word frequency counts | Simple, fast | Ignores order/meaning, overweights common words |
+| **TF-IDF** | Frequency × rarity weight | Suppresses common words | Still ignores order/meaning |
+| **N-gram** | Groups of consecutive words | Captures some order | Dimensionality explosion |
+| **Word Embedding** | Dense vectors (Word2Vec/GloVe) | Captures meaning and similarity | Requires a pretrained model |
+| **Contextual Embedding** | BERT, etc. | Context-aware meaning | High computational cost |
 
-TF-IDF addresses BoW's fundamental weakness. Words like "the" and "is" appear in all documents but carry no discriminative signal; BoW naively overweights them by counting frequency alone. TF-IDF **reduces weights for words appearing in many documents**, elevating rare but meaningful words.
+TF-IDF fixes BoW's fundamental weakness. Words like "the" and "is" appear in every document and have no discriminative power, but BoW only counts frequency and so overweights them. TF-IDF **lowers the weight of words that appear in many documents**, bringing out rare but meaningful words.
 
 ```python
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -64,22 +90,31 @@ X_text = vectorizer.fit_transform(train_texts)
 X_test_text = vectorizer.transform(test_texts)   # transform only
 ```
 
-> 💡 **Key Theory**: TF-IDF's IDF (inverse document frequency) = log(total documents / documents containing that word). Words appearing in all documents have a ratio near 1, making their log approach 0 (weight vanishes); words appearing in few documents get large IDF. This implements an information-theoretic principle ("ignore common, highlight rare") via multiplication. However, TF-IDF treats words independently, missing semantic similarities like "good" and "great." Embeddings overcome this by placing words in dense vector space, where Word2Vec learns by predicting center words from context.
+TF-IDF's IDF (inverse document frequency) = log(total number of documents / number of documents containing that word). A word that appears in every document has a ratio near 1, so its log approaches 0 and its weight vanishes, while a word appearing in only a few documents gets a large IDF. It implements the information-theoretic principle "ignore the common, highlight the rare" by multiplication. However, TF-IDF treats words independently, so it misses semantic similarity such as between "good" and "great." Embeddings overcome this by placing words in a dense vector space.
 
-On AWS, instead of vectorizing text directly, you can use **Amazon Comprehend** (entity, sentiment, key phrase extraction) or SageMaker's built-in **BlazingText** (Word2Vec implementation) to generate embeddings.
+On AWS, instead of vectorizing text yourself, you can use **Amazon Comprehend** (entity, sentiment, and key-phrase extraction) or create embeddings with SageMaker's built-in **BlazingText** (a Word2Vec implementation).
+
+### Other Things That Come Up in Text Preprocessing
+
+- **Tokenization**: Cutting sentences into word or subword units.
+- **Stopword removal**: Dropping function words such as particles in Korean or "the/is" in English.
+- **Lemmatization and stemming**: Grouping "running/ran/runs" into one.
+- **Lowercasing and special-character cleanup**: Prevents the same word from scattering into several forms.
+
+> ⚠️ **Pitfall**: The vectorizer's vocabulary must also be **fit on the training set only**. Building the vocabulary with the test documents included is leakage. It is normal behavior for words seen for the first time in the test set to simply be ignored.
 
 ## High-Cardinality Categorical Handling
 
-Categories with thousands or millions of unique values—cities, product IDs, user IDs—explode in dimensionality if one-hot encoded. Here's the strategy breakdown:
+Categoricals with thousands to millions of unique values, such as cities, product IDs, and user IDs, explode in dimensionality if one-hot encoded. Here is a summary by strategy.
 
 | Strategy | Method | Advantage | Drawback |
-|------|------|------|------|
-| **Target/Frequency Encoding** | Replace with target mean or frequency | Maintains single column | Risk of leakage |
-| **Feature Hashing** | Hash function maps to fixed dimensions | Fixed memory, streaming-friendly | Collision |
-| **Embedding Layer** | Neural network learns dense vectors | Captures semantics | Requires training data and network |
-| **Group Rare Categories** | Lump low-frequency categories into "Other" | Simple, reduces dimensions | Information loss |
+|---|---|---|---|
+| **Target/frequency encoding** | Replace with the target mean or frequency | Keeps a single column | Leakage risk (target), collisions (frequency) |
+| **Feature Hashing** | A hash function maps to fixed dimensions | Fixed memory, streaming-friendly | Collisions |
+| **Embedding layer** | A neural network learns dense vectors | Captures semantic similarity | Needs training data and a network |
+| **Group rare categories** | Merge low-frequency categories into "Other" | Simple, reduces dimensions | Information loss |
 
-The hashing trick maps categories to fixed-size vectors using a hash function. Since no vocabulary is needed upfront, it's robust to **unseen categories and streaming data**. The tradeoff is collision—different categories may hash to the same slot.
+The hashing trick maps categories into a fixed-size vector with a hash function. No vocabulary has to be built in advance, so it is **strong on unseen categories and streaming data**. The price is collisions — different categories may land in the same slot.
 
 ```python
 from sklearn.feature_extraction import FeatureHasher
@@ -88,15 +123,76 @@ hasher = FeatureHasher(n_features=256, input_type="string")
 X_hashed = hasher.transform(df["city"].astype(str).apply(lambda x: [x]))
 ```
 
-> 💡 **Key Theory**: Embeddings learn a mapping from high-dimensional sparse (one-hot) to low-dimensional dense representations. Each category is mapped to, say, a 16-dimensional real vector, which is jointly optimized during model training. The result: "similar-behaving categories" cluster together in vector space (e.g., in recommendation systems, users with similar preferences become adjacent). This mirrors word embeddings and is the standard in deep learning recommendation and NLP. The embedding dimension is often chosen as the fourth root of cardinality by rule of thumb.
+```
+[One-hot]    5000 cities → 5000 columns (sparse, memory explosion)
+[Hashing]    5000 cities → fixed 256 columns (accept collisions)
+[Target]     5000 cities → 1 column (watch for leakage)
+[Embedding]  5000 cities → 16-dimensional dense vector (obtained by learning)
+```
 
-> ⚠️ **Pitfall**: Blindly applying one-hot encoding to high-cardinality categories causes memory explosion and makes model training difficult due to sparsity. If you see "millions of unique values," one-hot is likely wrong—think target encoding, hashing, or embeddings instead.
+An embedding learns a mapping from a high-dimensional sparse (one-hot) representation to a low-dimensional dense one. Each category is mapped to, say, a 16-dimensional real vector, and this vector is optimized together during model training. As a result, "**categories that behave similarly end up close in vector space**" (e.g., in a recommender system, users with similar tastes become adjacent). It is the same idea as word embeddings and is the standard in deep-learning recommendation and NLP. As a rule of thumb, the embedding dimension is often set to about the fourth root of the cardinality.
 
-## Summary
+Blindly applying one-hot to a high-cardinality categorical blows up memory and, because of sparsity, makes training difficult too. When you see a description like "millions of unique values," one-hot is the wrong answer, and you should think of target encoding, hashing, and embeddings.
 
-Key points for specialized data feature engineering: (1) **Dates** are decomposed into components; periodicity uses sine/cosine; (2) **Text** progresses from BoW → TF-IDF → embeddings in rising complexity and expressiveness; TF-IDF suppresses common words; (3) **High-cardinality categories** use target encoding, hashing, or embeddings instead of one-hot to control dimensions.
+## Before Feeding a Time Series into a Model
 
-Next, we'll see SageMaker tools that automate all these transformations at scale: Data Wrangler, Processing Jobs, and Feature Store.
+Apart from derived date features, there are concepts worth knowing when handling the time series itself.
+
+- **Trend**: A component that rises or falls over the long term.
+- **Seasonality**: A component that repeats on a daily, weekly, monthly, or yearly basis.
+- **Stationarity**: The property that mean and variance do not change over time. Many traditional time-series models assume it.
+- **Differencing**: A transformation that takes the difference from the previous value to remove the trend and move closer to stationarity.
+
+| Approach | Method | When |
+|---|---|---|
+| Convert the time series to supervised learning | Build lag/rolling features and treat it as a regression problem | When you want to use a general ML model (XGBoost, etc.) |
+| Dedicated time-series model | A time-series algorithm such as DeepAR | When you train several series together and need interval forecasts |
+
+The moment you shuffle time-series data randomly to split train/validation, you are predicting the past with the future. For time series, a **chronological split** is the rule, and cross-validation likewise slides the window from front to back.
+
+## Example Text Processing Pipeline
+
+Text has a long chain of transformation steps, so it is easy to get the order wrong. The typical order is as follows.
+
+```
+Raw text ─▶ Normalization (lowercasing, special-character cleanup)
+         ─▶ Tokenization
+         ─▶ Stopword removal
+         ─▶ Lemmatization/stemming
+         ─▶ Vectorization (TF-IDF or embeddings)   ← fit on the training set only
+         ─▶ Dimensionality reduction (optional, SVD, etc.)
+         ─▶ Model input
+```
+
+- In tasks where negation matters, such as sentiment analysis, remove the negation words from the stopword list.
+- A TF-IDF result is a very sparse high-dimensional matrix, so add dimensionality reduction such as SVD if needed.
+- If you use embeddings, much of this preprocessing is absorbed into the model.
+
+## Transformation Summary by Data Type
+
+| Data type | First transformation | Caution |
+|---|---|---|
+| Date/time | Component decomposition + sin/cos | Watch for time-point leakage in lag/rolling features |
+| Text (short documents) | TF-IDF + n-gram | Vocabulary from the training set only |
+| Text (meaning needed) | Embeddings (BlazingText, pretrained) | Computational cost |
+| Low-cardinality categorical | One-Hot | Configure unknown-category handling |
+| High-cardinality categorical | Target/hashing/embedding | Leakage, collisions |
+| Image | Resize, normalize, augment | Preserve labels |
+
+In the next note we look at the SageMaker tools that automate these transformations at scale — Data Wrangler, Processing Jobs, and Feature Store.
+
+## 📖 Glossary
+
+- **Derived feature**: A new feature computed from an original column. Date decomposition is the classic example.
+- **Cyclical variable**: A variable whose end connects to its start, such as hour, day of week, or month. Needs sin/cos transformation.
+- **Lag feature**: A value from a past time point brought into the current row as a feature.
+- **Vectorization**: Converting non-numeric data such as text into numeric vectors.
+- **Bag of Words**: The simplest text representation, which ignores word order and counts only occurrence frequency.
+- **TF-IDF**: A representation that multiplies term frequency by a document-rarity weight to suppress common words.
+- **Embedding**: A representation of a category or word as a low-dimensional dense vector. Obtained by learning.
+- **Feature Hashing (hashing trick)**: An encoding that maps categories to fixed dimensions with a hash function. No vocabulary needed.
+- **Collision**: The phenomenon of different categories being assigned to the same hash slot. The price of hashing.
+- **IDF (inverse document frequency)**: A weight that grows as fewer documents contain the word. It dampens common words.
 
 ---
 

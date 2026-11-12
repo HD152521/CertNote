@@ -1,101 +1,230 @@
-# Day 4 - Unsupervised/Anomaly Detection: RCF, PCA, IP Insights, Topic Models (LDA/NTM)
+# Day 4 - Unsupervised Learning and Anomaly Detection: RCF, PCA, IP Insights, Topic Models (LDA/NTM)
 
-Today we consolidate unsupervised builtins that handle structure, anomaly, dimension, and topic without labels. Tests hint at these through signals "no labels / rare event / too many dimensions / discover topics." The key is distinguishing each algorithm's input/core parameters/common confusions.
+## 📌 Key Takeaways
+
+- All four builtins today work with structure, anomalies, dimensions, and topics **without labels**. The signals in a question are "there are no labels / rare events / too many dimensions / discover topics."
+- **RCF is for anomaly detection on general numeric data**, and **IP Insights is dedicated to "entity-IP" relationship anomalies.** Do not mix the two.
+- For **real-time stream anomaly detection**, think of the `RANDOM_CUT_FOREST` function in Kinesis Data Analytics.
+- **PCA compresses many correlated features while preserving variance.** For very large dimensions, use `algorithm_mode=randomized`.
+- **LDA in SageMaker is a topic model (Latent Dirichlet Allocation)** and shares only a name with Linear Discriminant Analysis, the dimensionality reduction technique. Choose NTM for large scale/GPU, and LDA for simplicity/interpretability.
+
+## Unsupervised Builtins at a Glance
+
+| Algorithm | Task | Signal words | Input | Output |
+|------|------|------|------|------|
+| Random Cut Forest | Anomaly detection (general numeric) | "rare events / spikes / real-time" | CSV, RecordIO-protobuf | Per-record anomaly score |
+| IP Insights | Anomaly detection (entity-IP) | "abnormal login / account IP" | (entity, IP) CSV | Likelihood that the entity would use that IP |
+| PCA | Dimensionality reduction | "too many features / compress / visualize" | RecordIO-protobuf, CSV | Principal component coordinates |
+| LDA | Topic model (probabilistic) | "discover topics / small scale / interpretability" | BoW | Per-document topic distribution, per-topic word distribution |
+| NTM | Topic model (neural network) | "discover topics / large scale / GPU" | BoW | Per-document topic distribution, per-topic word distribution |
+
+```
+              [There are no labels]
+                     │
+   ┌──────────┬──────┴───────┬──────────────┐
+"Find rare   "Too many       "Find topics   "Group similar
+ events"      features"       in documents"   things together"
+   │             │              │              │
+What data?     PCA          Document scale?   K-Means
+   │        (regular /          │            (Day 2)
+   ├─ General numeric randomized) ├─ Large/GPU → NTM
+   │  → RCF                   └─ Small/interpretable → LDA
+   │  (if real-time, Kinesis
+   │   Data Analytics RCF)
+   └─ (entity, IP) pairs
+      → IP Insights
+```
 
 ## Random Cut Forest (RCF) — Anomaly Detection
 
-Create trees by cutting data randomly, assign high **anomaly scores** to points that are easy to isolate (rare).
+It builds trees by cutting the data at random and assigns a high **anomaly score** to points that are easily isolated (rare).
 
 - **Use**: Anomaly detection (unsupervised). Time series spikes, rare patterns
 - **Input**: CSV, RecordIO-protobuf
-- **Output**: Each record's anomaly score (higher = more anomalous)
-- **Streaming**: Kinesis Data Analytics has `RANDOM_CUT_FOREST` function built-in → real-time anomaly detection
+- **Output**: Per-record anomaly score (higher means more anomalous)
+- **Streaming**: Kinesis Data Analytics has a built-in `RANDOM_CUT_FOREST` function, which enables real-time anomaly detection
 
 ```text
 Key hyperparameters:
-  num_trees              tree count (more = stable)
+  num_trees              number of trees (more means more stable)
   num_samples_per_tree   samples per tree
   feature_dim            feature dimension
 ```
 
-> 💡 **Related Theory**: RCF's intuition: "anomalies isolate faster than normal." Normal points are in dense regions, need many cuts to separate. Rare points isolate from few random cuts. This isolation depth becomes a score. No labels needed, responds to new anomaly forms → represents the "almost no labels / changing anomalies" problem from Day 1. Real-time? Recall Kinesis Data Analytics RCF SQL function.
+The intuition behind RCF is that "anomalies get isolated faster than normal points." Normal points sit in dense regions and need many cuts to be separated, but a rare point is isolated with just a few random cuts. This isolation depth becomes the score. It needs no labels and reacts even to new kinds of anomalies, so it represents the "there are almost no labels / the anomalies keep changing" problem mentioned on Day 1. If the requirement is real-time, think of the RCF SQL function in Kinesis Data Analytics.
+
+```
+[Normal point]  Dense region → many cuts needed to separate → deep isolation depth → low score
+   ● ●●●
+   ●●●●●   ──┬── ──┬── ──┬── ──┬──  (needs 4 cuts to separate)
+   ●●●
+
+[Anomalous point]  Sparse region → isolated in a few cuts → shallow isolation depth → high score
+                ○     ──┬──               (separated in 1 cut)
+```
+
+### Anomaly Detection: Supervised vs Unsupervised Decision Table
+
+| Condition | Supervised classification | Unsupervised anomaly detection (RCF) |
+|---|---|---|
+| Are there enough anomaly labels? | Required (thousands or more) | Not needed |
+| Is the anomaly pattern fixed? | Advantageous when fixed | Copes even when it keeps changing |
+| New types of anomalies | Missed because never learned | Caught when it deviates from normal |
+| Question clue | "Past fraud cases are sufficiently labeled" | "Almost no labels / the tactics keep changing" |
+| Metric | precision/recall/PR-AUC | Anomaly score threshold and operational alert volume |
+
+> ⚠️ **Trap**: For an anomaly detection problem, choosing "train it as a normal/anomaly binary classification" is correct only if the question gives grounds that enough anomaly labels exist. Choosing supervised classification without such grounds is wrong.
 
 ## PCA — Dimensionality Reduction
 
-Compress many correlated features into fewer **principal components** preserving variance maximally.
+It compresses many highly correlated features into a small number of **principal components** that preserve as much variance as possible.
 
-- **Use**: Dimensionality reduction (unsupervised). Visualization, lighten downstream model input, relax multicollinearity
+- **Use**: Dimensionality reduction (unsupervised). Visualization, lightening the input to downstream models, mitigating multicollinearity
 - **Input**: RecordIO-protobuf, CSV
-- **Modes**: `regular`(mid dimensions), `randomized`(huge dimensions, approximate, fast)
+- **Modes**: `regular` (medium dimensions), `randomized` (very large dimensions, approximate, fast)
 
 ```text
 Key hyperparameters:
-  num_components     principal components to keep
+  num_components     number of principal components to keep
   algorithm_mode     regular | randomized
-  subtract_mean      mean removal (centering)
+  subtract_mean      remove the mean (centering)
 ```
 
-- Sensitive to scale → usually **scale/center first**
-- PCA is unsupervised, doesn't use labels — need labeled dimensionality reduction? That's LDA(Linear Discriminant Analysis), but note: SageMaker LDA is topic modeling (Latent Dirichlet Allocation), name collision!
+- It is scale-sensitive, so you usually **scale and center first**.
+- PCA is unsupervised and does not use labels. If you need a dimensionality reduction that uses labels, that is LDA (Linear Discriminant Analysis), but there is a catch — **LDA in SageMaker is a topic model (Latent Dirichlet Allocation) and shares only the name.**
+
+| Mode | When to use | Characteristics |
+|---|---|---|
+| `regular` | The number of features is moderate | Exact computation |
+| `randomized` | The number of features is very large | Approximate computation, fast and scalable |
+
+| Reason to use PCA | Effect | Cost |
+|---|---|---|
+| Mitigate multicollinearity | Principal components are orthogonal, so correlation disappears | Loses interpretability of the original features |
+| Lighten training/inference | Fewer input dimensions improve speed and cost | Some variance (information) is lost |
+| Assist distance-based models | Eases the curse of dimensionality (in front of KNN) | Performance does not always improve |
+| Visualization | Scatter plot with 2~3 principal components | The meaning of the axes is not intuitive |
+
+> ⚠️ **Trap**: If you skip scaling before PCA, a feature with large units (e.g., salary) monopolizes the variance, and that feature's direction becomes the first principal component. **Standardizing before PCA** is almost always the correct option.
 
 ## IP Insights — Entity-IP Anomaly Detection
 
-Learn association between **entity**(user/account) and IPv4, detect unusual combinations.
+It learns the association between an **entity** (user/account) and IPv4 addresses and detects combinations that differ from the usual.
 
-- **Use**: Abnormal login, account takeover, bot detection (unsupervised)
+- **Use**: Abnormal logins, account takeover, bot detection (unsupervised)
 - **Input**: CSV — `(entity, IP)` pairs
-- **Output**: Likelihood that entity uses that IP (low = anomalous)
-- **Technique**: Neural net embedding learns entity-IP patterns, contrastive with random negative samples
+- **Output**: Likelihood that the entity would use that IP (lower means more anomalous)
+- **Technique**: Learns entity-IP patterns with neural network embeddings and contrasts them against random negative samples
 
 ```text
 Key hyperparameters:
-  num_entity_vectors   entity embedding hash space size
+  num_entity_vectors   size of the entity embedding hash space
   vector_dim           embedding dimension
   num_ip_encoder_layers
   random_negative_sampling_rate
 ```
 
-RCF vs IP Insights: Both anomaly detection, but **RCF is general numeric data anomaly, IP Insights specializes in "entity-IP" relationships**. Abnormal login IP? → IP Insights. General metric spike? → RCF.
+The fork between RCF and IP Insights: both are anomaly detection, but **RCF is for anomalies in general numeric data, while IP Insights specializes in the "entity-IP" relationship.** For a login from an unusual IP, use IP Insights; for a sudden change in a general metric, use RCF.
+
+| Comparison axis | Random Cut Forest | IP Insights |
+|---|---|---|
+| Input data | Numeric feature vectors | (entity, IPv4) pairs |
+| Learning method | Isolation depth of random-cut trees | Embeddings + contrast with random negative samples |
+| Output interpretation | Anomaly score (higher means more anomalous) | Usage likelihood (lower means more anomalous) |
+| Typical scenario | Server metric spikes, transaction anomalies | Account takeover, bots, logins from unfamiliar regions |
+| Real-time path | Kinesis Data Analytics RCF | Endpoint inference |
+
+### Real-Time vs Batch Anomaly Detection Paths
+
+| Requirement | Path | Rationale |
+|---|---|---|
+| Detect immediately in the stream | The `RANDOM_CUT_FOREST` SQL function in Kinesis Data Analytics | Computes scores inside the stream without model training or an endpoint |
+| Score each online request | SageMaker RCF model → real-time endpoint | The application queries per request |
+| Score a large volume of logs in a nightly batch | Batch Transform | No need to keep an endpoint running at all times |
+
+If you see only the word "real-time" and always choose a SageMaker real-time endpoint, you will be wrong on a question that says to process within the streaming pipeline. If there is a **clue that the data arrives through a Kinesis stream**, Kinesis Data Analytics RCF is the more direct answer.
 
 ## Topic Models: LDA and NTM
 
-Find **latent topics** and word distributions per topic from documents without labels. Both topic models but different implementations.
+They find **latent topics** and per-topic word distributions in documents without labels. Both are topic models, but their implementations differ.
 
 | Item | LDA (Latent Dirichlet Allocation) | NTM (Neural Topic Model) |
 |------|------|------|
-| Foundation | Probabilistic generative model | Neural network (autoencoder) |
-| Learning | CPU single, relatively simple | GPU capable, large-scale complex |
-| Input | BoW (document-word counts) | BoW |
-| Strength | Interpretable, small-to-mid data | Richer representations, large-scale |
+| Basis | Probabilistic generative model | Neural network (autoencoder) |
+| Training | CPU, single instance, relatively simple | Can use GPU, large-scale and complex |
+| Input | BoW (document-word frequencies) | BoW |
+| Strengths | Easy to interpret, small to medium data | Richer representation, large scale |
 
-- Common input: **Bag-of-Words** (word index frequency counts), RecordIO-protobuf or CSV
-- User specifies topic count (LDA: `num_topics`, NTM: `num_topics`)
+- Common input: **Bag-of-Words** (frequency counts per word index), RecordIO-protobuf or CSV
+- The user specifies the number of topics (LDA: `num_topics`, NTM: `num_topics`)
 
-> 💡 **Related Theory**: Topic models assume "each document is a mixture of topics, each topic is a word distribution." LDA estimates this as Bayesian prob model, NTM approximates same goal via neural net. Both unsupervised — no ground-truth topic labels, topic count is hyperparameter. Test asks "which of two?" → break by data scale/GPU/interpretability (large/GPU=NTM, simple/interpretable=LDA). This LDA (topic model) is completely different from Linear Discriminant Analysis (LDA), same name only!
+Topic models assume that "each document is a mixture of several topics, and each topic is a distribution over words." LDA estimates this with a Bayesian probabilistic model, and NTM approximates the same goal with a neural network. Both are unsupervised, so there are no ground-truth topic labels, and the number of topics is a hyperparameter. When the exam asks "which of the two?", decide by data scale, GPU, and interpretability (large scale/GPU = NTM, simple/interpretable = LDA). This LDA (the topic model) **shares only the name with Linear Discriminant Analysis and is completely different.**
 
-## Unsupervised Builtin Mapping Summary
+An option saying "LDA is a dimensionality reduction algorithm" is wrong in the SageMaker context. It is a classic trap that targets the abbreviation collision, and the SageMaker builtin LDA is a topic model.
 
-| Algorithm | Task | Signal Words | Input |
-|------|------|------|------|
-| Random Cut Forest | Anomaly detection (general numeric) | "rare events / spike / realtime" | CSV, protobuf |
-| IP Insights | Anomaly detection (entity-IP) | "abnormal login / account IP" | (entity, IP) CSV |
-| PCA | Dimensionality reduction | "too many features / compress / visualize" | protobuf, CSV |
-| LDA | Topic model (probabilistic) | "topic discovery / small data / interpret" | BoW |
-| NTM | Topic model (neural net) | "topic discovery / large-scale / GPU" | BoW |
+## Preprocessing Requirements and Evaluation Methods
 
-## Test Tips
+Unsupervised algorithms have no ground-truth labels, so they cannot be evaluated by "accuracy." What you judge them by is the exam point.
 
-- "No-label rare anomaly / realtime stream" → RCF (realtime = Kinesis Data Analytics RCF)
-- "User/account at unusual IP" → IP Insights
-- "Hundreds-to-thousands features, shrink model input" → PCA (huge = randomized mode)
-- "Documents → discover topics" → LDA/NTM, split by scale/GPU/interpretability
-- LDA name trap: Topic model LDA ≠ dimensionality reduction Linear Discriminant Analysis
+| Builtin | Scaling | Required preprocessing | Evaluation method |
+|---|---|---|---|
+| Random Cut Forest | Recommended (if feature units vary) | Convert to numeric, handle missing values | Anomaly score distribution and threshold, operational alert volume |
+| IP Insights | Not applicable | Organize into (entity, IP) pairs, remove duplicates | Validate the low-score range against known incident cases |
+| PCA | Mandatory (standardize and center) | Convert to numeric, handle missing values | Decide `num_components` by the cumulative explained variance ratio |
+| LDA / NTM | Not applicable | Tokenize → remove stop words → BoW vectorization | Perplexity, human interpretability of the topic words |
 
-## Summary
+| Decision | What to look at | Practical criterion |
+|---|---|---|
+| RCF threshold | What top percent of anomaly scores to treat as alerts | Match the alert volume the operations team can handle |
+| Number of PCA components | Cumulative explained variance ratio curve | Usually the minimum number of components that exceeds 90~95% |
+| Number of topics | Whether the top words of each topic are distinct from one another | If topics look overlapping, reduce `num_topics` |
 
-Today we consolidated unsupervised/anomaly builtins: RCF(general anomaly), IP Insights(entity-IP anomaly), PCA(dimensionality reduction), LDA/NTM(topic models). Each answers "what do we discover/detect/compress when there's no label?" Next — synthesize Week 6 decision-making for algorithm selection.
+An option that says to evaluate unsupervised results by "accuracy" is wrong, because there are no ground-truth labels. Judge RCF by the score threshold, PCA by explained variance, and topic models by perplexity and interpretability.
 
----
+### Pipeline That Puts PCA in Front of Other Algorithms
+
+```
+[Original 500 features]
+      │  Standardize (mean 0, variance 1)
+      ▼
+[PCA  algorithm_mode=randomized, num_components=30]
+      │  30 principal components (mutually orthogonal, 95% variance preserved)
+      ▼
+[Downstream]  KNN (eases curse of dimensionality) / K-Means (stabilizes distances) / Visualization (2~3 components)
+```
+
+- With fewer dimensions, training and inference of distance-based models become faster and more stable.
+- The cost is **loss of interpretability**. If a regulatory review requires explaining "which features had an influence," PCA is at a disadvantage.
+
+## Question Clue → Answer Mapping Table
+
+| Question clue | Answer direction | What gets pushed to wrong answers |
+|---|---|---|
+| "Rare anomalies without labels / real-time on a stream" | RCF (real-time = Kinesis Data Analytics RCF) | Supervised classification |
+| "A user/account from an IP unlike usual" | IP Insights | RCF |
+| "Reduce hundreds to thousands of features as model input" | PCA (`randomized` mode if huge) | K-Means, FM |
+| "Discover topics in a pile of documents" | LDA / NTM | BlazingText supervised (needs labels) |
+| "Topic discovery + large scale + GPU" | NTM | LDA |
+| "Topic discovery + easy to interpret + small scale" | LDA | NTM |
+| "LDA is Linear Discriminant Analysis" | Wrong (name collision) | — |
+| "Skip scaling before PCA" | Wrong | — |
+| "Evaluate unsupervised results by accuracy" | Wrong (no ground-truth labels) | — |
+| "Enough anomaly labels have accumulated" | Supervised classification is also valid | Insisting on RCF alone |
+
+Tomorrow we synthesize all of Week 6 from an algorithm-selection decision-making perspective.
+
+## 📖 Glossary
+
+- **Anomaly score**: A numeric value showing how different a record is from the usual. For RCF, a larger value means more anomalous.
+- **Isolation**: Leaving only a single point through random cuts. The more anomalous a point is, the fewer cuts it takes to isolate it.
+- **Principal component**: A new axis in the direction that explains the most variance in the data. They are mutually orthogonal.
+- **Multicollinearity**: A phenomenon where features are strongly correlated with each other, making the coefficient interpretation of linear models unstable. PCA mitigates it.
+- **subtract_mean (centering)**: A preprocessing step that subtracts the mean from each feature to align the origin. It is a prerequisite for PCA.
+- **Entity**: In IP Insights, the subject observed paired with an IP, such as a user ID or account ID.
+- **Random negative sampling**: A technique that artificially creates (entity, IP) combinations that were never actually observed and uses them for contrastive learning.
+- **Bag-of-Words (BoW)**: A representation that discards word order and counts only occurrence frequencies to turn a document into a vector. It is the input to topic models.
+- **num_topics**: The number of topics a topic model will find. With no ground truth, it is a hyperparameter the user sets.
+- **LDA name collision**: The SageMaker builtin LDA is a topic model (Latent Dirichlet Allocation), and shares only the abbreviation with Linear Discriminant Analysis, the dimensionality reduction technique.
 
 ## 📝 Practice Questions
 

@@ -1,92 +1,191 @@
 ﻿# Day 5 - Week 7 Synthesis: MLOps Review
 
-This week progressed from "deploy a model" to "automate model deployment and govern it". We code workflows with SageMaker Pipelines (Day 1), manage versions and approvals via Model Registry (Day 2), automate code-commit-to-deployment via CI/CD (Day 3), and standardize infrastructure and workflows via IaC and orchestrators (Day 4). Today we integrate these MLOps pieces into one big picture and organize decision criteria for tool selection on exams.
+## 📌 Key Takeaways
 
-## End-to-End MLOps Flow at a Glance
+- This week implemented the three MLOps principles of **automation, reproducibility, and governance** with SageMaker ecosystem tools.
+- The full chain: **code push → Build → quality gate → register → approve → EventBridge → Deploy → staging → manual approval → production**.
+- Orchestrator selection rests on three criteria: **scope covered + existing assets + trigger type**.
+- Two axes are easy to confuse: **Pipelines vs Step Functions vs MWAA** (workflows) and **EventBridge** (a trigger is not a workflow).
+- The exam does not ask for tool names; it asks for a **scenario keyword → tool mapping**. It is worth memorizing the keywords.
 
-Typical SageMaker MLOps pipeline from end to end:
+## MLOps End-to-End Flow at a Glance
 
-```
-[Code Push] → CodePipeline(Build) → CodeBuild → SageMaker Pipeline
+We coded workflows with Pipelines (Day 1), managed versions and approvals with the Registry (Day 2), automated everything from commit to deployment with CI/CD (Day 3), and standardized it with IaC and orchestrators (Day 4). Now we connect it all into one chain.
+
+```text
+[Code push] → CodePipeline(Build) → CodeBuild → SageMaker Pipeline
    (preprocess → train → evaluate → ConditionStep[accuracy gate] → RegisterModel)
-        ↓ Model registers to Registry as PendingManualApproval
-[Reviewer Approves: Approved]
-        ↓ EventBridge detects approval event
-   CodePipeline(Deploy) → CloudFormation deploys staging → auto-test
+        ↓ Model is registered in the Registry as PendingManualApproval
+[Reviewer approves: Approved]
+        ↓ EventBridge detects the approval event
+   CodePipeline(Deploy) → deploy to staging with CloudFormation → automated tests
         ↓ Manual approval gate
-   Production endpoint deploy
+   Deploy to production endpoint
 ```
 
-This one diagram is this entire week. Recognizing which service implements each arrow means you're exam-ready.
+This one diagram is the whole week. If you can name the service that implements each arrow, you are prepared for the exam.
 
-> 💡 **Related Theory**: MLOps' three core principles are automation, reproducibility, and governance. Automation replaces manual intervention with triggers and pipelines; reproducibility ensures identical results by version-managing code, data, and infrastructure; governance tracks and controls who approved/deployed what. Every service this week implements at least one of these three.
+| Link in the chain | Service responsible | Without this link |
+|-------------------|---------------------|-------------------|
+| Detecting code changes | CodePipeline source stage | A person has to run it by hand every time |
+| Running commands | CodeBuild (`buildspec.yml`) | No compute to start the pipeline |
+| Training/evaluation order | SageMaker Pipelines (DAG) | Order and dependencies exist only in someone's head |
+| Quality verdict | ConditionStep | A model that misses the bar is registered anyway |
+| Versions and approval | Model Registry | Cannot prove what was deployed |
+| Approval detection | EventBridge | Approving triggers nothing |
+| Deployment execution | CodePipeline + CloudFormation | Endpoints are updated by hand |
+| Production control | ManualApproval action | Defects reach users immediately |
 
-## Daily Core Review
+> 💡 **Related theory**: The three core principles of MLOps are automation, reproducibility, and governance. Automation replaces manual intervention with triggers and pipelines; reproducibility guarantees the same result by version-controlling code, data, and infrastructure; governance tracks and controls who approved and deployed what. Every service this week is a tool that implements at least one of these three.
+
+| MLOps principle | Implementing tools | Where this week |
+|-----------------|--------------------|-----------------|
+| **Automation** | EventBridge, CodePipeline, CodeBuild, SageMaker Projects | Days 3-4 |
+| **Reproducibility** | SageMaker Pipelines (parameters, DAG), CloudFormation/CDK | Days 1, 4 |
+| **Governance** | Model Registry (approval status, Lineage), ManualApproval action | Days 2-3 |
+
+## Core Review by Day
 
 ### Day 1 - SageMaker Pipelines
-- Orchestrate ML workflow as code-defined **DAG**—SageMaker native service.
-- Step types: ProcessingStep, TrainingStep, TuningStep, RegisterModel, **ConditionStep**, TransformStep, etc.
-- **Parameters** inject values at execution → reuse same definition across environments.
-- **Condition steps** create quality gates (like accuracy thresholds) auto-blocking poor models.
-- Referencing one step's output as next step's input auto-creates DAG dependencies.
+- A SageMaker-native service that orchestrates an ML workflow as a **DAG** defined in code.
+- Step types: ProcessingStep, TrainingStep, TuningStep, RegisterModel, **ConditionStep**, TransformStep, LambdaStep, CallbackStep, FailStep, and more.
+- **Parameters** inject values at execution time → the same definition is reused across environments.
+- **Condition steps** build quality gates such as an accuracy threshold, automatically blocking poor models.
+- When one step's output is referenced as the next step's input, the dependency automatically becomes a DAG edge. Without a reference, steps run in parallel.
 
 ### Day 2 - Model Registry & Governance
-- Registering to **Model Package Group** (purpose-grouped bundle) auto-increments **version**.
-- Each version holds artifacts, inference image, evaluation metrics, **approval status**.
+- Registering into a **Model Package Group** (a purpose-based bundle) **automatically increments the version**.
+- Each version holds the artifact, inference image, evaluation metrics, and **approval status**.
 - Approval status: **PendingManualApproval → Approved / Rejected**.
-- Status change emits EventBridge event → connects to deployment trigger.
-- Links to SageMaker Lineage for data → training → model → deployment traceability (auditing).
+- An approval status change fires an EventBridge event → wired to a deployment trigger.
+- Linked with SageMaker Lineage to provide data → training → model → deployment traceability (auditing). Rollback means redeploying the previous approved version.
 
 ### Day 3 - CI/CD for ML
-- **SageMaker Projects**: Service Catalog template provisions repository, CodePipeline, CodeBuild, Registry, EventBridge all at once.
-- **Build pipeline** (code-push trigger) vs **Deploy pipeline** (model-approval trigger).
-- Service roles: CodeCommit (source), CodeBuild (build, `buildspec.yml`), CodePipeline (orchestration), CloudFormation (deploy), EventBridge (trigger).
-- Staging → **manual approval gate** → production deploy minimizes blast radius.
+- **SageMaker Projects**: A Service Catalog template provisions the repository, CodePipeline, CodeBuild, Registry, and EventBridge in one go.
+- **Build pipeline** (triggered by code push) vs **Deploy pipeline** (triggered by model approval).
+- Service roles: CodeCommit (source), CodeBuild (build, `buildspec.yml`), CodePipeline (orchestration), CloudFormation (deployment), EventBridge (trigger).
+- Staging → **manual approval gate** → production deployment minimizes the blast radius.
+- Approval happens twice. `Approved` in the Registry and the ManualApproval in CodePipeline are different decisions.
 
 ### Day 4 - IaC & Orchestration
-- **CloudFormation/CDK**: Define infrastructure as code (IaC) — idempotency, reproducibility, environment consistency.
-- **Step Functions**: State machine orchestrating multiple AWS services (branching, parallel, retry, Catch).
-- **EventBridge**: Schedule (cron) or event-based triggering — workflow start signal.
-- **MWAA**: Managed Airflow — existing Airflow assets, hybrid, complex DAGs.
+- **CloudFormation/CDK**: Infrastructure as code (IaC) - idempotency, reproducibility, environment consistency. CDK, once synthesized, becomes CloudFormation.
+- **Step Functions**: A state machine that connects multiple AWS services (Choice, Parallel, Retry, Catch). SageMaker is awaited to completion with `.sync`.
+- **EventBridge**: Schedule (cron) or event-based triggers - the signal that starts a workflow.
+- **MWAA**: Managed Airflow - existing Airflow assets, hybrid setups, complex DAGs.
 
-## Exam Tool-Selection Decision Criteria
+## Decision Criteria for Choosing Tools on the Exam
 
-Most-confused comparisons nailed down:
+The easily confused comparisons, pinned down in tables.
 
-| Scenario Keywords | Answer Tool |
-|---|---|
-| SageMaker-centric, lineage/Registry integration | SageMaker Pipelines |
-| Multiple AWS services (Lambda/Glue/SNS, etc.) orchestration | Step Functions |
-| Infrastructure as reproducible, version-managed code | CloudFormation / CDK |
-| Trigger workflow at set time/on event | EventBridge |
+| Scenario keyword | Correct tool |
+|------------------|--------------|
+| SageMaker-job-centric, lineage/Registry integration | SageMaker Pipelines |
+| Orchestrating multiple AWS services (Lambda/Glue/SNS, etc.) | Step Functions |
+| Reproduce and version-control infrastructure as code | CloudFormation / CDK |
+| Start a workflow at a set time or on an event | EventBridge |
 | Existing Airflow assets, hybrid, multi-cloud | MWAA |
-| MLOps CI/CD infrastructure quickly via template | SageMaker Projects |
+| Quickly stand up MLOps CI/CD infrastructure from a template | SageMaker Projects |
 | Model version tracking, approval, auditing | Model Registry |
-| Register only if accuracy passes threshold | Pipelines' ConditionStep |
-| Auto-deploy on model approval | Registry approval → EventBridge → CodePipeline |
+| Register only when the accuracy bar is met | ConditionStep in Pipelines |
+| Automatic deployment on model approval | Registry approval → EventBridge → CodePipeline |
+| Human control right before production release | CodePipeline ManualApproval action |
+| Mark a below-threshold result as a failure and notify | `else_steps=[FailStep]` in ConditionStep |
+| Run the same definition differently for dev/staging/prod | Pipeline Parameter |
+
+The three workflow tools appear side by side especially often, so memorize them axis by axis.
+
+| Comparison axis | SageMaker Pipelines | Step Functions | MWAA (Airflow) |
+|-----------------|---------------------|----------------|----------------|
+| Scope covered | Centered on SageMaker jobs | AWS services broadly | AWS plus on-premises and external |
+| Lineage/Registry integration | Natively strong | Weak (wire it yourself) | Weak |
+| Operating model | Managed (billed per job) | Serverless | Always-on environment (idle cost) |
+| Definition style | SageMaker Python SDK | State machine (JSON/ASL) | Python DAG + operators |
+| Deciding factor | "SageMaker alone is enough" | "Many steps live outside SageMaker" | "We already use Airflow" |
 
 ```python
-# Synthesis code: pipeline end with condition passes → approval triggers deploy
+# Synthesis concept code: at the end of the pipeline, register if the condition passes → approval triggers deployment
 # 1) Pipelines: ConditionStep(if_steps=[RegisterModel])  → quality gate
 # 2) Registry: ModelApprovalStatus = "Approved"          → governance
 # 3) EventBridge: ModelApprovalStatus=["Approved"] pattern   → CD trigger
-# 4) CodePipeline + CloudFormation: staging→approval→production → safe deploy
+# 4) CodePipeline + CloudFormation: staging→approval→production → safe deployment
 ```
+
+## Tracing the Chain Backwards
+
+The exam does not only ask front to back. It also asks the reverse question: "prove where the model now running in production came from."
+
+```text
+Production endpoint
+     │  EndpointConfig → Model
+     ▼
+Model Package (version N)       ← Model Registry
+     │  approval status · approver · ApprovalDescription
+     │  ModelMetrics (evaluation metrics)
+     ▼
+Training Job                    ← with which Estimator and hyperparameters
+     │  ModelArtifacts.S3ModelArtifacts
+     ▼
+Processing Job (preprocessing)  ← with which input data
+     ▼
+Raw S3 dataset · Git commit hash
+```
+
+- The point where this chain breaks is usually **manual intervention**. A model built by hand in the console or an artifact uploaded from a laptop has no lineage.
+- So when "auditable" is required, the answer is always **registration through the pipeline + Registry + Lineage**, not log searching or S3 versioning.
+
+| Audit question | Where the answer lives |
+|----------------|------------------------|
+| Which version is deployed right now | EndpointConfig → Model → Model Package ARN |
+| What was that version's performance | ModelMetrics on the Model Package |
+| Who approved it and when | Approval status change history, ApprovalDescription |
+| What data was it trained on | Lineage → Training Job → input channel S3 path |
+| Why did this model pass | ConditionStep result of the pipeline execution |
 
 ## Common Pitfalls Summary
 
-- **Pipelines vs Step Functions**: SageMaker-only → Pipelines; many services broadly → Step Functions. Both DAGs but different integration scope.
-- **EventBridge is not workflow**: It's a start signal (trigger) only; workflow itself runs via Pipelines/Step Functions/CodePipeline.
-- **MWAA is "when you already use Airflow"**: Starting new projects in SageMaker defaults to Pipelines. MWAA appears with existing-assets/hybrid keywords.
-- **Approval status change = CD trigger**: "Auto-deploy on model approval" is almost always Registry approval → EventBridge → CodePipeline chain.
-- **ConditionStep = quality gate**: "Register/deploy only if accuracy meets threshold" points to ConditionStep.
+- **Pipelines vs Step Functions**: "SageMaker only" means Pipelines; "many services broadly" means Step Functions. Both are DAGs, but the integration scope differs.
+- **EventBridge is not a workflow**: It is only a start signal (trigger); the workflow itself is carried out by Pipelines/Step Functions/CodePipeline.
+- **MWAA is the answer for "when you already use Airflow"**: If you are starting a new project inside SageMaker, Pipelines comes first. MWAA shows up alongside existing-asset or hybrid keywords.
+- **Approval status change = CD trigger**: "Automatic deployment on model approval" is almost always the chain Registry approval → EventBridge → CodePipeline.
+- **ConditionStep = quality gate**: "Register/deploy only when accuracy is at or above the threshold" points to ConditionStep.
+- **CDK is not a replacement for CloudFormation**: Its synthesized output is a CloudFormation template. The question is not "which is more powerful" but how you author.
+- **Keep parameters as objects**: Pulling out `default_value` kills runtime injection.
+- **Approval shows up twice**: `Approved` in the Registry (the decision to put it on the deployment flow) and ManualApproval in CodePipeline (the decision to release to production) are different gates.
+- **Do not mix up CodeBuild and CodePipeline**: The compute that actually runs commands is CodeBuild; CodePipeline only manages the order.
 
-## Summary
+## Final Check: Situation → What to Choose
 
-- This week implemented MLOps' 3 principles (automation, reproducibility, governance) via SageMaker ecosystem tools.
-- Complete chain: code push → Build → quality gate → register → approve → EventBridge → Deploy → staging → manual approval → production.
-- Tool selection divides by "orchestration scope + existing assets + trigger type".
-- Exams ask these tools separated by scenario — practicing keyword-to-tool mapping is key.
+| Situation | Answer |
+|-----------|--------|
+| Retraining must run automatically every day at dawn | EventBridge schedule rule → pipeline execution |
+| You approved, but deployment does not start | Check the EventBridge rule pattern and target connection |
+| Steps run simultaneously with no order | Add dependencies through output references or `depends_on` |
+| You must submit the deployed model's provenance for an audit | Model Registry + SageMaker Lineage |
+| The new model is bad and must be reverted immediately | Redeploy with the previous approved version's ARN (rollback) |
+| dev/prod endpoint configurations differ from each other | Unify them with a CloudFormation/CDK template |
+| A Glue ETL and a Lambda notification must be tied into one flow | Step Functions |
+| A below-threshold run ended as a success and nobody noticed | Explicit failure with `else_steps=[FailStep]` |
+| Preprocessing reruns on every execution and costs too much | `CacheConfig` on the steps that do not change |
+| On-premises jobs must be tied into one DAG | MWAA |
+| You must build the repository, pipeline, and Registry from scratch | SageMaker Projects template |
+| Approval is automatic, but a human checks only the production release | Automatic approval + CodePipeline ManualApproval |
+
+> 💡 **Concept**: The fastest way to solve this week's questions is to **decide the layer first**. Decide which of four layers is being asked: "what exists (IaC) / what runs in what order (workflow) / when it starts (trigger) / who is accountable (governance)". Usually two of the four answer choices are tools from other layers and are eliminated immediately.
+
+Next week we move on to monitoring and observability for deployed models.
+
+## 📖 Glossary
+
+- **MLOps**: A way of building, deploying, and watching models through automated pipelines rather than by hand.
+- **Automation, reproducibility, governance**: The three MLOps principles. Reduce human intervention / guarantee the same result / leave a record of who approved.
+- **Quality gate**: An automated checkpoint that passes only models that clear a performance bar to the next stage. In Pipelines, ConditionStep plays this role.
+- **CI/CD chain**: The entire automated path from code push to production deployment.
+- **Build pipeline / Deploy pipeline**: The former runs through training and registration when code changes; the latter runs through deployment when a model is approved.
+- **Trigger**: A signal that starts a workflow. It is either a schedule or an event. It is different from the workflow itself.
+- **Orchestrator**: A tool that manages the execution order, branching, and retries of multiple tasks. Pipelines, Step Functions, and MWAA belong here.
+- **Lineage**: A connection record that lets you trace back which data, code, and jobs produced this model.
+- **ManualApproval gate**: A human checkpoint placed in the middle of an automated deployment flow. A device for reducing the blast radius.
+- **Rollback**: Returning to the last good version when a new deployment is wrong. Possible because versions remain in the Registry.
 
 ---
 

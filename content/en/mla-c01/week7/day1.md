@@ -1,48 +1,103 @@
 ﻿# Day 1 - SageMaker Pipelines: Steps, DAG, Parameters, Condition Steps
 
-Last week focused on "how to deploy a model"; this week pivots to "how to automate and make that deployment reproducible". That is MLOps. The sequence data preprocessing → training → evaluation → registration → deployment, executed by hand running notebook cells every time, lacks reproducibility and invites errors. **SageMaker Pipelines** bundles this workflow as code-defined DAGs, so once defined, the same procedure repeats via a button click or trigger, automatically.
+## 📌 Key Takeaways
 
-Today we cover Pipelines' core building blocks: **Steps, Directed Acyclic Graph (DAG), Parameters, and Condition Steps**. MLA-C01 repeatedly asks "what orchestrates this ML workflow to be reproducible?" and in SageMaker's native environment, Pipelines is almost always the answer.
+- **SageMaker Pipelines** is SageMaker's native orchestrator that bundles an ML workflow into a code-defined **DAG** and runs it repeatedly.
+- **Step types** are fixed per kind of work — Processing, Training, Tuning, Model, RegisterModel, Transform, Condition, Lambda, Callback, Fail.
+- When one step's `properties` are **referenced** as the next step's input, the dependency automatically becomes a **DAG edge**. Without a reference, steps run in parallel.
+- **Parameters** inject values at execution time so the same definition can be reused across dev/staging/prod.
+- **ConditionStep** is a **quality gate** that compares an evaluation metric to a threshold — it blocks automatic registration of a model that misses the bar.
 
-## What is SageMaker Pipelines?
+## What Is SageMaker Pipelines?
 
-SageMaker Pipelines is a **CI/CD orchestration service for ML workflows**. Define each task as a "step", connect data dependencies between steps, and SageMaker automatically constructs a **DAG (Directed Acyclic Graph)** with execution order. One step's output (e.g., S3 path to preprocessed data) flows as input to the next step, and SageMaker runs steps without dependencies in parallel.
+If last week was about "how to deploy a model," this week is about "how to automate that deployment and make it repeatable" — in other words, MLOps.
 
-Core characteristics:
-- **Reproducibility**: Workflow definition lives as code and JSON, enabling identical procedure repeats.
-- **Lineage tracking**: Which data, code, and parameters created which model is auto-recorded.
-- **SageMaker Studio integration**: View DAG visually and track each execution status.
-- **Python SDK-based**: Define using SageMaker Python SDK, no separate DSL required.
+- A **CI/CD orchestration service for ML workflows**. You define each task as a "step."
+- Once you connect data dependencies between steps, SageMaker automatically builds a **DAG (Directed Acyclic Graph)** with an execution order.
+- One step's output (for example, the S3 path of preprocessed data) is passed as the next step's input, and steps with no dependency between them run **in parallel**.
+- Having a person run notebook cells by hand every time is not reproducible and invites mistakes — the goal is to replace that.
 
-> 💡 **Related Theory**: What Pipelines creates is a DAG. A DAG is a "directed (execution order) and acyclic (no infinite loops)" graph expressing data dependencies as nodes/edges—the standard model for workflow orchestration. Airflow and Step Functions also use the same DAG model. On exams, remember: "automate training → evaluation → deployment within SageMaker" → Pipelines; "orchestrate many AWS services broadly" → Step Functions.
+| Feature | Description |
+|------|------|
+| **Reproducibility** | The workflow definition is kept as code and JSON, so the same procedure runs repeatedly |
+| **Lineage tracking** | Automatically records which data, code, and parameters produced which model |
+| **Studio integration** | View the DAG visually and track the status of each step per execution |
+| **Python SDK based** | Defined with the SageMaker Python SDK, with no separate DSL |
+| **Registry integration** | The `RegisterModel` step registers a version straight into the Model Registry |
 
-## Pipeline Step Types
+What Pipelines creates is a DAG. A DAG is a graph that is "directed (execution order) and acyclic (no infinite loops)," the standard model of workflow orchestration that expresses data dependencies as nodes and edges. Airflow and Step Functions use the same DAG model. In the exam it splits like this: "automate training → evaluation → deployment inside SageMaker" means Pipelines, while "broadly orchestrate many AWS services" means Step Functions.
 
-Pipelines offers pre-defined step types for common task kinds. Frequently tested:
+## A Typical Pipeline DAG
 
-| Step Type | Role |
-|----------|------|
-| ProcessingStep | Data preprocessing/postprocessing/evaluation (SageMaker Processing jobs) |
-| TrainingStep | Model training (Estimator-based) |
-| TuningStep | Run hyperparameter tuning job |
-| ModelStep / CreateModelStep | Create model object from trained artifacts |
-| RegisterModel | Register model version to Model Registry |
-| TransformStep | Run batch transform job |
-| ConditionStep | Branch by condition |
-| CallbackStep / LambdaStep | Call external tasks (queues, Lambda, etc.) |
+A widely used shape is preprocessing → training → evaluation → condition → registration.
 
-Typical pipeline flows: `ProcessingStep` (preprocess) → `TrainingStep` (train) → `ProcessingStep` (evaluate) → `ConditionStep` (compare accuracy to threshold) → `RegisterModel` (register if pass).
+```text
+ParameterString(InputData)          ParameterFloat(AccuracyThreshold)
+       │                                            │
+       ▼                                            │
+ProcessingStep "PreprocessData"   (preprocessing)   │
+       │ properties → S3Output.S3Uri                │
+       ▼                                            │
+TrainingStep   "TrainModel"       (training)        │
+       │ ModelArtifacts.S3ModelArtifacts            │
+       ▼                                            │
+ProcessingStep "EvaluateModel"    (evaluation)      │
+       │ PropertyFile → evaluation.json             │
+       └──────────────┬─────────────────────────────┘
+                      ▼
+              ConditionStep "CheckAccuracy"
+                      │
+        if_steps ─────┴───── else_steps
+            │                    │
+            ▼                    ▼
+      RegisterModel          FailStep
+    → Model Registry        (or left empty)
+```
 
-## Parameters — Make Pipelines Reusable
+- The parameters at the top are **injected at execution time** and flow through the entire DAG.
+- Every arrow was created automatically from an "output reference." No one wrote the order in by hand.
+- If the condition is false, the whole `if_steps` branch is skipped — a poor model never reaches the Registry.
 
-Parameters allow you to not fix values when defining the pipeline, but **inject them at execution time**. Instance type, instance count, training data path, accuracy threshold—if you externalize these as parameters, the same pipeline definition runs development/staging/production with different values.
+## Kinds of Pipeline Steps
+
+Pipelines provides step types predefined for each kind of work. The main step types are as follows:
+
+| Step type | Role | Typical use |
+|----------|------|-------------|
+| **ProcessingStep** | Runs a SageMaker Processing job | Preprocessing, feature engineering, model evaluation |
+| **TrainingStep** | Estimator-based model training | The main training. Output is `model.tar.gz` |
+| **TuningStep** | Runs a hyperparameter tuning job | Searching for the best combination among many candidates |
+| **ModelStep / CreateModelStep** | Creates a model object from the training artifact | The step right before deployment or batch transform |
+| **RegisterModel** | Registers a version in the Model Registry | Starting point of the approval workflow |
+| **TransformStep** | Runs batch transform | Large-scale offline inference |
+| **ConditionStep** | Branches based on a condition | Accuracy threshold quality gate |
+| **LambdaStep** | Invokes a Lambda function | Short custom logic (notifications, tagging, external APIs) |
+| **CallbackStep** | Hands off to an external system via SQS and waits | When you must wait for a response from a system outside the pipeline |
+| **FailStep** | Explicitly marks the pipeline as failed | When you do not want an unmet condition to end as "success" |
+
+- Typical flow: `ProcessingStep` (preprocessing) → `TrainingStep` (training) → `ProcessingStep` (evaluation) → `ConditionStep` (threshold) → `RegisterModel` (register if it passes).
+- Evaluation is also a **ProcessingStep**, not a training step. It is easy to wrongly assume there is a separate "evaluation step" type.
+- For short custom logic use **LambdaStep**; if you must wait for a response from a system outside the pipeline, use **CallbackStep**.
+
+> ⚠️ **Trap**: "Do not register if accuracy misses the bar" is satisfied just by leaving `ConditionStep`'s `else_steps` empty. But if the requirement goes further — "if it misses, the pipeline must be **marked as failed** so that an alert fires" — you need `else_steps=[FailStep(...)]`. If nothing happens when the condition is false, the execution status simply ends as **Succeeded** and nobody notices.
+
+## Parameters — Making a Pipeline Reusable
+
+A parameter is a variable that lets you **inject a value at execution time** rather than fixing it at definition time. If you pull values such as instance type and count, the training data path, and the accuracy threshold out into parameters, the same definition can run in multiple environments.
+
+| Parameter type | Holds | Example |
+|---------------|---------|-----|
+| `ParameterString` | A string | S3 path, instance type, approval status |
+| `ParameterInteger` | An integer | Instance count, number of epochs |
+| `ParameterFloat` | A floating-point number | Accuracy or AUC threshold |
+| `ParameterBoolean` | True/false | A toggle such as whether to use caching |
 
 ```python
 from sagemaker.workflow.parameters import (
     ParameterString, ParameterInteger, ParameterFloat,
 )
 
-# Declare parameters, injectible at execution
+# Declare parameters whose values can be injected at execution time
 input_data = ParameterString(
     name="InputData",
     default_value="s3://my-bucket/dataset/train.csv",
@@ -51,22 +106,39 @@ instance_count = ParameterInteger(name="TrainingInstanceCount", default_value=1)
 accuracy_threshold = ParameterFloat(name="AccuracyThreshold", default_value=0.85)
 ```
 
-At execution, use defaults or override:
+At execution time you can use the defaults as they are or override them.
 
 ```python
-# Run with defaults
+# Run with the defaults
 pipeline.start()
 
-# Override parameters—same definition, different inputs
+# Run with overridden parameters — same definition, different inputs
 pipeline.start(parameters={
     "InputData": "s3://my-bucket/dataset/train_v2.csv",
     "AccuracyThreshold": 0.90,
 })
 ```
 
-## Step Definition & Data Passing Between Steps
+You can do the same thing with boto3. This is the form used when running a pipeline from CI/CD.
 
-Each step is created as a SageMaker Python SDK object. Reference one step's `properties` as the next step's input, and SageMaker infers dependencies and creates DAG edges.
+```python
+import boto3
+sm = boto3.client("sagemaker")
+
+sm.start_pipeline_execution(
+    PipelineName="MLA-DemoPipeline",
+    PipelineParameters=[
+        {"Name": "InputData", "Value": "s3://my-bucket/dataset/train_v2.csv"},
+        {"Name": "AccuracyThreshold", "Value": "0.90"},
+    ],
+)
+```
+
+> ⚠️ **Trap**: You must **pass the parameter object as is** for execution-time injection to work. If you pull out the value, as in `instance_count.default_value`, the number from definition time gets baked in, and no amount of overriding at execution is reflected. Concatenating a parameter into a string is risky for the same reason.
+
+## Defining Steps and Passing Data Between Steps
+
+Each step is created as a SageMaker Python SDK object. When one step's `properties` are referenced as the next step's input, SageMaker infers the dependency and creates a DAG edge.
 
 ```python
 from sagemaker.workflow.steps import ProcessingStep, TrainingStep
@@ -81,7 +153,7 @@ step_process = ProcessingStep(
     code="preprocess.py",
 )
 
-# 2) Training step—reference preprocessing output S3 path as input (=auto dependency)
+# 2) Training step — references the preprocessing output S3 path as input (= dependency created automatically)
 step_train = TrainingStep(
     name="TrainModel",
     estimator=xgb_estimator,
@@ -96,18 +168,27 @@ step_train = TrainingStep(
 )
 ```
 
-Because `step_process`'s output is referenced by `step_train`, SageMaker auto-infers "preprocess → train" order. If explicit ordering is needed, `depends_on` is also available.
+Because `step_train` references the output of `step_process`, SageMaker works out the "preprocessing → training" order automatically.
 
-## Condition Step — Create Quality Gates
+| How to create a dependency | When to use it |
+|----------------------|-----------|
+| **Output reference** (`step_a.properties....`) | The default. When data actually flows between steps |
+| **`depends_on=[step_a]`** | When no data is exchanged but you want to force an order |
+| (Do nothing) | The steps are independent → they run **in parallel** |
 
-Condition steps **branch the pipeline based on evaluation results**. The most common pattern: "register model if accuracy exceeds threshold, otherwise don't"—a quality gate. Prevents poor-quality models from automatically becoming production candidates.
+- Frequently referenced properties: for training, `properties.ModelArtifacts.S3ModelArtifacts`; for processing, `properties.ProcessingOutputConfig.Outputs["name"].S3Output.S3Uri`.
+- If rerunning the same step on every execution is wasteful, you can turn on **caching (CacheConfig)** for the step. If the inputs and parameters are identical, the previous result is reused.
+
+## Condition Step — Building a Quality Gate
+
+A condition step **branches the pipeline based on evaluation results**. The representative pattern is a quality gate: "register the model if its accuracy exceeds the threshold, otherwise do not."
 
 ```python
 from sagemaker.workflow.conditions import ConditionGreaterThanOrEqualTo
 from sagemaker.workflow.condition_step import ConditionStep
 from sagemaker.workflow.functions import JsonGet
 
-# Read accuracy from evaluation.json output by eval step, compare to threshold
+# Read accuracy from the evaluation.json that the evaluation step outputs and compare it to the threshold
 cond_accuracy = ConditionGreaterThanOrEqualTo(
     left=JsonGet(
         step_name=step_eval.name,
@@ -120,18 +201,31 @@ cond_accuracy = ConditionGreaterThanOrEqualTo(
 step_condition = ConditionStep(
     name="CheckAccuracy",
     conditions=[cond_accuracy],
-    if_steps=[step_register],     # If condition met: register model
-    else_steps=[],                # If not: do nothing
+    if_steps=[step_register],     # If the condition is met: register the model
+    else_steps=[],                # If not met: do nothing
 )
 ```
 
-Use `if_steps` and `else_steps` to specify follow-up steps for each branch. If condition is false, `if_steps` do not execute.
+- If you put several conditions in `conditions`, `if_steps` runs **only when all are true** (a compound gate such as accuracy ≥ 0.85 **and** latency ≤ 100ms).
+- What `JsonGet` reads is a JSON file that the evaluation step has declared as a `PropertyFile`. If it is not declared, it cannot be read.
+- Kinds of conditions: `ConditionGreaterThanOrEqualTo`, `ConditionLessThanOrEqualTo`, `ConditionEquals`, `ConditionIn`, `ConditionNot`, and so on.
 
-> 💡 **Related Theory**: Quality gates created by ConditionStep implement the core MLOps philosophy: "replace manual human judgment with automated validation". If a model fails to exceed the baseline, the deployment flow automatically halts—stopping poor-performance models from reaching production at the code level. On exams, when you see "register/deploy only if accuracy meets threshold, automated", think ConditionStep.
+```python
+from sagemaker.workflow.properties import PropertyFile
 
-## Pipeline Creation & Execution
+# Declare which file the evaluation step exposes as a "readable property file"
+evaluation_report = PropertyFile(
+    name="EvaluationReport",
+    output_name="evaluation",          # Must match the output_name of the ProcessingOutput
+    path="evaluation.json",            # The file name the container wrote at that path
+)
+```
 
-Gather steps into a `Pipeline` object, register with `upsert`, then execute:
+The quality gate built with a condition step implements the core MLOps idea of "replacing manual human judgment with automated validation." If a model does not clear the baseline, the deployment flow stops automatically, so a degraded model is blocked from entering production at the code level. When the exam says "automate so that a model is registered/deployed only when accuracy is above a certain level," the answer is ConditionStep.
+
+## Creating and Running a Pipeline
+
+Gather the steps into a `Pipeline` object, register it with `upsert`, and then run it.
 
 ```python
 pipeline = Pipeline(
@@ -141,25 +235,47 @@ pipeline = Pipeline(
     sagemaker_session=pipeline_session,
 )
 
-# Create or update pipeline definition in SageMaker
+# Create or update the pipeline definition in SageMaker
 pipeline.upsert(role_arn=role)
 
 # Start execution
 execution = pipeline.start()
-execution.wait()   # Wait until complete
+execution.wait()   # Wait until it completes
 ```
 
-Each execution gets a unique execution ARN, and Studio's Pipelines tab visually tracks the DAG and per-step status (success/failure/in-progress).
+- Each execution has a unique execution ARN, and the Pipelines tab in Studio visually tracks the DAG and the status of each step (succeeded/failed/in progress).
+- After an execution, check per-step results with `execution.list_steps()`.
+- When defining steps, use **`PipelineSession`** rather than a regular `Session`. That way `estimator.fit()` does not run training immediately but only produces the "step arguments."
 
-## Summary
+## When a Pipeline Goes Wrong: Symptom → Cause → Action
 
-- SageMaker Pipelines orchestrates ML workflows as code-defined DAGs—the native service.
-- Compose work using step types (Processing, Training, Tuning, Register, Condition, etc.) and auto-connect dependencies via output references.
-- Parameters support value injection at execution time, enabling one definition to be reused across environments.
-- ConditionStep creates quality gates (like accuracy thresholds) to auto-block poor models.
-- "Automate/reproduce workflow inside SageMaker" → Pipelines is the default answer.
+| Symptom | Common cause | Action |
+|------|-----------|------|
+| Steps that should run in order start at the same time | There is no output reference between the steps, so SageMaker treats them as independent | Reference the `properties` output or specify `depends_on` |
+| The condition is always false, so registration never happens | `PropertyFile` not declared, `output_name` mismatch, or a typo in `json_path` | Compare the evaluation report structure and `json_path` against the actual JSON |
+| The condition is not met but the execution ends as "Succeeded" | `else_steps` is empty, so it is not marked as failed | Fail explicitly with `else_steps=[FailStep(...)]` |
+| Overriding a parameter does not change the value | `default_value` was pulled out and hardcoded at definition time | Pass the parameter object to the step as is |
+| You changed the code but it runs with the old definition | `start` was called without `upsert` | Run `pipeline.upsert()` again after changing the definition |
+| The training step fails with `AccessDenied` / PassRole denied | The pipeline execution role lacks `iam:PassRole` or S3 permissions | Grant the execution role PassRole on the target role and bucket permissions |
+| Every execution reruns from preprocessing, making it slow and expensive | Step caching is not used | Enable `CacheConfig` on steps that do not change |
+| The DAG does not appear in Studio | `upsert` failed, or a different Region/domain | Check the creation Region and the execution role permissions |
 
----
+Debugging a pipeline starts with separating "is it a **definition problem** or an **execution problem**?" If the DAG shape looks odd, it is a definition problem (references, `depends_on`); if the shape is right but only a specific step dies, it is a problem with the work that step runs (permissions, data, container). The former shows up right away if you extract the JSON with `pipeline.definition()`.
+
+Tomorrow we cover the Model Registry, which manages the models this pipeline registers as versions and connects them to deployment through approval.
+
+## 📖 Glossary
+
+- **SageMaker Pipelines**: SageMaker's built-in workflow service that bundles ML tasks into steps and runs them automatically in order.
+- **DAG (directed acyclic graph)**: A task graph whose execution order has a direction and which has no loops that return to an earlier point. The standard model for expressing workflows.
+- **Step**: One cell of work that makes up a pipeline. Types are fixed per kind of work, such as preprocessing, training, evaluation, and registration.
+- **properties reference**: Writing the output location of an earlier step as the input of a later step. This alone decides the execution order automatically.
+- **Parameter**: A variable whose value is left empty at definition time and filled in at execution time. It lets the same pipeline run differently per environment.
+- **ConditionStep**: A branching step that compares an evaluation metric to a threshold to decide whether later steps run.
+- **PropertyFile**: A declaration that registers the JSON produced by the evaluation step so the pipeline can read it. `JsonGet` extracts values through it.
+- **FailStep**: A step that explicitly ends the pipeline in a failed state. Used when you do not want an unmet condition to pass silently.
+- **PipelineSession**: A session for defining pipelines. It makes training calls get captured only as step arguments instead of running immediately.
+- **Step caching (CacheConfig)**: A feature that reuses the previous execution result and skips the step when the inputs and settings are the same. It saves time and cost.
 
 ## 📝 Practice Questions
 

@@ -1,111 +1,227 @@
-# Day 5 - Week 9 Review: Evaluation and Debugging
+# Day 5 - Week 9 Comprehensive Review: Evaluation and Debugging
 
-This week covered the final stage of Domain 3 (Modeling) — **how to evaluate and debug models**. After choosing an algorithm (Week 6) and training/tuning it (Weeks 7-8), we must now answer "is this model truly good, where and how does it fail" with numbers and tools. Today we tie four days into one evaluation-debugging flow and organize the trickiest choices.
+## 📌 Key Takeaways
 
-## One-Page Summary: Evaluation to Debugging
+- Week 9 is the final stage of Domain 3 (Modeling) — how to answer, with numbers and tools, **"is this model really good, and where and how does it go wrong?"**
+- One principle runs through it: **a metric is a translation of business cost.** If FP is expensive, use precision; if FN is expensive, use recall; if the data is imbalanced, drop accuracy and go to F1/PR-AUC.
+- **Model comparison and threshold decisions are separate stages.** First pick a model that ranks well by AUC, then set the cut that fits the cost afterward.
+- For regression: "big mistakes are fatal = RMSE, outliers are noise = MAE, comparing different scales = MAPE," and read bias, nonlinearity, and heteroscedasticity from residual plots.
+- Tool division: **"gradients/loss/overfitting/tensors = Debugger, fairness/groups/SHAP = Clarify"**; tuning direction is **classification Maximize / error Minimize**.
+
+## Flow Map: From Evaluation to Debugging
+
+If you have chosen an algorithm (Week 6) and trained and tuned it (Weeks 7-8), what remains is grading and repair. Weaving four days into one flow gives the following.
 
 ```text
 [Trained model]
    │
-   ├─ 1) Determine metric family by problem type
-   │     Classification → accuracy/precision/recall/F1, ROC-AUC, PR-AUC
-   │     Regression → RMSE/MAE/MAPE/R²
+   ├─ 1) Decide the metric family by problem type
+   │     classification → accuracy/precision/recall/F1, ROC-AUC, PR-AUC
+   │     regression     → RMSE/MAE/MAPE/R²
    │
-   ├─ 2) Select metrics and thresholds by business cost
-   │     FN deadly → recall / lower threshold
-   │     FP deadly → precision / raise threshold
-   │     Imbalance → F1, PR-AUC (ban accuracy)
+   ├─ 2) Choose metric and threshold by business cost
+   │     FN is fatal → recall / threshold ↓
+   │     FP is fatal → precision / threshold ↑
+   │     imbalanced  → F1, PR-AUC (no accuracy)
    │
-   ├─ 3) Analyze trade-offs with curves
-   │     ROC/AUC = discrimination, model comparison
-   │     PR curve = honest on extreme imbalance
+   ├─ 3) Analyze the tradeoff with curves
+   │     ROC/AUC = discriminative power, model comparison
+   │     PR curve = honest under extreme imbalance
    │
-   └─ 4) Debug, bias, error analysis
-         Debugger = training process (gradients/loss/overfitting)
-         Clarify = bias (group fairness) + SHAP (explainability)
-         Error analysis = improve from largest error bucket
+   └─ 4) Debugging, bias, and error analysis
+         Debugger = the training process (gradients/loss/overfitting)
+         Clarify  = bias (group fairness) + SHAP (explanation)
+         error analysis = improve starting with the biggest error buckets
 ```
 
-## Classification Metrics (Day1~2)
+## Classification Metrics Master Table (Day 1-2)
 
-| Metric | Formula Denominator | When |
-|------|------|------|
-| Accuracy | All | Balanced data only, ban on imbalance |
-| Precision | TP+FP (predicted positive) | High FP cost (spam) |
-| Recall | TP+FN (actual positive) | High FN cost (disease/fraud) |
-| F1 | Harmonic mean | Balance FP·FN, imbalanced data |
-| ROC-AUC | TPR vs FPR area | Threshold-independent model comparison |
-| PR-AUC | Precision vs Recall area | Honest on extreme imbalance |
+| Metric | Formula denominator | When | Representative scenario | Blind spot of this metric |
+|---|---|---|---|---|
+| **Accuracy** | Total | Balanced data only, forbidden for imbalanced | Problems where classes are close to 5:5 | Comes out high even by predicting only the majority class |
+| **Precision** | TP+FP (predicted positives) | When FP cost is high | Spam classification (blocking legitimate mail is fatal) | Doesn't look at missed positives (FN) at all |
+| **Recall** | TP+FN (actual positives) | When FN cost is high | Disease/fraud detection (missing is fatal) | Becomes 1.0 if you predict everything positive |
+| **F1** | Harmonic mean | FP/FN balance, imbalanced data | Imbalance with no stated cost asymmetry | Can't reflect which side is more expensive |
+| **ROC-AUC** | Area of TPR vs FPR | Threshold-independent model comparison | Choosing among several candidate models | Looks optimistic under extreme imbalance |
+| **PR-AUC** | Area of Precision vs Recall | Honest under extreme imbalance | Fraud detection with 0.5% positives | Absolute comparison across models is data-dependent |
 
-## Regression Metrics (Day3)
+### Threshold and Curves
 
-| Metric | Character | Signal |
-|------|------|------|
-| MAE | Robust to outliers, intuitive unit | Ignore outliers |
-| RMSE | Sensitive to large errors (squared) | Large mistakes catastrophic, built-in default |
-| MAPE | Scale-independent relative error | Compare across scales (watch y=0) |
-| R² | Explanatory power vs mean | Negative = worse than mean |
+| Item | ROC curve | PR curve |
+|---|---|---|
+| Axes | TPR vs FPR | Precision vs Recall |
+| TN in the denominator | Included (in FPR) | **Not included** |
+| Strength | General comparison of model discrimination | Doesn't inflate performance under extreme imbalance |
+| When imbalanced | FPR looks small thanks to the many negatives, so optimistic | Honest because it looks only at the few positives |
 
-Residual plot: random scatter=good, U-shape=missed nonlinearity, funnel=heteroscedasticity, skew=bias.
+- **Threshold ↓** → recall ↑, precision ↓ (you miss less, but false alarms increase)
+- **Threshold ↑** → precision ↑, recall ↓ (positive only when sure, but more misses)
 
-## Debugging, Bias (Day4)
+### Where Each Metric Looks on the Confusion Matrix
 
-| Keyword | Service |
+```
+                 Actual positive   Actual negative
+             ┌───────────────┬───────────────┐
+Pred. pos.   │      TP       │      FP       │  ← Precision = TP / (TP+FP)
+             ├───────────────┼───────────────┤
+Pred. neg.   │      FN       │      TN       │
+             └───────────────┴───────────────┘
+                     ↑
+             Recall = TP / (TP+FN)
+
+  Accuracy = (TP+TN) / total   ← if TN dominates, everything is inflated here
+  ROC's FPR = FP / (FP+TN)     ← TN in the denominator → looks small under imbalance
+  PR curve                     ← doesn't use TN at all → honest
+```
+
+### Cost Asymmetry → Metric and Threshold
+
+| Business situation | More expensive mistake | Priority metric | Threshold |
+|---|---|---|---|
+| Disease-diagnosis screening | FN (missed patient) | Recall | Lower it |
+| Fraudulent-transaction detection | FN (fraud that got through) | Recall / PR-AUC | Lower it |
+| Spam classification | FP (blocked legitimate mail) | Precision | Raise it |
+| Automatic account suspension | FP (unjust suspension) | Precision | Raise it |
+| Cost asymmetry not stated | Can't judge | F1 | Start from the default |
+
+> ⚠️ **Trap**: If the word "imbalanced" appears in the question, **the accuracy option is wrong**. In a 0.5% fraud problem, predicting everything as normal still gives 99.5% accuracy.
+
+## Regression Metrics Master Table (Day 3)
+
+| Metric | Character | Cue | Caution |
+|---|---|---|---|
+| **MAE** | Robust to outliers, intuitive units | When you want to ignore outliers | Doesn't treat large errors specially |
+| **RMSE** | Sensitive to large errors (squared) | Big mistakes are fatal, built-in default | Swung heavily by a few outliers |
+| **MAPE** | Scale-free relative error | Comparing items of different scales | **Blows up near y=0** |
+| **R²** | Explanatory power relative to the mean | Reporting explanatory power as one number | **If negative, worse than the mean line** |
+
+### Reading Residual Plots
+
+| Residual shape | Diagnosis | Next step |
+|---|---|---|
+| Random scatter | Good | Proceed as is |
+| U-shaped curve | Nonlinearity not captured | Review feature transforms / nonlinear models |
+| Funnel shape | Heteroscedasticity | Consider log-transforming the target, weighted regression |
+| Skewed to one side | Systematic bias | Check for missing features or an intercept problem |
+
+> 💡 **Concept**: The **gap between RMSE and MAE is itself information.** If the two are similar, errors are spread evenly; if RMSE is much larger, it signals that a few large errors (outlier-like residuals) exist.
+
+## Debugging and Bias (Day 4)
+
+| Keyword | Service | What it does |
+|---|---|---|
+| Vanishing/exploding gradients, overfitting, tensor capture, automatic job stop | **Debugger** | Watches training tensors with rules, stops broken jobs |
+| Group fairness, Disparate Impact, pre-/post-training bias | **Clarify (bias)** | Measures skew in data and predictions across groups |
+| SHAP, feature attribution, prediction explanation | **Clarify (explainability)** | Global importance + the reason for an individual prediction |
+| Errors concentrated in a specific range | **Error analysis** (human) | Group into buckets, then improve starting with the largest bucket |
+
+The single principle running through this week is **"a metric is a translation of business cost."** Even for the same model, you look at precision if FP is expensive and recall if FN is expensive, and if the data is imbalanced you drop accuracy and go to F1/PR-AUC. In regression too, RMSE if big mistakes are fatal, MAE if outliers are noise. Metric-selection questions almost always reduce to "which mistake is more expensive in this business?"
+
+## Metric Selection Decision Tree
+
+```
+What is the problem type?
+├─ Regression
+│   ├─ Are large errors especially fatal?
+│   │     ├─ Yes → RMSE (tuning direction Minimize)
+│   │     └─ No ↓
+│   ├─ Do you see outliers as noise and want to ignore them? → MAE
+│   ├─ Comparing items of different scales together?          → MAPE (watch y=0)
+│   └─ Reporting explanatory power as one number?             → R² (negative = worse than the mean)
+│
+└─ Classification
+    ├─ Are the classes severely imbalanced?
+    │     ├─ Yes → no accuracy. F1 / PR-AUC
+    │     └─ No ↓
+    ├─ Is FN more expensive? (missing disease/fraud is fatal)
+    │     └─ Yes → recall first + threshold ↓
+    ├─ Is FP more expensive? (blocking legitimate users is fatal)
+    │     └─ Yes → precision first + threshold ↑
+    ├─ Is the cost asymmetry unclear?                    → F1
+    └─ Comparing several models independent of threshold? → ROC-AUC
+          └─ Then set the operating cut at the expected-cost-minimizing point on the curve
+```
+
+## The Most Confusing Comparisons
+
+| Comparison | Key difference |
 |------|------|
-| Vanishing/exploding gradients, overfitting, tensor capture, auto-stop job | **Debugger** |
-| Group fairness, Disparate Impact, pre/post-training bias | **Clarify (bias)** |
-| SHAP, feature contribution, prediction explanation | **Clarify (explainability)** |
-
-> 💡 **Related Theory**: The single principle threading this week is **"metrics translate business cost."** Same model, high FP cost → focus precision; high FN cost → focus recall; imbalance → ditch accuracy for F1/PR-AUC. In regression too: big mistakes catastrophic → RMSE; outliers noise → MAE. Metric selection almost always reduces to "which mistake costs more in this business?"
-
-## Trickiest Comparisons
-
-| Comparison | Core Difference |
-|------|------|
-| Precision vs Recall | Reduce FP / Reduce FN |
-| Accuracy vs F1 | Balanced data / Imbalanced data |
-| ROC vs PR curves | General / Extreme imbalance (no TN in denominator) |
-| AUC vs threshold choice | Model comparison / Operational cut decision |
-| RMSE vs MAE | Emphasize large errors / Robust to outliers |
-| R² positive vs negative | Better than mean / Worse than mean |
-| Debugger vs Clarify | Training process health / Bias & explainability |
-| Clarify bias vs SHAP | Group fairness / Prediction explanation |
+| Precision vs recall | Reduce FP / reduce FN |
+| Accuracy vs F1 | Balanced data / imbalanced data |
+| ROC vs PR curve | General / extreme imbalance (no TN in the denominator) |
+| AUC vs threshold selection | Model comparison / deciding the operating cut |
+| RMSE vs MAE | Emphasizes large errors / robust to outliers |
+| Positive vs negative R² | Better than the mean / worse than the mean |
+| Debugger vs Clarify | Health of the training process / bias and explanation |
+| Clarify bias vs SHAP | Group fairness / prediction explanation |
 | Classification tuning vs regression tuning | Maximize (F1/AUC) / Minimize (RMSE) |
 
-> 💡 **Related Theory**: Model evaluation and threshold decision are separate stages. Use threshold-independent metrics like AUC to pick a "good-ranking model" first, then post-hoc pick threshold matching FP/FN costs on top. This separation lets you adjust threshold alone if cost structure changes, no model retraining. Exam splits "model comparison=AUC, operational cut=one point on curve" for this reason.
+Model evaluation and threshold decisions are separate stages. First pick a "well-ranking model" using a threshold-independent metric like AUC, then set the threshold that fits the FP/FN cost afterward. Thanks to this separation, even if the cost structure changes, you only need to adjust the threshold without retraining the model. This is why on the exam it splits into "model comparison = AUC, operating cut = one point on the curve."
+
+## Commonly Missed Traps
+
+| How you go wrong | Why it's wrong | Correct judgment |
+|---|---|---|
+| Evaluating imbalanced data with accuracy | High even if only the majority class is right | F1 / PR-AUC / precision and recall together |
+| Trusting only ROC-AUC under extreme imbalance | The large TN in the FPR denominator makes it optimistic | Look at the PR curve as well |
+| Fixing the threshold first, then choosing a model | An order that ignores the cost structure | Model by AUC → threshold decided afterward |
+| Pushing only recall all the way up | Predicting everything positive gives 1.0 | Together with the tradeoff against precision |
+| Finalizing a model on RMSE alone | Swung by a few outliers | Together with the gap to MAE and residual plots |
+| Always blaming the data when R² is low | A negative value means the model is worse than the mean | Re-examine the features and the model itself |
+| Maximizing the objective metric for regression tuning | Smaller error is better | RMSE is **Minimize** |
+| Diagnosing a training failure with Clarify | Clarify handles bias and explanation | Gradients and loss are **Debugger** |
+| Measuring group fairness with Debugger | Debugger handles the training process | Fairness is a **Clarify bias metric** |
 
 ## Self-Check Questions
 
-Try answering in your head:
+Try to recall the answers in your head.
 
-1. Fraud is 0.5% but accuracy is 99.5%, why not trust it? → **Classify all as normal = 99.5%, imbalance**
-2. When missing fraud (FN) is deadly, priority metric? → **Recall**
-3. On extreme imbalance, more honest curve than ROC? → **PR curve (PR-AUC)**
-4. If RMSE much larger than MAE? → **Large errors (outlier residuals) present**
-5. If R² negative? → **Worse than predicting mean**
-6. Residual plot U-shaped? → **Missed nonlinearity, review features/model**
-7. Service that auto-detects vanishing gradients during training? → **SageMaker Debugger**
-8. Measure prediction fairness across groups? → **SageMaker Clarify (bias metrics)**
-9. Explain feature contribution for single prediction? → **Clarify SHAP values**
-10. Regression tuning objective direction? → **Minimize (RMSE, etc)**
+1. Why can't you trust 99.5% accuracy when fraud is 0.5%? → **Predicting everything normal gives 99.5%; imbalance**
+2. When FN, missing a disease, is fatal, what is the priority metric? → **Recall**
+3. Which curve is more honest than ROC under extreme imbalance? → **PR curve (PR-AUC)**
+4. If RMSE is much larger than MAE? → **Large errors (outlier-like residuals) exist**
+5. If R² is negative? → **Worse than predicting the mean line**
+6. If the residual plot is a U-shaped curve? → **Nonlinearity not captured; re-examine features/model**
+7. Which service automatically detects vanishing gradients during training? → **SageMaker Debugger**
+8. Measuring prediction fairness across groups? → **SageMaker Clarify (bias metrics)**
+9. Explaining the feature contributions of an individual prediction? → **Clarify's SHAP values**
+10. What is the direction of the objective metric for regression tuning? → **Minimize (RMSE, etc.)**
 
-## Exam Tips Summary
+## Question Cue → Answer Mapping
 
-- **Step 1**: Classification or regression? → pick metric family.
-- **Step 2**: By FP vs FN cost, choose precision/recall/F1; on imbalance, ditch accuracy.
-- See "imbalance" word? Accuracy option = wrong, F1/PR-AUC = right.
-- "Compare models / discrimination" = AUC; "operational threshold" = min-cost point on curve.
-- Regression: "big mistakes catastrophic"=RMSE, "outliers noise"=MAE, "scale-different"=MAPE.
-- "Gradients/loss/overfitting/tensors"=Debugger, "fairness/groups/SHAP"=Clarify → instant answer.
-- Tuning direction: classification metrics Maximize, error metrics Minimize.
+| Question cue | Answer to pick | Reason |
+|---|---|---|
+| "Classes are imbalanced 95:5" | F1 / PR-AUC (the accuracy option is wrong) | Accuracy is high even if only the majority class is right |
+| "We must not miss disease/fraud" | Recall first, threshold ↓ | FN cost dominates |
+| "We must not block legitimate users" | Precision first, threshold ↑ | FP cost dominates |
+| "No mention of which mistake is more expensive + imbalanced" | F1 | Harmonic mean of precision and recall |
+| "Compare several candidate models by discriminative power" | ROC-AUC | Ranking quality independent of the threshold |
+| "We need to set the operating threshold" | Expected-cost-minimizing point on the curve | Evaluation and the cut decision are separate stages |
+| "Big prediction mistakes are fatal" | RMSE | Squaring amplifies large errors |
+| "Many outliers make the metric fluctuate" | MAE | Absolute error, so robust to outliers |
+| "Compare stores and items of different scales together" | MAPE | Relative error, so scale-free (watch y=0) |
+| "The model is worse than the mean prediction" | Negative R² | A state that failed to beat the baseline (the mean) |
+| "Residuals are funnel-shaped" | Heteroscedasticity | Variance changes with the predicted value |
+| "We want to catch vanishing gradients and overfitting during training" | SageMaker Debugger | Watches training tensors with rules |
+| "Report the approval-rate difference between gender groups" | Clarify bias metrics (DPPL, DI) | Group fairness of predictions |
+| "Explain the reason for this one decision" | Clarify SHAP (local) | Feature contributions for an individual prediction |
+| "Performance drops sharply only in a specific range" | Error analysis → improve starting with the largest bucket | Full retraining or random tuning is inefficient |
+| "Direction of the objective metric in Automatic Model Tuning" | RMSE = Minimize, F1/AUC = Maximize | Errors small, performance large |
 
-## Summary
+From next week (Week 10), we move on to Domain 4 (Machine Learning Implementation and Operations) — the stage of actually deploying, operating, and monitoring models.
 
-Week 9 was the final modeling step — "score and fix models." Define metric family by problem type, pick precision/recall/F1·threshold by business cost, read trade-offs with curves (ROC/PR). Then use Debugger for training process, Clarify for bias and explainability, error analysis for biggest error buckets. Core principles: **"metrics translate business cost"**, "classification Maximize / regression Minimize", "Debugger=process / Clarify=bias·explainability".
+## 📖 Glossary
 
-Next week (Week 10) shifts to Domain 4 — actually **deploying, operating, monitoring** models.
-
----
+- **TP / FP / FN / TN**: Positives correctly caught / positives wrongly flagged / positives missed / negatives correctly filtered. The raw material of every classification metric.
+- **Precision**: The share of actual positives among those called positive. "Did we avoid false flags?"
+- **Recall**: The share of actual positives that were caught. "Did we avoid missing any?"
+- **F1 score**: The harmonic mean of precision and recall. The score doesn't rise if only one side is high.
+- **ROC-AUC**: The area under the TPR-FPR curve when all thresholds are swept. The model's ability to rank.
+- **PR-AUC**: The area under the precision-recall curve. More honest than ROC when negatives overwhelmingly dominate.
+- **Threshold**: The cut that splits a probability output into positive/negative. Lowering it raises recall; raising it raises precision.
+- **MAPE**: The average of relative error, the error divided by the actual value. Used for comparing items of different scales, but watch out for y=0.
+- **R² (coefficient of determination)**: A value showing how much better the model is than "guessing the mean." If negative, it means worse than the mean.
+- **Residual**: Actual value − predicted value. Its pattern reveals structural defects in the model.
 
 ## 📝 Practice Questions
 

@@ -1,36 +1,62 @@
 # Day 1 - Custom Training: Script Mode, BYOC, Framework Containers
 
-Last week we trained models using SageMaker's built-in algorithms. But in practice, you often need to train models written directly in PyTorch or TensorFlow, or train in your own environment bundling company standard libraries. SageMaker offers three custom training modes depending on "how much of my code do I bring".
+## 📌 Key Takeaways
 
-In the MLA-C01 exam, this topic appears in scenarios like "I want to bring framework code with minimal changes", "I need special dependencies·system packages". Today we clarify the boundaries of three axes: script mode, BYOC, and framework containers.
+- Custom training is a **spectrum of "how much of my own code do I bring"** — built-in algorithm → script mode → requirements extension → BYOC.
+- **Script mode**: give only `train.py` and the AWS framework container runs it. No Docker needed → the "minimum effort" answer on the exam.
+- **requirements.txt extension**: when you only need more Python packages. Put it in `source_dir` and it is installed automatically when the container starts.
+- **BYOC**: only for system packages (apt), special runtimes, or unsupported frameworks. An ECR image + the `/opt/ml/` path conventions.
+- If you break the conventions it fails silently — data is read from `SM_CHANNEL_<channel name>`, and the model must be saved to `SM_MODEL_DIR`.
 
-## Three Customization Levels
+## Three Levels of Customization
 
-SageMaker training divides by "how much of AWS's provided container you keep as-is":
+In practice, you often need to train a model you wrote yourself in PyTorch or TensorFlow, or you need your own environment that bundles your company's standard libraries. SageMaker training is distinguished by "how much of the AWS-provided container you use as is."
 
-| Method | I Provide | Container | Fits When |
-|---|---|---|---|
-| Built-in Algorithms | (nothing, data only) | AWS Managed | Standard problems, no code needed |
-| Script Mode | One training script | AWS Framework Container | Quick PyTorch/TF code |
-| Framework Container Extension | Script + extra packages | AWS Container + requirements | Framework as-is, only add dependencies |
-| BYOC (self container) | Entire Docker image | Image I built | Special runtime, system dependencies |
+| Approach | What I bring | Container | Suitable situation |
+|------|----------------|---------|------------|
+| Built-in algorithm | (nothing, only data) | AWS managed | Standard problems, no code needed |
+| Script mode | One training script | AWS framework container | Run PyTorch/TF code quickly |
+| Framework container extension | Script + extra packages | AWS container + requirements | Framework stays as is, only dependencies added |
+| BYOC (own container) | The whole Docker image | An image I built | Special runtime, system dependencies |
 
-Core intuition: **Higher is easier, lower is freer.** Since exams ask "do X with minimum effort", choosing script mode when requirements are framework code level, and BYOC for system packages or special runtimes, is key.
+- Core intuition: **the higher up, the easier; the lower down, the freer.**
+- The exam asks in the form "do X with the least effort" → if the requirement is at the **framework-code level, use script mode**; if it is at the **system-package or special-runtime level, use BYOC**.
+- Whichever approach you pick, **the lifecycle of the training job and the path conventions are the same**. These conventions are the real point of exam questions.
 
-> 💡 **Related Theory**: This hierarchy exemplifies "separation of concerns". Split training logic (my code) from execution environment (container), so when environment is stable you swap only code (script mode), only when environment itself is special do you build it (BYOC). Dropping unnecessarily to lower tiers incurs Docker build and maintenance burden, so "go down only as needed" is the rule.
+This layered structure is a classic case of "separation of concerns." If you separate the training logic (my code) from the execution environment (the container), then when the environment is stable you just swap the code (script mode), and you build the environment yourself only when the environment itself is special (BYOC). Dropping to a lower layer than necessary saddles you with the burden of building and maintaining Docker images, so the principle is "go down only as far as needed."
 
-## Script Mode: Framework Code As-Is
+## The Lifecycle of One Training Job
 
-Script mode runs training scripts written in PyTorch, TensorFlow, Scikit-learn, etc. inside an AWS-managed framework container. No Docker needed—just one `.py` file and an Estimator.
+When you call `fit()`, the sequence below runs regardless of the approach. You need to pinpoint where things break on top of this diagram.
+
+```text
+estimator.fit({'training': 's3://.../train/'})
+   │
+   ├─ ① Provision the training instance      (ml.g5.xlarge etc.; billing starts here)
+   ├─ ② Pull the container image             (AWS framework image or my ECR image)
+   ├─ ③ S3 → /opt/ml/input/data/<channel>/   (File mode copies everything before starting)
+   ├─ ④ Download source_dir + install requirements.txt
+   ├─ ⑤ Run entry_point                      (BYOC runs the container with the `train` argument)
+   ├─ ⑥ /opt/ml/model/ → model.tar.gz → upload to S3 output_path
+   └─ ⑦ Shut down the instance               (billing ends)
+```
+
+- If the data is not visible at ③ → **channel name mismatch**.
+- If ④ takes a long time → **the dependencies are heavy** (better to bake them into an image).
+- If there is no artifact at ⑥ → **violation of the save-path convention**.
+
+## Script Mode: Framework Code As Is
+
+Script mode runs a training script written in PyTorch, TensorFlow, Scikit-learn, and so on inside an AWS-managed framework container. You never touch Docker; all you need is a single `.py` file and an Estimator.
 
 ```python
 from sagemaker.pytorch import PyTorch
 
 estimator = PyTorch(
-    entry_point='train.py',        # My training script
-    source_dir='src',              # Folder with dependent modules
+    entry_point='train.py',        # my training script
+    source_dir='src',              # folder with dependent modules
     role=role,
-    framework_version='2.0',       # AWS-provided PyTorch version
+    framework_version='2.0',       # PyTorch version provided by AWS
     py_version='py310',
     instance_type='ml.g5.xlarge',
     instance_count=1,
@@ -39,30 +65,59 @@ estimator = PyTorch(
 estimator.fit({'training': 's3://my-bucket/train/'})
 ```
 
-The training script follows SageMaker's promised environment variables and path conventions. Data arrives via `SM_CHANNEL_TRAINING`, model save location via `SM_MODEL_DIR` etc.
+The training script follows the environment variables and path conventions that SageMaker promises. This table is the contract that applies in common to both script mode and BYOC.
+
+| Environment variable | Container path | Meaning |
+|-----------|-------------|------|
+| `SM_CHANNEL_<channel name>` | `/opt/ml/input/data/<channel name>/` | Input data per channel given to `fit()`. The variable name is built from the channel name in uppercase |
+| `SM_MODEL_DIR` | `/opt/ml/model` | **Only what you save here** is bundled into `model.tar.gz` and uploaded to S3 |
+| `SM_OUTPUT_DATA_DIR` | `/opt/ml/output/data` | By-products other than the model (evaluation reports, plots, etc.) |
+| (hyperparameters) | `/opt/ml/input/config/hyperparameters.json` | Values passed through `hyperparameters=`. They also reach the script as CLI arguments |
+| `SM_NUM_GPUS` | — | Number of GPUs the instance has |
+| `SM_HOSTS` / `SM_CURRENT_HOST` | — | In distributed training, the list of all hosts / my host name |
 
 ```python
-# Inside train.py
+# inside train.py
 import argparse, os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=10)
 parser.add_argument('--lr', type=float, default=0.001)
-# Standard paths SageMaker injects
+# standard paths injected by SageMaker
 parser.add_argument('--train', default=os.environ['SM_CHANNEL_TRAINING'])
 parser.add_argument('--model-dir', default=os.environ['SM_MODEL_DIR'])
 args = parser.parse_args()
 
 # ... training ...
-# Saving model to SM_MODEL_DIR triggers SageMaker's auto S3 upload
+# if you save the model to SM_MODEL_DIR, SageMaker uploads it to S3
 torch.save(model.state_dict(), os.path.join(args.model_dir, 'model.pth'))
 ```
 
-> ⚠️ **Pitfall**: Save model anywhere and SageMaker won't upload to S3. Must save to `SM_MODEL_DIR` (`/opt/ml/model` inside container)—only then it auto-compresses and uploads to S3 output path at job end. Likewise, training data channels pair with `SM_CHANNEL_<channelname>` environment variables from the `fit()` call.
+> ⚠️ **Pitfall**: If you save the model anywhere else, SageMaker will not upload it to S3. You must save it to `SM_MODEL_DIR` (`/opt/ml/model` inside the container) so that it is automatically compressed and uploaded to the S3 output path when training ends. Likewise, the channel name given to `fit()` and the `SM_CHANNEL_<channel name>` environment variable are paired with each other for the training data.
+
+### Data Input Modes — They Decide the Start-Up Delay
+
+Even with the same script, how the S3 data is read in changes the start-up delay and throughput.
+
+| Input mode | Behavior | Suitable situation |
+|-----------|------|------------|
+| **File** (default) | Copies the entire dataset to the instance volume and then starts training | The data fits on the volume, and is accessed repeatedly over several epochs |
+| **Pipe** | Streams from S3. No wait for copying | Data larger than the volume, sequential reads |
+| **FastFile** | Looks like a file system but actually lazy-loads only the parts needed | Large data that needs random access and where you want to cut the start-up delay |
+
+```python
+from sagemaker.inputs import TrainingInput
+
+train_input = TrainingInput(
+    s3_data='s3://my-bucket/train/',
+    input_mode='FastFile'          # start training right away without a full copy
+)
+estimator.fit({'training': train_input})
+```
 
 ## Framework Container Extension: requirements.txt
 
-Using script mode but need extra Python packages? No need to build Docker—just add `requirements.txt` to `source_dir`. SageMaker auto-installs on container start.
+If you use script mode but need extra Python packages, you do not have to build a new Docker image — just put a `requirements.txt` in `source_dir`. SageMaker installs it automatically when the container starts.
 
 ```
 # src/requirements.txt
@@ -70,36 +125,49 @@ transformers==4.35.0
 datasets==2.14.0
 ```
 
-This is the most common middle ground: "framework (PyTorch) as AWS provides it, just add a few libraries on top". System-level packages (apt packages, CUDA version changes) don't work this way and need BYOC.
+This approach is the most common middle ground: "the framework (PyTorch) stays AWS's, and only a few libraries are added on top."
 
-> 💡 **Related Theory**: Auto-installing requirements.txt is a compromise between "immutable infrastructure" and "mutable config". Base image stays AWS-validated (immutable), only Python dependencies added declaratively on top. But installation happens per training, causing startup lag. If dependencies are heavy or rarely change, baking them into BYOC image may be faster.
+**The method depends on "what is needed"** — memorize the boundary at which you have to reach for Docker with this table.
 
-## BYOC: Bring Your Own Container
+| What is needed | Solution | Docker needed? |
+|-----------|----------|:---:|
+| Python package (pip-installable) | `source_dir/requirements.txt` | ✕ |
+| Company-shared Python modules (`.py`) | Place them in `source_dir` or use `dependencies=[...]` | ✕ |
+| Environment variables at run time | `Estimator(environment={...})` | ✕ |
+| System packages (apt: ffmpeg, libsndfile, etc.) | **BYOC** | ✓ |
+| A specific CUDA/driver combination | **BYOC** | ✓ |
+| Frameworks/languages AWS does not provide | **BYOC** | ✓ |
 
-BYOC (Bring Your Own Container) means building a Docker image directly, uploading to ECR, and training with it. Use when you need special runtimes (specific CUDA·driver combos), system packages (apt), or frameworks/languages AWS doesn't support.
+> ⚠️ **Pitfall**: A choice that writes an apt package name such as `ffmpeg` into `requirements.txt` is wrong. pip looks only at the Python package index → it will not be installed. "Can pip do it?" is the practical criterion separating script mode from BYOC.
 
-SageMaker's container contract is simple: training must run the container with `train` argument, following SageMaker's promised paths.
+The automatic installation from requirements.txt is a compromise between "immutable infrastructure" and "mutable configuration." The base image stays as AWS validated it (immutable), and only the Python dependencies on top are added declaratively. But since installation happens on every training run, it adds start-up delay. If the dependencies are heavy or rarely change, baking them in with BYOC can actually be faster.
+
+## BYOC: Your Own Container
+
+BYOC (Bring Your Own Container) means building a Docker image yourself, pushing it to ECR, and training with that image. You use it when you need a special runtime (for example a specific CUDA/driver combination), system packages (apt), or a framework or language that AWS does not support.
+
+The convention SageMaker requires of the container is simple. At training time the container must be runnable with the `train` argument, and it follows the paths SageMaker promises.
 
 ```dockerfile
 FROM ubuntu:22.04
-RUN apt-get update && apt-get install -y python3-pip libsndfile1   # System packages
+RUN apt-get update && apt-get install -y python3-pip libsndfile1   # system packages
 RUN pip3 install torch custom-internal-lib
 
 COPY train.py /opt/program/train.py
-# SageMaker runs container with 'train' command
+# SageMaker runs the container with the 'train' command
 ENTRYPOINT ["python3", "/opt/program/train.py"]
 ```
 
 ```
-SageMaker's promised paths inside container:
-/opt/ml/input/data/<channelname>/   ← Input data (copied from S3)
-/opt/ml/input/config/          ← Hyperparameters (hyperparameters.json), etc.
-/opt/ml/model/                 ← Model save location (uploads to S3)
-/opt/ml/output/                ← Output on failure
+SageMaker's promised paths inside the container:
+/opt/ml/input/data/<channel>/  ← input data (copied from S3)
+/opt/ml/input/config/          ← hyperparameters (hyperparameters.json), etc.
+/opt/ml/model/                 ← where the model is saved (uploaded to S3)
+/opt/ml/output/                ← output on failure
 ```
 
 ```python
-# Training with ECR image
+# train with an ECR image
 from sagemaker.estimator import Estimator
 estimator = Estimator(
     image_uri='123456789012.dkr.ecr.us-east-1.amazonaws.com/my-train:latest',
@@ -108,17 +176,81 @@ estimator = Estimator(
 estimator.fit({'training': 's3://my-bucket/train/'})
 ```
 
-> 📚 **Case**: An audio AI team needed system libraries (libsndfile, ffmpeg) and a specific CUDA version for audio preprocessing. Initially they tried script mode with requirements.txt for the system packages, but pip can't install those—failed. With BYOC, baking ffmpeg and libsndfile via apt into the image and uploading to ECR worked cleanly. Lesson: Python packages → script mode+requirements, system packages·runtime → BYOC.
+A voice AI team needed system libraries (libsndfile, ffmpeg) and a specific CUDA version for audio preprocessing. At first they tried to solve it with script mode plus requirements.txt, but system packages cannot be installed with pip, so it failed. When they pushed an image with ffmpeg and libsndfile baked in via apt to ECR and used BYOC, it ran cleanly. Lesson: for Python packages use script mode + requirements; for system packages or runtimes use BYOC.
+
+**Concept: a compromise — the container is mine, the interface is SageMaker's**
+If you install the `sagemaker-training` toolkit in a BYOC image, you can pass `entry_point` and run it inside your own image just like script mode. The system dependencies are baked into the image, and the training code is still swapped as a `.py` file. The sense that "BYOC does not mean everything by hand" — **only the environment goes down while the code interface stays on top** — is closer to the standard in practice.
+
+## Choosing the Training Instance
+
+Separately from the customization level, which instance to run on is also a judgment point on the exam.
+
+| Family | Characteristics | Suitable training |
+|------|------|------------|
+| `ml.m5` / `ml.c5` | CPU general purpose / compute optimized | Tree-based and traditional ML, small tabular data |
+| `ml.g5` | NVIDIA A10G GPU | Small and medium deep learning, fine-tuning. A reasonable default for the cost |
+| `ml.p4d` | 8 NVIDIA A100 + EFA support | Large-scale distributed training |
+| `ml.p5` | NVIDIA H100 | Training very large models |
+| `ml.trn1` | AWS Trainium (training-only accelerator) | Deep learning training, when cost efficiency matters |
+
+The standard way to cut cost is **managed Spot training**. In exchange it can be interrupted, so it is paired with checkpoints.
+
+```python
+estimator = PyTorch(
+    entry_point='train.py', source_dir='src', role=role,
+    framework_version='2.0', py_version='py310',
+    instance_type='ml.g5.2xlarge', instance_count=1,
+    output_path='s3://my-bucket/output/',
+    use_spot_instances=True,                    # managed Spot: large savings vs. on-demand
+    max_run=3600,                               # max time of the training itself (seconds)
+    max_wait=7200,                              # total wait including Spot waiting (seconds). Must be >= max_run
+    checkpoint_s3_uri='s3://my-bucket/ckpt/',   # resume from here on interruption
+)
+```
+
+If you turn on Spot and do not set `checkpoint_s3_uri`, it trains **from scratch** every time it is interrupted. A reversal in which the retraining cost exceeds the savings really does happen. Spot + checkpoints are one set.
+
+## Roundup of Situations That Frequently Blow Up
+
+| Symptom | Cause | Action |
+|------|------|------|
+| Training succeeds but there is no `model.tar.gz` in S3 | Saved to a path other than `SM_MODEL_DIR` | Save to `/opt/ml/model` |
+| `FileNotFoundError: /opt/ml/input/data/train` | The channel name in `fit()` does not match the one the code references | Match the channel name with `SM_CHANNEL_<channel name>` |
+| `ModuleNotFoundError: transformers` | `requirements.txt` is outside `source_dir` | Move it inside `source_dir` |
+| An apt package is not installed | pip cannot install system packages | Bake it into the image with BYOC |
+| Several minutes of delay before training starts | Heavy dependency installs on every run + File mode full copy | Put dependencies in the image, consider FastFile/Pipe for input |
+| Restarts from scratch after a Spot interruption | No checkpoint configured | `checkpoint_s3_uri` + resume logic in the script |
+| BYOC training fails immediately | The container cannot handle being run with the `train` argument | Check the ENTRYPOINT/CMD convention |
 
 ## How to Choose
 
-Exam decision flow: ① Standard problem, no code needed → built-in algorithms. ② PyTorch/TF code exists, standard environment → script mode. ③ Need just a few Python packages on top → requirements.txt extension. ④ System packages, special runtime, unsupported framework → BYOC. When "minimum effort" appears, pick as high (script mode) as possible.
+```text
+Do I have my own code?
+ ├─ No (standard problem)                   → built-in algorithm
+ └─ Yes
+     ├─ Standard PyTorch/TF/SKLearn environment  → script mode          ← "minimum effort" keyword
+     ├─ + only pip-installable packages added    → requirements.txt extension
+     └─ + apt, CUDA, unsupported runtime         → BYOC (ECR image)
+```
 
-## Summary
+- "Minimum effort," "minimize code changes" → pick as **high up** as possible.
+- "System dependencies," "specific driver," "SageMaker does not support the language we use" → **BYOC**.
+- Whichever path you take, the `/opt/ml/` conventions remain the same.
 
-Custom training is a spectrum of "how much of my code I bring". **Script mode** brings only training script, runs in AWS framework container, follows `SM_CHANNEL_*`/`SM_MODEL_DIR` conventions. **requirements.txt extension** adds only Python packages. **BYOC** builds entire Docker image directly, controlling system packages and special runtimes, but respects `/opt/ml/` path and `train` execution contracts. The exam mapping is critical: "framework code minimal changes" → script mode, "system dependencies" → BYOC.
+In the next lesson we look at distributed training, used when the model does not fit on one machine or training is too slow.
 
-Next we see distributed training when a model doesn't fit one machine or training is too slow.
+## 📖 Glossary
+
+- **Script mode**: A way of passing only my training script (`.py`) and leaving the execution environment to the AWS container. You do not have to deal with Docker.
+- **BYOC**: Bring Your Own Container. A way of building a Docker image yourself, pushing it to ECR, and training with it.
+- **ECR**: AWS's container image registry. If you push a BYOC image here, SageMaker pulls and uses it.
+- **Estimator**: A SageMaker SDK object that holds "train this code, on this instance, with these settings." You run it with `fit()`.
+- **Channel**: The label for a bundle of input data passed to `fit()`. You name it like `training` or `validation`, and the container path is built from that name.
+- **`SM_MODEL_DIR`**: `/opt/ml/model` inside the container. Only files saved here are uploaded to S3 after training ends.
+- **`model.tar.gz`**: The artifact archive SageMaker builds by bundling the model directory. It becomes the input for later deployment.
+- **Input mode**: How S3 data is put into the container. File (copy everything), Pipe (streaming), FastFile (lazy loading when needed).
+- **Managed Spot training**: A training mode that uses spare capacity cheaply but can be interrupted. Used together with checkpoints.
+- **Checkpoint**: The intermediate training state saved periodically. Even after an interruption, training can resume from that point rather than from the start.
 
 ---
 

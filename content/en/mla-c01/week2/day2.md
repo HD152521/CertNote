@@ -1,16 +1,22 @@
 # Day 2 - Data Catalog & ETL: AWS Glue and DataBrew
 
-Yesterday we collected data into the S3 data lake. But simply throwing objects into S3 isn't enough for analysis or training. You need to know **"what data is in this bucket, and under what schema?"** so you can query with Athena and train with SageMaker. Managing this metadata is what **data cataloging** is about, and preparing data by cleaning and transforming it is what **ETL** means.
+## 📌 Key Takeaways
 
-Today's stars are **AWS Glue** — a serverless data integration service. We'll cover crawlers, the data catalog, ETL Jobs, and even the no-code tool DataBrew.
+- The **Glue Data Catalog** is a Hive Metastore-compatible metadata repository. Athena, Redshift Spectrum, EMR, and SageMaker share it.
+- A **Crawler** scans S3, automatically infers schemas and partitions, and creates tables in the catalog.
+- A **Glue ETL Job** is serverless Spark transformation. The billing unit is **DPU × run time**. For small data, a Python Shell job is the better fit.
+- **DataBrew** is a no-code GUI data preparation tool. The keywords "non-technical users" and "visual profiling" point to it as the answer.
+- The standard flow is **Raw (JSON/CSV) → Crawler·Catalog → ETL/DataBrew → Curated (Parquet, partitioned)**.
 
 ## Glue Data Catalog: The Metadata Repository of a Data Lake
 
-Glue Data Catalog is a **Hive Metastore-compatible metadata repository**. It stores information *about* the data, not the data itself — table names, columns, types, S3 locations, partitions.
+Simply dropping objects into S3 lets you neither analyze nor train. You have to know "what data is in this bucket, with what schema" before you can query it with Athena and train on it with SageMaker.
+
+The Glue Data Catalog is a **Hive Metastore-compatible metadata repository**. It stores not the data itself but information about the data — table names, columns, types, S3 locations, partitions.
 
 ```
-Glue Data Catalog Structure:
-Database (logical group)
+Glue Data Catalog structure:
+Database (logical grouping)
 └─ Table (S3 location + schema + partitions)
    ├─ Columns: customer_id (string), amount (double), ts (timestamp)
    ├─ Location: s3://ml-datalake/curated/transactions/
@@ -18,21 +24,35 @@ Database (logical group)
    └─ Partitions: year=2026/month=06, year=2026/month=05, ...
 ```
 
-This catalog is **shared by Athena, Redshift Spectrum, EMR, SageMaker, and Glue ETL**. Once registered once, every analytics and ML tool sees the same schema. It's the "single source of truth" for table definitions in the data lake.
+This catalog is **referenced in common by Athena, Redshift Spectrum, EMR, SageMaker, and Glue ETL**. Register it once and every analytics/ML tool sees the same schema.
 
-> 💡 **Related Theory**: Glue Data Catalog inherits the concept of Apache Hive's **Metastore**. Hive, created by Facebook in 2009 to use SQL over HDFS, pioneered the core idea of "separating data (HDFS files) from schema (Metastore)." This separation is exactly **schema-on-read**. Unlike traditional databases that enforce schema at write time (schema-on-write), data lakes store the original first and apply schema at read time. This allows flexible accommodation of diverse formats and sources.
+| What it stores | What it does not store |
+|-----------|----------------|
+| Table and column names and types | The actual data rows |
+| S3 location (Location) | A copy of the data |
+| File format · SerDe | Transformation logic |
+| Partition list | Query results |
+
+The Glue Data Catalog is a concept inherited from Apache Hive's **Metastore**. Hive was a system Facebook built in 2009 to use SQL on top of HDFS, and its core idea was to "separate the data (HDFS files) from the schema (Metastore)." This separation is exactly **schema-on-read**. Unlike a traditional DB (schema-on-write) that enforces the schema when data is written, a data lake first stores the original and applies the schema when reading. Thanks to this, it can flexibly accept data of various formats and sources.
+
+| Aspect | schema-on-write (traditional DB) | schema-on-read (data lake) |
+|------|--------------------------|------------------------------|
+| When the schema is enforced | When data is inserted | When data is read |
+| Flexibility | Low (must be defined in advance) | High (accepts the original as is) |
+| Quality guarantee | Guaranteed at the entrance | The reading side is responsible |
+| Fit for ML | Structured only | Structured, semi-structured, and unstructured |
 
 ## Glue Crawler: Automatic Schema Inference
 
-When you have thousands of files in S3, defining each table manually is impractical. **Glue Crawler** scans S3 (or JDBC sources), automatically infers the schema, and creates tables in the catalog.
+When S3 holds thousands of files, defining tables one by one is impractical. A **Glue Crawler** scans S3 (or a JDBC source), automatically infers the schema, and creates tables in the catalog.
 
-How the crawler works:
+How a crawler works:
 
-1. Scan the designated S3 path
-2. Detect file format (Parquet/CSV/JSON, etc.)
+1. Scan the specified S3 path
+2. Detect the file format (Parquet/CSV/JSON, etc.)
 3. Infer columns and types (using classifiers)
 4. Recognize `key=value` directories as partitions
-5. Create/update table in Data Catalog
+5. Create/update tables in the Data Catalog
 
 ```python
 import boto3
@@ -44,20 +64,29 @@ glue.create_crawler(
     Role="arn:aws:iam::123456789012:role/GlueCrawlerRole",
     DatabaseName="ml_datalake",
     Targets={"S3Targets": [{"Path": "s3://ml-datalake/curated/transactions/"}]},
-    Schedule="cron(0 2 * * ? *)",  # Every day at 02:00 UTC
+    Schedule="cron(0 2 * * ? *)",  # every day at 02:00 UTC
 )
 glue.start_crawler(Name="transactions-crawler")
 ```
 
-> 🔍 **Deeper Dive**: If the same folder has files with different schemas, the crawler **splits them into multiple tables (or merges them)**. This behavior is controlled by the crawler's "schema change policy" and "grouping behavior" settings. Exam trap: when you re-run the crawler and new columns are added, it updates the schema by default, but column deletion might be ignored depending on policy. Also, using the "crawl new folders only" option prevents the crawler from full-scanning partitions each time, saving costs.
+If files with different schemas are mixed in the same folder, a crawler either **splits them into several tables or merges them into one**. This behavior is controlled by the crawler's "schema change policy" and "grouping behavior" settings. Exam trap: when you rerun a crawler and a new column has been added, it updates the schema by default, but depending on the policy it may ignore a column deletion. Also, using the "crawl new folders only" option so the crawler does not fully rescan the partitions every time reduces cost.
 
-> ⚠️ **Gotcha**: Instead of re-running the crawler when new partitions are added, you can also use Athena's `MSCK REPAIR TABLE` or `ALTER TABLE ADD PARTITION` to register partitions. Also, if the partition path is Hive-style (`year=2026/`), you can enable **partition projection** to make the crawler recognize partitions without even running it (Day 4).
+**A crawler is not the only way to make new partitions recognized.**
+
+| Method | How | When it is advantageous |
+|------|-------|----------|
+| Rerun the Glue Crawler | Scan the path and register automatically | When the schema changes too |
+| `MSCK REPAIR TABLE` | Athena sweeps the Hive-style paths and registers partitions | When only the partitions have grown |
+| `ALTER TABLE ADD PARTITION` | Explicitly add a specific partition | When adding only a few partitions |
+| Partition projection | Define the path rule up front and compute without scanning | When partitions are very numerous and regular |
+
+> ⚠️ **Trap**: In a scenario like "I added a partition but Athena cannot find it," unconditionally choosing to rerun the crawler may not be the best in terms of cost and time. If only the partitions grew with no schema change, `MSCK REPAIR TABLE` or partition projection is lighter.
 
 ## Glue ETL Job: Serverless Data Transformation
 
-While the catalog is "what's where," **Glue ETL Job** is "how to transform data." It runs serverless on Apache Spark (or Python Shell, Ray).
+If the catalog is "what is where," a **Glue ETL Job** is "how the data is transformed." It runs serverless on top of Apache Spark (or Python Shell, Ray).
 
-The core abstraction is **DynamicFrame**. Similar to Spark DataFrame, but stronger at handling semi-structured data with inconsistent schemas (e.g., `ResolveChoice` resolves type conflicts).
+The core abstraction is the **DynamicFrame**. It is similar to a Spark DataFrame, but it is strong at handling semi-structured data whose schema is not uniform (for example, resolving type conflicts with `ResolveChoice`).
 
 ```python
 import sys
@@ -66,15 +95,15 @@ from pyspark.context import SparkContext
 
 glueContext = GlueContext(SparkContext.getOrCreate())
 
-# Read from catalog
+# Read from the catalog
 dyf = glueContext.create_dynamic_frame.from_catalog(
     database="ml_datalake", table_name="raw_transactions"
 )
 
-# Remove nulls + select columns (cleaning)
+# Drop missing values + select columns (cleansing)
 cleaned = dyf.drop_nulls().select_fields(["customer_id", "amount", "ts"])
 
-# Write to Curated zone as Parquet (partitioned)
+# Write to the Curated zone as Parquet (partitioned)
 glueContext.write_dynamic_frame.from_options(
     frame=cleaned,
     connection_type="s3",
@@ -86,55 +115,124 @@ glueContext.write_dynamic_frame.from_options(
 )
 ```
 
-Glue Job billing is based on **DPU (Data Processing Unit)** — 4 vCPU + 16GB memory — and execution time (in seconds). Being serverless, there's no cluster provisioning.
+A Glue Job's billing unit is the **DPU (Data Processing Unit)** — 4 vCPU + 16GB memory — and it is proportional to run time. It is serverless, so there is no cluster provisioning.
 
-> 🔍 **Deeper Dive**: Glue ETL has three execution types. (1) **Spark**: Large-scale distributed transformations. (2) **Python Shell**: Simple scripts on small data (avoiding Spark overhead). (3) **Glue Streaming**: Process Kinesis/Kafka streams in microbatches. Running a Spark Job on small data is slow and expensive due to cluster startup overhead. On the exam: if you see "small MB-scale transformation," Python Shell is more appropriate.
+**Three execution types of Glue ETL** — data size decides the choice.
 
-> 💡 **Related Theory**: Know the difference between ETL and ELT. Traditional ETL transforms first, then loads to a data warehouse. In cloud data lakes, it's common to Load first to Raw, then Transform — that's ELT. S3 is cheap, and compute is separate. Glue supports both, but in data lake context, ELT patterns are common.
+| Type | Engine | Suitable data | Caution |
+|------|------|-------------|------|
+| Spark | Distributed Spark | Large-scale transformations of several GB to TB | Cluster start-up overhead |
+| Python Shell | Single Python process | Simple scripts for several MB to several hundred MB | No distributed processing |
+| Glue Streaming | Spark Structured Streaming | Kinesis/Kafka micro-batches | Always-on running cost |
+
+Using a Spark Job on small data is slow and expensive because of the cluster start-up overhead. On the exam, for "a small transformation of a few MB," Python Shell is the better fit.
+
+You should know the difference between ETL (Extract-Transform-Load) and ELT (Extract-Load-Transform). Traditional ETL transforms first and then loads into a data warehouse. In a cloud data lake, ELT — load into Raw first, then Transform — is common, because S3 is cheap and compute can be separated. Glue supports both, but in a data lake context the ELT pattern is used often.
 
 ## Glue DataBrew: No-Code Data Preparation
 
-When a data analyst wants to profile and clean data *visually* without writing Spark code, they use **Glue DataBrew**.
+When a data scientist wants to cleanse and transform data **visually** without writing Spark code, use **Glue DataBrew**.
 
-- **250+ predefined transformations**: Null handling, outlier removal, one-hot encoding, normalization, date parsing, etc.
-- **Data profiling**: Automatically report column distributions, null rates, correlations, outliers.
-- **Recipes**: Save applied transformation steps for reuse and scheduling.
-- Work in GUI without code, output results to S3.
+- **250+ predefined transformations**: missing-value handling, outlier removal, one-hot encoding, normalization, date parsing, and so on.
+- **Data profiling**: automatically reports per-column distributions, missing ratios, correlations, and outliers.
+- **Recipe**: save the transformation steps you applied to reuse and schedule them.
+- Work in the GUI without code, and output the result to S3.
 
 | Aspect | Glue ETL Job | Glue DataBrew |
 |------|------|------|
 | Interface | Code (PySpark/Scala) | No-code GUI |
-| User | Data Engineer | Data Analyst/Scientist |
-| Scale | Large distributed | Small-to-medium + profiling |
-| Strength | Complex custom logic | Fast exploration/cleaning, visualization |
+| User | Data engineer | Data analyst/scientist |
+| Scale | Large-scale distributed | Small to medium + profiling |
+| Strength | Complex custom logic | Fast exploration and cleansing, visualization |
+| Reuse unit | Script | Recipe |
+| Answer keywords | "large-scale transformation", "custom logic" | "no-code", "non-technical users", "profiling" |
 
-> 🔍 **Deeper Dive**: DataBrew's real value in ML preprocessing is **data profiling**. Before building a model, you quickly discover facts like "this column has 40% null rate," "this feature has zero correlation with the target" — without code. This connects directly to Day 3's EDA (Exploratory Data Analysis). On the exam, keywords like "no-code," "non-technical user," "visual data prep/profiling" point to DataBrew.
+DataBrew's real value is **data profiling** in ML preprocessing. Before building a model, you can quickly discover facts like "this column has a 40% missing rate" or "this feature has zero correlation with the target" without code. This connects directly to the EDA (Exploratory Data Analysis) covered on Day 3.
 
 ## The Big Picture: Ingest → Catalog → Transform
 
 ```
-S3 Raw Zone (JSON/CSV)
+S3 Raw zone (JSON/CSV)
    │
-   ├─ Glue Crawler ──→ Glue Data Catalog (register schema)
+   ├─ Glue Crawler ──→ Glue Data Catalog (schema registration)
+   │                        │
+   │                        └──> Shared by Athena / Redshift Spectrum / EMR / SageMaker
    │
-   ├─ Glue ETL Job ──→ Clean & Transform (DynamicFrame, Spark)
+   ├─ Glue ETL Job ──→ Cleansing and transformation (DynamicFrame, Spark)
    │                     or
-   ├─ Glue DataBrew ──→ No-code cleaning & profiling
+   ├─ Glue DataBrew ──→ No-code cleansing and profiling
    │
    ▼
-S3 Curated Zone (Parquet, partitioned)
+S3 Curated zone (Parquet, partitioned)
    │
    ▼
 Athena / Redshift / SageMaker (Day 3, training)
 ```
 
-## Summary
+**Tool selection summary**
 
-Glue is the central hub of ML data preparation. **Crawler** infers the schema and registers it in **Data Catalog**, then **ETL Job** (code) or **DataBrew** (no-code) cleans and transforms. All tools share the same catalog, enabling consistent schema for analytics and training.
+| Requirement | Answer |
+|---------|------|
+| Automatically register the schema of thousands of files | Glue Crawler |
+| Several engines share the same table definitions | Glue Data Catalog |
+| Large-scale distributed transformation, custom logic | Glue ETL Spark Job |
+| Simple transformation of a few MB, avoiding overhead | Glue Python Shell Job |
+| Visual cleansing and profiling without code | Glue DataBrew |
+| Transform a stream in micro-batches | Glue Streaming Job |
 
-Next, we'll explore how to query data prepared this way using **Athena and Redshift**, and cover the basics of EDA (Exploratory Data Analysis).
+## What Determines Glue Cost and Performance
 
----
+Glue is serverless but not free. The charge is the number of DPUs × run time, so a bad configuration quietly becomes expensive.
+
+| What to adjust | If raised | If lowered | Decision criterion |
+|----------|-------|-------|----------|
+| DPU count (workers) | Parallelism up, run time down | Cost down, run time up | Does the data actually parallelize? |
+| Job type | Spark is strong at large scale | Python Shell starts faster | Data size (a few MB vs GB and above) |
+| Number of input files | Parallel reads possible | Too many files add overhead | Keep any single file from being too large or too small |
+| Output partitioning | Later query scan volume down | Too many partitions raise metadata | The consuming side's query patterns |
+| Job bookmark | Prevents reprocessing already processed data | If turned off, everything is reprocessed every time | Whether processing is incremental |
+
+- Using a Spark Job on small data makes the cluster start-up overhead longer than the actual processing time.
+- If the output splits into tens of thousands of small files, the later Athena and training stages become slow. It is better to merge them to an appropriate size.
+
+## What You Often Run Into When Operating Crawlers
+
+| Situation | Cause | Response |
+|------|------|------|
+| The same folder splits into several tables | Each file has a different schema | Separate the paths or adjust the grouping policy |
+| Crawler cost keeps rising | It rescans all partitions every time | Use the "crawl new folders only" option |
+| A column was deleted but remains in the catalog | The schema change policy ignores deletions | Set the policy explicitly |
+| Athena cannot find a new partition | The partition is not registered in the catalog | `MSCK REPAIR TABLE` or partition projection |
+| A type is inferred differently from what was intended | Limits of the classifier's automatic inference | Specify a custom classifier or edit the table definition |
+
+> ⚠️ **Trap**: A crawler is not "run it once and you are done." In a lake where data keeps arriving, you need to judge when to run it periodically on a schedule, or switch to a lighter means when only the partitions are growing.
+
+## ETL Design Checklist
+
+| Question | Judgment |
+|------|------|
+| Is the data a few MB or GB and above? | MB means Python Shell, GB and above means Spark |
+| Is the schema irregular? | Use DynamicFrame's ResolveChoice |
+| What is the output format? | For analytics/training, Parquet + Snappy |
+| What do you partition by? | The column the consuming side filters on most often |
+| Do you reprocess everything each time? | Incremental processing with job bookmarks |
+| Is there someone who can write code? | If not, DataBrew; if so, an ETL Job |
+| Is the original preserved? | Never overwrite the Raw zone |
+
+In the next note we query the data prepared this way with **Athena and Redshift** and look at the basics of EDA (Exploratory Data Analysis).
+
+## 📖 Glossary
+
+- **Data catalog**: A metadata ledger recording which tables exist where with what schema. It holds no data itself.
+- **Hive Metastore**: The classic metadata repository that manages data and schema separately. The prototype of the Glue Catalog.
+- **schema-on-read**: A method that leaves the data as the original when storing and applies the schema at read time. The default of a data lake.
+- **Crawler**: A tool that sweeps a store, infers file formats, columns, and partitions, and creates tables in the catalog.
+- **SerDe**: A serialization/deserialization rule that defines how to read and write a file's bytes as rows and columns.
+- **DynamicFrame**: A data structure provided by Glue. It is strong at handling semi-structured data with an irregular schema.
+- **DPU (Data Processing Unit)**: Glue's billing and performance unit. One bundle of 4 vCPU + 16GB memory.
+- **ETL vs ELT**: Whether you load after transforming or transform after loading. Cloud data lakes usually use ELT.
+- **Recipe**: In DataBrew, the unit for saving the applied transformation steps to reuse and schedule them.
+- **Partition projection**: A setting that defines the path rule in advance so that partitions are computed without scanning.
 
 ## 📝 Practice Questions
 

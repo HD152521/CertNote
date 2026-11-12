@@ -1,78 +1,181 @@
 # Day 4 - The Human Role in ML Development: Labeling, Feedback, and Iterative Improvement
 
-When people think of ML, they often get the impression that "machines do everything themselves." The reality is nearly the opposite. Behind every good ML system, **there is always a person**. People label data with correct answers (labeling), evaluate the model's responses and give feedback, and iteratively refine the model with that feedback (iterative improvement). Today we organize "the human role" that pervades the entire ML lifecycle.
+## 📌 Key Takeaways
 
-AIF-C01 frequently asks about this topic in the context of "Human-in-the-loop" and Responsible AI.
+- ML is **collaboration between people and machines**. The impression that "the machine does everything by itself" is nearly the opposite of reality.
+- **Labeling**: People attach correct answers to data. It is the **foundation of supervised learning**, and if the labels are wrong, the model learns wrongly too.
+- **Feedback**: People evaluate and correct the model's answers. In generative AI, **RLHF** is the representative technique.
+- **Human-in-the-loop (HITL)**: The more important or risky a decision, the more a person does the final review and approval. It is a core safeguard of responsible AI.
+- ML is not "completed" but **"continuously improved."** Take people out and the model grows stale through drift.
 
 ## Why People Are Needed
 
-We said models learn patterns from data. But **who tells the model "this photo is a cat"?** The machine doesn't know it from the start by itself. People must tell it. Furthermore, people ultimately judge whether the model's answers are correct or wrong, and what is inappropriate.
+- AIF-C01 asks about this topic in the context of the **"Human-in-the-loop" (a loop in which people intervene)** concept and responsible AI.
+- **Who tells the model "this photo is a cat"?** The machine doesn't know it from the start; people have to tell it.
+- **Ultimately judging** whether the model's answers are right or wrong, and what is inappropriate, is also **done by people**.
 
-> 💡 **Related Theory**: ML learning methods broadly divide into **Supervised Learning** and **Unsupervised Learning**. Supervised learning learns from pairs of "input + correct answer (label)," while unsupervised learning learns from data structure alone without answers. Human labeling is particularly important for supervised learning. At exam entry level, remembering "with labels → supervised, without labels → unsupervised" is enough.
+Of the three learning types from Week 1 (supervised, unsupervised, reinforcement), the one that directly depends on human labeling is **supervised learning**. Supervised learning learns from "input + correct answer (label)" pairs, while unsupervised learning learns from the structure of the data alone, without answers. At exam entry level, remembering "with labels → supervised, without labels → unsupervised" is enough.
 
 ## 1. Data Labeling — Attaching Correct Answers
 
-Data labeling is the work of attaching **"this is what"** labels to raw data. Supervised learning models learn patterns by seeing these labels.
+- The work of attaching **a "this is what" answer key (label)** to raw data.
+- A supervised learning model learns patterns by looking at these labels.
 
-| Data Type | Labeling Example |
-|-----------|-----------------|
-| Images | Mark "this photo is cat/dog," draw boxes around objects |
-| Text | Mark "this review is positive/negative," tag person names |
-| Audio | Listen to recording and transcribe to text |
+| Data type | Labeling examples |
+|------------|-----------|
+| Image | Marking "this photo is a cat/dog," drawing boxes around objects in a photo |
+| Text | Marking "this review is positive/negative," tagging people's names within sentences |
+| Audio | Listening to a recording and transcribing it into text |
 
-Labeling is **slow, expensive, and labor-intensive**. Imagine attaching labels one by one to tens of thousands of photos. That's why managing label quality is a major challenge in ML projects.
+- Labeling is **slow, expensive, and labor-intensive** (think of attaching labels one by one to tens of thousands of photos).
+- That is why **labeling quality control** is a major challenge in ML projects.
 
-> ⚠️ **Pitfall**: If labels are wrong, models learn wrong too. If a labeler wrongly marks a dog photo as "cat," the model learns that incorrect answer. That's why multiple people often label the same data to check agreement, or quality control stages are added to manage label quality.
+> ⚠️ **Pitfall**: If the labels are wrong, the model learns wrongly too. If a labeler mistakenly tags a photo of a dog as "cat," the model learns that wrong answer as it is. That is why quality is managed by having several people label the same data and checking their agreement, or by adding a review step.
 
-> 📚 **Example**: AWS has a tool called **Amazon SageMaker Ground Truth** for labeling. It manages human labelers and provides features that automate some labeling to reduce human work. For the exam, it's enough to know "there are AWS services that help with labeling."
+AWS has a labeling tool called **Amazon SageMaker Ground Truth**. It manages human labelers and provides features that lighten the people's workload through automatic labeling. For the exam, it is enough to know that "there is an AWS service that helps with labeling."
 
 ## 2. Feedback — Evaluating and Correcting the Model's Answers
 
-When a model produces an answer, people **evaluate and correct** it. This feedback is the key fuel for improving the model. Especially in generative AI, human feedback plays a decisive role.
+- When the model produces an answer, people **evaluate and correct** it. This feedback is the key fuel for improving the model.
+- Human feedback is especially **decisive in generative AI**.
+- Feedback doesn't end after one round: the **loop** of the model answers → people evaluate → the model improves → it answers again keeps turning.
 
-> 💡 **Related Theory**: A signature technique for refining generative AI (large language models) is **RLHF (Reinforcement Learning from Human Feedback)**. People evaluate which of several model responses is better, and based on that evaluation, the model is adjusted in the "direction humans prefer." This human feedback is core to making chatbots more helpful and less risky.
+The representative technique for refining generative AI (large language models) is **RLHF (Reinforcement Learning from Human Feedback)**. When people evaluate which of the model's several answers is better, the model is adjusted toward "the direction people prefer" based on that evaluation. This human feedback is the key to making a chatbot answer in a more helpful and less risky way.
 
-Feedback doesn't end once. The model answers → people evaluate → the model improves → answers again—this **loop** keeps turning.
+## 3. Human-in-the-loop — A Person Is Inside the Loop
 
-## 3. Human-in-the-Loop — People in the Loop
+- **HITL** is a **design that deliberately inserts human judgment** into the operation of an ML system.
+- When the model is unsure, the decision is important, or the risk is high → **don't decide automatically; hand it to a person**.
 
-**Human-in-the-loop (HITL)** refers to a design that intentionally weaves human judgment into ML system operations. When the model is uncertain, the decision is important, or risk is high, **we don't decide automatically but hand it to a person**.
+| Situation | What HITL does |
+|------|---------------|
+| A judgment the model is unsure about | Request review by a person |
+| A high-risk decision (loan denial, medical) | A person gives the final approval |
+| The model gave a wrong answer | A person corrects it → it is reflected in the next training |
+| Inappropriate or dangerous output | A person filters it out |
 
-| Situation | What HITL Does |
-|-----------|----------------|
-| Model uncertain about judgment | Request human review |
-| High-risk decisions (loan denial, medical) | Human final approval |
-| Model gets answer wrong | Person corrects → reflected in next training |
-| Inappropriate or dangerous output | Person filters it out |
+HITL is a core safeguard of Responsible AI. If you let AI decide everything automatically, there is no way to catch biased judgments or dangerous mistakes. Keeping a person in the loop compensates for the model's limitations and also makes it clear who is accountable for a wrong decision. The principle is "the more important or risky the decision, the stronger the human involvement."
 
-> 💡 **Related Theory**: HITL is a core safety mechanism for Responsible AI. If we let AI automatically decide everything, there's no way to filter out biased judgments or dangerous errors. Having people in the loop complements the model's limitations and clarifies responsibility for wrong decisions. The principle is "the more important or risky the decision, the stronger the human involvement."
+> 🎯 **Scenario**: "An AI automatically reviews loan applications, and a denial decision has a major impact on people's lives. How should it be designed?" → Because it is a high-risk decision, apply Human-in-the-loop so that, at minimum, significant decisions such as denials are given a final review and approval by a person.
 
-> 🎯 **Scenario**: "AI automatically reviews loan applications, but rejection decisions greatly impact people's lives. How should we design this?" → Since it's a high-risk decision, we should apply Human-in-the-loop to ensure at least critical decisions like rejections undergo human final review and approval.
+## 4. Iterative Improvement — ML Is Not Completed in One Go
 
-## 4. Iterative Improvement — ML Is Never Finished in One Pass
+- A large part of the force that turns the cyclical lifecycle from Day 1 is **iterative improvement by people**.
+- After deployment, people look at real usage results → collect the wrong cases → attach labels to new data → retrain.
 
-On Day 1 we said the ML lifecycle is a circular loop. A large part of the force that drives this circulation is **human iterative improvement**. After deploying a model, people observe actual use results, collect wrong cases, label new data, and retrain the model. Through this process, the model gradually improves.
+![An improvement loop that goes from labeling through training, model responses, and human evaluation, then back to training](/diagrams/ml-feedback-loop.svg)
+
+- The key point: **ML is not "completed" but "continuously improved."** Human labels, feedback, and review keep this loop alive.
+
+> ⚠️ **Pitfall**: The thought that "once you build a good model, it needs no more human effort" is dangerous. Data changes (drift), new situations appear, and the model grows stale. Without continuous human monitoring and feedback, even a good model collapses over time.
+
+## Labeling, Feedback, and Review Happen at Different Points in Time
+
+All three share the fact that "people step in," but they differ in **when and on what** they step in. The exam mixes up these timings when asking.
+
+| Category | When | What people do | Output |
+|------|------|---------------|--------|
+| Data labeling | **Before** training | Attach correct answers to raw data | Labeled training data |
+| Feedback (RLHF, etc.) | **While refining** the model | Evaluate the model's answers and rank them | A model that reflects human preferences |
+| Human evaluation | Evaluation **before** deployment | People directly score the quality of the model's output | Grounds for deciding whether to deploy |
+| HITL review | Inference time **during** operation | Check, approve, or correct individual predictions the model produced | A reviewed final decision + corrected cases |
+| Human audit | **Periodically** during operation | Draw a sample and check for bias and errors | Problems found → a trigger for retraining |
+
+- If the passage says "prepare the training data," it is labeling; if it says "pick the better of the model's responses," it is feedback; if it says "a staff member checks the prediction before it goes out to the user," it is HITL review.
+- The responsible AI domain lists **label quality analysis, human audits, and subgroup analysis** (measuring performance separately for each group) as means of finding bias. All three involve human judgment.
+
+## How Does SageMaker Ground Truth Lighten the Human Workload?
+
+Amazon SageMaker Ground Truth is a service that builds labeled datasets using "people + machine learning." There are three things to know.
+
+**1) Who does the labeling — three kinds of workforce**
+
+| Workforce | Who they are | Suitable situation |
+|------|---------|--------------|
+| Amazon Mechanical Turk | Public workers around the world | Large volumes of non-sensitive data, quickly |
+| Private workforce | Our company's employees and contractors | Data that must not be exposed externally, work requiring in-house expertise |
+| Vendor | Specialist labeling companies on AWS Marketplace | When handing the whole job to a professional workforce |
+
+- Clue for telling them apart: when **the data is sensitive**, such as "patient records" or "confidential internal documents," choose a **private workforce**.
+
+**2) Automatic labeling — only the uncertain items go to people**
 
 ```
-[ The improvement loop humans drive ]
-
-  Labeling → Training → Model answers → People evaluate/correct
-    ▲                                    │
-    │                                    ▼
-    └──── Retrain reflecting new labels·feedback ◄───┘
+① People label a portion of the sample
+        ↓
+② Train a labeling model with those results
+        ↓
+③ The model assigns labels and confidence scores to the remaining data
+        ├─ Confidence at or above the threshold → label is confirmed automatically
+        └─ Confidence is low                    → send to a person
+        ↓
+④ Improve the model with the labels people attached, and repeat from ②
 ```
 
-The core insight is that **ML is not "completed" but "continuously improved."** Human labels, feedback, and review keep this improvement loop alive.
+- This approach is called **active learning**. Machines handle the easy items and people handle the confusing ones, reducing labeling time and cost.
+- People are not removed entirely. The starting sample and the difficult cases remain people's job to the end.
 
-> ⚠️ **Pitfall**: The idea that "once we build a good model, people don't need to be involved anymore" is dangerous. Data changes (drift), new situations emerge, and models become outdated. Without continuous human monitoring and feedback, even a good model crumbles over time.
+**3) Combining several people's answers into one — annotation consolidation**
 
-## Wrapping Up
+- Give the same data to two or more people and combine their answers to settle on a single label. This prevents one person's mistake or subjectivity from becoming the correct answer as is.
+- Adding more workers raises label accuracy but also raises cost. It is a trade-off between quality and cost.
 
-Today's core can be summed in one sentence: "**ML is collaboration between humans and machines.**" Humans (1) attach correct answers to data (labeling, especially the foundation of supervised learning), (2) evaluate and correct the model's answers (feedback, in generative AI this is RLHF), (3) directly intervene in important or risky decisions (Human-in-the-loop), and (4) repeat this process to continuously improve the model. While machines learn patterns, it's always people who guide those patterns toward the right direction.
+- Note: AWS documentation currently states that Ground Truth is not open to new customers and that only existing customers can continue to use it. For the exam, remember it by its role: "**the service that helps with labeling = Ground Truth**."
 
-Tomorrow we recap all this week's content—the ML lifecycle and data—together and organize the points that frequently appear on the exam.
+## In What Order Does RLHF Proceed?
 
----
+We'll grasp only the flow, without equations.
+
+| Step | What is done | Role of people |
+|------|--------|------------|
+| ① | Collect questions and model answers | People write good answers themselves |
+| ② | Fine-tune the language model on those model answers using supervised learning | — |
+| ③ | Rank the model's several answers to the same question. Train a separate **reward model** with this preference data | People choose which answer is better |
+| ④ | Adjust the language model in the direction that raises the scores the reward model assigns | — |
+
+- Step ③ is the key. Since people cannot score every answer one by one, we build a **scorer that imitates human taste** (the reward model) and have that scorer give the scores instead.
+- Connecting this to the reinforcement learning of Week 1, the difference is that the reward is given not by the environment but by **a model that learned from human evaluations**.
+
+## HITL Does Not Mean "People See Everything"
+
+- If people review every prediction, automation is pointless. The actual design is **deciding the conditions for which cases get sent to people**.
+- There are two representative conditions: cases where the model's **confidence is below the threshold**, and a **randomly drawn sample** for quality checks.
+
+As a hypothetical example, a model that reads items from loan documents processes 10,000 per day. The 9,200 cases with confidence of 90% or higher pass straight through, and only the 800 cases (8%) below that are sent to a staff member. The staff member looks at just 8% of the total while still filtering out the cases most likely to be wrong. Blurry scans and hard-to-read handwriting mostly end up in these 800.
+
+- The AWS service that provides this structure is **Amazon Augmented AI** (Amazon A2I). It builds the flow that routes low-confidence predictions from Amazon Textract and Amazon Rekognition, or predictions from your own model, to human review (according to its documentation, A2I is also currently not open to new customers).
+
+| Situation | Suitable human involvement |
+|------|----------------|
+| Tens of thousands of product photos need defect/normal marking | Data labeling (with automatic labeling alongside) |
+| Labeling data that must not leak externally, such as medical images | Labeling with a private workforce |
+| Refining chatbot answers to be more helpful and less risky | Human feedback (RLHF) |
+| Checking only the low-confidence cases among document extraction results | HITL review (confidence condition) |
+| A high-impact decision such as a loan denial | HITL — a person gives the final approval |
+| Checking whether a model in operation is unfavorable to a specific group | Human audit + subgroup analysis |
+
+## Correcting Common Misconceptions
+
+- **"HITL = people review every prediction"** → Only the cases that are high risk or that the model is unsure about are selected and sent.
+- **"If you use automatic labeling, people are not needed"** → People label the initial sample and the low-confidence cases. The human workload merely shrinks.
+- **"Unsupervised learning needs no people"** → It just doesn't need labels. People interpret and verify whether the results are usable.
+- **"Adding more labelers automatically raises quality"** → If the guidelines are ambiguous, each person labels differently. Clear labeling criteria and review come first.
+- **"A person reviewed it, so there is no bias"** → Human judgment has bias too, and if it enters the labels, the model learns it as is.
+
+Tomorrow we bring together everything from this week — the ML lifecycle and data — for a review and organize the points the exam asks about.
+
+## 📖 Glossary
+
+- **Data labeling**: The work of people attaching a "this is what" correct answer to raw data.
+- **Label**: The answer key attached to data. The value the model uses as its reference when learning.
+- **Supervised learning**: A way of learning from data in which inputs and correct answers are paired. Labels are essential.
+- **Unsupervised learning**: A way of learning by looking only at the structure or groupings of the data itself, without answers.
+- **RLHF**: A technique in which people evaluate how good or bad the model's answers are, and the model is adjusted by that evaluation in the direction people want.
+- **Human-in-the-loop (HITL)**: A design that doesn't let AI decide alone and inserts human judgment at important points.
+- **Responsible AI**: A collective term for the principles and practices that aim to make AI fair, safe, and explainable.
+- **Amazon SageMaker Ground Truth**: An AWS labeling service that manages human labelers and also helps with automatic labeling.
+- **Iterative improvement**: Making a model a little better by continually cycling through deploy → observe usage results → incorporate labels and feedback → retrain.
+- **Label agreement**: How often the same answer was attached when several people labeled the same data. A way of measuring label quality.
 
 ## 📝 Practice Questions
 

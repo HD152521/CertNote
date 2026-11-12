@@ -1,97 +1,186 @@
 # Day 5 - Week 4 Synthesis: The Big Picture of AWS Glue Transformation
 
-This week, we navigated the heart of data engineering — **transformation** — through the AWS Glue ecosystem. We captured metadata with Data Catalog, ran Spark transformations with ETL Job, built no-code transforms with Studio/DataBrew, and guaranteed reliability with Schema Registry and Data Quality. Today we stitch these pieces into one picture, clarify service selection criteria, and review exam traps.
+## 📌 Key Takeaways
 
-## Glue Data Flow in One Chart
+- The center of Glue transformation is the **Data Catalog**. Crawlers populate it, transformation tools read from and write to it, and analytics engines share it.
+- **A crawler registers metadata** and **an ETL Job transforms data**. If this distinction wavers, you will keep getting scenario questions wrong.
+- Choose tools by user and purpose — a code-written Spark ETL is a Glue Job, visual design is Studio, and an analyst's no-code cleaning is DataBrew.
+- Shape (schema compatibility) is guarded by Schema Registry, and content (validity of values) by Glue Data Quality.
+- The three "incremental" features (incremental crawl, Job bookmark, partition projection) each reduce a different thing.
 
-See how all Glue components fit together in a complete pipeline.
+## Glue Data Flow on One Page
+
+This week we ran through **transformation**, the heart of data engineering, using the AWS Glue ecosystem. We captured metadata with the Data Catalog, ran Spark transformations with ETL Jobs, did no-code transformations with Studio/DataBrew, and guaranteed reliability with Schema Registry and Data Quality. Today we stitch these pieces into one picture, organize the service selection criteria, and review the traps that tend to produce wrong answers on the exam.
+
+Here is the complete pipeline showing how all the Glue components fit together.
 
 ```
 [Source Data]                S3 raw / Kinesis / MSK / JDBC
      │
      ├─(streaming)→ [Schema Registry] Schema contract, compatibility validation
      │
-[Crawler] ──→ [Data Catalog] Register schema, partition metadata
+[Crawler] ──→ [Data Catalog] Register schema and partition metadata
      │              │
      │      (shared by all engines: Athena / Redshift Spectrum / EMR)
      ▼
-[Transform Layer]
-  ├─ Glue ETL Job (PySpark, DynamicFrame)   ← Engineers, code-based
-  ├─ Glue Studio (visual ETL → code gen)    ← Engineers, no-code start
-  └─ Glue DataBrew (cleaning·profiling)     ← Analysts, fully no-code
+[Transformation layer]
+  ├─ Glue ETL Job (PySpark, DynamicFrame)       ← Engineer, code
+  ├─ Glue Studio (visual ETL → code generation) ← Engineer, starts no-code
+  └─ Glue DataBrew (cleaning/profiling Recipe)  ← Analyst, fully no-code
      │
-[Quality Gate] Glue Data Quality (DQDL) — Load only passed, isolate failed
+[Quality gate] Glue Data Quality (DQDL) — load only what passes, quarantine failures
      │
      ▼
-[Clean Data]  S3 Parquet/Iceberg → Update Catalog → Athena/Redshift/QuickSight
+[Cleaned data]  S3 Parquet/Iceberg → Catalog update → Athena/Redshift/QuickSight
 
-[Orchestration]  Glue Workflow/Trigger · Step Functions · MWAA(Airflow)
-[Incremental]    Job Bookmark (transformation_ctx + job.commit())
+[Orchestration]       Glue Workflow/Trigger · Step Functions · MWAA (Airflow)
+[Incremental load]    Job bookmark (transformation_ctx + job.commit())
 ```
 
-The core insight: **Data Catalog is the center of everything**. Crawlers fill it, transformation tools read and write to it, analysis engines share it.
+The key is that the **Data Catalog is the center of everything**. Crawlers populate it, transformation tools read from and write to it, and analytics engines share it.
 
-> 💡 **Related Theory**: This structure maps exactly to the **medallion architecture** (Bronze→Silver→Gold), the standard modern data platform. Crawlers log raw (Bronze), ETL/DataBrew clean it into Silver, further aggregation builds Gold (analysis marts). Glue Data Quality acts as a gate at each layer transition. Don't get lost in AWS service names; understand the universal pattern: "raw → cleaned → aggregated, with quality gates at each step," and it works on any cloud.
+> 💡 **Related Theory**: This structure corresponds exactly to the **medallion architecture (Bronze→Silver→Gold)**, the standard of modern data platforms. The crawler catalogs raw (Bronze), ETL/DataBrew cleans it to produce Silver, and additional aggregation produces Gold (analytics marts). Glue Data Quality acts as a gate at each layer transition. Don't get lost in specific AWS service names; if you understand it as the universal pattern "raw → cleaned → aggregated, with a quality gate at each stage," it works on any cloud.
 
-## Service Selection Decision Matrix
+## Service Selection Decision Summary
 
-Exams relentlessly ask "what tool for this situation." Here's this week's criteria.
+The exam persistently asks "what to use in which situation?" These are the selection criteria for this week's tools.
 
-| Situation | Answer | Why |
-|-----------|--------|-----|
-| Auto-register S3 data schema/partitions | Glue Crawler → Data Catalog | Auto-infer metadata |
-| Large-scale distributed ETL, code available | Glue ETL Job (Spark) | DynamicFrame, powerful transforms |
-| Lightweight work <100MB, orchestration | Python Shell Job | Avoid distributed overhead, cheaper |
-| Visual ETL, code conversion when needed | Glue Studio | Auto-generate code + edit |
-| Analyst's no-code cleaning/profiling | Glue DataBrew | Preview, PII detection, recipes |
-| Force streaming schema compatibility | Schema Registry | BACKWARD/FORWARD/FULL |
-| Validate and block invalid data values | Glue Data Quality | DQDL rules, quality gates |
-| Avoid full reprocessing every run | Job Bookmark | Incremental processing |
-| Simple format conversion then S3 load | Firehose + Lambda | Glue is overkill |
+| Situation | Answer | Reason |
+|-----------|--------|--------|
+| Automatically register schema and partitions of S3 data | Glue crawler → Data Catalog | Automatic metadata inference |
+| Large-scale distributed ETL, able to write code | Glue ETL Job (Spark) | DynamicFrame, powerful transformations |
+| Lightweight work of a few hundred MB, orchestration | Python Shell Job | Avoids distributed overhead, cheap |
+| Visual ETL, switch to code if needed | Glue Studio | Automatic code generation + editing |
+| Analyst's no-code cleaning and profiling | Glue DataBrew | Preview, PII detection, Recipe |
+| Enforce streaming schema compatibility | Schema Registry | BACKWARD/FORWARD/FULL |
+| Validate and block on data value validity | Glue Data Quality | DQDL rules, quality gate |
+| Avoid reprocessing everything each time | Job bookmark | Incremental processing |
+| Only a simple transformation then load to S3 | Firehose + Lambda | Glue is overdesign |
 
-Especially remember the last line. **Knowing when Glue isn't the answer** is true mastery. Simple format conversion is cheaper with Firehose+Lambda; complex cluster tuning or non-standard frameworks demand EMR.
+On the last row, it is important to know the **cases where Glue is not the answer**. For simple format conversion, Firehose + Lambda is cheaper, and if you need complex cluster tuning or a non-standard framework, EMR is better.
 
-## Common Traps Collected
+## Collected Commonly Missed Traps
 
-We've emphasized gotchas each day this week. Here they are in one place.
+Here we gather in one place the traps emphasized on each day this week.
 
 ```
-[Day1] Non-Hive paths (2026/06/25/) fail auto-partition detection
-       → Use key=value (year=2026/...) paths from the start
+[Day1] A non-Hive path (2026/06/25/) fails automatic partition recognition
+       → Use key=value paths (year=2026/...) from the start
 
-[Day2] Job Bookmark needs BOTH job.commit() AND transformation_ctx
-       → Missing either, incremental processing breaks
-       → Modified (overwritten) files are skipped by bookmark
+[Day2] A Job bookmark needs both job.commit() and transformation_ctx
+       → If either is missing, incremental processing doesn't work
+       → A modified (overwritten) file has a changed modification time and is processed again (watch for target duplicates)
 
-[Day3] Studio = Engineer/production ETL, DataBrew = Analyst/exploratory cleaning
-       → Both are "Glue visual" so easy to confuse, DataBrew also costs
+[Day3] Studio = engineers/production ETL, DataBrew = analysts/exploratory cleaning
+       → Both are "Glue visual," so beware of confusion; DataBrew is also paid
 
-[Day4] Schema Registry = form (schema), Data Quality = content (values)
-       → Negatives/duplicates/nulls are quality issues, not schema issues
-       → DQ auto-recommendations can false-positive, need human review
+[Day4] Schema Registry = shape (schema), Data Quality = content (values)
+       → Negative/duplicate/null is a quality problem, not a schema problem
+       → DQ recommended rules can produce false positives, a person should review
 ```
 
-> ⚠️ **Gotcha**: The most common trap is **confusing Glue Crawler with Glue ETL Job**. Crawlers only "register metadata"—they don't transform or copy data. ETL Jobs actually read data, transform it, and write new versions. "Find the schema" = Crawler, "change the data" = ETL Job. Losing this distinction means you'll blow scenario questions.
+> ⚠️ **Gotcha**: The easily confused trap is **mixing up the Glue crawler and the Glue ETL Job**. A crawler only "registers metadata"; it does not transform or copy data. The ETL Job is what actually reads data, transforms it, and writes it anew. "Figure out the schema" = crawler, "change the data" = ETL Job. If this distinction wavers, you will get scenario questions wrong one after another.
 
-## Cost Perspective Once More
+## The Cost Perspective Once More
 
-Data engineers view cost as part of design. Glue transformation cost levers:
+Data engineers treat cost as part of design. Summarizing the cost levers of Glue transformation:
 
-| Lever | Save How |
-|-------|----------|
-| DPU time | Right-size DPU, optimize Jobs, use Python Shell |
-| Crawler scans | Incremental crawlers, partition projection to skip crawling |
-| Reprocessing | Job Bookmark to process only new data |
-| Output format | Parquet/ORC + partitioning cuts downstream scans |
-| Over-engineering | Downgrade simple transforms to Firehose+Lambda |
+| Lever | How to save |
+|-------|-------------|
+| DPU hours | Choose appropriate DPUs, optimize the Job, use Python Shell |
+| Crawler scans | Incremental crawl, eliminate the crawler with partition projection |
+| Reprocessing | Process only new data with Job bookmarks |
+| Output format | Parquet/ORC + partitioning reduces downstream scans |
+| Overdesign | Downgrade simple transformations to Firehose + Lambda |
 
-> 🎯 **Comprehensive Scenario**: A company receives raw JSON logs (tens of GB daily) and must turn them into analysis-ready cleaned tables. Full production setup: (1) Land logs to S3 with `dt=` Hive path → (2) **Incremental crawler** registers new partitions in Data Catalog → (3) **Glue Studio**-designed ETL Job reads via `from_catalog`, cleans with ApplyMapping/ResolveChoice, **Job Bookmark** processes only yesterday's new data → (4) **Glue Data Quality** node validates `amount>=0`, `IsComplete`, `RowCount`; load passing data as Parquet, isolate failures → (5) Follow-up crawler updates clean table → (6) **Workflow trigger** auto-runs at dawn daily, monitor quality score on CloudWatch. Athena queries the clean table instantly. This single flow contains this entire week.
+> 🎯 **Comprehensive Scenario**: A company receives raw JSON logs (tens of GB) daily and must turn them into an analyzable cleaned table. The complete architecture is: (1) Load logs to S3 under `dt=` Hive paths → (2) An **incremental crawler** registers new partitions in the Data Catalog → (3) An ETL Job designed in **Glue Studio** reads via `from_catalog`, cleans with ApplyMapping and ResolveChoice, and uses a **Job bookmark** to process only yesterday's new data → (4) A **Glue Data Quality** node validates `amount>=0`, `IsComplete`, and `RowCount`, loads only what passes to Parquet, and quarantines failures → (5) A follow-up crawler updates the cleaned table → (6) A **Workflow trigger** runs it automatically each dawn, with the quality score monitored in CloudWatch. Athena queries the cleaned table immediately. This one flow contains the entire week.
 
-## Summary: Transformation Must Be Trustworthy
+## Telling Similarly Named Features Apart
 
-This week's core lesson is simple: **Transformation isn't just changing data—it's building data you can trust**. Share consistent schemas via Catalog, transform with the right tool (code or no-code), handle increments efficiently with bookmarks, and defend form and content reliability with Schema Registry and Data Quality. Next week escalates transformed data further with Transformation Part 2 — entering the Amazon EMR and Spark universe.
+This week several features appeared whose names or roles look alike. Let's put them on the same axis and see the differences.
 
----
+**The three with "incremental"**
+
+| Feature | What it reduces | State it remembers | What it misses |
+|---------|-----------------|--------------------|----------------|
+| Incremental crawl | The S3 range the crawler scans | New folders created since the last crawl | Modifications or deletions of existing partitions, schema changes |
+| Job bookmark | The input an ETL Job reads | For S3, the object modification time; for JDBC, the bookmark key | UPDATE and DELETE of existing JDBC rows |
+| Partition projection | Partition registration work and Catalog lookups | None (computed from rules in table properties) | Engines other than Athena |
+
+**The four that deal with "schema"**
+
+| Feature | Target | What it does |
+|---------|--------|--------------|
+| Data Catalog | Stored tables | Holds schema, partitions, and location so multiple engines share them |
+| Crawler | S3 and JDBC sources | Infers the schema and registers it in the Catalog |
+| Schema Registry | Stream records | Manages schema versions and controls changes with compatibility rules |
+| ResolveChoice | The running DynamicFrame | Cleans up types mixed in a single column |
+
+**The three that "look into the data"**
+
+| Feature | What it looks at | Result |
+|---------|------------------|--------|
+| Crawler | Column names and types | A Catalog table definition. It does not look at whether values are right or wrong |
+| DataBrew Profile Job | Statistics such as missing rate, distribution, correlation | A current-state diagnostic report |
+| Glue Data Quality | Whether rules are satisfied | Pass/fail judgment and quality score, a pipeline gate |
+
+## From Symptom to Cause: This Week's Incident Backtracking Table
+
+| Symptom | Cause | Action |
+|---------|-------|--------|
+| Yesterday's data cannot be queried in Athena | The new partition is not in the Catalog | Run the crawler, `ALTER TABLE ADD PARTITION`, or partition projection |
+| The partition column name is picked up as `partition_0` | The path is not in `key=value` format | Load to Hive-style paths or fix the name in the table definition |
+| A single crawl creates dozens of tables | Files with dissimilar schemas are mixed under one path | Separate the paths or turn on the single-schema-per-path option |
+| The Job rereads everything every time | The bookmark is Disable (the default), or `transformation_ctx` or `job.commit()` is missing | Satisfy all three conditions |
+| Duplicate rows appear in the target even with the bookmark on | A source file was overwritten and processed again, or data was loaded to the same path again after a bookmark Reset | Keep source files immutable, and separate the output path for reprocessing |
+| The Job dies from out-of-memory | Data skew makes one partition too large, or there are too many small files | Move up the worker type, group files, reduce the input with a pushdown predicate |
+| The consumer's deserialization fails after the producer deployment | The schema changed without a compatibility check (NONE, or Registry not used) | Use a compatibility mode such as BACKWARD so it is rejected at the registration stage |
+| Dashboard numbers are wrong without any error | The schema is right but the values are wrong | Put a Glue Data Quality gate before the load |
+| DataBrew cost is higher than expected | An interactive session was left open and idle | Close the session when work is done, and move repeated work to a scheduled Job |
+
+## Scenario Practice: From Clue to Choice
+
+These are placed as pairs where changing one condition in the same situation changes the answer.
+
+| Scenario | Decisive clue | Choice |
+|----------|---------------|--------|
+| Logs pile up daily under `dt=` paths and are queried only with Athena. You want to eliminate crawler cost | The only consumer is Athena, regular partitions | Partition projection |
+| Same as above, but Redshift Spectrum also reads the same table | Projection is Athena-only | Incremental crawl or partition registration at the load stage |
+| Fetch only newly added rows from an RDS orders table daily | Append-only table, increasing key | Glue Job + bookmark |
+| Same as above, but order status is frequently UPDATEd | Changes to existing rows | DMS CDC (a bookmark misses changes) |
+| A marketer tidies the phone number format in a customer CSV themselves | Non-developer, preview | DataBrew |
+| Design with a graph an operational ETL joining multiple sources, and control part of it with code | Engineer, operational pipeline | Glue Studio |
+| Add a field to a Kafka topic's Avro schema and deploy with zero downtime | Schema contract on a stream | Schema Registry BACKWARD + add as an optional field + deploy consumers first |
+| Before loading, pick out and quarantine only the rows where `amount` is negative | Value validation + identifying failed records | Glue Data Quality inside an ETL Job |
+| Read a 50MB configuration file and call an external API | Small data, no distribution needed | Python Shell Job |
+| Lower the cost of a non-urgent nightly bulk transformation | Delayed start acceptable | Flex execution class |
+
+## Billing Units at a Glance
+
+To know what the levers in the "cost perspective" table above reduce, you first need to know what each component is billed on.
+
+| Component | Billing basis |
+|-----------|---------------|
+| Crawler | DPU × run time |
+| ETL Job (Spark) | Sum of the workers' DPUs × run time. Flex has a lower unit price |
+| Python Shell Job | 0.0625 or 1 DPU × run time |
+| Data Catalog | Number of stored objects and number of requests (with a free tier) |
+| DataBrew | Interactive sessions (30-minute units) + Job node hours |
+| Data Quality | DPUs used for evaluation × time |
+| Schema Registry | No additional charge |
+
+Next week we move into Transformation Part 2 — Amazon EMR and Spark, Lambda transformation, orchestration, and performance and cost optimization.
+
+## 📖 Glossary
+
+- **Medallion architecture**: A lake design pattern that stacks data in stages of raw (Bronze) → cleaned (Silver) → aggregated (Gold).
+- **Incremental processing**: A method of processing only data newly created since the last run instead of reprocessing everything each time.
+- **Quality gate**: A checkpoint that prevents data failing the quality criteria from moving to the next stage.
+- **Pruning**: An optimization that skips partitions or columns not needed by the query condition without reading them at all.
+- **Recipe**: A reusable list in DataBrew that writes down the applied transformation steps in order.
+- **DQDL**: The declarative language for writing Glue Data Quality rules.
+- **Choice type**: The representation in which a DynamicFrame preserves all the types when a single column has a mix of types.
+- **Compatibility mode**: Schema Registry's rule that judges whether a new schema version may be registered.
 
 ## 📝 Practice Questions
 

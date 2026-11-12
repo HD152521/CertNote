@@ -1,89 +1,203 @@
 # Day 4 - Batch & Serverless Inference Deep Dive: Throughput Tuning & Cost Tradeoffs
 
-Day 1 surveyed 4 inference options. Days 2–3 covered real-time and advanced patterns. Today we dig into the other two sides of synchronous endpoints: **batch transform** and **serverless inference**. Both share "always-on cost → 0," but their mechanics and fit scenarios differ completely. Batch handles bulk data at once; serverless handles sporadic individual requests.
+## 📌 Key Takeaways
 
-Exams test tuning parameters here directly. Batch transform: how to boost throughput (instance count, mini-batch, split). Serverless: how to handle concurrency and cold starts (MaxConcurrency, Provisioned Concurrency). Build numeric intuition for cost tradeoffs.
+- Batch and serverless share **zero always-on cost**, but their uses are opposite — bulk batch vs intermittent individual requests.
+- The batch throughput levers are **InstanceCount (parallelism) · SplitType (splitting) · BatchStrategy/MaxPayload/MaxConcurrentTransforms (mini-batch)**.
+- The input must be **splittable** for adding instances to have an effect. A single large file will not get faster no matter how many you add.
+- To match predictions with the original IDs, use `input_filter`/`output_filter`/`join_source`.
+- For serverless you specify only `MemorySize` + `MaxConcurrency`. Cold starts are mitigated with **Provisioned Concurrency** (which incurs standing cost).
 
-## Batch Transform — Throughput Tuning
+## Batch Transform — Tuning for Bulk Processing
 
-Batch transform reads bulk input from S3, runs inference in bulk, writes results to S3. Three levers boost throughput:
+We dig into the two options on the opposite side from synchronous endpoints: **batch transform** and **serverless inference**. First, batch transform reads bulk input from S3, runs inference in bulk, and writes the results to S3. There are three levers for raising throughput.
 
-- **InstanceCount**: More instances = data spreads, parallel processing. Most direct horizontal scaling.
-- **Data Split (SplitType)**: `Line` (record per line), `RecordIO`, `TFRecord`, etc. split large files record-by-record, distribute across instances/batches.
-- **Mini-batch (BatchStrategy, MaxPayloadInMB, MaxConcurrentTransforms)**: tune record-bundle size sent to model once and concurrent request count.
+- **InstanceCount**: Adding instances distributes the data for parallel processing. The most direct horizontal scaling.
+- **Data splitting (SplitType)**: Split a large file into records with `Line` (per record line), `RecordIO`, `TFRecord`, and so on, and distribute them across instances/batches.
+- **Mini-batch (BatchStrategy, MaxPayloadInMB, MaxConcurrentTransforms)**: Adjust the size of the bundle of records sent to the model at once and the number of concurrent requests.
+
+```text
+Parallel distribution structure of batch transform
+
+ S3 input (several files or a splittable format)
+   part-000.csv  part-001.csv  part-002.csv  part-003.csv
+        │             │             │             │
+        ▼             ▼             ▼             ▼
+   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+   │Instance 1│  │Instance 2│  │Instance 3│  │Instance 4│   ← instance_count=4
+   └─────────┘  └─────────┘  └─────────┘  └─────────┘
+        │             │             │             │
+        └─────────────┴──────┬──────┴─────────────┘
+                             ▼
+                       S3 output (.out)
+                             │
+                             ▼
+                    Job ends → the whole cluster is deleted (cost 0)
+
+ ⚠ If the input is a single giant file that can't be split, only Instance 1 works and the rest sit idle.
+```
 
 ```python
 from sagemaker.transformer import Transformer
 
 transformer = Transformer(
     model_name="churn-model",
-    instance_count=8,                 # 8 instances parallel processing
+    instance_count=8,                 # Process in parallel on 8 instances
     instance_type="ml.m5.xlarge",
-    strategy="MultiRecord",           # multi-record per mini-batch
-    max_payload=6,                    # max 6MB mini-batch
-    max_concurrent_transforms=4,      # 4 concurrent per instance
+    strategy="MultiRecord",           # Put several records into one mini-batch
+    max_payload=6,                    # Mini-batch max of 6MB
+    max_concurrent_transforms=4,      # 4 concurrent requests per instance
     output_path="s3://bkt/out/",
 )
 transformer.transform(
     data="s3://bkt/in/",
     content_type="text/csv",
-    split_type="Line",                # split line-by-line
+    split_type="Line",                # Split per line
 )
 ```
 
-`strategy="MultiRecord"` bundles multiple records per request to boost throughput; `SingleRecord` sends one per request (model takes single input only). `MaxPayloadInMB` and `MaxConcurrentTransforms` tune per-instance load.
+What each parameter controls is summarized below.
 
-> 💡 **Related Theory**: Batch throughput = "parallelism degree × per-instance efficiency." More instances approaches linear speedup but costs scale; data split across files or via `SplitType` enables distribution gains. Single huge unsplittable input file = one instance bears all, no scaling. So batch inputs should be **sharded across files** or in split-capable format—tuning begins there.
+| Parameter | What it controls | If you raise it | Caution |
+|----------|-----------|--------|------|
+| `instance_count` | Parallelism (horizontal scaling) | Shortens processing time | Cost rises proportionally too. Effective only if splittable |
+| `split_type` | How to split the input | Distribution becomes possible with `Line`, etc. | If `None`, distribution happens only per file |
+| `strategy` | Number of records in one request | `MultiRecord` reduces overhead | If the model accepts only single records, use `SingleRecord` |
+| `max_payload` | Max mini-batch size (MB) | Raises throughput per request | If too large, it exceeds model memory |
+| `max_concurrent_transforms` | Concurrent requests per instance | Raises instance utilization | If excessive, the container backs up |
 
-> ⚠️ **Trap**: Batch transform makes re-joining input records and output predictions tricky. To output prediction + input ID together, use `input_filter`/`output_filter`/`join_source` params (JSONPath) to merge input portion into output. "How to match predictions to source records?" is a favorite exam snare.
+- `strategy="MultiRecord"` bundles several records into one request to raise throughput, while `SingleRecord` sends only one record at a time (when the model accepts only single-record input).
+- Choose `split_type` from `None` (whole file) · `Line` (per line) · `RecordIO` · `TFRecord` to match the input format.
+
+Batch transform throughput is ultimately "parallelism × efficiency per instance." Adding instances speeds things up nearly linearly, but cost grows proportionally too, and distribution takes effect only if the data is divided into several files or can be split with `SplitType`. If the input is one giant file that cannot be split, a single instance takes it all and scaling doesn't work. So the start of tuning is to **shard the batch input into several files** or keep it in a format that allows per-line splitting.
+
+> ⚠️ **Pitfall**: In batch transform, re-joining the input records with the output predictions can be tricky. To output the input ID together with the prediction, you must merge part of the input into the output with the `input_filter`/`output_filter`/`join_source` parameters (JSONPath). "How do I match the prediction result to the original record" is a practical and easily confused pitfall.
+
+## Combining Input IDs with Prediction Results
+
+You must not feed the ID column to the model, but the output is useless without the ID. This contradiction is solved with the filter parameters.
+
+```python
+transformer.transform(
+    data="s3://bkt/in/",
+    content_type="text/csv",
+    split_type="Line",
+    input_filter="$[1:]",        # Drop column 0 (customer ID) before passing to the model
+    join_source="Input",         # Attach the input record back onto the output
+    output_filter="$[0,-1]",     # Keep only [customer ID, prediction] in the final output
+)
+```
+
+```text
+Input  : [C1001, 34, Seoul, 12.5]
+          └ ID    └───── features ─────┘
+
+input_filter="$[1:]"   ─▶ Model input: [34, Seoul, 12.5]
+Model output            ─▶ Prediction: 0.87
+join_source="Input"    ─▶ Joined: [C1001, 34, Seoul, 12.5, 0.87]
+output_filter="$[0,-1]"─▶ Final: [C1001, 0.87]
+```
 
 ## Batch vs Real-time — When Batch Wins
 
-Say 1 million records via same model. Real-time endpoint: 1M calls, always-on instance cost + call overhead, spike management too. Batch transform: spin cluster momentarily, distribute 1M across it, shutdown when done—cost only on runtime.
+Suppose you process 1 million records with the same model. Calling a real-time endpoint 1 million times incurs always-on instance cost plus call overhead, and you also have to manage traffic spikes. Batch transform briefly brings up a cluster, distributes the 1 million records across it, and shuts it down when done, so cost is incurred only during processing time.
 
-> 🔍 **Deep Dive**: Real-time optimized for "per-request instant response"—low per-request latency. On bulk batches, keep instance running, take sequential/concurrent calls—inefficient. Batch: "data locality + distributed bulk" maximizes throughput. **Throughput needed, instant response not = batch almost always cheapest and fastest**. Caveat: results not real-time—if any immediacy required, batch disqualified.
+A real-time endpoint is optimized for "an immediate response per request" and so has low latency for individual requests, but for bulk processing it must keep instances on and receive sequential/concurrent calls, which is inefficient. Batch maximizes bulk throughput through "data locality + bulk distribution." In summary, **bulk processing with no need for immediacy = batch is almost always cheaper and faster**. But since you cannot receive results in real time, batch is out if even a little immediacy is needed.
 
-## Serverless Inference — Concurrency & Cold Start
+## Serverless Inference — Concurrency and Cold Starts
 
-Serverless inference specifies memory (1–6GB) and **MaxConcurrency** (max simultaneous requests to handle). Traffic arrives → auto-spin compute; no traffic → scale to 0. No infra management; idle = no cost—biggest win.
+Serverless inference has exactly two things to specify.
+
+- **MemorySizeInMB** (1024~6144): Increasing memory also increases the compute allocated.
+- **MaxConcurrency**: The maximum number of requests processed at the same time. Requests beyond this are throttled.
+- You don't choose an instance type → which also means **you cannot use a GPU**.
+- It automatically brings up compute when traffic arrives and scales to 0 when there is none.
 
 ```python
 from sagemaker.serverless import ServerlessInferenceConfig
 
 serverless_config = ServerlessInferenceConfig(
-    memory_size_in_mb=2048,   # 1024–6144, 256-step
-    max_concurrency=20,       # max concurrent requests
+    memory_size_in_mb=2048,   # 1024 ~ 6144
+    max_concurrency=20,       # Max requests processed concurrently
 )
 predictor = model.deploy(serverless_inference_config=serverless_config)
 ```
 
-Snag: **cold start**. No calls in a while, first request arrives, spin container + load model—delay while loading. Need consistent low latency? Set **Provisioned Concurrency** to pre-warm N instances. Tradeoff: some always-on cost then, losing "total zero" advantage.
+The problem is the **cold start**. If there have been no calls for a while and the first request then arrives, a delay occurs while the container is brought up and the model is loaded.
 
-> 💡 **Related Theory**: Serverless cost model = "compute time of requests processed + (optional) Provisioned Concurrency always-on." **Sparser traffic** → bigger savings vs. real-time; **steady high traffic** → savings disappear or reverse. Provisioned Concurrency kills cold start but invokes always-on cost; only useful for "sporadic but first-response latency matters" compromises.
+```text
+Cold start vs warmed state
 
-## Serverless vs Real-time — Breakeven
+[Cold]  Request ─▶ │Container start│Model download·load│Inference│ ─▶ Response
+                   └──────────── several seconds ─────────────┘ ↑ only this part is real inference
 
-Rough intuition: endpoint mostly idle → serverless cheaper; nearly always busy → real-time cheaper. Breakeven lies between.
+[Warm]  Request ─▶ │Inference│ ─▶ Response            (milliseconds to a few hundred ms)
 
-> ⚠️ **Trap**: "Cost cut = serverless" oversimplifies to wrong answers. Serverless advantage needs ① sporadic traffic AND ② tolerance for cold start. Steady high traffic on serverless? Compute-time charges accumulate—more than real-time. Cold starts break SLA. Exams: check traffic pattern (sporadic vs steady) and latency SLA (cold-start tolerable?) first.
+Provisioned Concurrency = holding the specified number in a "warm" state
+                          → removes cold starts, but incurs that much standing cost
+```
 
-## Async Inference Boundary Revisited
+If you need consistently low latency, you can set **Provisioned Concurrency** to pre-warm a set number of instances. However, in that case that much standing cost is incurred, so part of the "completely zero cost" advantage is lost.
 
-Batch and serverless can blur into async. Separate all three:
+The serverless cost model is "compute time of the requests processed + (optionally) the standing portion of Provisioned Concurrency." The **rarer** the traffic, the larger the savings versus real-time thanks to scaling to 0, and the **steadier and heavier** the traffic, the more the savings advantage disappears or reverses. Provisioned Concurrency removes cold starts but brings standing cost, so it makes sense only in the compromise situation of "traffic is intermittent but the first-response delay is intolerable."
 
-- **Batch Transform**: no endpoint, full dataset bulk, job ends and terminates, cheapest bulk.
-- **Serverless**: has endpoint (sync response), individual requests, small payload (<4MB), short runtime (<60s), sporadic traffic.
-- **Async**: has endpoint (queue-based async), individual requests but large payload (1GB), long runtime (60 min), scale to 0.
+## Serverless vs Real-time — The Break-Even
 
-Payload/runtime exceed serverless limits in individual requests → async. Urgency-free bulk → batch.
+As a rule of thumb, if the endpoint is idle most of the time serverless is cheaper, and if it is busy almost all the time real-time is cheaper. The break-even lies somewhere between the two.
 
-## Summary
+| Decision axis | Serverless wins | Real-time wins |
+|---------|----------------|---------------|
+| Traffic pattern | Intermittent, long idle stretches | Steady or always high |
+| Latency SLA | First-response delay is tolerable | Consistently low latency is essential |
+| Hardware | CPU is enough | **GPU needed** (not possible with serverless) |
+| Payload | 4MB or less | 6MB or less |
+| Operational burden | No instance management | Scaling and capacity planning needed |
+| Cost structure | Billed only for processing time | Billed for the entire running time |
 
-Batch and serverless share "always-on to 0" but opposite use cases. ① **Batch Transform**: bulk batches, tune throughput via `InstanceCount`, `SplitType`, `BatchStrategy`, input must be shardable/splittable, input-output join via filter params. No urgency + bulk = nearly always cheapest. ② **Serverless**: sporadic traffic, specify `MemorySize` + `MaxConcurrency` only, scale to 0, cold start mitigated by Provisioned Concurrency (always-on cost). Cost choice always by traffic pattern and latency SLA.
+> ⚠️ **Pitfall**: A simple mapping of "cost reduction = serverless" leads to wrong answers. Serverless is favorable when ① traffic is intermittent and ② you can tolerate cold starts. If you use serverless for steadily high traffic, compute-time billing accumulates and it can become more expensive than real-time, and cold starts make you miss the SLA. On the exam, first check the traffic pattern (intermittent vs steady) and the latency SLA (whether cold starts are tolerated).
 
-Next we synthesize all Week 6 (inference options, real-time endpoints, advanced inference, batch/serverless).
+## Revisiting the Boundary with Asynchronous Inference
 
----
+When wrapping up batch and serverless, it is easy to confuse them with asynchronous. Separating the three looks like this.
+
+| Aspect | Batch Transform | Serverless | Asynchronous |
+|------|-----------|----------|--------|
+| Endpoint | None (per job) | Yes | Yes |
+| Response method | Results written to S3 | Synchronous response | S3 + SNS after queue processing |
+| Request unit | The whole dataset | Individual request | Individual request |
+| Payload | The whole dataset | <4MB | <1GB |
+| Processing time | Per job (long runs possible) | <60 seconds | <60 minutes |
+| Idle cost | 0 (terminates when done) | 0 (scale to 0) | 0 (scale to 0) |
+| Typical signal | "Overnight batch scoring" | "Occasional calls, mostly idle" | "Big file, takes a few minutes" |
+
+Individual requests whose payload/processing time exceed the serverless limits go to asynchronous, and bulk work with no immediacy goes to batch.
+
+## Symptom → Cause → Action
+
+| Symptom | Cause | Action |
+|------|------|------|
+| Batch is just as slow even after increasing to 8 instances | The input is a single large file that can't be split | Shard the input into several files + `split_type="Line"` |
+| The model container dies of out-of-memory during batch | `max_payload` is large so the mini-batch is too big | Reduce `max_payload` or switch to `SingleRecord` |
+| The output file has only predictions and you can't tell whose they are | The input ID was not joined | Specify `join_source="Input"` + `output_filter` |
+| Only the first serverless request takes several seconds | Cold start | Set Provisioned Concurrency |
+| Requests are throttled on serverless | Concurrent requests exceed `MaxConcurrency` | Raise `MaxConcurrency`; caller-side retries and backoff |
+| Cost increased after switching to serverless | Traffic is steadily high so processing-time billing accumulates | Return to real-time + Auto Scaling |
+| A GPU model can't be put on serverless | Serverless does not support GPUs | Deploy on real-time (GPU) or asynchronous |
+
+The next article reviews all of Week 6 (inference options, real-time endpoints, advanced inference, batch and serverless) comprehensively.
+
+## 📖 Glossary
+
+- **Batch Transform**: A job that runs inference on bulk data in S3 all at once without an endpoint and disappears when finished.
+- **Sharding**: Dividing large data into several pieces. It must be divided for several instances to share the processing.
+- **SplitType**: An option that specifies in what units to split the input. Per line (`Line`) is the most common.
+- **Mini-batch (BatchStrategy)**: The bundle of records sent to the model at once. Bundling several (`MultiRecord`) reduces overhead.
+- **MaxConcurrentTransforms**: The number of requests one instance processes at the same time. It governs instance utilization.
+- **join_source**: An option that attaches the original input record back onto the batch output. Used for ID matching.
+- **JSONPath filter**: A notation like `$[1:]` for picking only certain columns from a record. Used for input and output filters.
+- **MaxConcurrency**: The maximum number of requests a serverless endpoint processes at the same time. Beyond it, requests are throttled.
+- **Provisioned Concurrency**: A serverless setting that pre-warms a set number. It removes cold starts but incurs standing cost.
+- **Throttling**: The service rejecting or deferring requests that exceed the allowed limit.
 
 ## 📝 Practice Questions
 

@@ -1,105 +1,213 @@
-# Day 4 - Learning Techniques and Transfer Learning
+# Day 4 - Training Techniques and Transfer Learning
 
-Even with the right model structure, "how we train it" makes or breaks performance. Today covers **loss functions, optimizers, learning rate** — the training engine — and **transfer learning/fine-tuning** that achieves great results with limited data. Plus **framework (TensorFlow/PyTorch) and SageMaker integration** that tests often ask. MLS-C01 frequently asks "When learning fails/is slow/overfits, what do we change?" — this domain.
+## 📌 Key Takeaways
+
+- The problem type dictates the loss. Regression = MSE/MAE, classification = cross-entropy. **Never use MSE for classification.**
+- The default optimizer is **Adam** (adaptive, fast); a simple, robust alternative is SGD (+Momentum).
+- **The learning rate is the top tuning target.** Too large diverges, too small is slow → handle it with scheduling and warmup.
+- Five ways to prevent overfitting: dropout · weight decay (L2) · batch normalization · data augmentation · early stopping.
+- Transfer learning is decided by **data volume × domain similarity**. Little data and similar = freeze; lots of data or different = fine-tune with a low learning rate.
+
+## Training Creates Performance
+
+Even after you choose the model structure, "how you train it" determines performance. Today covers the engine of deep learning training — **loss functions, optimizers, and learning rate** — then **transfer learning and fine-tuning**, which achieve a lot with little data, and the **frameworks (TensorFlow/PyTorch) and SageMaker integration** that appear on the exam. In this area MLS-C01 asks "what do you change when training fails, is slow, or overfits?"
 
 ## Loss Function
 
-Quantifies difference between prediction and truth. Choose per problem type.
+It quantifies the difference between the model's predictions and the ground truth. You must choose it to match the problem type.
 
-| Problem Type | Loss Function |
-|------|------|
-| Regression | MSE (mean squared error), MAE |
-| Binary classification | Binary cross-entropy (BCE) |
-| Multi-class classification | Categorical cross-entropy |
-| Imbalance/detection | Focal Loss variations |
+| Problem type | Loss function | Paired output layer | Why |
+|------|------|---|---|
+| Regression | MSE (mean squared error), MAE | Linear (no activation) | MSE penalizes large errors heavily; MAE is robust to outliers |
+| Binary classification | Binary cross-entropy (BCE) | Sigmoid, 1 node | Log loss of the probability prediction |
+| Multiclass classification | Categorical cross-entropy | Softmax, K nodes | Compares probability distributions |
+| Imbalanced / detection | Variants such as Focal Loss | Depends on the task | Lowers the contribution of easy majority samples |
 
-- Using MSE for classification = slow, unstable learning → **cross-entropy is standard**
-- Loss is training's "compass." If loss doesn't decrease, check learning rate, structure, data
+- Using MSE for classification makes training slow and unstable, so **cross-entropy** is the standard.
+- The loss is training's "compass." If the loss curve does not fall, check the learning rate, structure, and data.
+
+> ⚠️ **Trap**: Do not mix up the loss function (what is optimized) and the evaluation metric (the selection criterion). Just as high accuracy on imbalanced data does not make a good model, a low loss does not mean the business goal was met. Choose the metric separately, as one that **reflects the cost structure**, such as recall or PR-AUC.
 
 ## Optimizer
 
-Uses backprop-computed gradients to actually update weights.
+The algorithm that actually updates the weights using the gradients obtained by backpropagation.
 
-| Optimizer | Essence |
-|------|------|
-| **SGD** | Move in opposite gradient direction at fixed rate, simple and robust |
-| **SGD + Momentum** | Accumulate past direction, reduce oscillation, accelerate |
-| **RMSProp** | Adapt per-parameter learning rate by gradient magnitude |
-| **Adam** | Combine Momentum + RMSProp, DL default |
+| Optimizer | Core idea | When to use | Caution |
+|------|------|---|---|
+| **SGD** | Moves a fixed fraction opposite the gradient, simple and robust | Basic understanding, final fine-tuning of large models | Heavy burden of learning-rate tuning |
+| **SGD + Momentum** | Accumulates past directions to reduce oscillation and accelerate | When oscillating in a narrow, long valley | The momentum coefficient is also a hyperparameter |
+| **RMSProp** | Adjusts the per-parameter learning rate by gradient magnitude | When gradient magnitudes differ greatly across parameters | No directional inertia on its own |
+| **Adam** | Combines Momentum + RMSProp, the deep learning default | The starting point for most cases | On very large models, SGD sometimes generalizes better |
 
 ```text
 SGD:  w ← w - η * ∇L
-Adam: Estimate 1st/2nd moments → per-parameter adaptive step
+Adam: adaptive per-parameter step size via 1st/2nd moment estimates
 ```
 
-Practical default is **Adam**: fast convergence, less tuning. Very large model final fine-tuning sometimes sees better generalization with SGD.
+The practical default is **Adam**: fast convergence and little tuning. For the final fine-tuning of very large models, SGD sometimes shows better generalization.
 
-> 💡 **Related Theory**: Adam estimates per-parameter 1st moment (mean) and 2nd moment (variance) to apply adaptive learning rate. Less sensitive to learning rate, fast convergence → safe starting point for most deep learning. Test: "DL learning too slow or tuning hard?" → Adam naturally surfaces
+Adam estimates the first moment (mean) and second moment (variance) of the gradient for each parameter and applies an adaptive learning rate. As a result it is less sensitive to the learning rate and converges quickly, making it the safe starting point for most deep learning projects. On the exam, if "deep learning training is too slow or learning-rate tuning is hard," Adam is the natural choice.
 
 ## Learning Rate
 
-Most critical hyperparameter. Controls how much we shift weights per step.
+The most important hyperparameter. It decides how far the weights move at once.
 
-- **Too large**: Loss diverges or oscillates, won't converge (NaN/explosion)
-- **Too small**: Convergence glacially slow, stuck in local minima
-- **Learning rate scheduling**: Start large, decay gradually (step decay, cosine, warmup)
-- **Warmup**: Gently raise LR first few steps, prevent initial instability (Transformers etc.)
+- **Too large**: the loss diverges or oscillates and fails to converge (loss goes NaN or explodes).
+- **Too small**: convergence is excessively slow and training gets stuck in a local minimum.
 
-> 💡 **Related Theory**: Learning curve diagnosis is key. Loss spikes/oscillates → lower LR. Train loss low but val high → overfitting (dropout, regularization, augment, early stop). Both low → underfitting (bigger model, more learning, more features). SageMaker Automatic Model Tuning (Bayesian) can auto-search LR, batch, layer count
+### Learning Rate Strategy Table
 
-## Regularization and Overfitting Prevention
+| Strategy | Behavior | When | Caution |
+|---|---|---|---|
+| **Constant** | Same value from start to finish | Short experiments, with Adam | Wanders around the minimum late in training |
+| **Step decay** | Lowers by a fixed factor every set number of epochs | Long training, finishing convergence | Decay timing and factor are extra tuning targets |
+| **Cosine** | Smoothly lowers toward 0 | When the number of epochs is fixed in advance | Check compatibility with early stopping |
+| **Warmup** | Gradually raises over the first few steps | Transformers and others unstable early on | A warmup period that is too long is wasteful |
 
-Deep networks = many parameters = easy overfitting. Standard fixes:
+- The basic sense of learning-rate scheduling: **start large, then reduce gradually**.
+- Warmup prevents large gradients in the first few steps from wrecking the weights.
 
-- **Dropout**: Random disable neurons during training → prevent co-adaptation
-- **L2 weight decay**: Penalty on large weights
-- **Batch Normalization**: Normalize layer input → train stability/speed
-- **Data augmentation**: Warp input, ensure diversity
-- **Early Stopping**: Stop when val loss stops improving
+### Learning Curve Diagnosis Table
+
+| Training loss | Validation loss | Diagnosis | Remedy |
+|---|---|---|---|
+| Explodes / NaN | — | Learning rate too large / exploding gradients | Lower the learning rate, gradient clipping |
+| Decreases very slowly | Also slowly | Learning rate too small | Raise the learning rate, scheduling, Adam |
+| Keeps decreasing | Rises from some point | Overfitting | Dropout, regularization, augmentation, early stopping |
+| Stalls at a high value | Stalls at a high value | Underfitting | Enlarge the model, train longer, add features |
+| Decreases then oscillates | Oscillates | Learning rate too large late in training | Apply a decay schedule |
+
+Learning curve diagnosis is the key. Loss explodes or oscillates → lower the learning rate. Training loss is low but validation loss rises → overfitting (dropout, regularization, augmentation, early stopping). Both training and validation loss are high → underfitting (enlarge the model, train more, add features). SageMaker Automatic Model Tuning (Bayesian optimization) can automatically search the learning rate, batch size, and number of layers.
+
+## Regularization and Preventing Overfitting
+
+Deep learning overfits easily because it has so many parameters. The main remedies are broken down by technique, effect, when to use, and caution.
+
+| Technique | Effect | When to use | Caution |
+|---|---|---|---|
+| **Dropout** | Randomly turns off some neurons during training → prevents co-adaptation | Networks with large fully connected layers | Turn it off at inference. Too high a rate causes underfitting |
+| **L2 weight decay** | Penalizes large weights → smoother decision boundary | Almost always a default option | A large coefficient causes underfitting |
+| **L1 regularization** | Pushes weights to 0, making them sparse | When a feature-selection effect is needed | L2 is more common in deep learning |
+| **Batch normalization (BatchNorm)** | Normalizes layer inputs to stabilize and speed up training | Deep CNNs and MLPs | Statistics become unstable with very small batches |
+| **Data augmentation** | Transforms inputs to gain diversity | First choice when data is scarce | Apply to the training set only. Do not break the meaning of the label |
+| **Early stopping** | Stops training when validation loss no longer decreases | Almost always | Needs a validation set and is sensitive to the patience setting |
+
+> ⚠️ **Trap**: Batch normalization and dropout have different purposes. Batch normalization is mainly for **stabilizing and speeding up training** (with a weak regularization effect as a side benefit), while dropout aims to **suppress overfitting**. Picking dropout for "training is unstable," or only batch normalization for "it is overfitting," points in the wrong direction.
+
+## What to Select the Model By — Metric Interpretation Table
+
+Both early stopping and Automatic Model Tuning work only after you fix one metric to optimize. That choice is itself a business decision.
+
+| Metric | What it tells you | When to prioritize | Trap |
+|---|---|---|---|
+| Accuracy | Share of all predictions that were right | Only when classes are balanced | With 1% positives, "all negative" is also 99% |
+| Precision | Of those called positive, how many are truly positive | False-positive cost is high | Easy to raise by predicting positive for only a few |
+| Recall | Share of actual positives caught | False-negative cost is high | Predicting everything positive gives 1.0 |
+| F1 | Harmonic mean of precision and recall | When the two costs are similar | Hides which side is the problem |
+| ROC-AUC | Discrimination independent of threshold | Comparing models | Optimistic under extreme imbalance |
+| PR-AUC | Discrimination for the minority class | When the positive ratio is extremely low | Value changes if the class ratio changes |
+| RMSE / MAE | Size of the regression error | To penalize large errors / to be robust to outliers | RMSE is sensitive to outliers |
+
+If you set the tuning objective metric to accuracy, the search converges in the wrong direction on imbalanced data. Decide the objective metric first so that it reflects the **costly error type**, and only then run tuning.
 
 ## Transfer Learning
 
-Reuse knowledge from large pre-trained models on new task. Few data, short time, strong results.
+It transfers the knowledge of a model pretrained on large-scale data to a new task. It is powerful with little data and little time.
 
 ```text
-Pre-trained model (ImageNet/huge corpus)
-   ├─ Backbone (feature extractor): reuse weights
-   └─ Head (output): replace, retrain for new task
+Pretrained model (ImageNet / large corpus)
+   ├─ Backbone (feature extractor): reuse the weights
+   └─ Head (output layer): replace and retrain for the new task
 ```
 
-Two strategies:
-- **Feature extraction**: **Freeze** backbone, train new head only. Very limited data
-- **Fine-tuning**: Partially/fully retrain backbone at low LR. Sufficient data
+```text
+[Feature extraction — very little data]    [Fine-tuning — a moderate amount of data]
 
-Pick:
-- Limited data + similar domain → feature extraction (freeze)
-- Ample data or different domain → fine-tune (low LR)
+  ❄️ Conv block 1  (frozen)                  ❄️ Conv block 1  (stays frozen)
+  ❄️ Conv block 2  (frozen)                  ❄️ Conv block 2  (stays frozen)
+  ❄️ Conv block 3  (frozen)                  🔥 Conv block 3  (unfrozen with a low learning rate)
+  🔥 New Dense head (trained)                🔥 New Dense head (trained)
 
-> 💡 **Related Theory**: During fine-tuning, use **much lower LR than training from scratch** to avoid destroying pre-trained weights. Also, "progressive unfreezing" (train head first, gradually unfreeze backbone) is stable. SageMaker JumpStart provides pre-trained models and fine-tuning scripts, simplifying this
+  ❄️ = weights fixed   🔥 = updated
+  "Gradual unfreezing" — train the head first, then progressively release the backbone — is stable.
+```
 
-## Framework and SageMaker Integration
+Two approaches:
 
-| Framework | Strength |
+- **Feature extraction**: **freeze** the backbone and train only the new head. For very little data.
+- **Fine-tuning**: retrain part or all of the backbone together at a low learning rate. For a moderate amount of data.
+
+### Data Volume × Domain Similarity Quadrants
+
+| | Domain is **similar** to pretraining | Domain is **different** |
+|---|---|---|
+| **Little data** | Freeze the backbone + train only the head (feature extraction) | Unfreeze only some upper layers with a low learning rate, combined with augmentation |
+| **Lots of data** | Fine-tune everything with a low learning rate | Widen the fine-tuning scope or also consider training from scratch |
+
+Selection criteria summary:
+
+- Little data + similar domain → feature extraction (frozen).
+- Lots of data or different domain → fine-tuning (low learning rate).
+
+When fine-tuning, use a **much lower learning rate than when training from scratch** so you do not ruin the pretrained weights. Also, "gradual unfreezing" — train the head first (backbone frozen), then progressively release the backbone — is stable. SageMaker JumpStart provides pretrained vision and NLP models and fine-tuning scripts, simplifying this process.
+
+In transfer learning, "retrain all layers at once with a large learning rate" is a wrong answer. It erases the knowledge gained from pretraining within the first few steps.
+
+## Frameworks and SageMaker Integration
+
+| Framework | Characteristic |
 |------|------|
-| **TensorFlow/Keras** | Industry deployment/serving rich, high-level Keras API |
-| **PyTorch** | Dynamic graphs, research/debug friendly, now most popular |
-| **MXNet** | Basis of some SageMaker builtins (historical) |
+| **TensorFlow / Keras** | Rich industrial deployment and serving ecosystem, high-level API with Keras |
+| **PyTorch** | Dynamic graphs make it friendly for research and debugging, currently the most widely used |
+| **MXNet** | The basis of some SageMaker built-ins (in the past) |
 
-SageMaker usage:
-- **Script Mode**: Run your TF/PyTorch script in SageMaker training container
-- **Pre-built containers / Deep Learning Containers (DLC)**: TF/PyTorch version management
-- **Distributed training**: Data/model parallelism libraries, multi-GPU, multi-instance
-- **SageMaker JumpStart**: Pre-trained models, solutions, deploy/fine-tune with clicks/script
-- GPU training uses `ml.p`/`ml.g` instances, inference cost optimization considers `ml.inf`(Inferentia)
+Use in SageMaker:
 
-## Core Summary
+- **Script Mode**: run your own TF/PyTorch script in a SageMaker training container.
+- **Prebuilt containers / Deep Learning Containers (DLC)**: managed images for each TF and PyTorch version.
+- **Distributed training**: data-parallel and model-parallel libraries, multi-GPU and multi-instance.
+- **SageMaker JumpStart**: deploy and fine-tune pretrained models and solutions by click or script.
+- Consider `ml.p` and `ml.g` instances for GPU training, and `ml.inf` (Inferentia) and similar for optimizing inference cost.
 
-- Loss: regression = MSE, classification = cross-entropy (never MSE for classification)
-- Optimizer default Adam (adaptive, fast), simple/robust = SGD (+Momentum)
-- Learning rate #1 tuning target: too big = diverge, too small = slow, use schedules/warmup
-- Overfitting prevention: dropout, weight decay, batch norm, augment, early stop
-- Transfer learning: limited data → freeze (feature extraction), ample data → low LR fine-tune
-- SageMaker integrates TF/PyTorch via Script Mode, DLC, distributed, JumpStart
+### Situation → AWS Choice Mapping Table
+
+| Situation | Choice | Why |
+|---|---|---|
+| Run your own training script as a managed job | Script Mode | Runs your code as-is in the training container |
+| Do not want to build the framework environment yourself | Deep Learning Containers | Managed images per version |
+| Automatically search learning rate, batch size, dropout | Automatic Model Tuning | Efficient search via Bayesian optimization |
+| The model does not fit on one GPU | Model-parallel distributed training | Splits the model across several devices |
+| Data is large and one instance is too slow | Data-parallel distributed training | Splits the batch across several devices |
+| Start quickly from a pretrained model | JumpStart | Provides the model + fine-tuning scripts |
+| Want to lower inference cost | Consider the `ml.inf` (Inferentia) family | Inference-specialized accelerators |
+
+## Symptom → Cause → Remedy
+
+| Symptom | Cause | First remedy |
+|---|---|---|
+| Loss explodes to NaN | Learning rate too large | Lower the learning rate |
+| Convergence is too slow | Learning rate too small, unsuitable optimizer | Raise the learning rate, scheduling, Adam |
+| Training loss ↓, validation loss ↑ | Overfitting | Dropout, L2, augmentation, early stopping |
+| Both losses high | Underfitting | Enlarge the model, train longer, add features |
+| Only 1,000 training images | Insufficient data | Transfer learning (frozen) + augmentation |
+| Performance actually drops after fine-tuning | Learning rate too large destroyed prior knowledge | Cut the learning rate drastically, gradual unfreezing |
+| Training fails with OOM | Batch or model too large | Reduce the batch, model parallelism |
+| Too many hyperparameter combinations | Limits of manual search | Automatic Model Tuning |
+
+The next post compresses all of Week 7 into one decision map and organizes confusable concept pairs from a comparison perspective.
+
+## 📖 Glossary
+
+- **Loss function**: a single number summarizing the difference between predictions and ground truth. What training tries to minimize.
+- **Optimizer**: the algorithm that actually updates the weights using the gradients obtained by backpropagation.
+- **Adam**: an optimizer that combines Momentum and RMSProp to use adaptive per-parameter steps. The deep learning default.
+- **Learning rate**: the value that sets how far the weights move at once. The first thing to tune.
+- **Learning rate warmup**: a technique that gradually raises the learning rate over the first few steps to prevent early instability.
+- **Dropout**: an overfitting-suppression technique that randomly turns off some neurons during training to prevent co-adaptation.
+- **Weight decay (L2)**: regularization that penalizes large weights to make the model smoother.
+- **Batch normalization**: a technique that normalizes the distribution of layer inputs to stabilize and speed up training.
+- **Early stopping**: a technique that stops training when validation loss no longer decreases, preventing overfitting.
+- **Transfer learning / fine-tuning**: taking and reusing pretrained weights / retraining those weights together at a low learning rate.
 
 ## 📝 Practice Questions
 

@@ -1,6 +1,12 @@
 # Day 5 - Week 2 Comprehensive Review: From Transformation to Distributed Training Data Supply
 
-This week covered "how to process, automate, augment, and efficiently supply data for training." This is the second axis of data engineering: **transformation and pipelines**. Today, we reconnect Days 1-4 in a single flow and clarify choice criteria that are easily confused in exams.
+## 📌 Key Takeaways
+
+- Week 2 covered the second axis of data engineering — **transformation → automation → augmentation → efficient supply**.
+- **Glue = serverless, minimal operations**, **EMR = fine-grained control, multiple frameworks**. The decision axes are operational burden, workload type, and framework variety.
+- **Step Functions = general-purpose, mixed workflows**, **SageMaker Pipelines = ML-specific, lineage**. A hybrid setup is also standard practice.
+- Imbalance is handled in three layers: **data layer (SMOTE) + algorithm layer (weights, thresholds) + evaluation layer (PR-AUC)**.
+- Data supply has a single goal — **making sure expensive GPUs don't sit idle waiting for I/O**.
 
 ## Week 2 Flow at a Glance
 
@@ -13,7 +19,7 @@ This week covered "how to process, automate, augment, and efficiently supply dat
    ▼  Step Functions (general-purpose) / SageMaker Pipelines (ML-specific) + EventBridge trigger
 [Reproducible Training Dataset]
    │  Day 3: Augmentation, Synthesis, Imbalance Handling
-   ▼  Augmentation (flip, back-translation) / Synthesis (GAN) / SMOTE, weights
+   ▼  Augmentation (flip, back-translation) / Synthesis (GAN) / SMOTE, class weights
 [Sufficient and Balanced Dataset]
    │  Day 4: Storage and Access Optimization
    ▼  File/Pipe/FastFile mode / FSx for Lustre / ShardedByS3Key
@@ -25,60 +31,144 @@ Core message: **Data preparation doesn't end with a single transformation step.*
 ## Day 1 Review — Transformation and ETL
 
 - **ETL** = Extract → Transform → Load. In ML, the output is a training dataset.
-- **AWS Glue**: Serverless Spark. Data Catalog, Crawler, ETL Job, DynamicFrame. Minimal operational burden, suitable for sporadic and standard ETL. Billing is DPU-hours.
-- **Amazon EMR**: Directly operate Hadoop/Spark/Hive/Presto on EC2 clusters. Suitable for heavy workloads requiring fine-tuning, multiple frameworks, and spot savings.
+- **AWS Glue**: Serverless Spark. Data Catalog, Crawler, ETL Job, DynamicFrame. Minimal operational burden, suitable for sporadic and standard ETL. Billing is by DPU-hour.
+- **Amazon EMR**: Directly operate Hadoop/Spark/Hive/Presto on EC2 clusters. Suitable for heavy workloads requiring fine-grained tuning, multiple frameworks, and spot savings.
 - **Large-scale preprocessing**: Parquet columnar format, partitioning (partition pruning), appropriate file sizes, predicate pushdown.
+- **Spark intuition**: Shuffle is the most expensive operation, and skew dominates job time. Use job bookmarks for incremental processing.
 
-> 💡 **Related Theory**: Three axes for Glue vs EMR decision—operational burden (minimize→Glue), workload type (short and sporadic→Glue, long and heavy batch→EMR), framework variety (Spark only→Glue, multiple engines→EMR).
+> 💡 **Concept**: Three axes for the Glue vs EMR decision — operational burden (minimize → Glue), workload type (short and sporadic → Glue, long and heavy batch → EMR), framework variety (Spark only → Glue, multiple engines → EMR).
 
 ## Day 2 Review — Pipeline Automation
 
-- **Step Functions**: General-purpose orchestrator. Define state machines with ASL (JSON). Strong for ML+non-ML mixing, approvals, external systems, and complex branching.
+- **Step Functions**: General-purpose orchestrator. Define state machines with ASL (JSON). Strong for mixed ML + non-ML, approvals, external systems, and complex branching.
 - **SageMaker Pipelines**: ML-specific. Python SDK. ProcessingStep/TrainingStep/TuningStep/ConditionStep/RegisterModel. Built-in lineage and model registry.
-- **Selection criteria**: Pure ML CI/CD and traceability → SageMaker Pipelines; ML+non-ML mixing and approvals → Step Functions. Mixed usage is also possible.
-- **Triggers**: EventBridge (cron/events), S3 events → start pipeline.
+- **Selection criteria**: Pure ML CI/CD and traceability → SageMaker Pipelines; mixed ML + non-ML and approvals → Step Functions. Combined use is also possible.
+- **Triggers**: EventBridge (cron/events), S3 event → start pipeline.
 
-> ⚠️ **Pitfall**: "It's ML, so definitely SageMaker Pipelines" is oversimplified and incorrect. If there are many non-ML steps, approvals, or complex branching, Step Functions may be more suitable.
+> ⚠️ **Pitfall**: "It's ML, so definitely SageMaker Pipelines" is an oversimplified wrong answer. If there are many non-ML steps, approvals, or complex branching, Step Functions is more suitable.
 
 ## Day 3 Review — Augmentation, Synthesis, Imbalance Handling
 
-- **Augmentation**: Diversify existing data through label-preserving transformations. Images (flip, rotate, color jitter), text (synonym replacement, back-translation). Domain meaning preservation is essential.
-- **Synthesis**: Generate new virtual data. GAN, simulation, synthetic tabular data (privacy). Risk of distribution gap → validation must use real data.
-- **Imbalance handling**: Data level (over/undersampling, **SMOTE**=interpolated synthesis), algorithm level (class weights, thresholds), evaluation level (ban accuracy → **recall, F1, PR-AUC**).
+- **Augmentation**: Diversify existing data through label-preserving transformations. Images (flip, rotate, color jitter), text (synonym replacement, back-translation). Preserving domain meaning is essential.
+- **Synthesis**: Generate new virtual data. GAN, simulation, synthetic tabular data (privacy). Risk of distribution gap → validate with real data.
+- **Imbalance handling**: Data layer (over/undersampling, **SMOTE** = interpolated synthesis), algorithm layer (class weights, thresholds), evaluation layer (no accuracy → **recall, F1, PR-AUC**).
 
-> 💡 **Related Theory**: SMOTE, unlike simple duplication, interpolates between minority samples and nearest neighbors to create new points. In imbalance like 1:999, accuracy gives false reassurance, so evaluation should use recall and PR-AUC.
+SMOTE, unlike simple duplication, creates new points by interpolating between a minority sample and its nearest neighbors. With an imbalance like 1:999, accuracy gives false reassurance, so evaluation should use recall and PR-AUC.
 
 ## Day 4 Review — Storage and Access Optimization
 
-| Option | One-line Summary | Best For |
-|--------|-----------------|----------|
-| File mode | Full download then start | Small data, repeated reads |
+| Option | One-line summary | Best for |
+|---|---|---|
+| File mode | Full download, then start | Small scale, repeated reads |
 | Pipe mode | S3 streaming, immediate start | Very large data, sequential processing |
 | FastFile mode | Streaming + POSIX access | Large data + random access |
 | FSx for Lustre | Ultra-fast parallel FS, S3 integration | Large scale + repeated + low latency + distributed |
+| EFS | Managed NFS, multiple mounts | Shared by several jobs/notebooks |
 | ShardedByS3Key | Data split and distributed per node | Data-parallel distributed training |
 
-- Core goal: **Ensure expensive GPUs don't sit idle waiting for I/O.**
-- Sharding prerequisite: Data must be divided into multiple S3 objects to be effective.
+- Core goal: **Make sure expensive GPUs don't sit idle waiting for I/O.**
+- Sharding prerequisite: The data must be divided into multiple S3 objects to be effective.
+- Distributed training defaults to data parallelism (replicate the model + split the data); use model parallelism only when the model doesn't fit on a GPU.
 
-> 🎯 **Integrated Scenario**: "Multiple TBs of data, 8 GPU nodes, startup is too slow." → Divide data into multiple Parquet shards (Day 1) → auto-generate through pipeline (Day 2) → if imbalanced, use SMOTE/weights (Day 3) → supply with ShardedByS3Key + FSx for Lustre (Day 4).
+> 🎯 **Integrated scenario**: "Several TB of data, 8 GPU nodes, startup is too slow." → Split the data into multiple Parquet shards (Day 1) → auto-generate through a pipeline (Day 2) → if imbalanced, SMOTE/weights (Day 3) → supply with ShardedByS3Key + FSx for Lustre (Day 4).
+
+## Week 2 Service and Technique Map
+
+| Role | Tool / technique | One line |
+|---|---|---|
+| Serverless ETL | AWS Glue | Spark transformations without cluster management |
+| Metadata | Glue Data Catalog | Central repository for schemas, locations, partitions |
+| No-code cleansing | Glue DataBrew | Visual cleansing recipes |
+| Big-data cluster | Amazon EMR | Directly operate Hadoop, Spark, Hive, Presto |
+| Middle option | EMR Serverless | Run just Spark jobs, no cluster |
+| General orchestration | AWS Step Functions | Connect heterogeneous services with a state machine |
+| ML pipeline | SageMaker Pipelines | ML-specific CI/CD, lineage built in |
+| Trigger | Amazon EventBridge | Start pipelines on cron or events |
+| Preprocessing execution | SageMaker Processing | Managed distributed preprocessing/evaluation jobs |
+| Imbalance correction | SMOTE, class weights | Data-layer and algorithm-layer responses |
+| Data supply | File / Pipe / FastFile | Startup delay vs random access |
+| High-speed storage | FSx for Lustre | Repeated, high-throughput training I/O |
+| Distributed allocation | ShardedByS3Key | Allocate data pieces per node |
 
 ## Complete Summary of Commonly Confused Comparison Points
 
-| Confusing Pair | Core Distinction |
+| Confusing pair | Decisive difference |
 |---|---|
 | Glue vs EMR | Serverless, minimal operations vs full control, multiple frameworks |
+| Glue Crawler vs Glue ETL Job | Schema inference and registration vs actual data transformation |
 | Step Functions vs SageMaker Pipelines | General-purpose, mixed workflows vs ML-specific, lineage |
 | Augmentation vs Synthesis | Transform existing data vs generate new virtual data |
 | Oversampling vs SMOTE | Simple duplication vs interpolated synthesis |
-| File vs Pipe vs FastFile | Full download vs streaming vs compromise |
+| Undersampling vs class weights | Throw data away vs adjust the penalty in the loss |
+| File vs Pipe vs FastFile | Full download vs streaming vs a compromise |
 | FullyReplicated vs ShardedByS3Key | Full replication vs per-node splitting |
+| Data parallel vs model parallel | Split the data vs split the model |
+| accuracy vs PR-AUC | For balanced data vs for extreme imbalance |
 
-> 💡 **Related Theory**: The question pattern in MLS-C01's data engineering section is almost always trade-off judgment of "cost/operational burden/scale/access pattern." The answer is not a single technology but **a choice matching the situation (requirements)**. The key is training to find clues like "minimal operations," "very large data," "random access needed," "non-ML steps included" in the problem and map them.
+The question pattern in the MLS-C01 data engineering domain is almost always a trade-off judgment of "cost / operational burden / scale / access pattern." The answer is not a single technology but **a choice matching the situation (requirements)**. The key is training to find clues in the problem such as "minimal operations," "very large data," "random access needed," and "non-ML steps included," and map them.
 
-## Summary
+## Passage Clue → Answer Mapping
 
-Week 2 covered the entire process of getting data to models—transformation (Glue/EMR), automation (Step Functions/SageMaker Pipelines), augmentation (augmentation, synthesis, SMOTE), efficient supply (input modes, FSx, sharding). Underlying all choices are **trade-offs of cost, operational burden, scale, and access pattern**. Next week, we move into serious **modeling and algorithms** on top of this prepared data. I recommend reviewing the comparison tables we covered today right before the exam.
+| Phrase in the passage | What to recall immediately |
+|---|---|
+| "Few operations staff," "don't want to manage clusters" | Glue or EMR Serverless |
+| "Hive and Presto too," "fine-grained tuning" | Amazon EMR |
+| "Cut costs with spot" | EMR task nodes |
+| "Approval wait," "integration with external systems" | Step Functions |
+| "Lineage," "model registry," "pure ML CI/CD" | SageMaker Pipelines |
+| "Run automatically when new data arrives" | S3 event / EventBridge |
+| "Positives are 0.2%," "can't catch fraud" | SMOTE/class weights + recall/PR-AUC |
+| "Can't use real data because of privacy" | Synthetic data |
+| "Labels must not change" | Domain-meaning-preserving augmentation |
+| "GPUs wait on downloads" | Pipe/FastFile mode |
+| "Repeated training on the same data" | FSx for Lustre |
+| "Every node receives the whole dataset" | ShardedByS3Key |
+| "The model doesn't fit in GPU memory" | Model parallelism |
+
+## Week 2 Wrong-Answer Notes
+
+- **An always-on EMR cluster just because the data is large** — for sporadic workloads, serverless is right.
+- **The finer you split partitions, the better** — small files explode in number and it actually gets slower.
+- **It's ML, so SageMaker Pipelines** — if there are many non-ML steps, use Step Functions.
+- **Solving failures by increasing the retry count** — permission, path, and data problems are not fixed by retries.
+- **Applying SMOTE to the validation set too** — resampling applies to the training set only. Validation must keep the real distribution.
+- **Validating with synthetic data** — validation must always use real data.
+- **A single giant file + ShardedByS3Key** — it can't be split by object, so there is no effect.
+- **Sharding the validation channel too** — each node sees a different validation set, so the metrics diverge.
+
+## Self-Check
+
+Answer these in your head.
+
+1. Few operations staff and a few standard Spark transformations a day? → **Glue serverless ETL**
+2. Need Spark, Hive, and Presto together and fine-grained instance tuning? → **Amazon EMR**
+3. What is the most expensive operation in a Spark job? → **Shuffle**
+4. To skip data already processed and handle only new data? → **Glue job bookmarks**
+5. The top-level orchestrator for a workflow mixing approval waits and Lambda post-processing? → **Step Functions**
+6. Which step expresses "register the model only when accuracy is 0.85 or higher"? → **ConditionStep**
+7. The technique that grows a minority class by interpolation instead of simple duplication? → **SMOTE**
+8. Resampling is applied to which dataset only? → **The training set only**
+9. What do you validate a model trained on synthetic data with? → **Real data**
+10. To start training immediately on hundreds of GB? → **Pipe (or FastFile) mode**
+11. Repeating tuning hundreds of times on the same dataset? → **FSx for Lustre**
+12. The prerequisite for `ShardedByS3Key` to work? → **Data split across multiple S3 objects**
+13. If the model doesn't fit in a single GPU's memory? → **Model parallelism**
+14. What must always go along with long spot-instance training? → **Checkpoints**
+
+Underlying every choice is a **trade-off of cost, operational burden, scale, and access pattern**. Next week we move into serious **modeling and algorithms** on top of this prepared data.
+
+## 📖 Glossary
+
+- **ETL**: Extract, transform, load. In ML, its output is the training dataset itself.
+- **DPU**: Glue's unit of processing capacity. About 4 vCPU + 16 GB of memory.
+- **Shuffle**: A Spark operation that redistributes data across nodes by key. The most expensive one.
+- **Orchestration**: Declaratively managing the execution order, conditions, and retries of multiple steps.
+- **Lineage**: A record that lets you trace which data, code, and parameters a model came from.
+- **SMOTE**: Oversampling that creates new samples by interpolating between a minority-class sample and its nearest neighbors.
+- **Distribution gap**: The risk that the distribution of synthetic/augmented data diverges from reality, lowering real-world performance.
+- **Input mode**: How S3 data is brought into the training container. File, Pipe, FastFile.
+- **ShardedByS3Key**: A setting that splits S3 objects per instance so each receives only a different piece.
+- **Data parallel / model parallel**: Splitting the data and replicating the model / splitting the model itself across several GPUs.
 
 ---
 

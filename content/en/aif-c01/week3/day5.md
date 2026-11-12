@@ -1,106 +1,180 @@
-# Day 5 - Week 3 Comprehensive Review: Wrapping Up Generative AI Fundamentals at a Glance
+# Day 5 - Week 3 Comprehensive Review: Tying Together Generative AI Basics at a Glance
 
-This week we covered the highest-weight section of AIF-C01: the fundamentals of generative AI. Monday started with "how is generative AI different from traditional ML," where we captured foundation models and LLMs. Tuesday we opened them up to see tokens, embeddings, context windows, and inference. Wednesday we learned how to communicate well with models (prompt engineering), and Thursday we addressed its limits and risks (hallucinations, bias, non-determinism).
+## 📌 Key Takeaways
 
-Today we tie scattered pieces into one big picture. Exams ask less "define this concept separately" and more "which choice fits this scenario?"—so catching connections between concepts is key. Rather than new material, we'll re-thread the essentials and organize frequently appearing comparisons, traps, and service mappings.
+- Generative AI consists of FMs/LLMs that create new content, and it works in the order **token → embedding → context window → inference**.
+- The ways of handling a model get more expensive in the order **prompt → RAG → fine-tuning**. Format and tone are for prompts, information the model doesn't know is for RAG, and deep internalization is for fine-tuning.
+- Few-shot and RAG both **leave the weights unchanged.** They merely insert examples or documents into the prompt. Only fine-tuning changes the weights.
+- The risks are hallucination, bias, and non-determinism, and each symptom has a different remedy. Hallucination is handled with grounding (RAG) and review, bias with measurement (Clarify), and non-determinism with inference parameters and a verification step.
+- For high-risk decisions, place a final human review (Human-in-the-loop). The output of generative AI is a draft, not verified fact.
 
-## Week 3 in One Sheet
+## Week 3 on One Page
+
+This week we passed through AIF-C01 Domain 2, "Fundamentals of Generative AI" (24% of scored questions). Domain 3, "Applications of Foundation Models" (28%), the heaviest domain, stands on these fundamentals too, so more than half of the two domains combined hinges on this week's concepts.
+
+- Monday: Started with "How is generative AI different from traditional ML?" and grasped foundation models and LLMs.
+- Tuesday: Opened them up and looked at tokens, embeddings, the context window, and inference.
+- Wednesday: How to talk to a model well (prompt engineering).
+- Thursday: Its limits and risks (hallucination, bias, non-determinism).
+
+Since the exam tends to weave concepts together as "What is the right choice for this scenario?" rather than ask about them separately, grasping the connections between concepts is the key.
 
 ```
-[Day1] Generative AI = Creates new content (≠ Traditional ML's judge/predict)
+[Day1] Generative AI = creating new content (≠ traditional ML's judgment/prediction)
           └ Foundation: Foundation Model (FM) → FM for language = LLM
-                                          └ AWS: Call via Amazon Bedrock
+                                          └ AWS: invoked through Amazon Bedrock
                     │
-[Day2] Inside LLM: Text → [Tokenization] → [Embedding (meaning vectors)]
-                          → [Process in context window] → [Inference (predict next token)]
-                    └ Cost=tokens, memory limit=window, diversity=temperature
+[Day2] Inside an LLM:  text → [tokenization] → [embedding (semantic vector)]
+                          → [processing within the context window] → [inference (next-token prediction)]
+                    └ cost = tokens, memory limit = window, diversity = temperature
                     │
-[Day3] Writing well: Prompt Engineering (instruction·context·input·format)
-                    └ Zero-shot / Few-shot(In-Context Learning) / CoT
-                    └ Order to try: Prompts → RAG → Fine-tuning
+[Day3] Using it well:   Prompt engineering (instruction, context, input, format)
+                    └ Zero-shot / Few-shot (In-Context Learning) / CoT
+                    └ Order to try: prompt → RAG → fine-tuning
                     │
-[Day4] Risks: Hallucination · Bias · Non-determinism (+privacy·copyright·toxicity·injection)
-                    └ Responsible AI: Clarify(bias) / Guardrails(safety) / AI Service Cards(transparency)
+[Day4] Risks:      hallucination · bias · non-determinism (+ privacy, copyright, toxicity, injection)
+                    └ Responsible AI: Clarify (bias) / Guardrails (safety) / AI Service Cards (transparency)
                     └ Human-in-the-loop for high-risk areas
 ```
 
-This flow alone reviews 80% of Week 3. If you can explain "why" for each arrow, you're exam-ready.
+This one flow reviews 80% of Week 3. If you can explain "why" for each arrow, you are ready for the exam.
 
-## Core Terms Quick Reference
+## Quick Summary of Key Terms
 
-| Term | One-line Definition |
+| Term | One-line definition |
 |------|-----------|
 | Generative AI | AI that creates new content (text, images, code) |
-| Foundation Model (FM) | A massive foundational model pre-trained once and reused across tasks |
-| LLM | An FM handling language, essence is predicting next token |
-| Transformer | Self-attention-based core architecture of LLMs |
-| Token | Unit by which model divides text (basis for charge and limits) |
-| Embedding | Converting tokens/text into numeric vectors carrying meaning |
-| Context Window | Maximum input + output tokens processable at once |
-| Inference | Process of generating answers with a trained model (per request) |
-| Temperature | Controls output diversity/creativity (lower = more consistent) |
-| Zero/Few-shot | Prompt technique giving 0 or a few examples |
-| RAG | Technique to search external/internal documents and reflect in answers |
-| Fine-tuning | Additional training to adjust model weights for a domain |
-| Hallucination | Phenomenon of plausibly generating false content |
-| Bias | Learning data prejudice to produce unfair output |
-| Non-determinism | Property where same input can produce different outputs |
+| Foundation Model (FM) | A huge foundation model pretrained once and reused for many tasks |
+| LLM | An FM that handles language; at its core, next-token prediction |
+| Transformer | The core LLM architecture based on self-attention |
+| Token | The unit into which a model cuts text (the basis for billing and limits) |
+| Embedding | Text/tokens converted into numeric vectors that carry meaning |
+| Context window | The maximum of input + output tokens that can be processed at one time |
+| Inference | The process of generating an answer with a trained model (on every request) |
+| temperature | Controls the diversity/creativity of the output (lower is more consistent) |
+| Zero/Few-shot | A prompt technique giving 0 examples / a few examples |
+| RAG | A technique that retrieves external/in-house documents and reflects them in the answer |
+| Fine-tuning | Adjusting model weights to a domain through additional training |
+| Hallucination | The phenomenon of plausibly inventing content that is not factual |
+| Bias | Learning the prejudices of the data and producing unfair output |
+| Non-determinism | The property that the output can differ even for the same input |
 
-> 💡 **Related theory**: Rather than memorizing these terms separately, anchor them on two axes: "the journey of text passing through the model" and "the ladder of methods to handle the model (prompts → RAG → fine-tuning)." Most exam questions point to one location on these two axes.
+Rather than memorizing these terms separately, hanging them on two axes, "the journey of text through the model" and "the ladder of ways to handle a model (prompt → RAG → fine-tuning)," makes them last longer. Finding where the question's situation falls on these two axes gives you a clue to solving it.
 
-## Frequently Appearing Comparisons
+## Comparison Summary
 
-**Traditional ML vs Generative AI**: If judge/predict, traditional ML; if generate new content, generative AI.
+- **Traditional ML vs generative AI**: If it is judgment/prediction, traditional ML; if it is generating new content, generative AI.
+- **Prompt vs RAG vs fine-tuning**:
+  - Changing only format and tone → prompt (cheapest and fastest).
+  - Supplying information the model doesn't know (latest, in-house) → RAG (no weight change).
+  - Deeply internalizing domain patterns → fine-tuning (expensive, changes weights).
+- **Zero-shot vs Few-shot**: 0 examples vs a few. Both are In-Context Learning, so they don't change weights (distinguish from fine-tuning).
+- **Low vs high temperature**: Low is consistent and fact-based; high is diverse and creative.
 
-**Prompt vs RAG vs Fine-tuning**:
-- Change only format/tone → Prompts (cheapest and fastest).
-- Supply unknown information (latest, internal) → RAG (no weight change).
-- Deeply internalize domain patterns → Fine-tuning (expensive, weights change).
+> ⚠️ **Pitfall**: Three points that are especially confusing on the exam. ① "Few-shot = training" is wrong. Examples are merely shown in the prompt; the weights do not change. ② "RAG = fine-tuning" is wrong. RAG is not training but "inserting reference material." ③ "A longer prompt = a better answer" is wrong. Clarity matters more than length.
 
-**Zero-shot vs Few-shot**: 0 examples vs a few. Both are In-Context Learning so don't change weights (distinguish from fine-tuning).
+## New Perspective 1: How a Single Question Becomes an Answer
 
-**Low vs High temperature**: Low = consistent, fact-based; High = diverse, creative.
+We rebuild what we learned by day of the week as **the life of a single request**. The situation is asking an internal policy chatbot, "What is the business trip expense limit?"
 
-> ⚠️ **Traps**: Two most confusing things on exams. ① "Few-shot ≠ learning." You show examples in the prompt but don't change weights. ② "RAG ≠ fine-tuning." RAG isn't learning—it's "inserting reference material." ③ "Longer prompt ≠ better answer." Clarity matters more than length.
+| Order | What happens | Day learned | Where money and limits are involved |
+|------|------|------|------|
+| ① | Convert the question into an embedding and find nearby policy fragments in the vector store | Day 2 | Embedding calls, vector store operation |
+| ② | Assemble the instruction + retrieved fragments + question into one prompt | Day 3 | **Input tokens** for the assembled length |
+| ③ | The entire prompt must fit inside the context window | Day 2 | If it overflows, it is cut off or the request is rejected |
+| ④ | The model picks the next token one at a time to build the answer | Day 1·2 | **Output tokens** for the answer length; temperature sets the diversity |
+| ⑤ | Check that the answer matches the source documents and contains no harmful or sensitive content | Day 4 | Guardrail checks |
+| ⑥ | A person confirms high-impact items such as refunds or disciplinary actions | Day 4 | People's time |
 
-## AWS Service Mapping (Connections AIF Frequently Tests)
+- Without ①, the model doesn't know the policy and **makes up a plausible number** at ④. This is the typical path of hallucination.
+- If you attach too many documents at ②, you hit the limit at ③ and the cost rises. That is why RAG inserts "only the relevant fragments," not "everything."
+- A chatbot re-inserts the previous conversation into ② on every turn. The longer the conversation, the larger the input tokens on every turn.
+- The exam guide calls this work of "designing what goes into the window" **context engineering**. It is a broader concept than polishing prompt sentences, and deals with the allocation of instructions, retrieval results, conversation history, and tool results.
 
-| Need | AWS Service/Feature |
+## New Perspective 2: Telling Similar Concepts Apart
+
+**Embedding · vector store · RAG** appear together in one sentence and look like the same thing, but their roles differ.
+
+| Concept | What it is | Analogy |
+|------|------|------|
+| Embedding | The **result** of converting text into a numeric vector that carries meaning (and the model that converts) | A coordinate attached to each book |
+| Vector store (vector DB) | A **repository** that stores those vectors and finds the nearby ones | A bookshelf where you find books by coordinates |
+| RAG | The **whole method** of attaching the retrieved content to the prompt and having the model answer | A librarian's procedure of opening the books and answering |
+
+**temperature · Top-P · Top-K** all set "how boldly to pick the next token," but they act on different places. We borrow an example from AWS documentation. Suppose the candidates for "I hear hoofbeats. That is a ___" are horse 0.7, zebra 0.2, unicorn 0.1.
+
+| Parameter | What it does | In the example above |
+|------|------|------|
+| temperature | Changes the **shape** of the probability distribution. Low makes it sharp, high makes it flat | Raising it increases the chance that unicorn is picked |
+| Top-K | Keeps only the top **K** by probability as candidates | With K=2, only horse and zebra are candidates |
+| Top-P | Keeps candidates only **until the cumulative probability reaches P** | With P=0.7, only horse; with 0.9, horse and zebra |
+| Max tokens (response length) | Limits the length of the answer | Unrelated to diversity; directly tied to cost and latency |
+
+- Lowering any of the three makes output consistent, and raising it makes it diverse. Since the direction is the same, on the exam you answer "consistency needed → lower it, creativity needed → raise it."
+- None of the parameters **makes the model know a fact it doesn't know.** Even with temperature at 0, knowledge it lacks does not appear.
+
+## New Perspective 3: From Symptom to Remedy
+
+| Symptom | Cause | What to do first | Remedies that don't work |
+|------|------|------|------|
+| It answers the latest internal policy wrongly | The model has never seen that information | Supply documents with RAG | Lowering temperature, an "answer accurately" instruction |
+| It cites papers or cases that don't exist | Hallucination | Provide source documents, require citations, human review | Merely swapping in a bigger model |
+| The answer format differs every time | Output format not specified | Specify the format, examples (Few-shot) | Trying fine-tuning first |
+| Answers differ for the same question, making testing hard | Non-determinism of sampling | Lower temperature and Top-P, add a verification step | Writing a longer prompt |
+| It forgets earlier content after a long conversation | Context window exceeded | Summarize the conversation, re-insert only the relevant parts | Adjusting temperature |
+| The bill is larger than expected | Too many input and output tokens | Shorten prompt and response length, consider a smaller model | Adding more examples |
+| Answers that disadvantage a specific group appear | Bias in the training data | Measure results by group, human oversight | Merely adding banned words to a guardrail |
+| Profanity or personal information gets mixed into answers | No output control | Filter/mask with Guardrails | Adding Few-shot examples |
+
+## AWS Service Mapping (Connections AIF Asks About)
+
+| Need | AWS service/feature |
 |------|-----------------|
-| Manage multiple FMs with single managed API | Amazon Bedrock |
-| Generate embeddings | Amazon Titan Embeddings (Bedrock) |
-| Store embeddings·similarity search (RAG) | OpenSearch vectors, Aurora pgvector, Kendra |
-| Filter harmful content·mask PII·restrict topics | Amazon Bedrock Guardrails |
-| Measure data/model bias, provide explainability | Amazon SageMaker Clarify |
-| Public documentation of AI service intent·limits·fairness | AWS AI Service Cards |
-| Code generation·autocomplete assistance | Amazon Q Developer |
+| Call multiple FMs as managed through a single API | Amazon Bedrock |
+| Generate embeddings | Amazon Titan Embeddings and other Bedrock embedding models |
+| Store embeddings and similarity search (RAG) | Amazon OpenSearch Service, Amazon Aurora and RDS for PostgreSQL (pgvector), Amazon Neptune |
+| RAG as managed, all at once | Amazon Bedrock Knowledge Bases |
+| Harmful content filtering, PII masking, topic restriction | Amazon Bedrock Guardrails |
+| Measuring data and model bias, explainability | Amazon SageMaker Clarify |
+| Public documentation of an AI service's intended use, limits, and fairness | AWS AI Service Cards |
+| Code generation and autocomplete assistance | Amazon Q Developer, Kiro |
 
-> 🔍 **Going deeper**: Exam scenarios usually ask "requirements → appropriate service." "Chatbot based on internal documents" = Bedrock + embeddings + vector DB (RAG); "block profanity and personal info in output" = Guardrails; "check if model is fair" = Clarify; "need transparency and responsibility documents" = AI Service Cards. Memorizing these keyword-service pairs helps you solve variations.
+- The four services in the vector store row are ones the exam guide itself cites as examples of "services that store embeddings in a vector database." Amazon Kendra is not a vector DB but a managed search service that can take on the retrieval step of RAG, and it is currently not open to new customers.
+- Coding assistance is in the middle of being renamed. End of support has been announced for the Amazon Q Developer IDE plugin, and AWS points to **Kiro** as the successor. The latest exam guide also lists Kiro as an in-scope service.
 
-## Self-Check (Answer These Mentally)
+> 🔍 **Going Deeper**: Exam scenarios usually ask "requirement → suitable service." For "an in-house document-based chatbot," it is Bedrock + embeddings + a vector DB (RAG); for "profanity and personal information must be blocked in the output," Guardrails; for "check whether the model is fair," Clarify; for "transparency and accountability documentation is needed," AI Service Cards. If you memorize the keyword and service pairs, variant questions can be solved too.
 
-1. In one sentence, how do you distinguish traditional ML from generative AI?
-2. Why is foundation model economically advantageous?
-3. How do tokens connect to cost?
-4. What role does embedding play in RAG?
+## Self-Check (Answer in Your Head)
+
+1. How would you distinguish traditional ML and generative AI in one sentence?
+2. Why are foundation models economically advantageous?
+3. How are tokens connected to cost?
+4. What role do embeddings play in RAG?
 5. What happens when you exceed the context window?
-6. Difference between Zero-shot and Few-shot, and why neither is fine-tuning?
-7. Standard order to try model adjustment methods (cheapest first)?
-8. Explain hallucination, bias, and non-determinism each in one line?
-9. Two ways to reduce hallucination?
-10. What's the essential safeguard for high-risk decisions?
+6. What is the difference between Zero-shot and Few-shot, and why are neither fine-tuning?
+7. What is the standard order for adjusting model behavior (cheapest first)?
+8. How would you explain hallucination, bias, and non-determinism in one line each?
+9. What are two ways to reduce hallucination?
+10. What safeguard is essential for high-risk decision-making?
 
-If you're stuck on any, go back to that day's reading. If answers flow smoothly, Week 3 is passing.
+If any item stumps you, go back to the write-up for that day. If the answers come easily, you have mastered the Week 3 scope well enough.
 
-> 📚 **Case study**: When a company introduced "generative AI for customer support automation," the team followed the sequence from Week 3 exactly. ① Rented FM via Bedrock, ② refined tone/format through prompt engineering, ③ embedded internal FAQs and raised accuracy via RAG, ④ blocked sensitive info and toxic language with Guardrails, ⑤ escalated high-risk requests like refunds and account deletion to humans via Human-in-the-loop. Not fancy new tech—the core was fundamental principles: "cheap methods first, control risks." That's what made it succeed.
+As a hypothetical case, when a company introduced "automating customer support with generative AI," the team followed the order learned in Week 3 exactly. ① They rented an FM through Bedrock, ② set the tone and format with prompt engineering, ③ embedded the in-house FAQ and raised accuracy with RAG, ④ blocked sensitive information and harmful expressions with Guardrails, and ⑤ handed high-risk requests such as refunds and account deletion over to people through Human-in-the-loop. It was not flashy new technology but the basic principle of "cheap things first, control the risks" that was the key to success.
 
-## Wrapping Up—and Next Week
+Next week, building on these fundamentals, we look into AWS's concrete generative AI services (especially Amazon Bedrock and its surrounding tools) and move on to how to combine them into real solutions.
 
-In Week 3, we completed a full circle on "what (concepts)," "how (operation and use)," and "what to watch (risks)" of generative AI. The essence compresses to three sentences: **Generative AI is an FM/LLM that creates new content, operates via tokens·embeddings·context·inference, and is handled by the order prompts → RAG → fine-tuning, with hallucinations·bias·non-determinism controlled by responsible AI tools and human review.**
+## 📖 Glossary
 
-On this foundation, starting next week we'll zoom into AWS's specific generative AI services (especially Amazon Bedrock and its surrounding tools) and move into actually combining solutions. Today's big picture becomes the coat rack on which all that detail hangs.
-
----
+- **Foundation Model (FM)**: A large model pretrained once on vast data and reused for many tasks.
+- **Token**: The unit into which a model cuts text. The basis for counting charges and limits.
+- **Embedding**: Text meaning converted into a numeric vector. If meanings are similar, the vectors are close.
+- **Vector store**: A repository that stores embeddings and finds nearby vectors.
+- **Context window**: The maximum number of tokens the model can see at one time. Input and output are counted together.
+- **Context engineering**: Designing what to put into the limited window among instructions, documents, and conversation history.
+- **Top-P / Top-K**: Inference parameters that trim the candidates for the next token by cumulative probability or by count.
+- **RAG**: A method that retrieves relevant documents and attaches them to the prompt for the model to answer. The model is left as it is.
+- **Hallucination**: The phenomenon of plausibly producing content that is not factual.
+- **Human-in-the-loop**: Putting a person into the procedure so that important outputs get a final human check.
 
 ## 📝 Practice Questions
 

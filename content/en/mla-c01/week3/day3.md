@@ -1,15 +1,23 @@
 # Day 3 - SageMaker Feature Store: Managing Features as Assets
 
-If features created yesterday exist only in a notebook dataframe, the next project must create the same features again. Worse, transformations used during training might subtly differ from those used during inference, silently destroying model performance. SageMaker Feature Store is a dedicated repository solving both problems: feature reuse and training/inference consistency.
+## 📌 Key Takeaways
 
-In MLA-C01 exams, Feature Store appears with keywords like "online/offline store differences," "preventing training/serving skew," "feature sharing." Today we cover three axes: structure, two stores, and consistency.
+- Feature Store is a repository that **centrally stores, reuses, and consistently serves** features. Its unit is the **Feature Group**.
+- The required elements of a Feature Group are the **Record Identifier (row identifier)** and the **Event Time (time of recording)**.
+- The **online store** = millisecond single-record lookups (real-time inference), the **offline store** = S3 Parquet history (training and batch).
+- Its greatest value is **preventing training/serving skew** — training and inference share the same feature definition.
+- A **point-in-time correct join** based on Event Time prevents future information leakage (look-ahead bias).
 
-## What is Feature Store?
+## What Is Feature Store
 
-Feature Store is a central repository storing, managing, and serving ML features. The core unit is **Feature Group**. A Feature Group is structured like a relational table with rows and columns; each column is one feature. Two essential elements exist:
+If the features you built yesterday exist only in a dataframe in a notebook, the next project has to build the same features again. Worse, the transformation used at training time and the one used at inference time can differ subtly, so model performance quietly collapses.
 
-- **Record Identifier**: Key identifying each row (e.g., customer_id)
-- **Event Time**: When that feature value was recorded (basis for time travel)
+Feature Store is a repository that centrally stores, manages, and serves ML features. Its core unit is the **Feature Group**, which is made of rows and columns like a relational table, with each column being one feature.
+
+| Required element | What it is | Why it is needed |
+|----------|---------|------------|
+| **Record Identifier** | The key that identifies each row (for example, customer_id) | The key for online lookups, and the basis for deciding the latest value |
+| **Event Time** | The time at which that feature value was recorded | The basis for point-in-time consistency (time travel) |
 
 ```python
 from sagemaker.feature_store.feature_group import FeatureGroup
@@ -18,90 +26,194 @@ feature_group = FeatureGroup(name='customer-features', ...)
 
 feature_group.create(
     record_identifier_name='customer_id',   # Row identifier
-    event_time_feature_name='event_time',    # Event timestamp
+    event_time_feature_name='event_time',    # Event time
     role_arn=role,
-    enable_online_store=True                 # Enable online store
+    enable_online_store=True                 # Enable the online store
 )
 
 # Ingest features
 feature_group.ingest(data_frame=df, max_workers=3)
 ```
 
-When multiple records with different event_times accumulate for the same customer_id, you can reconstruct "what was this feature's value at that point in time?"
+When multiple records with different event_time values accumulate for the same customer_id, you can reconstruct "what was the feature value at a particular point in time."
 
-> 💡 **Related Theory**: Event Time connects to bitemporal concepts in time-series databases. When training models on historical data, use only feature values actually knowable at that time to prevent look-ahead bias. For example, predicting January 2024 transactions using feature values updated in March 2024 is seeing the future. Event Time-based queries guarantee this temporal consistency.
+```
+History of customer_id = cust_123
+
+event_time          purchase_30d   activity_score
+2026-01-15 10:00        12             0.71
+2026-03-02 09:30        18             0.83
+2026-06-24 14:10        25             0.66   ← the "latest value" the online store returns
+
+The offline store keeps all three rows above → past points in time can be reconstructed
+```
+
+Event Time is related to the bitemporal concept in time series databases. When training a model on past data, you must use only "the feature values that could actually be known at that time" to prevent future information leakage (look-ahead bias). For example, if you predict a January 2024 transaction using a feature value that was updated in March 2024, you have seen the future. Event Time-based lookup is the mechanism that guarantees this temporal consistency.
 
 ## Online Store and Offline Store
 
-Feature Store's core is providing two kinds of stores simultaneously. Exam questions most frequently test this difference.
+The core of Feature Store is that it provides two kinds of stores at the same time. On the exam you need to distinguish the two.
 
-| Aspect | Online Store | Offline Store |
+| Category | Online store | Offline store |
 |------|----------------------|--------------------------|
-| Purpose | Real-time inference | Training & batch |
-| Latency | Milliseconds (low) | High (batch) |
-| Storage | Fast key-value lookup | S3 (Parquet) |
-| Query Unit | Single latest record (GetRecord) | Full history (bulk) |
-| Cost | Relatively higher | Low (S3) |
-| API | GetRecord (single) | Athena query / S3 direct |
-
-**Online store** returns the latest feature value for a customer_id in milliseconds when an inference server requests "give me current features for this customer." **Offline store** keeps all history in S3 as Parquet and supports batch queries via Athena when building training datasets.
+| Purpose | Real-time inference | Training and batch |
+| Latency | Milliseconds (low latency) | High (batch) |
+| Storage method | Fast key-value lookup | S3 (Parquet) |
+| Lookup unit | 1 latest record (GetRecord) | Full history (bulk) |
+| Cost | Relatively high | Cheap (S3) |
+| API used | GetRecord (single record) | Athena query / direct S3 |
+| Answer keywords | "milliseconds", "real-time inference", "single record" | "training dataset", "full history", "bulk lookup" |
 
 ```python
-# Online store: fetch latest features for real-time inference
+# Online store: look up the latest features during real-time inference
 record = featurestore_runtime.get_record(
     FeatureGroupName='customer-features',
     RecordIdentifierValueAsString='cust_12345'
 )
 
-# Offline store: create training dataset via Athena
+# Offline store: build a training dataset (Athena)
 query = feature_group.athena_query()
 query.run(query_string="SELECT * FROM customer_features WHERE ...",
           output_location='s3://my-bucket/query-results/')
 ```
 
-> ⚠️ **Gotcha**: Enabling only online store means training history doesn't accumulate in S3; enabling only offline means real-time inference can't query with low latency. Most real ML systems **enable both**, using the same feature definitions consistently for training (offline) and inference (online). When ingesting data, SageMaker auto-syncs latest values to online and history to offline.
+![Structure in which Feature Store syncs to an online store and an offline store, used for real-time inference and training datasets respectively](/diagrams/feature-store-online-offline.svg)
+
+> ⚠️ **Trap**: If you enable only the online store, training history is not accumulated in S3, and if you enable only the offline store, you cannot do low-latency lookups in real-time inference. Most real ML systems **enable both**, so the same features are used consistently for training (offline) and inference (online). When you ingest data, SageMaker automatically syncs the latest value to the online store and the history to the offline store.
 
 ## Consistency: Preventing training/serving Skew
 
-Feature Store's greatest value is **training and inference sharing the same feature definition**. Training/serving skew is the classic problem where feature calculation differs between training and serving, degrading model performance.
+The greatest value of Feature Store is that **training and inference share the same feature definition**. Training/serving skew is the classic problem in which the way features are computed differs between training and serving, degrading model performance.
 
-Typical scenario: training pipeline computes "average purchase amount last 30 days" in pandas; inference server recomputes it in Java. If the two implementations differ slightly (boundary handling, rounding), the model sees different values during training vs. serving. Feature Store eliminates this mismatch by computing features once and having both sides read from the same repository.
+A typical scenario: the training pipeline computes "average purchase amount over the last 30 days" with pandas, and the inference server recomputes the same value in Java. If the two implementations differ subtly (boundary handling, rounding), the values the model sees differ from those at training time.
+
+| Cause of skew | Concrete example | Feature Store's solution |
+|------------|----------|---------------------|
+| Duplicate implementation in two languages | Python for training / Java for serving | Compute once, both sides only read |
+| Different interpretation of boundary conditions | Whether "last 30 days" includes today | The definition is fixed in the store |
+| A bug fix reflected on only one side | Only the training code was fixed | A single definition, so it is reflected simultaneously |
+| Time mismatch | A newer value was used at inference | Time consistency through Event Time |
 
 ```
-[Feature Computation Pipeline] ──ingest──> [Feature Store]
-                                              |
-                        ┌─────────────────────┴──────────────────┐
-                        v                                          v
-              [Offline Store]                            [Online Store]
-              Create training dataset                    Real-time inference query
-              (Athena, consistent definition)            (GetRecord, consistent definition)
+[Feature computation pipeline]  ──ingest──>  [Feature Store]
+                                                |
+                          ┌─────────────────────┴──────────────────┐
+                          v                                          v
+                [Offline store]                              [Online store]
+                Build training datasets                  Real-time inference lookups
+                (Athena, same definition)                (GetRecord, same definition)
 ```
 
-> 💡 **Related Theory**: Training/serving skew is emphasized in Google's "Hidden Technical Debt in Machine Learning Systems" paper on ML technical debt. Model code is a tiny part of the whole ML system; data pipelines and feature consistency are chief failure sources. Feature Store elevates features from "code" to "shared data assets," consolidating definition in one place to reduce this debt.
+Training/serving skew is a core problem emphasized in Google's paper "Hidden Technical Debt in Machine Learning Systems," which dealt with the technical debt of ML systems. Model code is a small part of the whole ML system, and data pipelines and feature consistency are the main causes of failure. Feature Store reduces this debt by promoting features from "code" to a "shared data asset," gathering the definition in one place.
 
 ## Feature Reuse and Governance
 
-Feature Store's second value is reuse. Team B can use features like "customer lifetime value" and "recent activity score" created by Team A directly in new models. Duplicate work creating the same features repeatedly disappears.
+The second value of Feature Store is reuse. Features such as "customer lifetime value" and "recent activity score" built by Team A can be taken as they are by Team B for a new model.
 
-- **Discovery**: Attach metadata/descriptions to Feature Groups and features for team sharing
-- **Versioning & Lineage**: Track when and how features were created
-- **Access Control**: IAM permission control over Feature Group access
+| Capability | What it solves |
+|------|---------------|
+| Search and discovery | The problem of not knowing which features already exist and building duplicates |
+| Metadata and descriptions | The problem of not knowing exactly what a feature means |
+| Version and lineage | The problem of being unable to trace when and how it was created |
+| IAM permissions | The problem of anyone accessing sensitive features |
 
-> 🔍 **Deeper Dive**: Feature Store can join multiple Feature Groups with temporal consistency. When building training data, join customer and product features by each one's event time, exactly combining values "knowable at that point." This point-in-time-correct join automates the tedious and error-prone manual future-leakage prevention.
+Feature Store has a capability to join several Feature Groups with point-in-time consistency. When building training data, if you join customer features and product features on their respective event times, only "the values that could be known at that time" are combined exactly. This is called a point-in-time correct join, and it automates the prevention of future leakage, which is very tricky to do by hand.
 
-> 📚 **Case Study**: A fintech company ran fraud detection and credit scoring models, both needing "recent transaction frequency." Initially, each team computed it separately; definitions differed subtly, and bug fixes in one team weren't reflected in the other. Defining this feature once in Feature Store and sharing it eliminated definition mismatches; fixing one place improved both models together.
+```
+Wrong join (future leakage)              Correct point-in-time join
+Prediction time: 2026-01-15              Prediction time: 2026-01-15
+customer feature: value of 2026-03-02 ✗  customer feature: latest value before 2026-01-15 ✓
+  → Saw information from two months later    → Uses only values known at that time
+```
+
+A fintech company ran two models, fraud detection and credit scoring, and both needed a feature called "recent transaction frequency." At first each team computed it separately, so the definitions differed subtly, and when one team fixed a bug it was not reflected in the other. After this feature was defined once and shared through Feature Store, the definition mismatch disappeared, and fixing one place improved both models together.
 
 ## Data Flow Summary
 
-Typical pipeline connects like this: ① Data Wrangler (or Processing Job) transforms raw data to features → ② ingest into Feature Store (online+offline simultaneously) → ③ training creates dataset from offline store via Athena → ④ inference queries online store via GetRecord. This entire flow shares identical feature definitions, maintaining consistency.
+A typical pipeline connects like this.
 
-## Summary
+| Order | Stage | Tool |
+|------|------|------|
+| ① | Transform raw data into features | Data Wrangler / Processing Job |
+| ② | Load into Feature Store (online + offline at the same time) | `ingest` |
+| ③ | Build the training dataset | Offline store + Athena |
+| ④ | Look up the latest features in real time | Online store + GetRecord |
 
-Remember Feature Store in three axes: ① **Structure**: Feature Group (Record Identifier + Event Time) as unit. ② **Two stores**: Online (milliseconds, real-time inference, key-value) and offline (S3 Parquet, training, Athena bulk query). ③ **Value**: Prevent training/serving skew (training and inference share features) and enable reuse (team sharing, point-in-time-correct joins). In exams, the key mapping: "real-time low-latency feature queries" = online; "training bulk history" = offline.
+This whole flow shares the same feature definition, so consistency is maintained.
 
-Next, we examine whether prepared data is fair and balanced—data bias, quality, and SageMaker Clarify.
+**Exam discrimination summary**
 
----
+| Scenario wording | Answer |
+|-------------|------|
+| "Look up the user's latest features within milliseconds" | Online store GetRecord |
+| "Query the full history for training in bulk" | Offline store + Athena |
+| "Performance degrades because training and inference computations differ" | Unify the definition with Feature Store |
+| "Must use only the values known at that time" | Event Time-based point-in-time join |
+| "Two teams build the same feature separately" | Share and reuse a Feature Group |
+
+## Store Enablement Combinations and Results
+
+When you create a Feature Group, which of online and offline you turn on determines what you can do afterward.
+
+| Combination | What is possible | What is impossible | Suitable for |
+|------|----------|-----------|------|
+| Online only | Millisecond single-record lookups | Training history lookups | Serving-only, where training data already exists separately |
+| Offline only | Bulk history lookups, training set creation | Low-latency real-time lookups | Pipelines that only do batch inference |
+| Both | Both training and inference | — | Most real ML systems |
+
+- With both turned on, a single `ingest` reflects the latest value in the online store and the history in the offline store.
+- If you later need training history but had the offline store turned off, the history for that period cannot be recovered.
+
+## Which Features to Put in Feature Store
+
+Putting in every column is not the answer. There is a balance between management cost and value.
+
+| Features worth putting in | Reason |
+|-------------------|------|
+| Aggregate features that are expensive to compute | Recomputing every time is costly |
+| Features commonly used by several models | The reuse effect is large |
+| Features needed in both training and inference | The skew prevention effect is direct |
+| Features whose definition is subtle and leads to misunderstanding | Pinned down with a single definition |
+
+| Things you need not put in | Reason |
+|----------------------|------|
+| Original raw columns as they are | Already in the data lake |
+| Features used one-off in a single model | Low reuse value |
+| Values computed on the fly at every request | No storage benefit |
+
+## The Moment Point-in-Time Consistency Breaks
+
+```
+Time to predict: 2026-01-15
+   │
+   ├─ Correct: use the latest record among those with event_time <= 2026-01-15
+   │
+   └─ Wrong: use the latest record (2026-06-24) as it is
+                → Effectively feeds information from 5 months later into training
+```
+
+| Situation | Why it is dangerous |
+|------|-----------|
+| Joining the "current latest value" while building a past training set | Future information explains the label |
+| Joining several Feature Groups on different criteria | Only some features see the future |
+| Recording Event Time mistakenly as the ingestion time | Misaligned with the actual observation time |
+
+> ⚠️ **Trap**: When backtest performance is unusually good, doubt point-in-time consistency first, before celebrating the performance. A training set that did not use a point-in-time correct join almost always produces optimistic numbers.
+
+In the next lesson we look at data bias and quality, and SageMaker Clarify, which check whether the data prepared this way is fair and balanced.
+
+## 📖 Glossary
+
+- **Feature Store** : A repository that gathers ML features centrally and serves them consistently to training and inference.
+- **Feature Group** : The basic unit of Feature Store. A table of rows and columns where the features become the columns.
+- **Record Identifier** : The key that distinguishes each row. For online lookups, the latest record is found with this value.
+- **Event Time** : The time at which that feature value was recorded. The basis for reconstructing past points in time and preventing leakage.
+- **Online store** : A key-value store that returns 1 latest feature record within milliseconds. For real-time inference.
+- **Offline store** : A store that accumulates all history in S3 as Parquet. For building training datasets.
+- **GetRecord** : The API that fetches one latest record by identifier from the online store.
+- **training/serving skew** : The phenomenon where feature computation differs between training and inference, so the model quietly gets worse.
+- **point-in-time correct join** : A join method that combines only "the values that could be known at that time" relative to the prediction time.
+- **look-ahead bias (future leakage)** : An error in which information after the prediction time is used in training, inflating performance.
 
 ## 📝 Practice Questions
 
