@@ -1,20 +1,55 @@
 # Day 1 - Pipeline Monitoring: CloudWatch Metrics, Logs, and Alarms
 
-"Keeping data pipelines running" is harder than "making them run in the first place." Today we cover monitoring pipelines via CloudWatch, tracking Glue, EMR, Kinesis services, and tracing latency.
+## 📌 Key Takeaways
+
+- Observability = metrics (CloudWatch Metrics) + logs (CloudWatch Logs) + traces (X-Ray). CloudWatch is the starting point for data pipeline monitoring.
+- An alarm fires when `Datapoints to Alarm` datapoints breach the threshold within `Period × Evaluation Periods`. A metric that stops arriving altogether is only caught if you decide it explicitly with `TreatMissingData`.
+- Glue sends metrics every 30 seconds and EMR every 5 minutes. For Glue you watch task failures, shuffle, and executor counts; for EMR you watch YARN memory, pending containers, and `IsIdle`.
+- The key streaming-lag metric is `GetRecords.IteratorAgeMilliseconds` (statistic: Maximum), and throttling shows up in `Read/WriteProvisionedThroughputExceeded`.
+- For custom metrics, EMF, which emits metrics from a single log line, fits Lambda and container pipelines better than `PutMetricData`, and alarm storms are tamed by grouping alarms into a composite alarm.
 
 ## Three Pillars of Observability and CloudWatch
 
-Operational visibility typically consists of **metrics**, **logs**, and **traces**. In AWS these map to CloudWatch Metrics, CloudWatch Logs, and AWS X-Ray respectively. Data pipeline monitoring almost always starts with CloudWatch; most AWS services auto-publish operational metrics to CloudWatch namespaces without configuration.
+With data pipelines, "confirming that they keep running" is harder than "making them run in the first place." Today we look at how to observe Glue, EMR, and Kinesis with CloudWatch at the center, and how to trace delays.
 
-- **CloudWatch Metrics**: Time-series numbers (job count, processed records, latency). Organized by namespace/dimensions.
-- **CloudWatch Logs**: Text log streams (job stdout, driver/executor logs, Lambda output).
-- **CloudWatch Alarms**: Trigger SNS notifications or auto-actions when metrics exceed thresholds.
+- Operational visibility is usually described through three pillars: **metrics**, **logs**, and **traces**. In AWS these are CloudWatch Metrics, CloudWatch Logs, and AWS X-Ray respectively.
+- Most AWS services publish operational metrics to their own namespaces with no extra configuration, so pipeline monitoring almost always starts in CloudWatch.
 
-> 💡 **Related Theory**: CloudWatch metrics have standard resolution (1-min) and high resolution (1-sec). Capture fast-changing streaming latency via high-resolution custom metrics; standard for typical batch jobs.
+| Component | What it holds | Use in a pipeline |
+|------|------|------|
+| CloudWatch Metrics | Time-series numbers (organized by namespace and dimensions) | Failed job count, records processed, lag |
+| CloudWatch Logs | Text log streams | Job stdout, driver and executor logs, Lambda output |
+| CloudWatch Alarms | Result of comparing a metric to a threshold | SNS notifications, automated actions |
+| AWS X-Ray | Time spent in each segment of a single request | Tracing bottlenecks in segments that include Lambda or APIs |
 
-## Custom Metrics and EMF
+## Metric Structure: Namespaces, Dimensions, Resolution, Retention
 
-When service-provided metrics suffice, applications publish custom metrics directly. Use `PutMetricData` API, or more efficiently, **EMF (Embedded Metric Format)** logs; CloudWatch auto-extracts metrics.
+- A metric is identified by the combination of **name + namespace + dimensions**. If the dimension combination differs, it is a different metric even with the same name. You can attach up to 30 dimensions to a metric.
+- For AWS service metrics, omitting a dimension in a query sometimes returns an aggregate, but **custom metrics are not aggregated across dimensions.** They can only be queried by exactly the dimension combination they were published with. This is the cause of "I specified just one dimension and no data shows up."
+- There are two resolutions. Standard resolution is 1-minute granularity and high resolution is 1-second granularity; only custom metrics can be published at high resolution.
+- Metrics cannot be deleted, and they expire after 15 months if no new data arrives. The older the data, the more coarsely it is rolled up.
+
+| Datapoint period | Retention |
+|------|------|
+| Under 60 seconds (high resolution) | 3 hours |
+| 1 minute | 15 days |
+| 5 minutes | 63 days |
+| 1 hour | 455 days (15 months) |
+
+- Setting an alarm period shorter than the metric resolution is pointless. If you put a 1-minute alarm on a metric that arrives every 5 minutes, most periods end up as "no data."
+- High-resolution metrics can have high-resolution alarms with 10-second or 30-second periods, and these alarms cost more than regular alarms.
+
+> 💡 **Related theory**: To catch fast-changing streaming lag at second-level granularity, use a high-resolution custom metric; for ordinary batch jobs, use standard resolution. High-resolution data stays at one-second granularity for only 3 hours, so for looking at "last night's trend" it ends up being 1-minute aggregation anyway.
+
+## Custom Metrics: PutMetricData, EMF, Metric Filters
+
+When the default service metrics are not enough, the application creates its own metrics. There are three ways.
+
+| Method | How it works | Fits when | Weakness |
+|------|------|------|------|
+| `PutMetricData` API | Code calls CloudWatch directly | Batch jobs with a low call frequency | Billed per call; a synchronous call adds latency |
+| EMF (Embedded Metric Format) | You print a JSON log in a defined structure and CloudWatch extracts the metrics | Environments like Lambda and containers where logs already flow | Requires a log ingestion path |
+| Metric filter | Counts lines matching a pattern in existing logs and turns them into a metric | `ERROR` counts for jobs whose code you cannot change | Pattern matching only; does not apply retroactively to logs from before the filter was created |
 
 ```json
 {
@@ -31,64 +66,163 @@ When service-provided metrics suffice, applications publish custom metrics direc
 }
 ```
 
-EMF logs metric and context simultaneously, preferred for Lambda/container-based pipelines.
+- EMF leaves both the metric and its context (which pipeline, which batch) in a single log line. When a metric spikes, you can find the cause right in the same log.
+- If you put a field whose values grow without bound, such as a request ID, into a dimension, every dimension combination creates its own metric and costs balloon. Limit dimensions to low-cardinality values such as pipeline name or environment.
+
+## How Alarms Are Evaluated
+
+| Setting | Meaning |
+|------|------|
+| Period | The aggregation interval that produces one datapoint |
+| Evaluation Periods (N) | How many of the most recent periods to look at |
+| Datapoints to Alarm (M) | How many of those must breach the threshold for ALARM ("M out of N") |
+| TreatMissingData | How to treat periods that have no datapoint |
+
+- An alarm has three states: `OK`, `ALARM`, and `INSUFFICIENT_DATA`. Actions run once **when the state changes** (Auto Scaling actions are the only exception).
+- There are four values for missing-data handling, and the default is `missing`.
+
+| Value | How missing periods are treated | Suitable metrics |
+|------|------|------|
+| `missing` (default) | If the whole evaluation range is empty, the alarm goes to `INSUFFICIENT_DATA` | The general case |
+| `notBreaching` | Treated as healthy | Metrics that appear only when an error occurs (throttle counts, etc.) |
+| `breaching` | Treated as a breach | Metrics that must always arrive (heartbeats, processed counts) |
+| `ignore` | Keeps the current state | Metrics that are reported only intermittently |
+
+- If a job does not run at all, the failure metric is not emitted either. With the default, the alarm just moves to `INSUFFICIENT_DATA` with no notification. This is the classic incident of "the pipeline stopped overnight and the alarm was silent." Set `breaching` on a metric such as processed count, or attach an action to the `INSUFFICIENT_DATA` transition as well.
+- A **composite alarm** combines the states of other alarms with AND/OR. Attaching notifications only to the composite alarm and not to the underlying alarms reduces alarm storms. A composite alarm can send SNS notifications but cannot run EC2 or Auto Scaling actions.
+- Put alarms on symptoms (rising lag, rising failure rate), and look at plain resource numbers on a dashboard.
+
+```bash
+# Notify if consumer lag stays above 1 minute for 5 minutes
+aws cloudwatch put-metric-alarm \
+  --alarm-name orders-stream-consumer-lag \
+  --namespace AWS/Kinesis \
+  --metric-name GetRecords.IteratorAgeMilliseconds \
+  --dimensions Name=StreamName,Value=orders \
+  --statistic Maximum --period 60 \
+  --evaluation-periods 5 --datapoints-to-alarm 5 \
+  --threshold 60000 --comparison-operator GreaterThanThreshold \
+  --treat-missing-data breaching \
+  --alarm-actions arn:aws:sns:ap-northeast-2:111122223333:data-oncall
+```
+
+- This metric exists only when a consumer calls `GetRecords`. If the consumer dies, the metric stops, so you must set `breaching` so that "consumer stopped" is caught by the same alarm.
 
 ## Glue Monitoring
 
-Glue jobs auto-publish core metrics:
+When job metrics are enabled (`--enable-metrics`), a Glue job sends metrics to the `Glue` namespace **every 30 seconds**. The dimensions are `JobName`, `JobRunId`, and `Type` (count or gauge). They are recorded as custom metrics, so CloudWatch charges may apply.
 
-- `glue.driver.aggregate.numCompletedTasks` / `numFailedTasks`: Task success/failure counts.
-- `glue.driver.aggregate.elapsedTime`: Job elapsed time.
-- `glue.driver.ExecutorAllocationManager.executors`: Active executors (observe scaling).
-- `glue.driver.aggregate.shuffleBytesWritten`: Shuffle volume (hint at data skew, join costs).
+| Metric | What it tells you |
+|------|------|
+| `glue.driver.aggregate.numCompletedTasks` / `numFailedTasks` | Progress, and task failures caused by data or script problems |
+| `glue.driver.aggregate.numKilledTasks` | Tasks killed by OOM and the like (suspect skew) |
+| `glue.driver.aggregate.elapsedTime` | ETL elapsed time (excluding bootstrap). Detects runs slower than usual |
+| `glue.driver.aggregate.bytesRead` / `recordsRead` | Volume read. Whether the bookmark skipped data or the same data is being read again |
+| `glue.driver.aggregate.shuffleBytesWritten` | Shuffle volume. The cost of large joins, groupBy, and repartition |
+| `glue.driver.jvm.heap.usage` / `glue.ALL.jvm.heap.usage` | Driver and executor heap usage (0 to 1). A precursor to OOM |
+| `glue.driver.ExecutorAllocationManager.executors.numberAllExecutors` | Number of executors currently running |
+| `glue.driver.ExecutorAllocationManager.executors.numberMaxNeededExecutors` | Maximum number of executors needed for the current load |
+
+- Look at the last two metrics overlaid. If the "needed" count is consistently larger than the "running" count, DPUs are insufficient; if it is far smaller, you have provisioned too much.
+- If only the driver heap spikes, suspect code that pulls data into the driver (`collect`) or listing hundreds of thousands of small files. If only a particular executor spikes, it is skew.
+- **Logs**: From Glue 5.0 onward, every job writes logs in real time. On 4.0 and earlier, you must turn on **Continuous Logging** (`--enable-continuous-cloudwatch-log`) for logs to flow to CloudWatch Logs before the job ends; with it off, you can see them only after the job finishes. Exam material usually asks this as "turn on continuous logging."
+- The default log groups are `/aws-glue/jobs/output` (user stdout and stderr) and `/aws-glue/jobs/error` (system and Spark logs).
 
 ```python
-# Enable Job Bookmark + Continuous Logging in Glue job
-job = Job(glueContext)
-job.init(args['JOB_NAME'], args)
-# Specify --enable-continuous-cloudwatch-log, --enable-metrics as job params
+# Write to the driver log stream in real time from inside the job script
+logger = glueContext.get_logger()
+logger.info("orders partition dt=2026-06-26 loaded")
+logger.error("schema mismatch: email column missing")
 ```
 
-Continuous Logging streams real-time logs to CloudWatch Logs before job completion, tracking long-running job progress.
-
-> 💡 **Related Theory**: Glue Job Bookmark isn't a monitoring metric, but state enabling reprocessing to skip already-processed data, ensuring idempotency on restart failure.
+> 💡 **Related theory**: A Glue Job Bookmark is not a monitoring metric; it is state that makes a job skip data it has already processed, preventing duplicate processing on rerun. However, if the `bytesRead` metric suddenly drops close to 0 or jumps to several times its usual level, that is a clue that the bookmark has gone wrong.
 
 ## EMR Monitoring
 
-EMR publishes cluster, node, YARN-level metrics to CloudWatch:
+EMR sends cluster metrics to the `AWS/ElasticMapReduce` namespace **every 5 minutes**. The interval cannot be changed, and the metrics themselves carry no charge.
 
-- `YARNMemoryAvailablePercentage`, `MemoryAvailableMB`: Memory available (scaling/failure hints).
-- `ContainerPendingRatio`: Pending container ratio → resource shortage signal.
-- `AppsRunning`, `AppsFailed`: Application status.
-- `IsIdle`: Idle status (for auto-termination to cut costs).
+| Metric | Meaning | Used for |
+|------|------|------|
+| `YARNMemoryAvailablePercentage` | Percentage of memory remaining in YARN | Scaling decisions, failure precursor |
+| `ContainerPendingRatio` | Pending containers ÷ allocated containers (a number, not a percentage) | Signal of resource shortage |
+| `AppsPending` / `AppsRunning` / `AppsFailed` | YARN application states | Progress and health |
+| `HDFSUtilization` | HDFS utilization | Deciding whether to add core nodes |
+| `MRUnhealthyNodes` / `MRLostNodes` | Number of nodes with full disks or lost communication | Node failures |
+| `IsIdle` | 1 if there are no tasks or jobs | Detecting idle clusters |
 
-Configure Spark UI and EMR step logs saved to S3 for post-termination debugging.
+- `IsIdle` looks only at **that instant**, every 5 minutes. A value of 1 does not mean the cluster idled for the entire 5 minutes, so set the alarm for when it is 1 several times in a row, such as for 30 minutes.
+- The feature that shuts down an idle cluster by itself is the **auto-termination policy**. After the specified idle time passes, EMR terminates the cluster.
+- When a cluster disappears, the nodes' logs disappear with it. You must configure step logs and Spark event logs to be kept in S3 so you can debug after termination.
 
-## Kinesis Monitoring and Latency Tracking
+## Kinesis Monitoring and Tracking Lag
 
-In streaming, "how far behind are we now" is critical:
+In streaming, "how far behind are we right now" is the heart of the matter.
 
-- **`GetRecords.IteratorAgeMilliseconds`**: Age of records consumer is reading. Continuously rising means consumer can't keep up (core latency indicator).
-- `IncomingRecords` / `IncomingBytes`: Ingestion volume.
-- `WriteProvisionedThroughputExceeded` / `ReadProvisionedThroughputExceeded`: Shard throughput exceeded (throttling) → signal to add shards or switch On-Demand.
+| Metric | Meaning | Direction of action |
+|------|------|------|
+| `GetRecords.IteratorAgeMilliseconds` | How long ago the last-read record entered the stream. 0 means fully caught up | Increase consumer throughput, check for stalls from error retries |
+| `IncomingBytes` / `IncomingRecords` | Inbound volume | Basis for recalculating the shard count |
+| `WriteProvisionedThroughputExceeded` | Number of write records rejected by throttling | Add shards, check partition key distribution |
+| `ReadProvisionedThroughputExceeded` | Number of throttled `GetRecords` calls | Reduce the number of consumers, use enhanced fan-out |
+| `PutRecords.ThrottledRecords` / `FailedRecords` | Records rejected within a batch | Check that the producer retries partial failures |
+| `SubscribeToShardEvent.MillisBehindLatest` | How far an enhanced fan-out consumer is from the tip of the stream | Per-consumer lag |
+
+- Stream-level metrics arrive every minute at no charge. **Shard-level metrics (enhanced monitoring)** must be turned on separately with `EnableEnhancedMonitoring` and are billed per shard and per metric. To see "whether only a specific shard is hot," you need to turn this on.
+- Put the iterator age alarm on the **Maximum** statistic. Average hides a lagging shard behind shards that are keeping up.
+- If this value exceeds half the retention period, records are at risk of expiring and being lost. This alarm takes priority over the throttle alarm.
+
+## Finding Answers in Logs
+
+- If you do not set a retention period on a log group, logs accumulate without expiring. Set a retention period for each job to control storage cost.
+- **Logs Insights** queries log groups with a query language. You are billed for the amount of log data scanned, so narrow the time range when you run it.
+- A **subscription filter** forwards logs in real time to Lambda, Kinesis, or Firehose. Use it to archive logs in S3 for the long term or to send them to OpenSearch.
 
 ```text
-Alarm example: IteratorAgeMilliseconds > 60000 (1 min) sustained 5 min → SNS notify
-Meaning: Consumer lag accumulating, check shard/parallelism/processing logic
+# Logs Insights: error count per 5-minute bin in recent runs
+fields @timestamp, @message
+| filter @message like /Exception|ERROR/
+| stats count(*) as errors by bin(5m)
+| sort errors desc
 ```
 
-## Alarm Design Principles
+## Symptom → Cause → Action
 
-- **Symptom-based alarms**: Alert on user-impacting symptoms (increasing latency, rising failure rate), use dashboards for basic resource metrics.
-- **Composite Alarms**: Combine multiple alarms with AND/OR to reduce alarm storms.
-- **`TreatMissingData`**: Specify whether missing data means `breaching` or `notBreaching`. When job doesn't run and metric doesn't emit, treating as breaching is safer for many cases.
+| Symptom | Likely cause | Action |
+|------|------|------|
+| The pipeline stopped but no alarm fired | The metric stopped, so the alarm only went to `INSUFFICIENT_DATA` | `TreatMissingData=breaching`, or a lower-bound alarm on processed count |
+| Dozens of alarms fire at once | One cause spreads across many metrics | Group them with a composite alarm and send notifications only from the parent alarm |
+| A Glue job takes several times longer than usual, with only some executors busy | Data skew | Check shuffle metrics and per-executor heap; distribute keys |
+| An EMR step just waits | Insufficient YARN memory | Check `ContainerPendingRatio` and `YARNMemoryAvailablePercentage`, then scale out |
+| Iterator age keeps increasing | Consumer processing is too slow, or stalled by error retries | Check consumer logs and error rate; increase shards and parallelism |
+| Custom metric charges spike | A field with many unique values is used as a dimension | Reduce dimensions to low-cardinality values |
 
-## Key Takeaways
+## Question Clue → Answer Lookup Table
 
-- Observability = Metrics + Logs + X-Ray; CloudWatch is data pipeline's starting point.
-- Glue: Continuous logging + `--enable-metrics` for real-time tracking, observe task failures and shuffle metrics.
-- EMR: YARN memory, container pending, IsIdle for resource/cost, save logs to S3.
-- Kinesis latency core metric: `IteratorAgeMilliseconds`; throttling: ProvisionedThroughputExceeded.
+| Question clue | Answer |
+|------|------|
+| "The metric that most directly shows whether a consumer is falling behind" | `GetRecords.IteratorAgeMilliseconds` |
+| "Logs in real time before the job ends" | Glue continuous logging |
+| "Both the metric and its context in a single log line" | EMF |
+| "Turn the error count in existing logs into a metric without changing the code" | CloudWatch Logs metric filter |
+| "Combine several alarms with AND/OR to suppress notification storms" | Composite alarm |
+| "Detect idle EMR clusters" | `IsIdle` (or the auto-termination policy) |
+| "Check whether only a specific shard is throttled" | Shard-level enhanced monitoring |
+| "Who changed the configuration" | Not CloudWatch but CloudTrail (Day 3) |
+
+Tomorrow we cover the problem that a pipeline can run perfectly and still produce wrong content, that is, Glue Data Quality and validation gates.
+
+## 📖 Glossary
+
+- **Namespace**: The container that holds metrics. AWS services use their own namespaces such as `AWS/Kinesis`.
+- **Dimension**: A name-value pair attached to a metric. Even with the same metric name, different dimensions make separate metrics.
+- **EMF**: A format where printing a JSON log in a defined structure lets CloudWatch extract metrics automatically.
+- **Metric filter**: A setting that counts lines matching a pattern in logs and turns them into a metric.
+- **Datapoints to Alarm**: The value that sets how many of the evaluation periods must breach the threshold for the alarm to fire.
+- **TreatMissingData**: An alarm setting that decides whether periods with no data are treated as healthy, breaching, or ignored.
+- **Composite alarm**: An alarm that combines the states of other alarms with AND/OR and evaluates them as one.
+- **Continuous logging**: A feature that sends logs to CloudWatch Logs in real time even before a Glue job ends.
+- **Iterator age**: How long ago the record a consumer just read entered the stream. The larger it is, the further behind the consumer is.
+- **Enhanced monitoring**: A paid option that delivers Kinesis metrics per shard.
 
 ## 📝 Practice Questions
 

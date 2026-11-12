@@ -5,194 +5,118 @@ Topic: Serverless Deployment Patterns and Orchestration
 
 ---
 
-## Week 7 Core Concept Map
+To sum up this week in a single sentence: "**CI/CD for serverless workloads has to be viewed as one bundle, from the choice of IaC tool through the deployment strategy to workflow orchestration**." The SAM (Day 1), Serverless Framework and CDK (Day 2), Lambda Version, Alias, and CodeDeploy Canary (Day 3), and Step Functions (Day 4) we covered up to yesterday are all different faces of the same picture. Scenario questions on the exam are almost always built by combining two or three tools, so the ability to match precisely where each tool shines and where it is weak is what decides whether you pass.
 
-Week 7 covers serverless deployment patterns distinct from container orchestration. Lambda, SAM, CodeDeploy for serverless CI/CD; API Gateway, EventBridge, SQS/SNS for event-driven architecture; X-Ray, CloudWatch for observability. Unlike container platforms requiring infrastructure thinking, serverless demands traffic-switching and version management strategies.
+Today we reorganize the five core axes of this week and run a comprehensive check with 12 scenario questions that resemble real exam patterns. The goal goes beyond memorizing plain facts: it is to memorize the mapping of "which keyword in this scenario calls which answer."
 
-```
-Function Code Change
-  ↓
-SAM Build / Package
-  ↓
-Publish Version (immutable snapshot)
-  ↓
-Update Alias with Traffic Weight
-  ↓
-CodeDeploy Canary (10% → 50% → 100%)
-  ↓
-Pre/Post Traffic Hooks (Integration Tests)
-  ↓
-Monitor via X-Ray / CloudWatch
-```
+## Reviewing the Five Axes
 
-> 💡 **Serverless Deployment Philosophy**: Versions immutable; Aliases mutable pointers. Traffic shifting built-in via alias weight. Canary deployments automatic—no infrastructure switching needed.
+### Axis 1: Choosing an IaC Tool — Decided by Workload Character and Team Language
 
----
+| Scenario keyword | Suitable tool | Reason |
+|------------------|--------------|------|
+| "Only Lambda + API Gateway + DynamoDB, YAML" | **SAM** | Optimizes 6 serverless resource types through a CFN Macro, low learning curve |
+| "200 Lambdas, multiple stages, rich plugins" | **Serverless Framework** | Node plugin ecosystem (but review the v4 license) |
+| "Lambda + EKS + RDS + OpenSearch + TS team" | **CDK** | L2 abstractions for all AWS resources + grant methods + in-house L3 library |
+| "Multi-cloud (AWS+GCP+Azure)" | **Terraform** | Cloud-agnostic through the Provider model |
+| "Keep CFN governance (StackSets, Drift) as is + simplify serverless" | **SAM** | Compatible with every CFN feature |
+| "9,000 in-house stacks + need a standard pattern library" | **CDK** | Reusable abstractions through L3 Constructs |
 
-## Week 7 Core Comparison Tables
+### Axis 2: Lambda Deployment — The Version/Alias Model
 
-### Lambda Versioning vs Containers
-
-| Aspect | Lambda Versions | Containers (ECS/EKS) |
-|--------|-----------------|-------------------|
-| Deployment Model | Version (immutable) → Alias (mutable) | Rolling or Blue/Green |
-| Traffic Shift | Alias weight immediate | ALB Target Group or CodeDeploy |
-| Rollback | Alias point previous version | Scale previous Task group up |
-| State | Stateless (timeout enforced) | Stateful allowed (long-running) |
-| Cost Predictability | Pay per 100ms execution | Baseline + per-request |
-
-### SAM vs Terraform/CloudFormation
-
-| Aspect | SAM | Terraform | Raw CloudFormation |
-|--------|-----|-----------|-------------------|
-| Verbosity | Low (Lambda-optimized shortcuts) | Medium (provider-agnostic) | High (verbose) |
-| Learning Curve | Low (AWS-native) | Medium (learn Terraform) | High (CloudFormation syntax) |
-| AWS Feature Support | Good (evolves slower) | Excellent (faster updates) | Complete (AWS-native) |
-| Portability | AWS-only | Multi-cloud | AWS-only |
-
-### Serverless Event Sources
-
-| Source | Use Case | Delivery |
-|--------|----------|----------|
-| API Gateway | HTTP requests | Synchronous |
-| SQS | Decoupled queue | Event Source Mapping (polling) |
-| SNS | Pub/Sub broadcasting | Push-based |
-| EventBridge | Event filtering/routing | Event pattern matching |
-| S3 | File operations | Event notification |
-| DynamoDB Streams | Change data capture | Automatic triggers |
-
-> 💡 **Event Source Selection Criteria**:
-> - **API Gateway**: HTTP APIs needing transformation, throttling, caching
-> - **SQS**: Producer-consumer decoupling, dead-letter queue
-> - **SNS**: Same message multiple independent subscribers
-> - **EventBridge**: Complex event filtering, cross-service routing
-> - **S3**: Image processing, file archival triggered by upload
-
----
-
-## Core Serverless Patterns
-
-### 1. Canary Deployment Pattern
-Version 1 (current) ← → Version 2 (canary 10% traffic)
-BeforeAllowTraffic hook validates new version. On pass: increase weight. On fail: rollback automatic.
-
-### 2. Event-Driven Workflow
-S3 upload → EventBridge → Lambda → DynamoDB → SNS notification. Each service independent; asynchronous; scalable.
-
-### 3. CQRS (Command Query Responsibility Segregation)
-Command: API → SQS → Lambda writes to database
-Query: API → ElastiCache/read replica reads. Separation allows independent scaling.
-
-### 4. Lambda Layers for Shared Code
-Multiple functions share common libraries without duplication. Layer versioning separate from function versioning.
-
----
-
-## Week 7 vs Week 6 Deployment Comparison
-
-| Dimension | Week 6 (Container) | Week 7 (Serverless) |
-|-----------|-------------------|-------------------|
-| **Versioning** | Task Definition revision | Lambda Version |
-| **Traffic Shift** | ALB Target Group or CodeDeploy | Alias weight routing |
-| **Orchestration** | ECS/EKS cluster state | Lambda invocation model |
-| **Rollback** | Scale previous Task group | Alias revert version |
-| **Complexity** | Higher (cluster, networking, compute) | Lower (function-focused) |
-| **Cost Model** | Baseline + per-request | Per-100ms execution |
-| **Ideal Workload** | Long-running, stateful | Event-driven, short-lived |
-
-> 🎯 **Exam Strategy**: 
-> - Container questions → focus on CALMS, DORA, orchestration tools (ECS/EKS, ArgoCD/Flux, CodeDeploy)
-> - Serverless questions → focus on version/alias, canary, event sources, SAM
-> - Deployment questions → "zero-downtime" → Blue/Green; "traffic gradual shift" → canary alias weight
-> - Cost optimization → "compute baseline high" → containers; "pay-per-use" → serverless
-
----
-
-## DOP-C02 Keyword Mapping for Week 7
-
-| Keyword | Answer |
-|---------|--------|
-| "Lambda version is immutable" | Publish version creates immutable snapshot |
-| "Lambda zero-downtime deployment" | Use Alias with traffic weight |
-| "Lambda automatic rollback" | CodeDeploy canary + BeforeAllowTraffic hook |
-| "Serverless infrastructure as code" | AWS SAM templates |
-| "Share dependencies across Lambdas" | Lambda Layers |
-| "Large Lambda function (>50MB)" | Container image package type |
-| "Eliminate cold starts" | Provisioned Concurrency |
-| "Simple microservice API" | HTTP API (lower cost) |
-| "Complex API transformation" | REST API (feature-rich) |
-| "Event-driven decoupling" | SQS or EventBridge |
-| "Pub/Sub with multiple subscribers" | SNS topic |
-| "Pinpoint bottlenecks with distributed tracing" | X-Ray |
-| "Automatic alerting on Lambda errors" | CloudWatch Metric Alarm |
-
----
-
-## Real-World Scenario Summary
-
-### Scenario 1: Startup E-commerce
-Tech: API Gateway → Lambda (checkout) → DynamoDB (orders) + SNS (notification)
-Deployment: SAM template → CodeDeploy canary → 10% version 2 → Monitor → 100%
-Rollback: Alias reverts version 1 (seconds)
-
-### Scenario 2: Data Pipeline
-S3 upload → EventBridge → Lambda (extract) → RDS (write) → CloudWatch metric
-Cost: Pay per Lambda execution; no baseline cost; scales to zero
-
-### Scenario 3: Multi-Service Broadcast
-Order service → SNS → Email notification, SMS notification, Analytics Lambda independently process
-Deployment: Each subscribing Lambda has own SAM template; independent versions/aliases
-
----
-
-## Critical Exam Gaps Filled This Week
-
-✅ Lambda versioning as immutable snapshots
-✅ Alias as mutable traffic pointer
-✅ Canary deployment via alias weight + hooks
-✅ SAM as serverless IaC (vs CloudFormation verbosity)
-✅ Event sources (SQS vs SNS vs EventBridge vs S3)
-✅ Provisioned Concurrency for cold-start elimination
-✅ Container images for large Lambda payloads
-✅ X-Ray for distributed tracing
-✅ CloudWatch for cost analysis and alerting
-
----
-
-## Two-Week Container + Serverless Integration Pattern
-
-Production systems often mix container and serverless:
+Core proposition: **A Version is an immutable snapshot; an Alias is a mutable pointer.** It is the same idea as a Git commit/branch or a Docker image digest/tag.
 
 ```
-API Request → API Gateway → Lambda (validation)
-             ↓
-       Lambda publishes event → EventBridge
-             ↓
-       Event routes to: 
-         • Lambda (quick processing)
-         • SQS → ECS Task (heavy computation)
-         • SNS → Multiple subscribers
-             ↓
-       Observe → X-Ray (Lambda), Container Insights (ECS), CloudWatch (both)
+publish-version  →  V7 (immutable, never changes)
+update-alias --function-version 7  →  live points at V7
 ```
 
-This hybrid pattern captures benefits of both: serverless for event-driven, cost-efficient paths; containers for long-running or complex workloads.
+| Feature | Behavior |
+|------|------|
+| `$LATEST` | Mutable working copy, no weighted routing, no PC |
+| Version number | Immutable; only the resource policy and PC can be changed |
+| Alias weighted | Primary + 1 additional only (at most 2-way) |
+| API Gateway integration | `${stageVariables.alias}` + `add-permission --qualifier <alias>` |
+| CodeDeploy Canary | `AutoPublishAlias` + `DeploymentPreference`, one line |
 
----
+### Axis 3: Cold Start Mitigation — Telling PC and SnapStart Apart Precisely
 
-## Final DOP-C02 Strategy
+| Technique | Applicable runtimes | Cost | Effect |
+|------|--------------|------|------|
+| Provisioned Concurrency | All runtimes | Billed for active time | Zero cold starts (within PC capacity) |
+| SnapStart | Java 11/17/21, Python 3.12+, .NET 8+ (zip only) | Free for Java, paid for Py/.NET | Init time reduced by 90% |
+| Reserved Concurrency | All | Free | Concurrency limit (unrelated to cold starts) |
+| ARM architecture | Compatible runtimes | 20% cheaper | Init 10-20% faster |
 
-**Weeks 1-5**: CALMS, DORA, Well-Architected Framework, DevOps fundamentals
-**Week 6**: Container CI/CD (ECR, ECS, EKS) - 40% of exam
-**Week 7**: Serverless CI/CD (Lambda, SAM, CodeDeploy canary) - 20% of exam
-**Remaining (Weeks 8-12)**: Infrastructure, compliance, security, monitoring - 40% of exam
+### Axis 4: Step Functions — Standard vs Express
 
-**Exam Approach**:
-1. Scenario recognition: "Container" vs "Serverless" vs "Hybrid"
-2. Deployment pattern: "Blue/Green" vs "Canary" vs "Rolling"
-3. Cost model: "Baseline" vs "Usage-based"
-4. Service selection: Match requirement to CALMS/DORA axis
-5. Trade-offs: Complexity vs Control vs Cost
+| Item | Standard | Express |
+|------|----------|---------|
+| Duration | 1 year | 5 minutes |
+| Guarantee | Exactly-once | At-least-once |
+| Synchronous invocation | Not possible | Possible (StartSyncExecution) |
+| TaskToken | ✅ | ❌ |
+| Pricing | Per state transition | Per invocation + execution time |
+| Use | Deployment workflows, human approval | API backends, IoT, ETL |
+
+### Axis 5: The Integrated Flow — In One Picture
+
+```
+   ┌─ Source (Git) ──→ CodePipeline ──→ CodeBuild (sam build) ──→ CFN Deploy ──┐
+   │                                                                                                         ↓
+   │                                                                                Publish new Lambda Version V7
+   │                                                                                                         ↓
+   │                                                              CodeDeploy: Alias 'live' weighted (V6:90, V7:10)
+   │                                                                                                         ↓
+   │                                                              Wait 5 min + monitor CloudWatch Alarm
+   │                                                                                                         ↓
+   │                                                                            ┌─ Alarm OK → V7:100
+   │                                                                            └─ Alarm → V6:100 (rollback)
+   │
+   └─ Complex flow → delegate to Step Functions
+      ├─ AWS SDK Service Integration (call directly, without Lambda)
+      ├─ TaskToken (human approval, external systems)
+      └─ Distributed Map (large-scale parallelism)
+```
+
+## Easily Confused Comparisons
+
+| A | B | Distinguishing keyword |
+|---|---|----------------|
+| SAM | CDK | YAML, serverless-specific vs general-purpose code, all of AWS |
+| SAM | Serverless Framework | AWS-native, OSS vs multi-cloud, v4 commercial |
+| Standard SFn | Express SFn | 1 year, exactly-once vs 5 minutes, at-least-once |
+| Provisioned Concurrency | Reserved Concurrency | Warm-up, paid vs limit, free |
+| Lambda zip | Container Image | 250MB, Layers possible vs 10GB, no Layers, no SnapStart |
+| `$LATEST` | Version number | Mutable, no PC vs immutable, PC possible |
+| Alias weighted | Version 100% | Canary in two steps vs All-at-once |
+| Inline Map | Distributed Map | 40 concurrent, affects parent history vs 10,000 concurrent, child executions |
+| `.sync` integration | `.waitForTaskToken` | Automatically waits for completion vs waits for an external callback |
+| sam deploy | sam sync | Standard CFN path vs development speed-up, drift risk |
+
+> Every comparison in this table is a classic trade-off model. System design principles such as the CAP theorem (Eric Brewer, 2000), PACELC (Daniel Abadi, 2010), and Conway's Law (1968) apply equally to IaC and workflow tools. For example, the exactly-once guarantee of Standard SFn is a consistency guarantee that gives up some availability and performance, while the at-least-once guarantee of Express is the opposite trade. Exam scenarios almost always ask "which trade-off matters more?"
+
+> 🎯 **Scenario**: A question may appear on the exam that asks you to draw the following picture by combining this week's five tools — "Synthesize Lambda + DynamoDB + API Gateway with CDK → CodePipeline Source/Build → deploy with SAM Canary → monitor for 30 minutes → sequential multi-Region deployment with human approval through Step Functions." You may be asked which service is responsible at each step of this flow.
+
+> A case presented at AWS Summit Seoul in 2023 by a fintech company: it ran 1,500 Lambdas with a mix of CDK and SAM. Simple serverless (API + Lambda + Dynamo) used SAM, complex infrastructure (Lambda + EKS + OpenSearch + Step Functions) used CDK, and the deployment workflow was separated out into CodePipeline + Step Functions. By matching the strength of each tool precisely, deployment time dropped by 70%. On the exam, the answer to "how do you combine several tools?" is "separate them according to each tool's strengths" — trying to do everything with one tool is an anti-pattern.
+
+## Key Pitfalls
+
+> ⚠️ **Pitfall 1**: Omitting `add-permission --qualifier` makes API Gateway return 403 when it calls an Alias. A permission on the Function ARN only allows `$LATEST`.
+
+> ⚠️ **Pitfall 2**: With SnapStart, every invocation generates the same UUID/random value. You must re-initialize in the `afterRestore` hook of `org.crac.Resource`.
+
+> **Pitfall 3**: SAM Policy Templates are broad (including GSI/LSI). For PCI/HIPAA, write `Statement` directly to restrict to exact ARNs.
+
+> **Pitfall 4**: `sam sync --watch` bypasses CFN, which causes drift. In production, the next regular deploy overwrites the changes.
+
+> **Pitfall 5**: PC cannot be set on `$LATEST`, only on an Alias/Version. During a Canary both Versions have PC, so cost temporarily doubles.
+
+> **Pitfall 6**: Container Image Lambda cannot use Layers or SnapStart. Include every dependency in the Dockerfile.
+
+> **Pitfall 7**: Alias weighted routing supports only primary + 1 additional. For 3-way you need an ALB target group or Route 53 weighted records.
+
+> **Pitfall 8**: Step Functions Express does not support TaskToken. A human-approval workflow must use Standard.
 
 ---
 

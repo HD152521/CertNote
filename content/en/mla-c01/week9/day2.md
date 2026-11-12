@@ -1,27 +1,48 @@
-﻿# Day 2 - Network Isolation: VPC Mode SageMaker and PrivateLink
+﻿# Day 2 - Network Isolation: VPC-Mode SageMaker and PrivateLink
 
-Yesterday was permissions: "who can do what." Today is networking: "where does traffic flow." By default, SageMaker training and inference containers run in AWS-managed networks and can reach the internet. In sensitive or regulated environments, this must be blocked. Today you learn **VPC mode**, **internet blocking**, **VPC Endpoints (PrivateLink)**, and **security groups** to isolate SageMaker.
+## 📌 Key Takeaways
 
-## Why VPC Mode
+- By default, SageMaker runs containers in an **AWS-managed network** and can reach the internet. Regulated environments must block this.
+- **VPC mode** (`VpcConfig`) attaches the container ENI to subnets in your own VPC so that security group, routing, and endpoint controls apply.
+- **`EnableNetworkIsolation`** is a stronger block that cuts off **all outbound calls** from the container.
+- To reach AWS services from a VPC with no internet gateway, you need **VPC endpoints**. S3 and DynamoDB use gateway endpoints; everything else uses interface endpoints (PrivateLink).
+- If VPC-mode training hangs, it is usually a **missing S3/ECR endpoint**; if distributed training does not work, it is usually a **missing security group self-referencing rule**.
 
-By default, SageMaker training jobs run in AWS-managed, isolated networks with optional internet access. Two problems arise: ① data might leak via internet routes, ② regulations (finance, healthcare) require "all traffic stays inside our VPC." The solution is **VPC mode** — attaching training/inference containers to **customer VPC subnets**.
+## Three Levels of Isolation — What to Block and How Far
+
+If yesterday was permissions ("who can do what"), today is networking ("where does traffic flow"). With the default settings, a SageMaker training job runs in an isolated network managed by AWS and can reach the internet if needed. It is convenient, but it has two stumbling blocks: ① the concern that data could leak through an internet path, and ② the financial and healthcare regulatory requirement that "all traffic stays inside our VPC."
+
+| Item | Default (SageMaker-managed network) | VPC mode (`VpcConfig`) | Network isolation (`EnableNetworkIsolation`) |
+|------|-------------------------------|------------------------|------------------------------------------|
+| Where the container attaches | A network managed by AWS | An ENI in a subnet of your VPC | **Can be combined** with VPC mode. Blocks outbound entirely |
+| Internet access | Possible | Depends on subnet routing (not possible if private) | Not possible |
+| Security group / NACL applies | No | Yes | Not applicable (there are no calls at all) |
+| S3 access path | The service handles it | A VPC endpoint is required | SageMaker downloads the data in advance and provides it to the container |
+| Configuration key | None (default) | `Subnets` + `SecurityGroupIds` | `EnableNetworkIsolation: true` |
+| Typical use | Experiments · PoC | Regulatory compliance, traffic path control | Highest level of isolation, blocking data exfiltration |
+| Typical side effect | No means of control | The job hangs if an endpoint is missing | `pip install` and external API calls are impossible |
+
+The three levels are not mutually exclusive; they **stack**. You pull traffic inside your own boundary with VPC mode, remove the internet gateway, fill in the missing paths with VPC endpoints, and add network isolation on top for the most sensitive workloads.
 
 ```text
-[Default Mode]
+[Default mode]
 Training container → AWS-managed network → (internet possible)
 
-[VPC Mode]
-Training container → customer VPC subnet (ENI) → security group → VPC Endpoint → S3/SageMaker API
-                                                (no internet gateway)
+[VPC mode]
+Training container → Customer VPC subnet (ENI) → Security group → VPC endpoint → S3 / SageMaker API
+                                                  (no internet gateway)
+
+[VPC mode + network isolation]
+Training container ─╳─ all outbound blocked
+        ▲
+        └── uses only the data SageMaker pre-downloaded and mounted
 ```
 
-VPC mode makes SageMaker create an **ENI (elastic network interface)** in your specified subnet, connecting the container to your VPC.
+> 💡 **Related Theory**: The essence of VPC mode is "pulling the traffic path inside a boundary the customer can control." Once inside the VPC, you can apply all the familiar VPC controls: security groups, NACLs, route tables, and VPC endpoints. Isolation starts not from "blocking" but from "gathering traffic where I can see it."
 
-> 💡 **Related Theory**: VPC mode's essence is "bringing traffic into customer-controlled boundaries." Once inside the VPC, you apply familiar VPC controls: security groups, NACLs, routing tables, VPC Endpoints. Isolation isn't about blocking—it's about routing traffic to where you can see it.
+## Configuring VPC Mode
 
-## VPC Mode Configuration
-
-Specify subnets and security groups via `VpcConfig` in the training job or model.
+You specify subnets and security groups for a training job or model with `VpcConfig`. SageMaker creates an **ENI (Elastic Network Interface)** in the specified subnets to connect the container to the VPC.
 
 ```json
 {
@@ -32,12 +53,30 @@ Specify subnets and security groups via `VpcConfig` in the training job or model
 }
 ```
 
-- **Subnets**: Multiple AZ subnets improve availability. Typically use **private subnets** (no internet gateway routes).
-- **SecurityGroupIds**: Security groups attached to the container ENI. Control inbound/outbound rules.
+- **Subnets**: Providing subnets in multiple AZs improves availability. You normally use **private subnets** (those with no route to an internet gateway).
+- **SecurityGroupIds**: The security groups attached to the container ENI. They control inbound and outbound rules.
+- The subnet needs plenty of **available IPs**. Each instance needs an ENI, so if IPs run out in distributed training, the job fails.
 
-## Internet Blocking — EnableNetworkIsolation
+In the Python SDK, you pass these directly as Estimator parameters.
 
-VPC mode alone isn't enough. Stronger isolation is **network isolation**. When enabled, containers **cannot make any outbound network calls** — not even to the internet or within VPC. Containers operate only on data SageMaker provides.
+```python
+from sagemaker.estimator import Estimator
+
+estimator = Estimator(
+    image_uri=container,
+    role=role,
+    instance_count=2,
+    instance_type='ml.m5.xlarge',
+    subnets=['subnet-0a1b2c3d', 'subnet-4e5f6a7b'],   # VPC mode
+    security_group_ids=['sg-0123456789abcdef0'],
+    enable_network_isolation=True,                     # block all outbound
+    encrypt_inter_container_traffic=True,              # encrypt node-to-node traffic
+)
+```
+
+## Cutting Off the Internet — EnableNetworkIsolation
+
+VPC mode alone may not be enough. Stronger isolation is **network isolation**. When you turn it on, the container **cannot make any outbound network call**, and not only the internet but also calls inside the VPC are blocked. The container operates solely on the data SageMaker provides.
 
 ```json
 {
@@ -45,65 +84,150 @@ VPC mode alone isn't enough. Stronger isolation is **network isolation**. When e
 }
 ```
 
-Caveat: Network isolation blocks external package downloads and API calls. All dependencies must be pre-baked into the container image. Use for extremely sensitive workloads requiring maximum isolation.
+With network isolation on, the container cannot download external packages or call external APIs. So you must put all dependencies into the container image in advance. Use it for sensitive workloads that need the strictest isolation.
 
-> 💡 **Related Theory**: `EnableNetworkIsolation` and VPC mode are often confused but operate at different levels. VPC mode means "send traffic to customer VPC," network isolation means "cut all container outbound." Together they're most powerful — but isolation prevents downloading packages, so dependencies must be image-embedded. "Block external model/code downloads" scenarios point to network isolation.
+`EnableNetworkIsolation` and VPC mode are easy to confuse, but they are at different levels. VPC mode means "send the traffic to the customer VPC," and network isolation means "cut off all of the container's outbound traffic." Using the two together is the strongest, but once isolation is on, SageMaker pre-downloads the training data and mounts it into the container. The answer to the scenario "prevent the container from downloading models from the internet" is network isolation.
 
-## VPC Endpoints (PrivateLink) — Access AWS Services Without Internet
+> ⚠️ **Pitfall**: With network isolation on, `pip install` inside the training script, pretrained weight downloads, and sending to an external metrics server all fail. A good share of "why does it work locally but only fail on SageMaker" cases are this one. The remedies are ① bake the dependencies into a custom image, or ② upload a `requirements.txt` with the source directory so that SageMaker handles it before startup.
 
-With VPC mode and no internet gateway, how do containers reach S3 or SageMaker APIs? Answer: **VPC Endpoints**. Traffic stays within AWS backbone, never touching the internet.
+## VPC Endpoints (PrivateLink) — Calling AWS Services Without the Internet
 
-Two types:
+If you remove the internet gateway with VPC mode, how does the container reach S3 or the SageMaker API? The answer is a **VPC endpoint**. Traffic flows only inside the AWS backbone without crossing the internet. There are two kinds, and distinguishing which is which is within the exam scope.
 
-- **Gateway Endpoint**: S3 and DynamoDB only. Add routes to routing tables. No cost.
-- **Interface Endpoint (PrivateLink)**: Most other services (SageMaker API, SageMaker Runtime, ECR, CloudWatch Logs, STS). ENI created in subnet with private IP. Hourly + data cost.
+| Item | Gateway endpoint | Interface endpoint (PrivateLink) |
+|------|----------------------|-------------------------------------|
+| Supported services | **Only two: S3 and DynamoDB** | Most others, such as SageMaker API and Runtime, ECR, CloudWatch Logs, and STS |
+| How it works | Adds a route to the route table | Creates an ENI in the subnet and assigns a private IP |
+| Security group attachment | Not possible (controlled by endpoint policy) | Possible (attach an SG to the ENI) |
+| Name resolution | Handled by routing | Private DNS resolves the service domain to the private IP |
+| Cost | None | Charged per hour + data processed |
+| Use from on-premises | Not possible (only from inside that VPC) | Possible (via Direct Connect or VPN) |
+| Access control means | Endpoint policy | Endpoint policy + security group |
+
+To run VPC-mode training without the internet, you need the following endpoints.
 
 ```text
-Required VPC Endpoints (Internet-free VPC mode training)
-- com.amazonaws.<region>.s3                  (gateway) → data/artifacts
+Required VPC endpoints (for VPC-mode training without the internet)
+- com.amazonaws.<region>.s3                  (gateway)   → data · artifacts · ECR image layers
 - com.amazonaws.<region>.sagemaker.api       (interface) → job control
 - com.amazonaws.<region>.sagemaker.runtime   (interface) → inference calls
-- com.amazonaws.<region>.ecr.dkr / ecr.api   (interface) → container pull
+- com.amazonaws.<region>.ecr.api             (interface) → image metadata · authentication
+- com.amazonaws.<region>.ecr.dkr             (interface) → Docker pull
 - com.amazonaws.<region>.logs                (interface) → CloudWatch Logs
-- com.amazonaws.<region>.sts                 (interface) → role assume
+- com.amazonaws.<region>.sts                 (interface) → role assumption
 ```
 
-Missing endpoints cause "job starts but never finishes" — containers can't reach S3 or ECR. Classic exam trap.
+If these endpoints are missing, you get the symptom "I switched to VPC mode and the job hangs and never finishes," because the container cannot reach S3 or ECR. In particular, **ECR image layers are stored in S3**, so if you create only the ECR endpoints and forget the S3 gateway endpoint, the image pull fails.
 
-> 💡 **Related Theory**: PrivateLink's core value: "AWS service traffic never touches public internet." Endpoints have private IPs in your VPC, so containers see S3/SageMaker as if they're local. Data leak paths shift from internet to AWS backbone—final isolation puzzle piece.
+You can check what has actually been created right away with the EC2 API.
 
-## Security Groups — ENI-Level Firewall
+```python
+import boto3
 
-Attach security groups to container ENI and VPC Endpoint ENI to narrow traffic further. Distributed training needs node-to-node communication via self-referencing rules.
+ec2 = boto3.client('ec2')
+resp = ec2.describe_vpc_endpoints(
+    Filters=[{'Name': 'vpc-id', 'Values': ['vpc-0abc123456789def0']}]
+)
+
+for ep in resp['VpcEndpoints']:
+    print(ep['ServiceName'], ep['VpcEndpointType'], ep['State'])
+    # check that ServiceName includes s3 / sagemaker.api / ecr.dkr / logs / sts
+```
+
+The core value of PrivateLink (interface endpoints) is that "AWS service traffic never rides the public internet." Because the endpoint has a private IP inside the VPC, S3 and SageMaker look to the container as if they were in the same VPC. Moving the data exfiltration path from the internet to the AWS backbone is the final piece of the isolation puzzle.
+
+## Where the Traffic Actually Flows
 
 ```text
-SageMaker Container Security Group (sg-app)
-- Inbound: from sg-app (self-referencing) all TCP (distributed training node comms)
-- Outbound: 443 → Endpoint security group (sg-endpoint) (HTTPS to VPC Endpoints)
-
-VPC Endpoint Security Group (sg-endpoint)
-- Inbound: 443 from sg-app (HTTPS from containers)
+┌──────────────────────── Customer VPC ────────────────────────┐
+│                                                          │
+│   Private subnet A               Private subnet B        │
+│   ┌─────────────────┐           ┌─────────────────┐      │
+│   │ Training        │◀─────────▶│ Training        │      │
+│   │ container       │ node-to-  │ container       │      │
+│   │  ENI (sg-app)   │ node      │  ENI (sg-app)   │      │
+│   └────────┬────────┘ traffic   └────────┬────────┘      │
+│            │  443/HTTPS                   │               │
+│            ▼                              ▼               │
+│   ┌────────────────────────────────────────────┐          │
+│   │  Interface endpoint ENI (sg-endpoint)      │          │
+│   └────────────────────────────────────────────┘          │
+│            │                                              │
+│            ├──▶ SageMaker API / Runtime                   │
+│            ├──▶ ECR (api · dkr)                           │
+│            ├──▶ CloudWatch Logs                           │
+│            └──▶ STS                                       │
+│                                                          │
+│   Route table ──▶ [S3 gateway endpoint] ──▶ S3            │
+│                                                          │
+│   ✗ No internet gateway      ✗ No NAT gateway             │
+└──────────────────────────────────────────────────────────┘
 ```
 
-- **Self-referencing inbound missing** = distributed training (multi-node) node-to-node communication blocked, training won't start.
-- Outbound 443 to endpoint security group only = traffic doesn't leak.
+Traffic to the interface endpoints is created by **private DNS**. The container calls `sagemaker.<region>.amazonaws.com` as usual, and the in-VPC DNS resolves that name to the private IP of the endpoint ENI. If you turn private DNS off, the code tries to go out to a public IP and fails, so it is effectively a required setting.
+
+## Security Groups — A Firewall at the ENI Level
+
+You narrow traffic further with the security groups attached to the container ENIs and the VPC endpoint ENIs. Distributed training requires the containers to talk to each other, so it needs a self-referencing rule.
+
+```text
+SageMaker container security group (sg-app)
+- Inbound: all TCP from sg-app itself          (node-to-node traffic in distributed training)
+- Outbound: 443 → sg-endpoint                  (calls the VPC endpoints over HTTPS)
+
+VPC endpoint security group (sg-endpoint)
+- Inbound: 443 ← sg-app                        (HTTPS from the containers)
+```
+
+| Rule | What happens without it |
+|------|------------------|
+| sg-app self-referencing inbound | In multi-node distributed training, node-to-node traffic is blocked and training never starts |
+| sg-app outbound 443 → sg-endpoint | The container cannot reach any VPC endpoint and the job hangs |
+| sg-endpoint inbound 443 ← sg-app | Connections are refused even though the endpoint was created |
+
+If you allow outbound only on 443 to the endpoint security group, traffic cannot leak anywhere else. The trick is to **reference other security group IDs** rather than IP ranges. In a SageMaker environment where ENIs get a new IP every time, IP-based rules are unmanageable.
 
 ## VPC Mode Checklist
 
-When VPC training hangs or fails:
+The order to check when VPC-mode training hangs or fails:
 
-1. Subnets private? Routes go to VPC Endpoints?
-2. S3 gateway endpoint present and route table linked?
-3. SageMaker API/Runtime, ECR, Logs, STS interface endpoints present?
-4. Security group outbound 443 open to endpoints?
-5. Distributed training? Self-referencing inbound present?
-6. (If NAT gateway used) Do you need external package download path?
+1. Is the subnet private, and does routing go to the VPC endpoints?
+2. Is there an S3 gateway endpoint, and is it **associated with that subnet's route table**?
+3. Are there interface endpoints for SageMaker API/Runtime, ECR (api and dkr), Logs, and STS?
+4. Is **private DNS** turned on for the interface endpoints?
+5. Is security group outbound 443 open to the endpoint SG?
+6. For distributed training, is there a self-referencing inbound rule?
+7. Does the subnet have **available IPs** left to create ENIs?
+8. Is external package download really necessary (if so, a NAT gateway or pre-baking into the image)?
 
-## Summary
+## When Isolation Blocks You: Symptom → Cause → Fix
 
-Today in one sentence: **Isolation means pulling traffic into your VPC (VPC mode), removing internet gateways, and filling gaps with VPC Endpoints (PrivateLink).** Strongest blocking is `EnableNetworkIsolation` cutting all container outbound. Hanging VPC training is 90% likely S3/ECR endpoint gaps; broken distributed training is security group self-reference missing. These two points solve network isolation scenarios.
+| Symptom | Common cause | Fix |
+|------|-----------|------|
+| After switching to VPC mode, the job starts but times out with no progress | No S3 gateway endpoint, or it is not associated with the route table | Create the endpoint and associate it with that subnet's route table |
+| Stuck at the container image pull stage | `ecr.api` and `ecr.dkr` missing, or the S3 endpoint for image layers is missing | Configure the two ECR endpoints + the S3 gateway endpoint **together** |
+| Logs do not reach CloudWatch, so even finding the cause is hard | The `logs` interface endpoint is missing | Create the logs endpoint. Without it in an isolated environment, debugging is shut down |
+| `pip install` in the training script fails | Network isolation is active, or there is no internet path | Bake the dependencies into the image or pass `requirements.txt` in the source directory |
+| Multi-node distributed training hangs at the start phase | No security group self-referencing inbound rule | Add a rule with source = sg-app to the sg-app inbound |
+| Access fails even though the endpoint was created | Private DNS disabled, or inbound 443 not opened on the endpoint SG | Enable private DNS + sg-endpoint inbound 443 ← sg-app |
+| Everything else works but only S3 is denied | The `aws:SourceVpce` value in the bucket policy or endpoint policy does not match the actual endpoint ID | Compare the VPCE ID embedded in the policy with the current endpoint ID |
+| Job preparation time becomes noticeably longer | VPC mode adds a step that creates ENIs in the subnet | Normal behavior. Proceed with extra timeout margin |
+| The job fails because ENI creation failed | The subnet has run out of available IPs | Use a subnet with a larger CIDR or specify subnets in multiple AZs together |
 
-Tomorrow: protecting data and models themselves — KMS encryption and Secrets management.
+Tomorrow we cover KMS encryption and Secrets management, which protect the data and models themselves.
+
+## 📖 Glossary
+
+- **VPC mode** : A setting that runs training and inference containers attached to customer VPC subnets as ENIs. It is specified with `Subnets` and `SecurityGroupIds`.
+- **ENI (Elastic Network Interface)** : A virtual network card that has a private IP inside the VPC. SageMaker creates it when attaching a container to the VPC.
+- **EnableNetworkIsolation** : An option that blocks all outbound network calls from the container. The strongest means of isolation.
+- **VPC endpoint** : A pathway that lets you reach AWS services without crossing the internet. There are gateway and interface types.
+- **Gateway endpoint** : Dedicated to S3 and DynamoDB. It works by adding a route to the route table and has no additional cost.
+- **Interface endpoint (PrivateLink)** : Connects to a service by creating an ENI and private IP in the subnet. Most services use this method, and it is billed per hour and per data processed.
+- **Private DNS** : A feature that resolves a service's public domain name to the endpoint's private IP. If turned off, the code tries to go out over the public path and fails.
+- **Private subnet** : A subnet with no route to an internet gateway. The default placement for VPC-mode SageMaker.
+- **Self-referencing security group rule** : An inbound rule that specifies the same security group as its source. Essential for node-to-node traffic in distributed training.
+- **aws:SourceVpce** : A condition key that checks whether a request came in through a specific VPC endpoint. Used when opening a bucket only through that path.
 
 ---
 

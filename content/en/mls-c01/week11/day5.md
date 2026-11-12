@@ -1,90 +1,208 @@
-# Day 5 - Week 11 Review: Monitoring, MLOps, Security, Operations
+# Day 5 - Week 11 Comprehensive Review: Monitoring, MLOps, Security, Operations
 
-This week was "the world after building models." We covered monitoring deployed models, automating retraining and deployment (MLOps), protecting data/models/permissions (security), and managing cost/audit/recovery (operations) in one full loop. Today we integrate these pieces into a single operating system and organize the judgment points most frequently split on the exam.
+## 📌 Key Takeaways
 
-## Full Picture: Operations Loop on One Page
+- Week 11 is "the world after you build the model." The four axes of monitoring, MLOps, security, and operations form one closed loop through EventBridge and Pipelines.
+- Monitoring types split on **whether labels exist**. No labels → Data Quality; labels available → Model Quality.
+- Logging splits on **the shape of the question**. "Why is it slow, why did it fail?" → CloudWatch; "Who did what and when?" → CloudTrail.
+- Security has three pillars: **execution role + VPC isolation + KMS key policy**. For an AccessDenied in operations, look at the execution role first, not the user's permissions.
+- Inference cost splits on the shape of the traffic. Intermittent → Serverless, large payloads → Async, many models → MME, variable → Auto Scaling.
+
+## The Operations Loop on One Page
 
 ```text
-[Training Data S3]──(KMS encryption, VPC Endpoint)──┐
-                                               ▼
-                 [SageMaker Pipeline] process→train→eval
-                                               │ ConditionStep (quality gate)
-                                               ▼
-                        [Model Registry] versions & approval (Approved)
-                                               │ EventBridge
-                                               ▼
-                 [Deploy: Blue/Green·Canary] → [Endpoint]
-                          │                        │
-                  CloudTrail (audit)          DataCapture (S3)
-                          │                        ▼
+[Training data S3]──(KMS encryption, VPC endpoint)──┐
+                                                    ▼
+                 [SageMaker Pipeline] process → train → evaluate
+                                                    │ ConditionStep (quality gate)
+                                                    ▼
+                        [Model Registry] version · approval (Approved)
+                                                    │ EventBridge
+                                                    ▼
+                 [Deploy: Blue/Green · Canary] → [Endpoint]
+                          │                          │
+                  CloudTrail (audit)           DataCapture (S3)
+                          │                          ▼
                           │              [Model Monitor] drift detection
-                          │                        │ CloudWatch Alarm
-                          └────────────────────────┘ EventBridge → retrain (loop start)
+                          │                          │ CloudWatch alarm
+                          └──────────────────────────┘ EventBridge → retraining (the loop starts)
 ```
 
-This entire loop runs on IAM execution roles (least privilege), VPC isolation, KMS encryption.
+- This entire loop runs on top of **IAM execution roles (least privilege), VPC isolation, and KMS encryption**.
+- The loop starts at "drift detection" and ends at "deploying the approved new version." When you read a question, first locate which point of the loop it is asking about.
 
-## One-Line Summary per Day
+## One-Line Summary of Days 1-4
 
-| Day | Topic | One-Liner |
-|-----|------|-----------|
-| 1 | Monitoring | Data Quality watches input distribution shifts (no labels), 1st defense, violation→trigger retrain |
-| 2 | MLOps | Pipelines (DAG, ConditionStep) + Model Registry (versions, approval) + CI/CD (Projects) |
-| 3 | Security | IAM execution roles (least privilege) + VPC isolation + KMS (key policy controls decryption) |
-| 4 | Operations | Cost (Spot/Serverless/Async) + logging (CloudWatch vs CloudTrail) + DR (cross-region, Multi-AZ) |
+| Day | Topic | Key point | Representative services and features | Representative pitfall |
+|---|---|---|---|---|
+| 1 | Monitoring | The first line of defense that watches input distribution changes without labels. A violation → triggers retraining | Model Monitor (Data Quality / Model Quality / Bias Drift / Feature Attribution Drift), DataCapture | Not refreshing the baseline after retraining, causing a flood of false positives |
+| 2 | MLOps | Define process → train → evaluate → register → deploy as code for reproducibility, traceability, and automation | Pipelines (DAG, ConditionStep), Model Registry (versions, approval), Projects (CI/CD) | A model that misses the performance bar is deployed automatically because there is no ConditionStep |
+| 3 | Security | Who (execution role), where (VPC), and what can be opened (KMS key policy) | Execution Role, VpcConfig, VPC endpoints, CMK, Macie | Investigating AccessDenied only as a user permission issue |
+| 4 | Operations | Cost, audit, and recovery. Training and inference have opposite cost structures | Spot / Serverless / Async / MME, CloudWatch, CloudTrail, S3 CRR and Multi-AZ | An always-on GPU endpoint for intermittent traffic |
 
-## Most Frequently Split Judgment Points
+## The 5 Decision Branches That Split Most Often
 
-```text
-1) Monitoring type
-   No labels → Data Quality / Has labels → Model Quality
-   Feature contribution shift → Feature Attribution / Bias shift → Bias Drift
+| # | Branch | Stem signal | Answer |
+|---|---|---|---|
+| 1 | Monitoring type | No labels / labels available / feature attribution change / group bias change | Data Quality / Model Quality / Feature Attribution Drift / Bias Drift |
+| 2 | Logging service | Performance and failure debugging / who did what and when (audit) | CloudWatch / CloudTrail |
+| 3 | Inference cost | Intermittent traffic / large payload and long processing / many models shared / variable traffic | Serverless / Async / Multi-Model Endpoint / Auto Scaling |
+| 4 | Permission problem | AccessDenied in training or an endpoint | Execution Role permissions |
+| 5 | Internet-blocking requirement | Data must not pass through the internet | Private subnet + VPC endpoint + network isolation |
 
-2) Logging service
-   Perf/failure debugging → CloudWatch / Who did what (audit) → CloudTrail
+> 💡 **Related theory**: The operations domain of the Specialty exam does not ask "do you know the feature?" but "what would you choose in this situation?" The five branches above cover almost all operations questions. Training yourself to jump to a branch the moment you see a keyword (no labels, who, intermittent, AccessDenied, no internet) is what translates directly into points.
 
-3) Inference cost
-   Sparse traffic → Serverless / Large payload, long processing → Async
-   Many models shared → Multi-Model Endpoint / Variable traffic → Auto Scaling
+## Exam Clue Keyword → Answer Translation Table
 
-4) Permission issues
-   Training/endpoint AccessDenied → Execution Role permissions
+| Stem clue | Answer | Why |
+|---|---|---|
+| "Ground-truth labels cannot be obtained immediately" | Model Monitor **Data Quality** | The first line of defense that detects from input distribution alone, without labels |
+| "Labels arrive days later; confirm the accuracy drop" | **Model Quality** | Joins predictions with the later-arriving labels to compute metrics |
+| "The rank or magnitude of SHAP attributions has changed" | **Feature Attribution Drift** | Compares Clarify attributions against the baseline |
+| "Fairness metrics across groups are shifting" | **Bias Drift** | Clarify-based bias monitoring |
+| "Violations appear on every run after retraining" | **Regenerate the baseline** | Re-register the new distribution you deliberately taught as normal |
+| "Who deleted the endpoint and when?" | **CloudTrail** | Records the API caller, time, and source IP |
+| "Why did training fail; what about the loss curve?" | **CloudWatch Logs / Metrics** | Application logs and performance metrics |
+| "Traffic spikes only briefly during the day" | **Serverless Inference** | Zero idle cost, per-invocation billing |
+| "The payload is large and an immediate response is not needed" | **Asynchronous Inference** | Queue-based, scales down to zero |
+| "Thousands of models on one endpoint" | **Multi-Model Endpoint** | Shared hosting of many models |
+| "Traffic varies widely but real-time responses are required" | **Real-time endpoint + Auto Scaling** | Absorbs surges, scales in when idle |
+| "Cut training costs sharply" | **Managed Spot Training + `checkpoint_s3_uri`** | Interruptible but cheaper; resumes from checkpoints |
+| "AccessDenied, yet the user reads fine in the console" | **Insufficient execution role permissions** | The job runs with the execution role, not the user's credentials |
+| "Data must not pass through the internet" | **Private subnet + S3 VPC gateway endpoint** | Private access with no internet path |
+| "Block the container's outbound calls themselves" | **`enable_network_isolation=True`** | Blocks the container's network calls |
+| "Traffic between distributed training nodes must not be plaintext" | **`encrypt_inter_container_traffic=True`** | Encrypts node-to-node communication |
+| "Decryption must be isolated per team" | **Per-team KMS CMK + key policy** | Even if IAM allows it, the key policy has the final block |
+| "Automatically detect whether PII is mixed into S3" | **Amazon Macie** | Detects and classifies sensitive data in S3 |
+| "Same code and data give the same result (reproducibility)" | **SageMaker Pipelines definition** | Fixes the workflow as code |
+| "Do not register or deploy a model that misses the metrics" | **ConditionStep + Model Registry approval** | An automatic quality gate plus a human gate for redundancy |
+| "Which model was trained on which data; rollback" | **Model Registry** | Manages versions, approval status, and lineage |
+| "Receive an alarm and start the retraining pipeline" | **EventBridge** | Event routing that invokes a Pipeline or Lambda |
+| "Validate with a small amount of traffic first, then expand" | **Canary deployment** | Minimizes risk |
+| "Automatically provision build and deploy repos and CI/CD" | **SageMaker Projects** | MLOps template |
+| "Survive a single-AZ failure" | **`instance_count` ≥ 2** | Automatically spread across multiple AZs |
+| "Restore data and models even after a Region failure" | **S3 cross-Region replication + versioning + Model Registry** | Replication, plus tracking which version to restore |
+| "Recreate the endpoint in another Region or account" | **IaC (CloudFormation / Pipelines)** | Reproduce infrastructure as code |
+| "Manage external DB credentials outside the code" | **Secrets Manager** | Removes hardcoded credentials |
 
-5) Internet-blocking requirement
-   Private subnets + VPC Endpoints + network isolation
-```
+## Side-by-Side Tables for Commonly Confused Pairs
 
-> 💡 **Related Theory**: Specialty exam operations test "what to pick in situation," not "know the feature." The five splits above cover nearly all operations problems. Train yourself to spot keywords (no labels, who, sparse, AccessDenied, internet ban) and snap to the branch instantly — that makes the score.
+### Data Quality vs Model Quality
+
+| Aspect | Data Quality | Model Quality |
+|---|---|---|
+| What it watches | Input feature statistics (missing values, types, distribution) | Prediction quality such as accuracy, F1, RMSE |
+| Labels | Not needed | Needed |
+| Detection timing | Immediate (first line of defense) | After the labels arrive (delayed) |
+| What it catches | Data drift | Even concept drift |
+
+### CloudWatch vs CloudTrail
+
+| Aspect | CloudWatch | CloudTrail |
+|---|---|---|
+| What it records | Logs and metrics (loss, latency, CPU/GPU) | All AWS API calls |
+| Question it answers | "Why did it fail, how slow is it?" | "Who called what, when, and from where?" |
+| Main use | Debugging and alarms | Audit and compliance |
+| Retention | Log groups / metrics | Stored permanently in S3, tamper-resistant |
+
+### Deployment Strategies: Blue/Green vs Canary vs Linear vs A/B
+
+| Strategy | Behavior | When |
+|---|---|---|
+| Blue/Green | Bring up a new fleet and switch | The default safe deployment |
+| Canary | A small amount of traffic first → expand after checking | Minimizing risk |
+| Linear | Increase by a fixed percentage in stages | Gradual observation |
+| A/B (Production Variant) | Split traffic between two models | Performance comparison |
+
+### Serverless vs Async vs Real-time vs MME
+
+| Option | Traffic shape | Idle cost | Characteristics |
+|---|---|---|---|
+| Serverless Inference | Intermittent, unpredictable | 0 | Per-invocation billing |
+| Asynchronous Inference | Large payload, immediacy not needed | Scales down to 0 | Queue-based processing |
+| Real-time + Auto Scaling | Constant + variable | The minimum number of instances | Absorbs surges, scales in when idle |
+| Multi-Model Endpoint | A very large number of models | Shared | Many models on a single endpoint |
+
+### Execution Role vs User IAM Permissions
+
+| Aspect | Execution Role | User IAM permissions |
+|---|---|---|
+| Applies to | Used at runtime by training jobs, endpoints, and pipelines | People using the console or CLI |
+| Trust policy | `sagemaker.amazonaws.com` calls `sts:AssumeRole` | Not applicable |
+| Typical symptom | AccessDenied in the job log | Denied on the console screen |
+| Exam context | For an AccessDenied in operations, check here first | Easily used as a distractor |
+
+### Debugger vs Model Monitor vs Clarify
+
+| Tool | When | What it looks at |
+|---|---|---|
+| SageMaker Debugger | During training | Anomalies in the training process such as tensors and gradients |
+| Model Monitor | After deployment | Drift in input distribution and prediction quality |
+| Clarify | Before and after training, and in operations | Data and model bias, SHAP feature attributions |
 
 ## Integrated Scenario Checkpoint
 
-Scenario: Operating a classification model trained on medical data. (1) Data cannot expose to internet, (2) must auto-retrain on input distribution shift, (3) must audit who changed endpoint, (4) sparse traffic, want to cut idle cost.
+You are operating a classification model trained on medical data. There are four requirements: (1) the data must not be exposed to the internet, (2) retraining must happen automatically when the input distribution changes, (3) you must audit who changed the endpoint, and (4) traffic is intermittent, so idle cost must be reduced.
+
+| Requirement | Configuration | Basis |
+|---|---|---|
+| (1) No internet exposure | Private subnet + S3 VPC endpoint + KMS CMK + least-privilege execution role | Day 3 |
+| (2) Automatic retraining on distribution change | DataCapture → Model Monitor (Data Quality) → CloudWatch alarm → EventBridge → Pipeline retraining → Model Registry approval → redeployment | Days 1-2 |
+| (3) Change audit | Record API calls with CloudTrail and keep the logs in S3 | Day 4 |
+| (4) Reduce idle cost | Serverless Inference (zero idle cost) | Day 4 |
 
 ```text
-(1) VPC private subnets + S3 VPC Endpoint + KMS (CMK) + execution role least privilege
-(2) DataCapture → Model Monitor (Data Quality) → CloudWatch Alarm
-       → EventBridge → SageMaker Pipeline retrain → Model Registry approval → redeploy
-(3) CloudTrail audit API calls, store logs in S3
-(4) Serverless Inference zero idle cost
+(1) VPC private subnet + S3 VPC endpoint + KMS (CMK) + least-privilege execution role
+(2) DataCapture → Model Monitor (Data Quality) → CloudWatch alarm
+       → EventBridge → SageMaker Pipeline retraining → Model Registry approval → redeployment
+(3) Audit API calls with CloudTrail, keep the logs in S3
+(4) Zero idle cost with Serverless Inference
 ```
 
-Looks like one problem but fits week's 4 days of knowledge exactly, one piece each.
+- It looks like a single situation, but the knowledge from this week's four days fits in exactly, one piece at a time.
+- The real exam asks about **only one** of these in a composite stem. Practicing decomposing the requirement sentences and labeling which Day's branch each belongs to is itself real exam training.
 
-## Common Traps Summary
+## Common Pitfalls Summary Table
 
-```text
-- Baseline not refreshed after retraining, false positives surge (Day1)
-- Poor-performance model auto-deploys without ConditionStep (Day2)
-- Permission debug sees only user perms, misses execution role (Day3)
-- Try CloudWatch to find "who did it" → CloudTrail is answer (Day4)
-- Always-on GPU endpoint handles sparse traffic, wasteful (Day4)
-```
+| Pitfall | Why it is wrong | Correct response | Source |
+|---|---|---|---|
+| Leaving the baseline as it is after retraining | Flags the new distribution you deliberately taught as a violation, a false positive | Regenerate the baseline from the new training data | Day 1 |
+| Trying to confirm an accuracy drop directly with Data Quality | It only looks at input statistics, so it cannot know accuracy | Obtain labels, then use Model Quality | Day 1 |
+| Automatic registration and deployment without a ConditionStep | A model that misses the performance bar goes straight to production | ConditionStep + a redundant approval gate | Day 2 |
+| Setting Approved immediately at registration | Deployment automation continues without human review | Keep the `PendingManualApproval` default | Day 2 |
+| Investigating AccessDenied only against user permissions | The job runs with the execution role | Check the execution role policy and trust policy | Day 3 |
+| Turning on encryption but neglecting the key policy | Even if IAM allows it, the key policy decides in the end | Separate who can decrypt using the CMK key policy | Day 3 |
+| Handling "block the internet" with a NAT gateway | NAT is actually an outbound internet path | VPC endpoint + network isolation | Day 3 |
+| Looking for "who did it" in CloudWatch | CloudWatch is the performance and logs domain | CloudTrail | Day 4 |
+| An always-on GPU endpoint for intermittent traffic | Wasted idle cost | Serverless or Auto Scaling | Day 4 |
+| Not setting a checkpoint for Spot training | If interrupted, you start over from the beginning | Specify `checkpoint_s3_uri` | Day 4 |
+| Managed Spot Training to cut inference cost | Spot is a cost-saving measure for training only | For inference use Serverless / Async / MME | Day 4 |
 
-## Summary
+## Operations Domain Self-Check
 
-Week 11 treats ML as "living system," not "finished model." Monitoring catches drift; MLOps automates retraining and deployment; security wraps everything; operations handle cost/audit/recovery. These four connect via EventBridge and Pipelines into one closed loop. On exams, memorizing five splits that translate keywords to branches lets you answer most operations questions correctly.
+1. If you suspect a performance drop but have no labels, what do you look at first? → **Data Quality monitoring**
+2. If violations occur on every run after retraining? → **Regenerate the baseline**
+3. Which combination blocks automatic deployment of a model that misses its metrics? → **ConditionStep + the Model Registry approval gate**
+4. What is the default approval status of a version newly registered in Model Registry? → **PendingManualApproval**
+5. If the user reads fine but only the training job is denied on S3? → **Insufficient S3 permissions on the execution role**
+6. To reach S3 without going through the internet? → **A VPC gateway endpoint for S3**
+7. To prove "who called what and when"? → **CloudTrail**
+8. The simplest measure to survive a single-AZ failure? → **Set `instance_count` to 2 or more**
 
-Next week: comprehensive wrap-up and exam prep to finish the full course.
+Next week, we wrap up the whole course with a domain-by-domain integrated review and exam preparation.
+
+## 📖 Glossary
+
+- **Drift**: The phenomenon where, after deployment, the input data or the data-to-answer relationship differs from the time of training. If the inputs change it is data drift; if the relationship changes it is concept drift.
+- **Baseline**: A snapshot of statistics and constraints (`statistics.json` / `constraints.json`) recording "this is what normal looks like." Monitoring compares against it to judge violations.
+- **DataCapture**: A feature where an endpoint automatically saves actual requests and responses to S3. It is the raw material for monitoring.
+- **ConditionStep**: A quality gate in a pipeline that compares an evaluation metric to a threshold and decides whether the next step runs.
+- **Model Package Group**: The Model Registry grouping that collects model versions for the same purpose. Within it, versions v1, v2, … each have an approval status.
+- **Execution Role**: The IAM role that training jobs and endpoints borrow while running. S3 and KMS are accessed with this role's permissions, not a person's account.
+- **VPC endpoint**: A private channel to reach AWS services without going through the internet. S3 and DynamoDB use the gateway type; SageMaker API and others use the interface type (PrivateLink).
+- **Key policy**: The policy attached to the KMS key itself that defines "who can decrypt with this key." Even if IAM allows it, decryption fails if it is blocked here.
+- **Canary deployment**: A method of first sending only a very small amount of traffic to the new version to check that nothing is wrong, then increasing the share.
+- **RTO / RPO**: After a failure, "how quickly do you recover (RTO)" and "how much data loss is tolerated (RPO)." They are the two axes for choosing a DR strategy.
 
 ---
 

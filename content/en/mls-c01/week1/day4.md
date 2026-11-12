@@ -1,14 +1,27 @@
 # Day 4 - Data Labeling: SageMaker Ground Truth, Active Learning, Label Quality
 
-The ceiling of a supervised model is set not by the algorithm but by **label quality**. If the labels are wrong, even the best model learns wrong answers ("garbage in, garbage out"). Yet the cost of having humans hand-label hundreds of thousands of images is enormous. The Specialty exam asks "how do you meet this labeling requirement cheaply and accurately?", and SageMaker Ground Truth sits at the center of the answer.
+## 📌 Key Takeaways
 
-Today we cover (1) the structure of Ground Truth and workforce selection, (2) automated labeling (active learning) that cuts costs, and (3) consensus techniques that guarantee label quality.
+- The ceiling of a supervised model is set not by the algorithm but by **label quality**. "Garbage in, garbage out."
+- A Ground Truth labeling job consists of four things: **input data, task type, workforce, and UI template**.
+- For the workforce: **Private or Vendor for sensitive data**; Mechanical Turk for public, high-volume, low-cost work. Mechanical Turk is unsuitable for sensitive data.
+- **Active learning (automated data labeling)** — the model auto-labels what it is confident about, and only the ambiguous items go to humans. This is the standard play for cutting cost.
+- **Consensus** reduces random errors but cannot catch **systematic bias**. You need clear guidelines and a golden set.
 
 ## SageMaker Ground Truth: The Labeling Workflow
 
-Ground Truth composes a labeling job from (1) input data (S3), (2) a labeling task type, (3) a workforce (who does the labeling), and (4) a labeling UI template. The output comes in the standardized **augmented manifest** (JSON Lines) format, ready to use directly for training.
+The cost of having humans hand-label hundreds of thousands of images is hard to bear. The Specialty exam asks "how do you attach labels cheaply and accurately?", and Ground Truth sits at the center of the answer.
 
-Supported task types: image classification, bounding box (object detection), semantic segmentation, text classification, named entity recognition, video, and more.
+Ground Truth composes a labeling job from four pieces.
+
+| Component | Description |
+|---|---|
+| Input data | Specified by a manifest (JSON Lines) in S3 |
+| Task type | Image classification, bounding box, semantic segmentation, text classification, named entity recognition, video, etc. |
+| Workforce | Who will do the labeling (table below) |
+| Labeling UI | A built-in template or a custom HTML template |
+
+The output comes in the standard **augmented manifest** (JSON Lines) format, ready to use directly for training.
 
 ```python
 import boto3
@@ -26,72 +39,159 @@ sm.create_labeling_job(
         "WorkteamArn": private_workteam_arn,        # workforce selection (table below)
         "PreHumanTaskLambdaArn": prehuman_lambda,
         "TaskTitle": "Draw boxes around cats and dogs",
-        "NumberOfHumanWorkersPerDataObject": 3,     # 3 workers label each object → consensus
+        "NumberOfHumanWorkersPerDataObject": 3,     # 3 workers per object → consensus
         "TaskTimeLimitInSeconds": 300,
     },
 )
 ```
 
-The workforce (who does the labeling) is chosen based on data sensitivity and cost.
+### Label Shape by Task Type
 
-| Workforce | Characteristics | Suitable data |
-|---------|------|--------------|
-| **Amazon Mechanical Turk** | Large-scale, low-cost public workers | Non-sensitive public data, fast high volume |
-| **Private** | Trusted groups such as internal employees | Confidential or regulated data (medical, financial) |
-| **Vendor** | Professional vendors from AWS Marketplace | Tasks requiring expertise (e.g., medical image reading) |
+What humans do, and the shape of the result, differ by task type. Reading "what must be attached" in the passage determines the type.
 
-> 💡 **Related theory**: Exposing sensitive data (patient imaging, PII) to a public workforce like Mechanical Turk is a compliance violation. In such cases you must use a Private workforce (internal) or a trusted Vendor. The Specialty exam frequently asks "which labeling workforce for sensitive medical/financial data?", and the answer is almost always Private or Vendor. Choosing Mechanical Turk based on cost and scale alone is walking into the trap.
+| Task type | What humans do | Resulting label | Typical use |
+|---|---|---|---|
+| Image classification | Pick one category for a photo | Class label | Defective/normal judgment |
+| Bounding box | Draw a rectangle around each object | Coordinates + class | Object detection |
+| Semantic segmentation | Paint regions pixel by pixel | Pixel mask | Medical imaging, autonomous driving |
+| Text classification | Assign a category to a document | Class label | Sentiment analysis, inquiry classification |
+| Named entity recognition (NER) | Mark spans in a sentence | Offsets + entity type | Document information extraction |
+| Video frame / tracking | Mark and track objects frame by frame | Time axis + coordinates | Action recognition |
+
+- The higher up the table, the shorter the time per task; the further down, the more expensive. **Segmentation is overwhelmingly more expensive than classification.**
+- To cut cost, first ask "do we really need segmentation, or are bounding boxes enough?"
+
+### Workforce Selection Table
+
+Choose by looking at data sensitivity and cost together.
+
+| Workforce | Characteristics | Suitable when | Prohibited when |
+|---|---|---|---|
+| **Amazon Mechanical Turk** | Large public worker pool, low cost | Non-sensitive public data, fast high-volume processing | Regulated data such as PII, medical, or financial |
+| **Private** | Internal staff or a trusted group | Confidential or regulated data (medical, financial) | When you lack the staff and cannot process high volume |
+| **Vendor** | Specialist companies on AWS Marketplace | Expert knowledge required (reading medical images) | When the budget is extremely limited |
+
+Exposing sensitive data such as patient imaging or PII to a public workforce like Mechanical Turk is a compliance violation. In that case you must use a Private workforce (internal) or a Vendor with NDAs and expertise. When the Specialty exam asks "which labeling workforce for sensitive data?", the answer is almost always Private or Vendor.
+
+> ⚠️ **Pitfall**: Choosing Mechanical Turk by looking only at cost and scale is the classic trap in this area. If the passage contains even one of the words "patient," "PII," "regulated," or "confidential," immediately eliminate the public-workforce options.
 
 ## Active Learning: Cutting Costs with Automated Labeling
 
-Ground Truth's core cost-saving feature is **automated data labeling (active learning)**. How it works:
+Ground Truth's core cost-saving feature is **automated data labeling** (active learning). The sequence is as follows.
 
-1. Humans label a portion of the data (the seed).
-2. A model is trained on those labels.
-3. The model scores predictions over the full dataset, and **high-confidence predictions are adopted as automatic labels**.
-4. Only the **low-confidence (ambiguous) items** are sent back to humans.
-5. The model is retrained on the newly human-labeled data, and the cycle repeats.
+```
+1. Humans label a portion (the seed)
+        ▼
+2. Train a model on those labels
+        ▼
+3. The model predicts over the full dataset
+        ├─ High confidence → adopted as an automatic label (no human involvement)
+        └─ Low confidence  → routed to humans
+                          ▼
+4. Humans label only the ambiguous items → return to step 2 and repeat
+```
 
-The key insight: by concentrating human effort on the borderline cases the model is unsure about, you achieve high quality even though humans label only a fraction of the full dataset.
+- Key insight: by concentrating human labor on the **samples near the decision boundary** that the model finds ambiguous, you get high quality while labeling only a fraction of the whole.
+- The larger the dataset and the tighter the labeling budget, the greater the payoff.
 
 ```python
-# Adding LabelingJobAlgorithmsConfig to create_labeling_job enables active learning
+# Adding LabelingJobAlgorithmsConfig to create_labeling_job turns on active learning
 labeling_algorithm = {
     "LabelingJobAlgorithmsConfig": {
-        # Built-in algorithm ARN matching the task type (image classification example)
+        # Built-in algorithm ARN for the task type (image classification example)
         "LabelingJobAlgorithmSpecificationArn":
             "arn:aws:sagemaker:us-east-1:027400017018:labeling-job-algorithm-specification/image-classification"
     }
 }
-# High-confidence objects get auto-labeled by the model; only ambiguous objects route to humans → lower cost
+# High-confidence objects are auto-labeled by the model; only ambiguous ones go to humans → lower cost
 ```
 
-> 💡 **Related theory**: Active learning starts from the premise that "not all data is equally useful for training." Samples the model is already confident about carry low information value for additional labels, while ambiguous samples near the decision boundary (high-uncertainty samples) carry the most information. The strategy of selecting only these ambiguous samples to ask humans about is called **uncertainty sampling**. The more data you have and the tighter the labeling budget, the greater the payoff.
+Active learning starts from the premise that "not all data is equally useful for training." For samples the model is already confident about, an additional label has low information value, while ambiguous samples near the decision boundary (high-uncertainty samples) have the highest information value. The approach of focusing only on those ambiguous samples is called **uncertainty sampling**.
 
 ## Guaranteeing Label Quality: Consensus and Verification
 
-Humans err too. A single labeler makes mistakes from slips, bias, and fatigue. Ground Truth provides several mechanisms for quality.
+Humans make mistakes. A single labeler can be wrong because of carelessness, bias, or fatigue. Ground Truth protects quality with several mechanisms.
 
-- **Consensus**: Setting `NumberOfHumanWorkersPerDataObject` to 2-5 has multiple workers label the same object, and the results are aggregated (majority vote or weighted) into the final label.
-- **Annotation consolidation**: The logic that merges multiple answers. Provided by default and replaceable with a custom Lambda.
-- **Quality verification workflows**: A separate workforce reviews and corrects the labeling output.
+- **Consensus**: Set `NumberOfHumanWorkersPerDataObject` to 2-5 so that several workers label the same object, and combine the results (majority vote or weighted).
+- **Annotation consolidation**: The logic that merges multiple answers into one. A built-in default exists, and you can replace it with a custom Lambda if needed.
+- **Quality review workflow**: A separate workforce reviews and corrects the results.
 
 ```python
 # Consensus: 3 workers label each object → the consolidation algorithm produces the final label
 "NumberOfHumanWorkersPerDataObject": 3,
-# Consolidation logic (majority vote by default), or specify a custom consolidation Lambda
+# Consolidation logic (majority vote by default) or a custom Lambda
 "AnnotationConsolidationConfig": {
     "AnnotationConsolidationLambdaArn": consolidation_lambda_arn
 }
 ```
 
-A metric for measuring label quality is **inter-annotator agreement** (agreement between labelers, e.g., Cohen's kappa). Low agreement is a signal that the task guidelines are ambiguous or the task is inherently hard.
+One metric for measuring label quality is **inter-annotator agreement (e.g., Cohen's kappa)**. Low agreement is a signal that the guidelines are ambiguous or the task itself is inherently difficult.
 
-> 💡 **Related theory**: Label noise directly cuts into the upper bound of model performance. Consensus-based labeling cancels random errors through majority voting, reducing noise, but **systematic bias** — where all labelers err in the same direction (e.g., due to ambiguous guidelines) — cannot be caught by consensus. That is why you also need clear labeling guidelines and a procedure that validates labelers against a golden set (samples with known ground truth). Cost trades off against accuracy and labeler count, and reducing the amount of human labeling itself via active learning is the standard play that wins on both cost and quality.
+### Response Table by Error Type
+
+| Error type | Example | Caught by consensus? | Correct response |
+|---|---|---|---|
+| Random slip | One worker draws a box wrongly from fatigue | Caught | Consensus (majority vote) |
+| Individual bias | One labeler is unusually lenient | Mostly caught | Consensus + per-labeler quality tracking |
+| **Systematic bias** | Guidelines are ambiguous, so everyone errs in the same direction | **Not caught** | Clarify guidelines + golden set validation |
+| Task difficulty | Edge cases are inherently ambiguous | Partially | Add edge-case examples to the guidelines, use a specialist Vendor |
+
+Label noise directly lowers the ceiling of model performance. Consensus-based labeling reduces random errors through majority vote but cannot catch **systematic bias** (all labelers erring in the same direction because of ambiguous guidelines). A procedure that validates against clear labeling guidelines and a **golden set** (samples whose correct answers are already known) is essential. There is a cost trade-off among accuracy, number of labelers, and active learning, and reducing the amount of human labeling itself is the standard approach that improves cost and quality together.
+
+> ⚠️ **Pitfall**: If you memorize only "more labelers means better quality," you will get questions about systematic bias wrong. If the options include "clarify the guidelines" or "golden set," those are the likely answers.
 
 ## Labeling Alternatives: Do You Really Need All That Data?
 
-There are questions to ask before labeling. (1) Can a pretrained model + transfer learning get by with fewer labels? (2) Can data augmentation multiply the existing labels? (3) Can weak supervision provide heuristic labels? The Specialty exam often asks "ways to reduce labeling cost," and active learning and transfer learning show up as correct answers.
+Before starting labeling, check three things first.
+
+1. Can **a pretrained model + transfer learning** do the job with only a few labels?
+2. Can **data augmentation** stretch the existing labels further?
+3. **Weak supervision** — can heuristic rules produce rough labels?
+
+When the Specialty exam asks "how do you reduce labeling cost?", **active learning + transfer learning** is the candidate answer.
+
+### Comparison of Cost-Reduction Measures
+
+| Measure | What it reduces | Price paid |
+|---|---|---|
+| Active learning | Number of samples humans must see | Initial seed labels are still needed |
+| Transfer learning | Total number of labels needed | Less effective if the domain is too different |
+| Data augmentation | Amount of new label collection needed | Avoid transformations that break the label |
+| Weak supervision | Cost of obtaining initial labels | Noise created by the rules gets mixed in |
+| Lowering workforce unit price | Labor cost | Not applicable to sensitive data |
+
+## Human Review in Production: Amazon A2I
+
+Labeling is needed not only before training. There is also a flow in which predictions the model is unsure of in production are handed to humans for review.
+
+```
+Inference request ─▶ Model prediction ─▶ Confidence threshold check
+                              ├─ At or above threshold → respond as is
+                              └─ Below threshold → human review queue (A2I)
+                                                    ▼
+                                          Store review result → accumulate as retraining data
+```
+
+- **Amazon Augmented AI (A2I)** is the service that builds this "human review loop." It shares the workforce concept with Ground Truth.
+- The value is twofold. (1) Humans correct the quality of low-confidence predictions, and (2) those review results become high-quality labels for the next retraining.
+- The idea is the same as active learning. The principle of sending **only the ambiguous items to humans** applies at both the training stage (Ground Truth) and the production stage (A2I).
+
+Choosing Ground Truth for a passage saying "humans review low-confidence predictions in production" feels off. Ground Truth is a tool for attaching labels to a training dataset, and inserting human review into inference results is the place for A2I.
+
+Tomorrow we synthesize all of Week 1 (lifecycle, storage, ingestion, labeling) into a single data pipeline.
+
+## 📖 Glossary
+
+- **Labeling job**: The Ground Truth execution unit that defines the task of attaching ground truth to data.
+- **Manifest**: A JSON Lines file listing the targets to label. One line is one object.
+- **Augmented manifest**: An output file in which the label results are appended to the original information. It can be used directly as training input.
+- **Workforce**: The group of people who actually perform the labeling. Three kinds: Mechanical Turk, Private, and Vendor.
+- **Active learning**: A labeling strategy that auto-processes what the model is confident about and sends only the ambiguous items to humans.
+- **Uncertainty sampling**: Selecting for labeling the samples the model is most confused about first.
+- **Consensus**: The procedure of having several people label the same object and producing a single answer by majority vote or similar.
+- **Annotation consolidation**: The consolidation logic that merges the answers of multiple labelers into one.
+- **Golden set**: A validation sample whose correct answers are already known. Used to check the quality of labelers and guidelines.
+- **Systematic bias**: An error where everyone is wrong in the same direction. Majority vote does not filter it out.
 
 ## 📝 Practice Questions
 

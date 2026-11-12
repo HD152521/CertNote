@@ -1,66 +1,199 @@
-﻿# Day 4 - Common Traps and Keywords: "Requirement → SageMaker Function" Translation Table
+# Day 4 - Frequently Missed Traps·Keywords: The "Requirement → SageMaker Feature" Translation Table
 
-Exams are hard not from unknown concepts but from **failing to translate scenarios into functions**. "Verify prediction is fair" doesn't immediately trigger "Clarify" — you see four options and waver into traps. Today: **requirement keyword→function translation table** and **single traps**. Memorize this table; compound question speed jumps dramatically.
+## 📌 Key Takeaways
 
-## Core Translation Table — Requirement → Function
+- The exam is hard often not because you do not know the concepts but because you **cannot translate a scenario into a feature**.
+- Fix the order: while reading the question, use keywords to **think of the answer first**, then look for that name among the options. If you read the options first, you get shaken.
+- Confusing pairs are separated by **fine-grained qualifiers** — "before deployment vs. in production," "one-time vs. continuous," "same framework vs. different framework."
+- The three big traps: Accuracy on imbalanced data, algorithm mis-mapping, scaling a real-time endpoint to zero. Just knowing them filters them out immediately.
+- A cost-saving option that **breaks another requirement (performance, availability, security) is wrong**. Cheap is not automatically correct.
 
-| Requirement Keyword | Answer Function |
-|------------------|----------|
-| Input distribution changed? | Model Monitor (Data Quality) |
-| Performance vs actual labels? | Model Monitor (Model Quality) + ground truth |
-| Fair/bias check | SageMaker Clarify |
-| Which feature contributed? | Clarify (SHAP) |
-| Low-cost/sporadic inference (0-scale) | Serverless inference |
-| Cheapest bulk scoring | Batch Transform |
-| Training cost cut (resumable) | Spot Instance (Managed Spot Training) |
-| Deep learning inference cost cut | AWS Inferentia (inf1/inf2) |
-| Hundreds of identical models cost | Multi-Model Endpoint (MME) |
-| Train-inference feature consistency | Feature Store / inference pipeline |
-| ML workflow automation, CI/CD | SageMaker Pipelines |
-| Trigger retraining on event | EventBridge |
-| Internet-free S3/ECR access | VPC Endpoint (PrivateLink) |
-| At-rest data encryption | KMS |
-| Who called what API? | CloudTrail |
-| Visual data prep, no code | Data Wrangler |
-| Training debug, bottleneck | SageMaker Debugger |
+## The Core Translation Table — Requirement → Feature
 
-> 💡 **Related Theory**: This table's value: "answer from requirements before seeing options." Test options are crafted traps. If you've decided your answer name first, checking if that name appears in options is safest. Read problem → spot keywords → recall function → scan options.
+Once this table is stuck in your head, your speed on comprehensive questions rises greatly.
 
-## Confused Pairs — What's Different
+### Data·Features
 
-Most-confused pairs. Distinguish precisely.
+| Requirement keyword | Correct feature |
+|---------------------|-----------------|
+| Visual data preparation without code | Data Wrangler |
+| Run my preprocessing script as a managed job | Processing Job |
+| Serverless ETL·schema catalog | Glue / Glue Data Catalog |
+| SQL queries on S3 without moving it | Athena |
+| Real-time stream ingestion | Kinesis Data Streams / Firehose |
+| Humans must attach labels | Ground Truth |
+| Training-inference feature consistency | Feature Store / inference pipeline |
+| Single-record feature lookup right before real-time inference | Feature Store online store |
+| Build a training dataset as of a past point in time | Feature Store offline store |
+| Check whether predictions are fair / bias | SageMaker Clarify |
+| Which features contributed to the prediction | Clarify (SHAP) |
 
-| Confused Pair | Split Basis |
-|-----------|----------|
-| Model Monitor vs Clarify | Drift watch in ops=Monitor / Bias·explainability analysis=Clarify |
-| Data Quality vs Model Quality | Input distribution shift / Performance drop (label needed) |
-| MME vs MCE | Same container, many models / Different frameworks, few (≤15) |
-| CloudTrail vs CloudWatch | Who did what (API audit) / System metrics, logs, alarms |
-| Pipelines vs Step Functions | SageMaker-native ML CI/CD / Generic service orchestration |
-| Serverless vs Async | Small payload, short, sporadic / Large payload, long, queue |
-| Bayesian vs Hyperband | Few trials, efficient / Early-stop low-performers, save compute |
+### Training·Tuning·Evaluation
 
-> ⚠️ **Trap**: Exams intentionally place confused pairs in same question options. "Monitor bias" has Model Monitor Bias Drift AND Clarify as options. "Pre-check"=Clarify (one-time). "Operations watch"=Model Monitor (+Clarify integrated). Tiny condition words ("before deployment" vs "in operations", "one-time" vs "continuous") split answers. Master nuance.
+| Requirement keyword | Correct feature |
+|---------------------|-----------------|
+| Reduce training cost (interruptions tolerable) | Managed Spot Training + checkpoints |
+| Data larger than disk·startup delay | Pipe / Fast File mode |
+| I/O bottleneck from repeated reads every epoch | FSx for Lustre |
+| Efficient tuning with few attempts | Bayesian |
+| Early termination of unpromising training | Hyperband |
+| Training debugging·bottleneck analysis | SageMaker Debugger |
+| Compare the metrics of training attempts | SageMaker Experiments |
+| Train with my own PyTorch script | Framework Estimator + entry_point |
+| Evaluate performance on imbalanced data | F1 / AUC-ROC / Recall |
 
-## Trap Type 1 — Imbalanced, but Accuracy Tempts
+### Deployment·Orchestration
 
-Imbalanced data (fraud, disease, churn) has Accuracy as attractive option. 99% normal data → "all normal" model = 99% accuracy, catches nothing. Answer almost always **F1, AUC, Recall**. "Miss fraud/disease"=Recall. "False alarm cost high"=Precision.
+| Requirement keyword | Correct feature |
+|---------------------|-----------------|
+| Low-cost·intermittent inference (scale to 0) | Serverless inference |
+| Large payload·long processing·individual requests | Asynchronous inference |
+| Lowest-cost bulk scoring | Batch transform |
+| Cost reduction for hundreds of models of the same kind | Multi-model endpoint (MME) |
+| A few models of different frameworks on one endpoint | Multi-container endpoint (MCE) |
+| Reduce deep learning inference cost | AWS Inferentia (inf1/inf2) |
+| A/B testing·gradual traffic shifting | Production variant weights |
+| ML workflow automation·CI/CD | SageMaker Pipelines |
+| Register only if the threshold is passed | ConditionStep + Model Registry |
+| Trigger retraining by an event | EventBridge |
+| Workflow with many non-ML services mixed in | Step Functions |
 
-> 🔍 **Deeper**: Metric depends on "asymmetric cost." False-negative (miss) costly? → Recall. False-positive (alert) costly? → Precision. Both matter? → F1. Threshold adjustment trades Precision-Recall; medical: lower threshold to raise Recall.
+### Monitoring·Security·Governance
 
-## Trap Type 2 — Algorithm Mapping Shuffled
+| Requirement keyword | Correct feature |
+|---------------------|-----------------|
+| Detect whether the input distribution changed | Model Monitor (Data Quality) |
+| Detect performance degradation against the truth | Model Monitor (Model Quality) + ground truth |
+| Watch bias change in production | Bias Drift monitor (Clarify integration) |
+| Feature attribution change in production | Feature Attribution Drift monitor |
+| Access S3 without the internet | Gateway VPC endpoint |
+| Access ECR·SageMaker API without the internet | Interface endpoint (PrivateLink) |
+| Block the container's external communication | EnableNetworkIsolation |
+| Encrypt data at rest | KMS |
+| Encrypt data in transit | TLS |
+| Who called which API | CloudTrail |
+| Latency·error-rate alarms | CloudWatch |
+| Document model purpose·performance·limitations | Model Cards |
+| Track data → training → model provenance | Lineage Tracking |
+| A notebook·role with excessive permissions | IAM least privilege |
 
-"Time series" + Linear Learner, "anomaly" + K-Means mix similar-looking wrong answers. Map precisely: time series=**DeepAR**, anomaly=**RCF**, cluster=**K-Means**, dimension reduce=**PCA**, tabular classify/regress=**XGBoost**, sparse recommend=**Factorization Machines**, text=**BlazingText**.
+The value of this table is "thinking of the answer before looking at the options." Exam options are filled with plausible traps, so if you read the options without settling on an answer first, you get shaken. The safest order is to catch keywords while reading the question, write the feature name in your head, and then check whether that name is among the options.
 
-## Trap Type 3 — Real-Time to Zero Scale
+## Commonly Confused Pairs — What Is Different?
 
-"Traffic drops to zero, scale real-time endpoint to 0 instances" is wrong. Real-time **enforces ≥1 instance always**. Zero-scale requires **serverless/async/batch**. Also "XGBoost on GPU (p4d)" is trap — trees don't parallelize like tensors; CPU is right.
+Clearly distinguishing the easily confused pairs gives the following.
 
-> ⚠️ **Trap**: "Cost cut" keywords appear in every option, mixed. "Many models"→MME correct. "DL inference"→Inferentia correct. "Sporadic traffic"→serverless/async correct. "XGBoost to GPU" or "real-time to 0" or "drop data for speed" are cost-cut traps breaking other requirements. Cost wins when it doesn't sacrifice performance/availability.
+| Confusing pair | Distinguishing criterion |
+|----------------|--------------------------|
+| Model Monitor vs Clarify | Watching drift in production = Monitor / one-time pre-deployment bias·explanation analysis = Clarify |
+| Data Quality vs Model Quality | Input distribution·schema change / performance degradation against the truth (labels required) |
+| MME vs MCE | Same container·many models / different frameworks·few models |
+| Asynchronous vs batch transform | Individual requests received into a queue with results to S3 / the whole dataset as a job |
+| Serverless vs asynchronous | Small payload·short processing·intermittent / large payload·long processing·queue |
+| Data Wrangler vs Processing Job | Visual, no code / run my script as a managed job |
+| Feature Store online vs offline | Low-latency single-record lookup (real-time) / S3 bulk lookup (training·batch) |
+| Gateway vs Interface endpoint | Route table·S3/DynamoDB / ENI·most services |
+| CloudTrail vs CloudWatch | Who did what (API audit) / system metrics·logs·alarms |
+| Pipelines vs Step Functions | SageMaker-specific ML CI/CD / general service orchestration |
+| Bayesian vs Hyperband | Efficient search with few attempts / early termination of unpromising training |
+| File vs Pipe vs Fast File | Copy everything / streaming / instant access + streaming what is needed |
+| Data parallel vs model parallel | Split the data (lots of data) / split the model (does not fit on the GPU) |
+| Precision vs Recall | False-positive cost is high / miss cost is high |
+| Inference pipeline vs production variant | Sequential chain (preprocessing → model) / traffic distribution (A/B) |
+| Glue vs EMR | Serverless ETL·catalog / run the cluster yourself·large-scale Spark |
 
-## Summary
+> ⚠️ **Gotcha**: The exam deliberately places these confusing pairs side by side as options in the same question. For "monitor bias," it gives both Model Monitor's Bias Drift and Clarify as options, and it splits as: "one-time pre-deployment check" means Clarify, "continuous monitoring in production" means Model Monitor (+ Clarify integration). A fine-grained qualifier ("before deployment" vs "in production," "one-time" vs "continuous") separates the answer.
 
-Today's core: **translation speed**. Catch scenario keywords (drift, bias, isolate, encrypt, sporadic, bulk, time series, imbalance) → instantly recall function name → check if name in options → spot traps (confused pair confusion, Accuracy on imbalance, algorithm mismatch, real-time 0-scale/GPU). Three trap types — know them, you dodge instantly. Tomorrow: D-day strategy.
+## Trap Type 1 — Luring You Into Choosing Accuracy on Imbalanced Data
+
+On imbalanced data (fraud, disease, churn), Accuracy is placed attractively among the options. On 99% normal data, an "everything is normal" model also has 99% accuracy. The answer is almost always **F1·AUC·Recall**. "Must not miss" = Recall, "false-positive cost is high" = Precision.
+
+Metric questions require reading the "cost asymmetry." If the cost of a false negative (a miss) is large, Recall; if the cost of a false positive (a false alarm) is large, Precision; if balance between the two matters, F1. They also ask that adjusting the threshold trades off Precision against Recall. For something like medical diagnosis, where a miss is fatal, you lower the threshold to raise Recall.
+
+## Trap Type 2 — Scrambling the Algorithm Mapping
+
+They give similar-looking wrong answers, such as Linear Learner for "time-series forecasting" or K-Means for "anomaly detection." Fix the mapping firmly: time series = **DeepAR**, outliers = **RCF**, clustering = **K-Means**, dimensionality reduction = **PCA**, tabular classification/regression = **XGBoost**, recommendation (sparse) = **Factorization Machines**, text = **BlazingText**.
+
+| Wrong-answer lure | Why it attracts | Correct answer |
+|-------------------|-----------------|----------------|
+| Time series → Linear Learner | The association "forecasting = regression" | DeepAR |
+| Anomaly detection → K-Means | The association "outliers are outside the clusters" | Random Cut Forest |
+| Splitting segments → XGBoost | The association "classification = XGBoost" | K-Means if there are no labels |
+| Recommendation → K-Means | The association "group similar users" | Factorization Machines for sparse interactions |
+| Too many features → delete features | Simple intuition | Reduce dimensions with PCA |
+
+## Trap Type 3 — Trying to Scale a Real-Time Endpoint to Zero
+
+An option saying "traffic drops to 0, so scale the real-time endpoint to 0 instances" is wrong. Real-time **must keep at least 1 instance**. If you need scale-to-zero, you must move to **serverless/asynchronous/batch**. An option that attaches a GPU (p4d) to XGBoost is also a trap — for tree models, CPU is the answer.
+
+> ⚠️ **Gotcha**: When the keyword "reduce cost" appears, each option plausibly mixes in a cost-saving technique. Many models of the same kind → MME, deep learning inference → Inferentia, intermittent traffic → serverless/asynchronous, training cost·interruptions tolerable → Spot are right, but "XGBoost on a GPU," "real-time down to 0," and "discarding data even though accuracy matters" reduce cost yet break the requirements, so they are traps. If cost saving sacrifices another requirement (performance, availability), it is wrong.
+
+## Trap Type 4 — Pushing a Tool Outside Its Intended Use
+
+The option uses an "existing service" but **twists its role slightly.** Because the service name is familiar, it is easy to wave it through.
+
+| Trap option | Why it is wrong |
+|-------------|-----------------|
+| Model Monitor performs retraining | Monitor only goes as far as detection·notification. Retraining is EventBridge → Pipeline |
+| Use KMS to block internet access | KMS is encryption at rest. Networking is VPC endpoints·isolation |
+| Monitor latency with CloudTrail | CloudTrail is API auditing. Metrics are CloudWatch |
+| Continuously watch drift in production with Clarify | Continuous monitoring is Model Monitor (Clarify integration) |
+| Measure bias with Debugger | Debugger diagnoses the training process. Bias is Clarify |
+| Store the training script in Feature Store | Feature Store is a feature repository, not a code repository |
+| Reduce training cost with serverless inference | It is an inference option, unrelated to training cost |
+
+## Trap Type 5 — The "Almost Correct" Option That Misses One Condition
+
+This is the most painful trap. With three conditions, they place an option that satisfies only two next to the correct answer.
+
+```text
+[How to check conditions]
+  Extract the conditions from the question   Cond①  Cond②  Cond③
+        ▼
+  Option A : VPC endpoint only            ✓      ✗      ✗   → eliminated
+  Option B : VPC + isolation              ✓      ✓      ✗   → "almost correct" trap
+  Option C : VPC + isolation + KMS        ✓      ✓      ✓   → correct
+  Option D : Stronger IAM policy only     ✗      ✗      ✗   → eliminated
+```
+
+- Count the conditions first, and mark how many each option satisfies.
+- It is especially dangerous when conditions are **similar-looking but different requirements**, such as one being "does not traverse the internet" and another being "blocks external exfiltration."
+- Conversely, an option with a pile of components when there is only one condition loses under the "LEAST operational overhead" criterion.
+
+## Trap Type 6 — Skimming Over Superlative Qualifiers
+
+| Qualifier | What it compares | Common wrong answer |
+|-----------|------------------|---------------------|
+| MOST cost-effective | Cost | A high-performing but expensive configuration |
+| LEAST operational overhead | Operational burden | Building directly on EC2·your own scripts |
+| MOST secure | Security | A configuration that works but leaves an exposure path |
+| LEAST latency | Latency | Options without immediacy, like batch·asynchronous |
+| FASTEST to implement | Implementation speed | Custom container·direct implementation |
+
+## Wrong-Answer Patterns: Symptom → Cause → Action
+
+| Symptom | Cause | Action |
+|---------|-------|--------|
+| You change your mind while reading options and get it wrong | You read the options without settling on an answer first | Write the keyword → feature translation in your head, then check the options |
+| You pick the opposite every time on confusing pairs | You did not read the fine-grained qualifier | Underline "before deployment/in production," "one-time/continuous" |
+| You pick the option that satisfies two of three conditions | You did not count the conditions | Number the conditions and check each option |
+| On a cost question, you pick an option that breaks performance | You looked only at the qualifier and ignored other requirements | An option that breaks a requirement is eliminated regardless of the qualifier |
+| You pick reflexively when you see a familiar service name | You judged by the service's "name," not its "role" | Recite exactly what that service does |
+| You run out of time and cannot solve the later questions | You lingered too long on one question | After 2 minutes, give a tentative answer + mark it and move on |
+
+Tomorrow we finish with D-Day strategy.
+
+## 📖 Glossary
+
+- **Translation table**: A correspondence table that turns a scenario's requirement keywords directly into SageMaker feature names. It governs your solving speed.
+- **Confusing pair**: Two similar features that the exam deliberately places side by side as options in the same question. Separated by fine-grained qualifiers.
+- **Fine-grained qualifier**: A short modifier that separates the answer, such as "before deployment vs. in production," "one-time vs. continuous," or "individual request vs. whole dataset."
+- **Superlative qualifier**: An expression that specifies the comparison criterion, such as MOST cost-effective or LEAST operational overhead. It narrows to one answer when several options would all work.
+- **Almost-correct trap**: An option that misses one of the required conditions. Placed right next to the correct answer, it catches the most people.
+- **Role-twisting trap**: An option that has a real, existing service do something other than its intended use (e.g., Model Monitor performing retraining).
+- **Cost asymmetry**: A situation where the losses from false positives and false negatives differ in size. This asymmetry decides whether to look at Precision or Recall.
+- **Threshold**: The cutoff value that splits a classification probability into positive/negative. Lowering it raises Recall and lowers Precision.
+- **Process of elimination**: A solving method that narrows candidates by striking out any option that violates even one requirement.
 
 ---
 

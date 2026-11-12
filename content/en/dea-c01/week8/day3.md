@@ -1,92 +1,204 @@
 # Day 3 - Logging, Audit, and Troubleshooting: CloudTrail and Failure Recovery
 
-"What happened?" reconstruction when pipelines stop is half of operations. Today we audit via CloudTrail, systematically debug pipelines, recover from failures, and handle DLQ (dead letter queue).
+## 📌 Key Takeaways
+
+- CloudTrail = "who called which API" (audit); CloudWatch Logs = "what the application printed." If the question starts with "who," it is CloudTrail.
+- Management events are recorded by default and can be looked up in Event history for 90 days. **Data events**, such as S3 object access, **must be turned on explicitly** to be recorded.
+- Debugging narrows from top to bottom: orchestrator → failed task logs → input data → permissions and resources → CloudTrail.
+- Retry only transient errors, and add exponential backoff and jitter. Retries are safe only for idempotent operations, and permanent failures are isolated with Catch.
+- Move repeatedly failing messages to a DLQ so the queue does not get blocked, and after fixing the cause, put them back with redrive.
 
 ## CloudTrail: Who, When, What
 
-CloudTrail is account **API call audit log**. Where CloudWatch shows "how system operates" (metrics/logs), CloudTrail shows "who called which operation."
+When a pipeline stops, the ability to reconstruct "what happened" is half of operations. Of the material for that, the part that records "what people and systems told AWS to do" is CloudTrail.
 
-- **Management Events**: Control plane operations—resource create/modify/delete, IAM changes. Enabled by default.
-- **Data Events**: Data plane operations—S3 object GET/PUT, Lambda Invoke, etc. Large volume; default disabled; selectively enable.
-- **Insights Events**: Auto-detect anomalous API call spikes.
+| Event type | What it holds | Recorded by default? |
+|------|------|------|
+| Management events | Control-plane operations such as creating, modifying, and deleting resources and IAM changes | Recorded |
+| Data events | Data-plane operations such as S3 object GET/PUT, Lambda Invoke, and DynamoDB item-level operations | Not recorded (turn on by specifying resource types) |
+| Network activity events | API calls made through VPC endpoints | Not recorded |
+| Insights events | Unusual API call volume or error rates | Not recorded |
+
+- **Event history** shows the past 90 days of **management events** per Region with no setup at all. It is an immutable record, but after 90 days you can no longer see events, and data events are not in it.
+- To keep records longer than 90 days or to record data events, create a **trail** and export to an S3 bucket. A trail can also send events to CloudWatch Logs and EventBridge.
+- Delivery to S3 is not instantaneous. According to the S3 documentation, data events are delivered at 5-minute intervals and management events at 15-minute intervals. To receive "what just happened" as a real-time alarm, use an EventBridge rule.
+- With **log file integrity validation** on, you can verify with hashes and signatures whether delivered log files were tampered with or deleted. S3 server access logs do not have this feature.
+- Collect logs for the whole organization in the central account's bucket with an organization trail, and keep that bucket separate from operations accounts and unmodifiable.
+- **CloudTrail Lake** puts events into an event data store and lets you query them with SQL. Retention goes up to about 7 years or about 10 years depending on the pricing option.
 
 ```text
-Question: "Who dropped prod curated table last night?"
-→ CloudTrail: find glue:DeleteTable / athena query events by timestamp and userIdentity
+Question: "Who DROPped the curated table early yesterday morning?"
+→ In CloudTrail, narrow eventSource=glue.amazonaws.com, eventName=DeleteTable
+  by time and userIdentity
 ```
 
-> 💡 **Related Theory**: CloudWatch Logs and CloudTrail have different roles. CloudWatch Logs = application writes, CloudTrail = AWS API calls. Security, audit, "who did this" questions use CloudTrail.
+> 💡 **Related theory**: CloudWatch Logs holds logs written by the application, while CloudTrail records AWS API calls. A `DROP TABLE` statement executed in Athena remains in the Athena query history, and the `glue:DeleteTable` that was called as a result remains in CloudTrail. Remembering that one incident leaves traces in two places in different forms speeds up tracing.
 
-Best practice: centralize organization's CloudTrail logs in central S3 bucket, immutably store (object lock/separate account) for audit.
+## Four Similar Logs
+
+| Log | What it records | Default state | Clue for choosing it |
+|------|------|------|------|
+| CloudTrail management events | API calls that change resources, permissions, and settings | On (90-day lookup) | "Who changed the table, policy, or key?" |
+| CloudTrail data events | Object- and item-level access | Off; billed when on | "Who read this object?" |
+| S3 server access logs | Requests that arrived at a bucket | Off; delivery within a few hours (best effort) | When you must see authentication-failed requests, or lifecycle transitions and expirations |
+| CloudWatch Logs | Text output by jobs and functions | Depends on the service and settings | "Why did it fail? (stack trace)" |
+
+- CloudTrail does not record requests that **failed authentication** because the credentials were invalid. It does record insufficient permissions (`AccessDenied`). If you need to see authentication failures too, use server access logs.
+- Records of lifecycle rules moving or deleting objects appear only in server access logs. If "an object disappeared but there is no DeleteObject in CloudTrail," suspect lifecycle expiration.
+
+## Querying CloudTrail Logs with Athena
+
+JSON logs that a trail has accumulated in S3 can be turned into an Athena table and searched with SQL.
+
+```sql
+-- Calls that deleted or changed Glue catalog tables in the past two days
+SELECT eventtime, useridentity.arn AS who, eventname, sourceipaddress, requestparameters
+FROM cloudtrail_logs
+WHERE eventsource = 'glue.amazonaws.com'
+  AND eventname IN ('DeleteTable', 'UpdateTable', 'BatchDeleteTable')
+  AND eventtime >= '2026-06-25T00:00:00Z'
+ORDER BY eventtime DESC;
+```
+
+- The log volume is large, so apply a date-based partition (or partition projection) to reduce the amount scanned.
+- For a call made by assuming a role (AssumeRole), the role session appears in `userIdentity`. To find the actual person, trace back one more step to the `AssumeRole` event that created that session.
 
 ## Pipeline Debugging Workflow
 
-Don't dive into code when pipeline fails; narrow top-to-bottom:
+When an incident occurs, do not open the code first; narrow from top to bottom.
 
-1. **Orchestrator first**: Step Functions execution graph / Airflow(MWAA) DAG identify which task failed.
-2. **Failed task logs**: CloudWatch Logs for that Glue/EMR/Lambda job; find exception stack.
-3. **Input data check**: Schema change, empty partition, corrupted file.
-4. **Permissions and resources**: IAM denied, throttled, OOM (out of memory).
-5. **CloudTrail for change tracking**: Recently someone modified table/policy/config?
+1. **Start with the orchestrator**: Look at which task failed in the Step Functions execution graph or the Airflow (MWAA) DAG.
+2. **Logs of the failed task**: Look at the exception stack in the CloudWatch Logs of the relevant Glue, EMR, or Lambda.
+3. **Inspect the input data**: Schema changes, empty partitions, corrupted files.
+4. **Inspect permissions and resources**: IAM and Lake Formation denials, KMS key permissions, throttling, out of memory.
+5. **Trace changes with CloudTrail**: Whether someone recently changed a table, policy, or setting.
 
 ```text
-Step Functions execution → ❌ TransformJob fails
-  → CloudWatch Logs(Glue): "AnalysisException: cannot resolve 'email'"
-  → Root cause: upstream schema changed email column to user_email
-  → Action: fix mapping + add schema validation gate
+Step Functions execution → TransformJob failed
+  → CloudWatch Logs (Glue): "AnalysisException: cannot resolve 'email'"
+  → Cause: upstream renamed the email column to user_email
+  → Action: fix the mapping + add a schema validation gate
 ```
 
-## Common Failure Types and Clues
+- If "a job that worked until yesterday fails with no code change," it is steps 3 and 5. The data changed, or someone changed a setting.
 
-- **Throttling**: `ProvisionedThroughputExceededException`, `Rate exceeded` → backoff/retry, increase capacity.
-- **OOM**: Spark executor OOM → adjust partition count, increase executor memory, resolve data skew.
-- **Permission denied**: `AccessDenied` → check IAM/Lake Formation permissions, KMS key permissions.
-- **Data skew**: Data concentrated in specific key → some tasks run long (`shuffleBytes` metric clue).
+## Common Failure Types: Symptom → Cause → Action
 
-## Retry and Failure Recovery
+| Symptom (log or error) | Cause | Action |
+|------|------|------|
+| `ProvisionedThroughputExceededException`, `Rate exceeded`, `ThrottlingException` | API or throughput limit exceeded | Backoff retries, add capacity, batch the calls |
+| Spark executor OOM, tasks die repeatedly | Partitions too large, or skew | Adjust partition count, distribute keys, use workers with more memory |
+| Only some tasks take unusually long | Data skew | Check shuffle metrics, use salting or broadcast joins |
+| `AccessDenied` | One of IAM policy, Lake Formation permission, or KMS key policy is missing | Check the three layers in order (Week 9) |
+| A job runs a long time and is forcibly terminated | Glue job timeout | Check the timeout value. If left blank, it is 2,880 minutes for Glue 4.0 and below and 480 minutes for 5.0 and above |
+| Starting the same job concurrently causes an error | Exceeded the maximum concurrent runs (default 1) | Raise concurrent runs or queue job runs |
+| A job inside a VPC times out calling KMS | No path to KMS | KMS VPC endpoint or NAT |
+| Column not found, type mismatch | Upstream schema change | Fix the mapping, schema validation gate |
 
-Transient errors normal in distributed systems. Core is **distinguishing retryable from permanent errors**.
+- The automatic retry count of a Glue job is set between 0 and 10. **A job that ended by timeout is not restarted.** A design that tries to solve timeouts with retries does not work.
+- If a long-running job is cut off at 8 hours after moving up to Glue 5.0, the default timeout has changed. Exam material may present the old default (48 hours).
+
+## Retries and Failure Recovery: Step Functions Retry and Catch
+
+In distributed systems, transient errors are normal. The key is to **distinguish errors worth retrying from permanent errors**.
 
 ```json
-// Step Functions Retry/Catch (concept example)
 "Retry": [{
-  "ErrorEquals": ["States.TaskFailed", "ThrottlingException"],
+  "ErrorEquals": ["ThrottlingException", "Glue.ConcurrentRunsExceededException"],
   "IntervalSeconds": 5,
   "BackoffRate": 2.0,
-  "MaxAttempts": 3
+  "MaxAttempts": 4,
+  "MaxDelaySeconds": 60,
+  "JitterStrategy": "FULL"
 }],
 "Catch": [{
   "ErrorEquals": ["States.ALL"],
+  "ResultPath": "$.error",
   "Next": "QuarantineAndNotify"
 }]
 ```
 
-- **Exponential backoff + jitter**: Increase retry intervals, add randomness to prevent thundering herd.
-- **Catch after max retries**: Permanent failure goes to isolation/notify path.
+| Field | Default | Meaning |
+|------|------|------|
+| `IntervalSeconds` | 1 | Time to wait before the first retry |
+| `MaxAttempts` | 3 | Maximum number of retries. 0 means no retry |
+| `BackoffRate` | 2.0 | Multiplier applied to the interval on each retry |
+| `MaxDelaySeconds` | No limit | Upper bound on how far the interval grows |
+| `JitterStrategy` | `NONE` | With `FULL`, waits a random time between 0 and the computed interval |
 
-> 💡 **Related Theory**: Retries safe only on idempotent work. Retrying non-idempotent work (e.g., "increase balance") applies duplicates. Protect with idempotent keys or conditional writes.
+- Jitter is **off by default.** If many executions fail at the same moment, they pile back in at the same moment (thundering herd). Specify `FULL` explicitly.
+- `States.ALL` matches every error name, but it must appear alone in its array and as the last entry. `States.TaskFailed` matches every error except `States.Timeout`.
+- `States.Runtime` (for example, applying a path to a null payload) can be neither retried nor caught and fails the execution. `States.DataLimitExceeded` is not caught by `States.ALL` and must be named explicitly to be caught.
+- If a state has both Retry and Catch, **Retry comes first.** If it still fails after using up the retries, it moves on to Catch. If it has neither, an error in one state fails the entire execution.
+- Retries also count as state transitions. Standard workflows are billed by the number of state transitions, so near-unlimited retries become a cost.
+- After fixing a failed execution, you can use **redrive** to continue from the failure point instead of running from the beginning.
 
-## DLQ (Dead Letter Queue) Handling
+> 💡 **Related theory**: Retries are safe only for idempotent operations. Blindly retrying a non-idempotent operation such as "increase the balance by 100" applies it twice. Protect it with an idempotency key or a conditional write. For a load job, partition overwrite or MERGE instead of append plays the same role.
 
-Messages repeatedly failing if left in normal queue blocks consumers. **DLQ** separates messages failing repeated attempts.
+## Retry Defaults That Differ by Service
 
-- **SQS**: Messages exceeding `maxReceiveCount` move to DLQ.
-- **Lambda (async invoke)**: Failure sends to SQS/SNS DLQ, or more common **Lambda Destinations** (onFailure).
-- **Kinesis/event source mapping**: `OnFailure` target records failed batch metadata to SQS/SNS.
+| Executor | Default retry | If all attempts fail |
+|------|------|------|
+| Step Functions Task | No retry if Retry is not specified | Catch; if none, the execution fails |
+| Lambda asynchronous invocation | On function error, 2 more attempts (after 1 minute, then after another 2 minutes). Throttles and system errors are retried by default for up to 6 hours | The event is discarded. It remains only if you attach a DLQ or an on-failure destination |
+| Lambda stream event source mapping (Kinesis) | Retries the same batch until the records expire | The shard is blocked. Isolate with a retry limit, batch splitting, or an on-failure destination |
+| SQS consumer | The message becomes visible again after the visibility timeout passes | Goes to the DLQ when `maxReceiveCount` is exceeded |
+| Glue job | Restarts the configured number of times (0 to 10) | Ends in a failed state |
+
+- Defaults are mixed: some mean "retry almost forever" (stream mapping) and others "no retry" (Step Functions). In a question, first check which service is doing the invoking.
+
+## DLQ (Dead-Letter Queue) Handling
+
+If a message that keeps failing stays in the original queue, the consumer receives the same message and fails again and again. A **DLQ** is a queue that sets aside messages that have failed more than a certain number of times.
 
 ```text
-Normal queue → consumer fails N times → DLQ
-DLQ → (operator/reprocessing job) → root cause → fix, redrive
+Normal queue → consumer fails N times (maxReceiveCount) → DLQ
+DLQ → root-cause analysis → fix → put back into the source queue (redrive)
 ```
 
-SQS **DLQ redrive** lets messages from DLQ return to original queue for reprocessing after fix.
+| Item | Content |
+|------|------|
+| Move condition | The message was received `maxReceiveCount` times, as set in the source queue's redrive policy, without being deleted |
+| Location constraint | The DLQ must be in the same account and the same Region as the source queue |
+| Visibility timeout | Default 30 seconds, up to 12 hours from the moment the message is first received. If shorter than the processing time, a message still being processed becomes visible again and is processed twice |
+| Retention period (standard queue) | Expiration is based on **the time it entered the original queue.** Moving to the DLQ does not restart the clock |
+| Retention period (FIFO queue) | The timestamp is reset when moved to the DLQ |
+| Redrive allow policy | Restricts which source queues may use this queue as a DLQ |
 
-## Key Takeaways
+- For standard queues, set the DLQ retention period **longer than the source queue's.** A message that spent a day in the source queue disappears from a 4-day-retention DLQ after 3 days. That is why evidence vanishes before you can analyze it.
+- If you set `maxReceiveCount` low, such as 1, a single transient error sends the message to the DLQ. Give it enough retry attempts.
+- Attaching a DLQ to a FIFO queue changes the order as failed messages are pulled out. Do not use a DLQ for work where order must not break.
+- Make an alarm fire when even a single message accumulates in the DLQ. A DLQ without an alarm is a warehouse of silent data loss.
+- In Lambda asynchronous invocation, the **DLQ** receives the discarded event itself, while the **on-failure destination** receives a record of the failed invocation. In new designs, use the destination, which carries more information.
 
-- CloudTrail = "who called which API" (audit); CloudWatch Logs = "what did application write."
-- Debug top-to-bottom: orchestrator → failed task logs → input → permissions → CloudTrail.
-- Retry transient errors with exponential backoff+jitter; catch permanent with isolation. Safe only on idempotent work.
-- DLQ isolates repeat-fail messages; redrive after fix to reprocess.
+## Question Clue → Answer Lookup Table
+
+| Question clue | Answer |
+|------|------|
+| "Who deleted the table, down to the credentials and time" | CloudTrail |
+| "Who read objects in a sensitive bucket" | Enable CloudTrail data events |
+| "API call history older than 90 days" | Keep in S3 with a trail (or CloudTrail Lake) |
+| "Prove that logs have not been tampered with" | Log file integrity validation |
+| "Where to look first when finding the cause of an incident" | The failed task in the orchestrator |
+| "Intermittent failures from transient throttling" | Retry + exponential backoff + jitter |
+| "A message that keeps failing even after retries blocks the queue" | DLQ + `maxReceiveCount` |
+| "Reprocess failed messages after fixing the cause" | DLQ redrive |
+| "Data is applied twice because of retries" | Idempotency (idempotency key, conditional write, MERGE) |
+
+Tomorrow we cover how much a well-running pipeline costs: cost visibility, sizing, and automatic scaling.
+
+## 📖 Glossary
+
+- **Management events**: Records of API calls that create, change, and delete resources. CloudTrail records them by default.
+- **Data events**: Records of calls that handle data inside a resource, such as reading and writing objects. They are recorded only if you turn them on.
+- **Trail**: A setting that continuously exports CloudTrail events to an S3 bucket or similar destination.
+- **Event history**: The list of management events for the last 90 days that you can view without any setup.
+- **Exponential backoff**: A method that multiplies the waiting time on each retry.
+- **Jitter**: A random value mixed into the retry interval. It prevents many clients from piling in at the same time.
+- **Catch**: A Step Functions setting that receives errors retries could not resolve and sends them to another state.
+- **Visibility timeout**: The time during which an SQS message received by a consumer is hidden from other consumers.
+- **DLQ**: A queue that collects messages that have failed processing multiple times.
+- **redrive**: Sending DLQ messages or failed executions back into the processing path after fixing the cause.
 
 ## 📝 Practice Questions
 

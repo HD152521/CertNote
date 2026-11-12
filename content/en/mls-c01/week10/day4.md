@@ -1,10 +1,16 @@
-# Day 4 - Deployment Strategies: A/B Testing, Blue/Green, Canary, Shadow, Rollback
+# Day 4 - Model Deployment Strategies: A/B Testing, Blue/Green, Canary, Shadow, Rollback
 
-New models passing offline tests don't guarantee production wins. Real-world data shifts, latency changes, specific segments fail. Smart deployment risks incrementally, measures, rolls back fast if needed. Today covers **A/B testing** (compare side-by-side), **blue/green** (full swap + rollback), **canary** (gradual ramp), **shadow** (zero-risk test), and **rollback** chains.
+## 📌 Key Takeaways
 
-## Foundation: ProductionVariant Traffic Weights
+- A model that passes offline evaluation is not guaranteed to win in production. Deployment is **a procedure of exposing risk only a little at a time, measuring, and rolling back quickly if needed**.
+- All strategies share one foundation — the mechanism of **placing multiple ProductionVariants on one endpoint and adjusting traffic weights**.
+- **A/B** compares business KPIs, **Blue/Green** is a full cutover + instant rollback, **Canary** goes from a small share to gradual expansion, and **Shadow** validates with zero user exposure.
+- The differences among strategies ultimately reduce to two levers: **what percent of users see the new model**, and **how quickly you can roll back**.
+- Deployment guardrails combine **All-at-once / Canary / Linear** traffic shifting with **CloudWatch alarm-based automatic rollback** and a bake time.
 
-All strategies rest on one mechanism: **multiple Variants, traffic weights**.
+## The Foundation of All Strategies: ProductionVariant Traffic Weights
+
+It is common for a new model to fall apart because of a shift in the real data distribution, increased latency, or failure on a specific segment. That is why deployment is designed not as "start it up or fail" but on a single lever: **multiple Variants + weights**.
 
 ```python
 from sagemaker.session import production_variant
@@ -14,96 +20,194 @@ variant_b = production_variant("ModelB", "ml.m5.xlarge", initial_weight=10, init
 session.endpoint_from_production_variants("ab-endpoint", [variant_a, variant_b])
 ```
 
-Weights 90/10 → 90% traffic to A, 10% to B. Adjust 90/10 → 50/50 → 0/100 over time. This simple lever powers all strategies.
+- Weights 90/10 → 90% of traffic goes to A and 10% to B.
+- Over time you adjust 90/10 → 50/50 → 0/100. This simple lever drives A/B, canary, and Blue/Green alike.
+- With the `TargetVariant` parameter, you can force a specific invocation to the Variant you want (for testing and debugging).
 
-> 💡 **Related Theory**: Two levers: (1) what % of users see new model? (2) how fast roll back? A/B tests both. Canary ramps gradually. Shadow risks zero. These differ precisely in exposure degree.
+```text
+[ProductionVariant weight shift]
 
-## A/B Testing: Compare Side-by-Side
+          A (old version)                B (new version)
+t0   ████████████████████ 100%   ░ 0%      ← just before deployment
+t1   ██████████████████ 90%      ██ 10%    ← canary starts
+t2   ██████████ 50%               ██████████ 50%   ← A/B comparison window
+t3   ░ 0%                         ████████████████████ 100%  ← full cutover
+                    ↑ at any point, reverting the weights is a rollback
+```
 
-Run both models simultaneously, collect **business KPIs** (clicks, conversion, retention).
+A deployment strategy is defined by two levers. (1) **What percent of users** is the new model exposed to? (2) **How quickly do you roll back** if there is a problem? A/B tests both at once, canary grows exposure gradually, and shadow fixes exposure at zero. The strategies differ precisely in this "degree of exposure."
+
+## A/B Testing: Compare Side by Side
+
+You run two models at the same time and collect **business KPIs** (click-through rate, conversion rate, retention) to decide statistically which is better.
 
 ```text
 ModelA (old) 50%  ──┐
-                   ├─ same endpoint, split by weight
+                    ├─ same endpoint, split by weight
 ModelB (new) 50%  ──┘
-→ collect KPI metrics from both → statistical test
+→ collect KPI metrics from both sides → statistical test
 ```
 
-- **Goal**: Statistical significance on business metrics, not just ML metrics
-- **Variant target**: `TargetVariant` param lets specific tests force one model
-- **Duration**: Run long enough for statistical power
+| Item | Description |
+|---|---|
+| Goal | **Statistical significance of business metrics**, not ML metrics |
+| Variant targeting | `TargetVariant` can pin a specific test to one model |
+| Duration | Run **long enough** to achieve statistical power |
+| Exposure | Both sides return responses to real users |
 
-## Blue/Green Deployment: Full Swap + Fast Rollback
+> ⚠️ **Pitfall**: The purpose of A/B is **comparison**, not "safe cutover." If the passage says simply "move safely to the new version" rather than "judge which is better using real-usage metrics," the answer is canary or Blue/Green, not A/B.
 
-Blue (running), Green (new version) run in parallel. Green fully validated, then flip all traffic. Rollback just re-flip.
+## Blue/Green Deployment: Full Cutover + Fast Rollback
+
+You bring up Blue (currently serving) and Green (the new version) side by side. After fully validating Green, you switch traffic over at once, and if a problem occurs, you revert to Blue.
 
 ```text
-Blue(v1) 100% ──validate──> Green(v2) 100%   (full switch)
-                             issue
-                Green(v2) ──rollback──> Blue(v1) 100%
+Blue(v1) 100% ──validate──> Green(v2) 100%   (full cutover)
+                          problem occurs
+             Green(v2) ──rollback──> Blue(v1) 100%
 ```
 
-- **Advantage**: Instant switch, instant rollback (blue still running)
-- **Risk**: 100% traffic hits Green all at once without gradual exposure
-- **SageMaker default**: Typically implements blue/green on UpdateEndpoint
+- **Advantage**: The cutover is instant, and so is the rollback (Blue is still alive).
+- **Risk**: With no staged exposure, **100% of traffic hits** Green at once — if there is a problem, everyone sees it at the same time.
+- **SageMaker default behavior**: `UpdateEndpoint` generally starts a new fleet in a Blue/Green manner and then shifts traffic.
+- **Cost**: During the cutover window, instances for Blue and Green are kept **simultaneously**, so resources temporarily double.
 
-## Canary Deployment: Gradual Ramp
+## Canary Deployment: Gradual Expansion from a Small Share
 
-New version gets small % (5%) first, expand if healthy → 25% → 50% → 100%.
+You first send only a small percentage (e.g., 5%) to the new version, and if it is healthy, expand to 25% → 50% → 100%.
 
 ```text
-v2 at 5% → (check metrics) → 25% → 50% → 100%
-         → (metrics fail) → immediate 0% rollback
+v2 5% → (check metrics) → 25% → 50% → 100%
+      → (metrics worsen) → roll back to 0% immediately
 ```
 
-- **Advantage**: Catches problems in small segment
-- **SageMaker deployment guards**: Canary/Linear traffic shift + CloudWatch alarm auto-rollback
+- **Advantage**: Problems are caught **first in a small segment**. The blast radius is limited.
+- **SageMaker deployment guardrails**: Provide Canary/Linear traffic shifting + automatic rollback based on CloudWatch alarms.
+
+### Deployment Guardrail Traffic Shifting Modes
+
+| Mode | How traffic moves | Character |
+|---|---|---|
+| `All-at-once` | Switch everything at once | Corresponds to Blue/Green. Fastest, but the exposure risk is greatest |
+| `Canary` | A small batch first → if healthy, the rest all at once | Limits initial risk to a small amount |
+| `Linear` | Increase by a fixed percentage at each interval | Gentle and predictable. The total cutover time is the longest |
+
+## Shadow Deployment: Validation with Zero Risk
+
+Requests are sent to **both the old and new versions, but the only response returned to the user is the old version's**. The new version's output remains only in the logs.
 
 ```text
-Deployment guard traffic shift modes:
-  All-at-once : Full switch (blue/green)
-  Canary      : Small ramp, then rest
-  Linear      : Fixed % increments per period
+Request ──> Old model ──> only this response is returned to the user
+        └─> New model ──> recorded only in logs (the user never sees it)
+                        → compare response content / latency / error rate
 ```
 
-## Shadow Deployment: Zero-Risk Test
+- **When**: Before moving on to a canary, when you want to validate the new version safely on the real traffic distribution.
+- **Advantage**: **User exposure to bugs in the new version is zero.**
+- **SageMaker Shadow Tests**: Place the production Variant and the shadow Variant side by side and compare only through logs.
+- **Cost**: Because the same request is processed twice, **inference cost doubles**.
 
-Traffic → both old and new model, but **only old response returns to user**. New model's output logged, not shown.
+The difference between canary (gradual exposure to real users) and shadow (zero exposure, logs only) lies in **who sees the result**. A/B is an intentional split for comparison, canary is a staged expansion of risk, and shadow is validation that eliminates the risk itself. Choose by the level of risk you can tolerate.
+
+## Rollback and Automatic Guardrails
+
+| Method | Behavior | Speed |
+|---|---|---|
+| Manual rollback | Call `UpdateEndpoint` again with the previous EndpointConfig | Instant if Blue is still alive |
+| Automatic rollback | A CloudWatch alarm exceeds its threshold → the deployment guardrail halts the shift and reverts | As soon as the alarm fires |
+| Bake time | A waiting period that observes metrics after a shift before moving to the next stage | For early detection of problems |
+
+### Which Metrics to Watch When Deciding on Rollback
+
+| CloudWatch metric | Meaning when it worsens | Interpretation during deployment |
+|---|---|---|
+| `Invocation5XX` | Spike in server errors | The new version's container itself is broken → roll back immediately |
+| `Invocation4XX` | Spike in client errors | The input/output schema or serialization changed → suspect a contract mismatch |
+| `ModelLatency` | Model container inference time increases | The new version got heavier → raise the instance size or roll back |
+| `OverheadLatency` | SageMaker processing overhead increases | Suspect payload or serialization issues |
+| `CPU/Memory Utilization` | Resource saturation | The new version uses more resources → re-estimate capacity |
+| Business KPIs (clicks, conversions) | Drop | Technically normal but model quality is poor → decide with A/B |
+
+> ⚠️ **Pitfall**: It is easy to mistake **normal technical metrics alone (5XX, latency)** for deployment success. A model can respond without errors and still have worse prediction quality. That is why business-KPI comparison (A/B) and technical-metric-based automatic rollback (canary) cannot substitute for each other.
+
+### Conditions for a Rollback Chain to Hold
 
 ```text
-Request ──> Old model ──> User sees this response
-         └─> New model ──> Logged (user doesn't see)
-                          → compare responses/latency
+[Prerequisites for safe deployment]
+  ① The previous EndpointConfig remains          → there is something to revert to
+  ② Rollback criteria (alarms) defined in advance → no human needs to watch by eye
+  ③ The cutover is staged (or Blue is alive)     → time to revert is secured
+  ④ Each stage has a bake time                   → delayed symptoms are caught too
+  ─────────────────────────────────────────
+  If even one is missing, the claim "rollback is fast" does not hold
 ```
 
-- **When**: Validate new model on real traffic safely before canary
-- **Advantage**: Zero user exposure to new model bugs
-- **SageMaker Shadow Tests**: produ production Variant and shadow Variant side-by-side for log-only comparison
+## Placing Strategies by Situation
 
-> 💡 **Related Theory**: Canary (real user exposure gradually), Shadow (zero user exposure, log-only) differ precisely in who sees results. A/B (intentional split for comparison), Canary (risk ramp), Shadow (risk none). Choose by tolerance.
+In practice you often chain them in the order **shadow → canary → full cutover** rather than choosing just one.
 
-## Rollback and Auto-Guard Rails
+| Situation | Suitable strategy | Rationale |
+|---|---|---|
+| The model structure changed greatly, so the output schema may differ | Shadow | Compare response format and latency on real traffic before exposing users |
+| The recommendation algorithm was replaced and must be judged by click-through rate | A/B | Technical metrics cannot tell which is better. KPI samples are needed |
+| It is a minor version bump and only regression risk needs managing | Canary | Detect regressions early with small exposure, auto-revert with alarms |
+| It is a security patch that must be applied to everyone immediately | Blue/Green | Cutover speed takes priority over the benefits of gradual exposure |
+| Traffic is low and 5% will not gather enough samples | Blue/Green or shadow | The canary's small-share stage becomes statistically meaningless |
 
-Manual rollback: previous EndpointConfig via UpdateEndpoint (blue alive → instant).
+## Deployment Strategy Comparison Table
 
-Auto-rollback: CloudWatch alarm breach → deployment guard halts, reverts.
+| Strategy | How traffic moves | User exposure | Rollback speed | Resource cost | When not to use |
+|---|---|---|---|---|---|
+| **A/B test** | Fixed split by weight (e.g., 50/50) | Both sides exposed | Fast, by adjusting weights | Both Variants run continuously | When the goal is a simple version swap, or when KPI samples are too few to reach significance |
+| **Blue/Green** | Switch everything at once | 100% after cutover | **Fastest** (Blue kept) | 2x during the cutover window | When risk must be limited by gradual exposure, or when there is no spare capacity |
+| **Canary** | Small share → staged expansion | Only a few at first | Fast (revert to 0%) | Increases during the cutover window | When an immediate full cutover is needed, or when the problem type does not show up at small traffic |
+| **Shadow** | Replicate requests, do not return responses | **0%** | No concept of rollback (just turn it off) | Two inferences' worth | When you need to see real user reactions (KPIs), or cannot afford double inference cost |
 
-Bake time: Post-switch, observe metrics before next step.
-
-## Deployment Strategy Selector
+## Strategy Selection Decision Tree
 
 ```text
-Compare models on live KPIs    → A/B Test
-Full switch + instant rollback → Blue/Green
-Gradual ramp + auto-rollback   → Canary (+guards)
-No user risk validation        → Shadow
+You must put a new model into production
+├─ Is it acceptable to show users even a little of the new version's responses?
+│    ├─ No → Shadow deployment (replicate requests, compare logs only)
+│    └─ Yes ↓
+├─ Is the goal "decide which of the two is better using real metrics"?
+│    ├─ Yes → A/B test (weight split + sufficient duration + statistical test)
+│    └─ No (the goal is replacement) ↓
+├─ Do you want to limit risk in stages and even auto-revert?
+│    ├─ Yes → Canary / Linear (deployment guardrails + CloudWatch alarm auto rollback)
+│    └─ No ↓
+└─ Is it fine to cut over immediately and revert immediately if there is a problem?
+     └─ Yes → Blue/Green (All-at-once, keep Blue alive)
 ```
 
-## Summary
+## Passage Clue → Answer Mapping
 
-Deployment isn't "launch or fail." A/B tests both (comparison). Blue/Green flips all instantly. Canary ramps safely. Shadow validates zero-risk. All use variant weights + traffic splits. Rollback fast — old version still running.
+| Passage clue | Answer to choose | Reason |
+|---|---|---|
+| "Validate with real traffic without ever exposing it to users" | Shadow deployment | It does not return responses and only compares logs |
+| "Start at 5% and expand in stages, auto-revert if the error rate spikes" | Deployment guardrail Canary + CloudWatch alarm auto rollback | The definition of gradual expansion + automatic rollback |
+| "Move traffic periodically by a fixed percentage" | Linear traffic shifting | A fixed-percentage incremental method |
+| "Decide which model is better using business KPIs such as click-through rate" | A/B test | The goal is a real-usage metric comparison |
+| "Cut over at once, but must be able to revert immediately if there is a problem" | Blue/Green | Blue is alive, so switching back is instant |
+| "Adjust weights gradually from 90/10 to 0/100" | Multiple ProductionVariants + weight split | The common foundational mechanism of all strategies |
+| "Leave time to observe metrics right after the shift" | Bake time | An observation window before proceeding to the next stage |
+| "Revert to the previous version's configuration" | `UpdateEndpoint` with the previous EndpointConfig | The standard procedure for manual rollback |
+| "Deploy safely with Batch Transform / MME" | **Wrong option** | Both are inference/hosting methods, not deployment strategies |
 
-Next: Post-deployment — monitoring for drift.
+In the next post, we cover the world after deployment — monitoring and model drift detection.
+
+## 📖 Glossary
+
+- **ProductionVariant**: The unit within a single endpoint that defines "serve this model on this instance at this share."
+- **Traffic weight (InitialVariantWeight)**: The number that decides how requests are split among multiple Variants. 90/10 splits them 9:1.
+- **A/B test**: A comparison experiment that exposes two models at once and judges which is better using real business metrics.
+- **Blue/Green deployment**: A method of starting the new version (Green) while keeping the old version (Blue) alive and switching traffic over at once. Reverting is instant.
+- **Canary deployment**: A method of sending only a small share of traffic to the new version first and increasing the share if nothing is wrong. The name comes from the canary in the coal mine.
+- **Shadow deployment (Shadow Test)**: A validation method that sends the same request to the new version too but does not give the response to users and compares only through logs.
+- **Deployment guardrails**: SageMaker's safety mechanism that bundles traffic-shifting methods (All-at-once/Canary/Linear) with automatic rollback.
+- **Bake time**: The waiting time to watch metrics after moving traffic and before proceeding to the next stage.
+- **Auto-rollback**: The behavior of halting the deployment and reverting to the previous configuration when a CloudWatch alarm fires.
+- **EndpointConfig**: The blueprint that says which model to bring up on which instances at what share. Swapping it is both the zero-downtime replacement and the rollback mechanism.
 
 ## 📝 Practice Questions
 

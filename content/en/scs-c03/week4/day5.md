@@ -1,88 +1,253 @@
 # Day 5 - Week 4 Synthesis: Integrated Review of Edge and Perimeter Defense Scenarios
 
-This week has covered the second axis of infrastructure security: *edge and perimeter defense*. WAF (L7 filtering), Shield (DDoS absorption), Network/DNS Firewall (VPC inspection and domain control), CloudFront/ACM/OAC (edge integration and origin locking). Today we integrate these into one decision framework. The exam asks less about individual service knowledge and more about *"which control should I deploy where in this situation?"* The key is **two-dimensional thinking: layer (what threat?) × location (where do I block it?)**.
+This week covered the second axis of infrastructure security: *edge and perimeter defense*. WAF (L7 filter), Shield (DDoS absorption), Network Firewall/DNS Firewall (VPC inspection and domain control), and CloudFront/ACM/OAC (edge integration and origin locking). Today we tie them into a single decision framework. The exam asks less about individual service knowledge and more about *"which control do you place at which point in this situation?"* The core is **two-dimensional thinking: layer (what kind of threat?) × location (where do you block it?)**.
 
 ## Integrated Decision Matrix: Threat → Control
 
-| Threat/Requirement | Primary Control | Placement |
+| Threat/Requirement | Primary control | Placement |
 |-----------|----------|-----------|
-| SQLi/XSS etc. L7 injection | WAF managed/match rule + TextTransformation | CloudFront or ALB |
+| L7 injection such as SQLi/XSS | WAF managed/match rule + TextTransformation | CloudFront or ALB |
 | HTTP/GET flood (L7 DDoS) | WAF rate-based rule (+ScopeDown) | CloudFront/ALB |
-| SYN/UDP flood (L3/4 DDoS) | Shield (Standard auto, Advanced enhanced) | Edge (CloudFront/R53/GA) |
-| Large attack cost refund, DRT support | Shield Advanced | Protected resources |
+| SYN/UDP flood (L3/4 DDoS) | Shield (Standard automatic, Advanced enhanced) | Edge (CloudFront/R53/GA) |
+| Cost protection for large attacks, DRT support | Shield Advanced | Registered protected resources |
 | Login brute force | WAF rate-based (CUSTOM_KEYS) + CAPTCHA | Edge |
 | VPC outbound domain control | Network Firewall stateful (SNI/Host) | Inspection subnet/VPC |
-| Intrusion signature (IPS) | Network Firewall stateful (Suricata) | Inspection VPC |
+| Intrusion signatures (IPS) | Network Firewall stateful (Suricata) | Inspection VPC |
 | DNS-based malware/exfiltration | Route 53 DNS Firewall | VPC Resolver |
-| Multi-account central traffic inspection | Network Firewall + TGW (appliance mode) | Central inspection VPC |
-| S3/origin direct access block | OAC + bucket policy (SourceArn) | CloudFront ↔ S3 |
-| Content-level/time-limited access | Signed URL (single) / Signed Cookie (path) | CloudFront |
-| TLS enforcement and auto-renewal | ACM (us-east-1 for CF) + Viewer Protocol Policy | CloudFront/ALB |
-| Multi-account WAF policy enforcement | Firewall Manager | Organizations |
+| Central inspection of multi-account traffic | Network Firewall + TGW (appliance mode) | Central inspection VPC |
+| Block direct access to S3/origin | OAC + bucket policy (SourceArn) | CloudFront ↔ S3 |
+| Per-content/time-limited access | Signed URL (single object) / signed cookie (path) | CloudFront |
+| Enforce TLS and automatic renewal | ACM (us-east-1 for CF) + Viewer Protocol Policy | CloudFront/ALB |
+| Enforce WAF policy across accounts | Firewall Manager | Organizations |
 
-> 💡 **Related Theory**: This matrix's foundation is *defense in depth*. Rather than relying on a single control, build multiple defensive layers: DNS (name resolution) → edge (L7 filtering and absorption) → network (IPS and domain) → origin (locking). If one layer is bypassed, the next catches it. The exam's "best" answer usually involves blocking at *the appropriate layer closest to the attack, making bypass impossible*.
+The foundation of this matrix is *defense in depth*. Rather than relying on a single control, you stack layers of defense: DNS (name resolution) → edge (L7 filtering and absorption) → network (IPS and domains) → origin (locking). If one layer is bypassed, the next one blocks. The "best" answer on the exam is usually the control that blocks *at the appropriate layer closest to the attack, in a way that cannot be bypassed*.
 
-## Location Thinking: Place Controls at Unavoidable Choke Points
+## Four Services on One Page: What Each Sees and How It Is Enforced
 
-The same WAF rule has *very different security effects depending on where you attach it*.
+Most of this week's confusion comes from the fact that there are "four firewalls with similar names." If you firmly grasp just two rows of the table below, **what it can see** and **how it is enforced**, wrong answer choices filter themselves out.
 
-- **WAF at edge (CloudFront)**: Block malicious traffic before reaching origin. However, you must block direct origin access (OAC/prefix list) to prevent bypass.
-- **WAF at ALB**: Block at regional entry point. When ALB is the perimeter without CloudFront.
-- **Both public: Controls become scattered**, creating bypass paths → align the perimeter on one line.
+| | AWS WAF | AWS Shield | Network Firewall | Security Group |
+|---|---|---|---|---|
+| **Layer** | L7 (HTTP) | L3/L4 (+Advanced coordinates L7) | L3-L7 | L3/L4 |
+| **What it can see** | Method, URI, query, headers, cookies, body | Traffic volume, packet patterns | Payload, TLS SNI, HTTP Host, IPS signatures | IP, port, protocol, SG references |
+| **What it blocks** | Injection, bots, L7 floods, authentication abuse | Volumetric/state-exhaustion DDoS | Outbound domains, intrusion signatures | Exposure of the service itself |
+| **Enforcement method** | **Associated** with a resource | Automatic (Std) / **protection registration** (Adv) | **Routing forces traffic through it** | Attached to the ENI (cannot be bypassed) |
+| **How it fails** | Useless if the resource is bypassed | No Advanced benefits if not registered | No inspection if a route is missing | (Structurally cannot be bypassed) |
+| **Multi-account enforcement** | Firewall Manager | Firewall Manager | Firewall Manager | Firewall Manager |
+| **What it cannot do** | Non-HTTP traffic, bandwidth absorption | Precise L7 blocking (WAF does that) | Encrypted bodies (without decryption), ECH | Domain/payload inspection |
 
-Network Firewall follows the same principle. If routing doesn't *force* traffic through the firewall endpoint, rules are meaningless (Day 3 trap). A central inspection VPC creates a choke point all traffic must pass through, blocking bypass.
+The row the exam digs into most often in this table is **"How it fails"**. Three services go silently ineffective for three different reasons, and the fact that silence is the most dangerous failure mode is the backbone of most of this week's questions.
 
-> 🎯 **Integrated Scenario A**: "Global web app receives simultaneous L7 SQLi attempts, intermittent large SYN flood, and login brute force. Origin is ALB+EC2." Answer: (1) CloudFront front-line + ACM (us-east-1) TLS, (2) CLOUDFRONT scope WAF — SQLi managed rule (TextTransformation) + `/login` scoped-down rate-based (CUSTOM_KEYS) + CAPTCHA, (3) Shield Advanced registered (SYN flood absorption + cost protection + DRT), (4) Origin ALB restricted to CloudFront prefix list + X-Origin-Verify header verification to block direct access. One scenario showcases all this week's services working together.
+| Detailed contrast | Left | Right | Decision criterion |
+|---|---|---|---|
+| Shield **Standard** vs **Advanced** | Automatic, free, L3/L4 absorption | Subscription and registration required, L7 integration, SRT, cost protection, visibility | If cost protection/expert support/attack metrics are mentioned, Advanced |
+| **Network Firewall** vs **GWLB + appliance** | Managed, Suricata, no operational burden | Vendor product, GENEVE, portable policies | **Whether a vendor is specified** and whether the operational burden is acceptable |
+| **Network Firewall (SNI)** vs **DNS Firewall (query)** | Blocks the connection attempt | Blocks name resolution | If direct-IP connections must also be blocked, Network Firewall is required |
+| **OAC** vs **OAI** | SigV4, supports SSE-KMS, current | SigV2, limited, legacy | Always OAC for new setups |
+| **Signed URL** vs **signed cookie** | Single object | Multiple objects under a path pattern | Number of objects and whether the URL can be changed |
+| **CloudFront signed URL** vs **S3 presigned URL** | Passes through edge controls (WAF/Shield/OAC) | **Bypasses** the edge | If edge controls must apply, CloudFront |
+| **Viewer** vs **Origin Protocol Policy** | Viewer ↔ edge leg | Edge ↔ origin leg | "Encryption on every leg" means **both** |
 
-> 🎯 **Integrated Scenario B**: "100 accounts with workload VPCs needing internet and inter-VPC comms, want all outbound restricted to approved domains, IPS applied, centrally managed." Answer: TGW hub + central inspection VPC with Network Firewall (stateful: domain allow-list + Suricata IPS) + TGW appliance mode + DNS Firewall to block malicious domain resolution + Firewall Manager for central policy deployment. Both East-West and North-South traffic passes through a single choke point.
+## Thinking About Placement: Put Controls on a Chokepoint That Cannot Be Bypassed
 
-## Frequently Confused Distinctions
+Even the same WAF rule has a different security effect depending on *where you attach it*.
 
-**WAF vs Shield vs Network Firewall** — different layers and traffic types:
-- WAF: HTTP (L7) application requests. *Attached to* CloudFront/ALB/API GW, etc.
-- Shield: DDoS (L3/4 absorption + L7 integration). Powerful behind edge services.
-- Network Firewall: General VPC network traffic (L3-L7) inspection, IPS, domain filtering. Traffic forced through by routing.
+- **WAF at the edge (CloudFront)**: blocks malicious traffic before it reaches the origin. However, you must also block direct origin access (OAC/prefix list), or there is a bypass.
+- **WAF on the ALB**: blocks at the regional entry point. Use it when the ALB is the perimeter without CloudFront.
+- **If both are public, controls are distributed** and bypass paths appear → align the perimeter into a single line.
 
-**OAC vs OAI** — OAC is current recommendation (SigV4, SSE-KMS, dynamic requests, all regions). Use OAC for new work.
+The same goes for Network Firewall. Unless routing *forces* traffic through the firewall endpoint, the rules are meaningless (the Day 3 trap). A central inspection VPC creates a choke point that all traffic passes through, closing off bypasses.
 
-**Signed URL vs Signed Cookie** — single object vs. multiple objects under a path pattern.
+```
+[ This whole week on one page — the defensive line narrows from top to bottom ]
 
-**CloudFront Signed URL vs S3 Presigned URL** — the former passes through edge (WAF/Shield/OAC) controls; the latter bypasses them.
+  ┌──────────────────────── Internet ───────────────────────┐
+  │  Legitimate users   L7 injection/bots    L3/4 flood      │
+  └───────┬───────────────────┬────────────────┬───────────┘
+          ▼                   ▼                ▼
+  ┌───────────────────────────────────────────────────────┐
+  │ Route 53 (anycast DNS)          ← DNS flood via Shield │  ① Name resolution
+  └───────────────────────┬───────────────────────────────┘
+                          ▼
+  ┌───────────────────────────────────────────────────────┐
+  │ CloudFront edge                                        │  ② Edge perimeter
+  │  ├ Shield Standard : automatic absorption of common L3/L4 │
+  │  ├ Shield Advanced : enhanced detection, cost protection, SRT, automatic L7 │
+  │  ├ WAF(CLOUDFRONT) : SQLi/XSS, rate-based, Bot, CAPTCHA │
+  │  ├ Geo Restriction / Response Headers Policy           │
+  │  ├ Signed URL/cookie : per-content credential check    │
+  │  └ TLS termination : ACM @ us-east-1, TLS floor enforced │
+  └───────────────────────┬───────────────────────────────┘
+                          │  * There must be no other path below this point
+                          │     OAC / prefix list / X-Origin-Verify / BPA
+                          ▼
+  ┌───────────────────────────────────────────────────────┐
+  │ S3 (BPA ON) or ALB → app                               │  ③ Origin
+  └───────────────────────┬───────────────────────────────┘
+                          ▼
+  ┌───────────────────────────────────────────────────────┐
+  │ Inside the VPC · outbound                              │  ④ Internal/exfiltration path
+  │  ├ Network Firewall : domain allow list + Suricata IPS │
+  │  ├ DNS Firewall     : blocks resolution of malicious/C2 domains │
+  │  └ (multi-account) TGW hub + inspection VPC + appliance mode │
+  └───────────────────────────────────────────────────────┘
 
-**Network Firewall (SNI/domain) vs DNS Firewall (queries)** — former blocks connection attempts, latter blocks name resolution. Complementary.
+  ① and ② block what comes "in", and ④ blocks what goes "out".
+  What usually determines the scale of damage after a breach is ④.
+```
 
-**ACM Regional Rules** — CloudFront use requires us-east-1; regional resources use their region.
+The axis most often overlooked in this diagram is the **direction of ④**. Both exam questions and real-world incident thinking gravitate toward "how did they get in?", but what determines the actual scale of damage is **where data could go after the intrusion**. This is why outbound domain allow lists and DNS controls take up half of this week.
 
-> ⚠️ **Trap Collection**:
-> - Choosing wrong WAF Web ACL scope (CLOUDFRONT vs REGIONAL) so it doesn't attach to target.
-> - OAC setup but not updating bucket policy and KMS key policy, resulting in 403.
-> - Network Firewall routing not configured, so inspection never occurs.
-> - TGW appliance mode omitted, causing asymmetric stateful inspection failure.
-> - Trying to block L7 HTTP flood with Shield Standard (answer is WAF rate-based).
-> - Issuing CloudFront ACM certificate in a region other than us-east-1.
+> 🎯 **Integrated scenario A**: "A global web app is simultaneously hit by L7 SQLi attempts + intermittent large-scale SYN floods + login brute-force attempts. The origin is ALB+EC2." Answer: (1) place CloudFront in front + ACM (us-east-1) TLS, (2) CLOUDFRONT-scope WAF: SQLi managed rule (TextTransformation) + `/login` scope-down rate-based rule (CUSTOM_KEYS) + CAPTCHA, (3) register Shield Advanced (absorbs the SYN flood + cost protection + DRT), (4) block direct access to the origin ALB with the CloudFront prefix list + X-Origin-Verify. Every service from this week cooperates in a single scenario.
 
-## Visibility and Operations: Prove What You Block
+> 🎯 **Integrated scenario B**: "Workload VPCs in 100 accounts communicate with the internet and with each other. You want to restrict all outbound traffic to approved domains only, apply IPS, and operate it centrally." Answer: a TGW hub + Network Firewall in a central inspection VPC (stateful: domain allow list + Suricata IPS) + TGW appliance mode + DNS Firewall to block resolution of malicious domains + Firewall Manager to deploy policy centrally. Both East-West and North-South traffic pass through a single choke point.
 
-Defenses are proven through logs. Logs and metrics from this week's services:
-- **WAF**: Logs (`aws-waf-logs-` prefix) → CloudWatch/S3/Firehose. TerminatingRuleId, labels, sampled requests. RedactedFields masks sensitive headers.
-- **Shield Advanced**: `DDoSDetected`, `DDoSAttackBitsPerSecond`, etc. CloudWatch metrics + attack events.
-- **Network Firewall**: Flow logs + alert logs (IPS alerts).
+> 🎯 **Integrated scenario C**: "A media service serves video only to paying subscribers. Subscribers share links, causing unauthorized viewing, and some users discover the S3 bucket URL and download the originals directly. In addition, the service cannot be offered in certain countries under copyright contracts." The answer has four components. (1) Grant time-limited access to the `/premium/*` path with a **signed cookie**, and add an IP condition to the signing policy if needed, (2) block direct S3 access with **OAC + an `AWS:SourceArn` bucket policy + Block Public Access**, (3) block the contractually excluded countries with **CloudFront Geo Restriction** (it is a legal requirement, so geo blocking is the appropriate control), (4) if the origin is an ALB, lock it with the prefix list and a secret header. Here the choice "use S3 presigned URLs" is wrong because it bypasses the edge controls entirely.
+
+> 🎯 **Integrated scenario D**: "A regulatory audit raised three findings: encryption in transit is not applied on every leg, workloads can communicate with arbitrary internet destinations, and the history of security-control changes cannot be proven." Each finding is at a different layer, so the answer splits into three. (1) **Fix both the Viewer/Origin Protocol Policy to HTTPS** and upgrade the ALB → backend leg to HTTPS as well (Day 4), (2) seal outbound traffic with **Network Firewall STRICT_ORDER + default drop + a domain allow list**, plus **DNS Firewall + blocking direct queries to external DNS** (Day 3), (3) collect WAF logs, NFW alert/flow logs, and Resolver query logs into a central account and manage the rules as IaC so that **both the change history and the evidence for blocks are provable**. The third item is especially important: in regulatory responses, the claim "we blocked it" does not hold without logs.
+
+## The Common Operating Procedure: The Sequence Is the Same for Any Control
+
+This week's four services differ from each other, but **how you operate them converges on a single procedure.** If you memorize this procedure, you can apply the same judgment to a control you have never seen before.
+
+```
+[ Standard procedure for introducing and tuning a control — identical regardless of service ]
+
+  1) Turn it on in observation mode (do not block)
+       WAF                → OverrideAction/Action: Count
+       Shield automatic L7 mitigation → action: Count
+       Network Firewall   → Suricata alert rule
+       DNS Firewall       → action: ALERT
+                │
+  2) Quantify "what is getting caught" using logs and metrics
+       WAF sampled requests / CloudWatch metrics / Athena
+       NFW alert log / Resolver query log
+                │
+  3) Determine whether what got caught is legitimate
+       Legitimate → go to 4)     Malicious → go straight to 5)
+                │
+  4) Design exceptions as narrowly as possible  ← the exam's correct answer is always here
+       WAF   : label matching + path/header conditions, RuleActionOverrides
+       NFW   : add only the needed domains to the allow list
+       (disabling the whole group or allowing IPs wholesale is a last resort)
+                │
+  5) Switch to blocking and watch for regressions
+       Alarm on BlockedRequests/DroppedPackets spikes + prepare a rollback procedure
+```
+
+> ⚠️ **Trap**: The step most often skipped in this procedure is **step 2 (quantification)**. If you turn on observation mode but never actually analyze the logs and move to Block by gut feeling, going through observation mode was pointless. Conversely, staying in observation mode indefinitely is also a failure: **a rule in Count state blocks nothing.** On the exam too, a design that stops at "left it in Count" is usually an incomplete answer, and "observe, then switch to Block" is the complete form.
+
+Perimeter defense failures usually happen not because "there was no control" but because **"there was a control, but traffic did not pass through it."** Well-known cloud breach cases have repeatedly shown a few patterns. A web firewall was in place, but the credentials behind it had excessive permissions, so bypassing a single layer led to sweeping data access; a storage bucket sat behind a CDN, but the bucket itself was left public so anyone could download directly; and, in a third pattern, the intrusion itself was not prevented, but **outbound controls and logs made it possible to pin down the scope of exfiltration and cut it off early**. The first two are real-world examples of the "five paths by which the perimeter leaks," and the last is why this week spent half its time on outbound controls (Day 3) and logging. **On the premise that perfect blocking does not exist, reducing bypass paths and making things explainable after the fact** is the realistic goal of perimeter defense.
+
+## Audit Check: Sweep the Perimeter in Ten Lines
+
+If you were to actually audit this week's material beyond exam preparation, the commands below make a first pass. Each command corresponds to one of the "ways it fails" learned earlier.
+
+```bash
+# ① WAF: is the Web ACL actually attached to a resource (missing association = no control)
+aws wafv2 list-web-acls --scope CLOUDFRONT --query 'WebACLs[].{Name:Name,Id:Id}'
+aws wafv2 list-resources-for-web-acl \
+  --web-acl-arn arn:aws:wafv2:ap-northeast-2:111122223333:regional/webacl/app-acl/def-456
+
+# ② WAF: is logging enabled (without it, neither tuning nor proof is possible)
+aws wafv2 get-logging-configuration \
+  --resource-arn arn:aws:wafv2:us-east-1:111122223333:global/webacl/prod-edge-acl/abc-123
+
+# ③ Shield: list of resources registered as protected (unregistered = no Advanced benefits)
+aws shield list-protections --query 'Protections[].{Name:Name,Resource:ResourceArn}'
+
+# ④ Network Firewall: which subnets hold the endpoints and are they ready
+aws network-firewall describe-firewall --firewall-name prod-inspection \
+  --query 'FirewallStatus.SyncStates'
+
+# ⑤ Network Firewall: do the routes actually point at the endpoint (the biggest trap)
+aws ec2 describe-route-tables \
+  --query 'RouteTables[].Routes[?VpcEndpointId!=null].{Dest:DestinationCidrBlock,Vpce:VpcEndpointId}'
+
+# ⑥ DNS Firewall: is the rule group associated with the VPC (missing association = not applied)
+aws route53resolver list-firewall-rule-group-associations \
+  --query 'FirewallRuleGroupAssociations[].{Vpc:VpcId,Group:FirewallRuleGroupId,Status:Status}'
+
+# ⑦ CloudFront: WAF, geo restriction, and TLS floor per distribution at a glance
+aws cloudfront list-distributions \
+  --query 'DistributionList.Items[].{Id:Id,WebACL:WebACLId,MinTLS:ViewerCertificate.MinimumProtocolVersion,Geo:Restrictions.GeoRestriction.RestrictionType}'
+
+# ⑧ S3: public access block status of the origin bucket
+aws s3api get-public-access-block --bucket my-origin-bucket
+
+# ⑨ Origin exposure: list of internet-facing load balancers
+aws elbv2 describe-load-balancers \
+  --query 'LoadBalancers[?Scheme==`internet-facing`].{Name:LoadBalancerName,DNS:DNSName}'
+
+# ⑩ Alternate entry points: are there Lambda function URLs without authentication
+aws lambda list-functions --query 'Functions[].FunctionName' --output text
+```
+
+The questions running through these ten commands are really only two: **"Is the control on the path?"** (①③④⑤⑥) and **"Is there a door leading out of the path?"** (⑦⑧⑨⑩). A common mistake of people doing a security architecture review for the first time is to start by examining the contents of the rules, but the sophistication of a rule only matters **on the premise that traffic passes through that rule**. So the order of a review is always *path → enforcement → rules*. Once this order becomes second nature, you can find the biggest hole in an unfamiliar architecture within 15 minutes.
+
+## Commonly Confused Distinctions
+
+**WAF vs Shield vs Network Firewall** — the layers and traffic types differ:
+- WAF: HTTP (L7) application requests. *Associated* with CloudFront/ALB/API GW, etc.
+- Shield: DDoS (L3/4 absorption + L7 integration). Strong behind edge services.
+- Network Firewall: inspection of general network traffic in the VPC (L3-L7), IPS, domains. Traffic passes through via routing.
+
+**OAC vs OAI** — OAC is the currently recommended option (SigV4, SSE-KMS, dynamic requests, all Regions). Use OAC for new setups.
+
+**Signed URL vs signed cookie** — a single object vs multiple objects under a path pattern.
+
+**CloudFront signed URL vs S3 presigned URL** — the former passes through edge controls (WAF/Shield/OAC), the latter bypasses them.
+
+**Network Firewall (SNI/domain) vs DNS Firewall (query)** — the former blocks connection attempts, the latter blocks name resolution. They are complementary.
+
+**ACM Region rule** — us-east-1 for CloudFront, the resource's own Region for Regional resources.
+
+> ⚠️ **Collected traps**:
+> - Picking the wrong WAF Web ACL scope (CLOUDFRONT vs REGIONAL) so it does not attach to the target.
+> - A 403 after configuring OAC because the bucket policy and KMS key policy were not updated.
+> - Network Firewall routing not configured, so no inspection occurs at all.
+> - TGW appliance mode missing, causing asymmetric stateful inspection malfunction.
+> - Trying to stop an L7 HTTP flood with Shield Standard (→ WAF rate-based is the correct answer).
+> - Issuing the ACM certificate for CloudFront in a Region other than us-east-1.
+
+## Visibility and Operations: Proving What Was Blocked
+
+Defense is proven by logs. The logs and metrics of this week's services:
+- **WAF**: logs (`aws-waf-logs-` prefix) → CloudWatch/S3/Firehose. terminatingRuleId, labels, sampled requests. Mask sensitive headers with RedactedFields.
+- **Shield Advanced**: CloudWatch metrics such as `DDoSDetected` and `DDoSAttackBitsPerSecond`, plus attack events.
+- **Network Firewall**: flow logs + alert logs (IPS alerts).
 - **DNS Firewall**: Resolver query logs (blocked/allowed queries).
 
-These signals feed into GuardDuty and Security Hub for correlation analysis, and alarms connect to SNS and SRT proactive engagement. This bridges to Week 5 (detection and response) topics.
+Gather these signals into GuardDuty and Security Hub for correlation analysis, and connect alarms to SNS and SRT proactive engagement. This leads into Week 5's topic (detection and response).
 
-> 🔍 **Deeper Insight**: The maturity of perimeter defense isn't "did you block it?" but "can you *observe, tune, and prove* the block?" Run WAF in Count mode first to measure false positives (Day 1), use Shield health-based detection to distinguish normal traffic spikes from attacks (Day 2), validate IPS accuracy with Network Firewall alert logs (Day 3). Turning on a control is just the start; tuning it with data is what operational security is built on.
+The maturity of perimeter defense is determined not by "did you block it?" but by "can you *observe, tune, and prove* the blocking?" Run WAF in Count mode first to measure false positives (Day 1), distinguish legitimate surges from attacks with Shield health-based detection (Day 2), and verify IPS accuracy with Network Firewall alert logs (Day 3). Turning a control on is only the start; tuning controls with data is the essence of operational security.
 
-## One-Line Summary Checklist
+## 📌 Key Takeaways
 
-- [ ] Forced all entry through edge (CloudFront) — blocked direct origin access (OAC/prefix list/secret header)
-- [ ] Matched WAF scope to target (CloudFront = CLOUDFRONT), included TextTransformation
-- [ ] Using rate-based rule to block L7 flood and brute force by key
-- [ ] Shield tier matches threat scale and cost protection needs
-- [ ] Routing forces VPC traffic through firewall endpoint (+ TGW appliance mode)
-- [ ] Complementing DNS-layer threats with DNS Firewall
-- [ ] Matched ACM certificate region (CloudFront = us-east-1) and auto-renewal (DNS validation)
-- [ ] Centralized logging and alerting for all controls
+- [ ] Have you forced every entry through the edge (CloudFront), blocking direct origin access (OAC/prefix list/secret header)?
+- [ ] Does the WAF scope match the target (CloudFront=CLOUDFRONT), and did you include TextTransformation?
+- [ ] Do rate-based rules block L7 floods and brute force per key?
+- [ ] Does the Shield tier match the threat scale and cost-protection requirements?
+- [ ] Have you forced VPC traffic to route to the firewall endpoint (+ TGW appliance mode)?
+- [ ] Do you complement DNS-layer threats with DNS Firewall?
+- [ ] Do the ACM certificate Region (CloudFront=us-east-1) and automatic renewal (DNS validation) line up?
+- [ ] Are the logs and metrics of every control centrally collected and turned into alarms?
+- [ ] Did you design exceptions to managed rule groups *as narrowly as possible* (labels, conditions) rather than turning the whole group off?
+- [ ] Does outbound traffic leave only to approved domains, and are direct queries to external DNS blocked?
+- [ ] Did you finish Shield Advanced protected-resource registration and the SRT role and emergency contacts *in peacetime*?
+- [ ] Have you counted every internet-facing endpoint (ALB, function URL, API GW)?
+
+### In Closing
+
+The question running through this week from start to finish was just one. **"Where is this control, and does traffic necessarily pass through it?"**
+
+Service-by-service knowledge was the material for answering that question. WAF reads the meaning of HTTP requests but sees only the resources it is *associated* with. Shield absorbs scale through the nature of the network, but it performs best only when the workload is *behind the edge*, and Advanced benefits apply only to resources you *registered*. Network Firewall can see payloads and even domains, but if *routing* does not send traffic to it, it is as good as nonexistent. DNS Firewall can block at the name-resolution stage, but it sees only queries that *go through the VPC Resolver*. And CloudFront and origin locking do the job of removing the paths that go around behind all of these controls without passing in front of them.
+
+The second thing that repeated was the **operating procedure**. Start with observation (Count/alert), quantify with logs, design exceptions as narrowly as possible, then switch to blocking and watch for regressions. The procedure was the same for WAF, for Shield automatic mitigation, and for Network Firewall. This procedure is why, when the exam asks for "the most appropriate first step," the answer is usually observation mode, and why "remove the group" or "allow everything" is usually wrong.
+
+The third is **direction**. ① and ② block what comes in, and ④ blocks what goes out. Because the premise that intrusion can be blocked perfectly does not hold, the real value of perimeter defense lies in *reducing bypass paths* and *narrowing and recording the paths out*. The outbound controls of Day 3 and the logging emphasized all week are that axis.
+
+Next week follows naturally from here. If this week was about "how to block," Week 5 is about **how to notice and respond to what you failed to block**: weaving all these logs and signals together with GuardDuty, Security Hub, Detective, and EventBridge to build detection and automated response. All week we repeated that turning a control on is only the start and tuning controls with data is the essence of operational security. How to handle that data is next week's topic.
 
 ---
 
