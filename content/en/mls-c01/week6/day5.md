@@ -1,104 +1,200 @@
-# Day 5 - Week 6 Comprehensive Review: Algorithm Selection and SageMaker Builtins
+# Day 5 - Week 6 Comprehensive Review: Algorithm Selection and SageMaker Builtin Algorithms
 
-This week covered the starting point of MLS-C01 Domain 3 (Modeling) — **algorithm selection** and **SageMaker builtins**. Exam modeling problems almost always narrow down "identify problem type → algorithm family → specific builtin" in order. Today we review four days as one decision flow and organize the most confusing comparisons.
+## 📌 Key Takeaways
 
-## One-Page Summary: Problem to Builtin
+- The one sentence that runs through Week 6 is **"data shape × output shape → builtin."** If you memorize this combination mapping, most modeling questions can be solved.
+- The solving procedure always has two steps. **① Determine the ML type from the output shape + whether labels exist → ② Narrow down to a single builtin by the data shape.**
+- The words "text, images, time series, sparse" push out plain XGBoost and make a specialized builtin the answer.
+- Answer the scaling question immediately by algorithm family. **Distance-based (KNN, K-Means), linear (Linear Learner), and PCA require it; trees (XGBoost) do not.**
+- The input format is a clue too. **RecordIO-protobuf for sparse and large-scale efficiency, BoW for topic models, JSON Lines for DeepAR.**
+
+## Flow Map: From Problem to Builtin
+
+This week covered the starting point of MLS-C01 Domain 3 (Modeling) — **algorithm selection** and **SageMaker builtins**. Modeling questions on the exam almost always narrow down in the order "identify the problem type → algorithm family → specific builtin." Today we review the four days as a single decision flow and organize the most confusing comparisons.
 
 ```text
-[Business Problem]
+[Business problem]
    │
-   ├─ 1) Identify ML type from output form (Day1)
-   │     Category → Classification | Numeric → Regression | Find groups → Clustering
-   │     Recommend → Recommendation | Rare event → Anomaly | Topics → Topic model
+   ├─ 1) Identify the ML type from the output shape (Day 1)
+   │     Category → classification | Number → regression | Group discovery → clustering
+   │     Recommendation → recommendation | Rare events → anomaly detection | Topics → topic model
    │     (Labels present = supervised / absent = unsupervised)
    │
-   ├─ 2) Narrow builtin by data shape (Day2~4)
-   │     Tabular  → XGBoost / Linear Learner / KNN / K-Means
-   │     Text → BlazingText
-   │     Image → Image Classification
-   │     Time series → DeepAR
-   │     Sparse recommendation → Factorization Machines
-   │     Anomaly → Random Cut Forest / IP Insights
-   │     Dimension → PCA
-   │     Topics → LDA / NTM
+   ├─ 2) Narrow the builtin by data shape (Day 2~4)
+   │     Tabular        → XGBoost / Linear Learner / KNN / K-Means
+   │     Text           → BlazingText
+   │     Image          → Image Classification
+   │     Time series    → DeepAR
+   │     Sparse recs    → Factorization Machines
+   │     Anomalies      → Random Cut Forest / IP Insights
+   │     Dimensions     → PCA
+   │     Topics         → LDA / NTM
    │
-   └─ 3) Fine details
-         Scaling needed? (distance/linear=yes, tree=no)
-         Overfitting/underfitting adjustments, input format (RecordIO-protobuf etc)
+   └─ 3) Finalize the details
+         Is scaling needed (distance/linear = needed, trees = not needed)
+         Overfitting/underfitting adjustment, input format (RecordIO-protobuf, etc.)
 ```
 
-## Four Tabular Data Algorithms (Day2)
+## Week 6 Integrated Mapping Table
 
-| Algorithm | Type | Scaling | Signal |
-|------|------|------|------|
-| XGBoost | Classification/Regression | Not needed | Tabular, nonlinear, high accuracy |
-| Linear Learner | Classification/Regression | Required | Massive scale, fast, linear, interpretable |
-| K-Means | Clustering (unsupervised) | Required | Segmentation, group discovery |
-| KNN | Classification/Regression | Required | Most similar cases, neighbor-based |
+| Problem | Builtin | Supervised/Unsupervised | Input format | Scaling |
+|---|---|---|---|---|
+| Tabular classification/regression (nonlinear) | XGBoost | Supervised | CSV, libsvm, Parquet, RecordIO-protobuf | Not needed |
+| Tabular classification/regression (massive scale, linear) | Linear Learner | Supervised | RecordIO-protobuf (recommended), CSV | Needed |
+| Clustering, segmentation | K-Means | Unsupervised | RecordIO-protobuf, CSV | Mandatory |
+| Nearest-case-based prediction | KNN | Supervised | RecordIO-protobuf, CSV | Mandatory |
+| Document classification | BlazingText (supervised) | Supervised | Text, `__label__` format | Not applicable |
+| Word embeddings | BlazingText (Word2Vec) | Unsupervised | Text (whitespace-tokenized) | Not applicable |
+| Image classification | Image Classification | Supervised | RecordIO or images + .lst | Handled by container |
+| Time series forecasting | DeepAR | Supervised | JSON Lines (`start`,`target`,`cat`,`dynamic_feat`) | Not applicable |
+| Sparse recommendation | Factorization Machines | Supervised | RecordIO-protobuf (float32) | Cleanup recommended for numeric features |
+| General numeric anomaly detection | Random Cut Forest | Unsupervised | CSV, RecordIO-protobuf | Recommended |
+| Entity-IP anomaly detection | IP Insights | Unsupervised | (entity, IP) CSV | Not applicable |
+| Dimensionality reduction | PCA | Unsupervised | RecordIO-protobuf, CSV | Mandatory |
+| Topic discovery | LDA / NTM | Unsupervised | BoW | Not applicable |
 
-## Four Specialized Data Algorithms (Day3)
+> 💡 **Related Theory**: There is one principle running through this week — **"data shape and output shape decide the algorithm."** Even for the same classification, tabular data means XGBoost, text means BlazingText, and images mean Image Classification. Even for the same unsupervised learning, group discovery means K-Means, anomalies mean RCF, dimensionality reduction means PCA, and topics mean LDA/NTM. The exam plants the data shape (table/text/image/time series/sparse) and the goal (prediction/groups/anomalies/topics/compression) in the scenario and narrows to exactly one algorithm through that combination. That is why memorizing the "combination → builtin" mapping is the fastest approach.
 
-| Data | Builtin | Key Point |
+### "Must-Know" Hyperparameters per Builtin
+
+When a parameter name appears in an option, simply knowing which algorithm it belongs to can decide the answer.
+
+| Builtin | Parameters you must know | Role |
+|---|---|---|
+| XGBoost | `objective`, `num_round`, `max_depth`, `eta`, `scale_pos_weight` | Objective function, number of rounds, complexity, learning rate, imbalance |
+| Linear Learner | `predictor_type`, `num_classes`, `l1`/`wd`, `normalize_data` | Problem type, number of classes, regularization, standardization |
+| K-Means | `k`, `init_method`, `extra_center_factor` | Number of clusters, initialization, candidate centers |
+| KNN | `k`, `sample_size`, `dimension_reduction_type`, `predictor_type` | Number of neighbors, samples, dimensionality reduction, classification/regression |
+| Image Classification | `use_pretrained_model`, `augmentation_type`, `num_classes` | Transfer learning, augmentation, number of classes |
+| DeepAR | `context_length`, `prediction_length`, `likelihood` | Past window, forecast window, output distribution |
+| Factorization Machines | `num_factors`, `predictor_type` | Latent factor dimension, classification/regression |
+| Random Cut Forest | `num_trees`, `num_samples_per_tree` | Number of trees, samples per tree |
+| PCA | `num_components`, `algorithm_mode`, `subtract_mean` | Number of components, regular/randomized, centering |
+| IP Insights | `num_entity_vectors`, `vector_dim` | Entity hash space, embedding dimension |
+| LDA / NTM | `num_topics` | Number of topics to find |
+
+```
+                       [Read one sentence of the question]
+                                │
+              Does it mention "labels"? ──No──┐
+                                │Yes          │
+                     What is the output?   What do you want to do?
+        ┌──────────┬────────────┼──────────┐      ├─ Groups → K-Means
+      Category   Number     Ranking/preference │      ├─ Anomalies → RCF / IP Insights
+        │           │            │         │      ├─ Compression → PCA
+   Data shape?  Time series?  Factorization │      └─ Topics → LDA / NTM
+   ├─ Table → XGBoost / ├─ Yes → DeepAR  Machines
+   │        Linear /    │
+   │        KNN         └─ No → XGBoost / Linear
+   ├─ Text → BlazingText (supervised)
+   └─ Image → Image Classification
+                  (Object Detection if location is needed)
+```
+
+## Comparison Table of Confusing Pairs
+
+| Comparison | Key difference | Distinguishing clue |
 |------|------|------|
-| Text classification | BlazingText (supervised) | `__label__` format |
-| Word embedding | BlazingText (Word2Vec) | cbow/skipgram |
-| Image classification | Image Classification | transfer learning, augmentation |
-| Time series forecast | DeepAR | many related series, probabilistic (P90) |
-| Sparse recommendation | Factorization Machines | RecordIO-protobuf |
+| XGBoost vs Linear Learner | Nonlinear/tabular = XGBoost / massive scale/linear/interpretable = Linear Learner | "complex interactions" vs "hundreds of millions of rows, interpret coefficients" |
+| K-Means vs KNN | K-Means = unsupervised clustering / KNN = supervised neighbor prediction | Whether labels exist |
+| RCF vs IP Insights | Anomalies in general numeric data / anomalies in entity-IP relationships | Whether the data is a numeric vector or (account, IP) pairs |
+| RCF vs supervised anomaly detection | No labels needed, handles new types / precise when labels are sufficient | If "almost no labels" appears, RCF |
+| LDA (topic) vs LDA (Linear Discriminant Analysis) | SageMaker LDA is a topic model, a name collision | If the context is documents and topics, it is the topic model |
+| LDA vs NTM | Probabilistic/simple/interpretable / neural network/large scale/GPU | Mention of data scale and GPU |
+| DeepAR vs plain regression | Many related series/probabilistic / single point estimate | "thousands of time series," "P90 interval" |
+| BlazingText's two modes | supervised = document classification / Word2Vec = word embeddings | Whether labels exist |
+| FM vs collaborative filtering | FM is a generalization that includes extra features | "context and time features too" |
+| PCA vs K-Means | Reduces the axes / groups the rows | "compression" vs "groups" |
+| Image Classification vs Object Detection | Label only / location (bounding box) too | If "where is it" appears, Detection |
 
-## Four Unsupervised/Anomaly Algorithms (Day4)
+> 💡 **Related Theory**: Whether scaling is needed can be answered directly from the algorithm family. **Distance-based (KNN, K-Means), linear models (Linear Learner), and PCA** are distorted by feature scale, so scaling is mandatory. **Tree-based (XGBoost)**, on the other hand, splits each feature independently on a threshold, so it is invariant to scale. The preprocessing and algorithm traps on the exam (for example, "XGBoost must be standardized") are filtered out by this single principle.
 
-| Builtin | Task | Signal |
-|------|------|------|
-| Random Cut Forest | Anomaly (general numeric) | Rare events, real-time |
-| IP Insights | Anomaly (entity-IP) | Abnormal login |
-| PCA | Dimension reduction | Too many features, compress |
-| LDA / NTM | Topic model | Discover topics (LDA=simple, NTM=massive, GPU) |
+## Question Clue → Answer Mapping Table (Integrated)
 
-> 💡 **Related Theory**: One principle threads this week: **"Data shape and output form determine algorithm."** Same classification but tabular → XGBoost, text → BlazingText, image → Image Classification. Same unsupervised but group discovery → K-Means, anomaly → RCF, dimension reduction → PCA, topics → LDA/NTM. Exams embed data shape (table/text/image/time-series/sparse) and goal (predict/group/anomaly/topics/compress) in scenarios, narrowing to exactly one algorithm via combination. So memorize "combination → builtin" mapping.
+| Question phrase | Answer | Why |
+|---|---|---|
+| "There are no labels / discover groups" | K-Means | Unsupervised clustering |
+| "No labels / rare, new anomalies" | Random Cut Forest | Unsupervised anomaly detection |
+| "An account logs in from an unfamiliar IP" | IP Insights | Specialized for entity-IP |
+| "Sparse high-dimensional / user-item" | Factorization Machines | Second-order interactions, RecordIO-protobuf |
+| "Extract topics from documents" | LDA / NTM | Topic model |
+| "Hundreds of features, reduce the input" | PCA | Dimensionality reduction (randomized if huge) |
+| "Thousands of related time series / new product demand" | DeepAR | Shared learning across series |
+| "Need P10/P50/P90 probability intervals" | DeepAR | Quantile forecasting |
+| "Images but little labeled data" | Image Classification + transfer learning/augmentation | Use pretrained weights |
+| "Classify documents very fast on a large corpus" | BlazingText supervised | Based on fastText, GPU acceleration |
+| "Tabular + missing values + nonlinear + high accuracy" | XGBoost | Handles missing values natively, captures nonlinearity |
+| "Hundreds of millions of rows + fast + interpret coefficients" | Linear Learner | Large-scale linear |
+| "Anomalies on a real-time stream" | Kinesis Data Analytics RCF | SQL function inside the stream |
+| "Launch quickly without ML staff" | Comprehend / Rekognition / Forecast / Personalize | Managed AI services |
 
-## Most Confusing Comparisons
+## Metrics and Tuning Direction Summary
 
-| Comparison | Core Difference |
-|------|------|
-| XGBoost vs Linear Learner | Nonlinear, tabular = XGBoost / Massive scale, linear, interpretable = Linear |
-| K-Means vs KNN | K-Means = unsupervised clustering / KNN = supervised neighbor prediction |
-| RCF vs IP Insights | General numeric anomaly / Entity-IP relationship anomaly |
-| LDA(topic) vs LDA(linear discriminant) | SageMaker LDA is topic model, name collision |
-| LDA vs NTM | Probabilistic, simple, interpretable / Neural net, massive, GPU |
-| DeepAR vs general regression | Many related series, probabilistic vs single point estimate |
-| BlazingText two modes | supervised = document classification / Word2Vec = word embedding |
+| Situation | Metric choice | Reason |
+|---|---|---|
+| Class imbalance (under 1% positives) | Recall, PR-AUC | Accuracy reaches 99% even with "all negative" |
+| Problem where false positives are costly | Precision | Wrong blocking or sending is expensive |
+| Threshold undecided, comparing models | ROC-AUC | Discriminative power independent of the threshold |
+| Regression, large errors are fatal | RMSE | Penalizes large errors heavily by squaring |
+| Regression, many outliers | MAE | Robust to outliers |
+| Clustering, topics, dimensionality reduction | Silhouette/WCSS / interpretability / explained variance | No ground-truth labels, so accuracy is not possible |
 
-> 💡 **Related Theory**: Scaling necessity answers from algorithm family. **Distance-based (KNN, K-Means), linear models (Linear Learner), PCA** — feature scale distorts results, scaling mandatory. **Tree-based (XGBoost)**, by contrast, splits each feature independently at thresholds, scale-invariant. On exams, preprocessing/algorithm traps (e.g., "XGBoost must be scaled") filter via this principle.
+| Symptom | Adjustment direction (XGBoost) |
+|---|---|
+| Overfitting | `max_depth`↓, `eta`↓ (+`num_round`↑), `subsample`↓, `gamma`/`lambda`/`alpha`↑ |
+| Underfitting | `max_depth`↑, `num_round`↑, regularization↓ |
+| Positives are extremely rare | `scale_pos_weight`↑ (`balance_multiclass_weights` for Linear Learner) |
 
-## Self-Check Questions
+## Self-Check
 
-Recall answers mentally.
+Recall the answers in your head.
 
-1. Default builtin for nonlinear classification on tabular data? → **XGBoost**
-2. Probabilistic demand forecast for thousands related series? → **DeepAR**
-3. Recommended input format for user-item sparse recommendation? → **RecordIO-protobuf**
-4. Common preprocessing needed for both KNN and K-Means? → **Feature scaling**
-5. Detect anomaly when account logins from unusual IP? → **IP Insights**
-6. Discover topics in document collection, prefer massive scale, GPU? → **NTM**
-7. What is SageMaker "LDA"? → **Topic model (Latent Dirichlet Allocation)**
+1. What is the default builtin for nonlinear classification on tabular data? → **XGBoost**
+2. Probabilistic demand forecasting for thousands of related time series? → **DeepAR**
+3. What is the recommended input format for sparse user-item recommendation? → **RecordIO-protobuf**
+4. What preprocessing do both KNN and K-Means require? → **Feature scaling**
+5. Anomaly detection for an account logging in from an unusual IP? → **IP Insights**
+6. Discovering topics in a document set, with a preference for large scale and GPU? → **NTM**
+7. What is SageMaker's "LDA"? → **A topic model (Latent Dirichlet Allocation)**
+8. What value must be specified in advance in K-Means? → **The number of clusters `k`**
+9. What is the textbook combination when image data is scarce? → **Transfer learning + data augmentation**
+10. What PCA mode is used for very high-dimensional data? → **`randomized`**
+
+## Wrong-Answer Notes — Five Frequent Traps
+
+| Trap | Why it is wrong | Correct judgment |
+|---|---|---|
+| "XGBoost must also be scaled" | Trees are scale-invariant | Scaling is mandatory only for distance, linear, and PCA |
+| "It is distance-based but skip scaling" | Large-unit features dominate the distance | KNN and K-Means require scaling |
+| "SageMaker LDA is Linear Discriminant Analysis" | Abbreviation collision | The builtin LDA is a topic model |
+| "Anomaly detection is always supervised classification" | Anomaly labels are usually scarce | If labels are scarce or the pattern changes, RCF |
+| "Evaluate imbalanced data by accuracy" | It scores high just by getting the majority class right | Move to Recall and PR-AUC |
+| "Feed sparse recommendation data as CSV" | It becomes a huge dense table that is mostly zeros | FM uses RecordIO-protobuf (float32) |
+| "Images are scarce, so use a deeper model from scratch" | Overfits on little data | Transfer learning + augmentation |
 
 ## Comprehensive Exam Tips
 
-- **Step 1**: Confirm ML type from output form (category/numeric/group/recommend/anomaly/topics) and label presence
-- **Step 2**: Narrow to one builtin from data shape (tabular/text/image/time-series/sparse)
-- "Text/image/time series" words displace general XGBoost, push to specialized builtin answers
-- "No labels + rare/new anomaly" → RCF; "entity-IP" → IP Insights
-- "Skip scaling" option in distance/linear/PCA is wrong; "must scale" for XGBoost is also wrong
-- Input format: sparse/massive efficiency → **RecordIO-protobuf**; topic model → **BoW**
+- **Step 1**: Determine the ML type from the output shape (category/number/group/recommendation/anomaly/topic) and whether labels exist.
+- **Step 2**: Narrow to a single builtin by the data shape (tabular/text/image/time series/sparse).
+- The words "text/image/time series" push out plain XGBoost and push toward a specialized builtin answer.
+- "No labels + rare/new anomalies" means RCF, and "entity-IP" means IP Insights.
+- For distance/linear/PCA, an option to "skip scaling" is wrong, and "XGBoost must be scaled" is also wrong.
+- Input formats: **RecordIO-protobuf** for sparse and large-scale efficiency, **BoW** for topic models, **JSON Lines** for DeepAR.
 
-## Summary
+Next week (Week 7) moves on to actually **training and tuning** models — training infrastructure, hyperparameter optimization (Automatic Model Tuning), and regularization and overfitting control.
 
-Week 6 was modeling's first step — "translate problems to algorithms." Determine ML type from output form, narrow SageMaker builtin to one via data shape, finalize details like scaling, input format, overfitting adjustment. Core is **"data shape × output form → builtin"** mapping memory and distance/linear/tree scaling principle.
+## 📖 Glossary
 
-Next week (Week 7) moves to actually **training and tuning** models — training infrastructure, hyperparameter optimization (Automatic Model Tuning), regularization and overfitting control.
-
----
+- **Modeling domain (Domain 3)**: The part of the MLS-C01 exam that covers algorithm selection, training, tuning, and evaluation.
+- **Builtin algorithm**: An algorithm that AWS provides as a container, which you can train with just hyperparameters and no code.
+- **RecordIO-protobuf**: A binary input format recommended by many builtins. Efficient for sparse and large-scale data.
+- **BoW (Bag-of-Words)**: A representation that discards word order and counts only frequencies to turn a document into a vector. The input to topic models.
+- **JSON Lines**: A format that holds one JSON object per line. DeepAR receives one time series per line.
+- **Quantile forecast**: A way of forecasting the future not as a single value but as probability intervals such as P10/P50/P90.
+- **Transfer learning**: A technique that starts from pretrained weights and fine-tunes with a small amount of data.
+- **Scale invariance**: The property that the result stays the same as long as the ordering of the values is preserved. Tree families have it.
+- **Latent factor**: A low-dimensional hidden feature vector that describes users and items. FM's `num_factors` sets its dimension.
+- **Explained variance ratio**: In PCA, the ratio showing how much of the original data's variance the selected principal components preserve.
 
 ## 📝 Practice Questions
 

@@ -1,16 +1,30 @@
 # Day 2 - Real-time Endpoints: Configuration, Auto-scaling, Instance Selection
 
-Yesterday we surveyed 4 inference options. Most common and exam-heavy is real-time endpoints. Almost every online service where users await results deploys via real-time endpoints. Today we cover real-time endpoint setup (Model → EndpointConfig → Endpoint), auto-response to traffic (auto-scaling), and instance choices (CPU/GPU/accelerator).
+## 📌 Key Takeaways
 
-Key insight: SageMaker real-time deployment is a **3-layer structure**. Model bundles artifact and inference container; EndpointConfig specifies instance type/count; Endpoint handles actual HTTPS traffic. This separation enables zero-downtime deployment and A/B testing.
+- Real-time deployment has three layers: **Model → EndpointConfig → Endpoint**. This separation is what makes zero-downtime deployment, A/B testing, and canary releases possible.
+- To deploy a new model, **create a new EndpointConfig and call `update_endpoint`** → SageMaker swaps it in with Blue/Green.
+- For **Auto Scaling**, target tracking on `SageMakerVariantInvocationsPerInstance` is the standard. With a **minimum of 1 instance**, it cannot scale down to 0.
+- Auto Scaling cannot keep up with a sudden spike → prepare with **scheduled scaling** or a generous `MinCapacity`.
+- For instances: traditional ML = CPU (m5/c5), deep learning = GPU (g4dn/g5), deep learning cost reduction = Inferentia (inf1/inf2).
 
-## 3-Layer Structure: Model, EndpointConfig, Endpoint
+## Three-Layer Structure: Model, EndpointConfig, Endpoint
 
-Real-time endpoints are built from 3 resources:
+Almost every online service where users wait for results is deployed as a real-time endpoint. This endpoint is made of the following three resources.
 
-- **Model**: Definition bundling S3 model artifact (`model.tar.gz`) and container image with inference code.
-- **EndpointConfig**: Defines which Model, what instance type, how many initially (initial instance count), traffic weight distribution.
-- **Endpoint**: Actualizes EndpointConfig, making it callable via HTTPS.
+- **Model**: A definition that bundles the model artifact in S3 (`model.tar.gz`) with the container image that holds the inference code.
+- **EndpointConfig**: Defines which Model to run, on which instance type, how many instances (initial instance count), and what traffic-distribution weights to use.
+- **Endpoint**: The actual entity that provisions the EndpointConfig and makes it callable over HTTPS.
+
+```text
+S3 model.tar.gz ─┐
+                 ├─▶ [ Model ] ─▶ [ EndpointConfig ] ─▶ [ Endpoint ]
+Container image ─┘   artifact+code  instance type/count    HTTPS address
+                                    ProductionVariant       (what the caller sees)
+
+Key point: the three are separate resources. If you leave the Endpoint address
+           as it is and swap only the EndpointConfig, callers need to change nothing.
+```
 
 ```python
 import boto3
@@ -32,34 +46,95 @@ sm.create_endpoint_config(
         "InitialInstanceCount": 2,
     }],
 )
-# 3) Endpoint: actual deployment
+# 3) Endpoint: the actual deployment
 sm.create_endpoint(EndpointName="churn-endpoint", EndpointConfigName="churn-config")
 ```
 
-> 💡 **Related Theory**: This 3-layer split's real value is **zero-downtime updates**. Deploying new model: create new EndpointConfig, call `update_endpoint`, and SageMaker spins new instances, runs health checks, shifts traffic, shuts old instances (blue/green). Endpoint stays alive—callers experience no downtime. Adjusting ProductionVariant weights enables A/B testing or canary deployments, splitting traffic to two models on same endpoint.
+The real value of this three-layer separation lies in **zero-downtime updates**. When you deploy a new model, you create a new EndpointConfig and call `update_endpoint`; SageMaker first brings up new instances and has them pass health checks, then moves traffic over and takes the old instances down (Blue/Green). The endpoint stays alive throughout, so callers experience no downtime. By adjusting ProductionVariant weights you can also split traffic between two models on the same endpoint for A/B testing or a canary deployment.
+
+## Zero-Downtime Deployment — The Blue/Green Switchover Flow
+
+If you delete an endpoint and recreate it when putting up a new model, the address is cut off. The correct procedure is **create a new EndpointConfig → `update_endpoint`**.
+
+```text
+[Before update]  Endpoint(churn-endpoint) ──▶ Config v1 ──▶ 2 instances (old model)
+
+update_endpoint(EndpointConfigName="config-v2")
+        │
+        ├─ 1) Provision new instances (green) + load the model
+        ├─ 2) Wait for health checks to pass
+        ├─ 3) Shift traffic to green (all at once / canary / linear)
+        ├─ 4) Alarm monitoring window (baking) — automatic rollback on failure
+        └─ 5) Terminate the old instances (blue)
+
+[After update]   Endpoint(churn-endpoint) ──▶ Config v2 ──▶ 2 instances (new model)
+                 ↑ The address stays the same. Callers change nothing
+```
+
+```python
+# Swap in the new configuration — keep the endpoint name as it is
+sm.update_endpoint(
+    EndpointName="churn-endpoint",
+    EndpointConfigName="churn-config-v2",
+)
+# Check the transition status: Updating → InService
+status = sm.describe_endpoint(EndpointName="churn-endpoint")["EndpointStatus"]
+```
+
+The traffic shifting methods (deployment guardrails) differ in character.
+
+| Shifting method | Behavior | When to use |
+|-----------|------|-----------|
+| All-at-once | Moves all traffic to the new version in one step | When risk is low and you want to finish quickly |
+| Canary | Sends only a small share (e.g., 5%) first, then the rest after observing | When the new model is risky and you want to minimize the blast radius |
+| Linear | Moves traffic in steps of a fixed proportion | When you want to watch load and error rate gradually |
+| Rolling | Replaces existing capacity a portion at a time | When you cannot afford to double the full capacity |
+
+> ⚠️ **Pitfall**: The answer to "deploy a new model without downtime" is always **a new EndpointConfig + `update_endpoint`**. ① Deleting and recreating the endpoint cuts the address and causes downtime, ② creating only a new Model resource is not automatically reflected in the existing endpoint, and ③ connecting directly to a managed instance to change files is an anti-pattern that is impossible in the first place. These three repeatedly appear as wrong-answer options.
 
 ## ProductionVariant and A/B Testing
 
-EndpointConfig can hold multiple ProductionVariants. Each gets `InitialVariantWeight`; traffic distributes by weight ratio. Start new model 10%, old 90%, gradually increasing is canary deployment.
+You can place several ProductionVariants inside one EndpointConfig.
+
+- If you give each variant an `InitialVariantWeight`, traffic is **distributed in proportion to the weights**.
+- A **canary deployment** is possible: start with the new model at 10% and the old model at 90%, then raise the share.
+- Each variant can have a different instance type and count (for example, run only the new model small).
 
 ```python
 ProductionVariants=[
     {"VariantName": "ModelA", "ModelName": "model-a",
      "InstanceType": "ml.m5.xlarge", "InitialInstanceCount": 2,
-     "InitialVariantWeight": 9},   # 90% traffic
+     "InitialVariantWeight": 9},   # 90% of traffic
     {"VariantName": "ModelB", "ModelName": "model-b",
      "InstanceType": "ml.m5.xlarge", "InitialInstanceCount": 1,
-     "InitialVariantWeight": 1},   # 10% traffic
+     "InitialVariantWeight": 1},   # 10% of traffic
 ]
 ```
 
-> 🔍 **Deeper**: SageMaker lets `InvokeEndpoint` call force specific variant via `TargetVariant`, ignoring weights for testing one model. **Shadow testing** sends production traffic copy to new model but discards response, validating new model performance without user impact. Distinguish A/B (weight distribution) vs shadow (response discard).
+A/B testing and shadow testing are distinguished by **whether the user receives the new model's response**.
 
-## Auto-scaling—Auto-adjust Instance Count to Traffic
+```text
+[A/B test]  Request ──┬─ 90% ─▶ ModelA ─▶ Response returned to the user
+                      └─ 10% ─▶ ModelB ─▶ Response returned to the user  ← some users are affected
 
-Real-time endpoints attach Application Auto Scaling, adjusting instance count by traffic. Most common is **target tracking**, matching specific metric to goal value.
+[Shadow]    Request ────────▶ ModelA ─▶ Response returned to the user
+                  └(copy)──▶ ModelB ─▶ Response discarded, only metrics recorded  ← zero user impact
+```
 
-Key metric: `SageMakerVariantInvocationsPerInstance` (calls per instance per second). Set goal "one instance handles 1,000 calls/sec", traffic grows past that → scale out; drops → scale in.
+| Aspect | A/B (weighted distribution) | Shadow testing |
+|------|-----------------|----------------|
+| Traffic | Splits the real requests | Sends a **copy** of the real requests |
+| New model response | Returned to the user | **Discarded** (only metrics collected) |
+| User impact | Yes (some users) | None |
+| Purpose | Compare business metrics | Risk-free performance and stability validation |
+
+SageMaker can also force a specific variant with the `TargetVariant` parameter when calling `InvokeEndpoint`. This is used when you want to test only a particular model regardless of the weights. In addition, the **shadow testing (shadow variant)** feature sends a copy of production traffic to the new model but throws away the response, so you can validate the new model's performance without affecting real users. Tell A/B (weighted distribution) and shadow (response discarded) apart by that difference.
+
+## Auto Scaling — Adjusting Instance Count to Traffic
+
+A real-time endpoint attaches Application Auto Scaling to adjust the instance count automatically with traffic. The most common policy is **target tracking**, which scales instances out and in to hold a given metric at a target value.
+
+The representative metric is `SageMakerVariantInvocationsPerInstance` (invocations per second per instance). If you set a target such as "I want each instance to handle 1,000 requests per second," it scales out when traffic grows and exceeds this value, and scales in when it falls.
 
 ```python
 aas = boto3.client("application-autoscaling")
@@ -86,24 +161,58 @@ aas.put_scaling_policy(
 )
 ```
 
-`MinCapacity` ≥1, so real-time doesn't scale to 0 (0 needs serverless/async). Cooldown is wait between scale actions; scale-in slow (traffic re-spike defense), scale-out fast, standard practice.
+- `MinCapacity` must be 1 or more, so a real-time endpoint **does not shrink to 0** (if you need 0, use serverless/asynchronous).
+- A **cooldown** is the wait time after one scaling action before the next one.
+  - Keep `ScaleOutCooldown` short → react quickly to rising load
+  - Keep `ScaleInCooldown` long → so you don't scale in too hastily and regret it when traffic spikes again
 
-> ⚠️ **Pitfall**: Auto-scaling isn't magic. Spinning new instance, loading model, passing health check takes minutes—can't instantly handle **traffic spikes**. Black Friday-predictable surges need **scheduled scaling** (pre-increase capacity) or sufficient `MinCapacity`. "Auto-scaling on but spike caused delay"—answer: scheduled scaling or higher minimum.
+Scaling policy types differ by purpose.
 
-## Instance Selection—CPU vs GPU vs Accelerators
+| Policy type | Behavior | Suitable situation |
+|-----------|------|-------------|
+| Target tracking | Automatically adds or removes capacity to hold a metric at the target | The default choice. Adjusts in proportion to load |
+| Step scaling | Adds or removes a set amount per alarm-threshold band | When different adjustment sizes are needed per band |
+| Scheduled scaling | Changes capacity in advance at set times | **Predictable** surges such as sales or events |
 
-Instance family choice divides by model type and latency needs:
+> ⚠️ **Pitfall**: Auto Scaling is not a cure-all. It takes several minutes to bring up a new instance, load the model, and pass the health check, so it cannot respond instantly to a **sudden traffic spike**. For predictable surges such as Black Friday, you must increase capacity ahead of time with **scheduled scaling** or secure a sufficient `MinCapacity`. The answer to the scenario "we turned Auto Scaling on, yet latency jumped during the spike" is usually scheduled scaling or a higher minimum capacity.
 
-- **ml.m5/ml.c5 (CPU)**: Tree models (XGBoost), linear, small neural nets—most traditional ML. c5 compute-optimized, m5 general. Cheapest.
-- **ml.g4dn/ml.g5 (GPU)**: Deep learning inference, medium-large image/NLP models. GPU parallelizes matrix ops, lowering latency.
-- **ml.p3/ml.p4 (high-performance GPU)**: Very large models, high throughput deep learning. Expensive, common for training not inference.
-- **ml.inf1/ml.inf2 (AWS Inferentia)**: AWS proprietary inference chip. Deep learning inference cost per sample much lower than GPU.
+## Endpoint Monitoring Metrics
 
-> 💡 **Related Theory**: Inference instance choice balances "latency goal × throughput × cost". Traditional ML (XGBoost) fine on CPU; GPU adds little. Transformer/CNN deep learning see dramatic latency drop on GPU or Inferentia. Exam: "deep learning model, GPU cost concern"→Inferentia (inf1/inf2) is the signal. Conversely "XGBoost, use GPU to lower cost"—wrong choice often tested.
+You need to know what to look at when deciding on scaling and tuning. Endpoint metrics are emitted to CloudWatch.
 
-## Inference Recommender—Which Instance is Optimal?
+| Metric | Meaning | If this value jumps |
+|------|------|-------------|
+| `Invocations` | Total number of invocations the endpoint received | A rise or fall in traffic itself |
+| `InvocationsPerInstance` | Invocations per instance | The reference metric for target tracking scaling |
+| `ModelLatency` | Time the model container took to respond | A sign that the model or instances are insufficient |
+| `OverheadLatency` | Time added by SageMaker-side processing | A problem in payload serialization or the network |
+| `Invocation4XXErrors` | Bad requests (format, payload) | A caller-side input schema problem |
+| `Invocation5XXErrors` | Model or container errors | An inference code exception, OOM, etc. |
+| `CPUUtilization` / `MemoryUtilization` | Instance resource utilization | Consider a larger instance type or scaling out |
 
-Picking instance type and count directly is hard. SageMaker **Inference Recommender** auto-runs load tests, recommending optimal config by cost, latency, throughput. Deploys model on multiple instance types, runs traffic, compares.
+When looking at latency problems, you must look at `ModelLatency` and `OverheadLatency` **separately**. If `ModelLatency` is high, the model itself is heavy or the instances are insufficient, so the answer is a bigger instance, scaling out, or model optimization. If `OverheadLatency` is high, large-payload serialization or the network segment is the likely cause. If you lump the two together as "it's slow," you will take the wrong action.
+
+## Instance Selection — CPU vs GPU vs Accelerator
+
+The choice of instance family depends on the model type and the latency requirement.
+
+| Family | Character | Suitable models | Notes |
+|--------|------|-------------|------|
+| `ml.m5` / `ml.c5` (CPU) | General-purpose / compute-optimized | Traditional ML such as XGBoost, linear models, small neural networks | Cheapest. The default for most tabular-data models |
+| `ml.g4dn` / `ml.g5` (GPU) | Inference GPUs | Medium and large image/NLP deep learning | Parallelizes matrix operations to cut latency significantly |
+| `ml.p3` / `ml.p4` (high-performance GPU) | Large training GPUs | Very large models, ultra-high throughput | Expensive. Commonly used for **training** rather than inference |
+| `ml.inf1` / `ml.inf2` (Inferentia) | AWS inference-dedicated chips | Deep learning inference (transformers, CNNs) | Lower cost per inference. Requires a **Neuron compilation** step |
+
+Choosing an inference instance is a balance of "latency target × throughput × cost." Traditional ML (XGBoost) is fine on CPU, and attaching a GPU brings little benefit. Deep learning such as transformers and CNNs, on the other hand, sees latency drop dramatically on GPU or Inferentia. If the exam gives the condition "a deep learning model, but GPU cost is a burden," that is the signal for Inferentia (inf1/inf2). Conversely, "it's XGBoost, so let's cut cost by using a GPU" is easily used as a wrong option.
+
+## Inference Recommender — Which Instance Is Optimal?
+
+If it is hard to choose the instance type and count yourself, SageMaker **Inference Recommender** automatically runs load tests and recommends the optimal configuration based on cost, latency, and throughput. It deploys the model to several instance types, sends traffic through them, and compares the results.
+
+| Job type | What it does | When to use |
+|---------|---------|-----------|
+| Default | Quickly deploys to several instance types for a broad comparison | A first-pass exploration to narrow the candidates |
+| Advanced (custom) | You define the traffic pattern (request rate, latency SLA, etc.) for a precise load test | When you need to confirm that the real SLA is met |
 
 ```python
 sm.create_inference_recommendations_job(
@@ -114,15 +223,33 @@ sm.create_inference_recommendations_job(
 )
 ```
 
-> 🔍 **Deeper**: Inference Recommender has two modes. **Default** quickly deploys multiple types, broad comparison; **Advanced** takes custom traffic pattern (requests/sec, latency SLA), precise load test. "Don't know instance type, want data-driven decision"—Inference Recommender.
+Inference Recommender has two modes. A **Default** job deploys quickly to several instance types and compares them broadly, while an **Advanced (custom)** job lets you define the traffic pattern you want (requests per second, latency SLA) for a precise load test. The answer to the scenario "I don't know how to choose the instance type, and I want to decide with data" is Inference Recommender.
 
-## Summary
+## Symptom → Cause → Action
 
-Real-time endpoints split 3 ways: ① **3-layer structure**: Model (artifact+container) → EndpointConfig (instance type/count, ProductionVariant) → Endpoint (actual HTTPS). Enables zero-downtime, A/B, canary. ② **Auto-scaling**: `InvocationsPerInstance` target tracking standard, minimum 1 (no 0), spikes need scheduled scaling. ③ **Instance choice**: Traditional ML=CPU (m5/c5), deep learning=GPU (g4dn/g5) or Inferentia (inf1/inf2) for cost; hard decisions→ Inference Recommender.
+| Symptom | Cause | Action |
+|------|------|------|
+| Fine in normal times, but latency jumps only during spikes | New instance startup and model load take several minutes | Secure capacity in advance with scheduled scaling; raise `MinCapacity` |
+| `ModelLatency` stays high | The model is heavy or instances are insufficient | Larger instance / scale out; consider GPU or Inferentia |
+| `Invocation5XXErrors` increase | Inference code exception, out of memory (OOM) | Check container logs; switch to an instance with more memory |
+| The instance count keeps going up and down | Scale-in cooldown is too short | Increase `ScaleInCooldown` to suppress flapping |
+| Costs are incurred even at night with no traffic | Real-time always keeps at least 1 instance | For intermittent traffic, move to serverless or asynchronous |
+| Error rate rose after deployment and you want to roll back | New-model regression | Configure automatic rollback with CloudWatch alarms + canary/linear shifting |
 
-Next: multi-model/multi-container to cut cost, inference pipelines, Inferentia/Elastic Inference depth.
+The next article takes a deep look at multi-model/multi-container endpoints that put several models on one endpoint to cut cost, plus inference pipelines and Inferentia/Elastic Inference.
 
----
+## 📖 Glossary
+
+- **Model artifact**: A compressed file (`model.tar.gz`) holding the trained model's weights and structure, uploaded to S3.
+- **EndpointConfig**: A blueprint that states which model to run on which instances and how many. A resource separate from the endpoint.
+- **ProductionVariant**: One bundle of a model within an endpoint that receives a share of traffic. It can be given a weight.
+- **Blue/Green deployment**: A zero-downtime replacement method that brings up the new version separately, moves traffic after confirming it is healthy, and then takes down the old version.
+- **Canary deployment**: A method that first sends only a very small share of traffic to the new version and widens it if nothing is wrong.
+- **Shadow testing**: Validation that sends a copy of real requests to the new model but discards the responses, measuring performance without affecting users.
+- **Target tracking**: A policy that automatically increases and decreases the instance count to hold a metric at a target value.
+- **Cooldown**: The time to wait after one scaling action until the next. If too short, the count oscillates.
+- **ModelLatency**: The time the model container took to process a request and respond.
+- **Inference Recommender**: A feature that actually load-tests several instance types and picks the optimal configuration based on data.
 
 ## 📝 Practice Questions
 

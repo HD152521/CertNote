@@ -1,79 +1,200 @@
 # Day 5 - Week 6 Synthesis: Inference Deployment Review
 
-This week covered inference deployment—bringing trained models into production. One core message: **inference mode choice is driven by request pattern, not algorithm.** Is traffic steady or sporadic? Immediate response needed? Payload/runtime size? Where to cut cost? Today we weave Days 1–4 into single decision flow—ready to unpack in exam.
+## 📌 Key Takeaways
 
-## 4 Inference Options Totaled
+- **The inference mode is decided by the request pattern, not the algorithm** — four axes: immediacy, traffic, payload, and cost.
+- Four options: real-time (steady traffic + low latency) / serverless (sporadic traffic + scale to zero) / asynchronous (1GB, 60 minutes) / batch (bulk jobs at the lowest cost).
+- When cost is the concern — many models means **MME**, deep learning means **Inferentia**, long idle periods mean an **option that scales to zero**.
+- Ways to bundle models behind one endpoint: MME (same container, many models) / MCE (different containers, few) / pipeline (sequential chain).
+- Zero-downtime deployment means a **new EndpointConfig + `update_endpoint`** (Blue/Green); risk-free validation means **shadow testing**.
 
-Re-etch Day 1's core table:
+## Week 6 Overview
 
-| Option | Response | Traffic | Payload/Runtime | Always-on Cost |
-|--------|----------|---------|-----------------|----------------|
-| Real-time | Sync, ms–sec | Steady | <6MB, <60s | Yes (min 1) |
-| Serverless | Sync, ms–sec | Sporadic | <4MB, <60s | No (scale to 0) |
-| Async | Queue-based async | Variable, long | <1GB, <60m | No (scale to 0) |
-| Batch Transform | Job-based | Bulk | Full dataset | No (terminates) |
+This week covered inference deployment, which is how a trained model is actually served. We weave Day 1 through Day 4 into a single decision flow so you can pull it out straight away in the exam room.
 
 ```text
-Decision Tree
-Immediate response needed?
- ├─ No → entire dataset bulk? → Yes: Batch Transform / No (individual, large payload, long): Async
- └─ Yes → steady traffic? → Yes: Real-time / No (sporadic, cold-start tolerable): Serverless
-Extra constraint: payload >6MB or runtime >60s → real-time/serverless out, async/batch in
+                       [ Trained model ]
+                                │
+                    ① How do requests arrive?   ← Day 1
+        ┌───────────────┬───────┴───────┬───────────────┐
+        ▼               ▼               ▼               ▼
+    Real-time        Serverless      Asynchronous    Batch transform
+ (steady, low       (sporadic,      (large          (bulk job)
+  latency)           scale to 0)     payload)
+        │
+        │  ② How do you operate the endpoint?      ← Day 2
+        ├─ Model → EndpointConfig → Endpoint
+        ├─ Auto scaling (InvocationsPerInstance, minimum 1 instance)
+        ├─ Zero-downtime deployment (update_endpoint, blue/green)
+        └─ A/B (weights) · Shadow (responses discarded)
+        │
+        │  ③ How do you cut cost and complexity?   ← Day 3
+        ├─ MME (same container + hundreds to thousands of models)
+        ├─ MCE (containers for different frameworks, up to 15)
+        ├─ Inference pipeline (preprocess → inference → postprocess)
+        └─ Inferentia (lower deep learning inference cost, Neuron compile)
+        │
+        │  ④ How do you tune bulk and sporadic workloads?   ← Day 4
+        ├─ Batch: InstanceCount · SplitType · BatchStrategy
+        └─ Serverless: MemorySize · MaxConcurrency · Provisioned Concurrency
 ```
 
-> 💡 **Related Theory**: 4 options root in "always-on cost vs latency vs throughput" triangle tradeoff. Real-time minimizes latency, costs always-on. Serverless zeroes cost, accepts cold-start latency. Async handles big jobs, queue delay. Batch maximizes throughput, kills immediacy. Exams embed which to prioritize in scenario. "under 50ms" prioritizes latency (real-time), "idle wastes money" prioritizes cost (serverless), "1M records at night" prioritizes throughput (batch).
+## Summary of the Four Inference Options
 
-## Real-time Endpoint Review
+Let's burn Day 1's key table into memory once more.
 
-Real-time is anchored by **3-layer structure**. Model (artifact + container) → EndpointConfig (instance type/count, ProductionVariant weights) → Endpoint (HTTPS entity). This split enables zero-downtime blue/green deploy, A/B testing (weight distribution), shadow testing (discard response, verify).
+| Option | Response | Traffic | Payload / time | Always-on cost |
+|------|------|--------|---------------|----------------|
+| Real-time | Synchronous, ms to seconds | Steady | <6MB, <60 seconds | Yes (minimum 1 instance) |
+| Serverless | Synchronous, ms to seconds | Sporadic | <4MB, <60 seconds | None (scales to 0) |
+| Asynchronous | Queue-based asynchronous | Variable, long processing | <1GB, <60 minutes | None (scales to 0) |
+| Batch transform | Per job | Bulk | Entire dataset | None (shuts down when finished) |
 
-**Auto-scaling** uses `SageMakerVariantInvocationsPerInstance` target tracking as standard, maintains min 1 instance (0 forbidden). Sudden spikes outrun auto-scale, so **scheduled scaling** or higher `MinCapacity` pre-positions.
+```text
+Selection decision tree
+Is an immediate response required?
+ ├─ No → Bulk run over the whole dataset? → Yes: batch transform / No (individual requests, large payload, long processing): asynchronous
+ └─ Yes → Is traffic steady? → Yes: real-time / No (sporadic, cold start acceptable): serverless
+Extra constraint: payload >6MB or processing >60 seconds → real-time/serverless are out; go to asynchronous/batch
+```
 
-**Instance choice**: traditional ML (XGBoost) = CPU (m5/c5), deep-learning = GPU (g4dn/g5), deep-learning cost cut = Inferentia (inf1/inf2). Uncertain? **Inference Recommender** load-tests, recommends optimal.
+> 💡 **Related theory**: At the root of the four options is the triangle trade-off of "always-on cost vs. latency vs. throughput." Real-time has the lowest latency but a constant cost; serverless has a cost near 0 but cold-start latency; asynchronous suits large jobs but adds queue delay; batch has the highest throughput but zero immediacy. The exam hides which of these three to prioritize inside the scenario. "Within 50ms" means latency first (real-time), "lots of idle time, so the cost is wasteful" means cost first (serverless), and "process 1 million records overnight" means throughput first (batch).
 
-> ⚠️ **Trap**: Two favorite wrong answers. ① Attach GPU to XGBoost—tree models gain almost nothing from GPU, CPU wins. ② Scale real-time endpoint to 0—real-time enforces min 1; for 0 need serverless/async.
+## Real-Time Endpoint Review
 
-## Advanced Inference Review — What to Bundle in One Endpoint
+- **Three-layer structure**: Model (artifact + container) → EndpointConfig (instance type and count, ProductionVariant weights) → Endpoint (the HTTPS entity). This separation is what makes zero-downtime Blue/Green deployment, A/B testing (weighted traffic split), and shadow testing (validate while discarding responses) possible.
+- **Auto Scaling**: Target tracking on `SageMakerVariantInvocationsPerInstance` is the standard, and at least 1 instance is always kept (0 is not allowed). Auto Scaling cannot keep up with sudden spikes, so prepare with **scheduled scaling** or a high `MinCapacity`.
+- **Instance selection**: Traditional ML (XGBoost) = CPU (m5/c5), deep learning = GPU (g4dn/g5), cheaper deep learning = Inferentia (inf1/inf2). When the choice is hard, **Inference Recommender** load-tests and recommends the best configuration.
 
-Day 3's four patterns, one line each:
+The flow from deployment through scaling to replacement, condensed into one block of code, looks like this.
 
-- **MME (Multi-model)**: same container + hundreds to thousands models, `TargetModel` spec, dynamic S3 load. "Many same-type models to cut endpoint cost."
-- **MCE (Multi-container)**: different framework containers, max 15, `TargetContainerHostname` spec. "TensorFlow and PyTorch in one endpoint."
-- **Inference Pipeline**: preprocessing → inference → postprocessing linear container chain (2–15), handle in single call. "Training-serving consistency (prevent skew)."
-- **Inferentia (inf1/inf2)**: cut deep-learning inference cost/latency, needs Neuron compile. Elastic Inference legacy (fractional GPU), Inferentia replaces.
+```python
+import boto3
+sm = boto3.client("sagemaker")
+aas = boto3.client("application-autoscaling")
 
-> 🔍 **Deep Dive**: MME vs MCE is exam's most frequent confuse pair. Deciding keywords: "frameworks same/different?" and "models hundreds/few?" Same container + many = MME, different containers + few = MCE. Inference Pipeline differs: not "pick which," but "sequential chain." Input flows through one container to next.
+# 1) Create Config → Endpoint
+sm.create_endpoint_config(EndpointConfigName="cfg-v1", ProductionVariants=[{
+    "VariantName": "AllTraffic", "ModelName": "churn-model",
+    "InstanceType": "ml.m5.xlarge", "InitialInstanceCount": 2}])
+sm.create_endpoint(EndpointName="churn-ep", EndpointConfigName="cfg-v1")
 
-## Batch & Serverless Deep Review
+# 2) Register auto scaling (minimum 1 instance, 0 not allowed)
+aas.register_scalable_target(
+    ServiceNamespace="sagemaker",
+    ResourceId="endpoint/churn-ep/variant/AllTraffic",
+    ScalableDimension="sagemaker:variant:DesiredInstanceCount",
+    MinCapacity=2, MaxCapacity=10)
 
-**Batch Transform** is bulk's cheapest option. Throughput tuned via `InstanceCount` (parallel), `SplitType=Line` (record split), `BatchStrategy=MultiRecord`/`MaxPayloadInMB`/`MaxConcurrentTransforms`. Inputs sharded across files or split-capable format enables distribution. Match predictions to source IDs via `input_filter`/`output_filter`/`join_source`.
+# 3) Replace with the new model without downtime — the endpoint name stays the same
+sm.update_endpoint(EndpointName="churn-ep", EndpointConfigName="cfg-v2")
+```
 
-**Serverless**: specify `MemorySize` (1–6GB) + `MaxConcurrency` only, scales to 0. Cold-start issue? **Provisioned Concurrency** pre-warms (some always-on cost). Cost advantage valid only "idle abundant," steady high traffic favors real-time.
+> ⚠️ **Trap**: There are two cases that are easily used as wrong answers. ① Attaching a GPU to XGBoost — tree models gain little from a GPU, so CPU is the correct answer. ② Trying to scale a real-time endpoint to 0 — real-time enforces a minimum of 1 instance, so if you need 0 you must go to serverless/asynchronous.
 
-> 💡 **Related Theory**: Cost optimization's big picture: "eliminate idle cost." When traffic drops to 0, serverless/async/batch can zero that window's cost. Inverse: traffic always high → real-time + auto-scaling + (many models?) MME + (deep-learning?) Inferentia cut unit cost. Nearly all inference cost scenarios reduce to these two branches.
+## Advanced Inference Review — What to Bundle into One Endpoint
 
-## Integrated Scenario Map
+Day 3's four patterns, distinguished one line at a time:
 
-Exam keyword → answer map directly:
+- **MME (multi-model endpoint)**: Same container + hundreds to thousands of models, specify `TargetModel`, models load dynamically from S3. "There are very many models of the same kind and I want to cut endpoint cost."
+- **MCE (multi-container endpoint)**: Containers for different frameworks, up to 15, specify `TargetContainerHostname`. "TensorFlow and PyTorch on one endpoint."
+- **Inference pipeline**: A linear chain of preprocessing → inference → postprocessing containers (2 to 15), handled in a single call. "Training/serving consistency (preventing skew)."
+- **Inferentia (inf1/inf2)**: Cuts deep learning inference cost and latency, requires Neuron compilation. Elastic Inference is legacy (fractional GPU) and has been replaced by Inferentia.
 
-- "Fraud decision 50ms, steady traffic" → Real-time
-- "Internal tool, occasional, lots idle, first delay OK" → Serverless
-- "200MB image, 5min processing, individual request, result later" → Async
-- "Nightly 10M scoring, no urgency" → Batch Transform
-- "1,500 stores, same model type, occasional calls" → MME
-- "TensorFlow + PyTorch, one endpoint" → MCE
-- "Same preprocessing to inference, prevent skew" → Inference Pipeline
-- "Deep-learning inference, GPU cost burden" → Inferentia
-- "Decide instance type by data" → Inference Recommender
-- "Deploy new model, zero downtime" → new EndpointConfig + update_endpoint (blue/green)
+MME vs. MCE is a pair that is easy to confuse in the exam. The deciding keywords are "are the frameworks the same or different?" and "are there hundreds of models or only a few?" Same container + many = MME, different containers + few = MCE. The inference pipeline differs from both in that it is "sequential execution," not "selective invocation." The input flows through one container and on to the next.
 
-## Summary
+The invocation parameter name alone tells you immediately which pattern is in use.
 
-Week 6 one-liner: **Request pattern decides inference option.** Immediacy, traffic, payload, cost split 4 options (real-time/serverless/async/batch); cost concerns narrow to many models → MME, deep-learning → Inferentia, high idle → scale-to-zero options. Bundle choice: MME (same container many), MCE (different containers few), pipeline (sequential chain). Master this decision tree and keyword map, inference domain largely solves.
+| Parameter / API | Where it is used | Meaning |
+|----------------|-------------|------|
+| `TargetModel` | MME invocation | Which model artifact in S3 to use |
+| `TargetContainerHostname` | MCE invocation | Which container to send to |
+| `TargetVariant` | Real-time endpoint invocation | Ignore the weights and force a specific variant |
+| `InitialVariantWeight` | EndpointConfig | Traffic split ratio per variant |
+| `InputLocation` | Asynchronous invocation | S3 path where the input data is placed |
+| `split_type` / `strategy` | Batch transform | Unit for splitting the input / mini-batch method |
+| `join_source` | Batch transform | Join the original input back onto the output |
+| `MaxConcurrency` | Serverless | Maximum number of requests handled concurrently |
 
-Next week: deployed model operations—orchestration and monitoring.
+## Batch and Serverless Deep Review
 
----
+- **Batch transform** — the lowest-cost option for bulk jobs.
+  - Throughput tuning: `InstanceCount` (parallelism), `SplitType=Line` (split by record), `BatchStrategy=MultiRecord`/`MaxPayloadInMB`/`MaxConcurrentTransforms`.
+  - Input must be sharded into multiple files or kept splittable for distribution to work.
+  - To match predictions to the original IDs, use `input_filter`/`output_filter`/`join_source`.
+- **Serverless** — specify only `MemorySize` (1 to 6GB) + `MaxConcurrency` and it scales down to 0.
+  - If cold starts are a problem, pre-warm with **Provisioned Concurrency** (this adds an always-on cost).
+  - The cost advantage holds only "when there is a lot of idle time"; with steady, high traffic, real-time is cheaper.
+  - Because you do not choose the instance type, **a model that needs a GPU cannot be deployed**.
+
+The big picture of cost optimization is "eliminating idle cost." If there are periods when traffic drops to 0, serverless, asynchronous, and batch can bring the cost of those periods close to 0. Conversely, if traffic is always high, lower the unit cost with real-time + Auto Scaling + (for many models) MME + (for deep learning) Inferentia. Almost every inference cost scenario reduces to these two branches.
+
+## Integrated Scenario Mapping
+
+Here are exam keywords mapped directly to answers.
+
+- "A decision within tens of ms at the moment of purchase, steady traffic" → real-time
+- "Internal tool, called occasionally, lots of idle time, a first-call delay is acceptable" → serverless
+- "200MB images, 5 minutes of processing, individual requests, results later" → asynchronous
+- "Score 10 million records every night, immediacy not needed" → batch transform
+- "The same kind of model for 1,500 stores, called occasionally" → MME
+- "TensorFlow + PyTorch on one endpoint" → MCE
+- "Apply the same preprocessing to inference, prevent skew" → inference pipeline
+- "Deep learning inference, but the GPU cost is a burden" → Inferentia
+- "Decide the instance type from data" → Inference Recommender
+- "Deploy a new model with zero downtime" → new EndpointConfig + update_endpoint (Blue/Green)
+
+## Summary of Pitfalls That Trigger Wrong Answers
+
+These are the wrong choices that appear repeatedly in the exam.
+
+| Plausible wrong answer | Why it is wrong | Correct choice |
+|---------------|-----------|-------------|
+| Attach a GPU (p4d) to XGBoost inference to save cost | Tree models gain almost nothing from GPU parallelization | CPU (m5/c5) |
+| Scale a real-time endpoint in to 0 instances | Real-time enforces a minimum of 1 instance | Serverless / asynchronous |
+| Choose serverless every time just because "cut cost" is mentioned | With steady, high traffic it actually costs more | Check the traffic pattern first |
+| Deploy a GPU deep learning model as serverless | Serverless does not support GPUs | Real-time (GPU) / asynchronous |
+| Delete and recreate the endpoint to deploy a new model | The address breaks and downtime occurs | New Config + `update_endpoint` |
+| Validate the new model with a 50:50 A/B | Half of the users actually receive the new model's responses | Shadow testing |
+| Consolidate models of different frameworks into an MME | An MME has only one container | MCE |
+| Batch is slow, so keep adding instances | It has no effect if the input cannot be split | Input sharding + `split_type` |
+| Process a 200MB, 5-minute request in real-time | Exceeds the 6MB / 60-second limit | Asynchronous inference |
+
+## Symptom → Cause → Action Summary
+
+| Symptom | Cause | Action |
+|------|------|------|
+| Normal on regular days but latency spikes only during events | Auto Scaling cannot keep up with startup time | Scheduled scaling / raise `MinCapacity` |
+| Inference cost is high even during idle hours | Real-time endpoint running around the clock | Move to serverless / asynchronous / batch |
+| Hundreds of models and the endpoint cost explodes | An endpoint was launched for every model | Consolidate with MME |
+| Deep learning inference GPU cost is unaffordable | General-purpose GPU unit price | Inferentia (inf1/inf2) + Neuron compile |
+| Production accuracy is lower than training performance | Preprocessing mismatch (training-serving skew) | Bundle preprocessing with an inference pipeline |
+| Only the first call is slow (serverless, MME) | Cold start / cold load | Provisioned Concurrency, increase memory |
+| Error rate rises after deployment | New model regression | Canary or linear shifting + alarm-based automatic rollback |
+
+## One-Line Checklist
+
+- [ ] Can you state the payload and processing time limits of the four options (6MB, 4MB, 1GB / 60 seconds, 60 seconds, 60 minutes)?
+- [ ] Can you explain "real-time cannot be reduced to 0" along with the reason?
+- [ ] Can you state the zero-downtime deployment procedure (new Config → `update_endpoint`) in order?
+- [ ] Can you distinguish A/B from shadow by "whether the response goes to users"?
+- [ ] Can you tell MME, MCE, and pipeline apart by their invocation parameter names?
+- [ ] Do you remember that the first thing to check when batch is slow is "whether the input is splittable"?
+
+Next week we move to the stage of operating the deployed models: orchestration and monitoring.
+
+## 📖 Glossary
+
+- **Request pattern**: The character of how often and in what size traffic arrives. It is the first criterion for choosing an inference option.
+- **Always-on cost**: The fixed cost that keeps accruing because instances stay running even when there are no requests.
+- **Scale to zero**: Shrinking instances all the way to 0 when there are no requests, which eliminates the cost.
+- **Blue/Green deployment**: A zero-downtime replacement in which the new version is launched separately, traffic is moved over once it is confirmed healthy, and the old version is taken down.
+- **Canary deployment**: Sending only a very small amount of traffic to the new version first, then widening it if there are no problems.
+- **Shadow testing**: A method of validating a new model without affecting users by sending it a copy of real requests while discarding its responses.
+- **MME / MCE**: Placing "same container + many models" and "different containers + few models," respectively, on one endpoint.
+- **Inference pipeline**: A structure that chains preprocessing → inference → postprocessing containers in order and handles them in a single call.
+- **training-serving skew**: The problem where preprocessing differs between training and inference, so performance silently degrades.
+- **Scheduled scaling**: Scaling that raises capacity in advance at set times. Used for predictable surges.
 
 ## 📝 Practice Questions
 

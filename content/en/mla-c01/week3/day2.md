@@ -1,114 +1,212 @@
 # Day 2 - SageMaker Data Wrangler: No-Code Data Preparation
 
-Doing scaling, encoding, and missing value handling from yesterday's lessons in pandas every time is tedious and makes transformation sequences hard to reproduce. SageMaker Data Wrangler bundles this entire flow into a visual interface. Load data, see distribution visually, stack transformations by clicking, and export to the training pipeline—all on one screen.
+## 📌 Key Takeaways
 
-In the MLA-C01 exam, Data Wrangler often appears as the answer to scenarios needing "fast visual exploratory analysis and transformation." Today we cover four stages: connecting data sources, transforming, analyzing, and exporting.
+- Data Wrangler is a data preparation tool that bundles four stages into a GUI: **connect source → transform → analyze → export**.
+- The core concept is the **flow** — it leaves the transformation steps as a DAG with a fixed order, which guarantees reproducibility.
+- The data you see on screen is a **sample**. Applying to the full data is done by the exported **Processing Job**.
+- **Data Quality report, Quick Model, and Target Leakage analysis** catch data problems before training.
+- Exporting to Pipelines or Feature Store lets training and inference use the same transformation, preventing **training/serving skew**.
 
-## What is Data Wrangler?
+## What Is Data Wrangler
 
-Data Wrangler is a data preparation tool running inside SageMaker Studio. The core concept is **flow**. A flow is a directed acyclic graph (DAG) connecting data source → transformation stages → output, where each node is one data processing step. When users add transformations in the GUI, Data Wrangler internally generates corresponding code (pandas/PySpark).
+Hand-coding yesterday's scaling, encoding, and missing value handling in pandas every time takes a long time, and it is hard to reproduce the order of the transformations you applied. Data Wrangler is a built-in SageMaker Studio tool that bundles this whole flow into a visual interface.
+
+The core is the concept of a **flow**. A flow is a directed graph (DAG) running from the data source → transformation steps → output, in which each node is one data processing step. When the user adds a transformation in the GUI, Data Wrangler internally generates the corresponding code (pandas/PySpark).
 
 ```
-[S3 Data Source]
+[S3 data source]
       |
       v
-[Handle Missing: median]
+[Missing value imputation: median]
       |
       v
-[One-Hot Encode: category]
+[One-Hot encoding: category]
       |
       v
-[StandardScale: numeric]
+[StandardScaler: numeric]
       |
       v
 [Output: Feature Store / S3 / Pipeline]
 ```
 
-It provides 300+ built-in transformations, solving most common preprocessing without code. Custom logic can be added as Python (pandas), PySpark, or SQL code blocks.
+It provides more than 300 built-in transformations, so most common preprocessing is solved without code. If you need custom logic, you can also insert Python (pandas), PySpark, or SQL code blocks directly.
 
-> 💡 **Related Theory**: Data Wrangler's flow visualizes data engineering ETL/ELT pipelines. Each transformation is idempotent, and the order is fixed in the DAG, so the same input with the same transformations produces the same output. This reproducibility is ML pipeline's core value. Hand-coded notebooks have results that vary by cell execution order; flows have order fixed in the graph.
+**Difference from hand-coding in a notebook**
+
+| Category | Hand-coding in a notebook | Data Wrangler flow |
+|------|-------------|-------------------|
+| Transformation order | Depends on the cell execution order | Fixed in the graph |
+| Reproducibility | Low (who ran it in what order?) | High (the flow file is the blueprint) |
+| Exploration speed | Needs time to write code | Instant with clicks |
+| Large-scale application | Implement distributed processing yourself | Processing Job export |
+| Quality checks | Write the code yourself | Automatic reports provided |
+
+A Data Wrangler flow is a visualization of a data engineering ETL/ELT pipeline. Because each transformation is idempotent and expressed as a DAG with a clear order, applying the same transformation to the same input always produces the same output. This reproducibility is the core value of an ML pipeline. A hand-coded notebook gives different results depending on the cell execution order, but in a flow the order is fixed in the graph.
 
 ## Connecting Various Data Sources
 
-Data Wrangler ingests directly from multiple sources. Exams often ask "where can data be loaded?"
+Data Wrangler imports data directly from several sources. The exam has questions asking "where can data be loaded from."
 
-| Data Source | Purpose |
-|-----------|------|
-| **Amazon S3** | Most common. CSV, Parquet, JSON, etc. |
-| **Amazon Athena** | Query data on S3 via SQL, load results |
-| **Amazon Redshift** | Directly from data warehouse |
-| **Snowflake / Databricks** | External data platforms |
-| **SageMaker Feature Store** | Reuse already-created features |
+| Data source | Use | Strength |
+|-----------|------|------|
+| **Amazon S3** | Most common. CSV, Parquet, JSON, etc. | Directly tied to the data lake |
+| **Amazon Athena** | Queries data on S3 with SQL and loads the result | Only the needed part via `WHERE` |
+| **Amazon Redshift** | Directly from the data warehouse | Already-refined structured data |
+| **Snowflake / Databricks** | External data platforms | Multi-platform environments |
+| **SageMaker Feature Store** | Reuse features already built | Leverage assets shared across teams |
 
-Athena integration is especially useful. Instead of downloading an entire massive S3 dataset, use SQL `WHERE` clauses to sample only needed portions. With large data, Data Wrangler works on samples and applies transformations to the full dataset later in a processing job.
+The Athena integration is especially useful. Without downloading an entire huge S3 dataset, you can sample and load only the needed part with a SQL `WHERE` clause.
 
-> ⚠️ **Gotcha**: Data Wrangler displays **sample data** (e.g., first N rows or random sample). Preview confirms transformations work, but applying to full data requires exporting and running a SageMaker Processing Job. Even if samples look good, full data distribution might differ, so be aware of sample size and method.
+> ⚠️ **Trap**: The data you see in Data Wrangler is by default a **sample** (the top N rows or a random sample). Even if you confirm a transformation in the on-screen preview, to apply it to the actual full data you must export it and run it as a SageMaker Processing Job. Even if it looks fine on the sample, the result can differ if the distribution of the full data is different, so you need to be aware of the sample size and method.
 
-## Transformation
+## Transform
 
-Data Wrangler transformations move yesterday's feature engineering to GUI. Main categories:
+Data Wrangler's transformations are the feature engineering you learned yesterday moved into a GUI.
 
-- **Handle missing**: drop, impute (mean/median/most frequent), add missing flag
-- **Encoding**: One-Hot, Ordinal, categorical handling
-- **Scaling**: standardize, normalize, robust scaler
-- **Numeric transform**: log/sqrt, binning
-- **Text/Date**: string parsing, extract year/month/day from dates
-- **Dimensionality reduction**: PCA
+| Category | Representative transformations | Corresponding feature engineering |
+|---------|----------|------------------|
+| Missing value handling | drop, impute (mean/median/most frequent), missing flag | Imputation strategies |
+| Encoding | One-Hot, Ordinal, categorical handling | Nominal/ordinal encoding |
+| Scaling | standardize, normalize, robust scaler | The three scalers |
+| Numeric transformation | log/square root, binning | Skew correction, binning |
+| Text/date | String parsing, extracting year/month/day from dates | Derived feature creation |
+| Dimensionality reduction | PCA | High-dimensional compression |
+| Domain-specific | Time series resampling, image augmentation, text tokenization | — |
 
 ```python
-# Transformations exported by Data Wrangler convert to code like this (conceptual)
-# Actually, compose via GUI clicks, and generate notebook/script on export
-
-from sagemaker.wrangler.processing import DataWranglerProcessor
-
-# .flow file holds transformation definition; Processing Job applies to full data
+# Data Wrangler transformations are composed by clicking in the GUI
+# and generated as a notebook/script/Processing Job definition on export (concept)
+#
+# The .flow file holds the transformation definition, and a Processing Job applies it to the full data.
+#   flow (blueprint)  →  export  →  Processing Job (runs on the full data)
 ```
 
-Domain-specific transforms exist too: time series resampling, image augmentation, text tokenization.
-
-> 🔍 **Deeper Dive**: Data Wrangler has a **Quick Model** feature that instantly trains an XGBoost model on current transformation results, previewing expected performance and feature importance. This fast-validates "does this transformation actually help model performance?" before full training. Also, **Target Leakage** analysis auto-detects features with leaking target info.
+Data Wrangler has a feature called **Quick Model** that instantly trains a tree-based model on the transformation results so far and shows the expected performance and feature importance in advance. This lets you quickly verify "does this transformation actually help model performance" before full-scale training. It also automatically detects features that leak target information through **Target Leakage** analysis.
 
 ## Analyze
 
-Data understanding is as important as transformation. Data Wrangler provides multiple analysis visualizations with a click.
+As important as transformation is understanding the data. Data Wrangler provides several analysis visualizations with a single click.
 
-- **Data Quality and Insights Report**: Auto-generated report on missing values, duplicates, target leakage, class imbalance, feature importance
-- **Histograms/Scatter plots**: Distribution and correlation
-- **Quick Model**: Instant performance estimate
-- **Bias Report**: SageMaker Clarify integration for bias detection (Day 4)
-- **Multicollinearity**: Check inter-variable multicollinearity
+| Analysis feature | What it tells you | Follow-up action |
+|----------|---------------|-------------|
+| **Data Quality and Insights Report** | Missing values, duplicates, target leakage, class imbalance, feature importance | Grasp the whole picture, then decide priorities |
+| **Histogram/scatter plot** | Distribution and correlation | Decide on log transform and outlier handling |
+| **Quick Model** | Instant performance estimate and feature importance | Drop meaningless features |
+| **Target Leakage** | Features that leak target information | Remove those features |
+| **Bias Report (Clarify integration)** | Bias by sensitive attribute | Re-collect or resample data (Day 4) |
+| **Multicollinearity** | Multicollinearity among variables | Clean up redundant features |
 
-These reports automate "check data dictionary, understand missing mechanisms, detect outliers" from yesterday. The Data Quality report especially helps grasp the full picture early in preparation.
+These reports automate what you learned yesterday: "check the data dictionary, understand the missingness mechanism, detect outliers."
 
-> 📚 **Case Study**: A team building churn prediction included "last login date," but later found this column filled only for churned customers (recorded at churn time). Data Wrangler's Target Leakage analysis caught this feature's abnormally high predictive power, discovering leakage early. Keeping the leaky feature would've given 99% validation accuracy but useless real-world performance.
+One team was building a churn prediction model and included a "last login date" feature, but it turned out that only customers who had churned had this value filled in (it was recorded at the time of churn). Data Wrangler's Target Leakage analysis caught this feature's abnormally high predictive power and uncovered the leakage in advance. Had the leaking feature been left in, offline validation accuracy would have been 99%, but it would have been useless in the live service.
 
 ## Export
 
-After completing a flow, export to various targets. Exams test understanding export options.
+Once the flow is complete, you can export it to several destinations. The exam has questions that distinguish the export options.
 
-| Export Target | Meaning |
-|------------|------|
-| **SageMaker Processing Job** | Execute batch transformation on full data |
-| **SageMaker Feature Store** | Load processed features into Feature Store (Day 3) |
-| **SageMaker Pipelines** | Integrate transformation as pipeline stage |
-| **Python Code / Jupyter Notebook** | Extract transformation logic for reuse |
-| **S3** | Save processing results to S3 |
+| Export target | Meaning | When to choose it |
+|------------|------|------------|
+| **SageMaker Processing Job** | Run a batch job that applies the transformations to the full data | Apply the sample-designed flow to everything |
+| **SageMaker Feature Store** | Load the processed features into the Feature Store (Day 3) | Cross-team reuse, training/inference consistency |
+| **SageMaker Pipelines** | Integrate the transformations as an ML pipeline step | Build an automatic retraining pipeline |
+| **Python code / Jupyter Notebook** | Extract the transformation logic as code for reuse | Integrate into an existing codebase |
+| **S3** | Save the processed result to S3 | Simple result storage |
 
-The key: **Data Wrangler itself is a preview/design tool**, while actual large-scale processing runs via exported Processing Job. The flow (`.flow` file) is the blueprint of transformations; re-running applies the same transformations to new data, guaranteeing reproducibility.
+**Data Wrangler itself is a preview/design tool**, and the actual large-scale processing is carried out by the exported Processing Job. The flow (`.flow` file) is a blueprint holding the transformation definition, and re-running it applies the same transformation to new data too, which guarantees reproducibility.
 
-> 💡 **Related Theory**: The flow → Feature Store → Pipelines sequence implements MLOps's "feature pipeline." Making data prep a version-controlled, re-runnable pipeline step instead of one-off notebook work ensures the same transformations apply at training and inference time (preventing training/serving skew). This connects to Day 3's Feature Store consistency.
+```
+                    ┌──> Processing Job ──> Apply transformations to the full data
+                    │
+[.flow blueprint] ──┼──> Feature Store ───> Training and inference share the same features
+                    │
+                    ├──> Pipelines ───────> Incorporated as an automatic retraining step
+                    │
+                    └──> Python/Notebook ─> Extracted as code and managed directly
+```
+
+The flow from Data Wrangler → Feature Store → Pipelines implements the MLOps "feature pipeline." If you make data preparation not a one-off notebook task but a version-controlled, re-runnable pipeline step, the same transformation is applied at training time and at inference time (preventing training/serving skew). This ties directly to the Feature Store consistency in Day 3.
 
 ## Data Wrangler vs Other Tools
 
-When to choose Data Wrangler is the exam point. **Fast visual exploration and transformation prototyping** = Data Wrangler. But **large-scale distributed ETL** needs AWS Glue (Spark) or EMR better; **pure SQL transformation** = Athena; **already-working code pipeline** = direct SageMaker Processing Job. Data Wrangler's strength is the "exploration and design" stage via GUI, visualization, instant model validation.
+When to choose Data Wrangler is an exam point.
 
-## Summary
+| Requirement | Correct tool | Reason |
+|---------|----------|------|
+| Fast visual exploration and transformation prototyping | **Data Wrangler** | GUI, visualization, instant model validation |
+| Large-scale distributed ETL | AWS Glue (Spark) / EMR | Distributed processing engines are their core job |
+| Pure SQL transformation | Athena (CTAS) | SQL alone is enough |
+| A pipeline already well organized as code | SageMaker Processing Job directly | GUI steps are unnecessary |
+| No-code + data profiling (outside ML) | Glue DataBrew | General-purpose cleaning for analysts |
 
-Remember Data Wrangler in four steps: ① **Connect sources** (S3, Athena, Redshift, Snowflake, Feature Store), ② **Transform** (300+ built-in, custom code possible), ③ **Analyze** (Data Quality report, Quick Model, Target Leakage, Bias), ④ **Export** (Processing Job, Feature Store, Pipelines, code). Screen data is sample; Processing Job applies to full dataset. Flow ensures reproducibility.
+Data Wrangler's strength lies in the "exploration and design" stage: GUI, visualization, and instant model validation.
 
-Next, we explore SageMaker Feature Store for storing, sharing, and consistently serving processed features.
+> ⚠️ **Trap**: If you see the phrase "process hundreds of GB with Data Wrangler," what is exactly happening is **exporting the flow as a Processing Job to process it**. You must distinguish that the Data Wrangler screen itself does not process large volumes.
 
----
+## Managing the Gap Between the Sample and the Full Data
+
+What Data Wrangler handles on screen is a sample. The points where this fact causes problems in practice are well defined.
+
+| What is not visible in the sample | What happens when applied to everything | Prevention |
+|--------------------|---------------------|------|
+| Rare category values | Categories never seen before appear during encoding | `handle_unknown` handling, check the category list |
+| Minority class | Underestimates the degree of imbalance | Check the full class distribution with Athena first |
+| Outliers in a particular period | Scaler statistics change | Sample so that periods are evenly included |
+| Seasonality in the missingness pattern | The imputation strategy goes off | Check the overall missing rate with a separate query |
+
+- With an Athena source, you can use `WHERE` to adjust the period and conditions to build a representative sample.
+- The final judgment is always made from the result of running the full data through a Processing Job.
+
+## Reproducibility Lineage of the Preprocessing Pipeline
+
+```
+[.flow file]        ← Transformation definition (blueprint). Subject to version control
+     │ export
+     v
+[Processing Job]    ← Actually applied to the full data
+     │ output
+     v
+[Feature Store]     ← Store that training and inference read together
+     │
+     └─> [Pipelines] When incorporated as a step, the same transformation is applied automatically at every retraining
+```
+
+The place where this lineage breaks is exactly the place where skew arises.
+
+| How the lineage breaks | Result |
+|------------------|------|
+| The flow is not exported and is moved by hand into a notebook | Order and parameters differ subtly |
+| The inference server implements preprocessing separately | training/serving skew |
+| The transformation definition is not version-controlled | Past models cannot be reproduced |
+| Processing Job results are saved to a temporary path | Cannot trace which data was used for training |
+
+The statement "I preprocessed with Data Wrangler" alone does not guarantee reproducibility. Only when you **export the flow and pin it as a pipeline step** do training and inference use the same transformation.
+
+## One-Line Tool Selection Summary
+
+| Clue in the question | Answer |
+|----------|------|
+| "Without code", "visually", "explore quickly" | Data Wrangler |
+| "Data quality, leakage, and imbalance as an automatic report" | Data Wrangler analysis features |
+| "Actually apply the transformation to hundreds of GB" | Export to a Processing Job |
+| "Make training and inference use the same transformation" | Export to Feature Store / Pipelines |
+| "Large-scale distributed ETL is the core job" | Glue Spark / EMR |
+| "Transform with SQL only" | Athena CTAS |
+
+In the next lesson we look at SageMaker Feature Store, which stores the processed features and serves them in a reusable and consistent way.
+
+## 📖 Glossary
+
+- **Data Wrangler** : A data preparation tool inside SageMaker Studio for loading data and transforming and analyzing it by clicking.
+- **flow** : A graph running from the source through the transformations to the output. It fixes the transformation order to create reproducibility.
+- **DAG (directed acyclic graph)** : A task graph whose arrows flow in only one direction and never loop back.
+- **Idempotent** : The property that applying the same processing to the same input any number of times gives the same result.
+- **Sample** : A subset of rows rather than the whole. The Data Wrangler screen shows a sample by default.
+- **Processing Job** : A SageMaker batch job that applies preprocessing to the full data. The actual executor of a flow.
+- **Data Quality and Insights Report** : A report that automatically extracts missing values, duplicates, leakage, imbalance, and feature importance.
+- **Quick Model** : A feature that instantly trains a model on the current transformation state and shows performance and feature importance in advance.
+- **Target Leakage analysis** : A diagnosis that finds features into which target information has leaked, by their abnormally high predictive power.
+- **Feature importance** : The degree to which each feature contributed to the prediction.
 
 ## 📝 Practice Questions
 

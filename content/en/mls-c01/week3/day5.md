@@ -1,24 +1,32 @@
 # Day 5 - Week 3 Comprehensive Review: Cleaning and Feature Engineering
 
-This week, we covered the first half of EDA—**data cleaning** and **feature engineering**. Both are central to MLS-C01 Domain 2 (Exploratory Data Analysis) and are the stages most critical to model performance in practice. Today, we knit together four days of content into one workflow, review it holistically, and clarify the decision points that confuse exam takers most.
+## 📌 Key Takeaways
 
-## One-Page Summary: Cleaning → Feature Engineering → Tools
+- Week 3 covered the first half of EDA — **data cleaning** and **feature engineering**. This is the core of MLS-C01 Domain 2.
+- One principle runs through the whole week: **prevent data leakage**. Every transformation is **fit on the training set only**; everything else just gets `transform`.
+- The second principle is **preprocessing matched to the model**. Linear models need scaling, one-hot encoding and binning; tree-based models mostly do not.
+- The basics: missingness by mechanism (MCAR/MAR/MNAR), outliers by robust statistics (IQR), and duplicates cleaned before the split.
+- Tool mapping: **visual preparation = Data Wrangler**, **large-scale code-based processing = Processing Job**, **feature reuse and consistency = Feature Store**.
+
+## Flow Map: Cleaning → Feature Engineering → Tools
+
+This week covered the first half of EDA, **data cleaning** and **feature engineering**. Both are central to MLS-C01 Domain 2 (Exploratory Data Analysis) and are the stages that most determine model performance in practice.
 
 ```text
 [Raw Data]
    │
    ├─ 1) Cleaning (Day 1)
-   │     Missing values: Assess MCAR/MAR/MNAR → Impute (mean/median/KNN/model)
-   │     Outliers: Detect via IQR/Z-score → Delete/clip/transform/keep
-   │     Duplicates & errors: Clean before split (prevent leakage)
+   │     Missing values: judge MCAR/MAR/MNAR → impute (mean/median/KNN/model)
+   │     Outliers: detect with IQR/Z-score → delete/clip/transform/keep
+   │     Duplicates & errors: clean before the split (prevent leakage)
    │
    ├─ 2) Feature Engineering (Day 2–3)
-   │     Scaling: Normalization/Standardization/RobustScaler (trees unnecessary)
-   │     Encoding: Label/One-Hot/Target (decide by order & cardinality)
-   │     Binning: Nonlinearity & interpretability ↔ information loss
-   │     Dates: Decompose components + sin/cos
+   │     Scaling: normalization/standardization/RobustScaler (not needed for trees)
+   │     Encoding: Label/One-Hot/Target (decided by order and cardinality)
+   │     Binning: nonlinearity and interpretability ↔ information loss
+   │     Dates: component decomposition + sin/cos
    │     Text: BoW → TF-IDF → embeddings
-   │     High-cardinality: Target/hashing/embeddings
+   │     High cardinality: target/hashing/embeddings
    │
    └─ 3) AWS Tools (Day 4)
          Data Wrangler (visual) → Processing Job (scale) → Feature Store (reuse)
@@ -26,72 +34,173 @@ This week, we covered the first half of EDA—**data cleaning** and **feature en
 
 ## Key Decision Points
 
-### Missing Values: How to Impute?
+### Missing Values: How Should You Impute?
 
-| Scenario | Recommendation |
-|------|------|
+| Situation | Recommendation |
+|---|---|
 | Right-skewed numeric | Median imputation |
 | Symmetric numeric | Mean imputation |
 | Categorical | Mode imputation |
-| Strong inter-variable correlation | KNN or model-based |
-| Missing value itself is a signal (MNAR) | Add indicator variable |
+| Strong correlation between variables | KNN or model-based |
+| The missingness itself is a signal (MNAR) | Add an indicator variable |
+| Missing rate is overwhelmingly high | Drop the column or keep only the flag |
 
-### Scaling: Algorithm-Specific Requirement
+### Scaling: Whether It Is Needed, by Algorithm
 
-- **Required**: KNN, K-means, linear/logistic regression, SVM, neural networks, PCA, Ridge/Lasso
-- **Unnecessary**: Decision Tree, Random Forest, XGBoost, LightGBM (tree-based)
+- **Needed**: KNN, K-means, linear/logistic regression, SVM, neural networks, PCA, Ridge/Lasso
+- **Not needed**: Decision Tree, Random Forest, XGBoost, LightGBM (tree-based)
 - **With many outliers**: RobustScaler
 
-### Encoding: Decide by Order and Cardinality
+### Encoding: Decided by Order and Cardinality
 
 ```text
 Is there an order?  ── Yes ──→ Ordinal/Label Encoding
         │
-        └─ No ──→ Many unique values?
-                        ├─ Few → One-Hot
+        └─ No ──→ Are there many unique values?
+                        ├─ Few  → One-Hot
                         └─ Many → Target/Frequency/Hashing/Embedding
 ```
 
-> 💡 **Key Theory**: One principle threads through this entire week: **preventing data leakage**. All transformations—imputation statistics (mean, median), scaler parameters (min/max/μ/σ), target encoding statistics, text vectorizer vocabulary—must **fit only on training data**; validation and test sets get only `transform`. Duplicate removal must happen before split; time-series features must respect point-in-time. Leakage inflates offline performance unrealistically and collapses in production—it's a perennial trap in exams and real work alike.
+### Outliers: Detection and Treatment Are Separate
+
+| Judgment | Treatment |
+|---|---|
+| Obvious data-entry error | Delete |
+| You only want to reduce the extreme influence | Winsorizing (clipping) |
+| Right-skewed, long-tailed distribution | Log transform |
+| The outlier is the target (fraud, failure) | Keep it; approach as anomaly detection |
+
+> 💡 **Concept**: One principle runs through this entire week: **preventing data leakage**. Imputation statistics (mean, median), scaler parameters (min/max/μ/σ), target-encoding statistics, the vocabulary of a text vectorizer — every one of these transformations must be **fit on the training data only**, and validation and test data get only `transform`. Duplicate removal belongs before the split, and time-series features must respect point-in-time. Leakage inflates offline performance unrealistically and then collapses in production; it is a trap in both exams and real work.
 
 ## Confusing Pairs Compared
 
-| Pair | Key Difference |
-|------|------|
-| Mean vs median imputation | Median robust to outliers and skew |
-| Z-score vs IQR | IQR is robust without distribution assumptions |
-| Normalization vs standardization | Normalization: fixed [0,1] range; standardization: mean 0, variance 1; outliers: use RobustScaler |
-| Label vs One-Hot | Ordinal → Label; nominal → One-Hot |
+| Pair | Key difference |
+|---|---|
+| Mean vs median imputation | Median is robust to outliers and skew |
+| Z-score vs IQR | IQR is robust and needs no distribution assumption |
+| Normalization vs standardization | Normalization gives a fixed [0,1] range; standardization gives mean 0 and variance 1; with outliers use RobustScaler |
+| Label vs One-Hot | Ordinal → Label, nominal → One-Hot |
+| One-Hot vs Target encoding | Safe for low cardinality vs compresses high cardinality (watch for leakage) |
+| Target vs Hashing | Uses target information (leakage) vs no dictionary needed (collisions) |
 | BoW vs TF-IDF | TF-IDF suppresses common words |
-| Online vs Offline Store | Online: ms single-record inference; Offline: bulk training |
+| TF-IDF vs embeddings | Treats words independently vs captures semantic similarity |
+| Equal-width vs equal-frequency binning | Even value ranges vs even sample counts |
+| Online vs Offline Store | Millisecond single-record inference vs bulk training reads |
 | Data Wrangler vs Processing Job | Visual EDA vs code-based large-scale processing |
+| Delete vs winsorizing | Discard the row vs cap it at the boundary value and keep it |
 
-> 💡 **Key Theory**: Feature engineering and model choice are inseparable. With identical data, **linear models** need scaling, binning, and one-hot to explicitly capture nonlinearity and scale; **tree/boosting models** don't need scaling and gain little from binning/one-hot because trees capture nonlinearity via splits. The answer to "which preprocessing is correct?" depends on "which model will we use?" Exam questions often exploit this—using the algorithm as a clue to narrow the preprocessing answer.
+> 💡 **Concept**: Feature engineering and model selection cannot be separated. With the same data, a **linear model** needs scaling, binning and one-hot encoding to capture nonlinearity and scale explicitly, while a **tree or boosting model** needs no scaling and gains little from binning or one-hot (because trees capture nonlinearity through splits). The answer to "Which preprocessing is right?" depends on "Which model will you use?" The exam often exploits this, using the algorithm as a clue to narrow down the correct preprocessing.
 
-## Self-Check Questions
+## Typical Paths Where Leakage Occurs
 
-Try to answer these mentally:
+Most questions that ask you to pick the "wrong procedure" are on this list.
 
-1. For right-skewed income with missing values using simple imputation, mean or median? → **Median**
-2. Is feature scaling needed for XGBoost? → **No**
-3. Why is one-hot inappropriate for postal codes (thousands of values)? → **Dimensionality explosion**
-4. What makes hour 23 and hour 0 adjacent? → **Sin/cos transform**
-5. What problem arises when fitting a scaler to all data? → **Data leakage**
-6. For real-time single-record inference, which Feature Store? → **Online**
+| Wrong procedure | Why it is leakage | Correct approach |
+|---|---|---|
+| Compute the mean on all data, then split | Test statistics get mixed into training | Split first, fit only on the training set |
+| Remove duplicates after the split | The same record is scattered across both sets | Clean by key before the split |
+| Target-encode using all data | Answer information enters the feature | K-fold target encoding / smoothing |
+| Split a time series randomly | Past is predicted using future data | Split chronologically |
+| Use full-period aggregate features | Includes values after the prediction time | Point-in-time aggregation |
+| Vocabulary that includes test documents | Test vocabulary is reflected in training | Fit the vectorizer on the training set only |
+| Feature selection on all data | The selection itself sees the test set | Select within the training set |
+
+## Week 3 Technique and Tool Map
+
+| Role | Technique / tool | One line |
+|---|---|---|
+| Missing-value diagnosis | MCAR/MAR/MNAR | Why it is missing determines the treatment |
+| Missing-value imputation | Mean, median, mode, KNN, MICE | Chosen by distribution and inter-variable relationships |
+| Outlier detection | IQR, Z-score, Isolation Forest | Robust statistics are the default |
+| Outlier treatment | Delete, clip, log transform, keep | Domain context decides |
+| Scaling | Standard, MinMax, Robust, MaxAbs | Not needed for tree-based models |
+| Encoding | Label, One-Hot, Ordinal, Target, Frequency | Decided by order and cardinality |
+| High cardinality | Hashing, Embedding | No dictionary needed (collisions) / captures meaning |
+| Binning | Equal-width, equal-frequency, domain binning | Nonlinearity ↔ information loss |
+| Dates | Component decomposition, sin/cos, lag/rolling | Watch for point-in-time leakage |
+| Text | BoW, TF-IDF, N-gram, embeddings | Steps of expressiveness and cost |
+| NLP services | Amazon Comprehend, BlazingText | Managed extraction / built-in embeddings |
+| Visual preparation | SageMaker Data Wrangler | 300+ transforms, quality reports, flow export |
+| Large-scale processing | SageMaker Processing Job | Distributed container execution, auto-termination |
+| Feature reuse | SageMaker Feature Store | Online/Offline, point-in-time |
+| Bias diagnosis | SageMaker Clarify | Data and model bias, and explainability |
+
+## Week 3 Wrong-Answer Notes
+
+- **Fitting the scaler or imputer on all data** — the most common leakage. Fit on the training set only.
+- **Choosing scaling as the answer for a tree model** — trees are invariant to monotonic transformations.
+- **Label Encoding for nominal data** — it creates an order that does not exist and misleads linear models.
+- **One-Hot for high cardinality** — dimensionality explosion. Look at target encoding, hashing and embeddings.
+- **Removing outliers unconditionally** — in fraud and failure detection, they are the correct signal.
+- **Removing duplicates after the split** — leakage has already happened.
+- **Splitting a time series randomly** — the future ends up predicting the past.
+- **Full-period aggregate features** — information from after the prediction time gets mixed in.
+- **A vocabulary that includes test documents** — the vectorizer too must be fit on the training set only.
+- **Confusing Online and Offline Store** — single-record low latency is Online; bulk training is Offline.
+
+## Self-Check
+
+Answer these in your head.
+
+1. If you simply impute missing values in right-skewed income, mean or median? → **Median**
+2. Does XGBoost need feature scaling? → **No**
+3. Why is one-hot unsuitable for postal codes (thousands of values)? → **Dimensionality explosion**
+4. What makes 23:00 and 0:00 adjacent? → **Sine/cosine transform**
+5. What happens if you fit the scaler on all data? → **Data leakage**
+6. Which Feature Store serves real-time single-record inference lookups? → **Online**
+7. How do you detect outliers without distribution assumptions? → **IQR**
+8. What about extreme transaction amounts in fraud detection? → **Do not remove them (they are the signal)**
+9. How do you handle a streaming categorical feature with fixed memory and no dictionary? → **Feature Hashing**
+10. Which text representation reduces the influence of common words? → **TF-IDF**
+11. When do you clean user-level duplicates? → **Before the split**
+12. Which service keeps training and inference feature definitions consistent? → **Feature Store**
+
+## Question Clue → Answer Mapping
+
+| Phrase in the question | What to recall immediately |
+|---|---|
+| "Right-skewed distribution" | Median imputation, log transform, RobustScaler |
+| "Normal distribution cannot be assumed" | IQR-based outlier detection |
+| "Whether a value is missing is itself meaningful" | Add an indicator variable (MNAR) |
+| "Uses XGBoost / Random Forest" | Scaling options are usually wrong |
+| "KNN / SVM / neural network / PCA" | Scaling is required |
+| "Ordered grades" | Ordinal Encoding |
+| "Unordered colors or regions" | One-Hot Encoding |
+| "Thousands to millions of unique values" | Target / Hashing / Embedding |
+| "New categories keep appearing in production" | Feature Hashing |
+| "23:00 and 0:00 should be close" | sin/cos transform |
+| "Want to reduce the influence of common words" | TF-IDF |
+| "Want to group words with similar meanings" | Embeddings |
+| "Extreme values in fraud detection" | Do not remove them |
+| "No-code, quick preparation and diagnosis" | Data Wrangler |
+| "Large-scale distributed processing with custom code" | Processing Job |
+| "Consistent training and inference feature definitions" | Feature Store |
+| "Millisecond single-record lookup" | Feature Store Online |
+| "Only values as of the prediction time" | point-in-time lookup |
 
 ## Exam Tips
 
-- If the problem names an **algorithm**, preprocessing options narrow (tree → scaling likely wrong).
-- "Millions of unique values" = one-hot is wrong → think target encoding, hashing, or embeddings.
-- "No-code/visual/quick prep" = Data Wrangler; "large-scale custom code" = Processing Job.
+- When the question names an **algorithm**, the preprocessing options narrow (tree → scaling is usually wrong).
+- "Millions of unique values" = one-hot is wrong → think target encoding, hashing and embeddings.
+- "No-code / visual / quick preparation" = Data Wrangler; "large-scale custom code" = Processing Job.
 - "Training-inference consistency," "feature reuse," "single-record low-latency lookup" = Feature Store.
-- Any preprocessing that violates the **train fit → test transform** rule is nearly always wrong.
+- Preprocessing that violates the **fit on training → transform on test** rule is wrong.
+- An option that says "remove all outliers" is wrong in an anomaly-detection context.
 
-## Summary
+Next week (Week 4) covers the second half of EDA — data visualization, distribution and correlation analysis, and dimensionality reduction (PCA), the techniques for analysis and drawing insights.
 
-Week 3 transformed "dirty raw data" into "trusted features that models can learn from." Cleaning (missing, outliers, duplicates), feature engineering (scaling, encoding, binning, dates, text, high-cardinality), and SageMaker tools for scale—these form a unified workflow. Two principles run through all: **leakage prevention** and **choosing preprocessing to match your model**.
+## 📖 Glossary
 
-Next week (Week 4) covers the second half of EDA: data visualization, distribution and correlation analysis, dimensionality reduction (PCA), and other analytical and insight-generating techniques.
+- **EDA (Exploratory Data Analysis)**: The stage before modeling in which you examine the data's distributions, missing values, anomalies and relationships.
+- **MCAR / MAR / MNAR**: Missing completely at random / missingness that depends on observed variables / missingness that depends on the value itself.
+- **Imputation**: Filling in missing values with some value.
+- **IQR (interquartile range)**: Q3 − Q1. A robust criterion for setting outlier boundaries without distribution assumptions.
+- **Standardization / normalization**: Rescaling to mean 0 and variance 1 / squeezing into the [0,1] range.
+- **Cardinality**: The number of unique values in a categorical variable. Thousands of values means high cardinality.
+- **Target Encoding**: Encoding that replaces a category with the target mean of that category. Watch for leakage.
+- **TF-IDF**: A text representation that multiplies term frequency by a document-rarity weight, suppressing common words.
+- **Data leakage**: An accident in which information that would not have been known at training time leaks into the model.
+- **point-in-time**: The principle of using only values that were actually knowable at the prediction time.
 
 ---
 

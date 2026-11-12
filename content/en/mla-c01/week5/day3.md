@@ -1,28 +1,44 @@
 # Day 3 - Debugging and Profiling: SageMaker Debugger and Profiler
 
-Training job runs but loss doesn't decrease, or you rented expensive GPUs but only use 30% capacity—you need to look inside training to see what's happening. SageMaker Debugger and Profiler collect and analyze tensors and system resources in real time, telling you "why it's not working" and "where it's slow".
+## 📌 Key Takeaways
 
-In the MLA-C01 exam, this topic appears in scenarios like "auto-detect vanishing/exploding gradients", "find why GPU util is low", "auto-stop when training diverges". Today we distinguish two axes: Debugger (model internals) and Profiler (system resources).
+- **Debugger = model internals (tensors)**, **Profiler = system resources**. If the symptom is training quality, use Debugger; if it is speed or cost, use Profiler.
+- Debugger saves tensors to S3 and detects anomalies with **built-in rules** (vanishing_gradient, exploding_tensor, loss_not_decreasing, overfit, etc.).
+- **Detection ≠ automatic stop** — you must attach an **action** such as `StopTraining` to the rule to block cost. An easy trap.
+- Profiler finds low GPU utilization, data loading, and CPU bottlenecks. A GPU sitting idle is usually a problem of the **data pipeline, not the model**.
+- Overall metrics, logs, and alarms are handled by **CloudWatch**, and TensorBoard handles visualizing the training curves.
 
-## Debugger and Profiler Role Split
+## Separating the Roles of Debugger and Profiler
 
-First clarify their concerns:
+If the loss does not decrease, or the utilization of an expensively rented GPU stays at 30%, you need to look inside the training. First, clearly divide the concerns of the two tools.
 
-| Distinction | SageMaker Debugger | SageMaker Profiler |
-|---|---|---|
-| Observes | Model internal tensors (gradients, weights, loss, activations) | System resources (CPU/GPU util, memory, I/O) |
-| Answers Question | "Why is model training wrong?" | "Why slow/inefficient?" |
-| Typical Detection | Vanishing/exploding gradient, overfitting, weight not updating | Low GPU util, data loading bottleneck, CPU bottleneck |
-| Mechanism | Store tensors periodically to S3, evaluate rules | Collect·analyze system/framework metrics |
-| Auto Action | Alert/early stop on rule violation | Bottleneck reports·recommendations |
+| Aspect | SageMaker Debugger | SageMaker Profiler |
+|------|-------------------|-------------------|
+| What it looks at | Model internal tensors (gradients, weights, loss, activations) | System resources (CPU/GPU utilization, memory, I/O) |
+| Question it answers | "Why is the model being trained wrong?" | "Why is it slow/inefficient?" |
+| Typical detections | Vanishing/exploding gradients, overfitting, weights not updating | Low GPU utilization, data loading bottleneck, CPU bottleneck |
+| How it works | Periodically saves tensors to S3, then evaluates rules | Collects and analyzes system and framework metrics |
+| Automatic action | Notification/early stop (action) when a rule is violated | Bottleneck report and recommendations |
 
-Core intuition: **Debugger sees "model is wrong", Profiler sees "resources wasted"**. In exams, "gradients became 0/exploded"—model quality symptoms → Debugger; "GPU idle/data loading slow"—resource symptoms → Profiler.
+- Core intuition: **Debugger sees "the model is wrong," Profiler sees "resources are being wasted."**
+- **Training-quality** symptoms like "the gradient went to 0/exploded" → Debugger.
+- **Resource** symptoms like "the GPU is idle/data loading is slow" → Profiler.
 
-> 💡 **Related Theory**: This split mirrors two layers of observability. Debugger watches the "mathematical process" (model)'s internal state (tensors)—vanishing gradients stop learning, exploding ones cause divergence. Profiler watches the "physical resources" that process runs on—is GPU waiting for data idle, is preprocessing locking CPU? Viewing both layers lets you solve "why training fails" and "why expensive" simultaneously.
+```text
+First classify the symptom by layer
+
+  Loss/accuracy looks odd              → model layer      → Debugger (tensors)
+        │
+  It trains but is slow/expensive      → resource layer   → Profiler (GPU/CPU/IO)
+        │
+  Want job status and overall trends   → operations layer → CloudWatch (metrics, logs, alarms)
+```
+
+This separation corresponds to two layers of observability. Debugger looks at the internal state (tensors) of the "mathematical process" that is the model — if gradients vanish, training stops, and if they explode, it diverges. Profiler looks at the usage pattern of the "physical resources" on which that process runs — whether the GPU sits idle waiting for data, or preprocessing is tying up the CPU. You must look at both layers together to solve "why isn't it learning" and "why is it expensive" at the same time.
 
 ## SageMaker Debugger: See Inside the Model
 
-Debugger periodically saves tensors (gradients, weights, loss, etc.) to S3 during training and detects anomalies using pre-defined **built-in rules**.
+Debugger periodically saves tensors (gradients, weights, loss, etc.) to S3 during training and detects anomalies with predefined **built-in rules**.
 
 ```python
 from sagemaker.debugger import Rule, rule_configs, DebuggerHookConfig
@@ -32,10 +48,10 @@ estimator = PyTorch(
     instance_type='ml.g5.xlarge', instance_count=1,
     framework_version='2.0', py_version='py310',
     rules=[
-        Rule.sagemaker(rule_configs.vanishing_gradient()),   # Gradient vanishing
-        Rule.sagemaker(rule_configs.exploding_tensor()),     # Tensor explosion
-        Rule.sagemaker(rule_configs.overfit()),              # Overfitting
-        Rule.sagemaker(rule_configs.loss_not_decreasing())   # Loss stalled
+        Rule.sagemaker(rule_configs.vanishing_gradient()),   # vanishing gradient
+        Rule.sagemaker(rule_configs.exploding_tensor()),     # exploding tensor
+        Rule.sagemaker(rule_configs.overfit()),              # overfitting
+        Rule.sagemaker(rule_configs.loss_not_decreasing())   # loss stalled
     ],
     debugger_hook_config=DebuggerHookConfig(
         s3_output_path='s3://my-bucket/debug-tensors/'
@@ -43,24 +59,46 @@ estimator = PyTorch(
 )
 ```
 
-Frequently appearing built-in rules:
+Memorize the built-in rules grouped as "what it sees → what to suspect → what to do."
 
-- `vanishing_gradient` / `exploding_tensor`: Gradient vanishing·explosion
-- `loss_not_decreasing`: Loss didn't decrease over certain steps
-- `overfit` / `overtraining`: Validation loss worsening (overfitting signal)
-- `dead_relu` / `weight_update_ratio`: Dead neurons, weight update ratio anomaly
+| Built-in rule | What it detects | Cause to suspect | First action |
+|-----------|-----------|-----------|---------|
+| `vanishing_gradient` | Gradients converge to 0 | Deep layers with an unsuitable activation function/initialization | Replace the activation function, add normalization layers, change initialization |
+| `exploding_tensor` | Tensor values diverge | Learning rate too large, missing scaling | Lower the learning rate, gradient clipping, normalize inputs |
+| `loss_not_decreasing` | Loss stalls for a number of steps | Unsuitable learning rate, data/label problem | Adjust the learning rate, check the data, then **stop early** |
+| `overfit` / `overtraining` | Only the validation loss worsens | Overfitting | Regularization, augmentation, early stopping |
+| `dead_relu` | Too high a ratio of dead neurons | Activation function, initialization, learning rate | Change the activation function, lower the learning rate |
+| `weight_update_ratio` | Weight update magnitude is abnormal | Learning rate is too large or too small | Readjust the learning rate |
+| `class_imbalance` | Class distribution is skewed | Bias in data collection | Resampling, class weights |
 
-> ⚠️ **Pitfall**: Rules fundamentally "detect and report" only. To auto-stop training when a rule violates, you must attach separate **actions**. For example, to prevent gradient explosion from running training to completion wasting cost, attach `StopTraining` action. The key is not mistaking "detection = auto-stop".
+You can also choose the tensors to collect yourself and adjust the save interval. Saving tensors densely makes the diagnosis more precise, but increases S3 writes and training overhead.
+
+```python
+from sagemaker.debugger import DebuggerHookConfig, CollectionConfig
+
+debugger_hook_config = DebuggerHookConfig(
+    s3_output_path='s3://my-bucket/debug-tensors/',
+    collection_configs=[
+        CollectionConfig(name='losses',    parameters={'save_interval': '50'}),
+        CollectionConfig(name='gradients', parameters={'save_interval': '100'}),
+        CollectionConfig(name='weights',   parameters={'save_interval': '500'}),
+    ]
+)
+```
+
+**Concept: rules run outside the training.** Debugger built-in rules run not inside the training container but as a **separate evaluation job**. Training only writes tensors to S3, and the rules read those tensors to judge. Thanks to this, rule evaluation does not eat much into training speed, but remember as well that there is **a slight delay in the judgment** and a separate resource cost comes with it.
+
+> ⚠️ **Pitfall**: By default, a rule only does "detect and report." To stop training automatically when a rule is violated, you must connect an **action** separately. For example, to prevent the accident of training running to the end and just burning cost even though the gradients are exploding, you attach a `StopTraining` action. The key is not to mistake "detection = automatic stop."
 
 ```python
 from sagemaker.debugger import Rule, rule_configs
 from sagemaker.debugger import CollectionConfig
 
-# Auto-stop + alert on rule violation
+# Stop training automatically + notify when the rule is violated
 rule = Rule.sagemaker(
     rule_configs.loss_not_decreasing(),
     actions=rule_configs.ActionList(
-        rule_configs.StopTraining(),          # Stop training (save cost)
+        rule_configs.StopTraining(),          # stop training (save cost)
         rule_configs.Email("ml-team@example.com")
     )
 )
@@ -68,7 +106,7 @@ rule = Rule.sagemaker(
 
 ## SageMaker Profiler: See Resources
 
-Profiler collects system resources (CPU/GPU util, GPU memory, network/I/O) and framework activity during training, finding bottlenecks and reporting. Renting expensive GPU instances with low utilization wastes money proportionally, directly linked to cost optimization.
+Profiler collects system resources (CPU and GPU utilization, GPU memory, network and I/O) and framework behavior during training, finds bottlenecks, and reports them. If you rent an expensive GPU instance and its utilization is low, you are throwing money away by that much, so it is directly tied to cost optimization.
 
 ```python
 from sagemaker.debugger import ProfilerConfig, FrameworkProfile
@@ -84,43 +122,110 @@ estimator = PyTorch(
 )
 ```
 
-Bottlenecks Profiler commonly catches:
+Organized as symptom → cause → action, the bottlenecks Profiler commonly catches are as follows.
 
-- **Low GPU utilization**: GPU waits for data idly → suspect data loading/preprocessing bottleneck
-- **Data loading bottleneck**: Insufficient DataLoader workers, slow storage (reading S3 directly, etc.)
-- **CPU bottleneck**: Heavy preprocessing unable to keep up with GPU data
-- **GPU memory shortage·imbalance**: Need to adjust batch size
+| Symptom | Cause | Action |
+|------|------|------|
+| GPU utilization is low and goes up and down in a sawtooth | The GPU is waiting for data | More loader workers, FSx for Lustre cache, overlap with prefetch |
+| Only CPU usage is pinned at 100% | Preprocessing is heavy | Split preprocessing into pre-batch processing, make it lighter, consider GPU preprocessing |
+| GPU utilization is high but steps are slow | The computation itself is heavy | Mixed precision, adjust batch and model structure, a higher-tier instance |
+| GPU memory to spare but the batch is small | The batch setting is conservative | Increase the batch (but adjust the learning rate along with it) |
+| Only some of multiple GPUs are busy | Load imbalance, distributed configuration error | Check the distributed settings and shard distribution |
+| Takes long before training starts | File mode full copy, heavy dependency installation | FastFile/Pipe, bake dependencies into the image |
 
-Typical remedy: If GPU util low and data loading bottleneck → increase DataLoader workers, cache data on FSx for Lustre, overlap preprocessing with training (prefetch).
+A typical prescription: if GPU utilization is low and data loading is the bottleneck → increase the number of DataLoader workers, cache the data on FSx for Lustre, and make preprocessing asynchronous with training (prefetch).
 
-> 💡 **Related Theory**: Core of GPU underutilization is "GPU idle time". One training step chains data loading → preprocessing → forward → backward → optimizer, but GPU only does forward/backward. If other stages are slow, GPU waits. So prefetch and async loading, making data pipeline overlap with GPU compute, lift utilization. Profiler visualizes this "waiting time" and tells you which stage to fix.
+> ⚠️ **Pitfall**: A choice saying "training is slow → switch to a more expensive GPU instance" is mostly wrong. If the GPU is already idle, attaching a faster GPU **only increases the idle time** and raises the cost. An instance upgrade is the choice only after confirming with Profiler that "the GPU computation itself is saturated."
+
+The essence of low GPU utilization is "the time the GPU sits idle." One training step runs from data loading → preprocessing → forward → backward → optimizer, but the GPU does only forward/backward. If the other stages are slow, the GPU waits. So prefetch and asynchronous loading, which make the data pipeline (loading, preprocessing) overlap with the GPU computation, raise utilization. Profiler makes this "waiting time" visible and tells you which stage to fix.
 
 ## Training Monitoring: Relationship with CloudWatch
 
-Debugger/Profiler are fine-grained training internals analysis; whole operational monitoring falls to CloudWatch.
+Debugger/Profiler are precise analysis inside the training job, while overall operational monitoring is handled by CloudWatch.
 
-- **CloudWatch Metrics**: Training job metrics (CPU/GPU/memory util, loss) as time series. Can set alarms.
-- **CloudWatch Logs**: Training script stdout/stderr logs.
-- **TensorBoard**: SageMaker also supports tensor visualization via TensorBoard.
+| Tool | What it shows | Typical use |
+|------|-------------|----------|
+| CloudWatch **Metrics** | CPU/GPU/memory utilization, training metrics I define | Checking time-series trends, threshold **alarms** |
+| CloudWatch **Logs** | stdout/stderr of the training script | Exception stack traces, post-hoc cause analysis |
+| **EventBridge** events | Status changes of the training job (completed, failed, etc.) | Notification on failure, automatically running a follow-up pipeline |
+| **TensorBoard** | Loss and accuracy curves, histograms | Visually comparing training curves |
+
+To raise the logs I print as CloudWatch metrics, you register **rules that extract them with a regular expression** on the Estimator. Only then can you compare the loss curves of several training jobs on one screen and set alarms.
+
+```python
+estimator = PyTorch(
+    entry_point='train.py', role=role,
+    instance_type='ml.g5.xlarge', instance_count=1,
+    framework_version='2.0', py_version='py310',
+    enable_sagemaker_metrics=True,
+    metric_definitions=[                       # rules that extract numbers from a log line
+        {'Name': 'train:loss',      'Regex': r'train_loss: ([0-9\.]+)'},
+        {'Name': 'validation:loss', 'Regex': r'val_loss: ([0-9\.]+)'},
+        {'Name': 'validation:acc',  'Regex': r'val_acc: ([0-9\.]+)'},
+    ],
+)
+```
+
+- The script only needs to print like `print(f"val_loss: {loss:.4f}")`.
+- The metrics made here are also used as-is as the **objective metric for hyperparameter tuning** that you will learn later.
 
 ```
-[Training Job]
-   ├─ Debugger  → Store tensors to S3, evaluate rules, actions (stop/alert)
-   ├─ Profiler  → System/framework metrics, bottleneck reports
-   └─ CloudWatch → Metrics/logs (overall monitoring·alarms)
+[Training job]
+   ├─ Debugger  → saves tensors to S3, evaluates rules, actions (stop/notify)
+   ├─ Profiler  → system and framework metrics, bottleneck report
+   └─ CloudWatch → metrics/logs (overall monitoring, alarms)
 ```
 
-> 📚 **Case**: A team trained on ml.p4d but GPU utilization stuck at 25%, making training 4× slower than expected. Profiler report showed GPU mostly waiting for data loading. Root cause: reading each batch from S3 directly, heavy CPU preprocessing. Increasing DataLoader workers, caching data on FSx for Lustre, overlapping preprocessing via prefetch boosted GPU util to 85%, cutting training time to 1/3. Lesson: slow training isn't always GPU performance—Profiler finds the real bottleneck first.
+A team was training on an ml.p4d instance, but GPU utilization stayed at 25%, so training was 4 times slower than expected. The Profiler report showed the GPU was mostly waiting for data loading. The cause was that every batch was read directly from S3 and the CPU preprocessing was heavy. After increasing the DataLoader workers, caching the data on FSx for Lustre, and overlapping the preprocessing with prefetch, GPU utilization rose to 85% and training time dropped to one third. Lesson: slow training is not always a GPU performance problem — look at the real bottleneck first with Profiler.
+
+## A Loop That Blocks Cost Automatically
+
+The practical value of observation lies in "waste stops even when no person is watching." Tie detection and action into a single loop.
+
+```text
+Training job
+   │  save tensors (S3)                 system metrics
+   ├──────────────► Debugger rule        ├──────► Profiler report
+   │                     │                        │
+   │            violation detected            bottleneck diagnosed
+   │                     │                        │
+   │              ┌──────┴───────┐                └─► pipeline improvement (human)
+   │              │              │
+   │        StopTraining      Email/SNS notification
+   │              │
+   └──────────────┘  ← cost saved for the remaining training time
+```
+
+- If you attach only a rule and no action, this loop runs **broken** — reports pile up while money keeps flowing out.
+- Conversely, if you attach an action too aggressively, training is cut even in a normal loss-stall interval (plateau). Look at the rule threshold and the minimum number of training steps together.
 
 ## How to Choose
 
-Decision flow: ① Symptom "model training wrong" (loss stalled, gradient vanishing/exploding, overfitting) → **Debugger** + optional StopTraining action. ② Symptom "slow/GPU idle/expensive" → **Profiler** to diagnose bottlenecks, then adjust data pipeline/batch. ③ Overall metrics/logs/alarms → **CloudWatch**. To block divergence cost, attach actions to Debugger rules.
+```text
+What is the symptom?
+ ├─ Loss stall / vanishing or exploding gradients / overfitting
+ │     → Debugger built-in rules  (+ block cost with a StopTraining action)
+ ├─ Slow / the GPU is idle / inefficient for the cost
+ │     → Diagnose the bottleneck with Profiler → adjust data pipeline, batch, precision
+ │        (upgrade the instance only after GPU computation is confirmed saturated)
+ └─ Overall trends, failure notifications, comparing several jobs
+       → CloudWatch metrics/logs/alarms (+ follow-up automation with EventBridge)
+```
 
-## Summary
+In the next lesson we look at model evaluation — metric selection, overfitting, and cross-validation — which judges whether a trained model is really good.
 
-Training internals observation splits two: **Debugger** stores model internal tensors (gradient·weight·loss), detects learning quality issues with built-in rules (vanishing_gradient, exploding_tensor, loss_not_decreasing, overfit, etc.), and actions attached auto-stop/alert on divergence blocking cost. **Profiler** collects system/framework resources, finds GPU underutil, data loading, CPU bottlenecks optimizing cost and speed. Overall monitoring via CloudWatch. Exam mapping critical: "model quality anomaly" → Debugger, "resource inefficiency" → Profiler.
+## 📖 Glossary
 
-Next we see model evaluation—judging whether a trained model is good, metric selection and overfitting, cross-validation.
+- **Tensor**: A chunk of numbers the model uses in computation. Weights, gradients, and loss values all count.
+- **Gradient**: A value that tells you in which direction and by how much to change the weights to reduce the loss.
+- **Vanishing gradient**: A state where gradients approach 0 and the weights are effectively not updated. Training looks as if it has stopped.
+- **Exploding gradient**: Conversely, a state where values get too large and training diverges. The loss can even become `NaN`.
+- **Built-in rule**: An anomaly-detection condition SageMaker has made in advance. You can use it right away by specifying just the name.
+- **Action**: A measure to run when a rule is violated. `StopTraining` (stop training), an email notification, etc.
+- **Profiling**: Measuring where a program spends its time. Here we look at how busy the GPU, CPU, and I/O each are.
+- **GPU utilization**: The fraction of time the GPU was actually computing. When it is low, it usually means it is waiting for data.
+- **Prefetch**: A technique that prepares the next data in advance so that loading proceeds while the GPU is computing.
+- **`metric_definitions`**: A setting that extracts numbers from the training log with regular expressions and raises them as CloudWatch metrics.
 
 ---
 

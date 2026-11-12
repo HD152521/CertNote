@@ -1,29 +1,29 @@
 # Day 3 - AWS DMS + SCT: The Science of Database Migration
 
-Database migration is far more complex than server migration. Servers share a common language (OS and file systems), but DB engines each have different SQL dialects, data types, built-in functions, and procedural languages. Oracle's PL/SQL, SQL Server's T-SQL, and PostgreSQL's PL/pgSQL look syntactically similar but have dozens of incompatible functions and data types.
+Database migration is far more complex than server migration. Servers share a common language in the OS and the file system, but DB engines each have their own SQL dialect, data types, built-in functions, and procedural language. Oracle's PL/SQL, SQL Server's T-SQL, and PostgreSQL's PL/pgSQL may look similar in syntax, but in reality they contain dozens of incompatible functions and data types.
 
-AWS DMS (Database Migration Service) manages this complexity. CDC (Change Data Capture) tracks changes in real-time while the source DB continues operating, and SCT (Schema Conversion Tool) enables automatic schema and code conversion between heterogeneous engines. Today we'll cover DMS and SCT's internal operations, per-DB CDC implementations, Babelfish's innovative approach, and real-world large-scale migration patterns.
+AWS DMS (Database Migration Service) manages this complexity. It keeps the source DB in operation while following its changes in real time with CDC (Change Data Capture), and SCT (Schema Conversion Tool) supports automatic conversion of schema and code between heterogeneous engines. Today we go deep into the internals of DMS and SCT, the DB-specific implementations of CDC, the innovative approach of Babelfish, and real large-scale migration patterns.
 
 ## CDC's Internal Mechanism: DB-Specific Implementation
 
-CDC (Change Data Capture) captures database changes (INSERT, UPDATE, DELETE) in real-time. DMS implements CDC by reading each DB engine's internal logs.
+CDC (Change Data Capture) is a technique that captures a database's changes (INSERT, UPDATE, DELETE) in real time. DMS implements CDC by reading the internal log of each DB engine.
 
-| DB Engine | CDC Source | Configuration Required |
-|--------|---------|------------|
-| **Oracle** | Redo Log (LogMiner) | ARCHIVELOG mode, enable supplemental logging |
-| **SQL Server** | Transaction Log (CDC feature) | Enable SQL Server CDC feature |
+| DB engine | CDC source | Configuration requirements |
+|-----------|-----------|----------------------------|
+| **Oracle** | Redo Log (LogMiner) | ARCHIVELOG mode, supplemental logging enabled |
+| **SQL Server** | Transaction Log (CDC feature) | SQL Server CDC feature enabled |
 | **MySQL** | Binary Log (binlog) | binlog_format=ROW, FULL |
 | **PostgreSQL** | WAL (Write-Ahead Log) | wal_level=logical, replication slot |
-| **Aurora MySQL** | Binary Log | Enable binlog |
-| **Aurora PostgreSQL** | WAL | Enable logical replication |
+| **Aurora MySQL** | Binary Log | binlog enabled |
+| **Aurora PostgreSQL** | WAL | logical replication enabled |
 
-> 💡 **Related Theory**: Write-Ahead Logging (WAL) is the foundational mechanism for database durability (ACID's D). Log records are written before actual data page changes, enabling recovery after system failure (Jim Gray's Shadow Paging alternative, implemented in PostgreSQL 1992). DMS repurposes WAL not for "normal recovery" but for "change stream consumption"—called Logical Decoding (PostgreSQL pg_logical_emit_message).
+Write-Ahead Logging (WAL) is the basic mechanism of database durability (the D of ACID). A log record is written before the actual data page is changed, which makes recovery possible after a system failure (implemented in PostgreSQL in 1992 as an alternative to Jim Gray's Shadow Paging). DMS reuses this WAL not for "normal recovery" but for "consuming the change stream." This is called Logical Decoding (PostgreSQL pg_logical_emit_message).
 
-> 🔍 **Deeper Dive**: Oracle LogMiner's principle. LogMiner reconstructs DML operations as SQL from Oracle's Redo Log files (Oracle built-in DBMS_LOGMNR package). DMS uses LogMiner API to read change data from Redo Logs. Supplemental Logging must be enabled so the log includes old values of deleted rows. Without it, DMS cannot identify which rows were deleted.
+The principle of Oracle LogMiner. LogMiner is an Oracle built-in package that reconstructs DML operations as SQL from Oracle's Redo Log files (DBMS_LOGMNR). DMS uses the LogMiner API to read change data from the Redo Log. Supplemental Logging must be enabled for the previous values of DELETEd rows to be included in the log. Without it, DMS cannot know which rows were deleted.
 
-## DMS Architecture: The Role of Replication Instance
+## DMS Architecture: The Role of the Replication Instance
 
-DMS follows a three-tier structure: Source → Replication Instance → Target.
+DMS is a 3-tier structure: Source → Replication Instance → Target.
 
 ```
 Source DB                    Target DB
@@ -34,35 +34,35 @@ Source DB                    Target DB
 Replication Instance (EC2)        │
   ├── Full Load Worker            │
   ├── CDC Worker                  │
-  └── Apply transformation rules──┘
+  └── Apply transformation rules ─┘
 ```
 
-**Replication Instance**: EC2-based. Transformation job CPU/memory runs on this instance. Size selection is critical.
-- Small (< 1TB): dms.t3.medium
-- Medium (1-5TB): dms.c5.large
-- Large (5TB+): dms.r5.2xlarge (memory-intensive)
+**Replication Instance**: EC2-based. The CPU and memory for conversion work run on this instance. Choosing the size matters.
+- Small scale (< 1TB): dms.t3.medium
+- Medium scale (1-5TB): dms.c5.large
+- Large scale (5TB+): dms.r5.2xlarge (memory-intensive)
 
-**DMS Serverless (2023)**: AWS automatically manages and scales the Replication Instance. Billed in Capacity Units (DCU). Auto-scales on peak load, auto-shrinks when idle.
+**DMS Serverless (2023)**: AWS automatically manages and scales the Replication Instance. Billed in Capacity Units (DCU). It scales out automatically at peak load and scales in automatically when idle.
 
-> ⚠️ **Pitfall**: Replication Instance must connect to both Source and Target DBs simultaneously. If on-premises Oracle is behind a firewall, connectivity via Direct Connect or VPN is required. Standard practice: place Replication Instance in same VPC with private connections.
+> ⚠️ **Pitfall**: The Replication Instance must connect to the Source and Target DBs at the same time. If the on-premises Oracle is behind a firewall, a connection through Direct Connect or VPN is needed. The standard is to place the Replication Instance in the same VPC and configure private connectivity.
 
 ## Full Load + CDC: The Mathematics of Zero-Downtime Migration
 
 ```
 Timeline:
-T=0     Full Load starts (copy entire source)
-T=10h   Full Load completes (10TB ≈ 10 hours)
-T=10h~  CDC starts (changes accumulated during Full Load + subsequent real-time)
-T=12h   CDC Lag ≈ 0 (caught up on Full Load period changes)
-T=X     Cutover decision (Lag ≈ 0, app shutdown, DNS switch)
+T=0     Full Load starts (copy the entire source)
+T=10h   Full Load completes (10TB → about 10 hours)
+T=10h~  CDC starts (changes accumulated during Full Load + real-time changes after)
+T=12h   CDC Lag 0 (caught up with the changes made during the Full Load period)
+T=X     Cutover decision (Lag ≈ 0, stop the app then switch DNS)
 ```
 
 **Cutover decision criteria**:
-- CDC Lag < 1 second (or below business-acceptable RPO)
-- All table validation complete (row count match, data sample compare)
-- App connectivity test successful
+- CDC Lag < 1 second (or below the business-acceptable RPO)
+- All tables verified (row counts match, sample data compared)
+- App connection test succeeded
 
-**Table mapping rules**: DMS defines source-target table mapping, column filtering, data transformation in JSON.
+**Table mapping rules**: DMS defines source-to-target table mapping, column filtering, and data transformation in JSON.
 
 ```json
 {
@@ -88,134 +88,134 @@ T=X     Cutover decision (Lag ≈ 0, app shutdown, DNS switch)
 
 ## SCT (Schema Conversion Tool): The Reality of Heterogeneous Conversion
 
-SCT automatically converts source DB schema (DDL) and code (stored procedures, triggers, views, functions) to target engine. But "automatic" doesn't mean "complete."
+SCT automatically converts the source DB's schema (DDL) and code (stored procedures, triggers, views, functions) to the target engine. But "automatic" does not mean "complete."
 
-**SCT can convert**:
+**Items SCT can convert**:
 - Tables, indexes, constraints (85-95% automatic)
 - Basic SELECT/INSERT/UPDATE/DELETE (nearly 100%)
-- Standard SQL functions → corresponding functions
+- Standard SQL functions → conversion to corresponding functions
 
-**SCT requires manual fixes**:
-- DB engine-specific features (Oracle's ROWNUM, SQL Server's TOP)
+**Items SCT needs manual fixes for**:
+- DB-engine-specific features (Oracle's ROWNUM, SQL Server's TOP)
 - Complex cursor logic
 - Dynamic SQL (exec())
 - External procedure calls (Java stored procedures)
-- Package and type nested dependencies
+- Nested dependencies among packages and types
 
-**SCT Assessment Report**: Colors (green/orange/red) mark items automatically convertible vs. those requiring manual fix. Must run during pre-migration assessment phase.
+**SCT Assessment Report**: Marks the items that can be converted automatically and those needing manual fixes with colors (green/orange/red). It must be run in the pre-assessment stage of a migration.
 
-> 📚 **Case Study**: Netflix's Oracle to Aurora MySQL Migration (2015-2016). Netflix migrated dozens of Oracle DBs to Aurora. SCT auto-converted ~65% of PL/SQL; DBAs manually converted the remaining 35%. Oracle packages and Nested Table types were particularly problematic. Lesson: Set realistic SCT automation goal at 70-80%, and budget development resources for the remaining 20-30%.
+Netflix's Oracle → Aurora MySQL migration (2015-2016). Netflix moved dozens of Oracle DBs to Aurora. SCT automatically converted about 65% of the PL/SQL, and the remaining 35% was converted manually by the DBA team. Oracle packages and Nested Table types were particularly a problem. Lesson: in a heterogeneous DB migration, set an SCT automation rate of 70-80% as the realistic goal, and include development resources in the project for the remaining 20-30%.
 
 ## Key Migration Patterns
 
-### Pattern 1: Oracle → Aurora PostgreSQL (Most Common)
+### Pattern 1: Oracle → Aurora PostgreSQL (the most common)
 
 ```
-1. Run SCT Assessment Report (1-2 weeks)
-   → Evaluate conversion rate, understand manual effort scope
+1. Run the SCT Assessment Report (1-2 weeks)
+   → Evaluate the conversion rate, determine the scope of manual work
 
-2. Convert schema with SCT + manual fixes (2-8 weeks)
+2. Convert the schema with SCT + manual fixes (2-8 weeks)
    → DDL, PL/SQL → PL/pgSQL, indexes, views
 
 3. Start DMS Full Load + CDC (data migration)
-   → Choose Replication Instance size based on data volume
+   → Choose the Replication Instance size (based on data volume)
 
-4. Test app (verify functionality after Target DB connection)
+4. App testing (functional verification after connecting to the Target DB)
    → Compare SQL query performance, especially complex queries
 
-5. Performance tuning (Aurora PostgreSQL-specific)
+5. Performance optimization (Aurora PostgreSQL specific)
    → EXPLAIN ANALYZE, add indexes, remove query hints
 
-6. Cutover (within planned downtime window)
-   → Verify CDC Lag ≈ 0 → shutdown app → final sync → DNS switch
+6. Cutover (within planned downtime)
+   → Confirm CDC Lag ≈ 0 → stop the app → final synchronization → DNS switch
 ```
 
 **License savings calculation**:
 - Oracle Enterprise Edition: ~$47,500/core/year + options
-- Aurora PostgreSQL: $0.29/vCPU/hour (8vCPU → ~$20,000/year)
-- Savings: 50-80% (depending on server scale and options)
+- Aurora PostgreSQL: $0.29 per vCPU-hour (8 vCPU → ~$20,000/year)
+- Savings rate: 50-80% (depending on server scale and option packages)
 
 ### Pattern 2: SQL Server → Aurora PostgreSQL with Babelfish
 
-Babelfish is an Aurora PostgreSQL extension AWS open-sourced in 2021. It converts SQL Server's TDS (Tabular Data Stream) protocol and T-SQL dialect into forms Aurora PostgreSQL understands.
+Babelfish is an Aurora PostgreSQL extension that AWS released as open source in 2021. It translates SQL Server's TDS (Tabular Data Stream) protocol and T-SQL dialect so that Aurora PostgreSQL can understand them.
 
-**Babelfish's operating principle**:
-- Add TDS protocol endpoint to PostgreSQL (default port 1433)
-- Parse T-SQL statements and convert to PostgreSQL SQL
-- Emulate SQL Server system catalog views (sys.tables, sys.columns)
+**How Babelfish works**:
+- Adds a TDS protocol endpoint to PostgreSQL (default port 1433)
+- Parses T-SQL statements and converts them to PostgreSQL SQL
+- Emulates SQL Server system catalog views (sys.tables, sys.columns)
 
 **Babelfish use cases**:
-- Migrate SQL Server .NET apps to Aurora without code changes
+- Switch a SQL Server .NET app to Aurora without code changes
 - JDBC/ODBC SQL Server driver compatibility
-- Run most existing SQL Server stored procedures (T-SQL) as-is
+- Most existing SQL Server stored procedures (T-SQL) run as is
 
-**Babelfish limitations**:
-- Some complex T-SQL features unsupported (CLR procedures, some SQL Agent features)
+**Limits of Babelfish**:
+- Some complex T-SQL features are unsupported (CLR procedures, some SQL Agent features)
 - Performance characteristics may differ from pure PostgreSQL
-- SQL Server 2017+ specialized features limited
+- Features specific to SQL Server 2017+ are limited
 
-| Item | SCT + DMS (Traditional) | Babelfish |
-|-----|---------------------|---------|
-| Code changes | Yes (30-40% manual) | Minimal |
-| Compatibility | High (after complete conversion) | Medium (T-SQL partial compatibility) |
-| Duration | Longer | Shorter |
-| Long-term portability | Pure PostgreSQL | T-SQL dependency remains |
+| Item | SCT + DMS (traditional) | Babelfish |
+|------|-------------------------|-----------|
+| Code changes | Yes (30-40% manual) | Almost none |
+| Compatibility | High (after full conversion) | Medium (T-SQL partially compatible) |
+| Duration | Long | Short |
+| Long-term portability | Fully PostgreSQL | Stays dependent on T-SQL |
 
-> 💡 **Related Theory**: TDS protocol (Tabular Data Stream) is the communication protocol between SQL Server and clients. Sybase designed it in 1984, Microsoft inherited and published it (OpenSpec). Babelfish implements this protocol natively in PostgreSQL, making clients perceive Aurora as SQL Server. It's like adding an API compatibility layer.
+The TDS protocol (Tabular Data Stream) is the communication protocol between SQL Server and clients. Sybase designed it in 1984, and Microsoft inherited it and published it (OpenSpec). Babelfish implements this protocol so that PostgreSQL handles it directly, making the client recognize Aurora as a SQL Server. It is like adding an API compatibility layer.
 
 ## DMS's Diverse Targets
 
-DMS enables not just DB-to-DB migration but also **analytics pipeline construction**.
+DMS is used not only for plain DB → DB migration but also for **building analytics pipelines**.
 
-| Use Case | Source | Target | Pattern |
-|----------|-------|-------|-----|
+| Use case | Source | Target | Pattern |
+|----------|--------|--------|---------|
 | OLTP migration | Oracle | Aurora PG | Full Load + CDC |
-| Data lake construction | MySQL | S3 (Parquet/CSV) | CDC + S3 |
-| Real-time analytics | PostgreSQL | Kinesis Data Streams | CDC → real-time |
+| Data lake build | MySQL | S3 (Parquet/CSV) | CDC + S3 |
+| Real-time analytics | PostgreSQL | Kinesis Data Streams | CDC → real time |
 | Data warehouse | SQL Server | Redshift | Full Load + CDC |
 | NoSQL conversion | MongoDB | DynamoDB | Full Load |
 
-> 🔍 **Deeper Dive**: DMS → S3 → Athena pattern. DMS stores operational DB changes in S3 as Parquet format; Athena queries directly with SQL. This is the real-time ingestion path for Lake Formation-based data lakes. CDC records include an op column (I=Insert, U=Update, D=Delete), preserving all changes from the source. Athena queries this with Schema-on-Read pattern.
+The DMS → S3 → Athena pattern. When DMS stores the changes of an operational DB in S3 in Parquet format, Athena queries it directly with SQL. This is the real-time ingestion path of a Lake Formation-based data lake. CDC records include an op column (I=Insert, U=Update, D=Delete), so they preserve the full change history of the source. This can be queried in Athena in a Schema-on-Read manner.
 
-## DMS Fleet Advisor: Auto-Discovery of DB Portfolio
+## DMS Fleet Advisor: Auto-Discovery of the DB Portfolio
 
-Large enterprises sometimes don't know where which DBs exist or how many. DMS Fleet Advisor auto-discovers DB instances on the network and generates migration recommendations.
+In a large enterprise, there are cases where they cannot even tell which DBs exist where and how many. DMS Fleet Advisor automatically discovers DB instances on the network and generates migration recommendations.
 
-**Operating principle**:
-1. Specify network range (IP range or host list)
-2. Fleet Advisor Collector gathers DB engine, version, schema size, stored procedure count
-3. Generate Migration Complexity Report (evaluate migration difficulty for each DB)
-4. Recommend target engine (e.g., Oracle → Aurora PG recommended, 20% conversion complexity)
+**How it works**:
+1. Specify the network range (IP range or host list)
+2. The Fleet Advisor Collector gathers DB engine, version, schema size, and number of stored procedures
+3. Generates a Migration Complexity Report (assesses the difficulty of moving each DB)
+4. Recommends the target engine (e.g., recommends Oracle → Aurora PG, conversion complexity 20%)
 
 **ADS vs Fleet Advisor**:
-- ADS: Complete server infrastructure inventory (CPU, memory, network, OS)
-- Fleet Advisor: DB-specialized inventory (engine, version, schema, complexity)
+- ADS: Full inventory of server infrastructure (CPU, memory, network, OS)
+- Fleet Advisor: DB-specific inventory (engine, version, schema, complexity)
 
 ## Hidden Complexity in Heterogeneous Migration
 
-Common issues in heterogeneous DB migration:
+Problems that frequently occur in heterogeneous DB migration:
 
-**Data type inconsistencies**:
-- Oracle NUMBER(38,10) → PostgreSQL NUMERIC(38,10): auto-convertible
-- Oracle DATE (date+time) → PostgreSQL DATE (date only): risk of time info loss
-- Oracle CLOB → PostgreSQL TEXT: mostly OK, some length limit differences
+**Data type inconsistency**:
+- Oracle NUMBER(38,10) → PostgreSQL NUMERIC(38,10): can be converted automatically
+- Oracle DATE (includes date + time) → PostgreSQL DATE (date only): risk of losing time information
+- Oracle CLOB → PostgreSQL TEXT: mostly OK, some differences in length limits
 
 **Character encoding**:
-- Oracle: AL32UTF8, WE8ISO8859P1, etc. varied
+- Oracle: various, such as AL32UTF8 and WE8ISO8859P1
 - PostgreSQL: UTF8 recommended
-- DMS requires conversion settings for encoding mismatch
+- With heterogeneous encodings, DMS conversion settings are needed
 
-**NULL handling differences**:
-- Oracle: treats empty string '' as NULL
+**Differences in NULL handling**:
+- Oracle: treats the empty string '' as NULL
 - PostgreSQL: distinguishes '' from NULL
 - This difference can change query results
 
-**Schema case sensitivity**:
-- Oracle: uppercase object names by default (TABLE_NAME)
-- PostgreSQL: lowercase object names by default (table_name)
-- SCT auto-converts, but beware of app code case assumptions
+**Schema letter case**:
+- Oracle: object names default to uppercase (TABLE_NAME)
+- PostgreSQL: object names default to lowercase (table_name)
+- SCT converts automatically, but be careful about case assumptions in the app code
 
-> ⚠️ **Pitfall**: After migration, app queries may return different results on PostgreSQL. Due to NULL handling, string comparison, or date arithmetic differences. **Must perform application-level functional testing** after Full Load + CDC. Row count match alone isn't sufficient.
+> ⚠️ **Pitfall**: After migration, there are cases where the app's queries return different results in PostgreSQL. This is due to differences in NULL handling, character comparison, and date arithmetic. After Full Load + CDC completes, you must perform a **functional test (at the application level)**. Matching row counts alone is not sufficient.
 
 ## Architecture Diagram: Large-Scale Oracle → Aurora Migration
 
@@ -225,13 +225,13 @@ Common issues in heterogeneous DB migration:
     │  Step 1: SCT Assessment + schema conversion (dev environment)
     ▼
 [Aurora PostgreSQL (dev environment)]
-    │ validate schema, procedures
+    │ Verify schema and procedures
     ▼
 [Aurora PostgreSQL (production, Multi-AZ)]
     ▲
     │  Step 2: DMS Replication Instance
-    │    ├── Full Load (all data)
-    │    └── CDC (change data real-time)
+    │    ├── Full Load (entire data)
+    │    └── CDC (change data in real time)
     │
 [Oracle RAC On-Prem] ──── Redo Log ──► DMS
     │
@@ -240,18 +240,185 @@ Common issues in heterogeneous DB migration:
 [AWS VPC, ap-northeast-2]
     └── DMS Replication Instance (r5.2xlarge)
 
-    Step 3: Validation
+    Step 3: Verification
     ├── Row count comparison (DMS Row Count Validation)
     ├── Data sample comparison
     └── App functional test (Test environment)
 
     Step 4: Cutover
     ├── Confirm CDC Lag ≈ 0
-    ├── Schedule maintenance window (2-4 AM)
-    ├── Complete final sync
-    ├── Switch app endpoint → Aurora
-    └── Block Oracle connections → begin Aurora operation
+    ├── App server maintenance window (2-4 AM)
+    ├── Final synchronization complete
+    ├── Change the app endpoint → to Aurora
+    └── Block the Oracle connection → start operating on Aurora
 ```
+
+## Trade-off Comparison Table: 5 Paths Away from a Commercial DB
+
+Even for the single requirement "reduce Oracle licensing costs," the answers branch five ways. The Pro exam puts these five side by side and makes you pick one by the **qualifier**. In the 7R framework of cloud migration (Rehost, Replatform, Repurchase, Refactor, Retire, Retain, Relocate), a DB mostly falls across the first four.
+
+| Path | Transition period | App code changes | License savings | Operational burden | Risk |
+|------|-------------------|------------------|-----------------|--------------------|------|
+| **Rehost: Oracle on EC2 (BYOL)** | Shortest | None | **None** | High (run OS and DB yourself) | Low |
+| **Replatform: RDS for Oracle** | Short | Almost none | Partial (SE2 license-included is possible) | Medium | Low |
+| **Replatform: RDS Custom for Oracle** | Short | None | None (BYOL) | Medium (OS access possible) | Low |
+| **Refactor: SCT + DMS → Aurora PG** | **Longest** (months) | **Large** (30-40% manual) | **Largest** | Low (managed) | High |
+| **Refactor: Babelfish (SQL Server only)** | Medium | Almost none | Large | Low | Medium |
+
+**"To move fast, Rehost; to run cheap, Refactor."** These two are exactly opposite trade-offs. If the question text says "as quickly as possible" or "minimal changes to the application," it points to Rehost or Replatform; if it says "eliminate licensing costs" or "long-term operational efficiency," it points to SCT + DMS. If both qualifiers appear at once, a **phased approach** (first leave the data center with Rehost, then Refactor) is the correct direction.
+
+The **License Included** option of RDS for Oracle is limited to Standard Edition 2, and Enterprise Edition is BYOL (Bring Your Own License). So the statement "moving to RDS solves the license" is only half right. A workload that depends on EE features (Partitioning, Advanced Security, RAC, etc.) still carries the license cost even when moved to RDS. RAC is not supported on RDS for Oracle, so a RAC-dependent system has no option but to be reconfigured as a single instance or refactored to Aurora. When the condition "Oracle EE + RAC" is attached on the exam, the choices narrow sharply.
+
+> 🎯 **Scenario**: "The data center lease ends in 6 months. 12 core systems based on Oracle EE must be moved to AWS within that time, and the company wants to eliminate licensing costs over the following 2 years. What is the order?" — Answer: **Step 1 Rehost (EC2 BYOL or RDS Custom) to leave the data center by the deadline → Step 2 sequential Refactor to Aurora PostgreSQL with SCT + DMS**. Converting all the PL/SQL of 12 systems within 6 months is unrealistic, and a large-scale refactor under deadline pressure has a high chance of failure. When the two constraints of deadline and cost collide, **separating them along the time axis** is the standard answer.
+
+## Real DMS Task Settings: Validation, LOBs, Control Tables
+
+The success of DMS is decided not by console buttons but by the task settings JSON. Below are the key parts of the settings actually used in a large heterogeneous migration.
+
+```json
+{
+  "TargetMetadata": {
+    "SupportLobs": true,
+    "FullLobMode": false,
+    "LimitedSizeLobMode": true,
+    "LobMaxSize": 64,
+    "BatchApplyEnabled": true
+  },
+  "FullLoadSettings": {
+    "TargetTablePrepMode": "DO_NOTHING",
+    "MaxFullLoadSubTasks": 8,
+    "CommitRate": 10000,
+    "StopTaskCachedChangesApplied": false
+  },
+  "ValidationSettings": {
+    "EnableValidation": true,
+    "ValidationMode": "ROW_LEVEL",
+    "ThreadCount": 5,
+    "FailureMaxCount": 10000,
+    "TableFailureMaxCount": 1000
+  },
+  "ControlTablesSettings": {
+    "ControlSchema": "dms_control",
+    "HistoryTimeslotInMinutes": 5,
+    "StatusTableEnabled": true,
+    "SuspendedTablesTableEnabled": true,
+    "HistoryTableEnabled": true
+  },
+  "Logging": {
+    "EnableLogging": true
+  }
+}
+```
+
+The point is why each setting has that value.
+
+| Setting | Value | Rationale |
+|---------|-------|-----------|
+| `FullLobMode: false` + `LimitedSizeLobMode: true` | Limited mode | Full LOB mode splits a LOB into pieces and makes many round trips, so it is very slow. If you know the maximum size, limited mode is overwhelmingly faster |
+| `LobMaxSize: 64` (KB) | Based on a measured value | LOBs larger than this value are **truncated**. You must first measure `MAX(LENGTH(col))` on the source |
+| `TargetTablePrepMode: DO_NOTHING` | Keep existing tables | Keeps DMS from overwriting the schema (constraints, defaults) that SCT created |
+| `BatchApplyEnabled: true` | Batch apply | Applies CDC changes in batches rather than one by one, greatly raising throughput |
+| `EnableValidation: true` | Validation on | Compares source and target not just by row count but value by value |
+
+LOBs larger than `LobMaxSize` being **truncated without warning** is the classic data-loss incident of heterogeneous migration. It is especially dangerous in CLOB/BLOB columns that contain contract PDFs or images. That is why "measure the maximum size of each LOB column" is always included in pre-migration work. If sizes vary widely and no upper bound is known, use Full LOB mode even at the cost of performance, or consider a redesign that separates the LOBs into S3 and leaves only the key in the DB.
+
+When you turn on `ValidationSettings`, DMS creates an `awsdms_validation_failures_v1` table in the target DB and records mismatched rows. On top of that, `ControlTablesSettings` also leaves `awsdms_status` (task status), `awsdms_suspended_tables` (tables suspended by errors), and `awsdms_apply_exceptions` (records that failed to apply). The Cutover decision must be based not on the green indicator in the console but on **whether these control tables are empty**. A "row counts match" check can never catch a mismatch where only values changed through an UPDATE.
+
+```bash
+# Run a pre-assessment — catches unsupported data types, tables without a PK, etc. in advance
+aws dms start-replication-task-assessment-run \
+  --replication-task-arn arn:aws:dms:ap-northeast-2:111111111111:task:XXXX \
+  --service-access-role-arn arn:aws:iam::111111111111:role/dms-assessment-role \
+  --result-location-bucket dms-assessment-reports \
+  --assessment-run-name preflight-2026-q1 \
+  --include-only unsupported-data-types,table-with-lob-but-no-primary-key
+
+# Create a Full Load + CDC task
+aws dms create-replication-task \
+  --replication-task-identifier oracle-to-aurora-hr \
+  --source-endpoint-arn arn:aws:dms:...:endpoint:SRC \
+  --target-endpoint-arn arn:aws:dms:...:endpoint:TGT \
+  --replication-instance-arn arn:aws:dms:...:rep:INST \
+  --migration-type full-load-and-cdc \
+  --table-mappings file://table-mappings.json \
+  --replication-task-settings file://task-settings.json
+
+# Check per-table progress and validation status (the evidence data for the Cutover decision)
+aws dms describe-table-statistics \
+  --replication-task-arn arn:aws:dms:...:task:XXXX \
+  --query 'TableStatistics[?ValidationState!=`Validated`]'
+```
+
+When DMS creates target tables in a heterogeneous migration, it creates them in a **minimal form with only the primary key**. It does not create secondary indexes, foreign keys, sequences, defaults, triggers, or stored procedures. These must be applied separately from the DDL that SCT generated. And for performance, the standard is to **remove secondary indexes and foreign keys during Full Load and recreate them after it completes**. If you load hundreds of millions of rows with the indexes in place, load time grows several-fold.
+
+## Cutover and Rollback: The Order That Builds a Way Back
+
+The reason a DB Cutover is scarier than a server Cutover is that **it is hard to undo**. Once writes begin on the new DB after the switch, going back to the source loses the data written in between. That is why reverse replication must be part of the sequence.
+
+```
+[T-2 weeks]  Rehearsal
+   ├── Perform the entire Cutover process once exactly as is, on a production replica
+   ├── Measure the elapsed time → fix the length of the maintenance window
+   └── Rationale: downtime must be set by measurement, not estimation
+
+[T-1 day]  Preparation
+   ├── Lower the DNS TTL to 60 seconds or less (or prepare Route 53 weighted routing)
+   ├── Confirm the validation control tables are empty
+   ├── Fix the rollback criteria in a document (e.g., roll back if unresolved within 30 minutes)
+   └── Rationale: if you discuss "should we roll back?" in the middle of an outage, it is already too late
+
+[T-0]  Switch
+   1. Switch the app to read-only mode (or stop it completely)
+   2. Confirm that there are no more writes on the source DB
+   3. Wait for CDC Lag = 0
+   4. Synchronize sequences and auto-increment values  ← the step most often skipped
+   5. Refresh statistics (ANALYZE) on the target DB and confirm secondary indexes exist
+   6. Switch the app connection string/endpoint to the target DB
+   7. Smoke test (5-10 core transactions)
+
+[T+0]  Safety net activated
+   ├── Immediately start a reverse CDC task (Aurora → Oracle)
+   ├── Keep the source Oracle for at least 1-2 weeks (do not delete it)
+   └── Rationale: if reverse replication is alive, data loss at the time of rollback is close to 0
+
+[T+2 weeks]  Cleanup
+   ├── After confirming no problems, stop the reverse task and retire the source
+   └── Delete the DMS Replication Instance (it keeps being billed)
+```
+
+Incidents where **sequence synchronization** in step 4 is skipped are very common. DMS moves a table's row data, but it does not move the current value of an Oracle SEQUENCE or a PostgreSQL serial/identity. Right after the switch, new INSERTs start from 1 and primary key conflicts explode. The Cutover checklist must explicitly include "set the `last_value` of every sequence to the source's maximum value + a margin."
+
+The failure cause that teams that actually executed a rollback after a heterogeneous DB Cutover commonly point to is not data but **performance**. Cases repeat where all functional tests passed, but once real production load arrived, the execution plan of a particular query came out differently on Aurora PostgreSQL and the response time grew by dozens of times. It arises especially in queries that depended on Oracle hints, correlated subqueries, and large joins. So pre-Cutover verification must include a **production-level load test** and an execution plan comparison based on `EXPLAIN ANALYZE`. Matching row counts is a minimum condition, not a sufficient one.
+
+## When the Qualifier Changes, the Answer Changes
+
+Take one requirement, "move the on-premises Oracle to AWS," and change only the qualifier.
+
+| Qualifier | Correct direction | Why |
+|-----------|-------------------|-----|
+| **MINIMAL downtime** | DMS **Full Load + CDC** | Catch up while operating the source, and stop only briefly at the end |
+| **MINIMAL changes to application** | Rehost (EC2) or RDS for Oracle | A heterogeneous conversion inevitably brings code changes |
+| **LOWEST long-term cost** | SCT + DMS → **Aurora PostgreSQL** | The only path that eliminates the license itself |
+| **LEAST operational overhead (the migration work itself)** | **DMS Serverless** | Removes Replication Instance sizing and scaling |
+| **Network bandwidth is very limited / tens of TB** | **Snowball + DMS (SCT data extraction agent)** | Bulk initial load by physical transfer, then only changes via CDC |
+| **Homogeneous engine (MySQL → RDS MySQL)** | **DMS only** (SCT not needed) | No schema conversion is required |
+| **A real-time analytics pipeline is also needed** | DMS → **Kinesis / S3** target | DMS targets are not only DBs |
+
+**"If it asks about downtime, CDC; about cost, Aurora; about bandwidth, Snowball; if homogeneous, drop SCT."** Four sentences set the direction of most DMS questions.
+
+In the bandwidth-constraint scenario, you need to know exactly the role of the **SCT Data Extraction Agent**. This agent extracts and compresses source data on-premises into local files, loads those files onto Snowball Edge to ship them physically to AWS, and then loads them through S3 into the target (especially a data warehouse such as Redshift). It is the standard path for moving tens to hundreds of TB of Teradata, Netezza, or Oracle DW to Redshift. Even then, **only the initial load is a physical transfer, and the changes after that are caught up over the network by DMS CDC** — a question may ask about this combination.
+
+## Summary
+
+Today's picture is fourfold.
+
+First, **CDC is a technique that reuses the transaction log of each DB engine.** Oracle uses the Redo Log (LogMiner + supplemental logging), SQL Server uses the Transaction Log (CDC feature), MySQL uses the binlog (ROW format), and PostgreSQL uses the WAL (logical replication). A question about which advance configuration the source DB needs is really asking what that engine's CDC source is.
+
+Second, **SCT and DMS have different roles.** SCT moves the schema and code (structure), and DMS moves the data (content). For homogeneous engines SCT is not needed, and for heterogeneous engines you should set SCT's 70-80% automatic conversion rate as the realistic goal and include development resources for the rest in the project plan.
+
+Third, **the substance of zero downtime is Full Load + CDC.** CDC catches up on the changes accumulated while the whole is being copied, and the system stops briefly only at the moment the Lag converges to 0. However, in the Cutover checklist, sequence synchronization, secondary indexes, statistics refresh, and the reverse-CDC safety net must be handled separately.
+
+Fourth, **the qualifier decides the choice.** Downtime points to CDC, long-term cost to a Refactor to Aurora, minimal app changes to Rehost or Babelfish, and bandwidth constraints to Snowball + the data extraction agent. Since the basic premise of a Pro question is that several options all "work," you must choose not what works but **what is best under that qualifier**.
 
 ## 📝 Practice Questions
 

@@ -1,16 +1,31 @@
 # Day 1 - Secrets Manager: Automatic Rotation (Lambda), Parameter Store Comparison, Cross-Account Secrets
 
-A secret is "a credential that leads directly to a breach if exposed." This includes DB passwords, API keys, OAuth tokens, and TLS private keys. From a security exam perspective, the essence of secret management is not merely "encryption at rest" but *full lifecycle control*. Encryption during storage, IAM authorization on access, rotation after use, and deletion during discard — you must manage all four stages. AWS Secrets Manager is a service designed to automate this lifecycle.
+A secret is "a credential that leads directly to a breach if exposed." DB passwords, API keys, OAuth tokens, and TLS private keys all belong here. From a security exam perspective, the essence of secret management is not merely "encryption at rest" but *control over the entire lifecycle*. Encryption when stored, IAM authorization when accessed, rotation after use, and a deletion grace period when discarded — you must manage all four stages. AWS Secrets Manager is a service designed to automate this lifecycle.
 
-## Why Hardcoding Secrets in Code/Environment Variables Is Wrong
+## Why You Must Not Hardcode Secrets in Code or Environment Variables
 
-Hardcoding secrets in source code, Git repositories, EC2 user data, or container environment variables creates three problems. First, everyone with code access sees the secret (least privilege violation). Second, rotation is impossible — you must redeploy to change it. Third, auditing is absent — you cannot track who accessed the secret or when. Secrets Manager solves all three: it encrypts with KMS envelope encryption, controls access via IAM/resource policies, and logs `GetSecretValue` calls to CloudTrail.
+Hardcoding secrets in source code, Git repositories, EC2 user data, or container environment variables creates three problems. First, everyone with access to the code sees the secret (a least-privilege violation). Second, rotation is impossible — changing it requires a redeployment. Third, auditing is impossible — you cannot trace who read the secret and when. Secrets Manager solves all three: it envelope-encrypts with KMS, controls access with IAM and resource policies, and records `GetSecretValue` calls in CloudTrail.
 
-> 💡 **Related Theory**: Secret management ultimately reduces to the *secret zero* problem. "To securely retrieve a secret, I need another credential—how is that credential protected?" This is infinite regression. AWS breaks this with IAM roles — EC2/Lambda/ECS receive temporary credentials from instance metadata or task roles, which they then use to call Secrets Manager. In other words, "machine identity" replaces secret zero. There is no persistent secret on disk.
+Secret management comes down to the *secret zero* problem. It is an infinite regress: "To fetch a secret securely I need another credential, so how do I protect that credential?" AWS cuts this chain with IAM roles — EC2, Lambda, and ECS receive temporary credentials through instance metadata or task roles, and use those temporary credentials to call Secrets Manager. In other words, "machine identity" replaces secret zero. No persistent secret sits on disk.
+
+## How Secrets Actually Leak
+
+The need for secret management did not come from abstract principle but from repeated incidents. Leak paths converge on roughly four.
+
+| Leak path | Typical form | Countermeasure |
+|-----------|--------------|----------------|
+| Source code and version control | Access keys embedded in Git commits, committed `.env` files | Externalize secrets, commit hooks and repository scanning |
+| Build and CI logs | A pipeline prints environment variables straight into logs | Log masking, short-lived credentials via OIDC |
+| Instance metadata | SSRF hits the IMDS and steals the role's temporary credentials | Enforce IMDSv2, minimize role permissions |
+| Backups and artifacts | Credentials left in DB dumps or container image layers | Rotation, image scanning, no secrets at build time |
+
+The 2019 Capital One breach is the standard textbook case of what happens when the boundary between secrets and machine identity collapses. The attacker exploited an SSRF vulnerability in an application to call the EC2 instance metadata service (IMDSv1), and used the EC2 role's temporary credentials obtained there to read S3 data. There are two lessons. First, removing secrets from code and switching to roles is not enough — you must also block *the path that lets someone extract the role credentials* (SSRF → IMDSv1). Second, if the permissions attached to the role are broad, a single theft spreads to all of the data. This incident is the background to AWS pushing IMDSv2, which requires a session token, afterwards, and to the exam repeatedly asking "SSRF defense = enforce IMDSv2 + least-privilege roles."
+
+A long-standing incident pattern is a long-term AWS access key accidentally committed to a public repository, harvested by automated scanners, and abused immediately. To mitigate this, AWS continuously scans public repositories; when it detects an exposed key, it automatically attaches a managed quarantine policy (from the `AWSCompromisedKeyQuarantine` family) to the account and notifies the owner. However, this is only an after-the-fact safety net. The fundamental responses are two: "never issue long-term access keys in the first place" (roles and OIDC federation) and "move secrets out of the code." The exam also always sets the correct answer for an exposure incident as *rotate the key + remove long-term keys + switch to roles*.
 
 ## Secrets Manager's Storage and Encryption Model
 
-Secret values are always encrypted with a KMS key at rest. The default is the AWS-managed key `aws/secretsmanager`, but the exam-recommended approach is a **customer-managed KMS key (CMK)**. Using a CMK allows you to further control via key policy "which principals can decrypt this secret," and it becomes mandatory for cross-account sharing.
+Secret values are always stored encrypted with a KMS key. The default is the AWS managed key `aws/secretsmanager`, but what the exam recommends is a **customer managed KMS key (CMK)**. With a CMK, the key policy gives you additional control over "which principals can decrypt this secret," and it becomes mandatory for cross-account sharing.
 
 ```bash
 aws secretsmanager create-secret \
@@ -20,11 +35,39 @@ aws secretsmanager create-secret \
   --secret-string '{"username":"admin","password":"P@ssw0rd!","host":"db.internal","port":3306}'
 ```
 
-Secret values are conventionally stored as JSON structures — rotation Lambdas and RDS integration expect standard keys like `username` and `password`.
+Storing the secret value as a JSON structure is the convention — the rotation Lambda and the RDS integration expect standard keys such as `username` and `password`.
+
+### Versions and Staging Labels: A Secret Is Versioned, Not Overwritten
+
+Secrets Manager does not overwrite values. Calling `PutSecretValue` creates a new **version (VersionId)**, and a **staging label** is attached to that version. When an application calls `GetSecretValue` without specifying a label, it receives the version carrying the `AWSCURRENT` label.
+
+```
+VersionId: 8f3c...   label: AWSPREVIOUS   ← previous value (basis for comparison and rollback)
+VersionId: a91d...   label: AWSCURRENT    ← currently valid value (default lookup target)
+VersionId: c5e7...   label: AWSPENDING    ← value awaiting verification during rotation
+```
+
+Labels are not fixed to a value; they **move between versions**. When rotation finishes, `AWSCURRENT` moves to the new version and `AWSPREVIOUS` attaches to the old one. Thanks to this structure, if a failure occurs right after rotation, you can narrow down the cause using the previous value as a basis. You can also attach a custom label (for example `CANARY`) yourself so that only some workloads use the new value first.
+
+```bash
+# Retrieve the current value (default = AWSCURRENT)
+aws secretsmanager get-secret-value --secret-id prod/db/mysql
+
+# Retrieve the previous value — used to compare causes when a failure occurs right after rotation
+aws secretsmanager get-secret-value \
+  --secret-id prod/db/mysql \
+  --version-stage AWSPREVIOUS
+
+# Check the current placement of versions and labels
+aws secretsmanager list-secret-version-ids \
+  --secret-id prod/db/mysql --include-deprecated
+```
+
+The fact that `GetSecretValue` is label-based is directly tied to caching design. If an application pins and caches a specific VersionId, it keeps holding the old value even after rotation happens, and authentication breaks the moment rotation completes and the old credential is invalidated. Conversely, if it looks up by label (`AWSCURRENT`) and sets the cache TTL sufficiently shorter than the rotation interval, rotation propagates to the application naturally. A large share of the operational symptom "rotation is on, but authentication errors pop up periodically" is a mistake on this caching axis, not a problem with the rotation logic itself.
 
 ## Access Control: IAM Policy + Resource Policy
 
-Secrets Manager access is controlled on two axes. **Identity-based policies** (IAM) define "what can this principal do to which secrets," while **resource-based policies** (policies attached directly to the secret) define "who can access this secret." Cross-account access requires a resource policy.
+Access to Secrets Manager is controlled on two axes. The **identity-based policy** (IAM) defines "what can this principal do to which secrets," and the **resource-based policy** (a policy attached directly to the secret) defines "who can access this secret." Cross-account access always requires a resource policy.
 
 ```json
 {
@@ -41,35 +84,35 @@ Secrets Manager access is controlled on two axes. **Identity-based policies** (I
 }
 ```
 
-> ⚠️ **Pitfall**: Do not forget the 6-character random suffix at the end of the secret ARN. Secrets Manager appends a 6-character random suffix to the ARN to distinguish between deletion and recreation of secrets with the same name. If an IAM policy Resource specifies only `prod/db/mysql`, it won't match — you must use a wildcard like `prod/db/mysql-*` to include the suffix.
+> ⚠️ **Pitfall**: Do not forget the 6-character random suffix (`-??????`) at the end of the secret ARN. To distinguish the case where a secret with the same name is deleted and recreated, Secrets Manager appends a 6-character random suffix to the end of the ARN. If you write only `prod/db/mysql` in the IAM policy Resource, it will not match — you need to add a wildcard such as `prod/db/mysql-*` so that it also matches the suffix.
 
-## Automatic Rotation (Rotation): Lambda-Based 4-Step Process
+## Automatic Rotation: Four Steps Based on Lambda
 
-Rotation is the core value of Secrets Manager. If secrets are automatically rotated periodically, the effective lifetime of a leaked credential becomes very short. Rotation is performed by a Lambda function, and AWS provides rotation Lambda templates for RDS, Redshift, and DocumentDB.
+Rotation is the core value of Secrets Manager. If secrets are replaced automatically on a schedule, the valid lifetime of a leaked credential becomes short. Rotation is performed by a Lambda function, and AWS provides rotation Lambda templates for RDS, Redshift, and DocumentDB.
 
-The rotation Lambda is invoked in **4-step stages**:
+The rotation Lambda is invoked in **4 steps**:
 
 ```
-createSecret  → Create a new secret value, store in AWSPENDING version stage
-setSecret     → Actually apply the new credential to the target service (e.g., DB via ALTER USER)
-testSecret    → Test the AWSPENDING credential with real connection/query
-finishSecret  → Promote AWSPENDING stage to AWSCURRENT (previous CURRENT becomes AWSPREVIOUS)
+createSecret  → Generate a new secret value and store it in the AWSPENDING version stage
+setSecret     → Actually apply the new credential to the target service (e.g., DB) (ALTER USER, etc.)
+testSecret    → Test an actual connection/query using the AWSPENDING credential
+finishSecret  → Promote the AWSPENDING stage to AWSCURRENT (the previous CURRENT becomes AWSPREVIOUS)
 ```
 
 ```
 [AWSPREVIOUS] ← [AWSCURRENT] ← [AWSPENDING]
-   Previous value   Current value   New value being rotated
+ previous value   value in use   new value being rotated
 ```
 
-> 💡 **Related Theory**: This 4-step mimics *atomic swap*. The key insight is that finishSecret only runs if testSecret succeeds — traffic switches only after the new credential is validated to work. If setSecret applies to the DB but testSecret fails, AWSCURRENT still points to the old value, so the application doesn't break. This is the same principle as blue/green deployment — defer traffic cutover until after validation.
+These four steps imitate an *atomic swap*. The key is that finishSecret promotes only if testSecret succeeds — traffic is moved only after verifying that the new credential actually works. If setSecret has been applied to the DB but testSecret fails, AWSCURRENT still points to the old value, so the application does not stop. This is the same principle as a Blue/Green cutover in zero-downtime deployment — the traffic cutover is deferred until verification.
 
-### Single-User vs. Alternating-User Strategy
+### Single-User vs. Alternating-Users Strategy
 
 RDS rotation has two strategies:
-- **single-user**: Only change the password of the same DB user. Simple, but there can be a brief authentication failure window between password change and application cache refresh. The rotation Lambda doesn't use master credentials — it rotates itself.
-- **alternating-users**: Use two users (e.g., `app_user_1`, `app_user_2`) alternately. During rotation, change the password of the user not currently in use, then switch — this results in virtually no downtime. However, the rotation Lambda must retrieve **master (superuser) credentials** from a separate secret (`masterarn` parameter).
+- **single-user**: Changes only the password of the same DB user. It is simple, but a short authentication-failure window can occur between the password change and the application's cache refresh. The rotation Lambda rotates itself without using master credentials.
+- **alternating-users**: Alternates between two users (for example `app_user_1` and `app_user_2`). During rotation it changes the password of the user that is not in use and then switches, so there is almost no downtime. However, the rotation Lambda must hold **master (superuser) credentials** as a separate secret (refer to `masterarn`).
 
-> 🎯 **Scenario**: "During RDS password rotation, no authentication errors must occur (zero-downtime)" is a common exam question. The answer is the alternating-users strategy, which requires connecting the rotation Lambda to a master credential secret. single-user is simpler to implement but can suffer brief authentication failures depending on timing.
+> 🎯 **Scenario**: "No short authentication errors may occur during RDS password rotation (zero downtime)" is a typical scenario. The answer is the alternating-users strategy, and for it you must connect the master-credential secret to the rotation Lambda. single-user is easy to implement, but depending on the refresh timing a momentary authentication failure is possible.
 
 ```bash
 aws secretsmanager rotate-secret \
@@ -78,30 +121,98 @@ aws secretsmanager rotate-secret \
   --rotation-rules '{"AutomaticallyAfterDays":30}'
 ```
 
-The rotation Lambda must access the private DB inside a VPC, so it is typically **deployed in the same VPC as the DB**, and to call the Secrets Manager API it needs **a VPC endpoint (or NAT)**. Omitting this network path will cause rotation to fail with a timeout.
+Because the rotation Lambda must reach a private DB inside the VPC, it is usually placed in **the same VPC as the DB**, and to call the Secrets Manager API it needs **a VPC endpoint (or NAT)**. If this network path is missing, rotation fails with a timeout.
 
-## Parameter Store Comparison: When to Use What
+### Rotation Strategy Comparison
 
-AWS Systems Manager Parameter Store can also store secrets as `SecureString`, encrypting them with KMS at rest. The exam tests the selection criteria between the two.
+| Strategy | Behavior | Master secret reference | Authentication failure window | Suited for |
+|----------|----------|------------------------|------------------------------|------------|
+| single-user | Replaces the password of the same DB user | Not needed (rotates itself) | Possible (between change and cache refresh) | Batch jobs and internal tools that can tolerate a brief interruption |
+| alternating-users | Uses two users alternately, updating the idle one first | **Required** (a superuser changes the other user's password) | Effectively none | Production that requires zero downtime |
+
+alternating-users is not always superior. Because the master (superuser) credentials must be stored as a separate secret, you are effectively *creating one more powerful secret*, and if that secret is compromised the damage is far greater. So in practice the master secret is isolated by encrypting it with a separate CMK and allowing Decrypt only to the rotation Lambda's role. It is a trade-off between "do we need zero downtime" and "can we entrust master credentials to automation."
+
+### Rotation Network Path: Most Failures Happen Here
+
+```
+[ Two paths the rotation Lambda needs ]
+
+               ┌─────────────── VPC (private subnet) ────────────────┐
+               │                                                     │
+               │   Rotation Lambda ──(1) SQL: ALTER USER ...──→ RDS  │
+  Secrets      │        │                                            │
+  Manager ←────┼────────┘ (2) GetSecretValue / PutSecretValue        │
+   API         │        └─→ Interface VPC Endpoint (secretsmanager)  │
+               │             or NAT Gateway → via the internet       │
+               └─────────────────────────────────────────────────────┘
+
+  Only (1) works and (2) does not → timeout in createSecret/finishSecret
+  Only (2) works and (1) does not → DB connection failure in setSecret/testSecret
+```
+
+The moment you attach a Lambda to a VPC, its default path to the public internet disappears. That is why forgetting the second path (the Secrets Manager API) is the most common cause of failure. When you use an interface endpoint, the endpoint's security group must allow port 443 from the Lambda ENI, and private DNS must be enabled so that `secretsmanager.<region>.amazonaws.com` resolves to the endpoint.
+
+### How Do You Notice a Rotation Failure
+
+Rotation happens in the background, so even failures are silent. Set up three observation surfaces in advance.
+
+| Observation surface | What it shows | Meaning of the signal |
+|---------------------|---------------|----------------------|
+| CloudTrail | `RotationSucceeded` / `RotationFailed` events | Success or failure of the rotation attempt itself |
+| Lambda CloudWatch logs | In which of the 4 steps the exception occurred | Pinpoints the failing step |
+| `DescribeSecret` | `LastRotatedDate` / `NextRotationDate` | The scheduled time has passed but nothing updated = accumulating failures |
+
+```bash
+# Check rotation status — view the last rotation time and the rule together
+aws secretsmanager describe-secret --secret-id prod/db/mysql \
+  --query '{Rotation:RotationEnabled,LastRotated:LastRotatedDate,Next:NextRotationDate,Lambda:RotationLambdaARN}'
+
+# Rotate once immediately regardless of the schedule (for verification)
+aws secretsmanager rotate-secret --secret-id prod/db/mysql --rotate-immediately
+
+# Clean up when rotation stalls midway and AWSPENDING is left behind
+aws secretsmanager cancel-rotate-secret --secret-id prod/db/mysql
+```
+
+> 🎯 **Scenario**: "Rotation was enabled, but the value does not change and only `NextRotationDate` keeps being pushed back. Find the cause" is a typical diagnosis question. The inspection order is fixed — (1) Check `RotationFailed` in CloudTrail to see whether a rotation was attempted at all. (2) Check the Lambda logs to see in which step the exception occurred. (3) If it stopped at `setSecret`/`testSecret`, look at the Lambda→DB direction (security group, subnet routing, DB user permissions); if it stopped at `createSecret`/`finishSecret`, look at the Lambda→Secrets Manager direction (VPC endpoint, private DNS) and the execution role's `secretsmanager:PutSecretValue` and `UpdateSecretVersionStage`, plus KMS `Decrypt`/`GenerateDataKey` permissions. In the end the cause converges on one of two things: **the network path or permissions.**
+
+## Comparison with Parameter Store: When to Use Which
+
+AWS Systems Manager Parameter Store can also store secret values encrypted with KMS as `SecureString`. The exam asks for the selection criteria between the two.
 
 | Item | Secrets Manager | Parameter Store (SecureString) |
 |------|-----------------|--------------------------------|
-| Automatic Rotation | Built-in (Lambda integration) | None (manual implementation required) |
-| Cross-Account Sharing | Resource policy support | Standard unsupported (Advanced limited) |
-| Cost | Monthly per-secret fee + API calls | Standard free, Advanced paid |
-| Size Limit | Up to 64KB | Standard 4KB / Advanced 8KB |
-| Random Password Generation | Built-in `GetRandomPassword` | None |
-| RDS/Redshift Integration | First-class integration | None |
-| Use Case | Secrets requiring rotation/cross-account sharing | Config values, simple secrets not needing rotation, non-confidential configuration |
+| Automatic rotation | Built in (Lambda integration) | None (must implement yourself) |
+| Cross-account sharing | Supports resource policies | Not supported for Standard parameters (limited for Advanced as well) |
+| Cost | Monthly fee per secret + API calls | Standard is free, Advanced is paid |
+| Size limit | Up to 64KB | Standard 4KB / Advanced 8KB |
+| Random password generation | Built-in `GetRandomPassword` | None |
+| RDS/Redshift integration | First-class integration | None |
+| Use | Real secrets that need rotation or cross-account sharing | Configuration values, simple secrets that need no rotation, non-confidential configuration |
 
-> ⚠️ **Pitfall**: "Minimize cost + no rotation needed for a simple API key" → Parameter Store SecureString is the answer. Conversely, "auto-rotate DB password" or "cross-account secret sharing" is required → Secrets Manager. Interestingly, Parameter Store can *reference* Secrets Manager secrets via `/aws/reference/secretsmanager/{secret-name}` path, enabling a hybrid pattern.
+> ⚠️ **Pitfall**: If the requirement is "minimize cost + store a simple API key with no rotation needed," Parameter Store SecureString is the answer. Conversely, if "automatic DB password rotation" or "cross-account secret sharing" is required, it is Secrets Manager. Interestingly, Parameter Store can *reference* a Secrets Manager secret through the `/aws/reference/secretsmanager/{secret-name}` path, so a pattern that uses the two services together is also possible.
+
+## How an Application Picks Up a Secret
+
+The exam does not stop at "the secret was stored"; it asks "how does the runtime fetch it." Each injection method has a different exposure surface.
+
+| Injection method | Behavior | Exposure surface |
+|------------------|----------|------------------|
+| Call `GetSecretValue` directly via the SDK | The application code looks it up at runtime | Narrowest. The value exists only in process memory |
+| The `secrets` field in the ECS task definition | The ECS agent retrieves it and injects it as a container environment variable | Environment variables can be exposed via container metadata and crash dumps |
+| Lambda extension (Parameters and Secrets Extension) | The extension serves cached values over a local HTTP endpoint | Narrow. Also improves call count and latency |
+| EKS Secrets Store CSI driver | Mounts the secret as a volume file in the pod | Exposure depends on file permissions and node compromise |
+
+Whichever method you use, the common principle is the same. Do not persist the value on disk, do not print it to logs, and keep the cache TTL shorter than the rotation interval.
+
+"It's safe because I injected it as an environment variable" is a common misconception. An environment variable is not an encrypted store in itself but process context, and it can leak through container metadata lookups, crash dumps, and inheritance by child processes. Lambda environment variables are encrypted with KMS at rest but exist in plaintext in the process at run time. The accurate understanding is not "never use environment variables" but the ranking **"better than hardcoding in code, but a wider exposure surface than direct SDK lookup."**
 
 ## Cross-Account Secret Sharing
 
-To allow an IAM role in account B to read a secret in account A, **both** of the following are required:
+To let a role in account B read a secret in account A, **both** of the following are needed:
 
-1. **Secret Resource Policy**: Allow the principal in account B
-2. **KMS Key Policy**: Allow the principal in account B to decrypt with that key — AWS-managed key `aws/secretsmanager` cannot have its key policy modified, so it **must be a CMK**
+1. **Secret resource policy**: Allow the account B principal
+2. **KMS key policy**: Allow the account B principal to decrypt with that key — the AWS managed key `aws/secretsmanager` does not allow its key policy to be modified, so it **must be a CMK**
 
 ```json
 {
@@ -116,15 +227,96 @@ To allow an IAM role in account B to read a secret in account A, **both** of the
 }
 ```
 
-The KMS CMK key policy must also allow account B's `kms:Decrypt`. The IAM policy of account B's role must have both `secretsmanager:GetSecretValue` and `kms:Decrypt` (all three policies must intersect for authorization to succeed).
+You must also allow account B's `kms:Decrypt` in the KMS CMK key policy. The IAM policy of the account B role must also include `secretsmanager:GetSecretValue` and `kms:Decrypt` (the three policies are authorized as an intersection).
 
-> 🎯 **Scenario**: "Cross-account secret sharing results in `AccessDeniedException` (KMS) in account B" — the typical cause is that the secret is encrypted with an AWS-managed key. Managed keys cannot have their key policies edited, so there is no way to allow external account decryption. Solution: re-encrypt the secret with a CMK and add account B's Decrypt to the key policy.
+> 🎯 **Scenario**: The typical cause of "`AccessDeniedException` (KMS) in account B when sharing a secret cross-account" is that the secret is encrypted with an AWS managed key. A managed key's key policy cannot be edited, so there is no way to allow decryption by an external account. Solution: re-encrypt the secret with a CMK and add account B's Decrypt to the key policy.
+
+```
+[ Three gates a cross-account secret lookup must pass ]
+
+Account B role ──GetSecretValue──→ ┌ (1) Account B IAM policy: may this role make the call?
+                                   ├ (2) Account A secret resource policy: does it accept this principal?
+                                   └ (3) Account A CMK key policy: may this principal decrypt?
+
+  If any one of the three is missing, AccessDenied.
+  However, if blocked at (3) the error points to KMS, and if blocked at (1) or (2) it points to Secrets Manager.
+  ▶ Which service the error message points to is the first clue for diagnosis.
+```
+
+### Widening to the Organization Level: `aws:PrincipalOrgID`
+
+A resource policy that enumerates accounts one by one must be edited every time an account is added. If you use Organizations, bind them all at once with an organization ID condition, and at the same time lock down access from outside the organization and non-TLS access with a Deny.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowOrgReadOnly",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "aws:PrincipalOrgID": "o-abcd1234ef" }
+      }
+    },
+    {
+      "Sid": "DenyInsecureTransport",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "secretsmanager:*",
+      "Resource": "*",
+      "Condition": {
+        "Bool": { "aws:SecureTransport": "false" }
+      }
+    }
+  ]
+}
+```
+
+This form, which ties `Principal: "*"` to the organization through a condition, means "if the principal is inside the organization, and if its own account's IAM policy allows it." Do not misread it as a public policy just because you see `Principal: "*"` — authorization is decided jointly by the `Condition` and the requester account's IAM policy. Conversely, `Principal: "*"` with no condition is genuinely dangerous.
+
+### Multi-Region Replication
+
+If you replicate a secret to another Region with `ReplicateSecretToRegions`, the replica automatically follows when the primary Region's value changes. In a Region outage, the replica can be promoted to a standalone secret. Because the replica is re-encrypted with a KMS key in the destination Region, the destination Region also needs a corresponding CMK and its key policy.
+
+```bash
+aws secretsmanager replicate-secret-to-regions \
+  --secret-id prod/db/mysql \
+  --add-replica-regions \
+    Region=ap-southeast-1,KmsKeyId=arn:aws:kms:ap-southeast-1:111122223333:key/wxyz-9876
+```
+
+You do not configure rotation separately on a replica. Rotation is performed only on the **primary Region secret**, and the result propagates to the replicas. An option saying "configure rotation independently in each Region" is wrong. Also, a replica is only a read target, so a design that tries `PutSecretValue` directly on a replica is also wrong.
 
 ## Deletion Grace Period and Recovery
 
-`DeleteSecret` does not immediately delete but rather imposes a **7-30 day recovery grace period** (30 days by default). You can restore with `RestoreSecret` during this period. It's a safeguard against accidental or malicious deletion. If immediate deletion is truly necessary, use `--force-delete-without-recovery`, but the exam recommends the default grace period for "accidental deletion prevention."
+`DeleteSecret` is not an immediate deletion; it places a **7 to 30 day recovery window** (30 days by default). During this period you can recover with `RestoreSecret`. It is a safeguard against accidental or malicious deletion. If immediate deletion is truly necessary, use `--force-delete-without-recovery`, but on the exam the default grace period is recommended for "preventing accidental deletion."
 
-> 🔍 **Deeper Dive**: Secrets Manager provides an automatic caching client library that allows applications to avoid calling `GetSecretValue` on every request by caching in memory and refreshing only at rotation time. This improves both cost (charged per API call) and availability (application continues with cached value even if Secrets Manager is unavailable). The key is making the cache TTL shorter than the rotation period — that way, rotated new credentials are fetched on time.
+Secrets Manager has an automatic caching client library, so the application does not hit `GetSecretValue` on every call; it caches in memory and refreshes only when rotation occurs. This improves both cost (billed per API call) and availability (it keeps working with the cached value even during a Secrets Manager outage). The key is to set the cache TTL shorter than the rotation interval — only then does it pick up the rotated new credentials in time.
+
+## Reading Secret Access from Logs
+
+`GetSecretValue` is recorded by default as a CloudTrail **management event** (you do not need to enable a separate data event as with S3 object reads). The items to read from a single event are fixed.
+
+```
+eventName        : GetSecretValue           ← what was done
+userIdentity     : AssumedRole + session name ← who (which role, which session)
+sourceIPAddress  : 10.0.3.11 / public IP    ← from where
+requestParameters.secretId                   ← which secret
+errorCode        : AccessDeniedException     ← if it failed, why (if absent, it succeeded)
+```
+
+An investigator asks three questions of this event. (1) Is this role a principal that normally reads this secret — if not, it is a sign of privilege expansion. (2) Is `sourceIPAddress` the usual workload range — if it is a developer laptop or an unfamiliar public IP, suspect credential theft. (3) Is this a pattern of sweeping many secrets in a short time — this is typical of the credential harvesting stage after a breach.
+
+If always-on monitoring with CloudTrail alone is hard, turn on GuardDuty. GuardDuty learns from CloudTrail events and raises "API calls from an unusual principal or location" as anomalous behavior. Routing those findings through EventBridge into automated response (invalidating the session, immediately rotating the relevant secret) is the standard wiring.
+
+> 🎯 **Scenario**: When "There are signs that a developer account has been compromised. What is the immediate response order for secrets?" appears, the answer has an order — (1) Block the permissions of the suspected principal (modify the role trust policy, invalidate sessions), (2) **Immediately rotate** every secret that may have been exposed (`rotate-secret --rotate-immediately`), (3) Use CloudTrail to establish which secrets were actually read and narrow the blast radius, (4) Forcibly terminate the existing sessions of the target service (DB, etc.). "Delete the secret" is the wrong answer. Because of the recovery window, deletion has no immediate effect and only stops the application. **The antidote to a leaked credential is rotation, not deletion.**
+
+## Summary
+
+Secret management is not "encrypting it and putting it somewhere," but **automating the lifecycle of creation, distribution, rotation, auditing, and disposal**. Secrets Manager earns its price with two capabilities, rotation (Lambda 4 steps) and cross-account sharing (resource policy + CMK key policy), and if you need neither, Parameter Store SecureString is the cheaper and simpler correct answer. The fork on the exam always boils down to the same three questions — *Do you need rotation, is it cross-account, is cost the priority?*
 
 ---
 

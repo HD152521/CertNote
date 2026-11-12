@@ -1,246 +1,259 @@
-# Day 1 - Serverless CI/CD: Lambda, SAM, and Canary Deployments
+# Day 1 - AWS SAM: CloudFormation's Apology to Serverless
 
-AWS Lambda is fundamentally different from containers. No infrastructure to manage, no scaling configuration, pure function-as-a-service. But this simplicity masks complexity in versioning, alias management, and deployment strategy. A function update affects all users simultaneously unless carefully version-controlled. A broken deployment has nowhere to roll back except manual code changes.
+Anyone who has stood up a single Lambda with CloudFormation knows this. To create one function, a set of six types follows in a long line: `AWS::Lambda::Function`, `AWS::IAM::Role`, `AWS::IAM::Policy`, `AWS::Lambda::Permission`, `AWS::Lambda::EventSourceMapping`, and `AWS::ApiGateway::*`. One simple "order lookup API" becomes 200 lines of YAML. The weight of this boilerplate is the background to why it was formally announced at AWS re:Invent 2016 under the name SAM (Serverless Application Model). SAM is not a new IaC tool. It is **a serverless-friendly DSL layered on top of CloudFormation's Transform (macro)**, and at deployment time it is unrolled into plain CloudFormation.
 
-This week covers AWS SAM (Serverless Application Model) as infrastructure-as-code for Lambda, version/alias patterns for traffic control, and CodeDeploy Canary strategy for serverless safety nets. Together, these create serverless deployment reliability matching container platforms.
+Today we look at why SAM was designed on top of a single line (`Transform:`) of CloudFormation, how far sam local's Docker emulation can actually be trusted, and why sam sync's hotswap is dangerous in production. On the DOP exam, SAM is less often asked about on its own than sandwiched in the middle of "CodePipeline + CodeDeploy + Lambda Canary," so knowing the tool's internal behavior solves 5 to 10 questions at once.
 
-## Lambda Version and Alias Fundamentals
+## Why SAM Was Designed as a CloudFormation Macro
 
-Lambda functions have two forms of code identity: **Version** and **Alias**.
+The first line of a SAM Template, `Transform: AWS::Serverless-2016-10-31`, is where all the magic begins. In 2016 CloudFormation introduced an extension mechanism called **Transforms**, a step in which a separate Lambda function rewrites the template before it reaches the CFN engine. AWS SAM is an **AWS-managed macro** built on this mechanism; it defines pseudo resource types such as `AWS::Serverless::Function` and then, at deployment time, unrolls them into 6 to 8 real CFN resources.
 
-**Versions** are immutable snapshots. Publishing a version creates `$LATEST` → `1`. Publish again → `$LATEST` → `2`. Versions are numbered sequentially, never deleted, never modified. Request `arn:aws:lambda:...:function:myapp:1` always executes the exact code from first publish.
+Why did they use a macro instead of building a new IaC tool? The answer is **reuse of operational assets**. CloudFormation already has 13 years' worth of enterprise features such as Drift Detection, StackSets, Change Sets, and Rollback. Had SAM been a separate engine, all of this would have had to be rebuilt from scratch. Thanks to the macro approach, SAM users are automatically compatible with all of CloudFormation's governance tools (IAM, Service Catalog, Config Rules).
 
-**Aliases** are mutable pointers to versions. Create alias `LIVE` pointing to version 1. Later, point `LIVE` to version 2. Same ARN (`arn:aws:lambda:...:function:myapp:LIVE`) executes different code. Aliases enable zero-downtime deployments—switch traffic between versions via alias update.
+> The inner workings of the Transform macro are triggered at the moment of `aws cloudformation create-change-set --change-set-type CREATE --include-nested-stacks`. The macro Lambda receives the original template (JSON) and returns a new template, and the CFN service computes the ChangeSet from that result. In other words, **`sam deploy` is ultimately a wrapper around `aws cloudformation deploy`**. The only difference is that the SAM CLI has a step where it builds the code with `sam build`, uploads it to S3, and then substitutes `CodeUri` with the S3 URI. If you open a SAM stack in the CloudFormation console, the "Processed template" tab shows the real, unrolled template.
 
-The combination enables traffic-weighted canary deployments: version 1 (5%), version 2 (95%). As version 2 proves stable, increase weight until 100%, then delete version 1.
+> The macro pattern is the same metaprogramming model as Lisp's hygienic macros (Kohlbecker, 1986) and Scheme's syntax-rules. It is the classic "embedded DSL" approach of layering a domain-specific language (DSL) on a host language (CFN). The same pattern appears in Terraform modules, Pulumi component resources, and Kubernetes CRDs + Operators. The common principle is the declarative programming philosophy that **the user declares intent and the machine unrolls it into low-level resources**.
 
-```bash
-# Publish version 1
-aws lambda publish-version \
-  --function-name myapp \
-  --query 'Version' --output text  # Returns "1"
+## Where SAM Sits Among Other IaC Tools
 
-# Create alias LIVE pointing to version 1
-aws lambda create-alias \
-  --function-name myapp \
-  --name LIVE \
-  --function-version 1
+| Tool | Released | Abstraction model | AWS only | Exam weight (DOP) |
+|------|------|-------------|-------|-----------------|
+| **CloudFormation** | 2011 | Declarative resource graph | ✅ | Very high |
+| **SAM** | 2016 | CFN Transform macro (serverless DSL) | ✅ | High |
+| **Serverless Framework** | 2015 | Plugins + CFN generation | ❌ (multi-cloud) | Low (v4 commercialization) |
+| **CDK** | 2019 | Code → CFN synthesis (Construct tree) | ✅ | Medium (continually rising) |
+| **Terraform** | 2014 | HCL + Provider graph | ❌ | Low (almost never asked directly) |
+| **Pulumi** | 2018 | Code → its own engine | ❌ | Almost none |
 
-# Update alias to point version 2 with traffic weight
-aws lambda update-alias \
-  --function-name myapp \
-  --name LIVE \
-  --function-version 2 \
-  --routing-config AdditionalVersionWeights={"1"=0.05}  # 95% version 2, 5% version 1
-```
+GCP has the flow **Deployment Manager → Config Connector → Terraform**, and on Azure **ARM Template → Bicep** is the macro-based abstraction most similar to SAM. In particular, **Bicep** (2020) is nearly identical in design philosophy to SAM in that it is a friendlier DSL layered on top of ARM JSON. The difference is that Bicep is a general-purpose DSL abstracting all ARM resources, whereas SAM simplifies only the six serverless resources (Function/Api/HttpApi/SimpleTable/StateMachine/LayerVersion).
 
-Invoking alias: `arn:aws:lambda:region:account:function:myapp:LIVE` automatically routes according to weight. Clients see no difference; Lambda handles distribution.
+> 🎯 **Scenario**: "A company operates 50 sets of Lambda + API Gateway + DynamoDB, and its CloudFormation templates have exceeded 2,000 lines. How can it reduce operational burden while keeping the same governance (StackSets, Drift Detection)?" — The answer is **SAM migration**. CDK gives the same effect but adds a TypeScript learning curve, and Terraform loses the CloudFormation governance tools (the equivalents of StackSets and Drift Detection).
 
-> 💡 **Related Theory**: Lambda version/alias system implements **blue-green deployment pattern** without infrastructure switching. Traditional blue-green replaces entire environments; Lambda switches versions via pointer update. Traffic shifting is built-in via routing weights.
+## The Core of a SAM Template: Globals and Policy Templates
 
-## AWS SAM: Infrastructure as Code for Serverless
+The two key devices by which SAM cuts boilerplate are `Globals` and `Policies`.
 
-AWS SAM (Serverless Application Model) is declarative IaC for serverless architectures. Simpler than CloudFormation for Lambda, API Gateway, DynamoDB, SNS/SQS use cases.
-
-SAM template structure:
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
-Description: Serverless checkout service
-
 Globals:
   Function:
+    Runtime: python3.12
+    Architectures: [arm64]
     Timeout: 30
     MemorySize: 512
-    Runtime: python3.11
+    Tracing: Active
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+        POWERTOOLS_SERVICE_NAME: orders
 
 Resources:
-  CheckoutFunction:
+  GetOrderFn:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: checkout-service
-      CodeUri: src/
-      Handler: app.lambda_handler
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OrdersTable
-      Environment:
-        Variables:
-          ORDERS_TABLE: !Ref OrdersTable
+      CodeUri: ./src/get_order/
+      Handler: app.handler
       Events:
-        ApiEvent:
-          Type: Api
+        Api:
+          Type: HttpApi
           Properties:
-            RestApiId: !Ref CheckoutApi
-            Path: /orders
-            Method: POST
+            ApiId: !Ref OrdersApi
+            Path: /orders/{id}
+            Method: GET
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub '/${Env}/orders/*'
 
-  CheckoutApi:
-    Type: AWS::Serverless::Api
+  OrdersApi:
+    Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
-      TracingEnabled: true
-      MethodSettings:
-        - ResourcePath: '/**'
-          HttpMethod: '*'
-          LoggingLevel: INFO
+      Auth:
+        Authorizers:
+          CognitoAuth:
+            JwtConfiguration:
+              issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPoolId}'
+              audience: [!Ref AppClientId]
+            IdentitySource: $request.header.Authorization
+        DefaultAuthorizer: CognitoAuth
 
   OrdersTable:
-    Type: AWS::DynamoDB::Table
+    Type: AWS::Serverless::SimpleTable
     Properties:
-      TableName: orders
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: order_id
-          AttributeType: S
-      KeySchema:
-        - AttributeName: order_id
-          KeyType: HASH
-
-Outputs:
-  CheckoutApiEndpoint:
-    Description: API Gateway endpoint
-    Value: !Sub 'https://${CheckoutApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
-  CheckoutFunctionArn:
-    Description: Checkout Lambda ARN
-    Value: !GetAtt CheckoutFunction.Arn
+      PrimaryKey: {Name: id, Type: String}
 ```
 
-SAM deployment:
+`Globals` manages common properties in one place even with 50 functions. If an individual function overrides the same property, the function's value takes precedence. `Policies` are about 60 predefined IAM policy templates that express common permission patterns in a single line.
+
+| Policy Template | Unrolled IAM Actions |
+|-----------------|--------------------|
+| `DynamoDBReadPolicy` | `dynamodb:GetItem/BatchGetItem/Query/Scan/DescribeTable` on table+index |
+| `DynamoDBCrudPolicy` | + `PutItem/UpdateItem/DeleteItem/BatchWriteItem` |
+| `S3ReadPolicy` | `s3:GetObject/GetObjectAcl/GetObjectVersion/...` on bucket/* |
+| `SQSPollerPolicy` | `sqs:ReceiveMessage/DeleteMessage/GetQueueAttributes/ChangeMessageVisibility` |
+| `KMSDecryptPolicy` | `kms:Decrypt` on specific key |
+| `LambdaInvokePolicy` | `lambda:InvokeFunction` on specific function |
+| `SSMParameterReadPolicy` | `ssm:GetParameter*/DescribeParameters` |
+| `VPCAccessPolicy` | ENI creation/deletion + DescribeNetworkInterfaces (for VPC functions) |
+
+> ⚠️ **Pitfall**: Policy Templates look like **least privilege** but actually are not. `DynamoDBReadPolicy: TableName` grants permissions on the table resource plus **all GSIs/LSIs**. In PCI/HIPAA environments, it is safer to specify the exact ARNs directly with a `Policies: - Statement:` block. AWS publishes the actual IAM JSON of every template in the [official GitHub](https://github.com/aws/serverless-application-model/blob/master/samtranslator/policy_templates_data/policy_templates.json), so it is worth reading once before adopting them.
+
+## sam local: The Truth About Docker-Based Emulation
+
+`sam local invoke` and `sam local start-api` are the features that form a developer's first impression. Internally, they pull the `public.ecr.aws/lambda/<runtime>:latest` image and run it as a container, and inside the container the Lambda Runtime Interface Emulator (RIE) invokes the function.
+
 ```bash
-# Package (builds function, creates S3 deployment package)
-sam build
-sam package \
-  --output-template-file packaged.yaml \
-  --s3-bucket deployment-bucket
+# Single invocation
+sam local invoke GetOrderFn -e events/get-order.json
 
-# Deploy
-sam deploy \
-  --template-file packaged.yaml \
-  --stack-name checkout-stack \
-  --capabilities CAPABILITY_IAM
+# API Gateway emulation (port 3000)
+sam local start-api --port 3000 --warm-containers EAGER
+
+# Other functions can call the RIE endpoint (change the SDK URL endpoint)
+sam local start-lambda --port 3001
 ```
 
-SAM is CloudFormation under-the-hood—`sam deploy` creates CloudFormation stack. Simplified syntax vs raw CloudFormation.
+RIE is an HTTP server that mimics the real Lambda service's **Lambda Runtime API** (`/2018-06-01/runtime/invocation/next`) exactly. So the same code behaves identically locally and in the cloud, but there are **inherent limits to the emulation**.
 
-> 📚 **Case**: Serverless application architecture evolution. Initial: manual Lambda creation via console. Problem: infrastructure lost on accidental delete, impossible to reproduce. Migration to Terraform: full control but verbose. SAM adoption: Terraform simplicity matched with AWS-native features (Policies, Events, Globals shortcuts).
+| What is not emulated | Impact |
+|---------------------------|------|
+| **Cold start time** | Locally the Docker container is reused. The init cost of real Lambda cannot be measured |
+| **IAM permissions** | Locally the host's AWS credentials are used — deny policies of the IAM Role cannot be verified |
+| **Network throttling** | The ENI/VPC latency of real Lambda cannot be reproduced |
+| **CPU ratio** | Lambda allocates CPU/network in proportion to MemorySize, while locally it draws from the host CPU pool |
+| **Lambda Insights / X-Ray** | Some metadata is absent |
+| **Extension Layer** | Works locally too, but some lifecycle events differ |
 
-## CodeDeploy Canary Deployments for Lambda
+> The Lambda Runtime API is long-poll based. The function runtime calls `GET /next` and waits indefinitely; when a new invocation arrives, the payload + requestId come down as the response. When the function finishes processing and returns the result with `POST /response` or `POST /error`, it goes on to the next long-poll cycle. Thanks to this model, one container can process multiple invocations sequentially (reuse), which makes **execution context reuse** (container variables, DB connection pools) possible. SAM Local reproduces this exact API, so code compatibility is guaranteed.
 
-CodeDeploy applies continuous deployment principles to Lambda. Canary deployment: shift small traffic percentage to new version; monitor errors; gradually increase if stable.
+> In 2020, a fintech passed all its tests with `sam local invoke` and then deployed to production, and Lambda was throttled immediately. The cause was that the function connected to an **RDS Proxy inside a VPC**, ENI creation took 8 to 10 seconds, and the API Gateway 30-second timeout kicked in. Locally the host network is used as is, so this latency did not exist. Lesson: local tests are for verifying logic, and **integration tests must be in a dev/staging cloud environment**.
 
-AppSpec configuration for Lambda:
+## sam sync and hotswap: A Dangerous Shortcut for Faster Development
+
+`sam sync --watch`, added in SAM CLI 1.31 in 2021, is a game changer for development speed.
+
+```bash
+sam sync --watch --stack-name myapp-dev
+# Watch for file changes
+# Code change → direct S3 upload + lambda update-function-code (bypasses CFN, 5-10 seconds)
+# Infrastructure change → CloudFormation Change Set (normal 30-60 seconds)
+```
+
+Internally, sam sync classifies changes into two kinds.
+
+- **Code-only change**: Lambda function code, Layer contents, Step Functions definitions, API Gateway OpenAPI specs → patched directly with `boto3.client('lambda').update_function_code()` and the like
+- **Infrastructure change**: new resources, environment variables, IAM policies → the normal CFN path
+
+CDK offers the same concept as `cdk deploy --hotswap`. Both tools are **not recommended for production because CloudFormation's tracking disappears**.
+
+> ⚠️ **Pitfall**: Hotswapped resources go into **drift state** from CloudFormation's perspective. That is, the next `sam deploy` or `cdk deploy` overwrites the hotswapped changes. Moreover, core infrastructure such as IAM Roles and API Gateway routing cannot be hotswapped, so security policy changes must still proceed through a ChangeSet. In production pipelines, it is safer to put explicit protection in place, such as `sam deploy --no-disable-rollback`.
+
+## SAM Pipelines: A CodePipeline Auto-Generator
+
+```bash
+sam pipeline bootstrap   # Create per-environment (dev/staging/prod) IAM Roles, S3, ECR
+sam pipeline init         # Choose a template (CodePipeline / Jenkins / GitLab / GitHub Actions)
+```
+
+The resources that bootstrap creates are a set of four.
+
+1. **Pipeline execution role** (assumed by CodePipeline)
+2. **CloudFormation execution role** (assumed by CFN when creating resources)
+3. **Artifact S3 bucket** (stores CodeBuild outputs)
+4. **ECR repo** (for container-image Lambdas)
+
+These resources are created separately in **each environment's own AWS account** (multi-account is recommended). So the prod account has only prod-bootstrap resources and the dev account only dev-bootstrap, giving clean isolation.
+
+```toml
+# samconfig.toml — multi-environment
+version = 0.1
+
+[staging.deploy.parameters]
+stack_name = "myapp-staging"
+s3_bucket = "myapp-staging-artifacts"
+region = "ap-northeast-2"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=staging UserPoolId=..."
+
+[prod.deploy.parameters]
+stack_name = "myapp-prod"
+s3_bucket = "myapp-prod-artifacts"
+region = "ap-northeast-2"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=prod UserPoolId=..."
+confirm_changeset = true
+```
+
+> Per-environment resource isolation connects to the "namespace isolation" principle of NIST SP 800-204C (Cloud-Native Application security). It puts guardrails in place so that permissions cannot move laterally from one environment to another. "Separate workloads using accounts" in the Security Pillar of the AWS Well-Architected Framework is the recommendation of this principle.
+
+## DeploymentPreference: Canary/Linear/AllAtOnce
+
+The magic by which SAM connects CodeDeploy in a single line.
+
 ```yaml
-version: 0.0
-Resources:
-  - MyLambdaFunction:
-      Type: AWS::Lambda::Function
-      Properties:
-        Name: !Ref MyLambdaFunctionName
-        Alias: !Ref MyLambdaFunctionAlias
-        CurrentVersion: !Ref MyLambdaFunctionVersion
-        TargetVersion: !Ref MyLambdaFunctionVersionNew
-Hooks:
-  - BeforeAllowTraffic: !Ref PreTrafficHook
-  - AfterAllowTraffic: !Ref PostTrafficHook
+GetOrderFn:
+  Type: AWS::Serverless::Function
+  Properties:
+    AutoPublishAlias: live
+    DeploymentPreference:
+      Type: Canary10Percent5Minutes
+      PreTraffic: !Ref PreTrafficHook
+      PostTraffic: !Ref PostTrafficHook
+      Alarms:
+        - !Ref ErrorRateAlarm
+        - !Ref P99LatencyAlarm
 ```
 
-CodeDeploy automatically:
-1. Creates new version from $LATEST
-2. Establishes alias pointing new version with canary weight (e.g., 10%)
-3. Executes BeforeAllowTraffic hook (pre-traffic tests)
-4. Gradually increases weight based on monitoring (0% → 10% → 50% → 100%)
-5. Executes AfterAllowTraffic hook (post-deployment validation)
-6. On failure, rollback alias to previous version
+When `AutoPublishAlias: live` is on, the following happens automatically at `sam deploy`.
 
-Pre/post-traffic hooks are Lambda functions validating deployment:
+1. Function code change detected → a new Version is published (e.g., V7)
+2. The `live` Alias shifts from V6 to V7 (stepwise by CodeDeploy)
+3. Alarms are monitored at each stage, and a rollback occurs immediately if one fires
 
-```python
-# Pre-traffic validation hook
-import boto3
-import json
+| Type | Traffic progression |
+|------|-------------|
+| `Canary10Percent5Minutes` | 10% → wait 5 minutes → 100% |
+| `Canary10Percent30Minutes` | 10% → 30 minutes → 100% |
+| `Linear10PercentEvery1Minute` | Increase by 10% at 1-minute intervals |
+| `Linear10PercentEvery10Minutes` | Increase by 10% at 10-minute intervals |
+| `AllAtOnce` | 100% immediately (for test/dev) |
 
-codedeploy = boto3.client('codedeploy')
+> 🎯 **Scenario**: "When deploying a new Lambda version, send only 10% of traffic for 1 hour, then raise it to 100% automatically, and roll back automatically if 5xx errors exceed 1%." The answer is the combination of `Canary10Percent30Minutes` + CloudWatch Alarm + Pre/Post Hook. Linear is gradual increase, Canary is two stages, and AllAtOnce is immediate — catch the "stage" keyword in the scenario.
 
-def lambda_handler(event, context):
-    deployment_id = event['DeploymentId']
-    lifecycle_event_id = event['LifecycleEventHookExecutionId']
-    
-    # Test new Lambda function version
-    try:
-        # Integration test against new version
-        test_response = invoke_target_function(event['TargetLambda'])
-        assert test_response['statusCode'] == 200
-        status = 'Succeeded'
-    except Exception as e:
-        print(f'Test failed: {e}')
-        status = 'Failed'
-    
-    codedeploy.put_lifecycle_event_hook_execution_status(
-        deploymentId=deployment_id,
-        lifecycleEventHookExecutionId=lifecycle_event_id,
-        status=status
-    )
-    
-    return {'statusCode': 200}
+## The buildspec That Actually Runs SAM in CodePipeline
+
+```yaml
+# buildspec.yml — CodeBuild stage
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - pip install aws-sam-cli
+  build:
+    commands:
+      - sam build --use-container --cached
+      - sam package --output-template-file packaged.yaml --s3-bucket $ARTIFACT_BUCKET
+artifacts:
+  files:
+    - packaged.yaml
+    - samconfig.toml
 ```
 
-> 🔍 **Deep Dive**: Lambda canary deployment weight progression depends on CloudWatch metric monitoring. CodeDeploy queries CloudWatch alarms—if alarm trips, traffic decrease reverses progress. If alarms stay green, progress continues. Default progression: 10% → 50% → 100%, but configurable via CodeDeployConfig.
+Pass packaged.yaml in CodePipeline to the next Deploy Action (CloudFormation deploy) and you are done. The two flags of `sam build --use-container --cached` matter: `--use-container` builds in a container identical to the Lambda runtime to guarantee compatibility of native dependencies (C extensions, sharp, and so on), and `--cached` reuses unchanged dependencies to cut build time by more than half.
 
-## Step Functions: Orchestrating Complex Serverless Workflows
+> In 2022, a SaaS team uploaded a Lambda zip built with `sam build` on a local macOS machine straight to prod, and the function died with `Runtime.ImportModuleError: pyodbc.so glibc version mismatch`. The cause was that macOS's ODBC library is incompatible with Linux glibc. The single line `--use-container` prevents a one-hour incident.
 
-Step Functions is workflow orchestration service for serverless. Coordinates Lambda, ECS, SNS, DynamoDB, SQS, and other services into complex business logic DAGs (Directed Acyclic Graphs).
+## Summary
 
-State machine definition (JSON):
-```json
-{
-  "Comment": "Order processing workflow",
-  "StartAt": "ValidateOrder",
-  "States": {
-    "ValidateOrder": {
-      "Type": "Task",
-      "Resource": "arn:aws:lambda:region:account:function:validate-order",
-      "Catch": [{
-        "ErrorEquals": ["InvalidOrderError"],
-        "Next": "NotifyInvalidOrder"
-      }],
-      "Next": "ProcessPayment"
-    },
-    "ProcessPayment": {
-      "Type": "Task",
-      "Resource": "arn:aws:lambda:region:account:function:charge-card",
-      "Retry": [{
-        "ErrorEquals": ["ThrottlingException"],
-        "IntervalSeconds": 2,
-        "MaxAttempts": 3,
-        "BackoffRate": 2.0
-      }],
-      "Next": "ShipOrder"
-    },
-    "ShipOrder": {
-      "Type": "Task",
-      "Resource": "arn:aws:ecs:region:account:service/shipping/ship-order",
-      "TimeoutSeconds": 3600,
-      "Next": "NotifyCustomer"
-    },
-    "NotifyCustomer": {
-      "Type": "Task",
-      "Resource": "arn:aws:sns:region:account:order-shipped",
-      "End": true
-    },
-    "NotifyInvalidOrder": {
-      "Type": "Task",
-      "Resource": "arn:aws:sns:region:account:invalid-order",
-      "End": true
-    }
-  }
-}
-```
+Today's picture has three parts. First, SAM is a **serverless DSL layered on a CloudFormation Macro** and is unrolled into plain CFN at deployment time. So you can use CFN's 13 years of governance assets (StackSets, Drift, ChangeSet) as they are. Second, `sam local` reproduces the Lambda Runtime API exactly with Docker + RIE, but **cold starts, IAM, and network latency are not emulated**. Third, `sam sync --watch` and `cdk deploy --hotswap` are powerful for accelerating development but break CloudFormation's tracking, so they are forbidden in production.
 
-Execution flow: ValidateOrder Lambda → on success ProcessPayment → ShipOrder → NotifyCustomer. On InvalidOrderError, skip to NotifyInvalidOrder. Automatic retry on ThrottlingException.
-
-> 💡 **Related Theory**: Step Functions implements **orchestration pattern vs choreography**. Orchestration: central coordinator (Step Functions) directs services. Choreography: each service knows next step, triggers it. Orchestration centralizes logic (easier debugging), requires orchestrator availability. Choreography distributes logic (resilient), complicates tracing.
+In the next post we look at the alternatives to SAM, **Serverless Framework** and **CDK Lambda**. Which of the three tools to choose is determined by the nature of the workload, the team's language, and governance requirements.
 
 ---
 

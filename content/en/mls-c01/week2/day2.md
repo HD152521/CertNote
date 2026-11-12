@@ -1,17 +1,23 @@
 # Day 2 - Automating ML Training Pipelines: Step Functions and SageMaker Pipelines
 
-Yesterday we learned how to transform data with Glue and EMR. But in real operations, transformation doesn't happen just once. Every time new data arrives, or at a fixed time each day, we must automatically repeat **extract → transform → validate → train → evaluate**. If this repetition is done manually, mistakes occur and reproducibility breaks.
+## 📌 Key Takeaways
 
-Today we cover AWS's two main pillars for automating ML workflows: **AWS Step Functions** and **Amazon SageMaker Pipelines**. The MLS-C01 exam frequently asks "which orchestration tool to choose and when."
+- Automation delivers two essential values: **reproducibility** and **lineage**.
+- **Step Functions** = a general-purpose orchestrator. It ties Glue, Lambda, SageMaker, and approval waits into one flow with an ASL (JSON) state machine.
+- **SageMaker Pipelines** = ML-specific. Python SDK, ProcessingStep/TrainingStep/TuningStep/ConditionStep, with lineage and a model registry built in.
+- Decision rule: **pure ML CI/CD → Pipelines**, **mixed ML + non-ML, approvals, complex branching → Step Functions**. Layering the two together is also common.
+- Attach triggers with **EventBridge** (cron/events) or **S3 event → Lambda**.
 
 ## Why Orchestration is Necessary
 
-ML workflows have multiple steps with order, conditions, and dependencies intertwined. For example:
+Yesterday we learned how to transform data with Glue and EMR. But transformation doesn't just run once and finish. Every time new data arrives, or at a fixed time each day, we must automatically repeat **extract → transform → validate → train → evaluate**. If a person runs this repetition by hand, mistakes occur and reproducibility breaks.
+
+ML workflows have multiple steps with order, conditions, and dependencies intertwined.
 
 ```
 [Data Extraction] → [Preprocessing] → [Data Quality Validation]
-                                          │
-                  Quality Pass ────────┤──── Quality Fail → Alert and Stop
+                                  │
+                  Quality Pass ───┤──── Quality Fail → Alert and Stop
                   │
                   ▼
             [Model Training] → [Model Evaluation] → Accuracy Threshold Met?
@@ -19,18 +25,21 @@ ML workflows have multiple steps with order, conditions, and dependencies intert
                   Met → [Register & Deploy Model]  │  Not Met → Retrain or Notify
 ```
 
-Managing such branching, retries, and parallel processing in a single code block is fragile. An **orchestrator** makes each step a node and lets you declaratively define state transitions, error handling, and retries.
+- Managing such branching, retries, and parallel processing in a single block of code is fragile.
+- An **orchestrator** makes each step a node and lets you declaratively define state transitions, error handling, and retries.
 
-> 💡 **Related Theory**: The core values of a good pipeline are **reproducibility** and **lineage**. The same input should always produce the same result, and you should be able to trace back which data, code, and hyperparameters built a specific model. Automated pipelines structurally guarantee both.
+The core values of a good pipeline are **reproducibility** and **lineage**. The same input should produce the same result no matter when you run it, and you should be able to trace back which data, which code, and which parameters built a specific model. Automated pipelines structurally guarantee both.
 
 ## AWS Step Functions — A General-Purpose Workflow Orchestrator
 
-Step Functions is a **serverless orchestration service that connects AWS services via state machines**. Each step is defined as a "state," and workflows are described using Amazon States Language (ASL), a JSON DSL.
+Step Functions is a **serverless orchestration service that ties AWS services together as state machines**. Each step is defined as a "state," and the flow is described in Amazon States Language (ASL), a JSON DSL.
 
-Where Step Functions excels in ML:
-- **Heterogeneous services** (Glue jobs, Lambda, SageMaker training/processing/batch transform, ECS) can be tied into one flow.
-- `Choice` (branching), `Parallel` (parallelism), `Retry`/`Catch` (retries and exception handling) are expressed declaratively.
-- **Native SageMaker actions** are built-in to directly invoke training, tuning, and batch transform jobs.
+Where Step Functions is strong in ML:
+
+- It **ties heterogeneous services into one flow**: Glue jobs, Lambda, SageMaker training/processing/batch transform, ECS.
+- `Choice` (branching), `Parallel` (parallelism), `Map` (iteration), and `Retry`/`Catch` (retries and exception handling) are expressed declaratively.
+- **Built-in SageMaker integration actions** directly invoke training, tuning, and batch transform jobs.
+- Non-ML steps such as **waiting for human approval** slot in naturally.
 
 ```json
 {
@@ -64,20 +73,36 @@ Where Step Functions excels in ML:
 }
 ```
 
-The `.sync` suffix means "wait until that task completes." Note how `Retry` and `Catch` declaratively handle retry and notification flows on failure.
+- The `.sync` suffix means "wait until that task completes."
+- `Retry` and `Catch` declaratively handle the retry and notification flow on failure.
 
-> 💡 **Related Theory**: Step Functions is not ML-specific but a **general-purpose workflow tool**. It excels at broad orchestration where you need to bind together ML and non-ML steps (data extraction, S3 cleanup, external API calls, approval waits).
+### Commonly Used State Types
+
+| State | What it does | Use in ML |
+|---|---|---|
+| `Task` | Invokes the actual work | Glue job, SageMaker training, Lambda |
+| `Choice` | Conditional branching | Did the evaluation metric exceed the threshold? |
+| `Parallel` | Runs multiple branches at the same time | Train several algorithms simultaneously |
+| `Map` | Iterates over each array element | Train per-region or per-segment models |
+| `Wait` | Waits for a specified time | Waiting on an external system to finish |
+| `Fail` / `Succeed` | Explicit termination | Handling a quality-gate failure |
+
+Step Functions is not ML-specific but a **general-purpose workflow tool**. That is why it excels at broad orchestration where ML steps and non-ML steps (data extraction, S3 cleanup, external API calls, approval waits) must be tied together.
 
 ## Amazon SageMaker Pipelines — ML-Native Pipelines
 
-SageMaker Pipelines is a **CI/CD orchestrator designed exclusively for ML workflows**. Define steps with Python SDK, and SageMaker handles execution, tracking, and versioning. It's characterized by providing step types specialized for ML work.
+SageMaker Pipelines is a **CI/CD orchestrator designed exclusively for ML workflows**. Define the steps with the Python SDK, and SageMaker handles execution, tracking, and versioning.
 
 Key step types:
-- `ProcessingStep` — preprocessing and postprocessing (SageMaker Processing)
-- `TrainingStep` — model training
-- `TuningStep` — hyperparameter tuning
-- `RegisterModel` / `ModelStep` — model registry registration
-- `ConditionStep` — branching based on evaluation metrics (e.g., register only if accuracy ≥ 0.85)
+
+| Step | Role |
+|---|---|
+| `ProcessingStep` | Preprocessing, postprocessing, evaluation (SageMaker Processing) |
+| `TrainingStep` | Model training |
+| `TuningStep` | Hyperparameter tuning |
+| `RegisterModel` / `ModelStep` | Registration in the model registry |
+| `ConditionStep` | Branching on evaluation metrics (e.g., register only if accuracy ≥ 0.85) |
+| `TransformStep` | Batch transform (large-scale scoring) |
 
 ```python
 from sagemaker.workflow.steps import ProcessingStep, TrainingStep
@@ -107,37 +132,92 @@ pipeline.upsert(role_arn=role)
 pipeline.start()
 ```
 
-> 💡 **Related Theory**: SageMaker Pipelines automatically records **lineage** with each execution. Which dataset, code, and hyperparameters built which model is tracked and linked to the SageMaker Model Registry. This is a critical feature in regulated environments (explainability and audit).
+SageMaker Pipelines automatically records **lineage** with every execution. Which dataset, code, and hyperparameters built which model is tracked and linked to the SageMaker Model Registry. This is a very important feature in regulated environments (explainability and audit).
+
+### Model Registry and the Approval Flow
+
+- Models registered with `RegisterModel` accumulate versions inside a **model package group**.
+- Each version has an **approval status** (pending approval / approved / rejected). The standard practice is to configure the deployment pipeline to pick up only approved versions.
+- Thanks to this structure, a record remains of "who put this model into production, when, and on what grounds."
 
 ## Step Functions vs SageMaker Pipelines — Selection Criteria
 
 | Aspect | Step Functions | SageMaker Pipelines |
-|--------|----------------|---------------------|
+|---|---|---|
 | Scope | General-purpose (AWS-wide orchestration) | ML-only |
 | Definition | ASL (JSON) / Workflow Studio | Python SDK |
-| ML Integration | SageMaker actions supported | Native, with model registry and lineage built-in |
-| Non-ML Steps | Strong (Lambda, Glue, approvals, SNS) | Limited |
-| Best For | Mixed ML+non-ML, complex branching/approvals | Pure ML CI/CD, lineage-critical |
+| ML integration | SageMaker actions supported | Native, with model registry and lineage built in |
+| Non-ML steps | Strong (Lambda, Glue, approvals, SNS, etc.) | Limited |
+| Retries/exceptions | Fine-grained with Retry/Catch | Limited at the step level |
+| Best for | Mixed ML + non-ML, complex branching/approvals | Pure ML CI/CD, lineage-critical |
 
-Core decision: **If workflows are purely ML training/evaluation/registration, use SageMaker Pipelines**; **if ML steps intertwine with data pipelines, external systems, and approval steps, Step Functions feels more natural**. A hybrid pattern (Step Functions orchestrating at the top level, calling SageMaker jobs within) is also common.
+Core decision: **if the workflow is purely centered on ML training/evaluation/registration, use SageMaker Pipelines**; **if ML steps are mixed with data pipelines, external systems, and approval steps, Step Functions** feels more natural. A pattern that uses both (Step Functions orchestrating the whole at the top level, calling SageMaker jobs within) is also common.
 
-> ⚠️ **Pitfall**: "It's an ML task, so definitely use SageMaker Pipelines" is an oversimplified trap answer. If your workflow has approval waits, multiple non-ML system integrations, and complex conditional branching, the more general Step Functions may be better suited. Read the problem requirements (proportion of non-ML steps, traceability needs) to decide.
+```
+[Hybrid setup]
+Step Functions (top-level orchestration)
+   ├─ Glue ETL job
+   ├─ Data quality validation Lambda
+   ├─ Wait for human approval
+   └─ Run SageMaker Pipeline ──┬─ Processing
+                               ├─ Training
+                               ├─ Evaluation
+                               └─ ConditionStep → RegisterModel
+```
+
+> ⚠️ **Pitfall**: "It's an ML task, so definitely use SageMaker Pipelines" is an oversimplified wrong answer. If the workflow has approval waits, integration with several non-ML systems, and a lot of complex conditional branching, the more general-purpose Step Functions is better suited. Read the problem's requirements (the proportion of non-ML steps, traceability needs) to decide.
 
 ## Triggers and Scheduling
 
 Deciding "when to run the pipeline" is part of the design.
 
-- **Amazon EventBridge**: Start the pipeline on a schedule (cron) or event (e.g., new data arrives in S3).
-- **S3 Event → Lambda → Start Pipeline**: A typical pattern using data arrival as the trigger.
-- **SageMaker Pipelines Schedule**: EventBridge rules trigger regular executions.
+| Trigger | Setup | Typical situation |
+|---|---|---|
+| Schedule | EventBridge cron rule | Regular retraining every early morning |
+| Data arrival | S3 event → Lambda → start pipeline | Whenever a new batch file is uploaded |
+| Code change | CodePipeline/CodeCommit integration | When preprocessing or training code changes |
+| Drift detection | Model Monitor alarm → EventBridge | When production performance decay is detected |
+| Manual | `pipeline.start()` | Experiments, emergency retraining |
 
-> 🎯 **Scenario**: "Every day at 2 AM, preprocess yesterday's logs and retrain the model, but if evaluation accuracy is below 0.9, don't deploy and notify the data team." → Use an EventBridge cron rule to trigger the SageMaker Pipeline, place a `ConditionStep` (accuracy gate) inside, and add SNS notifications on failure.
+> 🎯 **Scenario**: "Every day at 2 AM, preprocess yesterday's logs and retrain the model, but if evaluation accuracy is below 0.9, don't deploy and notify the data team." → Use an EventBridge cron rule to trigger the SageMaker Pipeline, place a `ConditionStep` (accuracy gate) inside the pipeline, and add SNS notifications on failure.
 
-## Summary
+> ⚠️ **Pitfall**: An option that has a person start the trigger "from the console" is a wrong answer in an automation question. It contradicts the very purpose of automation.
 
-Today we compared two tools for automating ML training pipelines. **Step Functions is a general orchestrator binding AWS services, excelling at mixed ML and non-ML workflows**, while **SageMaker Pipelines is ML-only with built-in lineage and model registry integration and strong conditional branching**. The real value of automation is reproducibility and lineage; attach EventBridge scheduling and event triggers to complete a fully automated pipeline.
+## Parameterization and Re-execution
 
-Tomorrow we explore **data augmentation and synthesis** techniques to address insufficient or imbalanced data.
+A pipeline is something "written once and run over and over," so it is important to design away hardcoding.
+
+- **Pipeline parameters**: Inject the input data path, instance type and count, and accuracy threshold at execution time. The same definition runs development, staging, and production.
+- **Caching**: Steps whose inputs and settings are identical to a previous run reuse their results, saving time and cost.
+- **Partial re-execution**: If only training failed, there is no reason to rerun from preprocessing. Separating steps means separating the units of re-execution.
+- **Execution history**: Each run must leave a record of which parameters it used, so you can answer "why is only this model's performance different?"
+
+### What to Look At When It Fails
+
+| Symptom | Common cause | Response |
+|---|---|---|
+| Permission error at the training step | Execution role missing S3/ECR permissions | Fix the IAM role policy |
+| Input path not found | Mismatch with the previous step's output path | Pin the output→input connections between steps with parameters |
+| Results differ subtly every time | Random seed / data snapshot not pinned | Fix the seed, use versioned input data paths |
+| Keeps getting blocked at the quality gate | Data drift or an excessive threshold | Check the data first; adjust the threshold with justification |
+| Job seems to run forever | No timeout configured | Specify a maximum run time per step |
+
+When a pipeline fails, an option saying "increase the retry count" is usually wrong. Retries are the response to **transient errors**; permission, path, and data problems stop at the same place no matter how many times you rerun them.
+
+Tomorrow we look at **data augmentation and synthesis** techniques that compensate when data is scarce or imbalanced.
+
+## 📖 Glossary
+
+- **Orchestration**: Managing the execution order, conditions, and retries of multiple tasks declaratively in one place.
+- **State machine**: A workflow definition that defines each step as a "state" and describes the transition rules.
+- **ASL (Amazon States Language)**: The JSON-based language used to describe Step Functions workflows.
+- **`.sync` integration**: A Step Functions invocation style that waits until the invoked task finishes before moving to the next state.
+- **Retry / Catch**: Declarative exception handling that automatically retries on failure and, if it still fails, hands off to a designated handling state.
+- **Lineage**: A record that lets you trace back which data, code, and parameters a model came from.
+- **ConditionStep**: A SageMaker Pipelines step that branches subsequent steps on conditions such as evaluation metrics.
+- **Model registry**: A repository for registering, approving, and tracking model versions. A gate is set so that only approved versions get deployed.
+- **EventBridge**: An event bus that reacts to cron schedules or AWS events and invokes other services.
+- **Quality gate**: An automated checkpoint that blocks progress to the next step if a reference metric is not met.
 
 ---
 

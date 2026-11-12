@@ -1,124 +1,229 @@
-# Day 4 - Validation Design: train/validation/test Split, Cross-Validation, Time Series Split, Stratified Sampling
+# Day 4 - Validation Design: Train/Validation/Test Splits, Cross-Validation, Time-Series Splits, Stratified Sampling
 
-Yesterday we saw how leakage ruins validation. Today is the mirror image — **designing validation without leakage to honestly estimate model generalization**. Good model selection ultimately comes down to reliably estimating "how well will it perform on unseen data?" and that reliability depends entirely on validation design.
+## 📌 Key Takeaways
 
-MLS-C01 repeatedly asks validation strategy selection. When data is small, when classes are imbalanced, when it's time series — what do we use? Today covers **3-way split**, **k-fold cross-validation**, **stratified sampling**, and **time series split**.
+- **Keep the test set sealed until every decision is made** and look at it exactly once. The moment you look and fix, the test set becomes a validation set.
+- When data is scarce, use **k-fold cross-validation** so that every row is used for validation, and look at the **mean ± standard deviation** of the k scores (k=5 or 10 is the balance point).
+- For classification, especially with **class imbalance, stratification** is practically mandatory. It preserves the original class ratio in every split.
+- For **time series, use TimeSeriesSplit**. The training period must always be earlier than the validation period (forward-chaining).
+- When the same user or patient has multiple rows, you must split at the group level with **GroupKFold** so that performance is not inflated.
 
-## Why Split Into Three: train/validation/test
+## Why Split in Three: train / validation / test
 
-The most basic is splitting data into three parts. Each has a different role.
+Yesterday we saw how leakage ruins validation. Today is its mirror image: **designing validation without leakage so you honestly estimate a model's generalization performance**. Good model selection is ultimately the ability to credibly estimate "how well will it do on data it has never seen?", and that credibility depends entirely on the validation design.
 
-| Split | Role | Key |
-|------|------|------|
-| **Training** | Learn model parameters | Largest proportion (usually 60-80%) |
-| **Validation** | Hyperparameter tuning, model selection | Checked repeatedly |
-| **Test** | Final performance evaluation **once only** | Sealed until the end |
+The most basic step is to split the data into three. Each has a different role.
 
-Core principle: **Test set is sealed until all decisions are made, seen exactly once.** If you look at test scores and modify the model, the test set effectively becomes validation, contaminating the final estimate with optimism.
+| Split | Role | Key point | Times used |
+|---|---|---|---|
+| **Training** | Learn the model parameters | Usually the largest share, 60–80% | Every training run |
+| **Validation** | Hyperparameter tuning and model selection | Looked at repeatedly | Many times |
+| **Test** | Final performance evaluation | Sealed to the end | **Exactly once** |
+
+Key principle: **keep the test set sealed until every decision is made, and look at it exactly once.** If you modify the model after seeing the test score, the test set effectively becomes a validation set and the final estimate is contaminated optimistically.
 
 ```python
 from sklearn.model_selection import train_test_split
 
-# 1st: train+val vs test (test is sealed)
+# Step 1: train+val vs. test (test is sealed)
 X_temp, X_test, y_temp, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
-# 2nd: train vs validation
+# Step 2: train vs. validation
 X_train, X_val, y_train, y_val = train_test_split(
     X_temp, y_temp, test_size=0.25, random_state=42, stratify=y_temp
 )
 # Result: 60% / 20% / 20%
 ```
 
-> 💡 **Related Theory**: Separating validation and test sets addresses the **multiple comparisons problem**. When comparing dozens of hyperparameter combinations on validation, by chance we select combinations that fit that particular validation set well, accumulating "selection bias" in the validation score. That score no longer fairly estimates generalization. That's why after all selection is complete, we measure final performance on a test set never used before — only then is the estimate honest.
+The reason for separating the validation set from the test set is the **multiple comparisons problem**. If you compare dozens of hyperparameter combinations on the validation set, a combination that happens to fit that validation set well gets selected by chance, and "selection bias" accumulates in the validation score. That score no longer estimates generalization performance fairly. So after all selections are finished, you measure final performance on a test set that has never been used. Only then is the estimate honest.
 
-## k-fold Cross-Validation: Conserve Data
+### Role Comparison Table for the Three Splits
 
-Single split is at the mercy of chance. Especially with limited data, which rows end up in validation hugely affects scores. **k-fold cross-validation** divides data into k parts, uses each as validation once while training on the rest, repeats k times, and averages scores.
+| Question | Training set | Validation set | Test set |
+|---|---|---|---|
+| What does it decide? | Model parameters (weights) | Hyperparameters, algorithm, features | It decides nothing |
+| How many times is it viewed? | Unlimited | Many times | Once |
+| Are preprocessing statistics derived here? | **Yes** | No (transform only) | No (transform only) |
+| What the score means | Goodness of fit (for diagnosing overfitting) | A relative comparison value for selection | An estimate of generalization performance |
+| What happens if contaminated | Overfitting cannot be detected | Selection bias accumulates | The final reported number becomes false |
 
-| Method | Explanation | Suitable For |
-|------|------|------|
-| **k-fold** | k splits, k repetitions (usually k=5,10) | General default |
-| **Stratified k-fold** | Maintain class ratio in each fold | Classification, especially imbalanced |
-| **Leave-One-Out (LOO)** | k = n, validate on one row | Data very limited (expensive) |
-| **Repeated k-fold** | Repeat k-fold multiple times | Further reduce estimate variance |
+## k-fold Cross-Validation: Saving Data
 
-Cross-validation gains: (1) every row is used once in validation, conserving data, (2) we get **mean and variance** of k scores, seeing performance stability.
+A single split depends on luck. Especially when data is scarce, which rows land in validation swings the score greatly. **k-fold cross-validation** divides the data into k parts, uses each part once as validation while training on the rest, and averages the scores from the k repetitions.
+
+```
+5-fold cross-validation (■ = validation fold, □ = training fold)
+
+Fold 1  ■ □ □ □ □   → score₁
+Fold 2  □ ■ □ □ □   → score₂
+Fold 3  □ □ ■ □ □   → score₃
+Fold 4  □ □ □ ■ □   → score₄
+Fold 5  □ □ □ □ ■   → score₅
+                     ────────────────────
+                     Report as mean ± standard deviation
+                     (every row is used for validation exactly once)
+```
+
+| Method | Description | Suitable situation |
+|---|---|---|
+| **k-fold** | Split into k parts, repeat k times (usually k=5 or 10) | General default |
+| **Stratified k-fold** | Preserve class ratios in each fold | Classification, especially imbalanced |
+| **Leave-One-Out (LOO)** | k = n, validate one row at a time | When data is extremely scarce (costly) |
+| **Repeated k-fold** | Repeat k-fold several times | When you want to reduce estimation variance further |
+| **GroupKFold** | Place the same group on only one side | Group structure such as users or patients |
+| **Nested CV** | Evaluate with outer folds, tune with inner folds | Honest performance estimate that includes tuning |
+
+Benefits of cross-validation: (1) every row is used for validation once, saving data, and (2) you obtain the **mean and variance** of the k scores, so you can also see the stability of performance.
 
 ```python
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 scores = cross_val_score(pipe, X, y, cv=skf, scoring="f1")
-print(f"F1: {scores.mean():.3f} ± {scores.std():.3f}")  # mean ± std
+print(f"F1: {scores.mean():.3f} ± {scores.std():.3f}")  # mean ± standard deviation
 ```
 
-> 💡 **Related Theory**: k choice has **bias-variance tradeoff**. Small k (e.g., 2-fold) makes each training set small → estimate is **biased** pessimistically. Large k (LOO with k=n) makes training set almost the whole dataset → small bias but fold results are similar → estimate **variance** is large and computation explodes. Empirically k=5 or 10 balances bias, variance, and cost as widely used.
+Choosing k involves a **bias-variance tradeoff**. When k is small (e.g., 2-fold), each training set becomes small and the estimate is pessimistically **biased**. When k is very large (LOO, k=n), the training set is nearly the whole dataset so bias is small, but the fold results become similar to each other, so the estimate **variance** grows and the computation explodes. Empirically, k=5 or 10 is the balance point of bias, variance, and cost, and is widely used.
 
-## Stratified Sampling: Maintain Ratios
+### k Value Tradeoff Table
 
-In classification with **imbalanced** classes (e.g., fraud 1%), random split is risky. Bad luck and validation might have almost no or even zero minority class. **Stratified sampling** maintains **original class ratio in each split**.
+| k | Training set size | Bias | Variance | Computational cost | When |
+|---|---|---|---|---|---|
+| 2–3 | Small (50–67%) | Pessimistically large | Small | Very low | When data is very plentiful and only a quick check is needed |
+| **5** | 80% | Small | Moderate | Low | **General default** |
+| **10** | 90% | Smaller | Moderate to slightly large | Medium | When data is moderately scarce and a precise estimate is needed |
+| n (LOO) | Nearly all | Almost none | Large | Very high | When data is in the tens to hundreds of rows |
 
-- `train_test_split(..., stratify=y)`: Maintain ratio during split
-- `StratifiedKFold`: Maintain ratio in each fold
+> ⚠️ **Pitfall**: "The larger k is, the always better" is a wrong answer. As k grows, computational cost increases in proportion to k, and the training sets become nearly identical so the correlation between fold scores rises, which actually increases the variance of the mean estimate.
 
-Stratification is nearly always recommended for classification, almost essential for imbalanced data. In regression, sometimes stratify target into bins.
+## Stratified Sampling: Preserve the Ratio
+
+In classification with **imbalanced** classes (e.g., 1% fraud), a random split is risky. With bad luck, validation may contain almost no minority-class samples, or even zero. **Stratified sampling** **preserves the original class ratio in every split**.
+
+- `train_test_split(..., stratify=y)`: preserves the ratio when splitting
+- `StratifiedKFold`: preserves the ratio in each fold
+
+In classification, stratification is almost always recommended, and for imbalanced data it is practically mandatory. In regression, the target is sometimes divided into bins for stratification.
 
 ```python
 from sklearn.model_selection import train_test_split
 
-# stratify=y keeps original class ratio in splits
+# stratify=y preserves the original class ratio across the split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
-print(y_train.value_counts(normalize=True))  # verify same ratio as original
+print(y_train.value_counts(normalize=True))  # check whether it matches the original ratio
 ```
 
-> ⚠️ **Trap**: Splitting imbalanced data randomly (non-stratified) risks some fold having zero minority samples, making F1/recall uncomputable or distorted. If classification shows high accuracy but never catches minority class, check stratified split first.
+> ⚠️ **Pitfall**: If you randomly split imbalanced data without stratification, some fold may have zero minority-class samples, making F1 and recall incalculable or distorted. In classification, if accuracy is high but the minority class is not caught at all, first check for a stratified split.
 
-## Time Series Split: Don't Reverse Time
+### Metric Interpretation Table for Imbalanced Data
 
-As Day 3 showed, random or general k-fold on time series causes future leaking into past. Time series needs **splits that respect time order**.
+Even if you fix the split with stratification, choosing the wrong metric will still mislead you.
 
-| Method | Explanation |
-|------|------|
-| **Fixed split (holdout)** | Past = train, future = test from cutoff |
-| **Expanding window** | Expand training window, evaluate next window |
-| **Rolling window (sliding)** | Fixed-length training window slides forward, evaluate |
+| Metric | What it says | Situation to prioritize | Pitfall |
+|---|---|---|---|
+| Accuracy | Right often overall | Only when classes are balanced | **With 1% positives, "predict all negative" still gives 99%**, so it is meaningless on imbalanced data |
+| Precision | Few false alarms | False-alarm cost is high (spam blocking) | Easy to raise by predicting only a few as positive |
+| Recall | Few misses | Miss cost is high (fraud, disease) | Predicting everything as positive gives 1.0 |
+| F1 | Balance of precision and recall | When the two costs are similar | Hides which side is the problem |
+| ROC-AUC | Discriminative power independent of threshold | Threshold undecided, comparing models | Overly optimistic under extreme imbalance |
+| PR-AUC | Discriminative power for the minority class | When the positive ratio is very low | The value changes when the class ratio changes |
+| RMSE | Few large errors | Regression, when penalizing large errors strongly | Sensitive to outliers |
+| MAE | Small average error | Regression, when robustness to outliers is needed | Treats large errors leniently |
 
-scikit-learn's `TimeSeriesSplit` implements this forward-chaining. In each split, **training is always before validation**.
+The reason accuracy is a trap on imbalanced data is that the score is high even if you only get the majority class right. Validation design (stratification) and metric choice (PR-AUC, recall) must be fixed **together**. Fixing only one of them still leads you to pick the wrong model.
+
+## Time-Series Splits: Never Go Against Time
+
+As we saw on Day 3, using a random split or ordinary k-fold on a time series leaks the future into the past. Time series need a **split that respects time order**.
+
+| Method | Description | Characteristics |
+|---|---|---|
+| **Fixed split (holdout)** | Set a cutoff point; past = training, future = test | Simplest, evaluated only once |
+| **Expanding window** | Extend the training period while evaluating the next period | Uses all data, reflects older patterns too |
+| **Rolling / sliding window** | Slide a fixed-length training period forward while evaluating | Focuses on recent patterns, copes with distribution shift |
+
+scikit-learn's `TimeSeriesSplit` implements this forward-chaining. In every split, **training is always earlier than validation**.
+
+```
+TimeSeriesSplit (expanding window, n_splits=4)
+Time axis ───────────────────────────────────────▶
+
+Split 1  [■■■■]───[▨▨]  ·  ·  ·  ·        ■ training  ▨ validation
+Split 2  [■■■■ ■■]───[▨▨]  ·  ·
+Split 3  [■■■■ ■■ ■■]───[▨▨]  ·
+Split 4  [■■■■ ■■ ■■ ■■]───[▨▨]
+
+  · The training period expands each time, and the validation period is always the "next" point in time
+  · Same structure as real deployment (predicting the future with a model trained on the past)
+```
 
 ```python
 from sklearn.model_selection import TimeSeriesSplit
 
-# Time-ordered split: training always before validation (blocks leakage)
+# Chronological split: training is always earlier than validation (blocks leakage)
 tscv = TimeSeriesSplit(n_splits=5)
 for train_idx, test_idx in tscv.split(X):
-    # train_idx all times < test_idx times
+    # every point in time in train_idx < the points in test_idx
     X_tr, X_te = X.iloc[train_idx], X.iloc[test_idx]
-    # model train/evaluate ...
+    # train/evaluate the model ...
 ```
 
-> 💡 **Related Theory**: Time series validation differs from general cross-validation because **independence of rows assumption breaks**. General k-fold assumes rows are exchangeable, but time series — order is information. `TimeSeriesSplit` always maintains "train on past, evaluate on future," simulating actual deployment (predict future with past model). This alignment makes validation scores resemble actual production performance.
+Time-series validation differs from ordinary cross-validation because **the row-independence assumption breaks**. Ordinary k-fold assumes rows are exchangeable, but in a time series the order itself is information. `TimeSeriesSplit` always maintains "train on the past, evaluate on the future," simulating the real deployment situation (predicting the future with a model built on the past). Thanks to this alignment, the validation score comes to resemble real production performance.
 
-## Validation Design Decision Summary
+## Validation Strategy Selection Table
 
-| Data Characteristic | Recommended Validation |
-|------|------|
-| General classification, sufficient data | Stratified train/val/test split |
-| Data limited | Stratified k-fold cross-validation |
-| Data very limited | Leave-One-Out |
-| Class imbalance | Must use stratified |
-| Time series | TimeSeriesSplit / time-ordered holdout |
-| Group structure (users, patients) | GroupKFold (same group only on one side) |
+| Data characteristic | Recommended validation | Reason |
+|---|---|---|
+| General classification, plenty of data | Stratified train/val/test split | Simple and fast, and preserves the ratio |
+| Data is scarce | Stratified k-fold cross-validation | Uses every row for validation, gives mean and variance |
+| Data is very scarce | Leave-One-Out | Minimal bias, accept the cost |
+| Class imbalance | Stratification is mandatory | The minority class must be in every split |
+| Time series | TimeSeriesSplit / chronological holdout | Blocks backward-in-time leakage |
+| Group structure (users, patients) | GroupKFold | If the same group straddles both sides, performance is inflated |
+| Honest evaluation that includes tuning | Nested CV | Outer folds take no part in tuning, so there is no selection bias |
+| Regression with a heavily skewed target | Bin the target and stratify | Prevents extreme values from piling into one split |
 
-## Summary
+### AWS Service Mapping Table
 
-Today's essence: (1) **Keep test set sealed until the end, seen exactly once**, (2) limited data → **k-fold cross-validation** conserves data and gives mean/variance of k scores (k=5/10 is balance point), (3) classification/imbalance → **stratified** maintains class ratio, (4) time series → **TimeSeriesSplit** blocks leakage with time-ordered split.
+| Situation | AWS service / feature | Reason |
+|---|---|---|
+| Automatically search hyperparameters against a validation metric | SageMaker automatic model tuning (hyperparameter tuning job) | Specify an objective metric and it runs multiple training jobs to find the best combination |
+| Fix the order of preprocessing, training, and evaluation in code | SageMaker Pipelines | The order of splitting and preprocessing is reproduced, preventing leakage and procedural mistakes |
+| Compare and track metrics and parameters per training run | SageMaker Experiments | A history of validation score comparisons remains, so you can document the basis for selection |
+| Stop early when training stops improving to save cost | SageMaker early stopping setting | Cuts off training early when the validation metric is not improving |
+| Bulk-score the sealed test set | SageMaker Batch Transform | Evaluates all at once without keeping an endpoint running |
+| Monitor whether real performance after deployment differs from validation | SageMaker Model Monitor | Captures the validation-vs-production gap with metrics |
 
-Next post reviews this entire week — statistics foundations through validation design — as one integrated flow.
+### Question Clue → Answer Mapping Table
 
----
+| Phrase in the question | Signal to read | Answer to pick |
+|---|---|---|
+| "It is daily data with a time order" | Time series | TimeSeriesSplit / chronological holdout |
+| "The class is 0.5%" | Extreme imbalance | Stratified split + PR-AUC and recall |
+| "There are only a few hundred records" | Insufficient data | k-fold (or LOO) cross-validation |
+| "Multiple test records for the same patient" | Group structure | GroupKFold |
+| "The model was fixed while watching the test score" | Test set contamination | A new test set is needed; violates the sealing principle |
+| "The score differs greatly from fold to fold" | High estimation variance | Increase k or use Repeated k-fold |
+| "Report an honest performance that includes the tuning results" | Selection bias must be removed | Nested CV |
+| "Accuracy is high but the minority class is not caught" | Both metric and split are problems | Stratification + switch to recall/PR-AUC |
+
+In the next article, we tie together the whole week, from statistics basics to validation design, into a single flow.
+
+## 📖 Glossary
+
+- **Validation set**: Data used repeatedly for hyperparameter tuning and model selection. It is not for reporting final performance.
+- **Test set**: Data for final evaluation that is looked at exactly once, after all decisions are made.
+- **Multiple comparisons problem**: The phenomenon in which comparing multiple candidates on the same validation set selects one that fits by chance, optimistically biasing the score.
+- **k-fold cross-validation**: A method that divides the data into k parts and trains and evaluates k times, using each part once as validation.
+- **Stratified sampling**: A way of splitting so that each split preserves the original class ratio.
+- **GroupKFold**: Cross-validation that keeps rows from the same group (user, patient) from being separated between training and validation.
+- **TimeSeriesSplit**: Time-series-specific cross-validation that splits so the training period is always earlier than the validation period.
+- **Nested CV (nested cross-validation)**: A method that tunes in inner folds and evaluates in outer folds, eliminating selection bias as well.
+- **Bias-variance tradeoff (choosing k)**: The relationship in which a small k biases the estimate pessimistically, while a very large k increases variance and computational cost.
+- **PR-AUC**: The area under the precision-recall curve. Gives a more honest signal than ROC-AUC when the positive ratio is very low.
 
 ## 📝 Practice Questions
 

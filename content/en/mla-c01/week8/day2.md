@@ -1,27 +1,77 @@
 # Day 2 - Bias and Explainability Drift: Monitoring During Operations with Clarify
 
-On Day 1, we looked at Data Quality and Model Quality drift. Today we cover the remaining two monitors from Model Monitor: **Bias Drift** and **Feature Attribution Drift**. These two are handled by **SageMaker Clarify**. Clarify is a service that calculates model bias before training, post-training model bias, and prediction explainability. Today's topic extends that capability to **continuous monitoring of deployed endpoints**.
+## 📌 Key Takeaways
 
-Why do we need to monitor bias and explainability during operations? A model that was fair at training time can become unfair to certain groups as incoming data distribution changes. And if the features the model depends on shift in importance over time, that itself is a warning signal that model behavior has changed. MLA-C01 weaves together "responsible AI" and monitoring to test this area.
+- **Clarify** computes pre-training data bias, post-training model bias, and prediction explanations (SHAP), and extends them into **continuous monitoring in operation**.
+- The **bias drift monitor** periodically recomputes post-training bias metrics such as DPPL and DI to track changes in fairness between groups.
+- The **feature attribution drift monitor** watches how much SHAP importance has changed relative to the baseline, **without labels**.
+- In domains where labels arrive late, feature attribution drift is an **early warning** that sounds before performance degradation does.
+- All four monitors share the same skeleton: "baseline → cron schedule → Processing Job comparison → CloudWatch metrics".
 
-## Clarify's Two Faces: Bias and Explainability
+## The Three Points Where Clarify Attaches
 
-Clarify does two main things:
+Clarify attaches at three points: before training, after training, and in operation. Think of it as the same bias-metric engine being reused with only the stage changed.
 
-| Capability | What It Measures | Operations Monitor |
-|------|------------|------------|
-| Bias Detection | Outcome differences across sensitive groups (e.g., gender, age) | Bias Drift Monitor |
-| Explainability | How much each feature contributes to predictions (SHAP) | Feature Attribution Drift Monitor |
+```text
+ ① Pre-training (data)     ② Post-training (model)     ③ In operation (endpoint)
+ ─────────────────────   ─────────────────────────   ──────────────────────────
+  Raw data bias            Prediction bias · SHAP        Bias Drift Monitor
+  CI · DPL · KL/JS   ──▶   DPPL · DI · AD          ──▶   Feature Attribution
+  (looks at label dist.)   (looks at predictions)        Drift Monitor
+        │                       │                         │
+        ▼                       ▼                         ▼
+   Resample · recollect   Adjust model · thresholds   Detect departure from baseline
+                                                          │
+                                                  CloudWatch metrics → alarms
+```
 
-Explainability is calculated using **SHAP (SHapley Additive exPlanations)** values. SHAP is a concept from game theory that fairly quantifies how much each feature pushes or pulls the prediction from a baseline.
+Why look at bias and explanation in operation too? A model that was fair at training time can become unfavorable to a particular group if the distribution of incoming data changes. Also, if the importance of the features the model relies on changes over time, that itself is a warning sign that the model's behavior has changed. MLA-C01 ties "responsible AI" and monitoring together to ask about this.
 
-> 💡 **Related Theory**: Common bias metrics on the exam include **CI (Class Imbalance)** and **DPL (Difference in Positive Proportions in Labels)** at the pre-training stage, and **DPPL (Difference in Positive Proportions in Predictions)** and **DI (Disparate Impact)** at the post-training stage. The key is separating "data bias before training" from "model prediction bias after training." The Bias Drift Monitor tracks how much post-training bias metrics diverge from the baseline during operations.
+## The Two Faces of Clarify: Bias and Explainability
 
-## Feature Attribution Drift — Detecting Model Behavior Change Without Labels
+Clarify does two broad things.
 
-Feature Attribution drift looks at **how much the importance ranking and magnitude of each feature has changed from the baseline**. A critical advantage is **ground truth labels are not required**. You can calculate how much a model depends on which features from inputs and predictions alone using SHAP.
+| Capability | What it measures | Operational monitor | Labels needed |
+|------------|------------------|---------------------|---------------|
+| Bias detection | Differences in outcomes between sensitive groups (e.g., gender, age) | Bias Drift Monitor | Depends on the metric |
+| Explainability | How much each feature contributed to a prediction (SHAP) | Feature Attribution Drift Monitor | Not needed |
 
-For example, if a credit scoring model relied on "income" during training but suddenly "zip code" importance skyrockets during operations, even without knowing the ground truth, that's a strong warning that "model behavior has changed."
+Explainability is computed with **SHAP (SHapley Additive exPlanations)** values. SHAP is a concept from game theory that fairly distributes and quantifies how much each feature pushed the prediction up or pulled it down from the baseline.
+
+> 💡 **Related theory**: Among the bias metrics, the ones the exam covers are the pre-training metrics **CI (Class Imbalance)** and **DPL (Difference in Positive Proportions in Labels)**, and the post-training metrics **DPPL (Difference in Positive Proportions in Predicted Labels)** and **DI (Disparate Impact)**. The key point is that "pre-training data bias" and "post-training model prediction bias" are looked at separately. The Bias Drift Monitor tracks how far the post-training bias metrics diverge from the baseline during operation.
+
+## Bias Metrics - What to Look at When
+
+You do not need to memorize every metric name, but if you keep two axes straight, **"does the metric look at labels or at predictions"** and **"is it a difference or a ratio"**, the questions get easy.
+
+| Stage | Metric | What it compares | How to read it |
+|-------|--------|------------------|----------------|
+| Pre | **CI** (Class Imbalance) | The imbalance in the sample counts themselves between groups | Closer to 0 is more balanced |
+| Pre | **DPL** | Difference in the positive proportion of the **actual labels** by group | 0 means the label distributions are on par |
+| Pre | **KL / JS** | Distance between the label distributions of the groups | Larger means the two groups' distributions differ more |
+| Post | **DPPL** | Difference in the **predicted positive proportion** by group | 0 means predictions are on par · no labels needed |
+| Post | **DI** (Disparate Impact) | The **ratio** of predicted positive proportions by group | 1 means on par · no labels needed |
+| Post | **AD / RD** | Difference in accuracy / recall by group | 0 means on par · **ground truth labels needed** |
+
+Even among "post-training bias" metrics, label requirements split. DPPL and DI are computed from **predictions alone**, so real-time monitoring in operation is possible. Metrics such as AD and RD, which compare accuracy and recall by group, **need ground truth**. This is why the Bias Drift Monitor is classified as "labels not needed for some".
+
+## Feature Attribution Drift - Detecting Changes in Model Behavior Without Labels
+
+Feature attribution drift looks at **how much the importance ranking and magnitude of each feature differ from the baseline**. The decisive advantage is that **no ground truth labels are needed**. How much the model relies on each feature can be computed with SHAP from inputs and predictions alone.
+
+For example, if a credit scoring model weighted "income" most heavily at training time but in operation the contribution of "postal code" suddenly spikes, that is a strong warning that "the model's behavior has changed", even without knowing the answers.
+
+```text
+ Baseline SHAP importance      In-operation SHAP importance
+ ────────────────────────      ────────────────────────────
+  Income        ████████ 0.41    Income        ███ 0.15
+  Credit score  █████ 0.27       Postal code   ███████ 0.34   ← rank reversal
+  Txn count     ███ 0.18         Credit score  ████ 0.22
+  Postal code   ██ 0.09          Txn count     ███ 0.17
+                                     │
+                                     ▼
+             Score how much the importance "ranking" is disturbed → violation if it exceeds the threshold
+```
 
 ```python
 from sagemaker.model_monitor import ModelExplainabilityMonitor
@@ -33,21 +83,25 @@ explainability_monitor = ModelExplainabilityMonitor(
 shap_config = SHAPConfig(
     baseline="s3://my-bucket/shap-baseline.csv",
     num_samples=100,
-    agg_method="mean_abs",     # Aggregate feature importance by mean absolute SHAP
+    agg_method="mean_abs",     # aggregate importance as the mean absolute SHAP per feature
 )
 explainability_monitor.suggest_baseline(
-    data_config=...,           # Input data configuration
+    data_config=...,           # input data configuration
     model_config=ModelConfig(model_name="my-model", instance_type="ml.m5.xlarge",
                              instance_count=1),
     explainability_config=shap_config,
 )
 ```
 
-> 🔍 **Deeper Dive**: The strength of Feature Attribution drift is early warning. The Model Quality monitor must wait for ground truth to arrive (days to weeks) before confirming performance degradation. Meanwhile, Feature Attribution calculates immediately without labels, providing a leading indicator that "the model is starting to rely on different features" before actual performance drops. This is especially valuable in domains where label collection is slow.
+- `baseline` is the reference point (reference data) for the SHAP computation. Against this reference, it measures how much each feature moved the prediction.
+- Raising `num_samples` stabilizes the SHAP estimate, but the Processing Job's time and cost rise with it.
+- `agg_method="mean_abs"` is the mean of absolute values with the sign removed - it means ranking importance by "magnitude of influence, not direction".
 
-## Bias Drift Monitor — Continuously Monitoring Fairness
+The strength of feature attribution drift lies in the "early warning". The model quality monitor has to wait until ground truth accumulates (days to weeks) before it can confirm performance degradation. Feature attribution, by contrast, is computed immediately without answers, so before performance actually drops it gives a leading signal that "the model has started relying on different features". It is especially valuable in domains where label collection is slow.
 
-The Bias Drift monitor periodically recalculates post-training bias metrics (e.g., DPPL, DI) on operations data to track whether bias has widened compared to the baseline at training time. You must specify the sensitive attribute (facet) and positive outcome.
+## Bias Drift Monitor - Continuously Watching Fairness
+
+The bias drift monitor periodically recomputes post-training bias metrics (e.g., DPPL, DI) on operational data to track whether bias has grown relative to the training-time baseline. You must specify the sensitive attribute (facet) and the positive outcome.
 
 ```python
 from sagemaker.model_monitor import ModelBiasMonitor
@@ -55,43 +109,78 @@ from sagemaker.clarify import BiasConfig
 
 bias_monitor = ModelBiasMonitor(role=role, instance_count=1, instance_type="ml.m5.xlarge")
 bias_config = BiasConfig(
-    label_values_or_threshold=[1],        # Positive (favorable) outcome value
-    facet_name="gender",                   # Sensitive attribute (facet)
-    facet_values_or_threshold=[0],         # Comparison group
+    label_values_or_threshold=[1],        # value of the positive (favorable) outcome
+    facet_name="gender",                   # sensitive attribute (facet)
+    facet_values_or_threshold=[0],         # group to compare
 )
 ```
 
-Bias Drift can measure some metrics (like DPPL) without ground truth using only predictions, so some monitoring is possible during operations when labels aren't available.
+- **facet**: The sensitive attribute column on which fairness is judged (gender, age bracket, region, etc.). Which column to treat as the facet is **decided by the business and regulation**. It is not selected automatically on technical grounds.
+- **label_values_or_threshold**: What to treat as the "favorable outcome". Definitions such as loan approved = 1, rejected = 0.
+- Continuous attributes (e.g., age) split the groups with a threshold.
 
-> ⚠️ **Pitfall**: "Monitor fairness changes to a model toward specific demographic groups during operations" is the **Bias Drift Monitor** (Clarify), while "monitor how much each feature's importance changes during operations" is the **Feature Attribution Drift Monitor** (Clarify). Don't confuse these with the Data Quality monitor (simple distribution statistics). Data Quality catches "feature X's average changed," while Feature Attribution catches "feature X's impact on predictions changed" — the latter is more directly about model behavior.
+Some bias drift metrics (e.g., DPPL) are computed from predictions alone without ground truth, so some monitoring is possible in operation even without labels.
 
-## Four Monitors in One Table
+> ⚠️ **Trap**: "Monitor changes in the model's fairness toward a particular demographic group in operation" is the **Bias Drift Monitor** (Clarify), and "Monitor changes in the importance of each feature in operation" is the **Feature Attribution Drift Monitor** (Clarify). It is easy to confuse both with the data quality monitor (simple distribution statistics). Data quality catches "the mean of feature X changed", while feature attribution catches "the influence of feature X on predictions changed" - the latter is more directly about model behavior.
 
-This table summarizes everything before the exam.
+## The Four Monitors in One Table
 
-| Monitor | Monitors | Tool | Labels Needed |
-|--------|----------|------|----------|
-| Data Quality | Input feature distribution statistics | Model Monitor (Deequ) | Not required |
-| Model Quality | Prediction performance metrics | Model Monitor | **Required** |
-| Bias Drift | Prediction bias across groups | Clarify | Partly not required |
-| Feature Attribution Drift | Feature importance (SHAP) | Clarify | Not required |
+This one table covers it right before the exam.
+
+| Monitor | What it watches | Tool | Labels needed |
+|---------|-----------------|------|---------------|
+| Data quality | Distribution statistics of input features | Model Monitor (Deequ) | Not needed |
+| Model quality | Prediction performance metrics | Model Monitor | **Needed** |
+| Bias drift | Prediction bias between groups | Clarify | Not needed for some |
+| Feature attribution drift | Feature importance (SHAP) | Clarify | Not needed |
+
+Split them with one sentence each.
+
+| Question sentence | Answer |
+|-------------------|--------|
+| "Did the mean, missingness, or categories of input values change?" | Data quality |
+| "Have the predictions actually started to be wrong?" | Model quality |
+| "Is it becoming increasingly unfavorable to a particular group?" | Bias drift |
+| "Has the model started leaning on different features?" | Feature attribution drift |
 
 ```python
-# Common flow: Clarify-based monitors operate the same way with a schedule
+# Common flow: Clarify-based monitors are also operated on a schedule in the same way
 explainability_monitor.create_monitoring_schedule(
     endpoint_input=predictor.endpoint_name,
-    ground_truth_input=None,                  # Feature Attribution doesn't need labels
+    ground_truth_input=None,                  # feature attribution needs no labels
     analysis_config="s3://my-bucket/analysis-config.json",
     output_s3_uri="s3://my-bucket/explain-results/",
-    schedule_cron_expression="cron(0 * ? * * *)",   # Hourly
+    schedule_cron_expression="cron(0 * ? * * *)",   # every hour
 )
 ```
 
-## Summary
+`analysis_config` holds the analysis conditions such as the facet, label definition, and SHAP settings. The bias monitor can additionally connect `ground_truth_input` here to compute label-based metrics as well.
 
-Today's key insight is that **Clarify extends training-stage bias and explainability analysis to continuous operations monitoring**. The **Bias Drift Monitor** periodically recalculates post-training bias metrics like DPPL and DI to track fairness changes across groups, while the **Feature Attribution Drift Monitor** uses SHAP to monitor how much each feature's importance has changed from baseline without labels. Notably, Feature Attribution Drift provides an early warning of model behavior change without waiting for ground truth, making it powerful in domains with slow label collection. All four monitors share an identical scaffold: "generate baseline → create cron schedule → run Processing Job comparison → output CloudWatch metrics."
+## When Clarify Monitors Get Tangled: Symptom → Cause → Action
 
-Next, we'll look at monitoring from an **operations perspective** rather than model quality — CloudWatch metrics/alarms, endpoint latency/errors, and logging.
+| Symptom | Common cause | Action |
+|---------|--------------|--------|
+| The bias monitor produces only some of the metrics | The metric needs labels (AD, RD) but ground truth is not connected | Connect `ground_truth_input`, or monitor with prediction-based metrics such as DPPL and DI |
+| Feature attribution runs are slow and expensive | `num_samples` is excessive, hourly schedule | Lower the sample count and relax the period to daily |
+| Only attribution drift fires while performance is normal | Attribution redistributed among correlated features (no performance impact) | Observe rather than retrain immediately. Reset thresholds focusing on the ranking of top features |
+| Facet specification is rejected | The facet column is not in the input or the value definition is wrong | Check the capture data schema, group continuous ones with a threshold |
+| Bias changes abruptly right after deployment | A new segment flowed in (new region, age bracket) | Cross-check with data quality's `categorical_values_check`, then update the baseline |
+| Fair at training but bias widens in operation | Data distribution shifts occurred differently per group | Secure group balance in the retraining data (check the pre-training metrics CI and DPL) |
+
+In the next post, we look at monitoring from the **system operations perspective**, not model quality - CloudWatch metrics and alarms, endpoint latency and errors, and logging.
+
+## 📖 Glossary
+
+- **SageMaker Clarify**: A service that computes bias in data and models and prediction explanations (SHAP). It extends to continuous monitoring in operation.
+- **SHAP**: A value that uses game theory to fairly distribute and quantify how much each feature pushed a prediction up or pulled it down from the reference point.
+- **facet (sensitive attribute)**: The reference column on which fairness is judged (gender, age bracket, etc.). Decided by the business and regulation, not by technology.
+- **Pre-training bias metrics**: Bias in the data itself before training. CI (group sample imbalance), DPL (difference in positive proportion of labels by group), and so on.
+- **Post-training bias metrics**: Prediction bias of the trained model. DPPL (difference in predicted positive proportion), DI (its ratio), AD and RD (differences in accuracy and recall), and so on.
+- **DI (Disparate Impact)**: The predicted positive proportion of one group divided by that of the other. The closer to 1, the more on par.
+- **Bias drift monitor**: A monitor that periodically recomputes post-training bias metrics to catch worsening fairness relative to the baseline.
+- **Feature attribution drift monitor**: A monitor that watches, without labels, how far the ranking and magnitude of SHAP importance deviate from the baseline.
+- **Early warning (leading indicator)**: A signal that sounds before performance degradation is confirmed. Especially valuable in domains where labels arrive late.
+- **analysis_config**: A configuration file holding the Clarify analysis conditions such as the facet, label definition, and SHAP settings.
 
 ---
 

@@ -1,101 +1,211 @@
-# Day 5 - Week 8 Review: Training, Tuning, Generalization
+# Day 5 - Week 8 Comprehensive Review: Training, Tuning, Generalization
 
-This week covered the latter half of Domain 3 (Modeling) — **how to train models (Day1), tune them (Day2), generalize them (Day3), and make them converge well (Day4)**. Today we tie these four flows into a single decision chain and organize how to narrow answers from clues during the exam.
+## 📌 Key Takeaways
 
-## Week Flow at a Glance
+- Week 8 is the second half of Domain 3 (Modeling) — four flows: **train (Day 1), tune (Day 2), generalize (Day 3), and make it converge well (Day 4)**.
+- Every problem splits along two axes: the **optimization axis** (does it reduce training loss well: learning rate, batch, gradients) and the **generalization axis** (does it fit new data: regularization, data, validation). First work out which axis the symptom belongs to.
+- **Data size, model size, cost → training infrastructure** (input mode, distribution, Spot); **efficiency, cost → tuning strategy** (Bayesian/Hyperband/early stopping).
+- **Size of the gap → overfitting/underfitting remedy**; **symptom → optimization cause and tool** (quality = Debugger, resources = Profiler).
+- Easy-to-confuse traps: responding to overfitting with more epochs or a bigger model, missing checkpoints with Spot (`max_wait >= max_run`), and using Accuracy as the objective metric on imbalanced data.
+
+## The Week at a Glance
 
 ```text
-[Day1] Training Runtime Infrastructure
-  Estimator → input modes (File/Pipe/FastFile) → distributed (data/model parallel) → Spot+checkpoints
+[Day1] Training execution foundation
+  Estimator → input mode (File/Pipe/FastFile) → distribution (data/model parallel) → Spot + checkpoints
 
-[Day2] Hyperparameter Tuning (AMT)
-  search space, target metrics → strategies (Bayesian/Random/Grid/Hyperband) → early stopping → warm start
+[Day2] Hyperparameter tuning (AMT)
+  search space · objective metric → strategy (Bayesian/Random/Grid/Hyperband) → early stopping → warm start
 
 [Day3] Generalization
-  overfit/underfit diagnosis (bias-variance) → regularization (L1/L2/dropout/early-stop) → data augmentation → leakage prevention
+  diagnose overfitting/underfitting (bias-variance) → regularization (L1/L2/dropout/early stopping) → data augmentation → leakage prevention
 
-[Day4] Training Optimization
-  batch size, learning rate schedule → vanishing/exploding gradients → Debugger (quality) / Profiler (resources)
+[Day4] Training optimization
+  batch size · learning rate schedule → vanishing/exploding gradients → Debugger (quality) / Profiler (resources)
 ```
 
-> 💡 **Related Theory**: The core tension in latter modeling is two axes. (1) Optimization — reducing loss on training data well (learning rate, batch, gradients). (2) Generalization — fits new data well (regularization, data, validation). They differ. Even if optimization succeeds (low training loss), generalization fails (high validation loss) = overfitting. Exam questions are almost always designed to test "is this symptom an optimization problem or generalization problem first?"
+> 💡 **Related Theory**: The core tension in the second half of modeling is two axes. (1) **Optimization** — does it reduce the loss on training data well (learning rate, batch, gradients). (2) **Generalization** — does it fit new data well (regularization, data, validation). These are different. If optimization succeeds (low training loss) but generalization fails (high validation loss), that is overfitting. Exam questions are almost always designed to first ask "is this symptom an optimization problem or a generalization problem?"
 
-## Input Mode, Distributed, Spot Quick Reference (Day1)
+## Integrated Decision Tree
 
-| Signal | Choice |
+```text
+A training-related problem is given
+├─ ① Is this a stage where you can't even run training yet? (infrastructure)
+│    ├─ Data is larger than the disk / want to cut startup delay → Pipe / FastFile
+│    ├─ Download everything and access randomly                   → File
+│    ├─ Training is slow + the model fits on a GPU                → data parallel
+│    ├─ The model exceeds single-GPU memory                       → model parallel
+│    └─ Cost reduction (delay tolerated)  → Managed Spot + checkpoint_s3_uri
+│                               (max_wait >= max_run required)
+├─ ② Training runs but convergence looks wrong? (optimization — Day 4)
+│    ├─ NaN · divergence · oscillation → lower learning rate + gradient clipping
+│    ├─ Early layers stalled · plateau → vanishing → ReLU · BN · residual · initialization
+│    ├─ OOM                            → lower batch / gradient accumulation / mixed precision
+│    └─ GPU underused · slow · expensive → diagnose the bottleneck with Profiler
+├─ ③ It converges but performance is bad? (generalization — Day 3)
+│    ├─ Train high, validation low, large gap → overfitting → stronger regularization · more data · augmentation · dropout · early stopping
+│    ├─ Both train and validation low         → underfitting → more complexity · features · longer training
+│    └─ Validation score unrealistic          → leakage → check fit scope · target-derived features
+└─ ④ Performance is fine but you need to squeeze out more? (tuning — Day 2)
+     ├─ Efficient search with few evaluations → Bayesian
+     ├─ Deep learning epoch iteration + pruning → Hyperband
+     ├─ Reduce tuning cost → early stopping (Auto) or Hyperband
+     └─ Reuse a previous tuning job → warm start
+```
+
+## Day 1 Summary — Input Modes, Distribution, Spot
+
+| Cue | Choice |
 |------|------|
-| Data exceeds disk, reduce startup latency | Pipe / FastFile |
-| Download all then random access | File |
-| Accelerate training, model fits on GPU | Data Parallel |
-| Model exceeds single GPU memory | Model Parallel |
-| Cost savings acceptable (some latency) | Managed Spot + checkpoint_s3_uri |
+| Data exceeds the disk, reduce startup delay | Pipe / FastFile |
+| Download everything and access randomly | File |
+| Speed up training, model fits on a GPU | Data parallel |
+| Model exceeds single-GPU memory | Model parallel |
+| Cost reduction (some delay tolerated) | Managed Spot + `checkpoint_s3_uri` |
 
-Artifacts go to `/opt/ml/model`, Spot requires `max_wait >= max_run` — remember as trap points.
+Only what you write to `/opt/ml/model` is uploaded to S3, and Spot requires `max_wait >= max_run` — remember these as trap points.
 
-## Tuning Strategies Quick Reference (Day2)
+## Day 2 Summary — Tuning Strategies
 
-| Signal | Strategy |
+| Cue | Strategy |
 |------|------|
-| Efficient exploration with few evaluations | Bayesian |
-| Deep learning epoch iterations, fast pruning | Hyperband |
+| Efficient search with few evaluations | Bayesian |
+| Deep learning epoch iteration, fast pruning | Hyperband |
 | Simple, fully parallel baseline | Random |
-| Few categorical combinations exhaustive | Grid |
-| Reduce tuning cost | Auto early stopping / Hyperband |
-| Continue/reuse previous tuning | Warm start |
+| Exhaustive search over a few categorical combinations | Grid |
+| Reduce tuning cost | Automatic early stopping / Hyperband |
+| Continue from a previous tuning job | Warm start |
 
-Imbalanced data target metric is F1/AUC, not Accuracy.
+The objective metric for imbalanced data is F1/AUC, not Accuracy. With Bayesian, raising parallelism too high lowers how much it can use earlier results.
 
-## Generalization Diagnosis & Treatment Quick Reference (Day3)
+### Objective Metrics — What Do You Optimize
 
-| Symptom | Diagnosis | Treatment |
+Tuning optimizes only in the direction the objective metric points. If the metric choice is wrong, you get a well-tuned but meaningless model.
+
+| Situation | Objective metric | Direction | Why |
+|---|---|---|---|
+| Balanced classification | Accuracy, AUC | Maximize | Accuracy moves honestly |
+| **Imbalanced classification** (fraud detection, etc.) | F1, AUC, Recall | Maximize | With 1% positives, "all negative" gives 99% accuracy — **Accuracy is a trap** |
+| Missing a case is fatal (disease, fraud) | Recall | Maximize | The cost of a false negative is greater |
+| False alarms are costly | Precision | Maximize | False positives create real operational cost |
+| Regression | RMSE, MAE | Minimize | Direction that reduces error |
+| Custom script | `metric_definitions` regex required | — | The value must be parsed from the logs for AMT to compare |
+
+## Day 3 Summary — Generalization Diagnosis and Remedies
+
+| Symptom | Diagnosis | Remedy |
 |------|------|------|
-| Train↑ validation↓ (large gap) | Overfitting (variance↑) | Increase regularization, data, dropout, early-stop, augment |
-| Train & validation both low | Underfitting (bias↑) | Increase complexity, features, train longer |
-| Feature selection / sparse model | — | L1 |
-| Shrink all weights | — | L2 |
+| Train high, validation low (large gap) | Overfitting (high variance) | Stronger regularization, more data, dropout, early stopping, augmentation |
+| Both train and validation low | Underfitting (high bias) | More complexity, more features, longer training |
+| Need feature selection / sparse model | — | L1 |
+| Want to shrink all weights | — | L2 |
 
-Fit scaler only on train — prevent leakage.
+Scalers and encoders are `fit` on the training set only — this is the basis of leakage prevention.
 
-## Optimization & Tools Quick Reference (Day4)
+## Day 4 Summary — Optimization and Tools
 
-| Symptom | Root Cause | Response |
+| Symptom | Root cause | Response |
 |------|------|------|
-| NaN / divergence / oscillation | High learning rate, exploding gradients | Lower learning rate, gradient clipping |
-| Early layers not learning, loss stuck | Vanishing gradients | ReLU, BN, residual connections, initialization |
-| OOM | Oversized batch | Lower batch, gradient accumulation, mixed precision |
-| Quality anomalies auto-detect | — | Debugger |
-| Resource bottleneck, low GPU util | — | Profiler |
+| NaN / divergence / oscillation | Learning rate too high, exploding gradients | Lower learning rate, gradient clipping |
+| Early layers not learning, loss plateau | Vanishing gradients | ReLU, batch normalization, residual connections, initialization |
+| OOM | Excessive batch size | Lower batch, gradient accumulation, mixed precision |
+| Automatic detection of quality anomalies | — | Debugger |
+| Resource bottleneck, GPU underuse | — | Profiler |
 
-## Integration Scenarios for Thought Exercise
+## Services and Features Master Table
 
-> "Text classification model has 96% training accuracy, 75% validation accuracy. Data is scarce and hard to collect more. Want to reduce tuning cost too."
+| Feature | What it does | When to pick it | Confusion warning |
+|---|---|---|---|
+| **Training Job (Estimator)** | Managed one-off training run | When running training as a container | The instance exists only for the duration of the job |
+| **Input mode File/Pipe/FastFile** | How data is delivered from S3 to the container | Depending on data size and startup-delay requirements | Pipe = streaming, FastFile = lazy loading + random access |
+| **Data parallel / model parallel** | Distribute training across multiple devices | Speed problem vs model size problem | Tell whether "GPU memory exceeded" is caused by the model or the batch |
+| **Managed Spot Training** | Cheap, interruptible instances | Cost reduction is the goal, delay is tolerated | Without checkpoints, the savings are meaningless |
+| **AMT (tuning job)** | Automatic hyperparameter search | When you need to find the optimal combination | Can't fix convergence problems in training itself |
+| **Debugger** | Detects quality anomalies from tensors during training | Vanishing, exploding, overfitting, stalled loss | Not for resource analysis |
+| **Profiler** | Analyzes CPU/GPU and I/O resource bottlenecks | GPU underuse, slowness, cost inefficiency | Not for detecting quality anomalies |
+| **Model Monitor** | Watches drift on deployed endpoints | **The operations stage, not training** | Picking it for anomaly detection during training is wrong |
 
-Breakdown:
-1. Large gap → **overfitting** (Day3) → regularization, **data augmentation (back-translation, etc)**, dropout.
-2. Limited data → k-fold cross-validation for stable evaluation.
-3. Reduce tuning cost → **Hyperband** or early stopping (Day2).
+### Settings Master Table — Where the Traps Hide
 
-> "Training a large model on 8TB data is too slow and expensive. Single GPU memory is exceeded."
+| Setting | Where | What happens if you miss it |
+|---|---|---|
+| `output_path` / `/opt/ml/model` | Estimator | Only what is written to this path is uploaded to S3 automatically |
+| `input_mode` (File/Pipe/FastFile) | TrainingInput | With File, training doesn't start until the download finishes |
+| `instance_count` + `distribution` | Estimator | If you only add instances without choosing a distribution strategy, it won't work as intended |
+| `use_spot_instances` + `max_wait` | Estimator | Unless `max_wait >= max_run`, the Spot configuration isn't valid |
+| `checkpoint_s3_uri` | Estimator | Without it, a Spot interruption means retraining from scratch |
+| `strategy` / `early_stopping_type` | HyperparameterTuner | Hyperband has early stopping built in and ignores `early_stopping_type` |
+| `max_jobs` / `max_parallel_jobs` | HyperparameterTuner | With Bayesian, raising parallelism too high lowers efficiency |
+| `objective_metric_name` | HyperparameterTuner | Putting Accuracy on imbalanced data makes the tuning itself futile |
+| `l1` / `wd` | Linear Learner | `wd` is L2 (weight decay) — only the name differs |
+| `gradient_clipping` / `lr_scheduler` | Training hyperparameters | First-line means of handling explosion and divergence |
 
-Breakdown:
-1. Data exceeds disk → **Pipe/FastFile** (Day1).
-2. Exceeds single GPU → **model parallel** (Day1).
-3. Cost savings → **Spot + checkpoints** (Day1).
-4. Suspect low GPU utilization → **Profiler** (Day4) to identify bottleneck.
+## Thinking Through Integrated Cases
 
-## Common Traps Summary
+> **Case A**: A text classification model has 96% training accuracy and 75% validation accuracy. Data is scarce and collecting more is hard. You also want to cut tuning cost.
 
-- Responding to overfitting with "increase epochs / enlarge model" is usually wrong (worsens overfitting).
-- Distinguish model parallel from gradient accumulation / mixed precision on "GPU memory exceeded": model itself doesn't fit → model parallel; batch-related → accumulation/precision.
-- Debugger vs Profiler: **quality=Debugger, resources=Profiler**. Don't confuse with Model Monitor (drift post-deployment).
-- Spot is meaningless without checkpoints; requires `max_wait >= max_run`.
-- Using Accuracy as target metric on imbalanced data is a trap.
+Solution:
 
-## Summary
+1. Large gap → **overfitting** (Day 3) → stronger regularization, **data augmentation (back-translation, etc.)**, dropout.
+2. Little data → stabilize evaluation with **k-fold cross-validation**.
+3. Reduce tuning cost → **Hyperband** or early stopping (Day 2).
 
-Week 8 was about "after choosing a good algorithm (Week 6), actually training, tuning, and generalizing it well." The key is linking symptom → root cause → response quickly. **Data scale, model size, cost inform training infrastructure** (Day1); **efficiency, cost inform tuning strategies** (Day2); **gap size informs overfitting/underfitting treatment** (Day3); **symptom informs optimization root cause and tools** (Day4). Next week we move to Domain 4 — **deploying, operating, monitoring** models.
+> **Case B**: You are training a large model on 8TB of data and it is too slow and too expensive. It also exceeds single-GPU memory.
 
----
+Solution:
+
+1. Data exceeds disk → **Pipe/FastFile** (Day 1).
+2. Exceeds a single GPU → **model parallel** (Day 1).
+3. Cost reduction → **Spot + checkpoints** (Day 1).
+4. If GPU underuse is suspected → identify the bottleneck with **Profiler** (Day 4).
+
+## Commonly Missed Traps
+
+| Trap | Why it's wrong | Correct judgment |
+|---|---|---|
+| Responding to overfitting with "more epochs / bigger model" | It increases variance and makes things worse | Regularization, data, augmentation, early stopping |
+| Reflex "GPU memory exceeded = model parallel" | The cause may be the batch | The model itself doesn't fit → model parallel / because of the batch → accumulation, mixed precision, lower batch |
+| Confusing Debugger and Profiler | They look at different things | **Quality = Debugger, resources = Profiler**, post-deployment drift = Model Monitor |
+| Using Spot without checkpoints | An interruption means retraining from scratch → savings vanish | Set `checkpoint_s3_uri`, `max_wait >= max_run` |
+| Accuracy as the objective metric on imbalanced data | Predicting only the majority class still scores high | F1 / AUC / Recall |
+| Merging the validation set into training to raise performance | Measuring generalization becomes impossible | Validation is for selection, test is scored once at the end |
+| Fitting a scaler on the whole dataset | Test information leaks into training | `fit` on the training set only, `transform` for the rest |
+| Setting maximum parallelism for Bayesian | It decides the next trial without seeing earlier results | Moderate parallelism; fully parallel suits Random |
+
+## Question Cue → Answer Mapping
+
+| Question cue | Answer to pick | Which Day |
+|---|---|---|
+| "Training loss is very low but validation loss is much higher" | Optimization succeeded, generalization failed = overfitting | Day 3 |
+| "Both training and validation are low and the gap is small" | Underfitting → more complexity · features · training | Day 3 |
+| "The data is larger than the instance disk" | Pipe / FastFile input mode | Day 1 |
+| "The model exceeds single-GPU memory" | Model parallel | Day 1 |
+| "Cut cost substantially but delay is tolerated" | Managed Spot + checkpoints | Day 1 |
+| "Quickly discard hopeless candidates to cut tuning cost" | Hyperband | Day 2 |
+| "Search efficiently with few training runs" | Bayesian | Day 2 |
+| "Continue exploring from last tuning job's results" | Warm start | Day 2 |
+| "Objective metric for data with 1% positives, like fraud detection" | F1 / AUC (Accuracy is a trap) | Day 2 |
+| "Automatically zero out features to get a sparse model" | L1 | Day 3 |
+| "Labeling cost is high so you can't grow the data" | Data augmentation | Day 3 |
+| "Loss suddenly diverges to NaN" | Lower learning rate + gradient clipping | Day 4 |
+| "GPU utilization 30%, suspect data-loading bottleneck" | Profiler | Day 4 |
+| "Automatically detect and alert on vanishing, overfitting, non-decreasing loss" | Debugger | Day 4 |
+| "Monitor input distribution changes after deployment" | Model Monitor (next week's scope) | Week 9 |
+
+Next week moves to Domain 4 and covers how to **deploy, operate, and monitor** models.
+
+## 📖 Glossary
+
+- **Optimization / generalization**: The problem of reducing loss well on training data (learning rate, batch, gradients) / the property that performance holds on new data too (regularization, data, validation). Separating these two axes is the starting point for solving Week 8 questions.
+- **Input mode**: How training data in S3 is delivered to the container. File (full download), Pipe (streaming), FastFile (lazy loading).
+- **Data parallel / model parallel**: Replicating the same model and splitting the data / splitting the model itself across multiple devices.
+- **Managed Spot Training / checkpoint**: An option that reduces cost by training on cheap instances that can be interrupted / a state snapshot that lets training resume from that point after an interruption. The two are a set.
+- **AMT (Automatic Model Tuning)**: A SageMaker feature that automatically searches hyperparameter combinations across multiple training jobs to find the optimum.
+- **Hyperband / warm start**: A multi-fidelity strategy that allocates resources unevenly and cuts hopeless candidates early / a setting that starts from earlier tuning results and continues the search.
+- **Objective metric**: The validation metric that tuning maximizes or minimizes. What you choose is what you optimize, and picking Accuracy on imbalanced data makes tuning futile.
+- **Bias-variance tradeoff**: The relationship where making the model simpler increases bias and making it more complex increases variance. The goal is the point where their sum is minimal.
+- **Debugger / Profiler**: A tool that catches quality anomalies during training (vanishing, exploding, overfitting) / a tool that analyzes CPU, GPU, I/O resources and bottlenecks. The pair most often mixed up on the exam.
+- **Drift**: The phenomenon where the real input or prediction distribution after deployment differs from that at training time. It is the subject of Model Monitor.
 
 ## 📝 Practice Questions
 

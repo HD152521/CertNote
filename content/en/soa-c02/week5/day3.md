@@ -8,7 +8,7 @@ AWS Patch Manager is the tool that structurally solves the "patch deployment del
 
 Patch management predates modern computing. When Morris Worm exploited a fingerd buffer overflow in 1988, operators deployed patches manually. The 2000s brought Microsoft WSUS, Red Hat RHN, Ubuntu Landscape—tools enabling centralized patch management. All shared a design separating "which patches to approve" from "when to deploy." AWS Patch Manager inherits this philosophy.
 
-> 💡 **Related Theory**: Patch management is a core phase of the security field's "Vulnerability Management Lifecycle." NIST SP 800-40 Rev.4 defines four stages: Identify (CVE awareness) → Evaluate (prioritize) → Remediate (patch) → Verify (confirm). AWS Patch Manager's Baseline (Evaluate) → Maintenance Window (Remediate) → Compliance (Verify) aligns exactly with this framework. CVSS (Common Vulnerability Scoring System, version 3.1, 2019) 0–10 scoring is the de facto standard for patch prioritization.
+Patch management is a core phase of the security field's "Vulnerability Management Lifecycle." NIST SP 800-40 Rev.4 defines four stages: Identify (CVE awareness) → Evaluate (prioritize) → Remediate (patch) → Verify (confirm). AWS Patch Manager's Baseline (Evaluate) → Maintenance Window (Remediate) → Compliance (Verify) aligns exactly with this framework. CVSS (Common Vulnerability Scoring System, version 3.1, 2019) 0–10 scoring is the de facto standard for patch prioritization.
 
 ## Comparison with Other Cloud Patch Management
 
@@ -25,7 +25,7 @@ Patch management predates modern computing. When Morris Worm exploited a fingerd
 
 AWS Patch Manager's differentiator: **Gradual environment rollout via Patch Group + ApproveAfterDays combo** (Dev→Stage→Prod automation)—unavailable on GCP/Azure.
 
-> 💡 **Related Theory**: Patch Manager's per-OS Patch Baseline parses OS-vendor patch metadata. Amazon Linux uses `updateinfo.xml` (RPM Advisories); Ubuntu, `Origin:Ubuntu,Archive:security` APT labels; Windows, Microsoft Update Catalog WSUS classifications. This metadata includes CVE numbers, CVSS scores, patch classification (Security/Critical/Important). AWS periodically syncs each OS repository. Understanding this metadata structure when setting patch classifications enables precise Patch Filter design.
+Patch Manager's per-OS Patch Baseline parses OS-vendor patch metadata. Amazon Linux uses `updateinfo.xml` (RPM Advisories); Ubuntu, `Origin:Ubuntu,Archive:security` APT labels; Windows, Microsoft Update Catalog WSUS classifications. This metadata includes CVE numbers, CVSS scores, patch classification (Security/Critical/Important). AWS periodically syncs each OS repository. Understanding this metadata structure when setting patch classifications enables precise Patch Filter design.
 
 ## Patch Baseline: "Which Patches to Approve"
 
@@ -56,7 +56,7 @@ AWS provides default baselines per OS (`AWS-DefaultPatchBaseline`, `AWS-AmazonLi
 | 4.0 – 6.9 | Medium/Moderate |
 | 0.1 – 3.9 | Low |
 
-> 📚 **Case Study**: 2023, a financial company (Company C) faced PCI-DSS audit requests for "patch application policy evidence." Manual patch records lived in an Excel file—some server histories were incomplete. After implementing Patch Manager and Compliance with auto-saving S3 histories, they submitted those logs as audit proof. Next year's audit rated them "Good Practice" for implementing automated patch processes. PCI-DSS v4.0 requirement 6.3.3 (all components protected from vulnerabilities) was satisfied directly by Patch Manager + Compliance reports.
+As a hypothetical case, in 2023 a financial company (Company C) faced PCI-DSS audit requests for "patch application policy evidence." Manual patch records lived in an Excel file—some server histories were incomplete. After implementing Patch Manager and Compliance with auto-saving S3 histories, they submitted those logs as audit proof. Next year's audit rated them "Good Practice" for implementing automated patch processes. PCI-DSS v4.0 requirement 6.3.3 (all components protected from vulnerabilities) was satisfied directly by Patch Manager + Compliance reports.
 
 **Custom Patch Baseline Configuration:**
 
@@ -65,7 +65,7 @@ AWS provides default baselines per OS (`AWS-DefaultPatchBaseline`, `AWS-AmazonLi
 aws ssm create-patch-baseline \
   --name "Prod-AmazonLinux2-Baseline" \
   --operating-system "AMAZON_LINUX_2" \
-  --description "Conservative: Security+Critical only, 14-day wait" \
+  --description "Conservative baseline: Security+Critical only, 14-day wait" \
   --approval-rules '{
     "PatchRules": [
       {
@@ -82,13 +82,14 @@ aws ssm create-patch-baseline \
     ]
   }' \
   --rejected-patches "kernel*" \
-  --rejected-patches-action "BLOCK"
+  --rejected-patches-action "BLOCK" \
+  --tags '[{"Key":"Environment","Value":"prod"}]'
 
-# 2. Aggressive baseline for Dev (fast validation)
+# 2. Aggressive baseline for Dev (validate by applying quickly)
 aws ssm create-patch-baseline \
   --name "Dev-AmazonLinux2-Baseline" \
   --operating-system "AMAZON_LINUX_2" \
-  --description "Aggressive: all patches, immediate approval" \
+  --description "Aggressive baseline: all patches, immediate approval" \
   --approval-rules '{
     "PatchRules": [
       {
@@ -163,7 +164,7 @@ aws ssm register-patch-baseline-for-patch-group \
 
 This design naturally rolls out the same patch: Dev → Stage → Prod.
 
-> 🔍 **Deeper Dive**: ApproveAfterDays-based gradual patching is the "Canary Release" pattern applied to patch management. Martin Fowler defined it (2010): "don't deploy changes to all users immediately; deploy to some environments first, then expand if no issues." Setting ApproveAfterDays to 0 (Dev), 3 (Stage), 14 (Prod) implements this pattern. Kernel panics, service interruptions, compatibility issues get caught in Dev before hitting Prod. The 2024 CrowdStrike update outage that affected 8.5 million machines would have impacted only a portion if gradual rollout had been used.
+ApproveAfterDays-based gradual patching is the "Canary Release" pattern applied to patch management. Martin Fowler defined it (2010): "don't deploy changes to all users immediately; deploy to some environments first, then expand if no issues." Setting ApproveAfterDays to 0 (Dev), 3 (Stage), 14 (Prod) implements this pattern. Kernel panics, service interruptions, compatibility issues get caught in Dev before hitting Prod. The 2024 CrowdStrike update outage that affected 8.5 million machines would have impacted only a portion if gradual rollout had been used.
 
 ## Patch Operations: Scan vs Install
 
@@ -248,7 +249,7 @@ mainSteps:
       Targets: [{"Id": "{{ InstanceId }}"}]
 ```
 
-> 💡 **Related Theory**: The ELB Deregister → patch → reboot → re-register pattern exactly implements distributed systems' "rolling update" pattern. Kubernetes' RollingUpdate deployment strategy replaces Pods one-by-one identically. The key: "Connection Draining." AWS ELB's Deregistration Delay (default 300s) maintains traffic for already-connected client sessions until completion. The `WaitForDeregistration` step waits within this 300s window for existing sessions to complete. Without Connection Draining, immediate patching force-terminates in-flight HTTP transactions.
+The ELB Deregister → patch → reboot → re-register pattern exactly implements distributed systems' "rolling update" pattern. Kubernetes' RollingUpdate deployment strategy replaces Pods one-by-one identically. The key: "Connection Draining." AWS ELB's Deregistration Delay (default 300s) maintains traffic for already-connected client sessions until completion. The `WaitForDeregistration` step waits within this 300s window for existing sessions to complete. Without Connection Draining, immediate patching force-terminates in-flight HTTP transactions.
 
 ## Patch Compliance: Results as Numbers
 
@@ -286,7 +287,121 @@ aws ssm describe-instance-patches \
   --filters 'Key=State,Values=Missing'
 ```
 
-> 🔍 **Deeper Dive**: `InstalledPendingRebootCount` rising is frequently tested. This state occurs when patch files installed to disk but require reboot before actual kernel/system loading. Linux: use `needs-restarting -r` to check reboot necessity. Windows: check `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired` registry key. This state persists when patching with `NoReboot` option or reboot deferred due to ELB deregistration avoidance.
+`InstalledPendingRebootCount` rising is frequently tested. This state occurs when patch files installed to disk but require reboot before actual kernel/system loading. Linux: use `needs-restarting -r` to check reboot necessity. Windows: check `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired` registry key. This state persists when patching with `NoReboot` option or reboot deferred due to ELB deregistration avoidance.
+
+## Patch Policy (Quick Setup): Multi-Account Patch Governance
+
+Patch Policy, launched in 2023, integrates with Organizations to deploy patch policy across multiple accounts and multiple Regions at once.
+
+```bash
+# Quick Setup Patch Policy (console or CLI)
+# Run from the Organizations management account
+aws ssm create-resource-data-sync \
+  --sync-name "OrgPatchCompliance" \
+  --s3-destination '{
+    "BucketName": "org-patch-compliance",
+    "Region": "ap-northeast-2",
+    "SyncFormat": "JsonSerDe"
+  }'
+
+# Aggregate each account's compliance into a central S3 bucket, then analyze with Athena
+# SELECT account_id, instance_id, missing_count, patch_group
+# FROM "org_patch_compliance"."aws_patchcompliancesummary"
+# WHERE missing_count > 0
+# ORDER BY missing_count DESC
+```
+
+As a hypothetical case, in 2024 a global manufacturer, Company D, adopted Patch Policy in an AWS Organizations-based multi-account environment (23 accounts, 3 Regions). Once Patch Policy was configured a single time in Quick Setup, StackSets automatically deployed the Patch Baseline, Patch Group settings, and Maintenance Window to every account and Region. They could now check the company-wide patch compliance rate in real time on a central S3 + Athena dashboard. Previously, each account team managed patching independently, and it took 2 weeks to determine the company-wide compliance rate; after adoption, real-time checking became possible. As evidence meeting the NIST 800-171 SI-2 (Flaw Remediation) requirement, the auditor checked this dashboard directly.
+
+## Troubleshooting: When Patches Are Not Applied
+
+**Systematic order of checks:**
+
+```bash
+# 1. Check that it is a Managed Instance
+aws ssm describe-instance-information \
+  --filters "Key=InstanceIds,Values=i-0123456789abcdef0" \
+  --query 'InstanceInformationList[0].[PingStatus,PlatformName,PlatformVersion]'
+
+# 2. Check the Patch Group tag (exact name, including the space!)
+aws ec2 describe-tags \
+  --filters "Name=resource-id,Values=i-0123456789abcdef0" "Name=key,Values=Patch Group"
+
+# 3. Which Baseline is the Patch Group linked to?
+aws ssm get-patch-baseline-for-patch-group \
+  --patch-group "prod-web"
+
+# 4. Check the Baseline's approval rules
+aws ssm get-patch-baseline \
+  --baseline-id pb-0123456789abcdef0
+
+# 5. Query patch compliance details (which patches are missing)
+aws ssm list-compliance-items \
+  --resource-ids i-0123456789abcdef0 \
+  --resource-types ManagedInstance \
+  --filters 'Key=ComplianceType,Values=Patch' \
+           'Key=STATUS,Values=NON_COMPLIANT'
+
+# 6. Check SSM Agent logs (inside the instance)
+# sudo tail -100 /var/log/amazon/ssm/amazon-ssm-agent.log
+# sudo tail -100 /var/log/amazon/ssm/errors.log
+```
+
+> ⚠️ **Pitfall**: Even when the Patch Group tag is set correctly, patches may not be applied because the link between the Patch Group and the Baseline (`register-patch-baseline-for-patch-group`) is missing. The tag and the Baseline link are separate operations. Always verify the link status with the `get-patch-baseline-for-patch-group` command. Another pitfall: an instance with no Patch Group specified automatically uses the per-OS **AWS default baseline**. The default baseline gets applied unintentionally, causing confusion such as "why were only some patches applied instead of all of them?"
+
+## Integration with Inspector: CVE-Based Priority Patching
+
+AWS Inspector (v2) scans EC2 instances for vulnerabilities by CVE and prioritizes them by CVSS Score. Linking Inspector findings with Patch Manager lets you build a workflow that patches the most dangerous CVEs first.
+
+```bash
+# Query Inspector findings (patchable ones among CRITICAL CVEs)
+aws inspector2 list-findings \
+  --filter-criteria '{
+    "severity":[{"comparison":"EQUALS","value":"CRITICAL"}],
+    "findingType":[{"comparison":"EQUALS","value":"PACKAGE_VULNERABILITY"}],
+    "fixAvailable":[{"comparison":"EQUALS","value":"YES"}]
+  }' \
+  --query 'findings[*].[findingArn,packageVulnerabilityDetails.cvss[0].score,packageVulnerabilityDetails.vulnerabilityId,resources[0].id]'
+```
+
+The future direction of security operations is a pattern in which you explicitly add the package version information of CVEs found by Inspector to the Patch Baseline's Approved Patches, or receive Inspector alarms through EventBridge and automatically trigger Patch Manager.
+
+The Inspector + Patch Manager integration is AWS's implementation of "Risk-Based Patching." Whereas traditional patch management is policy-based, applying "all patches by classification criteria," Risk-Based Patching dynamically decides priority by considering the CVSS Score plus actual environment exposure (whether it is internet-facing, data sensitivity). Linking Inspector with CISA's (the US Cybersecurity and Infrastructure Security Agency) KEV (Known Exploited Vulnerabilities) list lets you build a pipeline that patches "vulnerabilities actually used in real attacks" first. Commercial vulnerability scanners such as Tenable.io, Qualys, and Rapid7 implement the same principle.
+
+## Summary of the Overall Flow
+
+```
+Patch Manager standard operating flow
+============================================================
+
+[Step 1] Establish policy
+  Create Patch Baselines
+    ├── Dev: all patches, 0-day wait (fast validation)
+    ├── Stage: Sec/Critical/Important, 3-day wait
+    └── Prod: Sec/Critical, 14-day wait (safety first)
+
+[Step 2] Classify instances
+  EC2 tag: Key="Patch Group", Value="prod-web"
+  → link with register-patch-baseline-for-patch-group
+
+[Step 3] Pre-check (optional)
+  AWS-RunPatchBaseline, Operation=Scan
+  → find which patches are missing (nothing applied)
+
+[Step 4] Apply patches
+  Maintenance Window
+  ├── Task 1: EBS Snapshot (Priority 1)
+  ├── Task 2: ELB Deregister (Priority 2)
+  ├── Task 3: AWS-RunPatchBaseline Install (Priority 3)
+  ├── Task 4: Health Check (Priority 4)
+  └── Task 5: ELB Register (Priority 5)
+  Concurrency: 10%, Error Tolerance: 5%
+
+[Step 5] Verify results
+  Compliance dashboard
+  ├── MissingCount > 0 → NON_COMPLIANT
+  └── Priority patching of CVEs via Inspector integration
+```
 
 ## 📝 Practice Problems
 

@@ -1,37 +1,51 @@
 # Day 3 - Query & Exploration: Athena, Redshift, EDA Basics
 
-On Day 1 we collected data, and on Day 2 we cataloged and transformed it with Glue. Now it's time to **read and understand** the data. Before building a model, a data scientist must examine the data closely. "What's the feature distribution? Are there missing values? How does it relate to the target?" — this is **EDA (Exploratory Data Analysis)**.
+## 📌 Key Takeaways
 
-Today we look at **Athena** for directly querying the data lake, the **Redshift** data warehouse, and the fundamentals of EDA, the starting point for ML.
+- **Athena** queries S3 directly with serverless SQL. Billing is by **data scanned** ($5/TB) — cutting scan volume is cutting cost.
+- Athena's three big cost levers: **columnar format (Parquet) + partitioning + compression**.
+- **Redshift** is a load-based data warehouse (MPP). It is strong at repeated high-performance BI. **Spectrum** is the bridge to S3.
+- **Redshift ML** trains and runs inference with `CREATE MODEL` SQL without moving the data.
+- Before modeling, always check distributions, missing values, outliers, correlations, class imbalance, and **data leakage** with **EDA**.
 
 ## Amazon Athena: Querying S3 with SQL
 
-**Athena** is a service that queries data stored in S3 using **serverless SQL**. Built on Presto/Trino, it requires no cluster provisioning. It directly uses table definitions from Glue Data Catalog.
+Once you have ingested and cataloged the data, it is time to **read and understand** it. Before building a model, a data scientist always looks into the data — this is **EDA (Exploratory Data Analysis)**.
 
-Key characteristics:
+**Athena** is a service that queries data stored in S3 with **serverless SQL**. It is based on the Presto/Trino engine and has no cluster provisioning at all. It uses the table definitions in the Glue Data Catalog as they are.
 
-- **Serverless**: No infrastructure management. Runs only when querying.
-- **Schema-on-read**: Query data while it stays in S3, no movement.
-- **Billing = data scanned**: Charged per byte scanned ($5/TB). So **minimizing scan volume directly reduces cost**.
+- **Serverless**: No infrastructure to manage. It runs only when you query.
+- **schema-on-read**: Query the data while leaving it in S3, without moving it.
+- **Billing = data scanned**: Charged per byte the query scans ($5/TB). **Minimizing scan volume is cost savings.**
 
 ```sql
--- Query tables directly from Glue Catalog
+-- Query a table registered in the Glue Catalog directly
 SELECT customer_id, AVG(amount) AS avg_amount
 FROM ml_datalake.transactions
-WHERE year = '2026' AND month = '06'   -- Partition filter reduces scan volume
+WHERE year = '2026' AND month = '06'   -- partition filter reduces scan volume
 GROUP BY customer_id
 ORDER BY avg_amount DESC
 LIMIT 100;
 ```
 
-The `WHERE year='2026' AND month='06'` clause triggers **partition pruning**, scanning only Parquet in that partition. Combining Parquet + partitioning can reduce scan volume by orders of magnitude.
+In the query above, `WHERE year='2026' AND month='06'` triggers **partition pruning**, so only the Parquet files of the matching partition are scanned.
 
-> 💡 **Related Theory**: Athena's cost being proportional to data scanned directly impacts ML data prep. (1) **Parquet/ORC** columnar formats → scan only needed columns, (2) **Partitioning** → scan only needed partitions, (3) **Compression** → reduce physical bytes. These three are Athena's cost levers. Full-scanning CSV is expensive and slow, but well-partitioned Parquet runs the same query at 1/50 cost. If you run feature extraction queries frequently, this difference compounds.
+**The three big levers for reducing scan volume**
 
-> 🔍 **Deeper Dive**: Athena suits quick feature exploration in ML workflows. Before SageMaker reads training data as Parquet from S3, an analyst uses Athena to confirm "what's the target distribution? Is there class imbalance?" via SQL. Also, **Athena CTAS (CREATE TABLE AS SELECT)** lets you save query results as Parquet to S3, directly creating training datasets.
+| Lever | Principle | Effect |
+|------|------|------|
+| Columnar format (Parquet/ORC) | Reads only the needed column blocks | Reduced by the ratio of columns |
+| Partitioning | Reads only the folders matching the condition | Reduced by the ratio of partitions |
+| Compression (Snappy/GZIP) | The physical bytes themselves get smaller | 2–10x reduction |
+
+The three levers multiply. That is why a well-designed Parquet query becomes dozens of times cheaper than a full CSV scan.
+
+The fact that Athena cost is proportional to the "data scanned" directly affects ML data preparation. A full CSV scan is expensive and slow, but on well-partitioned Parquet the same query runs at a much lower cost. If you frequently run queries that extract ML features, this difference accumulates.
+
+Athena suits quick feature exploration in an ML workflow. Before SageMaker reads Parquet from S3 as training data, an analyst checks with SQL in Athena "what is the target distribution? is there class imbalance?" You can also use **Athena CTAS (CREATE TABLE AS SELECT)** to save query results to S3 as Parquet and build a training dataset directly.
 
 ```sql
--- Generate training dataset as Parquet via CTAS
+-- Create a training dataset as Parquet with CTAS
 CREATE TABLE ml_datalake.churn_training
 WITH (format = 'PARQUET', external_location = 's3://ml-datalake/curated/churn/')
 AS
@@ -42,23 +56,25 @@ WHERE year = '2026';
 
 ## Amazon Redshift: Data Warehouse
 
-**Redshift** is a petabyte-scale **data warehouse (OLAP)**. Data is loaded into Redshift cluster nodes (or Redshift Serverless) and complex analytical queries are processed at high speed via MPP (Massively Parallel Processing).
-
-Core difference between Athena and Redshift:
+**Redshift** is a petabyte-scale **data warehouse (OLAP)**. It loads data into Redshift's internal nodes (or Redshift Serverless) and processes complex analytical queries at high speed with MPP (Massively Parallel Processing).
 
 | Aspect | Athena | Redshift |
 |------|------|------|
-| Model | Serverless, direct S3 query | Data warehouse (load required) |
-| Data Location | S3 (no movement) | Inside cluster (or Serverless) |
-| Suited For | Ad-hoc, intermittent queries, exploration | Repetitive, high-performance analysis, BI dashboards |
-| Billing | Data scanned | Cluster (node-hours) or RPU |
+| Model | Serverless, queries S3 directly | Data warehouse (loading required) |
+| Data location | S3 (no movement) | Inside the cluster (or Serverless) |
+| Suited for | Ad hoc/occasional queries, exploration | Repeated high-performance analytics, BI dashboards |
+| Billing | Scan volume | Cluster (node hours) or RPU |
+| Preparation work | None (catalog only) | Loading (COPY), designing distribution keys and sort keys |
+| Answer keywords | "occasional", "minimal management overhead", "leave in S3 as is" | "repeated BI", "complex joins", "sustained workload" |
 
-**Redshift Spectrum** bridges the two — you can **query S3 data as external tables directly from Redshift**. Keep frequently used data inside Redshift, cold data in S3, and join via Spectrum.
+**Redshift Spectrum** is the bridge between the two — from Redshift you can **query data in S3 directly as external tables**. Keep frequently used (hot) data inside Redshift and cold data in S3, and join them with Spectrum.
 
-In the ML integration sense, also know **Redshift ML**. Using SQL `CREATE MODEL` statement, you can call SageMaker Autopilot from within Redshift to train and infer models. Create prediction columns with just SQL, no data movement.
+![Structure that joins Redshift internal tables and S3 external tables with Spectrum](/diagrams/redshift-spectrum.svg)
+
+On the ML integration side there is also **Redshift ML**. With the SQL `CREATE MODEL` statement you can call SageMaker Autopilot from inside Redshift to train and run inference. You create a prediction column with SQL alone, without moving the data.
 
 ```sql
--- Redshift ML: Train model via SQL (internally calls SageMaker Autopilot)
+-- Redshift ML: train a model with SQL (internally calls SageMaker Autopilot)
 CREATE MODEL churn_predictor
 FROM (SELECT tenure, monthly_charges, churned FROM transactions)
 TARGET churned
@@ -67,22 +83,21 @@ IAM_ROLE 'arn:aws:iam::123456789012:role/RedshiftMLRole'
 SETTINGS (S3_BUCKET 'ml-datalake-redshiftml');
 ```
 
-> 🔍 **Deeper Dive**: Common exam comparison — "ad-hoc exploration/intermittent queries + minimal management + data stays in S3" = **Athena**. "Repetitive, high-performance BI queries + complex joins + continuous workload" = **Redshift**. "Join S3 cold data from Redshift" = **Redshift Spectrum**. "ML via SQL without data movement" = **Redshift ML**.
+An easy-to-confuse comparison — "ad hoc exploration/occasional queries + minimal management overhead + leave the data in S3" means **Athena**. "Repeated high-performance BI queries + complex joins + sustained workload" means **Redshift**. "Joining cold S3 data from Redshift" means **Redshift Spectrum**. "ML with SQL without moving data" means **Redshift ML**.
 
 ## EDA (Exploratory Data Analysis) Basics
 
-Now that you can query, it's time to **understand**. EDA is the process of grasping data structure, quality, and relationships before modeling. In MLA-C01, EDA is tested as an essential step providing the foundation for feature engineering and data cleaning.
+Now that you can query the data, it is time to **understand** it. EDA is the process of grasping the structure, quality, and relationships of the data before modeling, and it provides the basis for feature engineering and data cleansing.
 
-Core EDA checklist items:
-
-| Check | Question | Action If Found |
+| Check | Question | Response when found |
 |------|------|------|
 | Distribution | How is each feature distributed? | Skew → log transform |
-| Missing Values | Which columns have many nulls? | Imputation or removal |
+| Missing values | Which columns have many missing values? | Imputation or removal |
 | Outliers | Are there extreme values? | Clipping, removal, robust scaling |
-| Correlation | Correlation between features/target? | Remove multicollinearity, drop meaningless features |
-| Class Imbalance | Is target distribution skewed? | Over/undersampling, class weight |
-| Cardinality | How many unique values in categorical columns? | Determine encoding strategy |
+| Correlation | What are the correlations between features and with the target? | Remove multicollinearity, drop meaningless features |
+| Class imbalance | Is the target distribution skewed? | Over/under-sampling, class weight |
+| Cardinality | How many unique values do categorical columns have? | Decide the encoding strategy |
+| Data leakage | Is there an unrealistically high correlation with the target? | Remove that feature |
 
 ```python
 import pandas as pd
@@ -90,25 +105,112 @@ import pandas as pd
 df = pd.read_parquet("s3://ml-datalake/curated/churn/train.parquet")
 
 # Basic statistics
-print(df.describe())          # Numeric distribution (mean/std/percentiles)
-print(df.isnull().mean())     # Null rate per column
-print(df["churned"].value_counts(normalize=True))  # Check class imbalance
-print(df.corr(numeric_only=True))  # Feature correlation matrix
+print(df.describe())          # numeric distributions (mean/std/quartiles)
+print(df.isnull().mean())     # missing ratio per column
+print(df["churned"].value_counts(normalize=True))  # check class imbalance
+print(df.corr(numeric_only=True))  # feature correlation matrix
 ```
 
-> 💡 **Related Theory**: EDA was established in 1977 by statistician **John Tukey** in his work *Exploratory Data Analysis*. The core philosophy is "before forming hypotheses and testing them, let the data speak for itself." Visualizations like boxplots, histograms, and scatter plots are Tukey's legacy. Skipping EDA in ML risks missing class imbalance or data leakage, causing models to learn incorrect patterns.
+**How to read correlation coefficients** — a table that leads straight to judgments in EDA.
 
-> ⚠️ **Gotcha**: The most dangerous mistake in EDA is **data leakage**. For example, if a "payment completion date" column essentially pre-includes the "purchase made" target, validation accuracy will be 99% but deployment is useless. If EDA reveals a feature with unrealistically high correlation to the target (e.g., 0.99), suspect leakage.
+| Observation | What it means | Action |
+|------|-------------|------|
+| Feature-target correlation ≈ 0 | Contributes nothing to prediction | Drop candidate |
+| Feature-target correlation 0.99 | Suspected data leakage | Trace the cause, then remove |
+| Feature-feature correlation 0.95 | Multicollinearity | Keep only one or reduce dimensions |
+| Missing rate > 50% | Almost no information | Remove the column or turn it into a "was missing" flag |
+| Minority class < 1% | Extreme imbalance | Stratified split + resampling + PR-AUC |
 
-The typical AWS environment for EDA is **SageMaker Studio / notebooks**. Query Athena with SQL from a notebook, or read S3 Parquet directly into pandas for analysis. For large-scale data, **SageMaker Data Wrangler** provides visual EDA and transformation together (covered in depth Week 3).
+EDA is a concept established in 1977 by the statistician **John Tukey** in his book *Exploratory Data Analysis*. The core philosophy is "before forming and testing hypotheses, first let the data speak for itself." Visualizations such as box plots, histograms, and scatter plots are also Tukey's legacy. If you skip EDA in ML, you miss class imbalance or data leakage and the model learns wrong patterns.
 
-## Summary
+> ⚠️ **Trap**: The most dangerous mistake at the EDA stage is **data leakage**. For example, if a column named "payment completion date" effectively contains the "did purchase" target in advance, validation accuracy is 99% but it is useless in actual deployment. If EDA shows a feature with an unrealistically high correlation (e.g., 0.99) with the target, suspect leakage.
 
-There are two paths to reading prepared data. **Athena** (serverless, direct S3 query, billing by scan volume) is for ad-hoc exploration; **Redshift** (data warehouse, MPP) is for repetitive high-performance analysis. And before building a model, always run **EDA** to check distribution, missing values, outliers, correlations, class imbalance, and data leakage.
+The environment for doing EDA on AWS is usually **SageMaker Studio / notebooks**. In a notebook you query with SQL through Athena, or read Parquet in S3 directly with pandas to analyze it. For large-scale data, **SageMaker Data Wrangler** offers visual EDA and transformation bundled together (covered in depth in Week 3).
 
-Next, we'll explore **storage strategies optimized for ML training — partitioning, format optimization, and training readiness considerations**.
+```
+[S3 Parquet] ──┬──> Athena SQL (large-scale aggregation and sampling)
+               ├──> pandas notebook (detailed analysis and visualization)
+               └──> Data Wrangler (visual EDA + transformation + quality report)
+```
 
----
+## Tool Selection Summary
+
+| Requirement | Answer |
+|---------|------|
+| Occasional SQL exploration of S3 data, minimal management overhead | Athena |
+| Athena cost is high | Parquet + partitioning + compression, no `SELECT *` |
+| Repeated high-performance BI, complex joins | Redshift |
+| Hot data in the cluster, cold in S3, join them | Redshift Spectrum |
+| ML with SQL alone, without moving data | Redshift ML |
+| Save query results as a training dataset (Parquet) | Athena CTAS |
+
+## Habits That Make Athena Queries Fast and Cheap
+
+The constraint of scan-based billing even changes how you write queries.
+
+| Habit | Bad example | Good example |
+|------|--------|--------|
+| Column selection | `SELECT *` | Name only the columns you need |
+| Partition filter | Query everything with no condition | `WHERE year='2026' AND month='06'` |
+| Previewing | Sort everything and then look | `LIMIT` together with a partition filter |
+| Repeated aggregation | Run the same heavy query every time | Create an intermediate table with CTAS and reuse it |
+| Joins | Join large tables blindly | Reduce them first with filters and aggregation, then join |
+
+- `LIMIT` alone may not reduce scan volume. Partition pruning must also apply for it to actually read less.
+- A Parquet intermediate table made with CTAS is used both for later repeated queries and for creating training datasets.
+
+## Design Decisions That Come with Choosing Redshift
+
+Unlike Athena, Redshift is "load-based," so the data placement design governs performance.
+
+| Decision | What you determine | If done wrong |
+|------|-------------|---------|
+| Distribution style (DISTKEY) | How rows are scattered across nodes | Data moves between nodes on every join |
+| Sort key (SORTKEY) | Sort order within blocks | Range queries read unnecessary blocks too |
+| Compression encoding | Per-column storage method | Storage size and I/O grow |
+| Load method | Parallel load with COPY | Row-by-row INSERT is very slow |
+
+This design burden is the practical basis for the rule "Athena for occasional exploration, Redshift for repeated high-performance analytics."
+
+## What to Plot in EDA
+
+| Visualization | What it checks | Follow-up action |
+|--------|-----------|-------------|
+| Histogram | Distribution shape, skew | Whether to apply a log transform |
+| Box plot | Quartiles and outliers | Outlier handling by the IQR rule |
+| Scatter plot | Relationship between two variables | Derived features if the relationship is nonlinear |
+| Correlation matrix heatmap | Multicollinearity, target correlation | Remove duplicate features, suspect leakage |
+| Class bar chart | Degree of target imbalance | Plan stratified split and resampling |
+| Missing-pattern table | Which columns go missing together | Estimate the missingness mechanism |
+
+> ⚠️ **Trap**: If you do EDA on the full data, pick features based on those results, and only then split train/test, leakage has already begun. Feature selection and transformation criteria must be derived **only from train, after the split**. You must distinguish looking at the data for exploration from using those statistics in training.
+
+## One-Line Discriminators for Choosing a Query Tool
+
+| Clue in the question | Answer |
+|----------|------|
+| "without managing infrastructure", "used occasionally", "leave in S3 as is" | Athena |
+| "reduce scan cost" | Parquet + partitioning + column selection |
+| "hundreds of people view BI dashboards every day" | Redshift |
+| "hot data in the cluster, cold in S3" | Redshift Spectrum |
+| "predict with SQL without moving the data" | Redshift ML |
+| "save the query result as Parquet for training" | Athena CTAS |
+| "must understand the data before building a model" | EDA (distribution, missing values, imbalance, leakage) |
+
+In the next note we look at the **storage strategy — partitioning, format optimization, and training-preparation considerations** that optimize this data for ML training.
+
+## 📖 Glossary
+
+- **Athena**: A serverless query service that queries files in S3 with SQL directly without moving them. You pay for the amount scanned.
+- **Scan-based billing**: A scheme where the charge is proportional to the number of bytes a query actually read. The whole of Athena cost design.
+- **Partition pruning**: An optimization that reads only the folders matching the `WHERE` condition and does not touch the rest at all.
+- **CTAS**: `CREATE TABLE AS SELECT`. A statement that saves query results as a new table (files). Used to create training sets.
+- **MPP (Massively Parallel Processing)**: A structure where multiple nodes split the data and compute at the same time. The secret of Redshift's speed.
+- **Redshift Spectrum**: A feature that lets Redshift read S3 data as external tables and join them with internal tables.
+- **Redshift ML**: A feature that calls Autopilot with `CREATE MODEL` SQL to train and run inference without moving data.
+- **EDA (Exploratory Data Analysis)**: The stage before building a model where you check the data's distributions, missing values, outliers, and relationships by eye.
+- **Skew**: The degree to which a distribution is stretched long to one side. If severe, flatten it with something like a log transform.
+- **Multicollinearity**: A phenomenon where features carrying nearly the same information enter together and harm model interpretation and stability.
 
 ## 📝 Practice Questions
 

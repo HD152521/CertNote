@@ -1,280 +1,132 @@
-# Day 52 - SNS: Publish/Subscribe Pattern
+# Day 2 - SNS: Publish Once and Everyone Hears
 
-📅 Date: July 27, 2026 (Monday)  
-🎯 Topic: Amazon SNS  
-⏱️ Study Time: Approximately 90 minutes
+The SQS of the previous article was a point-to-point model in which "one message is taken by exactly one consumer." But many real-world events are "something happened once, and several places must react." When a single order is created, the inventory system, the payment system, the notification system, and the data warehouse all need to know about it at the same time. To do this with SQS, the producer would have to send the identical message 4 times to 4 queues, and every time a new subscriber is added, the producer code would have to be changed. The **publish-subscribe** model flips this problem. The producer publishes only once to a "topic" and does not care who is listening. Amazon SNS is a fully managed implementation of this model.
 
----
+In DVA-C02, SNS often comes paired with SQS. There are standalone questions (filter policies, FIFO topics), but the central theme is "**fanout**," that is, the pattern of combining SNS and SQS to spread one event reliably to multiple queues. This article covers why publish-subscribe separates producers from subscribers, how SNS's "push, non-retaining" model complements SQS's "pull, retaining" model, and how filter policies select messages "without any subscriber code."
 
-## 🎯 Learning Objectives
+## Publish-Subscribe: Making the Producer Unaware of Its Subscribers
 
-- Understand SNS publish/subscribe pattern
-- Integrate SNS and SQS using fanout pattern
-- Implement selective message delivery with SNS filter policies
-
----
-
-## 📖 Theory Content
-
-### 1. What is Amazon SNS?
-
-A fully managed notification service where publishers send messages that are immediately delivered to all subscribers.
-
-**SNS vs SQS:**
-- **SNS**: Push model, deliver to all subscribers simultaneously
-- **SQS**: Pull model, single consumer receives
-
-**SNS Subscription Targets:**
-- Email/SMS
-- HTTP/HTTPS endpoints
-- Lambda functions
-- SQS queues
-- Kinesis Data Firehose
-- AWS mobile apps (Mobile Push)
-
-### 2. SNS Basic Usage
+The central concept of SNS is the **topic**. The producer `publish`es a message to the topic, and that is all. The topic **immediately pushes** that message to every registered subscriber. Whether there is 1 subscriber or 10,000, the producer code is the same, and the producer is unaffected when subscribers are added or removed. This property, "the producer does not know the subscribers exist," is the essential value of the publish-subscribe model.
 
 ```python
 import boto3
 
 sns = boto3.client('sns')
 
-# Create topic
-response = sns.create_topic(Name='OrderNotifications')
-topic_arn = response['TopicArn']
+# Create a topic - the producer knows only this topic
+topic_arn = sns.create_topic(Name='OrderEvents')['TopicArn']
 
-# Add email subscription
-sns.subscribe(
-    TopicArn=topic_arn,
-    Protocol='email',
-    Endpoint='admin@example.com'
-)
+# Register a variety of subscribers (can be increased independently of the producer code)
+sns.subscribe(TopicArn=topic_arn, Protocol='sqs',
+              Endpoint='arn:aws:sqs:...:inventory-queue')
+sns.subscribe(TopicArn=topic_arn, Protocol='lambda',
+              Endpoint='arn:aws:lambda:...:function:notify')
+sns.subscribe(TopicArn=topic_arn, Protocol='email',
+              Endpoint='ops@example.com')
 
-# Add SQS queue subscription
-sns.subscribe(
-    TopicArn=topic_arn,
-    Protocol='sqs',
-    Endpoint='arn:aws:sqs:ap-northeast-2:123456789:order-queue'
-)
-
-# Add Lambda subscription
-sns.subscribe(
-    TopicArn=topic_arn,
-    Protocol='lambda',
-    Endpoint='arn:aws:lambda:ap-northeast-2:123456789:function:process-order'
-)
-
-# Publish message
+# Publish - does not care who is listening
 sns.publish(
     TopicArn=topic_arn,
     Message='{"orderId": "O001", "status": "created"}',
-    Subject='New order created',
-    MessageAttributes={
-        'orderType': {
-            'DataType': 'String',
-            'StringValue': 'premium'
-        }
-    }
+    MessageAttributes={'orderType': {'DataType': 'String', 'StringValue': 'premium'}}
 )
 ```
 
-### 3. SNS Fanout Pattern (Fanout)
+Publish-subscribe extends the software design **Observer Pattern** to a distributed environment. In the GoF design patterns, the Observer has a "Subject notify its Observers of state changes," but the Subject itself holds the list of observers, so coupling remains. Messaging's pub/sub inserts a **topic (broker)** in between, separating the subject and the observers completely so that they do not know each other at all (spatial decoupling). Thanks to this, when you extend the system, features grow just by "adding a new subscriber," and the existing code does not need to be touched. It is the foundation of event-driven architecture (EDA).
+
+The most important contrast between SNS and SQS is "message retention." **SNS does not store messages.** It pushes to subscribers at the moment of publishing, and if the push fails (after retries according to the retry policy), the message disappears. SQS, on the other hand, retains messages for up to 14 days.
+
+- If SNS pushes directly to Lambda or an HTTP endpoint and that target is down for a moment, the message is lost forever once the retries are exhausted.
+- That is why an event that "must never be lost" is made to be **pushed by SNS into SQS**. Once SNS puts it into SQS, SQS then safely retains the message until the consumer comes back.
+- This is why the fanout pattern is not mere convenience but a durability design.
+
+## Fanout: Combining SNS's Push with SQS's Retention
+
+The fanout pattern is a structure that spreads a message from an **SNS topic to multiple SQS queues**. Each SQS queue is connected to an independent consumer (usually Lambda or a processing service).
 
 ```
-Fanout Pattern (SNS + SQS)
+Fanout architecture
 ================================
-
-[S3 Event] → [SNS Topic]
-                  |
-          +-------+-------+
-          |       |       |
-       [SQS1]  [SQS2]  [SQS3]
-     (Image   (Data    (Alert
-      Resize)  Analysis) Send)
-          |
-          v
-      [Lambda]
-
-S3 bucket can only set one event target directly
-→ Deliver to multiple SQS via SNS (fanout)
+[Order service] ──publish──> [SNS topic: OrderEvents]
+                                  │
+                  ┌───────────────┼───────────────┐
+                  ▼               ▼               ▼
+          [SQS: inventory]  [SQS: payment]  [SQS: analytics]
+                  │               │               │
+                  ▼               ▼               ▼
+        [Lambda inventory] [Lambda payment] [Firehose→S3]
 ```
 
-### 4. SNS Filter Policy
+There are three reasons to insert SQS rather than have SNS invoke several Lambdas directly.
 
-Deliver messages to specific subscribers only:
+- **Durability**: Even if a consumer goes down, messages pile up safely in its own SQS queue and wait.
+- **Buffering**: Even if events suddenly spike, each queue acts as a buffer and the consumer processes at its own pace.
+- **Independent retries and DLQs**: If payment processing fails, only the messages in the payment queue are retried and isolated into that queue's DLQ. Inventory processing is unaffected.
+
+Fanout combines the strengths of each: SNS's "multiple delivery from a single publish" and SQS's "reliable retention and retry."
+
+The typical use of this pattern is **S3 event branching**. For a single event type (for example `s3:ObjectCreated:*`), an S3 bucket can in practice connect directly to only one target. So to do "thumbnail generation, virus scanning, and metadata indexing simultaneously for one upload," you have to solve it with an S3 -> SNS -> multiple SQS fanout. Recently EventBridge provides richer routing and filtering, so S3 -> EventBridge -> multiple targets is also used, but when the exam asks about "the canonical fanout," SNS+SQS is the default answer. The difference between the two approaches is whether it is "simple replicated distribution" (SNS) or "complex content-based routing" (EventBridge).
+
+> ⚠️ **Pitfall**: If you see the phrase "multiple consumers process one event simultaneously," the answer is SNS (or EventBridge), and SQS alone is wrong. SQS is point-to-point, where only one consumer takes a message, so multiple consumers cannot receive the same message. Conversely, if it is "exactly one worker processes one message (a work queue)," it is SQS. SNS/SQS selection questions usually come down to "1:N or 1:1."
+
+## Filter Policy: Selecting Messages Without Subscriber Code
+
+When you do fanout, a requirement arises: "this queue should receive only premium orders, and that queue only regular orders." Solved naively, every queue receives every message and each consumer writes code that discards with "this one is not mine." Unnecessary message delivery and processing cost are wasted. The **Filter Policy** has SNS do this selection for you **before delivery**.
 
 ```python
-# Deliver premium orders only to specific SQS
+# This subscription receives only messages whose orderType is premium
 sns.set_subscription_attributes(
-    SubscriptionArn='arn:aws:sns:...',
+    SubscriptionArn='arn:aws:sns:...:premium-sub',
     AttributeName='FilterPolicy',
-    AttributeValue='{"orderType": ["premium"]}'
-)
-
-# Standard orders only to standard order SQS
-sns.set_subscription_attributes(
-    SubscriptionArn='arn:aws:sns:...:standard-queue',
-    AttributeName='FilterPolicy',
-    AttributeValue='{"orderType": ["standard"]}'
+    AttributeValue='{"orderType": ["premium"], "price": [{"numeric": [">", 1000]}]}'
 )
 ```
 
-### 5. SNS FIFO Topic
+The filter policy is matched against the message's attributes, and a message that does not match is **not delivered to that subscriber at all**. Because the subscriber receives only the messages relevant to it, the code becomes simpler, and there is no cost for messages that were not delivered.
+
+| Matching operation | Example |
+|-----------|------|
+| Exact match | `{"store": ["seoul", "busan"]}` |
+| Negation | `{"event": [{"anything-but": "test"}]}` |
+| Numeric comparison | `{"price": [{"numeric": [">", 100]}]}` |
+| Existence | `{"size": [{"exists": true}]}` |
+| Prefix | `{"region": [{"prefix": "ap-"}]}` |
+
+By default, filtering inspects only message **attributes (MessageAttributes)**. To filter on a field inside the message body (payload), you have to explicitly turn on `FilterPolicyScope` as `MessageBody` (added in 2022). The reason body filtering is not the default is that attributes are metadata with a simple structure and light parsing, while the body is arbitrary JSON and parsing it every time is costly. It reflects the general messaging principle: "keep the information needed for routing in the header (attributes) and keep the payload separate from routing." It is the same idea as AMQP's headers exchange and HTTP's header-based routing.
+
+The filter policy implements the **Content-Based Router** pattern on the broker (SNS) side rather than the subscriber side.
+
+- If you leave the routing decision to the consumer, every consumer has to receive every message and judge for itself (waste).
+- If you set up a separate router service, that router becomes a single point of failure.
+- SNS embeds the routing rules into the topic as subscription attributes, so the broker does the routing with no additional infrastructure.
+- However, the filter's expressiveness is more limited than EventBridge's event patterns, so EventBridge is a better fit when complex conditional routing is needed.
+
+## SNS FIFO: Guaranteeing Order at Both Ends
+
+Just as SQS has FIFO, SNS has FIFO topics. The topic name carries the `.fifo` suffix, and it can **subscribe only to SQS FIFO queues**. That is because both ends must be FIFO for the ordering guarantee to remain unbroken from publishing through consumption. Even if SNS FIFO pushes in order, if the receiving side is a standard SQS queue, the order breaks there.
 
 ```python
-# Create SNS FIFO topic (use with SQS FIFO queue)
-response = sns.create_topic(
+topic_arn = sns.create_topic(
     Name='orders.fifo',
-    Attributes={
-        'FifoTopic': 'true',
-        'ContentBasedDeduplication': 'true'
-    }
-)
+    Attributes={'FifoTopic': 'true', 'ContentBasedDeduplication': 'true'}
+)['TopicArn']
 ```
 
-**FIFO Topic Characteristics:**
-- Order guarantee
-- Deduplication
-- Can only subscribe SQS FIFO queues
+The SNS FIFO + SQS FIFO combination is used when you "fan out order-sensitive events to several consumers in order." The trade-off that throughput is lower than a standard topic (around 300 msg/s) and cost is higher is the same as with SQS FIFO.
 
----
+## Where Do Delivery Failures Go: Retries and the SNS DLQ
 
-## 🧠 Advanced Theory Worth Knowing
+SNS does not retain messages, but it does not give up on a single failure. The **retry policy** differs by subscription protocol. HTTP/HTTPS endpoints are retried by default up to 50 times over about 1 hour (including exponential backoff). Targets inside AWS such as SQS and Lambda are retried more aggressively. Even so, if all the retries are exhausted, the message disappears; at that point, if you configure a **subscription-level DLQ in SNS** (redrive policy), you can send the failed-delivery messages to an SQS DLQ and preserve them.
 
-### SNS Core Limits (Exam Occasionally)
+> ⚠️ **Pitfall**: Do not confuse SNS's "no message retention" with the "subscription DLQ." SNS itself does not store messages, but the safety net that holds a failed message when delivery to a particular subscription fails is the subscription DLQ. The "SNS DLQ" and the "Lambda DLQ" are at different layers. The SNS DLQ catches the case where "SNS failed to deliver to the subscriber," while the Lambda DLQ catches the case where "Lambda failed to process an asynchronous invocation." The exam may swap the two.
 
-| Item | Value |
-|------|-----|
-| Topics per account/region | 100,000 |
-| Subscribers per topic | 12,500,000 |
-| Message size | **256 KB** (same as SQS) |
-| SNS Extended Client | Maximum 2GB (via S3) |
-| Message retention | **None** (lost on delivery failure) |
-| Publish throughput | Unlimited (FIFO 300 msg/s) |
+SNS is also used as the backend for mobile push notifications. It pushes to **APNs** for iOS, **FCM** (formerly GCM) for Android, and **ADM** for Amazon devices, and SNS abstracts the protocol differences among these platforms and unifies them into a single `publish`. When you register a device token with SNS, a platform endpoint ARN is created, and afterwards you can send notifications without being conscious of the platform. The answer to the scenario "unified push notifications to multiple mobile platforms" is SNS Mobile Push.
 
-### SNS Subscription Protocols (Exam Frequently)
+## Summary
 
-| Protocol | Target |
-|----------|------|
-| **HTTPS** | Webhook (auto retry policy applied) |
-| **HTTP** | Webhook (no TLS, not recommended) |
-| **Email** | Email (subject and body) |
-| **Email-JSON** | Email (JSON format) |
-| **SMS** | Mobile SMS |
-| **SQS** | Queue delivery |
-| **Lambda** | Direct function invocation |
-| **Mobile Push** | APNs, GCM, FCM, ADM, Baidu |
-| **Kinesis Data Firehose** | S3, Redshift, OpenSearch |
+The single sentence that runs through SNS is "publish once, and it is pushed to everyone without the producer knowing the subscribers." The publish-subscribe model is the Observer pattern fully decoupled by a broker called the topic, and its price is "no message retention." That is why **fanout**, which combines SNS's immediate push with SQS's reliable retention, is not mere convenience but the standard for durable 1:N distribution. The filter policy builds content-based routing into the broker so selection is handled without subscriber code, FIFO topics preserve order at both ends, and the subscription DLQ becomes the safety net of the non-retaining model. SNS and SQS are not competitors; they are most powerful when used together, dividing roles as "push, non-retaining, 1:N" and "pull, retaining, 1:1."
 
-### Retry Policy (HTTPS Subscription)
-
-```json
-{
-  "deliveryPolicy": {
-    "numRetries": 50,
-    "numNoDelayRetries": 3,
-    "minDelayTarget": 20,
-    "maxDelayTarget": 600
-  }
-}
-```
-
-- Default 50 retries, 1 hour total
-- On failure → SNS DLQ (similar to Lambda Destinations)
-
-### Message Filtering Details (Exam Scenarios)
-
-```json
-{
-  "store": ["seoul", "busan"],
-  "event": [{ "anything-but": "test_event" }],
-  "price": [{ "numeric": [">", 100] }],
-  "size": [{ "exists": true }]
-}
-```
-
-- Message body filtering (2022~): `subscriptionAttributes.FilterPolicyScope=MessageBody`
-- Default filters MessageAttributes only
-
-### SNS FIFO + SQS FIFO Integration
-
-```
-[Producer FIFO] → SNS FIFO Topic → SQS FIFO Queue 1
-                                 → SQS FIFO Queue 2
-                                 (Consumer uses same group ID)
-```
-
-- Order and deduplication guaranteed at both ends
-- Use message group ID
-
-### SNS Mobile Push (Exam Occasionally)
-
-| Platform | Service |
-|--------|--------|
-| iOS | **APNs** (Apple Push Notification) |
-| Android | **GCM/FCM** (Firebase) |
-| Amazon | **ADM** |
-| Windows | WNS (deprecated) |
-
-- Register device token with SNS → generates endpoint ARN
-
-### SNS Data Protection Policy (PII Masking)
-
-- Auto-detect and mask credit cards, SSN from messages
-- Rarely appears in exam (with Macie)
-
-### SNS Pricing
-
-- Publishing 1 million: $0.50 (HTTPS), $2.00 (SMS varies by country)
-- SQS subscription: Free
-- Email/Lambda invocation: Separate costs
-
-### Related Service Cross-Reference
-
-- **SNS + SQS Fanout** → [Day 1]
-- **SNS + Lambda** → Asynchronous invocation
-- **SNS + Mobile Push** → Mobile app notifications
-- **SNS + CloudWatch Alarms** → Alarm notifications
-- **SNS Topic Encryption** → KMS
-
----
-
-## Architecture Diagram
-
-```
-SNS Fanout Architecture
-================================
-
-[Order Service]
-     |
-     | Order created event
-     v
-[SNS Topic: OrderEvents]
-     |
-     +---[FilterPolicy: premium]---> [SQS: premium-orders]
-     |                                      |
-     |                                      v
-     |                               [Lambda: VIP processing]
-     |
-     +---[FilterPolicy: standard]--> [SQS: standard-orders]
-     |                                      |
-     |                                      v
-     |                               [Lambda: Standard processing]
-     |
-     +---> [Email subscription] (Admin notification)
-     |
-     +---> [Lambda: Inventory update]
-```
-
----
-
-## ⭐ Key Points
-
-1. ⭐ **SNS**: Push model, deliver to all subscribers simultaneously
-2. ⭐ **Fanout**: S3→SNS→multiple SQS, single event processed by multiple consumers
-3. ⭐ **Filter Policy**: Selective message delivery based on specific attributes
-4. ⭐ **SNS+SQS**: SNS immediate delivery, SQS reliable asynchronous processing
-5. ⭐ **Message Retention**: SNS non-retained (lost on failure), SQS retained
+The next article moves on to Kinesis. Unlike SQS and SNS, where a message "disappears once processed," Kinesis retains data in a stream so that multiple consumers can each read it repeatedly from their own position.
 
 ---
 

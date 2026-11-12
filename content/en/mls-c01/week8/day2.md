@@ -1,31 +1,56 @@
 # Day 2 - Hyperparameter Tuning (AMT): Bayesian, Random, Hyperband
 
-Yesterday we learned to run one training job well. Today, **run that training automatically many times to find optimal hyperparameters** via SageMaker Automatic Model Tuning (AMT). Tests ask about search strategies (Bayesian/random/grid/Hyperband), early stopping, warm start, objective metrics.
+## 📌 Key Takeaways
 
-## Hyperparameter vs Parameter
+- **Parameters are values that are learned; hyperparameters are values a person sets before training.** AMT searches the space of the latter to find the combination with the best validation metric.
+- Strategy choice: **Bayesian** if you want efficiency with few evaluations, **Hyperband** for pruning epoch-iterative deep learning, **Random** for a simple, fully parallel baseline, and **Grid** for exhaustively covering a few categorical combinations.
+- **The objective metric is the optimization direction.** On imbalanced data, maximizing Accuracy gives 99% even for "all negative," making the model meaningless — use F1, AUC, or Recall.
+- A custom script has no standard metric names, so AMT recognizes the metric only if you extract it from the logs with a **`metric_definitions` regex**.
+- **Raising `max_parallel_jobs` too much reduces the benefit of Bayesian search** (because candidates are chosen without seeing earlier results). Random is independent, so it loses nothing.
 
-First, terminology:
+## Hyperparameters vs Parameters
 
-- **Parameter**: **Learned** from data during training (e.g., neural net weights, linear model coefficients)
-- **Hyperparameter**: **Human-set before** training (e.g., learning rate, max_depth, tree count, regularization strength)
+If yesterday you learned how to run one training job well, today covers SageMaker Automatic Model Tuning (AMT, the Hyperparameter Tuning Job), which **runs that training many times automatically to search for the best combination**.
 
-AMT explores hyperparameter space to find the combination with best validation metric.
+| Aspect | Who sets it | When it is set | Examples |
+|---|---|---|---|
+| **Parameter** | The training algorithm | During training, from the data | Neural network weights, linear model coefficients |
+| **Hyperparameter** | A person (or AMT) | **Before** training starts | Learning rate, `max_depth`, number of trees, regularization strength |
 
 ```text
-Define search space → Run multiple training jobs (trials) → Evaluate each trial's objective metric
-→ Next trial's hyperparameters chosen by strategy → Return best combination
+Define the search space → run several training jobs (trials) → evaluate each trial's objective metric
+→ pick the next trial's hyperparameters according to the strategy → return the best combination
 ```
 
-> 💡 **Related Theory**: Hyperparameter tuning is essentially "black-box optimization." Objective function (val metric) is non-differentiable, evaluation is expensive (= one training run). So strategies efficiently finding good regions with few evals (Bayesian, Hyperband) outperform blind search (random, grid).
+Hyperparameter tuning is essentially "black-box optimization." The objective function (the validation metric) is not differentiable, and one evaluation (= one training run) is expensive. So strategies that find a good region with as few evaluations as possible (Bayesian, Hyperband) are more efficient than random or grid search.
+
+### Execution Structure of a Tuning Job
+
+```text
+[HyperparameterTuner]
+   │  Search space: eta ∈ [0.01, 0.3], max_depth ∈ [3, 10]
+   │  Objective metric: validation:auc (Maximize)
+   ▼
+ ┌──────────── runs max_parallel_jobs at the same time ────────────┐
+ │  trial#1 ──train──→ auc 0.81                                    │
+ │  trial#2 ──train──→ auc 0.86  ← promising                       │
+ │  trial#3 ──train──→ auc 0.74  ← hopeless (early-stop candidate) │
+ └─────────────────────────────────────────────────────────────────┘
+   │  The strategy (Bayesian, etc.) looks at the results and picks the next candidates
+   ▼  … repeat until max_jobs is used up …
+[Return the best combination + BestTrainingJob]
+```
 
 ## Four Search Strategies
 
-| Strategy | How | Traits |
-|------|------|------|
-| **Grid** | Enumerate all combinations | Curse of dimensionality (explodes with dims), categorical-only recommended |
-| **Random** | Sample space randomly | Simple, parallelizes well, often better than grid in high dimensions |
-| **Bayesian** | Use previous results to build surrogate model, concentrate on promising regions | Best evals-per-trial efficiency, sequential (heavy) |
-| **Hyperband** | Multi-fidelity — allocate few resources, discard hopeless trials early | Powerful for iterative learning (DL), fast convergence |
+The strategies AMT supports and their characteristics.
+
+| Strategy | Behavior | When to use | When not to use |
+|---|---|---|---|
+| **Grid** | Exhaustively searches every combination on a grid | When you want to see a few categorical combinations without omission | Continuous or high-dimensional spaces (combinatorial explosion, curse of dimensionality) |
+| **Random** | Samples randomly from the space | A simple baseline, or a quick fully parallel sweep | When training cost is high and you must conserve evaluations |
+| **Bayesian** | Builds a surrogate model from earlier results and focuses on promising regions | When one evaluation is expensive and you must find **a good value in few runs** | When you need to push parallelism to the extreme (sequentiality is the source of its benefit) |
+| **Hyperband** | Multi-fidelity — gives few resources and stops hopeless trials early | Deep learning that iterates over epochs, where fast convergence is the goal | Training with no iteration steps, so intermediate performance cannot be observed |
 
 ```python
 from sagemaker.tuner import HyperparameterTuner, ContinuousParameter, IntegerParameter
@@ -46,17 +71,20 @@ tuner.fit({"train": train_s3, "validation": val_s3})
 ```
 
 Discriminating signals:
-- "Efficient search, few jobs" → **Bayesian**
-- "Epoch iteration DL + prune hopeless fast" → **Hyperband**
-- "Simple/parallel baseline" → **Random**
-- "Categorical few combos exhaustively" → **Grid**
+
+- "Efficient search with few training runs" → **Bayesian**.
+- "Like deep learning, iterates over epochs + we want to discard hopeless candidates quickly" → **Hyperband**.
+- "Simple/fully parallel, baseline" → **Random**.
+- "Exhaustive over a few categorical combinations" → **Grid**.
+
+> ⚠️ **Trap**: Grid search looks safe because it "looks at everything," but the number of combinations explodes as soon as even a few continuous hyperparameters are mixed in. If the question features a continuous range (`ContinuousParameter`), Grid is effectively a wrong-answer candidate.
 
 ## Objective Metric
 
-AMT extracts metrics from logs via regex, compares them.
+AMT extracts the metric from each trial's logs with a regex and compares them.
 
-- Builtin algorithms provide standard metric names (`validation:auc`, `validation:rmse` etc.)
-- Custom scripts need `metric_definitions` with regex to parse log values
+- Built-in algorithms provide standard metric names as-is (`validation:auc`, `validation:rmse`, etc.).
+- For a custom script, you must specify with `metric_definitions` a regex that parses the value from the logs.
 
 ```python
 metric_definitions=[
@@ -64,17 +92,32 @@ metric_definitions=[
 ]
 ```
 
-- **objective_type**: Maximize (AUC, F1, Accuracy) or Minimize (RMSE, Loss)
-- For imbalanced data, choosing objective metric smartly is critical → F1/AUC over Accuracy
+- **objective_type**: Maximize (AUC, F1, Accuracy) or Minimize (RMSE, Loss).
+- Since the metric choice is "what you optimize," on imbalanced data it is right to target F1/AUC rather than Accuracy.
 
-> 💡 **Related Theory**: Tuning optimizes only in the objective metric's direction. Fraud fraud detection with 1% positive, maximizing Accuracy on "all negative" still gets 99% → useless model. Choose objective to match business goal (F1, Recall, AUC) and data imbalance. Therefore setting objective metric is a **modeling decision before tuning**, not after
+### Objective Metric Interpretation Table by Situation
+
+| Situation | Candidate objective metrics | Direction | Why / what to watch for |
+|---|---|---|---|
+| Classification with roughly balanced classes | `validation:accuracy` | Maximize | Accuracy is an honest signal only when balanced |
+| Fraud or anomaly detection with ~1% positives | `validation:f1`, `validation:auc` | Maximize | **Accuracy is 99% even for "all negative"** — a trap |
+| Missing is fatal (disease, undetected fraud) | `validation:recall` | Maximize | Accept false positives to reduce misses |
+| Alerts or blocking where false positives are costly | `validation:precision` | Maximize | Raises the true share among what was called positive |
+| Ranking problem where the threshold is not yet set | `validation:auc` | Maximize | Looks at ranking quality regardless of threshold |
+| Continuous-value prediction (demand, price) | `validation:rmse` | **Minimize** | Error metrics run the opposite direction — beware of setting mistakes |
+
+Tuning optimizes only in the direction the objective metric points. On data with 1% positives, such as fraud detection, maximizing Accuracy gives 99% even if you label everything "normal," making the model meaningless. That is why choosing the objective metric to fit the business goal and the data imbalance (F1, Recall, AUC, etc.) is the precondition for tuning to succeed.
+
+> ⚠️ **Trap**: If you use a custom container or script and omit `metric_definitions`, AMT cannot read the metric. In that case, options that raise `instance_count` or change the input mode are all irrelevant wrong answers.
 
 ## Early Stopping
 
-Discard unpromising trials early, save cost.
+It saves cost by stopping hopeless trials early. Distinguish two levels.
 
-- **Trial-level early stopping (`early_stopping_type="Auto"`)**: During trial's learning, if objective metric unlikely to beat others, stop that job. With Bayesian/Random
-- **Hyperband**: Strategy inherently does multi-fidelity early stopping. Ignores separate early_stopping_type
+| Level | Setting | Behavior |
+|---|---|---|
+| Trial-level early stopping | `early_stopping_type="Auto"` (default `Off`) | During training, if the objective metric is unlikely to improve relative to other trials, that training job is stopped. An option used with Bayesian/Random |
+| Built-in strategy pruning | `strategy="Hyperband"` | Allocates resources unevenly via multi-fidelity and has early stopping built in. Ignores a separate `early_stopping_type` |
 
 ```python
 tuner = HyperparameterTuner(
@@ -82,16 +125,16 @@ tuner = HyperparameterTuner(
 )
 ```
 
-Signal: "Cut tuning cost, stop unpromising jobs early" → early_stopping (Auto) or Hyperband
+Discriminating signal: "automatically stop hopeless training to cut tuning cost" → early stopping (Auto) or Hyperband.
 
 ## Warm Start
 
-Launch new tuning job using **results from previous tuning**. Don't explore from scratch, start in known good region.
+A new tuning job starts **by leveraging the results of a previous tuning job**. Instead of searching from scratch, it starts from the good regions already discovered.
 
-| Type | Meaning |
-|------|------|
-| **IDENTICAL_DATA_AND_ALGORITHM** | Same data/algo, extend search (e.g., more max_jobs) |
-| **TRANSFER_LEARNING** | Slightly different data/algo, reuse previous insights |
+| Type | Meaning | Typical situation |
+|---|---|---|
+| **IDENTICAL_DATA_AND_ALGORITHM** | Same data and algorithm, extends the search | Yesterday's tuning found a good region, and you raise `max_jobs` to keep searching |
+| **TRANSFER_LEARNING** | Transfers earlier knowledge even if the data/algorithm changed slightly | New data was added or the algorithm settings changed a little |
 
 ```python
 from sagemaker.tuner import WarmStartConfig, WarmStartTypes
@@ -103,29 +146,83 @@ warm = WarmStartConfig(
 tuner = HyperparameterTuner(..., warm_start_config=warm)
 ```
 
-Signal:
-- "Continue exploring, same data/algo" → **IDENTICAL_DATA_AND_ALGORITHM**
-- "Data changed slightly, reuse learning" → **TRANSFER_LEARNING**
+Discriminating signals:
 
-## Parallelism vs Bayesian Efficiency Tradeoff
+- "Continue the last tuning and explore further / data and algorithm unchanged" → **IDENTICAL_DATA_AND_ALGORITHM**.
+- "The data changed slightly but we want to reuse the knowledge from the last tuning" → **TRANSFER_LEARNING**.
 
-- Large `max_parallel_jobs` → finishes sooner, but Bayesian's advantage (learning from prior results) shrinks → **lower efficiency (info use)**
-- Random doesn't lose efficiency with parallelism (independent)
-- Test: "Bayesian with max parallel high, expected efficiency not there" → this tradeoff
+In a question that says "continue the previous search," options such as raising `max_parallel_jobs`, switching the strategy to Grid, or turning off early stopping get mixed in. All three are unrelated to reusing the previous job's search knowledge — warm start is the only means of reuse.
 
-## Test Tips
+## The Trade-off Between Parallelism and Bayesian Efficiency
 
-- Strategy choice: "efficient few evals" → Bayesian, "DL epochs + fast prune" → Hyperband, "simple parallel" → Random, "categorical exhaustive" → Grid
-- "Save tuning cost, auto-stop hopeless" → early stopping (Auto) or Hyperband
-- "Reuse previous / continue exploring" → warm start
-- Custom algorithm needs metric_definitions regex
-- Imbalanced data objective = F1/AUC not Accuracy
+- A large `max_parallel_jobs` finishes sooner, but Bayesian search decides the next candidates by looking at earlier results, so **making parallelism too large reduces learning efficiency (use of information)**.
+- Random loses no efficiency when you raise parallelism (the trials are independent of each other).
+- On the exam, "it was Bayesian but maximizing parallelism did not improve things as expected" is answered by this trade-off.
 
-## Summary
+```text
+max_parallel_jobs = 1        max_parallel_jobs = N (large)
+  trial1 → result applied      trial1 ┐
+  trial2 → result applied      trial2 ├─ decided at the same time
+  trial3 → result applied      trial3 ┘  (cannot see earlier results)
+  ─────────────────────        ─────────────────────
+  Slow / best efficiency per evaluation   Fast / Bayesian benefit reduced
+  Random has the same efficiency either way (each trial is independent)
+```
 
-Today: AMT auto-searches for optimal hyperparameters. Key flow: **define search space, pick objective metric & type, select strategy (Bayesian/Hyperband/Random/Grid), optional early stopping/warm start → best combination**. Next: generalization tuning itself — overfitting vs underfitting and fixes (regularization, data augmentation)
+| Goal | Recommended setting | Why |
+|---|---|---|
+| Shortening wall-clock time is the top priority | Random + large `max_parallel_jobs` | Independent sampling, so no parallelism loss |
+| One training run is expensive and you conserve evaluations | Bayesian + small `max_parallel_jobs` | Reflects earlier results as much as possible |
+| Cut deep learning tuning cost | Hyperband | Gives no resources to hopeless trials |
+| Reuse a previous tuning | Warm start | Starts from a good region and removes wasted search |
 
----
+## Tuning Strategy Decision Tree
+
+```text
+We need to find hyperparameters automatically
+├─ Does training iterate over epochs/rounds and expose intermediate performance?
+│    ├─ Yes + cost savings matter → Hyperband (early pruning built in)
+│    └─ No ↓
+├─ Is one training run expensive?
+│    ├─ Yes → Bayesian (+ early_stopping_type="Auto", keep parallelism modest)
+│    └─ No ↓
+├─ Is the search space a few categorical combinations?
+│    ├─ Yes → Grid (exhaustive search)
+│    └─ No  → Random (simple baseline, fully parallel)
+└─ Is there a previous tuning result?
+     ├─ Same data and algorithm → warm start IDENTICAL_DATA_AND_ALGORITHM
+     └─ Slightly changed        → warm start TRANSFER_LEARNING
+```
+
+## Question Clue → Answer Mapping
+
+| Question clue | Answer to pick | Why |
+|---|---|---|
+| "Deep learning, each trial trains several epochs, minimize wasted resources" | Hyperband | Stops hopeless candidates early via multi-fidelity |
+| "We want to find a good combination with few training runs" | Bayesian | Focuses on promising regions using earlier results |
+| "Set a simple baseline with full parallelism" | Random | Trials are independent, so no parallelism loss |
+| "Look at every combination of a few categorical values" | Grid | Exhaustive search holds up only when combinations are few |
+| "Objective metric for fraud data with 1% positives" | AUC, F1, Recall (Accuracy is **wrong**) | Accuracy is 99% even for all negative |
+| "A custom script, but the metric cannot be read" | Specify a `metric_definitions` regex | Standard metric names are not provided automatically |
+| "Continue the last tuning and explore more, same data and algorithm" | Warm start IDENTICAL_DATA_AND_ALGORITHM | Extends the previous search results as-is |
+| "It was Bayesian but maximizing parallelism made efficiency worse" | Parallelism ↑ → less use of earlier results | Bayesian's sequentiality is the source of its benefit |
+| "We want to cut tuning cost" | `early_stopping_type="Auto"` or Hyperband | Stops hopeless training to cut billing |
+| "Use RMSE as the objective metric" | `objective_type="Minimize"` | Error metrics run the opposite direction |
+
+The next post covers **overfitting and underfitting**, which block the goal of tuning — "good generalization" — and how to respond (regularization and data augmentation).
+
+## 📖 Glossary
+
+- **Hyperparameter**: a setting a person decides before training starts. Learning rate, tree depth, regularization strength, and so on.
+- **Parameter**: a value determined automatically from the data during training. Neural network weights, regression coefficients, and so on.
+- **AMT (Automatic Model Tuning)**: a SageMaker feature that runs training many times with different hyperparameter combinations to find the best one.
+- **Trial (one training job)**: an individual training job a tuning job runs. The unit that evaluates one hyperparameter combination once.
+- **Objective metric**: the reference metric used to judge whether tuning is good or bad. This metric is the optimization direction.
+- **`metric_definitions`**: regex definitions that pull metric values out of the training logs. The device that lets a custom script's objective metric be recognized.
+- **Surrogate model**: the stand-in model Bayesian search builds to predict "with this combination, performance will be roughly this."
+- **Multi-fidelity**: a method that first sweeps many candidates with few resources (short training) and gives more resources only to the survivors. The core of Hyperband.
+- **Early stopping**: stopping training that is unlikely to improve partway through to save time and cost.
+- **Warm start**: a method that inherits information found by a previous tuning job, so the search starts from good regions instead of a blank slate.
 
 ## 📝 Practice Questions
 

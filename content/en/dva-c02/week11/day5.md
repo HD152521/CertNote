@@ -1,133 +1,109 @@
-# Day 55 - Week 11 Review + Practice Questions (Messaging)
+# Day 5 - Week 11 Review: The Questions That Separate Messaging Models
 
-📅 Date: July 30, 2026 (Thursday)  
-🎯 Topic: Comprehensive Messaging Services Review  
-⏱️ Study Time: Approximately 90 minutes
+The five services covered in Week 11 - SQS, SNS, Kinesis, Step Functions, and AppSync - all superficially "move data or work from one place to another." That is why the exam often asks in the form "what fits this scenario." Fragmentary memorization wobbles on comparisons such as SQS vs Kinesis, SNS vs EventBridge, and Standard vs Express. Instead of listing the five services again, this review reorganizes them around **a few fundamental questions that separate them**. Whatever scenario you meet, asking these questions in order narrows down the answer.
 
----
+## Four Questions That Separate the Models
 
-## 🎯 Learning Objectives
+### Question 1: How many receive one message? (1:1 vs 1:N)
 
-- Consolidate key concepts of SQS, SNS, Kinesis, Step Functions
-- Practice exam scenarios with messaging services
+This is the first fork that separates SQS and SNS.
 
----
+- **1:1 (one job = one processor)** -> **SQS**. A "work queue" such as order processing or image conversion. A message is taken by one consumer, processed, and then disappears (point-to-point).
+- **1:N (one event -> several reactions)** -> **SNS** (or EventBridge). A single order creation triggers inventory, payment, and notification at the same time. It is pushed to every subscriber the instant it is published (publish-subscribe).
 
-## 📖 Week 11 Key Summary
+**Fanout** (SNS -> multiple SQS), which combines the two, is a structure that gets both at once: "spread it out 1:N, while each consumer has a reliable buffer and retries."
 
-### Messaging Service Selection Guide
-```
-Order guarantee + exactly-once: SQS FIFO
-High throughput + no order needed: SQS Standard
-One message to multiple consumers: SNS (fanout)
-Real-time data streaming: Kinesis Data Streams
-ETL → S3/Redshift: Kinesis Firehose
-Complex workflows: Step Functions
-GraphQL + Real-time: AppSync
-```
+### Question 2: Does the data disappear when consumed? (Destructive read vs retained log)
 
-### Core Numbers to Memorize
-```
-SQS message max size: 256KB
-SQS max retention: 14 days
-SQS FIFO throughput: 300 messages/sec (3000 with batching)
-SQS VisibilityTimeout default: 30 seconds
-Kinesis shard write: 1MB/s or 1000 RPS
-Kinesis shard read: 2MB/s
-Kinesis default retention: 24 hours (max 365 days)
-Firehose minimum latency: 1 minute
-```
+This is the most essential question separating SQS and Kinesis.
 
----
+- **Consume = delete** -> **SQS**. Once processed, it is over. No reprocessing or multiple consumption.
+- **Retained even after reading (log)** -> **Kinesis Data Streams**. Multiple consumers read simultaneously from their own positions, and you can reprocess yesterday's data with new code (replay). Consumers are responsible for their own position through checkpoints.
 
-## Architecture Diagram
+If you see "several analytics systems on the same stream at once," "reprocessing past data after a bug fix," or "hundreds of thousands of events per second + ordering," it is Kinesis.
 
-```
-Messaging Service Selection Architecture
-================================
+### Question 3: Do I process it, or do I just send it along? (Data Streams vs Firehose)
 
-[Event Source]
-     |
-     +-- Order/duplicate crucial? → SQS FIFO
-     |
-     +-- High throughput? → SQS Standard
-     |
-     +-- Multiple consumers simultaneously? → SNS → multiple SQS
-     |
-     +-- Real-time streaming? → Kinesis Data Streams
-     |
-     +-- ETL pipeline? → Kinesis Firehose → S3
-     |
-     +-- Complex workflow? → Step Functions
-     |
-     +-- GraphQL API? → AppSync
-```
+This is the fork inside Kinesis.
 
----
+- **Process directly in code (real-time, low latency)** -> **Data Streams** + Lambda/KCL.
+- **Load automatically into a destination (no code, 1-minute delay acceptable)** -> **Firehose** -> S3/Redshift/OpenSearch/Splunk.
 
-## 🧠 Week 11 Exam Traps & Acronyms
+If it is "automatically save to S3," "Parquet conversion," or "serverless ETL," it is Firehose. If it is "ultra-low-latency real-time," it is Data Streams.
 
-### Confusing Comparisons
+### Question 4: Must the flow be woven together explicitly? (Decoupling vs orchestration)
 
-| A | B | Key Difference |
-|---|---|------|
-| SQS Standard | SQS FIFO | Unlimited·no order vs 300/s·order·dedup |
-| SQS | SNS | Pull·single vs Push·multiple |
-| SNS | EventBridge | Pub/Sub vs event filter·routing |
-| Kinesis Data Streams | SQS | Multi-consumer·replay vs single·consume-and-gone |
-| Kinesis | Firehose | Direct processing vs auto S3·1min+ |
-| Kinesis Provisioned | On-Demand | Direct shard vs auto 200MB/s |
-| Classic Fan-Out | Enhanced Fan-Out | Shared 2MB/s vs per-consumer 2MB/s |
-| KPL | KCL | Producer·Java vs Consumer·checkpoint |
-| Step Functions Standard | Express | 1year·exactly-once·cheap vs 5min·at-least-once·fast |
-| Map | Distributed Map | Parallel vs large-scale (thousands) |
-| .sync | .waitForTaskToken | Wait completion vs external callback |
-| AppSync | API Gateway | GraphQL·multi-source vs REST·single |
-| SQS Long Polling | Short Polling | 20sec wait vs immediate |
-| Visibility Timeout | Message Retention | Hide during processing vs retain in queue |
-| SNS DLQ | Lambda DLQ | SNS delivery failure vs Lambda async failure |
+- **Weave steps together with order, branching, retries, and rollback** -> **Step Functions**. A multi-step business process that needs visibility and error handling.
+- **Data from multiple backends in one query + real-time** -> **AppSync** (GraphQL).
 
-### Week 11 Exam Traps (18 points)
+These four questions match the classic classification axes of messaging and integration: (1) point-to-point vs pub/sub, (2) destructive read vs log-based, (3) processing vs delivery, (4) choreography vs orchestration. Gregor Hohpe's *Enterprise Integration Patterns* (2003) and Jay Kreps's log-centric thinking (2013) established these axes. AWS's five services are different coordinates on these universal axes. Rather than memorizing each service's traits, if you place it by "which side of which axis is this service on," comparison questions turn into reading coordinates.
 
-1. **SQS 256KB limit** — Exceed with Extended Client (S3)
-2. **SQS retention 60 seconds~14 days, default 4 days**
-3. **SQS visibility timeout default 30 sec, max 12 hours**
-4. **SQS FIFO 300 msg/s (batching 3000)**, high-throughput 70000
-5. **Long Polling = WaitTimeSeconds 1~20**
-6. **DLQ same type only** (FIFO ↔ FIFO)
-7. **SNS retention none** — Lost on delivery failure (set DLQ)
-8. **SNS message body filtering requires option**
-9. **SNS FIFO only subscribes SQS FIFO**
-10. **Kinesis shard write 1 MB/s · 1000 RPS**, read 2 MB/s
-11. **Enhanced Fan-Out = per-consumer dedicated 2 MB/s** (cost ↑)
-12. **Kinesis retention 24 hours ~ 365 days** (Streams), Firehose no retention
-13. **Firehose minimum 60 second latency**, not real-time
-14. **Kinesis On-Demand 200 MB/s limit**
-15. **Step Functions Standard max 1 year, Express 5 min**
-16. **Distributed Map = large-scale S3 files·JSON array**
-17. **.waitForTaskToken = external system response wait**
-18. **AppSync = GraphQL + WebSocket (real-time subscription)**
+## Key Numbers: Boundary Values at a Glance
 
-### Week 11 Acronyms Summary
+| Service | Item | Value |
+|--------|------|-----|
+| SQS | Maximum message size | **1 MiB** (raised from 256 KiB in August 2025. If exceeded, Extended Client -> S3, 2 GB) |
+| SQS | Retention period | 60 seconds to **14 days** (default 4 days) |
+| SQS | Visibility timeout | 0 to **12 hours** (default 30 seconds) |
+| SQS | Message delay | 0 to 15 minutes |
+| SQS FIFO | Throughput | 300 msg/s, 3,000 with batching, 70,000+ high throughput |
+| SNS | Message retention | **None** (lost on delivery failure) |
+| SNS | Subscribers per topic | 12,500,000 |
+| Kinesis | Shard write | 1 MB/s or 1,000 records/s |
+| Kinesis | Shard read (classic) | 2 MB/s shared / (EFO) 2 MB/s per consumer |
+| Kinesis | Retention | 24 hours to **365 days** |
+| Kinesis | On-Demand limit | 200 MB/s, 200,000 RPS |
+| Firehose | Minimum latency | **60 seconds** (Near Real-Time) |
+| Step Functions | Standard / Express | 1 year, exactly-once / 5 minutes, at-least-once |
 
-| Acronym | Full Name |
-|--------|--------|
-| **SQS** | Simple Queue Service |
-| **SNS** | Simple Notification Service |
-| **DLQ** | Dead Letter Queue |
-| **KDS** | Kinesis Data Streams |
-| **KDF** | Kinesis Data Firehose |
-| **KCL** | Kinesis Client Library |
-| **KPL** | Kinesis Producer Library |
-| **KDA** | Kinesis Data Analytics |
-| **EFO** | Enhanced Fan-Out |
-| **FIFO** | First In First Out |
-| **ESM** | Event Source Mapping |
-| **MSK** | Managed Streaming for Apache Kafka |
-| **Saga** | Distributed transaction compensation pattern |
-| **APNs / FCM** | Apple/Google Push Services |
-| **ETL** | Extract Transform Load |
-| **TPS / RPS** | Transactions/Requests Per Second |
+> ⚠️ **Pitfall**: These are three especially easy-to-confuse boundary values. (1) **Firehose is not real-time** (minimum 60 seconds). If you see "real-time," it is Data Streams. (2) **SNS has no retention**. For "preventing loss on delivery failure," insert SQS or use a subscription DLQ. (3) **The Lambda-SQS visibility timeout is 6 times the function timeout**. If you do not respect this, duplicate processing occurs.
+
+## Confusing Comparisons at a Glance
+
+| A | B | Key difference |
+|---|---|----------|
+| SQS Standard | SQS FIFO | Unlimited, no ordering, duplicates possible vs 300/s, ordering, 5-minute dedup |
+| SQS | SNS | Pull, 1:1, retained vs Push, 1:N, non-retained |
+| SNS | EventBridge | Simple replicated distribution, attribute filters vs rich event-pattern routing, schemas |
+| Kinesis Data Streams | SQS | Retained log, multiple consumers, reprocessing vs destructive read, single consumer |
+| Data Streams | Firehose | Direct processing, real-time vs automatic loading, 60 seconds+ |
+| Classic | Enhanced Fan-Out | Shared 2 MB/s, polling vs per-consumer 2 MB/s, HTTP/2 push |
+| SF Standard | Express | 1 year, exactly-once, expensive vs 5 minutes, at-least-once, high throughput |
+| `.sync` | `.waitForTaskToken` | Wait for a machine job to complete vs wait for an external/human callback |
+| AppSync | API Gateway | GraphQL, multiple sources, built-in subscriptions vs REST, single backend |
+
+The distinction between SNS and EventBridge is said to have grown in weight on recent exams. Both "send events to multiple targets," but their strengths differ.
+
+- SNS is strong at **simple, high-speed replicated distribution** (attribute-based filters, very high throughput).
+- EventBridge is strong at **rich routing** (pattern matching on the entire event body, schema registry, SaaS integration, scheduling).
+- The rough rule is this: if it is "spray the same message quickly to multiple queues/functions," it is SNS; if it is "branch, transform, or integrate with external SaaS in complex ways depending on the event content," it is EventBridge.
+- When the exam asks for the "canonical fanout," SNS+SQS is the default answer, and for "content-based complex routing," it is EventBridge.
+
+## Failure Handling: A Different Safety Net for Each Service
+
+How each service handles a "failed message/job" is a comparison point within the exam scope.
+
+- **SQS**: When `maxReceiveCount` is exceeded, **DLQ** (same type to same type). Isolates poison messages.
+- **SNS**: Non-retaining, but a **subscription DLQ** (redrive) preserves messages that failed delivery.
+- **Kinesis**: Because of order preservation, a failed record **blocks what comes after it** (head-of-line blocking). It is mitigated with the Lambda ESM's `BisectBatchOnFunctionError`, `MaximumRetryAttempts`, and a failure destination (SQS/SNS).
+- **Step Functions**: Per-state `Retry` (backoff) and `Catch` (error branching), compensating transactions (Saga).
+
+> 📚 **Case**: The exam can mix up three kinds of DLQ. The **SQS DLQ** (a queue message exceeds maxReceiveCount), the **SNS subscription DLQ** (delivery to a subscriber fails), and the **Lambda DLQ** (a Lambda asynchronous invocation fails). Even though all are called "DLQ," the layer of failure each one catches is different. For example: "preserve messages that SNS failed to deliver to an HTTPS endpoint" -> SNS subscription DLQ. "Lambda failed to process an asynchronous event" -> Lambda DLQ (or Destinations). "An SQS message failed processing 3 times" -> SQS DLQ. From the wording, you must first pin down "the failure at which stage."
+
+## Acronym Quick Reference
+
+| Acronym | Full name |
+|------|--------|
+| SQS / SNS | Simple Queue / Notification Service |
+| DLQ | Dead Letter Queue |
+| KDS / KDF | Kinesis Data Streams / Firehose |
+| KCL / KPL | Kinesis Client / Producer Library |
+| EFO | Enhanced Fan-Out |
+| ESM | Event Source Mapping |
+| FSM | Finite State Machine (the foundation of Step Functions) |
+| Saga | Compensation pattern for distributed transactions |
+| APNs / FCM | Apple / Google mobile push |
+| WAL | Write-Ahead Log (the root of the log model) |
 
 ---
 

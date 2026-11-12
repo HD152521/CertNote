@@ -229,43 +229,183 @@ Lyft Engineering publicly shared this case, emphasizing not "rollback speed" but
 
 ## 🎯 12 Scenario Problems
 
-[12 detailed scenario problems with answers - translated from Korean...]
-
 ### Scenario 1: On-Premises Downtime Minimization
-**Answer: B** - On-Premises supports In-place only, not Blue/Green.
+
+A company deploys with CodeDeploy to 80 servers in its data center. Requirements: maintain service availability during deployment, and automatic rollback on failure.
+
+**A)** CodeDeploy Blue/Green + new ASG  
+**B)** CodeDeploy In-place, OneAtATime, CloudWatch Alarm-based automatic rollback  
+**C)** ECS Rolling + Circuit Breaker  
+**D)** Lambda Canary10Percent5Minutes  
+
+**Answer: B**
+
+On-Premises supports In-place only. Blue/Green is possible only on AWS infrastructure (because provisioning of new instances must be under AWS control). OneAtATime deploys one at a time so the remaining servers keep serving traffic. With a CloudWatch Alarm + automatic rollback configured, the previous Revision is redeployed immediately upon detecting failure.
+
+---
 
 ### Scenario 2: Lambda High-Risk Deployment Automation
-**Answer: A** - SAM AutoPublishAlias automates the entire process.
+
+You are updating a payment-processing Lambda function. Requirements: expose 10% for 5 minutes, then go to 100% if nothing is wrong, and roll back automatically and immediately if the 5xx error rate exceeds 1%.
+
+**A)** SAM `AutoPublishAlias: live` + `DeploymentPreference: Canary10Percent5Minutes` + CloudWatch Alarm  
+**B)** Manually adjust Alias weights in the Lambda console  
+**C)** ECS Blue/Green with CodeDeploy  
+**D)** CodePipeline + Manual Approval + manual Lambda deployment  
+
+**Answer: A**
+
+SAM AutoPublishAlias handles the entire process automatically: publish a new Version → create/update the Alias → create the CodeDeploy Application/Deployment Group → run the deployment. If you connect a CloudWatch Alarm to the Alarms field of DeploymentPreference, an automatic rollback occurs when the alarm enters ALARM state. Manual adjustment (B) does not satisfy the automation requirement.
+
+---
 
 ### Scenario 3: ECS Pre-Validation Deployment
-**Answer: B** - Test Listener + AfterAllowTestTraffic Hook enables separate validation.
 
-### Scenario 4: ASG Scale-out During In-place Deployment
-**Answer: B** - CodeDeploy auto-syncs to new instances.
+Before deploying a new version to an ECS Fargate service, the QA team wants to access it on a separate port for pre-validation and then switch traffic.
 
-### Scenario 5: Lambda Hook Deployment Failure Cause
-**Answer: B** - Hook Lambda must call PutLifecycleEventHookExecutionStatus.
+**A)** ECS Rolling Update (deployment_controller=ECS)  
+**B)** ECS Blue/Green (deployment_controller=CODE_DEPLOY) + Test Listener (port 8080) + AfterAllowTestTraffic Hook  
+**C)** Lambda Blue/Green  
+**D)** EC2 In-place + BeforeInstall Hook  
 
-### Scenario 6: ECS Auto-Rollback Minimum Cost Implementation
-**Answer: B** - ECS Circuit Breaker is built-in, no extra cost.
+**Answer: B**
 
-### Scenario 7: Blue/Green Deployment Immediate Rollback
-**Answer: B** - CodeDeploy console "Stop and roll back" while Termination Wait Time remains.
+The Test Listener is an optional feature of ECS Blue/Green that makes the new Task Set reachable on a specific port or path. The QA team validates through the Test Listener URL, the AfterAllowTestTraffic Hook Lambda reports the automated validation result, and when it passes, Production Listener traffic switches to the new Task Set. Rolling Update (A) does not support this pre-validation pattern.
 
-### Scenario 8: AppSpec Hook Order and First Deployment
-**Answer: B** - ApplicationStop script must be defensive for non-running app.
+---
 
-### Scenario 9: Lambda Alias Weight Setting Error
-**Answer: B** - $LATEST cannot be used in routing-config.
+### Scenario 4: In-place Deployment During ASG Scale-out
+
+While an In-place deployment is in progress on an EC2 ASG, Auto Scaling adds 2 instances because of a traffic surge. How do the newly added instances behave?
+
+**A)** They run the previous version of the code until the next deployment  
+**B)** CodeDeploy automatically installs the Revision currently in progress onto the new instances  
+**C)** They are terminated immediately because of a health check failure  
+**D)** ASG scale-out is blocked during deployment  
+
+**Answer: B**
+
+When CodeDeploy and the ASG are integrated, the CodeDeploy Agent is included in the ASG Launch Template and the Auto Sync mechanism is enabled. When a new instance starts through scale-out, CodeDeploy detects it and automatically installs the Revision currently being deployed. Thanks to this, even if scale-out occurs during a deployment, no version mismatch arises between instances.
+
+---
+
+### Scenario 5: Cause of a Lambda Hook Deployment Failure
+
+The `BeforeAllowTraffic` Hook Lambda ran, but the CodeDeploy deployment fails with a timeout. Looking at CloudWatch Logs, the Hook Lambda terminated normally. What is the most likely cause?
+
+**A)** The Hook Lambda has insufficient memory  
+**B)** The Hook Lambda IAM Role lacks the `codedeploy:PutLifecycleEventHookExecutionStatus` permission  
+**C)** The Lambda Concurrency Limit was exceeded  
+**D)** The VPC configuration prevents access to the CodeDeploy endpoint  
+
+**Answer: B**
+
+This is the most common cause when a deployment times out even though the Hook Lambda terminated normally. CodeDeploy requires the Hook Lambda to report the result (Succeeded/Failed) directly by calling the `PutLifecycleEventHookExecutionStatus` API. Without this report, CodeDeploy waits until the default timeout (1 hour) and then fails the deployment. A VPC problem (D) is also possible, but since the question confirms a "normal termination," B is the exact cause.
+
+---
+
+### Scenario 6: Minimum-Cost Implementation of ECS Automatic Rollback
+
+In a Rolling Update of an ECS Fargate service, you want the service to automatically return to its previous state if new Tasks fail repeatedly. Additional AWS service costs must be minimized.
+
+**A)** Introduce CodeDeploy Blue/Green + connect a CloudWatch Alarm  
+**B)** Enable the ECS Deployment Circuit Breaker (`enable=true, rollback=true`)  
+**C)** A Lambda function that polls ECS events, detects failure, and calls UpdateService  
+**D)** CloudWatch Events + Step Functions workflow  
+
+**Answer: B**
+
+The ECS Deployment Circuit Breaker is a feature within the ECS service configuration and has no extra cost. CodeDeploy Blue/Green (A) incurs CodeDeploy costs plus an additional Target Group and the cost of running a second Task Set. Lambda polling (C) adds Lambda execution cost and complexity. The Circuit Breaker is simply enabled in the service settings, and it automatically calculates the failure threshold to decide whether to roll back.
+
+---
+
+### Scenario 7: Immediate Rollback After a Blue/Green Deployment
+
+After an EC2 Blue/Green deployment completes, a serious bug is found in production. 45 minutes of Termination Wait Time remain. What is the fastest way to roll back?
+
+**A)** Manually increase the EC2 Blue ASG in the AWS console and change the ALB target group  
+**B)** Select "Stop and roll back deployment" in the CodeDeploy console  
+**C)** Create a new Launch Template with the previous AMI and update the ASG  
+**D)** Switch traffic to the previous ELB after the DNS TTL expires  
+
+**Answer: B**
+
+This is exactly the moment the key advantage of Blue/Green deployment is for. During the Termination Wait Time, the Blue ASG (the previous version) is still alive. If you run "Stop and roll back" in CodeDeploy, ALB traffic returns to the Blue ASG immediately. Manual operation (A) takes time and risks errors. A new Launch Template (C) requires new-instance boot time. A DNS change (D) is delayed by the length of the TTL.
+
+---
+
+### Scenario 8: AppSpec Hook Order and the First Deployment
+
+On the first EC2 In-place deployment, the ApplicationStop Hook raises an "app is not running" error and the deployment fails. What is the solution?
+
+**A)** Add a script to BeforeInstall that starts the app first  
+**B)** Modify the ApplicationStop script to return exit 0 even when the app is not running  
+**C)** Remove the ApplicationStop Hook from the AppSpec  
+**D)** Use OneAtATime instead of AllAtOnce  
+
+**Answer: B**
+
+On the first deployment ApplicationStop should be skipped when there is no previous deployment, but if the script itself returns an "error if there is no app," the deployment fails. The correct pattern is a defensive script that checks whether the app is running, terminates it only if it is, and returns exit 0 if it is not. Removing the Hook (C) causes the problem that the app is not terminated properly in later deployments.
+
+---
+
+### Scenario 9: Lambda Alias Weight Configuration Error
+
+A team tries to set the weights `$LATEST:0.1, Version-5:0.9` on a Lambda Alias. Why does this configuration fail?
+
+**A)** Because the weights sum to more than 1.0  
+**B)** Because $LATEST cannot be included in routing-config (the weight setting)  
+**C)** Because an Alias can point to at most 3 Versions  
+**D)** Because Version-5 does not exist  
+
+**Answer: B**
+
+The routing-config of a Lambda Alias allows only published Version numbers. $LATEST is a special pointer to the latest code under development and cannot be included in Alias weighted routing. The correct configuration takes the form `Version-6:0.1, Version-5:0.9`. In addition, an Alias can include at most two Versions in its routing-config (1 primary Version + 1 additional Version).
+
+---
 
 ### Scenario 10: CodePipeline ECS Blue/Green Image Substitution
-**Answer: B** - Use <IMAGE1_NAME> placeholder + imagedefinitions.json.
 
-### Scenario 11: Canary vs Linear Selection
-**Answer: B** - Linear better for cumulative load defects like memory leaks.
+You are configuring automated ECS Blue/Green deployment with CodePipeline. Every time a new image is pushed to ECR, you want the ECS service to update automatically to the new image.
+
+**A)** Run `aws ecs update-service --force-new-deployment` directly in buildspec.yml  
+**B)** CodePipeline ECS (Blue/Green) Action + the `<IMAGE1_NAME>` placeholder in `taskdef.json` + `imagedefinitions.json`  
+**C)** Call the `UpdateService` API directly from a Lambda Action  
+**D)** Update the Task Definition with a CloudFormation Action  
+
+**Answer: B**
+
+The `<IMAGE1_NAME>` placeholder in `taskdef.json` is a special string recognized by the CodePipeline ECS (Blue/Green) Action. When the build stage records the container name and image URI in `imagedefinitions.json`, in the deploy stage CodePipeline replaces `<IMAGE1_NAME>` with the actual image URI, creates a new Task Definition, and then starts the CodeDeploy Blue/Green deployment. A direct `update-service` (A) bypasses Blue/Green, and a direct Lambda call (C) makes the automation incomplete.
+
+---
+
+### Scenario 11: Choosing Between Canary and Linear
+
+You are deploying a payment-service Lambda. That function has a history of memory usage growing as load accumulates. Which deployment strategy is appropriate?
+
+**A)** LambdaCanary10Percent5Minutes (10%, observe for 5 minutes, then 100%)  
+**B)** LambdaLinear10PercentEvery1Minute (increase by 10% every 1 minute, reaching 100% in 10 minutes)  
+**C)** LambdaAllAtOnce (100% immediately)  
+**D)** ECS Rolling Update  
+
+**Answer: B**
+
+Defects that show up under cumulative load (such as memory leaks) are caught better by Linear's gradual increase than by Canary's one-off small exposure. LambdaLinear10PercentEvery1Minute raises traffic by 10% over 10 minutes, so at each step you can monitor the memory-usage growth pattern with CloudWatch and automatically roll back if an anomaly is detected. Canary (A) switches to 100% if no anomaly shows within 5 minutes, which is risky.
+
+---
 
 ### Scenario 12: Provisioned Concurrency + Canary Cost
-**Answer: B** - Both Version and New Version need PC during Canary, ~2× cost temporarily.
+
+You set Provisioned Concurrency (PC) of 100 units on a Lambda function and run a Canary deployment. During the Canary stage of the deployment (10% of traffic to the new Version), what is the cost impact?
+
+**A)** The same as the existing cost, because PC is set only on the new Version  
+**B)** PC is needed on both Versions, so PC cost temporarily becomes ~2x  
+**C)** PC is automatically disabled during the Canary  
+**D)** There is no impact, because PC is set on the Alias  
+
+**Answer: B**
+
+PC is set per Version. During a Canary deployment, both the Old Version (90%) and the New Version (10%) must respond without cold starts, so PC must be set on both Versions. This means PC cost roughly doubles during the Canary period (for example, 5 minutes for LambdaCanary10Percent5Minutes). After the deployment completes, the PC of the Old Version is released. This temporary cost increase can become a cost that is hard to ignore for high-traffic, high-PC functions.
 
 ---
 
@@ -313,6 +453,6 @@ If CodeDeploy is the "deployment executor," CodePipeline is the "entire release 
 - **Day 2**: Multi-account pipeline + Cross-Account IAM Role delegation
 - **Day 3**: Action Providers — Lambda, Step Functions, Manual Approval, CloudFormation
 - **Day 4**: V2 Pipeline + Variables + Advanced Trigger filters
-- **Day 5**: CodePipeline integration scenario problems (10 problems)
+- **Day 5**: CodePipeline integration scenario problems (12 problems)
 
 If deployment strategy was "where to deploy," pipeline is "in what order, under what conditions, to which account." Knowledge from Week 4 integration of deployment strategies integrates into a bigger picture in Week 5.
