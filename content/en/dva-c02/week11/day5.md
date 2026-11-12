@@ -133,168 +133,168 @@ Messaging Service Selection Architecture
 
 ## 📝 Week 11 Comprehensive Practice Questions
 
-**문제 1.** When processing payment transactions exactly once and in order?
+**Question 1.** When processing payment transactions exactly once and in order?
 
 A) SQS Standard queue  
 B) SQS FIFO queue  
 C) SNS  
 D) Kinesis  
 
-**정답: B** - FIFO queue guarantees order and exactly-once processing (deduplication).
+**Answer: B** - FIFO queue guarantees order and exactly-once processing (deduplication).
 
 ---
 
-**문제 2.** To analyze millions of user click events in real-time and store in S3?
+**Question 2.** To analyze millions of user click events in real-time and store in S3?
 
 A) SQS → Lambda → S3  
 B) Kinesis Data Streams → analytics → Firehose → S3  
 C) SNS → SQS → S3  
 D) DynamoDB Streams → S3  
 
-**정답: B** - Kinesis Data Streams optimized for high-volume streaming, Firehose easily delivers to S3.
+**Answer: B** - Kinesis Data Streams optimized for high-volume streaming, Firehose easily delivers to S3.
 
 ---
 
-**문제 3.** When one S3 upload event triggers 3 Lambda functions simultaneously?
+**Question 3.** When one S3 upload event triggers 3 Lambda functions simultaneously?
 
 A) Set S3 event directly to each Lambda  
 B) S3 → SNS → 3 Lambda subscriptions  
 C) S3 → SQS → Lambda  
 D) S3 → EventBridge → 3 Lambda  
 
-**정답: B or D** - SNS fanout or EventBridge can deliver single event to multiple Lambda simultaneously. Exam standard: B is the fanout pattern.
+**Answer: B or D** - SNS fanout or EventBridge can deliver single event to multiple Lambda simultaneously. Exam standard: B is the fanout pattern.
 
 ---
 
-**문제 4.** To isolate messages that failed 3 times in SQS?
+**Question 4.** To isolate messages that failed 3 times in SQS?
 
 A) SQS filter policy  
 B) DLQ setting (maxReceiveCount=3)  
 C) Increase VisibilityTimeout  
 D) Disable long polling  
 
-**정답: B** - DLQ with maxReceiveCount=3 moves failed messages to DLQ.
+**Answer: B** - DLQ with maxReceiveCount=3 moves failed messages to DLQ.
 
 ---
 
-**문제 5.** When orchestrating multiple Lambda in sequence with rollback on failure?
+**Question 5.** When orchestrating multiple Lambda in sequence with rollback on failure?
 
 A) Lambda chain (Lambda directly invokes Lambda)  
 B) Step Functions  
 C) SQS workflow  
 D) EventBridge rule chain  
 
-**정답: B** - Step Functions manages workflow state and supports error handling, retry, compensation transactions.
+**Answer: B** - Step Functions manages workflow state and supports error handling, retry, compensation transactions.
 
 ---
 
-**문제 6.** Most significant difference between Kinesis Data Streams and SQS?
+**Question 6.** Most significant difference between Kinesis Data Streams and SQS?
 
 A) Speed difference  
 B) Kinesis allows multiple consumers to read simultaneously; data retained  
 C) Cost difference  
 D) Region restriction  
 
-**정답: B** - Kinesis retains data so multiple consumers read independently; SQS message consumed and gone.
+**Answer: B** - Kinesis retains data so multiple consumers read independently; SQS message consumed and gone.
 
 ---
 
-**문제 7.** For mobile app using GraphQL with real-time updates?
+**Question 7.** For mobile app using GraphQL with real-time updates?
 
 A) API Gateway REST API  
 B) API Gateway WebSocket  
 C) AWS AppSync  
 D) Kinesis Firehose  
 
-**정답: C** - AppSync provides fully managed GraphQL and real-time subscriptions (WebSocket).
+**Answer: C** - AppSync provides fully managed GraphQL and real-time subscriptions (WebSocket).
 
 ---
 
-**문제 8.** To deliver SNS messages with premium customer info only to specific SQS?
+**Question 8.** To deliver SNS messages with premium customer info only to specific SQS?
 
 A) SQS message filter  
 B) SNS filter policy  
 C) Lambda intermediate processing  
 D) IAM policy  
 
-**정답: B** - SNS filter policy delivers messages to specific subscribers based on attributes.
+**Answer: B** - SNS filter policy delivers messages to specific subscribers based on attributes.
 
 ---
 
-**문제 9.** What is Lambda's recommended visibility timeout with Kinesis integration?
+**Question 9.** What is Lambda's recommended visibility timeout with Kinesis integration?
 
 A) Same as Lambda timeout  
 B) 2x Lambda timeout  
 C) 6x Lambda timeout  
 D) 12x Lambda timeout  
 
-**정답: C** - For Kinesis, recommend 6x or more Lambda timeout to prevent duplicate processing.
+**Answer: C** - For Kinesis, recommend 6x or more Lambda timeout to prevent duplicate processing.
 
 ---
 
-**문제 10.** Standard Lambda execution time limit with Step Functions?
+**Question 10.** Standard Lambda execution time limit with Step Functions?
 
 A) 5 minutes  
 B) 15 minutes  
 C) 1 hour  
 D) Unlimited (via Step Functions)  
 
-**정답: D** - Step Functions Standard can orchestrate up to 1 year; each Task (Lambda) still 15 min, but overall workflow unlimited.
+**Answer: D** - Step Functions Standard can orchestrate up to 1 year; each Task (Lambda) still 15 min, but overall workflow unlimited.
 
 ---
 
-**문제 11.** When Kinesis shard reaches write capacity (1MB/s)?
+**Question 11.** When Kinesis shard reaches write capacity (1MB/s)?
 
 A) Automatic scaling  
 B) Request ProvisionedThroughputExceededException error  
 C) Increase shard count or use On-Demand  
 D) Data loss  
 
-**정답: C** - Kinesis Provisioned throws exception; must increase shards or switch to On-Demand mode.
+**Answer: C** - Kinesis Provisioned throws exception; must increase shards or switch to On-Demand mode.
 
 ---
 
-**문제 12.** AppSync best data source for millisecond-latency DynamoDB query?
+**Question 12.** AppSync best data source for millisecond-latency DynamoDB query?
 
 A) Lambda resolver  
 B) Direct DynamoDB data source (AppSync native)  
 C) RDS Proxy  
 D) HTTP endpoint  
 
-**정답: B** - AppSync native DynamoDB resolver is optimized for direct CRUD without Lambda overhead.
+**Answer: B** - AppSync native DynamoDB resolver is optimized for direct CRUD without Lambda overhead.
 
 ---
 
-**문제 13.** SNS message lost on Lambda delivery failure?
+**Question 13.** SNS message lost on Lambda delivery failure?
 
 A) Auto-move to SQS  
 B) Retry then lost (set Lambda DLQ or Destinations)  
 C) Auto-move to DLQ  
 D) Email admin  
 
-**정답: B** - SNS retries then loses message; must configure Lambda Destinations or SNS DLQ for Lambda.
+**Answer: B** - SNS retries then loses message; must configure Lambda Destinations or SNS DLQ for Lambda.
 
 ---
 
-**문제 14.** What determines partition into same Kinesis shard?
+**Question 14.** What determines partition into same Kinesis shard?
 
 A) Consumer ID  
 B) Partition Key  
 C) Timestamp  
 D) Random  
 
-**정답: B** - Same partition key → same shard; allows ordering guarantees per partition.
+**Answer: B** - Same partition key → same shard; allows ordering guarantees per partition.
 
 ---
 
-**문제 15.** Step Functions Express vs Standard - when to choose Express?
+**Question 15.** Step Functions Express vs Standard - when to choose Express?
 
 A) Long-running workflows (days/months)  
 B) Need exactly-once guarantee  
 C) Short frequent event processing  
 D) Human approval workflows  
 
-**정답: C** - Express: short (5 min max), high throughput, at-least-once. Standard: long, exactly-once, cheap.
+**Answer: C** - Express: short (5 min max), high throughput, at-least-once. Standard: long, exactly-once, cheap.
 
 ---
 

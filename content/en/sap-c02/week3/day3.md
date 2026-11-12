@@ -245,74 +245,74 @@ Site-to-Site VPN is the most frequently used hybrid connectivity solution in AWS
 
 ## 📝 Practice Questions
 
-**문제 1.** Emergency situation: must connect on-premises data center and AWS immediately (within minutes). Direct Connect provisioning is underway but 6 weeks remain. Most suitable temporary connection:
+**Question 1.** Emergency situation: must connect on-premises data center and AWS immediately (within minutes). Direct Connect provisioning is underway but 6 weeks remain. Most suitable temporary connection:
 
 A) Direct Connect Hosted Connection (small)
 B) AWS Site-to-Site VPN + BGP
 C) AWS Client VPN (deploy to all company employees)
 D) VPC Peering
 
-**정답: B**
+**Answer: B**
 Explanation: Site-to-Site VPN can be created within minutes via console; once on-premises router IPsec/IKEv2 is configured, connection occurs within hours. BGP minimizes routing configuration changes when later migrating to DX. Hosted Connection still takes weeks (A incorrect). Client VPN is for individual user terminals, not site-to-site connection (C incorrect). VPC Peering is for AWS internal VPC connectivity, not on-premises (D incorrect).
 
 ---
 
-**문제 2.** Currently connected via single Site-to-Site VPN (VGW). Peak-hour bandwidth reaches 2Gbps causing congestion. DX planned 3 months out. Immediately increase bandwidth:
+**Question 2.** Currently connected via single Site-to-Site VPN (VGW). Peak-hour bandwidth reaches 2Gbps causing congestion. DX planned 3 months out. Immediately increase bandwidth:
 
 A) Increase existing VPN MTU to 9001
 B) Replace VGW with TGW and add 2 more VPN connections, enable ECMP
 C) Add 2 more tunnels to existing VPN
 D) Bypass traffic through CloudFront to on-premises
 
-**정답: B**
+**Answer: B**
 Explanation: VGW doesn't support ECMP, operating only Active-Passive with effectively max 1.25Gbps. Replacing with TGW and enabling ECMP activates tunnels simultaneously, summing bandwidth. 2 VPN connections (2 tunnels each) = max 5Gbps. MTU increase (A) doesn't increase throughput itself. Adding tunnels to existing VPN (C) is impossible since max 2 tunnels per Site-to-Site VPN. CloudFront (D) is CDN unrelated to on-premises VPN bandwidth scaling.
 
 ---
 
-**문제 3.** 1,000 remote employees distributed globally need secure VPC internal application access. Already using Okta for SSO. Minimize operational burden:
+**Question 3.** 1,000 remote employees distributed globally need secure VPC internal application access. Already using Okta for SSO. Minimize operational burden:
 
 A) Site-to-Site VPN + employee home router CGW configuration
 B) AWS Client VPN + SAML 2.0 (Okta IdP) authentication
 C) Bastion Host + SSH tunneling
 D) AWS VPN + AD authentication (deploy AD servers each region)
 
-**정답: B**
+**Answer: B**
 Explanation: Client VPN is for individual user terminals and uses OpenVPN client. SAML 2.0 integration connects with Okta SSO so employees authenticate VPN with existing Okta credentials. No separate user account management needed, minimizing operational burden. Site-to-Site VPN is for fixed inter-site connection; configuring home router CGW is impractical (A incorrect). Bastion Host has high management burden and poor scalability (C incorrect). Deploying AD servers each region incurs AD replication/management burden (D incorrect).
 
 ---
 
-**문제 4.** Company operates AWS Site-to-Site VPN and Direct Connect together, using DX normally and auto-switching to VPN on DX failure. Control path priority for AWS → on-premises (inbound) traffic via BGP:
+**Question 4.** Company operates AWS Site-to-Site VPN and Direct Connect together, using DX normally and auto-switching to VPN on DX failure. Control path priority for AWS → on-premises (inbound) traffic via BGP:
 
 A) Mark DX as "Primary" in AWS console
 B) Set high Local Preference on on-premises BGP for DX path
 C) Use AS Path Prepending on VPN side to lengthen path so AWS prefers DX
 D) Enable BFD on DX, disable on VPN
 
-**정답: C**
+**Answer: C**
 Explanation: AWS → on-premises direction path selection is determined by AWS-side BGP. Cannot adjust AWS Local Preference, so on-premises makes VPN-side advertised path AS Path longer (Prepending), inducing AWS to prefer DX path with shorter AS Path. AWS follows standard BGP behavior preferring shorter AS Path. On-premises BGP Local Preference (B) controls reverse direction. A is non-existent feature. BFD (D) is failure detection speed, not path priority.
 
 ---
 
-**문제 5.** Created AWS Client VPN Endpoint in us-east-1 and Associated to only single-AZ subnet (us-east-1a). What risk:
+**Question 5.** Created AWS Client VPN Endpoint in us-east-1 and Associated to only single-AZ subnet (us-east-1a). What risk:
 
 A) Max concurrent connection count decreases
 B) us-east-1a AZ failure disconnects all Client VPN connections
 C) Cost doubles
 D) BGP routing doesn't work
 
-**정답: B**
+**Answer: B**
 Explanation: Client VPN Endpoint availability depends on Associated subnet's AZ. Associating only single-AZ subnet means service completely stops if that AZ fails. Minimum 2+ AZ subnet associations required for high availability. Max connection count depends on Endpoint settings, unrelated to AZ count (A incorrect). Cost corresponds to associated subnet count and connection time; AZ redundancy doesn't necessarily double cost (C incorrect). Client VPN doesn't use BGP (D incorrect).
 
 ---
 
-**문제 6.** Global corporation connecting Korea on-premises to us-east-1 VPC via VPN. Korea~USA internet latency unstable, VPN performance inconsistent. Most suitable solution:
+**Question 6.** Global corporation connecting Korea on-premises to us-east-1 VPC via VPN. Korea~USA internet latency unstable, VPN performance inconsistent. Most suitable solution:
 
 A) Upgrade to faster internet circuit
 B) AWS Accelerated Site-to-Site VPN (TGW connection)
 C) Place CloudFront in front of VPN
 D) Reduce VPN MTU to prevent packet fragmentation
 
-**정답: B**
+**Answer: B**
 Explanation: Accelerated Site-to-Site VPN uses Global Accelerator Anycast to immediately enter AWS global backbone from nearest Korea AWS edge location (Seoul). Only Korea~Seoul edge segment traverses internet; Seoul~us-east-1 segment goes through AWS backbone ensuring stable latency. Faster internet circuit (A) doesn't resolve internet path latency variation itself. CloudFront (C) is HTTP/HTTPS content delivery service unrelated to IPsec VPN. MTU reduction (D) reduces fragmentation but doesn't resolve latency variation. Accelerated VPN only available on TGW-connected VPN.
 
 ---

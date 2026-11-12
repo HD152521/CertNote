@@ -91,50 +91,50 @@ KMS "provides computation without letting keys leave the HSM," controls usage wi
 
 ## 📝 Practice Questions
 
-**문제 1.** 보안팀이 "키 정책을 직접 편집해 세밀한 접근 통제를 적용하고, 키 회전 주기를 통제하며, 다른 계정과 키를 공유해야 한다"고 요구한다. 어떤 종류의 키를 써야 하는가?
+**Question 1.** 보안팀이 "키 정책을 직접 편집해 세밀한 접근 통제를 적용하고, 키 회전 주기를 통제하며, 다른 계정과 키를 공유해야 한다"고 요구한다. 어떤 종류의 키를 써야 하는가?
 
 A) AWS owned key  
 B) AWS managed key (`aws/s3`)  
 C) Customer managed key  
 D) S3 관리형 키(SSE-S3)  
 
-**정답: C**  
-해설: 키 정책 편집, 회전 주기 통제, 교차계정 공유는 모두 고객이 소유·관리하는 customer managed key에서만 가능하다. AWS managed key는 키 정책이 AWS에 의해 고정돼 편집할 수 없고 교차계정 공유도 안 된다. AWS owned key는 콘솔에 보이지도 않으며 통제 대상이 아니다. SSE-S3는 KMS 키가 아니라 S3가 관리하는 별도 방식으로 키 정책 개념이 없다.
+**Answer: C**  
+Explanation: 키 정책 편집, 회전 주기 통제, 교차계정 공유는 모두 고객이 소유·관리하는 customer managed key에서만 가능하다. AWS managed key는 키 정책이 AWS에 의해 고정돼 편집할 수 없고 교차계정 공유도 안 된다. AWS owned key는 콘솔에 보이지도 않으며 통제 대상이 아니다. SSE-S3는 KMS 키가 아니라 S3가 관리하는 별도 방식으로 키 정책 개념이 없다.
 
 ---
 
-**문제 2.** 관리자가 KMS 키의 기본 키 정책에서 `Enable IAM User Permissions`(Principal이 계정 root, Action `kms:*`) 구문을 실수로 삭제했다. IAM 관리자 권한을 가진 사용자도 키를 사용할 수 없게 되었다. 원인으로 가장 정확한 것은?
+**Question 2.** 관리자가 KMS 키의 기본 키 정책에서 `Enable IAM User Permissions`(Principal이 계정 root, Action `kms:*`) 구문을 실수로 삭제했다. IAM 관리자 권한을 가진 사용자도 키를 사용할 수 없게 되었다. 원인으로 가장 정확한 것은?
 
 A) IAM 정책이 KMS보다 항상 우선하므로 무관하다  
 B) 키 정책이 IAM에 권한을 위임하지 않으면 IAM 정책만으로는 키에 접근할 수 없기 때문  
 C) 키가 자동으로 비활성화되었기 때문  
 D) CloudTrail이 비활성화되었기 때문  
 
-**정답: B**  
-해설: KMS는 키 정책과 IAM이 함께 작동하는 이중 모델을 쓴다. 키 정책의 `Enable IAM User Permissions` 구문이 "이 계정의 IAM 정책으로 권한 결정을 위임한다"는 핵심 위임이다. 이를 삭제하면 키 정책에 직접 명시되지 않은 어떤 프린시펄도(관리자 포함) 키를 쓸 수 없다. IAM이 KMS보다 항상 우선한다는 설명은 틀렸으며, 키 비활성화나 CloudTrail은 이 증상과 무관하다.
+**Answer: B**  
+Explanation: KMS는 키 정책과 IAM이 함께 작동하는 이중 모델을 쓴다. 키 정책의 `Enable IAM User Permissions` 구문이 "이 계정의 IAM 정책으로 권한 결정을 위임한다"는 핵심 위임이다. 이를 삭제하면 키 정책에 직접 명시되지 않은 어떤 프린시펄도(관리자 포함) 키를 쓸 수 없다. IAM이 KMS보다 항상 우선한다는 설명은 틀렸으며, 키 비활성화나 CloudTrail은 이 증상과 무관하다.
 
 ---
 
-**문제 3.** AWS 외부의 파트너 시스템이 데이터를 암호화해 우리 계정으로 보내야 한다. 파트너에게는 KMS API 호출 권한이나 복호화 권한을 주면 안 된다. 가장 적절한 키 구성은?
+**Question 3.** AWS 외부의 파트너 시스템이 데이터를 암호화해 우리 계정으로 보내야 한다. 파트너에게는 KMS API 호출 권한이나 복호화 권한을 주면 안 된다. 가장 적절한 키 구성은?
 
 A) 대칭 customer managed key를 만들고 파트너에게 `kms:Encrypt` 권한 부여  
 B) 비대칭 KMS 키(암호화/복호화 용도)를 만들어 퍼블릭 키를 파트너에게 배포, 복호화는 KMS 내부 프라이빗 키로 수행  
 C) S3 presigned URL을 파트너에게 발급  
 D) AWS managed key를 공유  
 
-**정답: B**  
-해설: 파트너에게 KMS 호출 권한을 주지 않고 암호화만 시키려면 비대칭 키가 적합하다. 퍼블릭 키를 배포하면 파트너는 KMS API 없이 로컬에서 암호화할 수 있고, 프라이빗 키는 KMS 밖으로 나가지 않아 복호화는 우리 계정의 KMS만 수행한다. 대칭 키로 `kms:Encrypt`를 주면 파트너가 KMS API를 호출해야 하므로 요구를 위반한다. presigned URL이나 managed key 공유는 이 요구와 맞지 않는다.
+**Answer: B**  
+Explanation: 파트너에게 KMS 호출 권한을 주지 않고 암호화만 시키려면 비대칭 키가 적합하다. 퍼블릭 키를 배포하면 파트너는 KMS API 없이 로컬에서 암호화할 수 있고, 프라이빗 키는 KMS 밖으로 나가지 않아 복호화는 우리 계정의 KMS만 수행한다. 대칭 키로 `kms:Encrypt`를 주면 파트너가 KMS API를 호출해야 하므로 요구를 위반한다. presigned URL이나 managed key 공유는 이 요구와 맞지 않는다.
 
 ---
 
-**문제 4.** 단일 리전 customer managed key로 암호화한 EBS 스냅샷을 us-east-1에서 us-west-2로 복사해 사용하려 한다. 가장 정확한 설명은?
+**Question 4.** 단일 리전 customer managed key로 암호화한 EBS 스냅샷을 us-east-1에서 us-west-2로 복사해 사용하려 한다. 가장 정확한 설명은?
 
 A) 같은 키 ID로 어느 리전에서나 복호화되므로 추가 작업이 없다  
 B) 스냅샷 복사 시 대상 리전의 키로 재암호화가 필요하다(단일 리전 키는 리전을 넘지 못함). 교차 리전 운영이 잦으면 멀티 리전 키를 고려한다  
 C) 비대칭 키로 변환하면 자동 해결된다  
 D) AWS owned key로 바꿔야 한다  
 
-**정답: B**  
-해설: 일반 KMS 키는 키 자료가 해당 리전을 떠나지 못하므로, 다른 리전에서 스냅샷을 쓰려면 대상 리전의 키로 재암호화해야 한다. 교차 리전 복호화를 동일 키로 하려면 같은 키 자료를 여러 리전에 복제하는 멀티 리전 키가 설계상 정답이다. 비대칭 변환이나 AWS owned key 전환은 이 문제를 해결하지 못한다.
+**Answer: B**  
+Explanation: 일반 KMS 키는 키 자료가 해당 리전을 떠나지 못하므로, 다른 리전에서 스냅샷을 쓰려면 대상 리전의 키로 재암호화해야 한다. 교차 리전 복호화를 동일 키로 하려면 같은 키 자료를 여러 리전에 복제하는 멀티 리전 키가 설계상 정답이다. 비대칭 변환이나 AWS owned key 전환은 이 문제를 해결하지 못한다.
 
 ---

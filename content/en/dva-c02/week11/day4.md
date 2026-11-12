@@ -310,58 +310,58 @@ AppSync GraphQL Architecture
 
 ## 📝 Practice Questions
 
-**문제 1.** What is the best way to execute multiple Lambda functions sequentially and handle errors?
+**Question 1.** What is the best way to execute multiple Lambda functions sequentially and handle errors?
 
 A) Lambda functions directly invoke other Lambda  
 B) Step Functions workflow  
 C) SQS chain  
 D) EventBridge rules  
 
-**정답: B** - Step Functions orchestrates Lambda functions with error handling, retry, and branching visually.
+**Answer: B** - Step Functions orchestrates Lambda functions with error handling, retry, and branching visually.
 
 ---
 
-**문제 2.** What state type executes multiple tasks simultaneously in Step Functions?
+**Question 2.** What state type executes multiple tasks simultaneously in Step Functions?
 
 A) Choice  
 B) Task  
 C) Parallel  
 D) Map  
 
-**정답: C** - Parallel state executes multiple branches simultaneously and proceeds after all complete.
+**Answer: C** - Parallel state executes multiple branches simultaneously and proceeds after all complete.
 
 ---
 
-**문제 3.** Which is NOT an advantage of AppSync?
+**Question 3.** Which is NOT an advantage of AppSync?
 
 A) GraphQL API support  
 B) Real-time subscriptions (WebSocket)  
 C) Supports only relational queries  
 D) Offline data synchronization  
 
-**정답: C** - AppSync supports GraphQL with DynamoDB, Lambda, RDS, and other diverse data sources.
+**Answer: C** - AppSync supports GraphQL with DynamoDB, Lambda, RDS, and other diverse data sources.
 
 ---
 
-**문제 4.** To auto-retry when API rate limiting (ThrottlingException) occurs in Step Functions?
+**Question 4.** To auto-retry when API rate limiting (ThrottlingException) occurs in Step Functions?
 
 A) Write retry logic inside Lambda function  
 B) Specify BackoffRate and MaxAttempts in Retry setting  
 C) Configure DLQ  
 D) Set alarm  
 
-**정답: B** - Step Functions Retry setting can configure exponential backoff and max retry attempts.
+**Answer: B** - Step Functions Retry setting can configure exponential backoff and max retry attempts.
 
 ---
 
-**문제 5.** To receive real-time order status updates in mobile app?
+**Question 5.** To receive real-time order status updates in mobile app?
 
 A) Periodically poll API  
 B) AppSync GraphQL subscription  
 C) SNS Push notification  
 D) SQS Long Polling  
 
-**정답: B** - AppSync GraphQL subscription pushes real-time updates via WebSocket from server to client.
+**Answer: B** - AppSync GraphQL subscription pushes real-time updates via WebSocket from server to client.
 
 ---
 

@@ -75,62 +75,62 @@ In the next article, we'll review and consolidate all of Week 3 — databases, i
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to automatically create identical infrastructure environments (dev, test, prod) in a repeatable, version-controlled way. Which service is most appropriate?
+**Question 1.** You want to automatically create identical infrastructure environments (dev, test, prod) in a repeatable, version-controlled way. Which service is most appropriate?
 
 A) AWS Elastic Beanstalk  
 B) AWS CloudFormation  
 C) AWS Lambda  
 D) Amazon ECS  
 
-**정답: B**  
-해설: CloudFormation is an IaC service that defines infrastructure as JSON/YAML templates (code) for repeatable reproduction and version control. Elastic Beanstalk focuses on simplifying app deployment, Lambda is serverless code execution, and ECS is container orchestration, so none are meant for defining infrastructure as a whole.
+**Answer: B**  
+Explanation: CloudFormation is an IaC service that defines infrastructure as JSON/YAML templates (code) for repeatable reproduction and version control. Elastic Beanstalk focuses on simplifying app deployment, Lambda is serverless code execution, and ECS is container orchestration, so none are meant for defining infrastructure as a whole.
 
 ---
 
-**문제 2.** A developer wants to deploy a web app quickly by uploading just the code — without handling infrastructure details directly — and have EC2, a load balancer, and Auto Scaling configured automatically. Which service is most appropriate?
+**Question 2.** A developer wants to deploy a web app quickly by uploading just the code — without handling infrastructure details directly — and have EC2, a load balancer, and Auto Scaling configured automatically. Which service is most appropriate?
 
 A) AWS CloudFormation  
 B) AWS Config  
 C) AWS Elastic Beanstalk  
 D) Amazon EKS  
 
-**정답: C**  
-해설: Elastic Beanstalk automatically configures and deploys the standard infrastructure needed to run the code once uploaded, letting the developer focus on the code. CloudFormation requires defining every resource directly, Config evaluates configuration, and EKS manages Kubernetes, so their purposes differ.
+**Answer: C**  
+Explanation: Elastic Beanstalk automatically configures and deploys the standard infrastructure needed to run the code once uploaded, letting the developer focus on the code. CloudFormation requires defining every resource directly, Config evaluates configuration, and EKS manages Kubernetes, so their purposes differ.
 
 ---
 
-**문제 3.** You want to run containers but not patch or scale the underlying EC2 servers (nodes) directly — a serverless approach. Which is most appropriate?
+**Question 3.** You want to run containers but not patch or scale the underlying EC2 servers (nodes) directly — a serverless approach. Which is most appropriate?
 
 A) Amazon EC2  
 B) AWS Fargate  
 C) Amazon RDS  
 D) AWS CloudTrail  
 
-**정답: B**  
-해설: Fargate is serverless compute that runs only containers on ECS/EKS without node (EC2) management. EC2 requires managing servers directly, RDS is a database, and CloudTrail is audit logs, so they have nothing to do with running containers.
+**Answer: B**  
+Explanation: Fargate is serverless compute that runs only containers on ECS/EKS without node (EC2) management. EC2 requires managing servers directly, RDS is a database, and CloudTrail is audit logs, so they have nothing to do with running containers.
 
 ---
 
-**문제 4.** You want code to run only when an event (e.g., a file upload) occurs, to be charged only for the time it runs, and to not manage servers at all. Which service is most appropriate?
+**Question 4.** You want code to run only when an event (e.g., a file upload) occurs, to be charged only for the time it runs, and to not manage servers at all. Which service is most appropriate?
 
 A) AWS Lambda  
 B) Amazon EC2  
 C) Amazon EKS  
 D) AWS Elastic Beanstalk  
 
-**정답: A**  
-해설: Lambda is serverless compute that runs only in response to events and charges only for the time used. EC2, EKS, and Beanstalk each require maintaining and managing servers or environments to varying degrees, so they don't meet the "no servers at all" condition.
+**Answer: A**  
+Explanation: Lambda is serverless compute that runs only in response to events and charges only for the time used. EC2, EKS, and Beanstalk each require maintaining and managing servers or environments to varying degrees, so they don't meet the "no servers at all" condition.
 
 ---
 
-**문제 5.** A team already using standard open-source Kubernetes wants to run managed Kubernetes on AWS. Which service is most appropriate?
+**Question 5.** A team already using standard open-source Kubernetes wants to run managed Kubernetes on AWS. Which service is most appropriate?
 
 A) Amazon ECS  
 B) Amazon EKS  
 C) AWS Lambda  
 D) AWS CloudFormation  
 
-**정답: B**  
-해설: EKS provides standard Kubernetes in managed form, so it fits well with existing Kubernetes workloads. ECS is AWS's proprietary container orchestration, Lambda is serverless functions, and CloudFormation is IaC, so none are Kubernetes management services.
+**Answer: B**  
+Explanation: EKS provides standard Kubernetes in managed form, so it fits well with existing Kubernetes workloads. ECS is AWS's proprietary container orchestration, Lambda is serverless functions, and CloudFormation is IaC, so none are Kubernetes management services.
 
 ---

@@ -89,62 +89,62 @@ Next week we enter data storage and serving — data warehouses and catalog spac
 
 ## 📝 Practice Questions
 
-**문제 1.** 다음 요구를 모두 만족하는 변환 엔진은? "수십 TB를 처리, Hive와 HBase를 함께 사용, 스팟 인스턴스로 비용을 극단적으로 제어, 클러스터를 세밀히 튜닝."
+**Question 1.** 다음 요구를 모두 만족하는 변환 엔진은? "수십 TB를 처리, Hive와 HBase를 함께 사용, 스팟 인스턴스로 비용을 극단적으로 제어, 클러스터를 세밀히 튜닝."
 
 A) Amazon EMR on EC2  
 B) AWS Lambda  
 C) AWS Glue  
 D) Amazon Athena  
 
-**정답: A**  
-해설: 다양한 빅데이터 생태계 도구(Hive/HBase), 스팟을 통한 비용 제어, 세밀한 클러스터 튜닝은 모두 EMR on EC2의 강점이다. Lambda는 15분 한계, Glue는 서버리스 추상화로 세밀 제어가 제한적, Athena는 쿼리 서비스로 이 요구와 맞지 않는다.
+**Answer: A**  
+Explanation: 다양한 빅데이터 생태계 도구(Hive/HBase), 스팟을 통한 비용 제어, 세밀한 클러스터 튜닝은 모두 EMR on EC2의 강점이다. Lambda는 15분 한계, Glue는 서버리스 추상화로 세밀 제어가 제한적, Athena는 쿼리 서비스로 이 요구와 맞지 않는다.
 
 ---
 
-**문제 2.** "S3 파일 도착 → Glue 변환 → 검증 → 통과 시 Redshift 적재, 실패 시 알림"을 분기·재시도와 함께 서버리스로 조율하려 한다. 가장 적합한 오케스트레이터는?
+**Question 2.** "S3 파일 도착 → Glue 변환 → 검증 → 통과 시 Redshift 적재, 실패 시 알림"을 분기·재시도와 함께 서버리스로 조율하려 한다. 가장 적합한 오케스트레이터는?
 
 A) Amazon MWAA  
 B) 단일 Lambda 함수  
 C) Amazon Kinesis  
 D) AWS Step Functions  
 
-**정답: D**  
-해설: 전부 AWS 서비스로 구성되고 분기(Choice)·재시도(Retry/Catch)를 선언적으로 처리하며 서버리스 저운영을 원하므로 Step Functions가 최적이다. MWAA는 Airflow 자산·멀티 환경이 단서일 때 선택하고, 단일 Lambda는 15분 한계와 가시성 부족, Kinesis는 스트리밍 수집 도구다.
+**Answer: D**  
+Explanation: 전부 AWS 서비스로 구성되고 분기(Choice)·재시도(Retry/Catch)를 선언적으로 처리하며 서버리스 저운영을 원하므로 Step Functions가 최적이다. MWAA는 Airflow 자산·멀티 환경이 단서일 때 선택하고, 단일 Lambda는 15분 한계와 가시성 부족, Kinesis는 스트리밍 수집 도구다.
 
 ---
 
-**문제 3.** EMR 비용 최적화를 위한 설명 중 옳은 것은?
+**Question 3.** EMR 비용 최적화를 위한 설명 중 옳은 것은?
 
 A) 영구 데이터를 Core 노드 HDFS에 저장하고 클러스터를 24시간 유지한다  
 B) Task 노드에 스팟을 적용하고 영구 데이터는 S3(EMRFS)에 두며 Transient 클러스터로 작업 시에만 띄운다  
 C) Primary 노드를 스팟으로 구성해 비용을 줄인다  
 D) 모든 노드를 온디맨드로 고정한다  
 
-**정답: B**  
-해설: Task 노드는 HDFS를 저장하지 않아 스팟 회수에 안전하고, 영구 데이터는 S3(EMRFS)에 두어 컴퓨트-스토리지를 분리하며, Transient 클러스터로 작업 시에만 띄우는 것이 정석이다. HDFS는 임시 저장소이고, Primary를 스팟으로 두면 회수 시 클러스터 전체가 멈춘다.
+**Answer: B**  
+Explanation: Task 노드는 HDFS를 저장하지 않아 스팟 회수에 안전하고, 영구 데이터는 S3(EMRFS)에 두어 컴퓨트-스토리지를 분리하며, Transient 클러스터로 작업 시에만 띄우는 것이 정석이다. HDFS는 임시 저장소이고, Primary를 스팟으로 두면 회수 시 클러스터 전체가 멈춘다.
 
 ---
 
-**문제 4.** Athena 스캔 비용이 급증했다. 데이터는 단일 Gzip CSV로 저장돼 있고 쿼리는 최근 며칠·특정 컬럼만 본다. 다음 중 비용 절감에 도움이 되지 않는 조치는?
+**Question 4.** Athena 스캔 비용이 급증했다. 데이터는 단일 Gzip CSV로 저장돼 있고 쿼리는 최근 며칠·특정 컬럼만 본다. 다음 중 비용 절감에 도움이 되지 않는 조치는?
 
 A) Parquet 같은 열 기반 포맷으로 변환  
 B) year/month/day로 파티셔닝  
 C) user_id 같은 고카디널리티 컬럼으로 잘게 파티셔닝하고 파일을 더 쪼갠다  
 D) 작은 파일을 128MB~1GB로 컴팩션하고 분할 가능한 Snappy 압축 사용  
 
-**정답: C**  
-해설: 고카디널리티 컬럼으로 파티셔닝하고 파일을 더 쪼개면 파티션 폭증과 작은 파일 문제로 오히려 성능·비용이 악화된다. 열 포맷 전환, 날짜 파티셔닝, 컴팩션과 분할 가능 압축은 모두 스캔량을 줄이는 올바른 처방이다.
+**Answer: C**  
+Explanation: 고카디널리티 컬럼으로 파티셔닝하고 파일을 더 쪼개면 파티션 폭증과 작은 파일 문제로 오히려 성능·비용이 악화된다. 열 포맷 전환, 날짜 파티셔닝, 컴팩션과 분할 가능 압축은 모두 스캔량을 줄이는 올바른 처방이다.
 
 ---
 
-**문제 5.** 다음 중 도구와 대표 용도의 연결이 잘못된 것은?
+**Question 5.** 다음 중 도구와 대표 용도의 연결이 잘못된 것은?
 
 A) Lambda — S3에 도착한 작은 파일을 즉시 정제하는 이벤트 기반 경량 변환  
 B) MWAA — 기존 Airflow DAG를 재사용하며 멀티 클라우드를 조율하는 복잡한 워크플로  
 C) Glue Workflows — 다양한 비-Glue 서비스를 복잡한 분기와 함께 조율하는 범용 오케스트레이션  
 D) Parquet — 분석 쿼리에서 컬럼 프루닝으로 스캔량을 줄이는 열 기반 포맷  
 
-**정답: C**  
-해설: Glue Workflows는 Glue 크롤러·작업에 거의 국한된 경량 오케스트레이션으로, 다양한 비-Glue 서비스와 복잡한 분기 조율에는 약하다. 그 역할은 Step Functions나 MWAA가 맡는다. 나머지 연결(Lambda·MWAA·Parquet)은 모두 올바르다.
+**Answer: C**  
+Explanation: Glue Workflows는 Glue 크롤러·작업에 거의 국한된 경량 오케스트레이션으로, 다양한 비-Glue 서비스와 복잡한 분기 조율에는 약하다. 그 역할은 Step Functions나 MWAA가 맡는다. 나머지 연결(Lambda·MWAA·Parquet)은 모두 올바르다.
 
 ---

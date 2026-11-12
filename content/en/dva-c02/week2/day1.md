@@ -180,96 +180,96 @@ In the next article, we look at EC2's network controls — security groups, key 
 
 ## 📝 Practice Questions
 
-**문제 1.** A company is evaluating a switch from c5.xlarge (Intel) to c6g.xlarge (Graviton). What's required to keep the same performance?
+**Question 1.** A company is evaluating a switch from c5.xlarge (Intel) to c6g.xlarge (Graviton). What's required to keep the same performance?
 
 A) It can switch as-is with no code changes
 B) A recompile for the ARM64 architecture is required (or use a multi-architecture runtime like Java/Python)
 C) Additional licensing costs are incurred
 D) The EBS volume must also be converted to ARM (impossible)
 
-**정답: B**
-해설: Graviton is an ARM64 architecture, so it can't run x86-64 binaries directly. Compiled languages like C/C++/Go/Rust need a recompile, while interpreted/JIT languages like Java/Python/Node.js run as-is. Container images also need a multi-arch build tagged `linux/arm64`. AWS provides a [Porting Advisor](https://github.com/aws/porting-advisor-for-graviton) for Graviton migrations. At roughly 20% cheaper for the same performance, it comes up frequently as the answer in cost-optimization scenarios.
+**Answer: B**
+Explanation: Graviton is an ARM64 architecture, so it can't run x86-64 binaries directly. Compiled languages like C/C++/Go/Rust need a recompile, while interpreted/JIT languages like Java/Python/Node.js run as-is. Container images also need a multi-arch build tagged `linux/arm64`. AWS provides a [Porting Advisor](https://github.com/aws/porting-advisor-for-graviton) for Graviton migrations. At roughly 20% cheaper for the same performance, it comes up frequently as the answer in cost-optimization scenarios.
 
 ---
 
-**문제 2.** CPU utilization on a t3.medium instance is always above 50%. What's the cause of the bill coming in far more expensive than expected?
+**Question 2.** CPU utilization on a t3.medium instance is always above 50%. What's the cause of the bill coming in far more expensive than expected?
 
 A) A bug in the AWS billing system
 B) t3 defaults to unlimited mode, so exceeding the baseline (20%) incurs additional cost
 C) An instance in another region is being billed by mistake
 D) EBS volume cost
 
-**정답: B**
-해설: t3 defaults to unlimited mode, so once it exceeds baseline CPU (20% for t3.medium) it uses surplus credits, and when the surplus credit balance hits 0, additional charges are billed. For a workload that always exceeds baseline, it's more cost-effective to switch to a fixed-performance family like m5 or c5. You can track it with the CloudWatch `CPUSurplusCreditBalance` and `CPUSurplusCreditsCharged` metrics.
+**Answer: B**
+Explanation: t3 defaults to unlimited mode, so once it exceeds baseline CPU (20% for t3.medium) it uses surplus credits, and when the surplus credit balance hits 0, additional charges are billed. For a workload that always exceeds baseline, it's more cost-effective to switch to a fixed-performance family like m5 or c5. You can track it with the CloudWatch `CPUSurplusCreditBalance` and `CPUSurplusCreditsCharged` metrics.
 
 ---
 
-**문제 3.** A developer baked a DB password into user-data. After being flagged in a security audit, what's the most appropriate alternative?
+**Question 3.** A developer baked a DB password into user-data. After being flagged in a security audit, what's the most appropriate alternative?
 
 A) Encrypt the user-data
 B) Store the password in AWS Secrets Manager, grant the instance's IAM Role `secretsmanager:GetSecretValue` permission, and have user-data fetch it from Secrets Manager at boot
 C) Use the user-data briefly and then delete it
 D) Bake the password into the AMI
 
-**정답: B**
-해설: user-data can be read by anyone from IMDS, so it's unsuitable for storing passwords. The Secrets Manager + IAM Role pattern is the standard. Put only the "aws secretsmanager get-secret-value ..." command inside user-data and keep the actual password in Secrets Manager. Parameter Store's SecureString also works, but Secrets Manager's automatic rotation is more powerful. D fails for the same reason user-data does (the password leaks when the AMI is shared).
+**Answer: B**
+Explanation: user-data can be read by anyone from IMDS, so it's unsuitable for storing passwords. The Secrets Manager + IAM Role pattern is the standard. Put only the "aws secretsmanager get-secret-value ..." command inside user-data and keep the actual password in Secrets Manager. Parameter Store's SecureString also works, but Secrets Manager's automatic rotation is more powerful. D fails for the same reason user-data does (the password leaks when the AMI is shared).
 
 ---
 
-**문제 4.** You want to run an MPI-based HPC workload on EC2. To minimize latency between instances?
+**Question 4.** You want to run an MPI-based HPC workload on EC2. To minimize latency between instances?
 
 A) Spread placement group
 B) Cluster placement group + Enhanced Networking + Elastic Fabric Adapter
 C) Multi-AZ distributed placement
 D) Distribute across different regions
 
-**정답: B**
-해설: A cluster placement group places instances on the same rack/spine, cutting inter-instance latency to < 50μs. Combining Enhanced Networking (SR-IOV connects a virtual NIC directly to the host NIC) with EFA (Elastic Fabric Adapter, OS bypass for RDMA-like communication) is optimal for MPI workloads. The catch is that a single rack failure takes everything down, so fault tolerance is weak (HPC usually handles this with checkpointing).
+**Answer: B**
+Explanation: A cluster placement group places instances on the same rack/spine, cutting inter-instance latency to < 50μs. Combining Enhanced Networking (SR-IOV connects a virtual NIC directly to the host NIC) with EFA (Elastic Fabric Adapter, OS bypass for RDMA-like communication) is optimal for MPI workloads. The catch is that a single rack failure takes everything down, so fault tolerance is weak (HPC usually handles this with checkpointing).
 
 ---
 
-**문제 5.** Which of the following is the least suitable workload for a Spot Instance?
+**Question 5.** Which of the following is the least suitable workload for a Spot Instance?
 
 A) CI/CD build jobs
 B) ML model training (with checkpoint saving)
 C) An RDBMS primary DB
 D) Batch data transformation (Spark)
 
-**정답: C**
-해설: Spot is reclaimable after a 2-minute notice, so it's unsuitable for an always-on workload like a stateful primary DB. A, B, and D are all fault-tolerant (can restart from a checkpoint) or idempotent, so reclamation has little impact. For an RDBMS, the standard is to use a managed service like RDS Multi-AZ, or Reserved Instance / On-Demand if self-managed. Since a Spot reclamation only stops the instance with no extra charge, configuring an EBS root volume that preserves data is also key.
+**Answer: C**
+Explanation: Spot is reclaimable after a 2-minute notice, so it's unsuitable for an always-on workload like a stateful primary DB. A, B, and D are all fault-tolerant (can restart from a checkpoint) or idempotent, so reclamation has little impact. For an RDBMS, the standard is to use a managed service like RDS Multi-AZ, or Reserved Instance / On-Demand if self-managed. Since a Spot reclamation only stops the instance with no extra charge, configuring an EBS root volume that preserves data is also key.
 
 ---
 
-**문제 6.** You want to move an AMI from us-east-1 to ap-northeast-2. What's the most accurate method?
+**Question 6.** You want to move an AMI from us-east-1 to ap-northeast-2. What's the most accurate method?
 
 A) AMIs are global, so it's automatically available
 B) Copy it with `aws ec2 copy-image --source-region us-east-1 --source-image-id ami-... --region ap-northeast-2`
 C) Rebuild the instance and create a new AMI in ap-northeast-2
 D) Use the AMI ID as-is
 
-**정답: B**
-해설: AMIs exist per region. You can copy one to another region with the `CopyImage` API, which generates a new AMI ID and copies the EBS snapshots along with it (incurring data transfer costs). An encrypted AMI is re-encrypted with a KMS key in the destination region. A common exam trap: "trying to use the same AMI ID in another region" → always wrong. The ID differs per region.
+**Answer: B**
+Explanation: AMIs exist per region. You can copy one to another region with the `CopyImage` API, which generates a new AMI ID and copies the EBS snapshots along with it (incurring data transfer costs). An encrypted AMI is re-encrypted with a KMS key in the destination region. A common exam trap: "trying to use the same AMI ID in another region" → always wrong. The ID differs per region.
 
 ---
 
-**문제 7.** Which of the following is NOT information you can retrieve from an EC2 instance's IMDS endpoint (169.254.169.254)?
+**Question 7.** Which of the following is NOT information you can retrieve from an EC2 instance's IMDS endpoint (169.254.169.254)?
 
 A) The IAM Role's temporary credentials
 B) The instance ID, AMI ID, AZ
 C) The instance's hourly billing amount
 D) user-data
 
-**정답: C**
-해설: IMDS provides the instance's own metadata (ID, AZ, instance type, SG, IAM role credentials, user-data, etc.) but does not expose billing information. Billing is queried separately via AWS Cost Explorer or the Cost and Usage Report. You can inspect all IMDS paths with `aws ec2-instance-connect describe-instance-metadata` or, from inside the instance, `curl http://169.254.169.254/latest/meta-data/`. When using IMDSv2 you must first obtain a token via PUT.
+**Answer: C**
+Explanation: IMDS provides the instance's own metadata (ID, AZ, instance type, SG, IAM role credentials, user-data, etc.) but does not expose billing information. Billing is queried separately via AWS Cost Explorer or the Cost and Usage Report. You can inspect all IMDS paths with `aws ec2-instance-connect describe-instance-metadata` or, from inside the instance, `curl http://169.254.169.254/latest/meta-data/`. When using IMDSv2 you must first obtain a token via PUT.
 
 ---
 
-**문제 8.** An EC2 Spot instance has received a 2-minute interruption notice. What's the most appropriate response?
+**Question 8.** An EC2 Spot instance has received a 2-minute interruption notice. What's the most appropriate response?
 
 A) Don't terminate the instance and start a new one in a different region
 B) Monitor the IMDS `spot/instance-action` signal, and when received, drain in-flight requests and then shut down gracefully
 C) Ignore it and keep running the workload
 D) Revoke the IAM Role
 
-**정답: B**
-해설: The Spot interruption notice arrives at the IMDS endpoint `http://169.254.169.254/latest/meta-data/spot/instance-action`. The workload should pick up this signal by polling or via EventBridge and then (1) stop accepting new requests, (2) finish in-flight requests, (3) save a state checkpoint, and (4) run the shutdown sequence. Combined with the ALB Target Group's deregistration delay, you can handle reclamation with no user impact.
+**Answer: B**
+Explanation: The Spot interruption notice arrives at the IMDS endpoint `http://169.254.169.254/latest/meta-data/spot/instance-action`. The workload should pick up this signal by polling or via EventBridge and then (1) stop accepting new requests, (2) finish in-flight requests, (3) save a state checkpoint, and (4) run the shutdown sequence. Combined with the ALB Target Group's deregistration delay, you can handle reclamation with no user impact.

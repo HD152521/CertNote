@@ -130,86 +130,86 @@ The S3 philosophy we looked at today — flat namespace, distributed replication
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following is a valid S3 bucket name?
+**Question 1.** Which of the following is a valid S3 bucket name?
 
 A) MyCompanyBucket
 B) my.company.bucket
 C) my-company-bucket-2026
 D) 192.168.1.1-backup
 
-**정답: C**
-해설: S3 bucket names allow only lowercase letters, digits, and hyphens (dots are technically allowed too, but not recommended due to HTTPS certificate issues). A is invalid because it contains uppercase letters, and D is invalid because it is in IP-address format. B's dotted name is technically valid, but matching against a wildcard SSL certificate (`*.s3.amazonaws.com`) breaks, causing problems with HTTPS access. C is the most exemplary name.
+**Answer: C**
+Explanation: S3 bucket names allow only lowercase letters, digits, and hyphens (dots are technically allowed too, but not recommended due to HTTPS certificate issues). A is invalid because it contains uppercase letters, and D is invalid because it is in IP-address format. B's dotted name is technically valid, but matching against a wildcard SSL certificate (`*.s3.amazonaws.com`) breaks, causing problems with HTTPS access. C is the most exemplary name.
 
 ---
 
-**문제 2.** You want to store compliance logs that are accessed once a quarter but require the data immediately upon access. Which is the most cost-effective storage class?
+**Question 2.** You want to store compliance logs that are accessed once a quarter but require the data immediately upon access. Which is the most cost-effective storage class?
 
 A) S3 Standard
 B) S3 Standard-IA
 C) S3 Glacier Instant Retrieval
 D) S3 Glacier Flexible Retrieval
 
-**정답: C**
-해설: Glacier Instant Retrieval is optimized for a quarterly (90-days-or-more interval) access pattern and supports millisecond-level immediate retrieval. Standard is for frequently accessed data and is over-costly for quarterly access; Standard-IA has a 30-day minimum retention and supports immediate retrieval but has higher storage cost than Glacier IR. Glacier Flexible does not support immediate retrieval and requires 1–12 hours for recovery, so it does not meet the "needed immediately" requirement.
+**Answer: C**
+Explanation: Glacier Instant Retrieval is optimized for a quarterly (90-days-or-more interval) access pattern and supports millisecond-level immediate retrieval. Standard is for frequently accessed data and is over-costly for quarterly access; Standard-IA has a 30-day minimum retention and supports immediate retrieval but has higher storage cost than Glacier IR. Glacier Flexible does not support immediate retrieval and requires 1–12 hours for recovery, so it does not meet the "needed immediately" requirement.
 
 ---
 
-**문제 3.** In 2024, you uploaded a 10MB file to S3 Standard-IA and deleted it 20 days later. What storage cost is billed?
+**Question 3.** In 2024, you uploaded a 10MB file to S3 Standard-IA and deleted it 20 days later. What storage cost is billed?
 
 A) 20 days' worth of cost
 B) 30 days' worth of cost (minimum storage duration)
 C) An additional 10 days' worth of cost
 D) No cost (because it was deleted)
 
-**정답: B**
-해설: S3 Standard-IA has a minimum storage duration of 30 days. Even if you delete it after 20 days, AWS bills the remaining 10 days' worth of storage cost. This rule applies identically to Glacier Instant Retrieval (90 days), Glacier Flexible Retrieval (90 days), and Glacier Deep Archive (180 days). There is also a minimum object size (128KB) requirement, so small files are billed on a 128KB basis.
+**Answer: B**
+Explanation: S3 Standard-IA has a minimum storage duration of 30 days. Even if you delete it after 20 days, AWS bills the remaining 10 days' worth of storage cost. This rule applies identically to Glacier Instant Retrieval (90 days), Glacier Flexible Retrieval (90 days), and Glacier Deep Archive (180 days). There is also a minimum object size (128KB) requirement, so small files are billed on a 128KB basis.
 
 ---
 
-**문제 4.** Which is the correct description of S3 durability and availability?
+**Question 4.** Which is the correct description of S3 durability and availability?
 
 A) S3 Standard's durability is 99.99% and its availability is 99.999999999%
 B) One Zone-IA's durability is low because it stores data in a single AZ
 C) S3 Standard's durability is 99.999999999% and One Zone-IA has the same durability
 D) Glacier's durability is lower than S3 Standard's
 
-**정답: C**
-해설: The durability of all S3 storage classes is 99.999999999% (11 nines), the same. Durability means the probability of data loss; One Zone-IA achieves 11 nines through erasure coding within a single AZ. However, in the extreme case of an entire AZ being physically destroyed, there is a risk of data loss. What is low for One Zone-IA is not durability but **availability** (99.5%). B is half-right, but the phrasing "durability is low" is not accurate.
+**Answer: C**
+Explanation: The durability of all S3 storage classes is 99.999999999% (11 nines), the same. Durability means the probability of data loss; One Zone-IA achieves 11 nines through erasure coding within a single AZ. However, in the extreme case of an entire AZ being physically destroyed, there is a risk of data loss. What is low for One Zone-IA is not durability but **availability** (99.5%). B is half-right, but the phrasing "durability is low" is not accurate.
 
 ---
 
-**문제 5.** In which of the following situations should you NOT use S3 Intelligent-Tiering?
+**Question 5.** In which of the following situations should you NOT use S3 Intelligent-Tiering?
 
 A) Hundreds of thousands of large image files with irregular access patterns
 B) Millions of small log files (average size 50KB)
 C) A large dataset analyzed once every three months
 D) User-uploaded files whose access pattern is hard to predict
 
-**정답: B**
-해설: S3 Intelligent-Tiering incurs a monitoring fee of $0.0025 per object per month. The monthly storage cost of a 50KB file is about $0.0000115 (on Standard), so the monitoring fee of $0.0025 is more than 200 times the storage cost. AWS itself states in the official documentation that objects under 128KB are unsuitable for Intelligent-Tiering. The other choices are all ideal use cases for Intelligent-Tiering.
+**Answer: B**
+Explanation: S3 Intelligent-Tiering incurs a monitoring fee of $0.0025 per object per month. The monthly storage cost of a 50KB file is about $0.0000115 (on Standard), so the monitoring fee of $0.0025 is more than 200 times the storage cost. AWS itself states in the official documentation that objects under 128KB are unsuitable for Intelligent-Tiering. The other choices are all ideal use cases for Intelligent-Tiering.
 
 ---
 
-**문제 6.** What is the maximum size of a single object that can be uploaded with an S3 PUT request, and what method must you use to upload anything larger?
+**Question 6.** What is the maximum size of a single object that can be uploaded with an S3 PUT request, and what method must you use to upload anything larger?
 
 A) Up to 1GB, use S3 Transfer Acceleration
 B) Up to 5GB, use Multipart Upload
 C) Up to 5TB, no limit
 D) Up to 100MB, use Multipart Upload
 
-**정답: B**
-해설: With a single PUT request, you can upload up to 5GB. Objects exceeding 5GB must use Multipart Upload (up to 5TB), and Multipart Upload is also recommended for objects of 100MB or larger. With Multipart, on a failure you only need to retransmit the affected part, and parallel processing improves speed as well. Transfer Acceleration is a feature that provides fast uploads from anywhere in the world; it has nothing to do with size limits.
+**Answer: B**
+Explanation: With a single PUT request, you can upload up to 5GB. Objects exceeding 5GB must use Multipart Upload (up to 5TB), and Multipart Upload is also recommended for objects of 100MB or larger. With Multipart, on a failure you only need to retransmit the affected part, and parallel processing improves speed as well. Transfer Acceleration is a feature that provides fast uploads from anywhere in the world; it has nothing to do with size limits.
 
 ---
 
-**문제 7.** Which is the correct description of S3 Express One Zone?
+**Question 7.** Which is the correct description of S3 Express One Zone?
 
 A) It distributes data across multiple AZs to guarantee 11 nines of durability
 B) It can be used with the same API as a regular S3 bucket
 C) It uses the Directory Bucket type and provides sub-millisecond latency
 D) It is available in all regions
 
-**정답: C**
-해설: S3 Express One Zone uses a new type called a Directory Bucket, not the regular General Purpose Bucket. Because it stores data in a single AZ only, data is inaccessible on an AZ failure, and as of 2023 it is offered only in limited regions. Its sub-millisecond access latency is about 10 times faster than Standard's tens to hundreds of milliseconds. It is optimized for cases requiring repetitive data access, such as AI/ML training and HPC workloads.
+**Answer: C**
+Explanation: S3 Express One Zone uses a new type called a Directory Bucket, not the regular General Purpose Bucket. Because it stores data in a single AZ only, data is inaccessible on an AZ failure, and as of 2023 it is offered only in limited regions. Its sub-millisecond access latency is about 10 times faster than Standard's tens to hundreds of milliseconds. It is optimized for cases requiring repetitive data access, such as AI/ML training and HPC workloads.
 
 ---

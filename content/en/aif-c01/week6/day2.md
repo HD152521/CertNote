@@ -83,62 +83,62 @@ Next text organizes **Responsible AI and Security/Governance** (Domains 3·4) ma
 
 ## 📝 Practice Questions
 
-**문제 1.** Auto-extract text, tables, input form fields from scanned paper contract. Most fitting service?
+**Question 1.** Auto-extract text, tables, input form fields from scanned paper contract. Most fitting service?
 
 A) Amazon Comprehend  
 B) Amazon Textract  
 C) Amazon Polly  
 D) Amazon Translate  
 
-**정답: B**  
-해설: Core verb "extract" on document target = Textract. Comprehend analyzes text meaning/sentiment, Polly → text-to-speech, Translate does language translation — none match text·table extraction.
+**Answer: B**  
+Explanation: Core verb "extract" on document target = Textract. Comprehend analyzes text meaning/sentiment, Polly → text-to-speech, Translate does language translation — none match text·table extraction.
 
 ---
 
-**문제 2.** Without ML experts, want to call several companies' foundation models via single API and build generative AI app. Most fitting service?
+**Question 2.** Without ML experts, want to call several companies' foundation models via single API and build generative AI app. Most fitting service?
 
 A) Amazon SageMaker  
 B) Amazon Rekognition  
 C) Amazon Bedrock  
 D) Amazon Forecast  
 
-**정답: C**  
-해설: Bedrock lets you call multiple-provider FMs without infrastructure management via single API and customize/assemble RAG/agents. SageMaker is direct-train platform, Rekognition is image analysis, Forecast is time-series prediction — none match.
+**Answer: C**  
+Explanation: Bedrock lets you call multiple-provider FMs without infrastructure management via single API and customize/assemble RAG/agents. SageMaker is direct-train platform, Rekognition is image analysis, Forecast is time-series prediction — none match.
 
 ---
 
-**문제 3.** Data science team wants to directly train custom ML model with company data, tune it, deploy it, and post-deployment monitor drift. Most fitting?
+**Question 3.** Data science team wants to directly train custom ML model with company data, tune it, deploy it, and post-deployment monitor drift. Most fitting?
 
 A) Amazon SageMaker  
 B) Amazon Q Business  
 C) Amazon Lex  
 D) Amazon Kendra  
 
-**정답: A**  
-해설: Full ML lifecycle (data prep → train·tune·deploy·monitor) is SageMaker's domain. Q Business is work AI assistant, Lex is chatbot, Kendra is enterprise search — not custom-model-build purposes.
+**Answer: A**  
+Explanation: Full ML lifecycle (data prep → train·tune·deploy·monitor) is SageMaker's domain. Q Business is work AI assistant, Lex is chatbot, Kendra is enterprise search — not custom-model-build purposes.
 
 ---
 
-**문제 4.** Build customer voice/chat bot with intent recognition and conversation flow management specialization. What service?
+**Question 4.** Build customer voice/chat bot with intent recognition and conversation flow management specialization. What service?
 
 A) Amazon Polly  
 B) Amazon Transcribe  
 C) Amazon Lex  
 D) Amazon Personalize  
 
-**정답: C**  
-해설: Lex is intent-slot-based conversation chatbot/voice bot builder. Polly = text-to-speech, Transcribe = speech-to-text conversion only, Personalize = recommendation engine — none handle conversation flow.
+**Answer: C**  
+Explanation: Lex is intent-slot-based conversation chatbot/voice bot builder. Polly = text-to-speech, Transcribe = speech-to-text conversion only, Personalize = recommendation engine — none handle conversation flow.
 
 ---
 
-**문제 5.** Critical difference between Bedrock and SageMaker?
+**Question 5.** Critical difference between Bedrock and SageMaker?
 
 A) Bedrock uses ready-made foundation models, SageMaker builds custom models from scratch·training directly  
 B) Identical, names only differ  
 C) Bedrock image-only, SageMaker text-only  
 D) SageMaker can't train models  
 
-**정답: A**  
-해설: Bedrock borrows pre-trained FMs from multiple providers, SageMaker builds/trains custom models with own data. Completely different purposes (B wrong), no data-type exclusivity (C wrong), SageMaker core is training (D wrong).
+**Answer: A**  
+Explanation: Bedrock borrows pre-trained FMs from multiple providers, SageMaker builds/trains custom models with own data. Completely different purposes (B wrong), no data-type exclusivity (C wrong), SageMaker core is training (D wrong).
 
 ---

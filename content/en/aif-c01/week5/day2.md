@@ -86,62 +86,62 @@ Tomorrow we broaden our perspective to **AI Security** — least privilege IAM, 
 
 ## 📝 Practice Questions
 
-**문제 1.** A data scientist wants to measure whether specific age groups are overrepresented in training data and check if model prediction results are discriminatory between groups. They also want to explain the basis of each prediction (feature contribution). What's the most appropriate AWS tool?
+**Question 1.** A data scientist wants to measure whether specific age groups are overrepresented in training data and check if model prediction results are discriminatory between groups. They also want to explain the basis of each prediction (feature contribution). What's the most appropriate AWS tool?
 
 A) Amazon Bedrock Guardrails  
 B) Amazon SageMaker Clarify  
 C) AWS AI Service Cards  
 D) Amazon SageMaker Model Monitor  
 
-**정답: B**  
-해설: SageMaker Clarify provides both pre- and post-training bias measurement and SHAP-based feature contribution (explainability). A's Guardrails is a generative AI output safety mechanism, C's AI Service Cards are transparency documents, and D's Model Monitor is a post-deployment drift monitoring tool whose primary function is not bias measurement and explanation.
+**Answer: B**  
+Explanation: SageMaker Clarify provides both pre- and post-training bias measurement and SHAP-based feature contribution (explainability). A's Guardrails is a generative AI output safety mechanism, C's AI Service Cards are transparency documents, and D's Model Monitor is a post-deployment drift monitoring tool whose primary function is not bias measurement and explanation.
 
 ---
 
-**문제 2.** A generative AI chatbot needs to mask personal ID numbers and card numbers in user input, block profanity, and prevent covering specific topics like "investment recommendations." What's the appropriate feature?
+**Question 2.** A generative AI chatbot needs to mask personal ID numbers and card numbers in user input, block profanity, and prevent covering specific topics like "investment recommendations." What's the appropriate feature?
 
 A) Amazon SageMaker Model Monitor  
 B) AWS CloudTrail  
 C) Amazon Bedrock Guardrails  
 D) Amazon SageMaker Clarify  
 
-**정답: C**  
-해설: Bedrock Guardrails provides PII filtering (masking), content filtering (profanity blocking), and denied topics (topic restriction) as one unified policy. A is for model quality monitoring, B is for API call audit logging, and D is for bias and explanation tools that don't match these requirements.
+**Answer: C**  
+Explanation: Bedrock Guardrails provides PII filtering (masking), content filtering (profanity blocking), and denied topics (topic restriction) as one unified policy. A is for model quality monitoring, B is for API call audit logging, and D is for bias and explanation tools that don't match these requirements.
 
 ---
 
-**문제 3.** Which statement about Amazon SageMaker Model Monitor is correct?
+**Question 3.** Which statement about Amazon SageMaker Model Monitor is correct?
 
 A) It detects data drift and quality degradation of deployed models and sends alerts  
 B) When it detects problems, it automatically retrains and redeploys the model  
 C) It's a tool that blocks harmful content in generative AI output  
 D) It's a document that discloses limitations of AWS AI services  
 
-**정답: A**  
-해설: Model Monitor supervises data quality, model quality, and bias drift of deployed endpoints and sends CloudWatch alerts. B is incorrect because it doesn't auto-retrain (humans decide), C is the role of Guardrails, and D is the role of AI Service Cards.
+**Answer: A**  
+Explanation: Model Monitor supervises data quality, model quality, and bias drift of deployed endpoints and sends CloudWatch alerts. B is incorrect because it doesn't auto-retrain (humans decide), C is the role of Guardrails, and D is the role of AI Service Cards.
 
 ---
 
-**문제 4.** What is the primary purpose of AWS AI Service Cards?
+**Question 4.** What is the primary purpose of AWS AI Service Cards?
 
 A) To speed up model training  
 B) To provide transparency by publicly disclosing recommended use cases, limitations, and fairness considerations of AWS AI services  
 C) To encrypt personal information  
 D) To automatically remove model bias  
 
-**정답: B**  
-해설: AI Service Cards publicly disclose intended use cases, design choices, limitations, and responsible use guidelines for services. A is unrelated to performance, C is not an encryption feature, and D does not automatically remove bias (the purpose is providing transparency information).
+**Answer: B**  
+Explanation: AI Service Cards publicly disclose intended use cases, design choices, limitations, and responsible use guidelines for services. A is unrelated to performance, C is not an encryption feature, and D does not automatically remove bias (the purpose is providing transparency information).
 
 ---
 
-**문제 5.** Which connection between responsible AI principle and supporting AWS tool is correct?
+**Question 5.** Which connection between responsible AI principle and supporting AWS tool is correct?
 
 A) Transparency - Amazon Bedrock Guardrails  
 B) Bias·Explainability - Amazon SageMaker Clarify  
 C) Safety - AWS AI Service Cards  
 D) Operational Monitoring - Amazon Bedrock Guardrails  
 
-**정답: B**  
-해설: SageMaker Clarify supports both bias measurement and explainability. A pairs transparency with AI Service Cards, C pairs safety with Guardrails, and D pairs operational monitoring with Model Monitor, so all other pairs are mismatched.
+**Answer: B**  
+Explanation: SageMaker Clarify supports both bias measurement and explainability. A pairs transparency with AI Service Cards, C pairs safety with Guardrails, and D pairs operational monitoring with Model Monitor, so all other pairs are mismatched.
 
 ---

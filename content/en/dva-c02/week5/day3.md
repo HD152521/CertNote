@@ -207,86 +207,86 @@ The S3 security layers we looked at today — Block Public Access, bucket polici
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following is the correct way to configure a bucket policy to allow only HTTPS in S3?
+**Question 1.** Which of the following is the correct way to configure a bucket policy to allow only HTTPS in S3?
 
 A) Add an Allow on `aws:SecureTransport: true`
 B) Add a Deny on `aws:SecureTransport: false`
 C) Enable the bucket's SSL setting
 D) Enable the HTTP-blocking option in Block Public Access
 
-**정답: B**
-해설: To enforce HTTPS, you must explicitly deny HTTP requests. If you place `"Effect": "Deny"` on `"Condition": {"Bool": {"aws:SecureTransport": "false"}}`, requests where SecureTransport (HTTPS) is false — that is, HTTP requests — are denied. If, as in A, you only place an Allow on `true`, HTTP can be allowed in combination with another Allow policy. The separate bucket option "enable SSL setting" in C does not exist. Block Public Access has nothing to do with HTTP/HTTPS.
+**Answer: B**
+Explanation: To enforce HTTPS, you must explicitly deny HTTP requests. If you place `"Effect": "Deny"` on `"Condition": {"Bool": {"aws:SecureTransport": "false"}}`, requests where SecureTransport (HTTPS) is false — that is, HTTP requests — are denied. If, as in A, you only place an Allow on `true`, HTTP can be allowed in combination with another Allow policy. The separate bucket option "enable SSL setting" in C does not exist. Block Public Access has nothing to do with HTTP/HTTPS.
 
 ---
 
-**문제 2.** On an S3 bucket using SSE-KMS encryption, a KMS API limit error occurs at thousands of requests per second. What is the most effective solution?
+**Question 2.** On an S3 bucket using SSE-KMS encryption, a KMS API limit error occurs at thousands of requests per second. What is the most effective solution?
 
 A) Change the encryption method to SSE-S3
 B) Distribute the bucket across multiple regions
 C) Enable the S3 Bucket Key
 D) Submit only a KMS service quota increase request
 
-**정답: C**
-해설: Enabling the S3 Bucket Key generates a bucket-level key once and reuses it for individual object encryption, dramatically reducing KMS API calls (up to 99% reduction). Changing to SSE-S3 (A) means giving up KMS audit logs and fine-grained key control. Region distribution (B) does not solve the KMS limit. A quota increase request (D) alone will hit the same problem again when traffic grows over the long term. Bucket Key resolves the root cause while keeping the encryption method.
+**Answer: C**
+Explanation: Enabling the S3 Bucket Key generates a bucket-level key once and reuses it for individual object encryption, dramatically reducing KMS API calls (up to 99% reduction). Changing to SSE-S3 (A) means giving up KMS audit logs and fine-grained key control. Region distribution (B) does not solve the KMS limit. A quota increase request (D) alone will hit the same problem again when traffic grows over the long term. Bucket Key resolves the root cause while keeping the encryption method.
 
 ---
 
-**문제 3.** When a user in a different AWS account tries to download an SSE-KMS-encrypted S3 object, an AccessDenied error occurs. What settings must you check?
+**Question 3.** When a user in a different AWS account tries to download an SSE-KMS-encrypted S3 object, an AccessDenied error occurs. What settings must you check?
 
 A) Only the Block Public Access setting
 B) Only that the account is Allowed in the bucket policy
 C) Both the Principal Allow for that account in the KMS key policy and the kms:Decrypt permission in that account's IAM policy
 D) Change the encryption method to SSE-C
 
-**정답: C**
-해설: To download an SSE-KMS-encrypted object from a different account, permissions at two layers are both required. ① In the KMS key policy, the other account's user/role must be allowed as a Principal — the key policy is evaluated independently of the IAM policy. ② The other account's IAM policy must have the `kms:Decrypt` permission. Configuring only the bucket policy and omitting the KMS key policy is the most common mistake. You must have both S3 access to the bucket and KMS access to the KMS key.
+**Answer: C**
+Explanation: To download an SSE-KMS-encrypted object from a different account, permissions at two layers are both required. ① In the KMS key policy, the other account's user/role must be allowed as a Principal — the key policy is evaluated independently of the IAM policy. ② The other account's IAM policy must have the `kms:Decrypt` permission. Configuring only the bucket policy and omitting the KMS key policy is the most common mistake. You must have both S3 access to the bucket and KMS access to the KMS key.
 
 ---
 
-**문제 4.** A company has a requirement where three teams (finance, HR, dev) must access different prefixes in an S3 bucket, and the HR team must access only from within the VPC. What is the most suitable solution?
+**Question 4.** A company has a requirement where three teams (finance, HR, dev) must access different prefixes in an S3 bucket, and the HR team must access only from within the VPC. What is the most suitable solution?
 
 A) Create a separate S3 bucket per team
 B) Handle all conditions with a single complex bucket policy
 C) Create an S3 Access Point per team and set a VPC restriction on the HR Access Point
 D) Manage with IAM policies only
 
-**정답: C**
-해설: S3 Access Points are optimized for managing independent access policies per team. Attach a policy that accesses only the relevant prefix to each team's Access Point, and add a VPC restriction (vpc-restriction) to the HR Access Point. Separate buckets per team (A) scatter the data and make management complex. A single complex bucket policy (B) can become thousands of lines with a high risk of mistakes. With IAM policies alone (D), it is hard to express resource-level conditions such as VPC-based access restriction.
+**Answer: C**
+Explanation: S3 Access Points are optimized for managing independent access policies per team. Attach a policy that accesses only the relevant prefix to each team's Access Point, and add a VPC restriction (vpc-restriction) to the HR Access Point. Separate buckets per team (A) scatter the data and make management complex. A single complex bucket policy (B) can become thousands of lines with a high risk of mistakes. With IAM policies alone (D), it is hard to express resource-level conditions such as VPC-based access restriction.
 
 ---
 
-**문제 5.** Which is the correct description of SSE-C encryption?
+**Question 5.** Which is the correct description of SSE-C encryption?
 
 A) AWS securely stores the customer's key in KMS
 B) The key is passed in the request header, and AWS does not store the key. HTTPS is required.
 C) It can be used over HTTP too, and AWS manages key rotation
 D) Key usage history is automatically recorded in CloudTrail
 
-**정답: B**
-해설: In SSE-C, the customer provides the encryption key in a header (`x-amz-server-side-encryption-customer-key`) on every request. AWS uses this key for encryption/decryption and then discards it immediately, without storing it. Therefore, if you lose the key, the data cannot be recovered. HTTPS is required to prevent the key from being exposed in plaintext on the network when it is transmitted as an HTTP header. Because AWS cannot access the key itself, key usage history is not recorded in CloudTrail.
+**Answer: B**
+Explanation: In SSE-C, the customer provides the encryption key in a header (`x-amz-server-side-encryption-customer-key`) on every request. AWS uses this key for encryption/decryption and then discards it immediately, without storing it. Therefore, if you lose the key, the data cannot be recovered. HTTPS is required to prevent the key from being exposed in plaintext on the network when it is transmitted as an HTTP header. Because AWS cannot access the key itself, key usage history is not recorded in CloudTrail.
 
 ---
 
-**문제 6.** With account-level Block Public Access enabled on an S3 bucket, you allowed GetObject with `"Principal": "*"` in the bucket policy. What happens when you access that object from the internet?
+**Question 6.** With account-level Block Public Access enabled on an S3 bucket, you allowed GetObject with `"Principal": "*"` in the bucket policy. What happens when you access that object from the internet?
 
 A) The bucket policy takes precedence, so access is allowed
 B) The account-level Block Public Access takes precedence, so access is denied
 C) The policy applied last takes precedence
 D) The two settings conflict, so an error occurs
 
-**정답: B**
-해설: Account-level Block Public Access takes precedence over the bucket policy. Even if the bucket policy allowed public (`"Principal": "*"`), public access is blocked if account-level or bucket-level Block Public Access is enabled. This is why Block Public Access acts as the "last line of defense" — even if you accidentally open the bucket policy to public, Block Public Access stops it. Since 2023, all four Block Public Access settings are enabled by default on every new bucket.
+**Answer: B**
+Explanation: Account-level Block Public Access takes precedence over the bucket policy. Even if the bucket policy allowed public (`"Principal": "*"`), public access is blocked if account-level or bucket-level Block Public Access is enabled. This is why Block Public Access acts as the "last line of defense" — even if you accidentally open the bucket policy to public, Block Public Access stops it. Since 2023, all four Block Public Access settings are enabled by default on every new bucket.
 
 ---
 
-**문제 7.** Which of the following is correct regarding the post-2023 changes to S3 encryption?
+**Question 7.** Which of the following is correct regarding the post-2023 changes to S3 encryption?
 
 A) SSE-KMS is the default encryption method for all new objects
 B) SSE-S3 (AES-256) is the default encryption method for all new objects
 C) Encryption is still optional and disabled by default
 D) CSE (client-side encryption) is the default
 
-**정답: B**
-해설: Since 2023, all new objects in new S3 buckets are automatically encrypted with SSE-S3 (AES-256). Previously encryption was optional, but now it is the default behavior. There is no option to disable encryption. Existing objects already stored without encryption are unaffected, and if you need stronger encryption you can change the bucket's default encryption setting to SSE-KMS. On the exam, for the question "Are S3 objects encrypted?", the answer since 2023 is "Yes, always encrypted with SSE-S3 or stronger."
+**Answer: B**
+Explanation: Since 2023, all new objects in new S3 buckets are automatically encrypted with SSE-S3 (AES-256). Previously encryption was optional, but now it is the default behavior. There is no option to disable encryption. Existing objects already stored without encryption are unaffected, and if you need stronger encryption you can change the bucket's default encryption setting to SSE-KMS. On the exam, for the question "Are S3 objects encrypted?", the answer since 2023 is "Yes, always encrypted with SSE-S3 or stronger."
 
 ---

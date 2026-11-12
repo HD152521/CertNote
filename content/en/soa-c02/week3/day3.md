@@ -326,72 +326,72 @@ CloudWatch Agent is not a tool to install and forget. It's the core of a complet
 
 ## 📝 Practice Questions
 
-**문제 1.** EC2 인스턴스에서 메모리 사용률을 CloudWatch 알람으로 모니터링하려 한다. 가장 먼저 해야 할 작업은?
+**Question 1.** EC2 인스턴스에서 메모리 사용률을 CloudWatch 알람으로 모니터링하려 한다. 가장 먼저 해야 할 작업은?
 
 A) CloudWatch 콘솔에서 `AWS/EC2` 네임스페이스의 `MemoryUtilization` 메트릭으로 알람 생성
 B) EC2 Detailed Monitoring 활성화
 C) CloudWatch Agent 설치 및 `mem` 플러그인 설정 후 Custom Namespace로 메트릭 발행
 D) CloudFormation으로 인스턴스를 재생성
 
-**정답: C**
-해설: 메모리는 EC2 기본 메트릭에 없다. 하이퍼바이저가 게스트 OS 내부 메모리 상태를 볼 수 없기 때문이다. CloudWatch Agent를 설치하고 설정 파일에 `mem` 섹션을 추가해야 `CWAgent`(또는 커스텀) 네임스페이스에 `mem_used_percent` 메트릭이 발행된다. Detailed Monitoring은 CPU 등 기본 메트릭의 수집 간격을 5분에서 1분으로 줄일 뿐이다.
+**Answer: C**
+Explanation: 메모리는 EC2 기본 메트릭에 없다. 하이퍼바이저가 게스트 OS 내부 메모리 상태를 볼 수 없기 때문이다. CloudWatch Agent를 설치하고 설정 파일에 `mem` 섹션을 추가해야 `CWAgent`(또는 커스텀) 네임스페이스에 `mem_used_percent` 메트릭이 발행된다. Detailed Monitoring은 CPU 등 기본 메트릭의 수집 간격을 5분에서 1분으로 줄일 뿐이다.
 
 ---
 
-**문제 2.** 200대 EC2 인스턴스에 동일한 CloudWatch Agent 설정을 배포하고, 이후 신규 인스턴스에도 자동 적용하며, 누군가 Agent를 중지해도 자동 복구되게 하려면?
+**Question 2.** 200대 EC2 인스턴스에 동일한 CloudWatch Agent 설정을 배포하고, 이후 신규 인스턴스에도 자동 적용하며, 누군가 Agent를 중지해도 자동 복구되게 하려면?
 
 A) 각 인스턴스에 SSH로 수동 설치
 B) User Data 스크립트에 설치 명령 포함
 C) SSM Parameter Store에 설정 저장 + State Manager Association (태그 기반 대상 + 24시간 주기)
 D) CloudFormation으로 인스턴스를 모두 재배포
 
-**정답: C**
-해설: State Manager Association이 "지속적 desired state enforcement"를 구현한다. 태그 기반 대상이므로 신규 인스턴스가 해당 태그를 달면 자동 포함된다. 주기적 실행(24시간 rate)으로 누군가 설정을 변경하거나 Agent를 중지해도 다음 실행 시 자동 교정된다. User Data는 인스턴스 최초 시작 시 1회만 실행되므로 drift 교정이 불가능하다.
+**Answer: C**
+Explanation: State Manager Association이 "지속적 desired state enforcement"를 구현한다. 태그 기반 대상이므로 신규 인스턴스가 해당 태그를 달면 자동 포함된다. 주기적 실행(24시간 rate)으로 누군가 설정을 변경하거나 Agent를 중지해도 다음 실행 시 자동 교정된다. User Data는 인스턴스 최초 시작 시 1회만 실행되므로 drift 교정이 불가능하다.
 
 ---
 
-**문제 3.** Node.js 애플리케이션의 커스텀 비즈니스 메트릭(주문 수, 처리 시간)을 CloudWatch에 발행하는 가장 간단한 방법은?
+**Question 3.** Node.js 애플리케이션의 커스텀 비즈니스 메트릭(주문 수, 처리 시간)을 CloudWatch에 발행하는 가장 간단한 방법은?
 
 A) AWS SDK PutMetricData를 코드에 직접 호출
 B) CloudWatch Agent의 StatsD 수신 기능을 사용해 UDP 8125로 메트릭 전송
 C) CloudWatch Logs에 로그를 쓰고 Metric Filter로 추출
 D) Lambda를 통해 CloudWatch에 중계
 
-**정답: B**
-해설: StatsD는 UDP로 메트릭을 보내는 경량 프로토콜이다. `statsd` npm 패키지로 `c.incr('orders.created')` 한 줄이면 된다. CloudWatch Agent가 8125 포트에서 수신 대기하다가 CloudWatch로 발행한다. AWS SDK PutMetricData도 가능하지만 HTTP API 호출이므로 오버헤드가 있고 에러 처리를 별도로 해야 한다. StatsD는 UDP이므로 실패해도 애플리케이션에 영향 없다.
+**Answer: B**
+Explanation: StatsD는 UDP로 메트릭을 보내는 경량 프로토콜이다. `statsd` npm 패키지로 `c.incr('orders.created')` 한 줄이면 된다. CloudWatch Agent가 8125 포트에서 수신 대기하다가 CloudWatch로 발행한다. AWS SDK PutMetricData도 가능하지만 HTTP API 호출이므로 오버헤드가 있고 에러 처리를 별도로 해야 한다. StatsD는 UDP이므로 실패해도 애플리케이션에 영향 없다.
 
 ---
 
-**문제 4.** CloudWatch Agent가 설치됐는데 메트릭이 CloudWatch에 보이지 않는다. 트러블슈팅 첫 번째 확인 사항은?
+**Question 4.** CloudWatch Agent가 설치됐는데 메트릭이 CloudWatch에 보이지 않는다. 트러블슈팅 첫 번째 확인 사항은?
 
 A) Agent 버전이 최신인지 확인
 B) EC2 인스턴스 Role에 `CloudWatchAgentServerPolicy`가 부여됐는지 확인
 C) 인스턴스 OS 종류 확인
 D) CloudWatch 서비스 상태 확인
 
-**정답: B**
-해설: IAM 권한 누락이 가장 흔한 원인이다. Agent가 `cloudwatch:PutMetricData`를 호출하려면 Role에 `CloudWatchAgentServerPolicy`가 필요하다. 권한이 없으면 Agent 로그에 `AccessDeniedException`이 남는다. 트러블슈팅 순서: IAM → Agent 상태(`agent-ctl -a status`) → Agent 로그(`/opt/aws/amazon-cloudwatch-agent/logs/`) → 시간 동기화 → 네트워크(VPC Endpoint 또는 NAT GW).
+**Answer: B**
+Explanation: IAM 권한 누락이 가장 흔한 원인이다. Agent가 `cloudwatch:PutMetricData`를 호출하려면 Role에 `CloudWatchAgentServerPolicy`가 필요하다. 권한이 없으면 Agent 로그에 `AccessDeniedException`이 남는다. 트러블슈팅 순서: IAM → Agent 상태(`agent-ctl -a status`) → Agent 로그(`/opt/aws/amazon-cloudwatch-agent/logs/`) → 시간 동기화 → 네트워크(VPC Endpoint 또는 NAT GW).
 
 ---
 
-**문제 5.** procstat 플러그인으로 nginx 프로세스를 모니터링하고 파일 디스크립터 한도 초과를 예방하려면?
+**Question 5.** procstat 플러그인으로 nginx 프로세스를 모니터링하고 파일 디스크립터 한도 초과를 예방하려면?
 
 A) EC2 기본 메트릭의 `DiskReadOps`를 모니터링
 B) procstat에 `exe: nginx`로 설정하고 `num_fds` 측정값을 추가해 알람 임계값 설정
 C) CloudTrail로 nginx 프로세스 호출 추적
 D) X-Ray로 nginx 요청 추적
 
-**정답: B**
-해설: `num_fds`(열린 파일 디스크립터 수)는 procstat으로만 수집 가능한 OS 레벨 메트릭이다. Linux 기본 ulimit는 1024~65535 범위이며 이를 초과하면 `Too many open files` 에러가 발생한다. procstat 설정에 `exe: nginx`와 `measurement: ["num_fds"]`를 추가하고 한도의 80% 시점에 알람을 거는 것이 예방적 모니터링 표준이다. CloudTrail은 AWS API 호출을 추적하며 프로세스 내부 상태는 볼 수 없다.
+**Answer: B**
+Explanation: `num_fds`(열린 파일 디스크립터 수)는 procstat으로만 수집 가능한 OS 레벨 메트릭이다. Linux 기본 ulimit는 1024~65535 범위이며 이를 초과하면 `Too many open files` 에러가 발생한다. procstat 설정에 `exe: nginx`와 `measurement: ["num_fds"]`를 추가하고 한도의 80% 시점에 알람을 거는 것이 예방적 모니터링 표준이다. CloudTrail은 AWS API 호출을 추적하며 프로세스 내부 상태는 볼 수 없다.
 
 ---
 
-**문제 6.** CloudWatch Agent 설정의 `retention_in_days: 30`을 설정했는데, 이미 존재하는 Log Group의 보존 기간이 변경되지 않았다. 이유는?
+**Question 6.** CloudWatch Agent 설정의 `retention_in_days: 30`을 설정했는데, 이미 존재하는 Log Group의 보존 기간이 변경되지 않았다. 이유는?
 
 A) 권한 부족
 B) `retention_in_days`는 Log Group 최초 생성 시에만 적용되며 기존 Log Group은 변경하지 않는다
 C) Agent 재시작이 필요하다
 D) CloudFormation으로만 변경 가능하다
 
-**정답: B**
-해설: Agent의 `retention_in_days` 설정은 해당 Log Group이 존재하지 않을 때 새로 생성하면서 보존 기간을 설정한다. 이미 존재하는 Log Group의 보존 기간은 변경하지 않는다. 기존 Log Group의 보존 기간을 변경하려면 콘솔, CLI(`aws logs put-retention-policy`), 또는 Terraform/CloudFormation으로 별도로 업데이트해야 한다. 운영 표준으로는 Log Group 보존 기간을 Terraform에서 중앙 관리하고 Agent는 메트릭/로그 수집에만 집중시키는 것이 권장된다.
+**Answer: B**
+Explanation: Agent의 `retention_in_days` 설정은 해당 Log Group이 존재하지 않을 때 새로 생성하면서 보존 기간을 설정한다. 이미 존재하는 Log Group의 보존 기간은 변경하지 않는다. 기존 Log Group의 보존 기간을 변경하려면 콘솔, CLI(`aws logs put-retention-policy`), 또는 Terraform/CloudFormation으로 별도로 업데이트해야 한다. 운영 표준으로는 Log Group 보존 기간을 Terraform에서 중앙 관리하고 Agent는 메트릭/로그 수집에만 집중시키는 것이 권장된다.

@@ -139,62 +139,62 @@ with DAG("ml_retrain", schedule_interval="@daily") as dag:
 
 ## 📝 Practice Questions
 
-**문제 1.** SageMaker 엔드포인트, IAM 역할, 버킷을 dev/staging/prod에 동일하게 재현하고 변경을 버전 관리하려 한다. 가장 적절한 접근은?
+**Question 1.** SageMaker 엔드포인트, IAM 역할, 버킷을 dev/staging/prod에 동일하게 재현하고 변경을 버전 관리하려 한다. 가장 적절한 접근은?
 
 A) 콘솔에서 매번 수동 생성  
 B) CloudFormation/CDK로 인프라를 코드(IaC)로 정의  
 C) 각 환경마다 다른 사람이 임의로 구성  
 D) S3에 스크린샷을 저장  
 
-**정답: B**  
-해설: IaC(CloudFormation/CDK)는 인프라를 선언적 코드로 정의해 멱등성·재현성·환경 일관성을 제공한다. A·C는 드리프트와 비재현성을 낳고, D는 버전 관리·자동화가 전혀 안 된다.
+**Answer: B**  
+Explanation: IaC(CloudFormation/CDK)는 인프라를 선언적 코드로 정의해 멱등성·재현성·환경 일관성을 제공한다. A·C는 드리프트와 비재현성을 낳고, D는 버전 관리·자동화가 전혀 안 된다.
 
 ---
 
-**문제 2.** ML 워크플로가 Glue ETL → SageMaker 학습 → Lambda 후처리 → SNS 알림처럼 여러 AWS 서비스에 걸쳐 있고, 분기·재시도·오류 처리가 필요하다. 가장 적합한 오케스트레이터는?
+**Question 2.** ML 워크플로가 Glue ETL → SageMaker 학습 → Lambda 후처리 → SNS 알림처럼 여러 AWS 서비스에 걸쳐 있고, 분기·재시도·오류 처리가 필요하다. 가장 적합한 오케스트레이터는?
 
 A) SageMaker Pipelines  
 B) AWS Step Functions  
 C) EventBridge 단독  
 D) CodeCommit  
 
-**정답: B**  
-해설: Step Functions는 여러 AWS 서비스를 잇는 상태 머신으로 분기(Choice)·병렬·재시도·Catch를 표현한다. A는 SageMaker 작업 중심이라 서비스 전반 오케스트레이션엔 좁고, C는 트리거일 뿐 워크플로 제어가 없으며, D는 소스 저장소다.
+**Answer: B**  
+Explanation: Step Functions는 여러 AWS 서비스를 잇는 상태 머신으로 분기(Choice)·병렬·재시도·Catch를 표현한다. A는 SageMaker 작업 중심이라 서비스 전반 오케스트레이션엔 좁고, C는 트리거일 뿐 워크플로 제어가 없으며, D는 소스 저장소다.
 
 ---
 
-**문제 3.** SageMaker 작업만으로 구성된 ML 워크플로를 계보 추적과 Model Registry 통합까지 누리며 오케스트레이션하려 한다. 무엇이 가장 적합한가?
+**Question 3.** SageMaker 작업만으로 구성된 ML 워크플로를 계보 추적과 Model Registry 통합까지 누리며 오케스트레이션하려 한다. 무엇이 가장 적합한가?
 
 A) MWAA  
 B) Step Functions  
 C) SageMaker Pipelines  
 D) CloudFront  
 
-**정답: C**  
-해설: SageMaker 작업 중심이며 계보(lineage)·Registry 통합이 필요하면 SageMaker Pipelines가 가장 적합하다. A·B도 가능은 하나 SageMaker 네이티브 통합 이점이 약하고, D는 CDN으로 무관하다.
+**Answer: C**  
+Explanation: SageMaker 작업 중심이며 계보(lineage)·Registry 통합이 필요하면 SageMaker Pipelines가 가장 적합하다. A·B도 가능은 하나 SageMaker 네이티브 통합 이점이 약하고, D는 CDN으로 무관하다.
 
 ---
 
-**문제 4.** 조직이 이미 온프레미스를 포함한 복잡한 데이터 의존성을 Apache Airflow DAG로 운영 중이며, 이를 관리형으로 AWS에서 이어가려 한다. 가장 적절한 서비스는?
+**Question 4.** 조직이 이미 온프레미스를 포함한 복잡한 데이터 의존성을 Apache Airflow DAG로 운영 중이며, 이를 관리형으로 AWS에서 이어가려 한다. 가장 적절한 서비스는?
 
 A) Amazon MWAA  
 B) SageMaker Pipelines  
 C) AWS Batch  
 D) Amazon QuickSight  
 
-**정답: A**  
-해설: 기존 Airflow 자산·하이브리드·복잡한 DAG를 관리형으로 이어가려면 MWAA(Managed Workflows for Apache Airflow)가 적합하다. B는 SageMaker 네이티브로 Airflow 자산 재사용이 안 되고, C는 배치 컴퓨팅, D는 BI 시각화 도구다.
+**Answer: A**  
+Explanation: 기존 Airflow 자산·하이브리드·복잡한 DAG를 관리형으로 이어가려면 MWAA(Managed Workflows for Apache Airflow)가 적합하다. B는 SageMaker 네이티브로 Airflow 자산 재사용이 안 되고, C는 배치 컴퓨팅, D는 BI 시각화 도구다.
 
 ---
 
-**문제 5.** 매일 새벽 2시에 재학습 파이프라인을 자동으로 시작시키려 한다. 가장 단순하고 적절한 트리거 방법은?
+**Question 5.** 매일 새벽 2시에 재학습 파이프라인을 자동으로 시작시키려 한다. 가장 단순하고 적절한 트리거 방법은?
 
 A) EventBridge 스케줄 규칙(cron 식)으로 파이프라인 실행을 트리거  
 B) 사람이 매일 새벽 수동 실행  
 C) CloudFormation 스택을 매일 재배포  
 D) S3 버킷을 매일 새로 생성  
 
-**정답: A**  
-해설: EventBridge의 스케줄 규칙(cron/rate)은 정해진 시각에 워크플로를 트리거하는 표준 방법이다. B는 자동화가 아니고, C·D는 트리거 목적과 무관하며 부작용만 크다.
+**Answer: A**  
+Explanation: EventBridge의 스케줄 규칙(cron/rate)은 정해진 시각에 워크플로를 트리거하는 표준 방법이다. B는 자동화가 아니고, C·D는 트리거 목적과 무관하며 부작용만 크다.
 
 ---

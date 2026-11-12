@@ -71,62 +71,62 @@ Tomorrow, we'll cover how to measure whether models built with this prepared dat
 
 ## 📝 Practice Questions
 
-**문제 1.** 다음 중 비정형 데이터(Unstructured Data)에 해당하는 것은?
+**Question 1.** 다음 중 비정형 데이터(Unstructured Data)에 해당하는 것은?
 
 A) Rows and columns organized in a customer database table  
 B) Transaction history CSV consisting of date, amount, and account number  
 C) Customer-left free-form voice call recording  
 D) Excel spreadsheet with Age and Gender columns  
 
-**정답: C**  
-해설: Voice call recordings are unstructured data with no fixed row-column structure. Database tables, transaction history CSV, and Excel spreadsheets with defined columns are all structured data organized in rows and columns. Unstructured data requires additional processing to convert to numbers.
+**Answer: C**  
+Explanation: Voice call recordings are unstructured data with no fixed row-column structure. Database tables, transaction history CSV, and Excel spreadsheets with defined columns are all structured data organized in rows and columns. Unstructured data requires additional processing to convert to numbers.
 
 ---
 
-**문제 2.** 데이터를 학습용·검증용·테스트용으로 나누는 가장 근본적인 이유는?
+**Question 2.** 데이터를 학습용·검증용·테스트용으로 나누는 가장 근본적인 이유는?
 
 A) To reduce data storage costs  
 B) To fairly evaluate performance on data not used in training  
 C) To speed up model training  
 D) To encrypt the data  
 
-**정답: B**  
-해설: If we measure model performance on data it trained on, it's just "answering what it memorized," so we can't know its true ability. Therefore, evaluation on unseen data (test set) lets us fairly know the true performance on new data. Storage costs, training speed, and encryption are unrelated to data splitting's purpose.
+**Answer: B**  
+Explanation: If we measure model performance on data it trained on, it's just "answering what it memorized," so we can't know its true ability. Therefore, evaluation on unseen data (test set) lets us fairly know the true performance on new data. Storage costs, training speed, and encryption are unrelated to data splitting's purpose.
 
 ---
 
-**문제 3.** 테스트용으로 따로 떼어 둔 데이터가 학습 데이터에 섞여 들어가 평가 점수가 비현실적으로 높게 나오는 현상을 무엇이라 하는가?
+**Question 3.** 테스트용으로 따로 떼어 둔 데이터가 학습 데이터에 섞여 들어가 평가 점수가 비현실적으로 높게 나오는 현상을 무엇이라 하는가?
 
 A) Data Drift  
 B) Data Leakage  
 C) Underfitting  
 D) Class Imbalance  
 
-**정답: B**  
-해설: When test data that shouldn't be used in training accidentally gets mixed in during training, it's called data leakage. In this case, evaluation scores become inflated, diverging greatly from actual operational performance. Data drift is distribution change over time, underfitting is insufficient training, and class imbalance is skewed class ratios—all different concepts.
+**Answer: B**  
+Explanation: When test data that shouldn't be used in training accidentally gets mixed in during training, it's called data leakage. In this case, evaluation scores become inflated, diverging greatly from actual operational performance. Data drift is distribution change over time, underfitting is insufficient training, and class imbalance is skewed class ratios—all different concepts.
 
 ---
 
-**문제 4.** 얼굴 인식 모델을 특정 인종의 사진으로만 학습시켰더니 다른 인종 얼굴을 잘 인식하지 못했다. 이는 데이터 품질의 어떤 측면이 부족했기 때문인가?
+**Question 4.** 얼굴 인식 모델을 특정 인종의 사진으로만 학습시켰더니 다른 인종 얼굴을 잘 인식하지 못했다. 이는 데이터 품질의 어떤 측면이 부족했기 때문인가?
 
 A) Timeliness  
 B) Consistency  
 C) Representativeness  
 D) Storage capacity  
 
-**정답: C**  
-해설: When training data doesn't broadly represent diverse subjects in reality (lack of representativeness), the model makes biased judgments about subjects not included in the data. Timeliness means data's recency, consistency means format and unit unification—neither is the cause here. Storage capacity is not a quality dimension.
+**Answer: C**  
+Explanation: When training data doesn't broadly represent diverse subjects in reality (lack of representativeness), the model makes biased judgments about subjects not included in the data. Timeliness means data's recency, consistency means format and unit unification—neither is the cause here. Storage capacity is not a quality dimension.
 
 ---
 
-**문제 5.** 정상 거래 99.9%, 사기 거래 0.1%인 데이터로 사기 탐지 모델을 평가할 때, 단순 정확도(Accuracy)만 보면 안 되는 이유로 가장 적절한 것은?
+**Question 5.** 정상 거래 99.9%, 사기 거래 0.1%인 데이터로 사기 탐지 모델을 평가할 때, 단순 정확도(Accuracy)만 보면 안 되는 이유로 가장 적절한 것은?
 
 A) Because accuracy always comes out as 0  
 B) Because just answering "all normal" yields 99.9% accuracy, potentially leading to misinterpreting a model that can't detect fraud as good  
 C) Because the data is structured so accuracy cannot be calculated  
 D) Because fraud data is unstructured  
 
-**정답: B**  
-해설: With extremely imbalanced classes, an even meaningless model that always answers the majority class (normal) gets very high accuracy. In this case, even if it completely fails to detect the minority class (fraud) it should catch, accuracy still appears high, leading to incorrect model evaluation. That's why additional metrics like precision and recall are needed.
+**Answer: B**  
+Explanation: With extremely imbalanced classes, an even meaningless model that always answers the majority class (normal) gets very high accuracy. In this case, even if it completely fails to detect the minority class (fraud) it should catch, accuracy still appears high, leading to incorrect model evaluation. That's why additional metrics like precision and recall are needed.
 
 ---

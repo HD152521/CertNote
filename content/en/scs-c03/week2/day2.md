@@ -133,60 +133,60 @@ Next, we'll zoom out and cover **AWS Organizations and SCP**, which control the 
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 개발자에게 `iam:CreateRole`과 `iam:AttachRolePolicy` 권한을 부여하려 한다. 권한 상승을 막으면서 위임하려면 반드시 추가해야 하는 것은?
+**Question 1.** 한 회사가 개발자에게 `iam:CreateRole`과 `iam:AttachRolePolicy` 권한을 부여하려 한다. 권한 상승을 막으면서 위임하려면 반드시 추가해야 하는 것은?
 
 A) 개발자 계정에 MFA를 강제한다  
 B) CreateRole 시 특정 Permission Boundary 부착을 조건으로 강제하고, Boundary 변경을 Deny한다  
 C) CloudTrail로 롤 생성을 사후 모니터링한다  
 D) 개발자에게 읽기 전용 권한만 준다  
 
-**정답: B**  
-해설: 권한 상승의 핵심 차단 메커니즘은 `iam:PermissionsBoundary` 조건키로 Boundary 부착을 강제하고, 동시에 그 Boundary를 떼거나 바꾸는 액션을 명시적 Deny로 막는 것이다. MFA나 사후 모니터링은 상승 자체를 사전 차단하지 못하고, 읽기 전용은 위임 목적(롤 생성)을 달성하지 못한다.
+**Answer: B**  
+Explanation: 권한 상승의 핵심 차단 메커니즘은 `iam:PermissionsBoundary` 조건키로 Boundary 부착을 강제하고, 동시에 그 Boundary를 떼거나 바꾸는 액션을 명시적 Deny로 막는 것이다. MFA나 사후 모니터링은 상승 자체를 사전 차단하지 못하고, 읽기 전용은 위임 목적(롤 생성)을 달성하지 못한다.
 
 ---
 
-**문제 2.** Permission Boundary가 부착된 개발자가 자기가 만든 롤에서 Boundary를 제거하려 한다. 이를 막는 가장 직접적인 방법은?
+**Question 2.** Permission Boundary가 부착된 개발자가 자기가 만든 롤에서 Boundary를 제거하려 한다. 이를 막는 가장 직접적인 방법은?
 
 A) SCP로 모든 IAM 액션을 차단한다  
 B) 개발자 정책에 `iam:DeleteRolePermissionsBoundary`를 명시적 Deny로 추가한다  
 C) 롤을 읽기 전용으로 만든다  
 D) Boundary를 더 넓게 설정한다  
 
-**정답: B**  
-해설: Boundary 강제 생성만으로는 부족하며, 생성 후 Boundary를 제거하는 `iam:DeleteRolePermissionsBoundary`와 변경하는 `iam:PutRolePermissionsBoundary`를 명시적 Deny로 막아야 우회를 차단한다. SCP로 모든 IAM을 막으면 위임 자체가 불가능해지고, 나머지는 문제를 해결하지 못한다.
+**Answer: B**  
+Explanation: Boundary 강제 생성만으로는 부족하며, 생성 후 Boundary를 제거하는 `iam:DeleteRolePermissionsBoundary`와 변경하는 `iam:PutRolePermissionsBoundary`를 명시적 Deny로 막아야 우회를 차단한다. SCP로 모든 IAM을 막으면 위임 자체가 불가능해지고, 나머지는 문제를 해결하지 못한다.
 
 ---
 
-**문제 3.** Permission Boundary와 SCP의 차이로 옳은 것은?
+**Question 3.** Permission Boundary와 SCP의 차이로 옳은 것은?
 
 A) Boundary는 권한을 부여하고, SCP는 권한을 제한한다  
 B) Boundary는 개별 주체의 상한이고, SCP는 계정 전체의 상한이다  
 C) 둘 다 멤버 계정의 root 사용자에게 동일하게 적용된다  
 D) SCP는 개발자가 직접 관리할 수 있다  
 
-**정답: B**  
-해설: Permission Boundary는 특정 User/Role 한 명의 권한 상한이고, SCP는 OU/Account에 적용되어 계정 전체 주체의 상한을 정한다. 둘 다 권한을 부여하지 않고 상한만 정한다. SCP는 멤버 계정 root에도 적용되지만 Boundary는 그렇지 않으며, SCP는 Organizations 관리 계정에서만 관리한다.
+**Answer: B**  
+Explanation: Permission Boundary는 특정 User/Role 한 명의 권한 상한이고, SCP는 OU/Account에 적용되어 계정 전체 주체의 상한을 정한다. 둘 다 권한을 부여하지 않고 상한만 정한다. SCP는 멤버 계정 root에도 적용되지만 Boundary는 그렇지 않으며, SCP는 Organizations 관리 계정에서만 관리한다.
 
 ---
 
-**문제 4.** 개발자에게 `role/dev-*` 패턴의 롤만 만들 수 있도록 `Resource`를 제한한 이유로 가장 적절한 것은?
+**Question 4.** 개발자에게 `role/dev-*` 패턴의 롤만 만들 수 있도록 `Resource`를 제한한 이유로 가장 적절한 것은?
 
 A) 롤 생성 속도를 높이기 위해  
 B) 개발자가 보안팀이나 운영팀의 롤(예: role/admin-*)을 건드리지 못하게 네임스페이스를 격리하기 위해  
 C) 롤 개수를 줄이기 위해  
 D) Boundary를 생략할 수 있게 하기 위해  
 
-**정답: B**  
-해설: 리소스를 이름 접두사로 제한하면 개발자가 자기 네임스페이스(`dev-`) 밖의 권한 높은 롤을 생성하거나 수정하는 것을 막는다. 이는 self-service IAM에서 격리를 구현하는 표준 패턴이며, Boundary를 대체하지는 않고 함께 쓰인다.
+**Answer: B**  
+Explanation: 리소스를 이름 접두사로 제한하면 개발자가 자기 네임스페이스(`dev-`) 밖의 권한 높은 롤을 생성하거나 수정하는 것을 막는다. 이는 self-service IAM에서 격리를 구현하는 표준 패턴이며, Boundary를 대체하지는 않고 함께 쓰인다.
 
 ---
 
-**문제 5.** 개발자가 만든 롤의 유효 권한을 계산하려 한다. 그 롤에는 Identity 정책 `s3:*, ec2:*`, Permission Boundary `s3:*, dynamodb:*`가 있고, 계정 SCP는 `s3:*`만 허용한다. 이 롤의 유효 권한은?
+**Question 5.** 개발자가 만든 롤의 유효 권한을 계산하려 한다. 그 롤에는 Identity 정책 `s3:*, ec2:*`, Permission Boundary `s3:*, dynamodb:*`가 있고, 계정 SCP는 `s3:*`만 허용한다. 이 롤의 유효 권한은?
 
 A) `s3:*, ec2:*, dynamodb:*` 전부  
 B) `s3:*`만  
 C) `s3:*, dynamodb:*`  
 D) 아무 권한 없음  
 
-**정답: B**  
-해설: 유효 권한은 SCP ∩ Boundary ∩ Identity의 교집합이다. SCP는 `s3:*`만, Boundary는 `s3:*`와 `dynamodb:*`, Identity는 `s3:*`와 `ec2:*`를 허용한다. 세 집합 모두에 공통으로 존재하는 것은 `s3:*`뿐이다. `ec2`는 SCP·Boundary에 없고, `dynamodb`는 SCP·Identity에 없어 모두 탈락한다.
+**Answer: B**  
+Explanation: 유효 권한은 SCP ∩ Boundary ∩ Identity의 교집합이다. SCP는 `s3:*`만, Boundary는 `s3:*`와 `dynamodb:*`, Identity는 `s3:*`와 `ec2:*`를 허용한다. 세 집합 모두에 공통으로 존재하는 것은 `s3:*`뿐이다. `ec2`는 SCP·Boundary에 없고, `dynamodb`는 SCP·Identity에 없어 모두 탈락한다.

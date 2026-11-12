@@ -37,13 +37,13 @@ Next article we'll tie together all the security and encryption tools covered th
 
 ## 📝 Practice Questions
 
-**문제 1.** EC2 인스턴스가 알려진 암호화폐 채굴 풀 도메인을 DNS로 조회하고 있다. 에이전트 설치 없이 이를 자동 탐지하려면?
+**Question 1.** EC2 인스턴스가 알려진 암호화폐 채굴 풀 도메인을 DNS로 조회하고 있다. 에이전트 설치 없이 이를 자동 탐지하려면?
 
 A) Inspector v2로 OS 취약점을 스캔한다
 B) GuardDuty를 켜면 DNS Logs 분석으로 `CryptoCurrency:EC2/BitcoinTool.B!DNS` finding이 자동 발행된다
 C) Macie로 인스턴스 디스크의 민감 데이터를 스캔한다
 D) Config Rule로 인스턴스 태그를 검사한다
 
-**정답: B**
+**Answer: B**
 
 ---

@@ -121,62 +121,62 @@ Real-time endpoint operations follow three axes: "Configuration (zero-downtime s
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 고객 1만 명 각각에 대해 동일한 XGBoost 프레임워크로 학습된 개인화 모델을 운영해야 한다. 모든 모델을 개별 엔드포인트로 띄우는 비용은 감당할 수 없다. 가장 적합한 방식은?
+**Question 1.** 한 회사가 고객 1만 명 각각에 대해 동일한 XGBoost 프레임워크로 학습된 개인화 모델을 운영해야 한다. 모든 모델을 개별 엔드포인트로 띄우는 비용은 감당할 수 없다. 가장 적합한 방식은?
 
 A) 모델 1만 개에 대해 각각 Real-time Endpoint 생성  
 B) 멀티모델 엔드포인트(MME)  
 C) 멀티컨테이너 엔드포인트 Direct 모드  
 D) Batch Transform  
 
-**정답: B**  
-해설: "수천~수만 개의 동일 프레임워크 모델 + 비용 절감"은 멀티모델 엔드포인트의 정의다. 공유 인스턴스에 모델을 동적 로딩한다. 개별 엔드포인트(A)는 비용 폭증, MCE(C)는 서로 다른 컨테이너용, Batch(D)는 온라인 개인화 추론에 부적합하다.
+**Answer: B**  
+Explanation: "수천~수만 개의 동일 프레임워크 모델 + 비용 절감"은 멀티모델 엔드포인트의 정의다. 공유 인스턴스에 모델을 동적 로딩한다. 개별 엔드포인트(A)는 비용 폭증, MCE(C)는 서로 다른 컨테이너용, Batch(D)는 온라인 개인화 추론에 부적합하다.
 
 ---
 
-**문제 2.** 실시간 엔드포인트의 인스턴스 수를, 인스턴스당 초당 호출 수를 일정하게 유지하도록 자동 조절하고 싶다. 가장 적절한 오토스케일링 정책은?
+**Question 2.** 실시간 엔드포인트의 인스턴스 수를, 인스턴스당 초당 호출 수를 일정하게 유지하도록 자동 조절하고 싶다. 가장 적절한 오토스케일링 정책은?
 
 A) Scheduled Scaling  
 B) Step Scaling  
 C) Target Tracking (SageMakerVariantInvocationsPerInstance)  
 D) 수동으로 UpdateEndpoint 호출  
 
-**정답: C**  
-해설: 목표 지표값을 유지하도록 자동 조절하는 것은 Target Tracking이며, 인스턴스당 호출 수를 추적하는 기본 지표가 SageMakerVariantInvocationsPerInstance다. Scheduled(A)는 예측 가능한 시간표용, Step(B)은 알람 단계별 가감, 수동(D)은 자동화가 아니다.
+**Answer: C**  
+Explanation: 목표 지표값을 유지하도록 자동 조절하는 것은 Target Tracking이며, 인스턴스당 호출 수를 추적하는 기본 지표가 SageMakerVariantInvocationsPerInstance다. Scheduled(A)는 예측 가능한 시간표용, Step(B)은 알람 단계별 가감, 수동(D)은 자동화가 아니다.
 
 ---
 
-**문제 3.** 학습 시 Scikit-learn으로 전처리하고 XGBoost로 예측했다. 추론 시에도 동일한 전처리를 한 번의 요청으로 보장해 학습-서빙 스큐를 막고 싶다. 적절한 구성은?
+**Question 3.** 학습 시 Scikit-learn으로 전처리하고 XGBoost로 예측했다. 추론 시에도 동일한 전처리를 한 번의 요청으로 보장해 학습-서빙 스큐를 막고 싶다. 적절한 구성은?
 
 A) 추론 파이프라인(Inference Pipeline)으로 전처리 컨테이너와 예측 컨테이너를 직렬 연결  
 B) 멀티모델 엔드포인트  
 C) 두 개의 별도 실시간 엔드포인트를 클라이언트가 순서대로 호출  
 D) Batch Transform 두 번 실행  
 
-**정답: A**  
-해설: 추론 파이프라인은 여러 컨테이너를 직렬로 묶어 전처리→예측을 한 요청으로 처리하므로 학습과 동일한 전처리를 보장한다. MME(B)는 동일 컨테이너의 다른 모델용, 별도 엔드포인트 두 개(C)는 네트워크 왕복·정합성 문제, Batch 두 번(D)은 온라인 요청에 부적합하다.
+**Answer: A**  
+Explanation: 추론 파이프라인은 여러 컨테이너를 직렬로 묶어 전처리→예측을 한 요청으로 처리하므로 학습과 동일한 전처리를 보장한다. MME(B)는 동일 컨테이너의 다른 모델용, 별도 엔드포인트 두 개(C)는 네트워크 왕복·정합성 문제, Batch 두 번(D)은 온라인 요청에 부적합하다.
 
 ---
 
-**문제 4.** 무중단으로 새 모델 버전을 배포하기 위한 SageMaker의 표준 메커니즘으로 옳은 것은?
+**Question 4.** 무중단으로 새 모델 버전을 배포하기 위한 SageMaker의 표준 메커니즘으로 옳은 것은?
 
 A) 기존 Endpoint를 삭제하고 새 Endpoint를 동일 이름으로 재생성  
 B) Model 아티팩트를 S3에서 직접 덮어쓴다  
 C) 인스턴스에 SSH로 접속해 모델 파일을 교체한다  
 D) 새 EndpointConfig를 만들고 UpdateEndpoint로 교체하면 SageMaker가 새 플릿을 띄운 뒤 트래픽을 옮긴다  
 
-**정답: D**  
-해설: Endpoint와 EndpointConfig가 분리되어 있어, 새 EndpointConfig를 UpdateEndpoint로 바꿔 끼우면 새 플릿 기동→트래픽 이동→기존 플릿 종료의 무중단 교체가 일어난다. 삭제 후 재생성(A)은 다운타임 발생, S3 덮어쓰기(B)·SSH 교체(C)는 동작하지 않거나 비권장이다.
+**Answer: D**  
+Explanation: Endpoint와 EndpointConfig가 분리되어 있어, 새 EndpointConfig를 UpdateEndpoint로 바꿔 끼우면 새 플릿 기동→트래픽 이동→기존 플릿 종료의 무중단 교체가 일어난다. 삭제 후 재생성(A)은 다운타임 발생, S3 덮어쓰기(B)·SSH 교체(C)는 동작하지 않거나 비권장이다.
 
 ---
 
-**문제 5.** 멀티모델 엔드포인트(MME)에서 오랫동안 호출되지 않던 모델을 처음 호출할 때 지연이 발생하는 이유는?
+**Question 5.** 멀티모델 엔드포인트(MME)에서 오랫동안 호출되지 않던 모델을 처음 호출할 때 지연이 발생하는 이유는?
 
 A) 모델이 영구 삭제되었기 때문  
 B) 오토스케일링이 항상 0에서 시작하기 때문  
 C) 해당 모델이 메모리에 없어 S3에서 동적으로 로드해야 하기 때문  
 D) MME는 GPU만 지원하기 때문  
 
-**정답: C**  
-해설: MME는 호출된 모델을 메모리에 동적 로드하고 메모리가 부족하면 LRU로 언로드하므로, 오래 안 쓰인 모델은 첫 호출 시 S3에서 로드하는 콜드 지연이 생긴다. 모델이 삭제되는 것은 아니며(A), MME의 인스턴스는 0이 아니고(B), GPU 전용도 아니다(D).
+**Answer: C**  
+Explanation: MME는 호출된 모델을 메모리에 동적 로드하고 메모리가 부족하면 LRU로 언로드하므로, 오래 안 쓰인 모델은 첫 호출 시 S3에서 로드하는 콜드 지연이 생긴다. 모델이 삭제되는 것은 아니며(A), MME의 인스턴스는 0이 아니고(B), GPU 전용도 아니다(D).
 
 ---

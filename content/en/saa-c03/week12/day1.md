@@ -99,91 +99,91 @@ In the next article, we'll re-weave Domain 2, resilience architecture, the same 
 
 ## 📝 Practice Questions
 
-**문제 1.** An IAM user has an Identity policy granting read permission on an S3 bucket. However, the SCP of the organization the user belongs to explicitly Denies that S3 action. What is the result?
+**Question 1.** An IAM user has an Identity policy granting read permission on an S3 bucket. However, the SCP of the organization the user belongs to explicitly Denies that S3 action. What is the result?
 
 A) The Identity policy's Allow takes precedence, so access is permitted
 B) The SCP's explicit Deny takes precedence, so access is blocked
 C) The two conflict, so it's decided after administrator approval
 D) If a bucket policy exists, it makes the final decision
 
-**정답: B**
+**Answer: B**
 
-해설: In IAM policy evaluation, an **explicit Deny takes precedence over any Allow**, and an SCP is a guardrail (ceiling) draped over the entire organization, so even if an in-account Identity policy grants an Allow, an SCP Deny blocks it unconditionally. The evaluation order is explicit Deny → SCP permission → Boundary/Resource/Session intersection → Identity Allow. A has the evaluation order backwards, C is wrong because IAM has no such conflict-approval mechanism, and D is wrong because a bucket policy cannot beat an explicit Deny or SCP either. Key signal: "SCP Denies" = every Allow above it is void.
+Explanation: In IAM policy evaluation, an **explicit Deny takes precedence over any Allow**, and an SCP is a guardrail (ceiling) draped over the entire organization, so even if an in-account Identity policy grants an Allow, an SCP Deny blocks it unconditionally. The evaluation order is explicit Deny → SCP permission → Boundary/Resource/Session intersection → Identity Allow. A has the evaluation order backwards, C is wrong because IAM has no such conflict-approval mechanism, and D is wrong because a bucket policy cannot beat an explicit Deny or SCP either. Key signal: "SCP Denies" = every Allow above it is void.
 
 ---
 
-**문제 2.** An EC2 application needs to access S3. What is the most recommended approach for security, and what defense should be applied alongside it?
+**Question 2.** An EC2 application needs to access S3. What is the most recommended approach for security, and what defense should be applied alongside it?
 
 A) Hardcode access keys in the code and manage them via environment variables
 B) Attach an IAM Role to the instance and enforce IMDSv2
 C) Open the bucket to public-read and access it without keys
 D) Route access through a NAT Gateway to bypass permission needs
 
-**정답: B**
+**Answer: B**
 
-해설: When EC2 calls an AWS API, attach an **IAM Role (instance profile)** instead of hardcoding access keys, so IMDS automatically provides temporary credentials. On top of that you must **enforce IMDSv2** to prevent SSRF attacks from stealing the credentials from metadata — the 2019 Capital One incident leaked 100 million records precisely via IMDSv1 + SSRF. A risks key exposure, C exposes all data, and D is an irrelevant network path (NAT does not provide authentication). "EC2 → API = Role + IMDSv2" is a security-domain regular answer.
+Explanation: When EC2 calls an AWS API, attach an **IAM Role (instance profile)** instead of hardcoding access keys, so IMDS automatically provides temporary credentials. On top of that you must **enforce IMDSv2** to prevent SSRF attacks from stealing the credentials from metadata — the 2019 Capital One incident leaked 100 million records precisely via IMDSv1 + SSRF. A risks key exposure, C exposes all data, and D is an irrelevant network path (NAT does not provide authentication). "EC2 → API = Role + IMDSv2" is a security-domain regular answer.
 
 ---
 
-**문제 3.** A company wants to encrypt large data stored in S3 with KMS while reducing KMS API call costs. Additionally, another account must read these encrypted objects. What are the two necessary actions?
+**Question 3.** A company wants to encrypt large data stored in S3 with KMS while reducing KMS API call costs. Additionally, another account must read these encrypted objects. What are the two necessary actions?
 
 A) Enable S3 Bucket Keys + add the target account to the KMS key policy
 B) Switch to SSE-S3 + modify only the bucket policy
 C) Move the key to CloudHSM and modify the bucket policy
 D) Store the key in Parameter Store and add an IAM user
 
-**정답: A**
+**Answer: A**
 
-해설: KMS call-cost reduction is solved with **S3 Bucket Keys**, which reduce per-object KMS calls to a bucket-level key. Cross-account access requires **naming the target account/role in the KMS key policy**, because reading an encrypted object requires both the S3 permission and `kms:Decrypt` permission. B's SSE-S3 doesn't use a customer KMS key, so it doesn't fit key-policy control or the Bucket Keys cost model; C's CloudHSM is overkill absent a FIPS L3 dedicated-HSM requirement; and D is unrelated to KMS master-key management. "Cross-account encrypted object = add to KMS key policy" is the crux.
+Explanation: KMS call-cost reduction is solved with **S3 Bucket Keys**, which reduce per-object KMS calls to a bucket-level key. Cross-account access requires **naming the target account/role in the KMS key policy**, because reading an encrypted object requires both the S3 permission and `kms:Decrypt` permission. B's SSE-S3 doesn't use a customer KMS key, so it doesn't fit key-policy control or the Bucket Keys cost model; C's CloudHSM is overkill absent a FIPS L3 dedicated-HSM requirement; and D is unrelated to KMS master-key management. "Cross-account encrypted object = add to KMS key policy" is the crux.
 
 ---
 
-**문제 4.** A security team wants to detect, respectively, (1) whether EC2 has unpatched CVEs, (2) whether someone is abnormally communicating for cryptomining, and (3) whether S3 contains PII like national-ID numbers. What is the correct combination of services?
+**Question 4.** A security team wants to detect, respectively, (1) whether EC2 has unpatched CVEs, (2) whether someone is abnormally communicating for cryptomining, and (3) whether S3 contains PII like national-ID numbers. What is the correct combination of services?
 
 A) (1) GuardDuty (2) Inspector (3) Config
 B) (1) Inspector (2) GuardDuty (3) Macie
 C) (1) Macie (2) Inspector (3) GuardDuty
 D) (1) Config (2) Macie (3) Inspector
 
-**정답: B**
+**Answer: B**
 
-해설: The three detection services have cleanly divided roles — **Inspector** scans EC2/container OS and software **vulnerabilities (CVEs)**, **GuardDuty** ML-analyzes logs to detect **threat behavior** like cryptomining and malicious-IP communication, and **Macie** auto-classifies **PII** in S3. Confusing these three is Domain 1's biggest trap. Keyword matching: "CVE/patch" → Inspector, "abnormal behavior/mining/malicious IP" → GuardDuty, "sensitive data/PII" → Macie. All three only detect; blocking must be wired via EventBridge + Lambda.
+Explanation: The three detection services have cleanly divided roles — **Inspector** scans EC2/container OS and software **vulnerabilities (CVEs)**, **GuardDuty** ML-analyzes logs to detect **threat behavior** like cryptomining and malicious-IP communication, and **Macie** auto-classifies **PII** in S3. Confusing these three is Domain 1's biggest trap. Keyword matching: "CVE/patch" → Inspector, "abnormal behavior/mining/malicious IP" → GuardDuty, "sensitive data/PII" → Macie. All three only detect; blocking must be wired via EventBridge + Lambda.
 
 ---
 
-**문제 5.** A bucket allows public-read via its bucket policy, yet objects cannot be accessed externally. What is the most likely cause?
+**Question 5.** A bucket allows public-read via its bucket policy, yet objects cannot be accessed externally. What is the most likely cause?
 
 A) The IAM user lacks permission
 B) S3 Block Public Access is enabled, voiding the bucket policy's public allow
 C) The KMS key has expired
 D) The NACL is blocking traffic
 
-**정답: B**
+**Answer: B**
 
-해설: **S3 Block Public Access (BPA)** is a final blocking layer that unconditionally blocks even when a bucket policy or ACL allows public — the consistent security-domain principle that "a global block beats an individual allow." AWS introduced it after the repeated S3 exposure incidents (Verizon, Accenture, etc.) and enables it by default on new buckets. A doesn't fit an external (unauthenticated) access scenario, C is wrong because BPA would be the prior cause even for encrypted objects, and D's NACL is usually not the cause of such policy-priority issues. "Opened public via policy but it doesn't work" = suspect BPA.
+Explanation: **S3 Block Public Access (BPA)** is a final blocking layer that unconditionally blocks even when a bucket policy or ACL allows public — the consistent security-domain principle that "a global block beats an individual allow." AWS introduced it after the repeated S3 exposure incidents (Verizon, Accenture, etc.) and enables it by default on new buckets. A doesn't fit an external (unauthenticated) access scenario, C is wrong because BPA would be the prior cause even for encrypted objects, and D's NACL is usually not the cause of such policy-priority issues. "Opened public via policy but it doesn't work" = suspect BPA.
 
 ---
 
-**문제 6.** Due to regulation, a company must manage encryption keys in a FIPS 140-2 Level 3 certified environment on its own dedicated hardware. What is the appropriate service?
+**Question 6.** Due to regulation, a company must manage encryption keys in a FIPS 140-2 Level 3 certified environment on its own dedicated hardware. What is the appropriate service?
 
 A) KMS CMK B) CloudHSM C) Secrets Manager D) Parameter Store
 
-**정답: B**
+**Answer: B**
 
-해설: **CloudHSM** is a FIPS 140-2 Level 3 certified **single-tenant dedicated hardware security module**, used for regulatory requirements that keys be isolated on customer-dedicated hardware. KMS (A) is convenient but a multi-tenant managed service, so it doesn't directly satisfy a "dedicated HSM / FIPS L3" requirement (KMS is also HSM-backed but a shared model). Secrets Manager (C) and Parameter Store (D) are key-storage / secrets-management services, not HSMs. "Dedicated HSM / FIPS Level 3 / keys on my own hardware" = CloudHSM is the answer signal.
+Explanation: **CloudHSM** is a FIPS 140-2 Level 3 certified **single-tenant dedicated hardware security module**, used for regulatory requirements that keys be isolated on customer-dedicated hardware. KMS (A) is convenient but a multi-tenant managed service, so it doesn't directly satisfy a "dedicated HSM / FIPS L3" requirement (KMS is also HSM-backed but a shared model). Secrets Manager (C) and Parameter Store (D) are key-storage / secrets-management services, not HSMs. "Dedicated HSM / FIPS Level 3 / keys on my own hardware" = CloudHSM is the answer signal.
 
 ---
 
-**문제 7.** A team wants to block traffic coming from a specific malicious IP range (CIDR) across an entire subnet. What is the appropriate tool?
+**Question 7.** A team wants to block traffic coming from a specific malicious IP range (CIDR) across an entire subnet. What is the appropriate tool?
 
 A) Add a Deny rule to a Security Group
 B) Add a Deny rule for that CIDR to a NACL
 C) Deny the IP with an IAM policy
 D) Modify the KMS key policy
 
-**정답: B**
+**Answer: B**
 
-해설: To **block (Deny)** a specific IP, you must use a **NACL** — a subnet-level stateless filter that supports **both** Allow and Deny rules. **A Security Group allows only Allow rules and has no Deny** (A), so it cannot block an IP. An IAM policy (C) governs AWS API permissions, not network packets, and a KMS key policy (D) is unrelated to encryption permissions. "IP block / broad subnet block" = NACL Deny is the answer. The Allow-only vs. Deny-capable difference between SG and NACL is Domain 1's key distinction.
+Explanation: To **block (Deny)** a specific IP, you must use a **NACL** — a subnet-level stateless filter that supports **both** Allow and Deny rules. **A Security Group allows only Allow rules and has no Deny** (A), so it cannot block an IP. An IAM policy (C) governs AWS API permissions, not network packets, and a KMS key policy (D) is unrelated to encryption permissions. "IP block / broad subnet block" = NACL Deny is the answer. The Allow-only vs. Deny-capable difference between SG and NACL is Domain 1's key distinction.
 
 ---
 

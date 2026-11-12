@@ -275,72 +275,72 @@ Three key exam/ops points: First, Audit Manager automates evidence collection, n
 
 ## 📝 Practice Questions
 
-**문제 1.** 외부 감사 회사가 PCI-DSS 감사를 위해 지난 6개월간의 IAM 정책 변경 이력, RDS 암호화 상태, MFA 적용 현황을 모두 요청했다. 운영팀이 최소 노력으로 이 요구사항을 충족하는 방법은?
+**Question 1.** 외부 감사 회사가 PCI-DSS 감사를 위해 지난 6개월간의 IAM 정책 변경 이력, RDS 암호화 상태, MFA 적용 현황을 모두 요청했다. 운영팀이 최소 노력으로 이 요구사항을 충족하는 방법은?
 
 A) CloudTrail 로그를 S3에서 수동으로 다운로드해 정리한다
 B) Config Rule 평가 결과를 엑셀로 내보낸다
 C) Audit Manager에서 PCI-DSS Framework로 Assessment를 생성하고, 6개월치 증거 수집 후 보고서를 자동 생성한다
 D) Security Hub에서 Finding을 PDF로 내보낸다
 
-**정답: C**
-해설: Audit Manager는 PCI-DSS를 포함한 주요 컴플라이언스 Framework를 내장하고 있으며, Assessment 활성화 후 CloudTrail, Config, Security Hub에서 자동으로 증거를 수집한다. 보고서는 PDF/CSV로 생성된다. A와 B는 수동 작업으로 오류 가능성이 높다. D는 Security Hub Finding만 포함되어 전체 요구사항을 충족하지 못한다.
+**Answer: C**
+Explanation: Audit Manager는 PCI-DSS를 포함한 주요 컴플라이언스 Framework를 내장하고 있으며, Assessment 활성화 후 CloudTrail, Config, Security Hub에서 자동으로 증거를 수집한다. 보고서는 PDF/CSV로 생성된다. A와 B는 수동 작업으로 오류 가능성이 높다. D는 Security Hub Finding만 포함되어 전체 요구사항을 충족하지 못한다.
 
 ---
 
-**문제 2.** 회사가 Microsoft Windows Server Enterprise 라이선스 500코어 분을 구매했다. AWS에서 EC2를 시작할 때 이 한도를 초과하면 인스턴스 시작 자체를 차단해야 한다. 어떤 서비스와 설정을 사용해야 하는가?
+**Question 2.** 회사가 Microsoft Windows Server Enterprise 라이선스 500코어 분을 구매했다. AWS에서 EC2를 시작할 때 이 한도를 초과하면 인스턴스 시작 자체를 차단해야 한다. 어떤 서비스와 설정을 사용해야 하는가?
 
 A) AWS Config Rule로 EC2 인스턴스 수를 제한
 B) Service Quotas로 EC2 인스턴스 수 제한
 C) License Manager에서 License Configuration을 만들고 `LicenseCountHardLimit: true`로 설정한 후 해당 AMI에 연결
 D) IAM Permission Boundary로 RunInstances 횟수 제한
 
-**정답: C**
-해설: License Manager의 정확한 사용 사례다. License Configuration을 만들 때 `--license-count-hard-limit` 플래그를 켜면, 해당 AMI로 EC2를 시작할 때 라이선스 카운트가 한도에 도달하면 RunInstances 자체가 실패한다. Hard Limit이 false면 초과 시 알림만 보내고 시작은 허용된다. Config Rule은 이 차단 기능이 없다.
+**Answer: C**
+Explanation: License Manager의 정확한 사용 사례다. License Configuration을 만들 때 `--license-count-hard-limit` 플래그를 켜면, 해당 AMI로 EC2를 시작할 때 라이선스 카운트가 한도에 도달하면 RunInstances 자체가 실패한다. Hard Limit이 false면 초과 시 알림만 보내고 시작은 허용된다. Config Rule은 이 차단 기능이 없다.
 
 ---
 
-**문제 3.** 기업이 20개 AWS 계정, 6개 리전에 걸쳐 `Project=payment-platform` 태그가 붙은 EC2 인스턴스 수를 빠르게 파악해야 한다. 가장 효율적인 방법은?
+**Question 3.** 기업이 20개 AWS 계정, 6개 리전에 걸쳐 `Project=payment-platform` 태그가 붙은 EC2 인스턴스 수를 빠르게 파악해야 한다. 가장 효율적인 방법은?
 
 A) 각 계정에 로그인해 리전별로 EC2 콘솔을 확인
 B) AWS Config 집계 보기에서 리소스 목록 확인
 C) Resource Explorer를 Aggregator Index로 설정하고 `service:ec2 resourcetype:instance tag.Project=payment-platform` 검색
 D) CloudTrail Lake SQL로 EC2 생성 이벤트 집계
 
-**정답: C**
-해설: Resource Explorer는 멀티 리전·멀티 계정 리소스 검색을 위한 도구다. Aggregator Index를 설정하면 모든 리전의 데이터가 집계되어 단일 쿼리로 검색 가능하다. A는 수작업이다. B는 Config도 리소스 목록을 볼 수 있지만 검색 기능이 Resource Explorer보다 제한적이다. D는 현재 상태가 아닌 이벤트 기록 조회다.
+**Answer: C**
+Explanation: Resource Explorer는 멀티 리전·멀티 계정 리소스 검색을 위한 도구다. Aggregator Index를 설정하면 모든 리전의 데이터가 집계되어 단일 쿼리로 검색 가능하다. A는 수작업이다. B는 Config도 리소스 목록을 볼 수 있지만 검색 기능이 Resource Explorer보다 제한적이다. D는 현재 상태가 아닌 이벤트 기록 조회다.
 
 ---
 
-**문제 4.** Audit Manager Assessment를 활성화했는데 특정 Control의 증거가 수집되지 않는다. 원인으로 가장 가능성 높은 것은?
+**Question 4.** Audit Manager Assessment를 활성화했는데 특정 Control의 증거가 수집되지 않는다. 원인으로 가장 가능성 높은 것은?
 
 A) AWS Config가 해당 리소스 타입을 기록하지 않도록 설정되어 있다
 B) CloudTrail이 비활성화되어 있다
 C) S3 버킷 권한이 잘못 설정되어 있다
 D) A 또는 B
 
-**정답: D**
-해설: Audit Manager는 Data Source에서 증거를 가져온다. Config Rule 결과를 Data Source로 쓰는 Control은 Config가 해당 리소스를 기록해야 하고, CloudTrail 이벤트를 Data Source로 쓰는 Control은 CloudTrail이 활성화되어야 한다. C는 보고서 저장에 영향을 주지만 증거 수집 자체를 막지는 않는다.
+**Answer: D**
+Explanation: Audit Manager는 Data Source에서 증거를 가져온다. Config Rule 결과를 Data Source로 쓰는 Control은 Config가 해당 리소스를 기록해야 하고, CloudTrail 이벤트를 Data Source로 쓰는 Control은 CloudTrail이 활성화되어야 한다. C는 보고서 저장에 영향을 주지만 증거 수집 자체를 막지는 않는다.
 
 ---
 
-**문제 5.** Resource Group을 SSM Patch Manager의 대상으로 사용하면 어떤 장점이 있는가?
+**Question 5.** Resource Group을 SSM Patch Manager의 대상으로 사용하면 어떤 장점이 있는가?
 
 A) 인스턴스 ID를 일일이 나열할 필요 없이 태그 조건에 맞는 인스턴스가 자동으로 포함된다
 B) 패치 속도가 빨라진다
 C) 패치 실패 알림이 자동으로 생성된다
 D) 인스턴스가 자동으로 재시작된다
 
-**정답: A**
-해설: Resource Groups의 핵심 가치는 동적 그룹핑이다. 태그 조건을 정의하면, 조건에 맞는 리소스가 자동으로 그룹에 포함되고 제거된다. 새 EC2를 시작할 때 태그만 붙이면 자동으로 그룹에 들어와 Patch Manager 대상이 된다. B, C, D는 Resource Groups이 아닌 Patch Manager 자체의 기능이다.
+**Answer: A**
+Explanation: Resource Groups의 핵심 가치는 동적 그룹핑이다. 태그 조건을 정의하면, 조건에 맞는 리소스가 자동으로 그룹에 포함되고 제거된다. 새 EC2를 시작할 때 태그만 붙이면 자동으로 그룹에 들어와 Patch Manager 대상이 된다. B, C, D는 Resource Groups이 아닌 Patch Manager 자체의 기능이다.
 
 ---
 
-**문제 6.** Audit Manager가 자동으로 증거를 수집할 수 없는 항목은?
+**Question 6.** Audit Manager가 자동으로 증거를 수집할 수 없는 항목은?
 
 A) AWS Config Rule 평가 결과
 B) CloudTrail에 기록된 API 호출
 C) Security Hub Finding
 D) 외부 감사관과 나눈 인터뷰 내용 및 수기로 작성한 정책 문서
 
-**정답: D**
-해설: Audit Manager의 자동 증거 수집은 AWS API를 통해 접근 가능한 데이터에 한정된다. Config Rule 결과(A), CloudTrail 이벤트(B), Security Hub Finding(C)은 모두 자동 수집된다. 종이 문서, 인터뷰 기록, 외부 시스템 데이터, 수기 서명 문서 등은 수동으로 콘솔에 업로드해야 한다.
+**Answer: D**
+Explanation: Audit Manager의 자동 증거 수집은 AWS API를 통해 접근 가능한 데이터에 한정된다. Config Rule 결과(A), CloudTrail 이벤트(B), Security Hub Finding(C)은 모두 자동 수집된다. 종이 문서, 인터뷰 기록, 외부 시스템 데이터, 수기 서명 문서 등은 수동으로 콘솔에 업로드해야 한다.

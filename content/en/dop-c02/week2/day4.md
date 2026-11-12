@@ -392,63 +392,63 @@ artifacts:
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following is the most appropriate AWS service for automated code review at the PR stage?
+**Question 1.** Which of the following is the most appropriate AWS service for automated code review at the PR stage?
 
 A) CodeGuru Profiler — comment on the PR with runtime flame-graph code hotspots
 B) CodeGuru Reviewer + CodeGuru Security
 C) Inspector — statically scan the PR's code changes for CVEs and dependency vulnerabilities
 D) GuardDuty — receive commit events and analyze malicious code patterns as threat detection
 
-**정답: B**
-해설: Profiler covers runtime performance, Inspector covers dependencies/images/OS, and GuardDuty covers runtime threats. Code analysis at the PR stage is Reviewer (quality) + Security (security). Both register the repository through the same Associate API and analyze automatically on PRs.
+**Answer: B**
+Explanation: Profiler covers runtime performance, Inspector covers dependencies/images/OS, and GuardDuty covers runtime threats. Code analysis at the PR stage is Reviewer (quality) + Security (security). Both register the repository through the same Associate API and analyze automatically on PRs.
 
 ---
 
-**문제 2.** Which setting is required to enforce signature verification on Lambda deployments?
+**Question 2.** Which setting is required to enforce signature verification on Lambda deployments?
 
 A) `UntrustedArtifactOnDeployment=Warn` — record a warning in CloudWatch Logs when untrusted code is deployed
 B) `UntrustedArtifactOnDeployment=Enforce`
 C) Add a Lambda Layer containing signature verification logic to check integrity at runtime
 D) Enable Provisioned Concurrency so only signed versions are pre-initialized and pinned
 
-**정답: B**
-해설: Warn only leaves a warning in CloudWatch Logs and lets the deployment proceed; Enforce is what actually blocks (CodeSigningConfigNotFoundException). On the exam, the keywords "enforce," "strict," and "reject untrusted code" mean Enforce.
+**Answer: B**
+Explanation: Warn only leaves a warning in CloudWatch Logs and lets the deployment proceed; Enforce is what actually blocks (CodeSigningConfigNotFoundException). On the exam, the keywords "enforce," "strict," and "reject untrusted code" mean Enforce.
 
 ---
 
-**문제 3.** How do you automatically scan every image pushed to ECR, including OS and language dependencies?
+**Question 3.** How do you automatically scan every image pushed to ECR, including OS and language dependencies?
 
 A) Enable ECR Enhanced Scanning (Inspector v2 integration)
 B) Trigger a Lambda on the ECR push event to run Trivy on every push and aggregate the results
 C) Export ECR images to S3 and invoke an external scanner via S3 object notifications
 D) Analyze CloudTrail's ECR PutImage logs to identify vulnerable images after the fact
 
-**정답: A**
-해설: Inspector Enhanced Scanning scans automatically on every ECR push plus a rescan every 24 hours. Standard scanning covers only the OS layer; Enhanced also includes language dependencies. Results are forwarded to Security Hub automatically.
+**Answer: A**
+Explanation: Inspector Enhanced Scanning scans automatically on every ECR push plus a rescan every 24 hours. Standard scanning covers only the OS layer; Enhanced also includes language dependencies. Results are forwarded to Security Hub automatically.
 
 ---
 
-**문제 4.** Which action best matches the "Shift Left" principle?
+**Question 4.** Which action best matches the "Shift Left" principle?
 
 A) Periodically run DAST-based post-hoc penetration testing in staging after production deployment
 B) Automate SAST, SCA, and secret scanning at the IDE/PR stage
 C) Have the security team manually review the entire codebase once a quarter as a release gate
 D) Run a bug bounty so external researchers report vulnerabilities for you to fix
 
-**정답: B**
-해설: Shift Left = moving security checks to earlier stages of the SDLC. The PR/IDE stage is the earliest, and the cost of an incident is lowest there (IBM Cost of a Data Breach Report: fixing at the code-writing stage costs 1/100 of a prod incident). A is a right shift, C has too long an interval, and D is reactive.
+**Answer: B**
+Explanation: Shift Left = moving security checks to earlier stages of the SDLC. The PR/IDE stage is the earliest, and the cost of an incident is lowest there (IBM Cost of a Data Breach Report: fixing at the code-writing stage costs 1/100 of a prod incident). A is a right shift, C has too long an interval, and D is reactive.
 
 ---
 
-**문제 5.** A build needs a DB password. What is the safest way to inject it?
+**Question 5.** A build needs a DB password. What is the safest way to inject it?
 
 A) Hardcode the DB password directly into an env variable in buildspec.yml and inject it into the build
 B) Store it in plaintext in GitHub Secrets and have the workflow pass it to CodeBuild as an environment variable
 C) Store it in Secrets Manager and reference it from CodeBuild via env.secrets-manager
 D) Encrypt the password with KMS, keep it in S3, and have the build fetch and decrypt it
 
-**정답: C**
-해설: The Secrets Manager + CodeBuild env.secrets-manager integration is the standard. Automatic rotation, audit logs, single source of truth. GitHub Secrets is standard for GitHub Actions, but in an AWS context (CodeBuild) Secrets Manager is the answer.
+**Answer: C**
+Explanation: The Secrets Manager + CodeBuild env.secrets-manager integration is the standard. Automatic rotation, audit logs, single source of truth. GitHub Secrets is standard for GitHub Actions, but in an AWS context (CodeBuild) Secrets Manager is the answer.
 
 ```yaml
 env:
@@ -458,87 +458,87 @@ env:
 
 ---
 
-**문제 6.** How do you make CodeGuru Reviewer a mandatory gate for PR merges?
+**Question 6.** How do you make CodeGuru Reviewer a mandatory gate for PR merges?
 
 A) CodeGuru Reviewer blocks the PR merge by itself when there are findings
 B) Approval Rule + a bot that checks CodeGuru findings and approves or rejects
 C) Branch Protection's Required Status Check + CodeBuild pushing a failure status when findings are not zero
 D) Both B and C work
 
-**정답: D**
-해설: CodeGuru itself only leaves comments; it does not block. An external enforcement mechanism is required. B (Approval Rule + a Lambda bot querying findings through the CodeGuru API) and C (Branch Protection + CodeBuild reporting a failure through the GitHub Status API) are both industry-standard patterns. On the exam, "CodeGuru blocks directly" is always a trap.
+**Answer: D**
+Explanation: CodeGuru itself only leaves comments; it does not block. An external enforcement mechanism is required. B (Approval Rule + a Lambda bot querying findings through the CodeGuru API) and C (Branch Protection + CodeBuild reporting a failure through the GitHub Status API) are both industry-standard patterns. On the exam, "CodeGuru blocks directly" is always a trap.
 
 ---
 
-**문제 7.** Which tooling is appropriate for generating and managing an SBOM (Software Bill of Materials)?
+**Question 7.** Which tooling is appropriate for generating and managing an SBOM (Software Bill of Materials)?
 
 A) Syft / CycloneDX / SPDX
 B) CloudTrail — collect API call history to reconstruct the component list included in a build
 C) AWS Config — manage a dependency inventory from resource configuration snapshots
 D) Trusted Advisor — report a list of dependency vulnerabilities from its security/cost checks
 
-**정답: A**
-해설: SBOMs use standard formats (CycloneDX, SPDX, SWID). Syft is the OSS generation tool. Trivy also supports SBOM generation. CodeArtifact is a package repository, not an SBOM generator. EO 14028 (2021) effectively made SBOMs mandatory for US federal procurement.
+**Answer: A**
+Explanation: SBOMs use standard formats (CycloneDX, SPDX, SWID). Syft is the OSS generation tool. Trivy also supports SBOM generation. CodeArtifact is a package repository, not an SBOM generator. EO 14028 (2021) effectively made SBOMs mandatory for US federal procurement.
 
 ---
 
-**문제 8.** What does a build pipeline need in order to reach SLSA L3?
+**Question 8.** What does a build pipeline need in order to reach SLSA L3?
 
 A) Build with CodeBuild and check the buildspec into the repository to document the build process (an L1-level measure)
 B) An isolated build environment (VPC + least-privilege IAM Role) + non-falsifiable provenance (an in-toto attestation signed with a key outside the build) + version control
 C) Add a Trivy vulnerability scan to the build artifacts to guarantee there are no CVEs
 D) Move the build to Lambda so function-level isolation blocks interference from other builds
 
-**정답: B**
-해설: SLSA L3's requirements are ① source/build platform isolation ② isolated build (unaffected by other builds) ③ non-falsifiable provenance (the signing key lives outside the build environment, so even a compromised build cannot forge provenance). On AWS this is implemented with VPC CodeBuild + KMS signing + in-toto attestation. It is the standard for preventing incidents like SolarWinds.
+**Answer: B**
+Explanation: SLSA L3's requirements are ① source/build platform isolation ② isolated build (unaffected by other builds) ③ non-falsifiable provenance (the signing key lives outside the build environment, so even a compromised build cannot forge provenance). On AWS this is implemented with VPC CodeBuild + KMS signing + in-toto attestation. It is the standard for preventing incidents like SolarWinds.
 
 ---
 
-**문제 9.** A company wants to enforce "never run an unsigned container image" on production EKS. Which mechanism is most appropriate?
+**Question 9.** A company wants to enforce "never run an unsigned container image" on production EKS. Which mechanism is most appropriate?
 
 A) Use an IAM policy to deny Pull permissions on ECR repositories holding unsigned images
 B) Sign images with AWS Signer + deploy the ratify (or Sigstore policy-controller) admission webhook on EKS + express the policy with Kyverno/OPA
 C) Block egress to untrusted registries with a Calico NetworkPolicy so images cannot be pulled
 D) Enforce readOnlyRootFilesystem and non-root execution in the Pod SecurityContext to restrict unsigned images
 
-**정답: B**
-해설: This is the standard pattern for container signature verification. ① Sign the image with AWS Signer for Containers (Notary v2) or with cosign keyless signing ② Deploy the ratify (AWS) or policy-controller (Sigstore) admission webhook on EKS ③ Write a "reject unsigned images" policy with Kyverno or OPA Gatekeeper. IAM, NetworkPolicy, and SecurityContext are controls on other dimensions (access, network, privilege), not signature verification.
+**Answer: B**
+Explanation: This is the standard pattern for container signature verification. ① Sign the image with AWS Signer for Containers (Notary v2) or with cosign keyless signing ② Deploy the ratify (AWS) or policy-controller (Sigstore) admission webhook on EKS ③ Write a "reject unsigned images" policy with Kyverno or OPA Gatekeeper. IAM, NetworkPolicy, and SecurityContext are controls on other dimensions (access, network, privilege), not signature verification.
 
 ---
 
-**문제 10.** A new CVE has been found in a Lambda function's dependencies, but the function code has not changed. What is the fastest way to learn about it?
+**Question 10.** A new CVE has been found in a Lambda function's dependencies, but the function code has not changed. What is the fastest way to learn about it?
 
 A) Since no rescan happens when the code does not change, wait until the next function update or deployment
 B) Inspector Lambda scanning (2023+) — Inspector detects CVE database changes, rematches them against existing functions, and notifies through EventBridge
 C) Analyze CloudTrail's function invocation and update logs to detect vulnerable dependency usage after the fact
 D) Force a redeployment of the Lambda every day so a deployment-time dependency scan runs each time
 
-**정답: B**
-해설: The lesson of Log4Shell (2021) — "already deployed functions become vulnerable too when a new CVE is disclosed." Inspector v2 supports Lambda scanning (GA in 2023) and reevaluates dependencies on function update plus every 24 hours. When a new CVE is found, an EventBridge event fires → notify Lambda/SNS → auto-patch via SSM Automation. CloudTrail tracks API calls; it does not detect CVEs.
+**Answer: B**
+Explanation: The lesson of Log4Shell (2021) — "already deployed functions become vulnerable too when a new CVE is disclosed." Inspector v2 supports Lambda scanning (GA in 2023) and reevaluates dependencies on function update plus every 24 hours. When a new CVE is found, an EventBridge event fires → notify Lambda/SNS → auto-patch via SSM Automation. CloudTrail tracks API calls; it does not detect CVEs.
 
 ---
 
-**문제 11.** A company worried about supply chain attacks wants to strengthen the trustworthiness of its build artifacts. Which combination is most suitable for reaching SLSA L3?
+**Question 11.** A company worried about supply chain attacks wants to strengthen the trustworthiness of its build artifacts. Which combination is most suitable for reaching SLSA L3?
 
 A) Add only a Trivy CVE scan of the build artifacts to guarantee no known vulnerabilities
 B) Isolate CodeBuild inside a VPC + sign an in-toto attestation with a KMS key (key kept outside the build environment) + ECR Enhanced Scanning + sign the final image with AWS Signer
 C) Use only GitHub-hosted Actions runners to delegate build infrastructure management outside AWS
 D) Have the security team manually review every build artifact before release to check for compromise
 
-**정답: B**
-해설: This combination satisfies all three of SLSA L3's core requirements. ① **Isolation**: VPC CodeBuild + a build-only IAM Role (least privilege) ② **Non-falsifiable provenance**: the KMS key lives outside the build environment, so even a compromised build cannot forge an attestation ③ **Verifiable artifacts**: AWS Signer signatures + Inspector scanning. The SolarWinds incident was precisely the absence of these three.
+**Answer: B**
+Explanation: This combination satisfies all three of SLSA L3's core requirements. ① **Isolation**: VPC CodeBuild + a build-only IAM Role (least privilege) ② **Non-falsifiable provenance**: the KMS key lives outside the build environment, so even a compromised build cannot forge an attestation ③ **Verifiable artifacts**: AWS Signer signatures + Inspector scanning. The SolarWinds incident was precisely the absence of these three.
 
 ---
 
-**문제 12.** A security team receives a report that "there are so many security gates at the PR stage that developers are routing around them." What is the most appropriate response?
+**Question 12.** A security team receives a report that "there are so many security gates at the PR stage that developers are routing around them." What is the most appropriate response?
 
 A) Remove all PR-stage security gates and move the checks to post-deployment stages to restore development speed
 B) Risk-based gating — block PRs only on Critical/High, notify only on Medium/Low + weekly tracking + introduce automatic fix PRs (Dependabot/Snyk)
 C) Have the security team review every finding by hand and decide case by case whether to block
 D) Turn off PR-stage checks and detect threats only at production runtime (GuardDuty, etc.)
 
-**정답: B**
-해설: **Alert fatigue plus workarounds** is the most common failure pattern of security automation. The answer is not "more gates" but "smarter gates." Risk-based gating means ① classification by CVSS score (block only Critical 9.0+ and High 7.0+) ② minimizing developer burden with automatic fix PRs ③ tracking Medium/Low on a dashboard while allowing the merge. The CodeGuru Security + Snyk + Dependabot combination is standard. A and D are security regressions, and C denies the very point of automation.
+**Answer: B**
+Explanation: **Alert fatigue plus workarounds** is the most common failure pattern of security automation. The answer is not "more gates" but "smarter gates." Risk-based gating means ① classification by CVSS score (block only Critical 9.0+ and High 7.0+) ② minimizing developer burden with automatic fix PRs ③ tracking Medium/Low on a dashboard while allowing the merge. The CodeGuru Security + Snyk + Dependabot combination is standard. A and D are security regressions, and C denies the very point of automation.
 
 > 🎯 **Scenario**: A fintech configured every finding to block PRs, and developers responded by creating a separate branch strategy "for bypassing the security gates." The post-mortem found ① 80% of alerts were false positives ② there was no prioritization, so critical and low carried the same weight ③ developers did not know how to fix the issues. The fix was to switch to CodeGuru Security's CVSS-based automatic classification + Snyk's auto-PRs + a risk-based policy that blocks only Critical. The PR pass rate improved from 12% to 89%, and the average time to resolve a finding from 14 days to 1.2 days.
 

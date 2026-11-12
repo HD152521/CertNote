@@ -269,72 +269,72 @@ EBS fits most single-EC2 workloads, and gp3 is the default choice. Instance Stor
 
 ## 📝 Practice Questions
 
-**문제 1.** You have a database server currently using a gp2 EBS volume (500GB). You want to raise IOPS performance while also cutting cost. What is the most suitable action?
+**Question 1.** You have a database server currently using a gp2 EBS volume (500GB). You want to raise IOPS performance while also cutting cost. What is the most suitable action?
 
 A) Grow the volume to 1TB to raise IOPS to 3,000
 B) Convert to gp3 and set IOPS independently to 6,000
 C) Convert to io2
 D) Migrate to Instance Store
 
-**정답: B**
-해설: gp2 uses a size×3 IOPS model, so even at 1TB it caps at 3,000 IOPS. gp3 lets you set IOPS independently up to 16,000 regardless of size, and it's 20% cheaper than gp2. io2 is unnecessarily expensive, and gp3 solves this fully. Instance Store offers no persistence guarantee. The answer is B.
+**Answer: B**
+Explanation: gp2 uses a size×3 IOPS model, so even at 1TB it caps at 3,000 IOPS. gp3 lets you set IOPS independently up to 16,000 regardless of size, and it's 20% cheaper than gp2. io2 is unnecessarily expensive, and gp3 solves this fully. Instance Store offers no persistence guarantee. The answer is B.
 
 ---
 
-**문제 2.** Several Linux EC2 instances running across multiple AZs must share common configuration files and logs. The instance count may grow unpredictably. What is the most suitable storage?
+**Question 2.** Several Linux EC2 instances running across multiple AZs must share common configuration files and logs. The instance count may grow unpredictably. What is the most suitable storage?
 
 A) EBS gp3 with Multi-Attach enabled
 B) EFS Standard, Elastic throughput
 C) FSx for Windows File Server
 D) S3 + S3 FUSE mount
 
-**정답: B**
-해설: EBS Multi-Attach is possible only with io1/io2 types, and without a cluster file system, simultaneous writes from multiple instances corrupt the data. EFS, over NFSv4.1, can be mounted concurrently by multiple Linux instances across Multi-AZ and scales automatically. FSx for Windows uses the SMB protocol and is unsuitable for a default Linux mount. S3 FUSE doesn't fully support POSIX file-system semantics, so random writes like log writes run into problems.
+**Answer: B**
+Explanation: EBS Multi-Attach is possible only with io1/io2 types, and without a cluster file system, simultaneous writes from multiple instances corrupt the data. EFS, over NFSv4.1, can be mounted concurrently by multiple Linux instances across Multi-AZ and scales automatically. FSx for Windows uses the SMB protocol and is unsuitable for a default Linux mount. S3 FUSE doesn't fully support POSIX file-system semantics, so random writes like log writes run into problems.
 
 ---
 
-**문제 3.** You are migrating data running on on-premises NetApp ONTAP storage to AWS. Both Linux and Windows servers must access the same file system, and you want to keep the on-premises NetApp's SnapMirror replication intact. What is the most suitable service?
+**Question 3.** You are migrating data running on on-premises NetApp ONTAP storage to AWS. Both Linux and Windows servers must access the same file system, and you want to keep the on-premises NetApp's SnapMirror replication intact. What is the most suitable service?
 
 A) Amazon EFS
 B) FSx for Lustre
 C) FSx for NetApp ONTAP
 D) FSx for OpenZFS
 
-**정답: C**
-해설: FSx for NetApp ONTAP supports the NFS (Linux), SMB (Windows), and iSCSI multi-protocol set. It can sync with on-premises NetApp via SnapMirror, making migration and hybrid operation natural. EFS supports only NFS and can't do Windows SMB. FSx for Lustre is an HPC parallel file system. FSx for OpenZFS supports only NFS and has no NetApp-compatible features.
+**Answer: C**
+Explanation: FSx for NetApp ONTAP supports the NFS (Linux), SMB (Windows), and iSCSI multi-protocol set. It can sync with on-premises NetApp via SnapMirror, making migration and hybrid operation natural. EFS supports only NFS and can't do Windows SMB. FSx for Lustre is an HPC parallel file system. FSx for OpenZFS supports only NFS and has no NetApp-compatible features.
 
 ---
 
-**문제 4.** An ML training team trains across many GPU instances using a 50TB image dataset stored in S3. Data loading has become the bottleneck for GPU utilization. What storage configuration should you add?
+**Question 4.** An ML training team trains across many GPU instances using a 50TB image dataset stored in S3. Data loading has become the bottleneck for GPU utilization. What storage configuration should you add?
 
 A) Switch EFS to Max I/O mode
 B) Create FSx for Lustre and link it via S3 ImportPath
 C) Attach an EBS gp3 volume to each GPU instance and copy the data
 D) Enable S3 Transfer Acceleration
 
-**정답: B**
-해설: When you link an S3 bucket to FSx for Lustre as the ImportPath, S3 objects appear as POSIX files. Its parallel file-system architecture serves hundreds of GB/s of throughput to many GPU instances concurrently. EFS Max I/O has throughput but is far lower than Lustre for ML training data loading. EBS is independent per instance, so it can't be shared and incurs initial copy time. S3 Transfer Acceleration is for accelerating S3 uploads over the internet.
+**Answer: B**
+Explanation: When you link an S3 bucket to FSx for Lustre as the ImportPath, S3 objects appear as POSIX files. Its parallel file-system architecture serves hundreds of GB/s of throughput to many GPU instances concurrently. EFS Max I/O has throughput but is far lower than Lustre for ML training data loading. EBS is independent per instance, so it can't be shared and incurs initial copy time. S3 Transfer Acceleration is for accelerating S3 uploads over the internet.
 
 ---
 
-**문제 5.** For a single-EC2-based PostgreSQL database whose data must be preserved even if the instance terminates or is relocated unexpectedly, which storage is suitable for the boot volume and the data volume?
+**Question 5.** For a single-EC2-based PostgreSQL database whose data must be preserved even if the instance terminates or is relocated unexpectedly, which storage is suitable for the boot volume and the data volume?
 
 A) Instance Store (boot) + Instance Store (data)
 B) EBS gp3 (boot) + EBS io2 (data)
 C) EBS gp3 (boot) + Instance Store (data)
 D) EFS (boot + data)
 
-**정답: B**
-해설: To preserve data even on instance termination/relocation, you need EBS. For the boot volume, gp3 is optimal on the cost/performance balance. The database data volume needs consistent low latency, so io2 is the fit. Using Instance Store as the data volume loses the data when the instance stops. EFS is a file system, not block storage, so it's unsuitable as PostgreSQL's boot volume or data directory.
+**Answer: B**
+Explanation: To preserve data even on instance termination/relocation, you need EBS. For the boot volume, gp3 is optimal on the cost/performance balance. The database data volume needs consistent low latency, so io2 is the fit. Using Instance Store as the data volume loses the data when the instance stops. EFS is a file system, not block storage, so it's unsuitable as PostgreSQL's boot volume or data directory.
 
 ---
 
-**문제 6.** A company wants to migrate data from an on-premises file server to AWS S3. It needs to move 100TB of data as fast as possible, and new files keep being added on the on-premises server during the migration. Which service should it use?
+**Question 6.** A company wants to migrate data from an on-premises file server to AWS S3. It needs to move 100TB of data as fast as possible, and new files keep being added on the on-premises server during the migration. Which service should it use?
 
 A) AWS Storage Gateway File Gateway
 B) AWS DataSync
 C) AWS Direct Connect + manual rsync
 D) S3 Multi-Part Upload script
 
-**정답: B**
-해설: DataSync moves large volumes of data quickly with parallel transfer and supports incremental sync, so it can handle files added during the migration too. It supports NFS/SMB sources with S3, EFS, and FSx as destinations. Storage Gateway File Gateway is a continuous hybrid-operation structure, not a one-time migration tool. Direct Connect + rsync carries heavy network-setup cost and manual management burden. An S3 Multi-Part Upload script has limited parallelism and requires you to implement incremental sync yourself.
+**Answer: B**
+Explanation: DataSync moves large volumes of data quickly with parallel transfer and supports incremental sync, so it can handle files added during the migration too. It supports NFS/SMB sources with S3, EFS, and FSx as destinations. Storage Gateway File Gateway is a continuous hybrid-operation structure, not a one-time migration tool. Direct Connect + rsync carries heavy network-setup cost and manual management burden. An S3 Multi-Part Upload script has limited parallelism and requires you to implement incremental sync yourself.

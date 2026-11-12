@@ -251,84 +251,84 @@ In the next article, we dig into what events trigger this Lambda function, and i
 
 ## 📝 Practice Questions
 
-**문제 1.** What is the most accurate description of Lambda SnapStart?
+**Question 1.** What is the most accurate description of Lambda SnapStart?
 
 A) It is enabled by default on all runtimes  
 B) It creates a snapshot of the initialized JVM at the moment a version is published, and does not work on $LATEST  
 C) It incurs an additional cost proportional to the memory size  
 D) It cannot be activated at the same time as Provisioned Concurrency  
 
-**정답: B**  
-해설: SnapStart saves the initialized JVM state as a snapshot at the moment of publish-version. It cannot be set on `$LATEST`, so you must invoke it through a published version or an alias that points to that version. A is wrong — only the Java runtime is supported, and it is disabled by default. C is wrong — SnapStart itself is free (only a negligible S3 cost for storing the snapshot). D is wrong — they can be used together.
+**Answer: B**  
+Explanation: SnapStart saves the initialized JVM state as a snapshot at the moment of publish-version. It cannot be set on `$LATEST`, so you must invoke it through a published version or an alias that points to that version. A is wrong — only the Java runtime is supported, and it is disabled by default. C is wrong — SnapStart itself is free (only a negligible S3 cost for storing the snapshot). D is wrong — they can be used together.
 
 ---
 
-**문제 2.** How many vCPUs does a Lambda function with 1,769MB of memory get?
+**Question 2.** How many vCPUs does a Lambda function with 1,769MB of memory get?
 
 A) 0.5 vCPU  
 B) 1 vCPU  
 C) 2 vCPU  
 D) Memory and vCPU are unrelated  
 
-**정답: B**  
-해설: Lambda allocates CPU at a ratio of 1,769MB = 1 vCPU. 512MB is about 0.29 vCPU, and 3,008MB is about 1.7 vCPU. Because of this, for CPU-intensive work (JSON serialization, encryption, image processing), increasing memory can shorten execution time so that the GB-second cost actually goes down. The AWS Lambda Power Tuning tool can automatically find the optimal memory.
+**Answer: B**  
+Explanation: Lambda allocates CPU at a ratio of 1,769MB = 1 vCPU. 512MB is about 0.29 vCPU, and 3,008MB is about 1.7 vCPU. Because of this, for CPU-intensive work (JSON serialization, encryption, image processing), increasing memory can shorten execution time so that the GB-second cost actually goes down. The AWS Lambda Power Tuning tool can automatically find the optimal memory.
 
 ---
 
-**문제 3.** A Lambda function is attached to a VPC and needs to call an internet API. What configuration is required?
+**Question 3.** A Lambda function is attached to a VPC and needs to call an internet API. What configuration is required?
 
 A) Remove the VPC attachment and switch to a public Lambda  
 B) Place the function in a public subnet  
 C) Route outbound internet traffic through a private subnet and a NAT Gateway  
 D) Add an HTTPS (443) inbound rule to the Security Group  
 
-**정답: C**  
-해설: A VPC Lambda receives a VPC-internal address through an ENI but has no public IP. Placing it in a public subnet does not let it out to the internet. Internet access requires a private subnet + NAT Gateway, or a private subnet + VPC Endpoint (for AWS services only). As in B, placing it in a public subnet is meaningless because the Lambda ENI is not routed through an IGW.
+**Answer: C**  
+Explanation: A VPC Lambda receives a VPC-internal address through an ENI but has no public IP. Placing it in a public subnet does not let it out to the internet. Internet access requires a private subnet + NAT Gateway, or a private subnet + VPC Endpoint (for AWS services only). As in B, placing it in a public subnet is meaningless because the Lambda ENI is not routed through an IGW.
 
 ---
 
-**문제 4.** Which of the following about Provisioned Concurrency and Reserved Concurrency is correct?
+**Question 4.** Which of the following about Provisioned Concurrency and Reserved Concurrency is correct?
 
 A) Both features can be set on the $LATEST version  
 B) Reserved Concurrency keeps pre-initialized environments to prevent cold starts  
 C) Provisioned Concurrency can only be set on a function version or alias, while Reserved Concurrency is set on the function itself, including $LATEST  
 D) Both features incur additional cost  
 
-**정답: C**  
-해설: Provisioned Concurrency is the feature that keeps initialized execution environments and must be set on a version number or an alias (not allowed on $LATEST). Reserved Concurrency is a concurrency ceiling applied to the whole function that affects all invocations including $LATEST, and has no cost. B is wrong — Reserved has nothing to do with cold starts. D is wrong — Reserved is free.
+**Answer: C**  
+Explanation: Provisioned Concurrency is the feature that keeps initialized execution environments and must be set on a version number or an alias (not allowed on $LATEST). Reserved Concurrency is a concurrency ceiling applied to the whole function that affects all invocations including $LATEST, and has no cost. B is wrong — Reserved has nothing to do with cold starts. D is wrong — Reserved is free.
 
 ---
 
-**문제 5.** Which is correct about the difference between Destination and DLQ in Lambda asynchronous invocation?
+**Question 5.** Which is correct about the difference between Destination and DLQ in Lambda asynchronous invocation?
 
 A) DLQ handles both success and failure, and Destination handles only failure  
 B) Destination can handle both success and failure, and supports SQS, SNS, EventBridge, and Lambda as targets  
 C) DLQ supports EventBridge as a target, but Destination does not  
 D) The two features are functionally identical and differ only in cost  
 
-**정답: B**  
-해설: A Destination can send events for both the success (OnSuccess) and failure (OnFailure) of an asynchronous invocation, to SQS, SNS, EventBridge, and Lambda targets, and it delivers rich context including request and response metadata. A DLQ, by contrast, sends only the final failure event to SQS or SNS, and includes only the basic payload. AWS recommends using Destinations for new designs.
+**Answer: B**  
+Explanation: A Destination can send events for both the success (OnSuccess) and failure (OnFailure) of an asynchronous invocation, to SQS, SNS, EventBridge, and Lambda targets, and it delivers rich context including request and response metadata. A DLQ, by contrast, sends only the final failure event to SQS or SNS, and includes only the basic payload. AWS recommends using Destinations for new designs.
 
 ---
 
-**문제 6.** What is the correct reason to use global variables in a Lambda function?
+**Question 6.** What is the correct reason to use global variables in a Lambda function?
 
 A) Lambda is multi-threaded, so it needs thread-local storage  
 B) To skip INIT code and improve warm-start performance when the same execution environment is reused  
 C) To share state across multiple function instances  
 D) Global variables are not recommended in Lambda  
 
-**정답: B**  
-해설: When a Lambda execution environment (MicroVM) is reused in a warm state, the global variable initialization code run during INIT is not run again. If you put DB connections, boto3 clients, config files, and so on in globals, they are reused on warm starts, greatly reducing response time. But C is wrong — global variables are not shared across different MicroVM instances. Each instance has a completely separate memory space.
+**Answer: B**  
+Explanation: When a Lambda execution environment (MicroVM) is reused in a warm state, the global variable initialization code run during INIT is not run again. If you put DB connections, boto3 clients, config files, and so on in globals, they are reused on warm starts, greatly reducing response time. But C is wrong — global variables are not shared across different MicroVM instances. Each instance has a completely separate memory space.
 
 ---
 
-**문제 7.** What is the correct description of Lambda Extensions?
+**Question 7.** What is the correct description of Lambda Extensions?
 
 A) Lambda Extensions run only inside the function code  
 B) An external extension runs as a separate process from the function and keeps running through the SHUTDOWN phase even after the function finishes  
 C) Lambda Extensions incur no additional charge but share the function timeout  
 D) An external extension runs outside the function's memory limit  
 
-**정답: B**  
-해설: An external Lambda Extension is an independent process placed at `/opt/extensions/` that the Lambda service starts side by side with the function. It runs concurrently with the function during the INVOKE phase and performs cleanup during the SHUTDOWN phase. C is wrong — the extension also shares the function's timeout (max 15 minutes). D is wrong — the extension runs within the function's memory limit, so if the extension uses a lot of memory, the memory available to the function decreases. Therefore, when using extensions, you should increase memory sufficiently.
+**Answer: B**  
+Explanation: An external Lambda Extension is an independent process placed at `/opt/extensions/` that the Lambda service starts side by side with the function. It runs concurrently with the function during the INVOKE phase and performs cleanup during the SHUTDOWN phase. C is wrong — the extension also shares the function's timeout (max 15 minutes). D is wrong — the extension runs within the function's memory limit, so if the extension uses a lot of memory, the memory available to the function decreases. Therefore, when using extensions, you should increase memory sufficiently.

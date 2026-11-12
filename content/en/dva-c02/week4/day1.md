@@ -285,84 +285,84 @@ In the next article, we dig into the heart of API Gateway integrations: Lambda P
 
 ## 📝 Practice Questions
 
-**문제 1.** You created a stage on an API Gateway REST API, but your changes are not reflected to clients. What is the cause?
+**Question 1.** You created a stage on an API Gateway REST API, but your changes are not reflected to clients. What is the cause?
 
 A) You need to clear the cache  
 B) You need to redeploy the Lambda function  
 C) After changing the API, you must create a new Deployment and attach it to the stage  
 D) You need to invalidate the CloudFront cache  
 
-**정답: C**  
-해설: After changing an API definition in API Gateway (resources, methods, integrations, authorizers, etc.), you must create a Deployment and attach it to the stage for the change to apply. Even if you hit "Save" in the console, the existing API is served if you don't deploy. A is not a cache problem. B is not a situation that requires redeploying Lambda. D — the CloudFront cache is a separate setting and is not the cause here.
+**Answer: C**  
+Explanation: After changing an API definition in API Gateway (resources, methods, integrations, authorizers, etc.), you must create a Deployment and attach it to the stage for the change to apply. Even if you hit "Save" in the console, the existing API is served if you don't deploy. A is not a cache problem. B is not a situation that requires redeploying Lambda. D — the CloudFront cache is a separate setting and is not the cause here.
 
 ---
 
-**문제 2.** When setting up a custom domain on an Edge-Optimized API Gateway, where must the ACM certificate be issued?
+**Question 2.** When setting up a custom domain on an Edge-Optimized API Gateway, where must the ACM certificate be issued?
 
 A) The region in use (e.g., ap-northeast-2)  
 B) Must be us-east-1  
 C) The same region as Route 53  
 D) It can be issued in any region  
 
-**정답: B**  
-해설: An Edge-Optimized endpoint uses CloudFront, and CloudFront can only reference ACM certificates in us-east-1. Therefore, the ACM certificate needed for an Edge-Optimized custom domain must be issued in us-east-1. A Regional endpoint uses a certificate issued in each region's own ACM. This is a common cause of the "domain doesn't work" scenario on the DVA exam.
+**Answer: B**  
+Explanation: An Edge-Optimized endpoint uses CloudFront, and CloudFront can only reference ACM certificates in us-east-1. Therefore, the ACM certificate needed for an Edge-Optimized custom domain must be issued in us-east-1. A Regional endpoint uses a certificate issued in each region's own ACM. This is a common cause of the "domain doesn't work" scenario on the DVA exam.
 
 ---
 
-**문제 3.** You provide an API to partner companies and need to set a different call limit for each partner. Which API Gateway feature should you use?
+**Question 3.** You provide an API to partner companies and need to set a different call limit for each partner. Which API Gateway feature should you use?
 
 A) Lambda Authorizer  
 B) VPC Endpoint  
 C) API keys + Usage Plans  
 D) Cognito User Pool  
 
-**정답: C**  
-해설: An API key identifies a client (partner), and a usage plan sets requests-per-second (RPS), burst, and monthly quota limits for that key. You can apply tiered limits by allocating 1,000 RPS to Partner A and 100 RPS to Partner B, for example. A is for authentication, not usage limiting. B is for internal VPC access. D is for user authentication, not usage limiting.
+**Answer: C**  
+Explanation: An API key identifies a client (partner), and a usage plan sets requests-per-second (RPS), burst, and monthly quota limits for that key. You can apply tiered limits by allocating 1,000 RPS to Partner A and 100 RPS to Partner B, for example. A is for authentication, not usage limiting. B is for internal VPC access. D is for user authentication, not usage limiting.
 
 ---
 
-**문제 4.** Which API type lets you integrate WAF (Web Application Firewall) directly with API Gateway?
+**Question 4.** Which API type lets you integrate WAF (Web Application Firewall) directly with API Gateway?
 
 A) HTTP API only  
 B) WebSocket API only  
 C) REST API (Edge-Optimized or Regional)  
 D) All API types support WAF  
 
-**정답: C**  
-해설: AWS WAF can be connected directly to an API Gateway REST API (both Edge-Optimized and Regional). HTTP API does not support WAF directly; to apply WAF, you must place CloudFront in front and attach WAF to CloudFront. WebSocket API also does not support direct WAF integration.
+**Answer: C**  
+Explanation: AWS WAF can be connected directly to an API Gateway REST API (both Edge-Optimized and Regional). HTTP API does not support WAF directly; to apply WAF, you must place CloudFront in front and attach WAF to CloudFront. WebSocket API also does not support direct WAF integration.
 
 ---
 
-**문제 5.** Which of the following is NOT an appropriate use case for an API Gateway stage variable?
+**Question 5.** Which of the following is NOT an appropriate use case for an API Gateway stage variable?
 
 A) Calling Lambda alias "dev" on the dev stage and "prod" on the prod stage  
 B) Referencing a different HTTP backend URL per stage  
 C) Setting a different memory size for a Lambda function per stage  
 D) Specifying a different table name per stage in an AWS service integration  
 
-**정답: C**  
-해설: Stage variables are used in API Gateway to dynamically reference integration URIs, HTTP URLs, ARNs, and so on. A Lambda function's memory size is a setting of the Lambda function itself and cannot be controlled by an API Gateway stage variable. A, B, and D are all appropriate use cases for stage variables.
+**Answer: C**  
+Explanation: Stage variables are used in API Gateway to dynamically reference integration URIs, HTTP URLs, ARNs, and so on. A Lambda function's memory size is a setting of the Lambda function itself and cannot be controlled by an API Gateway stage variable. A, B, and D are all appropriate use cases for stage variables.
 
 ---
 
-**문제 6.** A team is evaluating migrating from REST API to HTTP API. Which functional requirement makes migration impossible?
+**Question 6.** A team is evaluating migrating from REST API to HTTP API. Which functional requirement makes migration impossible?
 
 A) Lambda proxy integration  
 B) IAM authentication (SigV4)  
 C) CloudWatch metrics monitoring  
 D) Response caching and usage plans  
 
-**정답: D**  
-해설: Response caching and usage plans are not supported on HTTP API. HTTP API is cheaper and faster, but if you need these two features you must stay on REST API. A — HTTP API also supports Lambda proxy integration. B — HTTP API also supports IAM authentication. C — HTTP API also supports CloudWatch metrics (though it has fewer detailed metric types).
+**Answer: D**  
+Explanation: Response caching and usage plans are not supported on HTTP API. HTTP API is cheaper and faster, but if you need these two features you must stay on REST API. A — HTTP API also supports Lambda proxy integration. B — HTTP API also supports IAM authentication. C — HTTP API also supports CloudWatch metrics (though it has fewer detailed metric types).
 
 ---
 
-**문제 7.** Among API Gateway REST API endpoint types, which is accessible only from inside a VPC?
+**Question 7.** Among API Gateway REST API endpoint types, which is accessible only from inside a VPC?
 
 A) Edge-Optimized  
 B) Regional  
 C) Private  
 D) Internal  
 
-**정답: C**  
-해설: A Private endpoint is accessible only through an Interface Endpoint (PrivateLink) inside a VPC and can never be reached from the internet. It is suitable for internal microservice APIs, data pipeline APIs, and internal company tool APIs. You can control access from a specific VPC or VPC Endpoint more granularly with a resource policy. D is not a real endpoint type.
+**Answer: C**  
+Explanation: A Private endpoint is accessible only through an Interface Endpoint (PrivateLink) inside a VPC and can never be reached from the internet. It is suitable for internal microservice APIs, data pipeline APIs, and internal company tool APIs. You can control access from a specific VPC or VPC Endpoint more granularly with a resource policy. D is not a real endpoint type.

@@ -86,159 +86,159 @@ The gist of this picture is that the "detect → diagnose → respond" flow neve
 
 ## 시나리오 연습 문제 12
 
-**문제 1.** In a security audit, you must track "who, when, and which IAM user opened a particular security group to 0.0.0.0/0." Which is the most appropriate tool?
+**Question 1.** In a security audit, you must track "who, when, and which IAM user opened a particular security group to 0.0.0.0/0." Which is the most appropriate tool?
 
 A) AWS Config
 B) CloudTrail
 C) VPC Flow Logs
 D) X-Ray
 
-**정답: B**
+**Answer: B**
 
-해설: Behavior tracking of "who called which API, when" is CloudTrail's domain. CloudTrail leaves the principal (IAM principal), time, source IP, and request parameters of the `AuthorizeSecurityGroupIngress` call. A's Config answers the current state and compliance ("is that SG in a rule-violating state now") but doesn't directly reveal the actor. C's Flow Logs is network traffic metadata (who sent packets where), not a configuration-change API call. D is distributed tracing and is irrelevant. Remember the signal: if the verb is "who did ~," it's CloudTrail.
+Explanation: Behavior tracking of "who called which API, when" is CloudTrail's domain. CloudTrail leaves the principal (IAM principal), time, source IP, and request parameters of the `AuthorizeSecurityGroupIngress` call. A's Config answers the current state and compliance ("is that SG in a rule-violating state now") but doesn't directly reveal the actor. C's Flow Logs is network traffic metadata (who sent packets where), not a configuration-change API call. D is distributed tracing and is irrelevant. Remember the signal: if the verb is "who did ~," it's CloudTrail.
 
 ---
 
-**문제 2.** A compliance team wants to continuously check "whether all S3 buckets currently have Block Public Access enabled" and automatically remediate on violation. Which is the most appropriate configuration?
+**Question 2.** A compliance team wants to continuously check "whether all S3 buckets currently have Block Public Access enabled" and automatically remediate on violation. Which is the most appropriate configuration?
 
 A) Use CloudTrail to see only who turned it off
 B) Check the compliance state with an AWS Config Rule and auto-remediate with an SSM Automation Runbook
 C) Scan for vulnerabilities with Inspector
 D) Classify sensitive data with Macie
 
-**정답: B**
+**Answer: B**
 
-해설: "Is it currently in ~ state / does it comply" is Config's domain, and auto-remediation on violation follows the standard path Config Rule → SSM Automation Runbook. A's CloudTrail is behavior tracking, so it can tell "who turned it off" but can't do current-state checking or auto-remediation. C's Inspector is EC2/container vulnerability assessment, and D's Macie is S3 sensitive-data classification — both differ from BPA compliance checking. Remember "state compliance + auto-remediation" as the Config + SSM Automation combination.
+Explanation: "Is it currently in ~ state / does it comply" is Config's domain, and auto-remediation on violation follows the standard path Config Rule → SSM Automation Runbook. A's CloudTrail is behavior tracking, so it can tell "who turned it off" but can't do current-state checking or auto-remediation. C's Inspector is EC2/container vulnerability assessment, and D's Macie is S3 sensitive-data classification — both differ from BPA compliance checking. Remember "state compliance + auto-remediation" as the Config + SSM Automation combination.
 
 ---
 
-**문제 3.** In the flow API Gateway → Lambda → DynamoDB → external payment API, user-perceived latency is 3 seconds, but CloudWatch Metrics only shows that Lambda Duration is long and you can't tell which downstream is the bottleneck. Which is the most appropriate tool?
+**Question 3.** In the flow API Gateway → Lambda → DynamoDB → external payment API, user-perceived latency is 3 seconds, but CloudWatch Metrics only shows that Lambda Duration is long and you can't tell which downstream is the bottleneck. Which is the most appropriate tool?
 
 A) Look at CloudWatch Metrics more
 B) Decompose latency at the Subsegment level with X-Ray (Active Tracing)
 C) Trusted Advisor Performance check
 D) Increase Lambda memory with Compute Optimizer
 
-**정답: B**
+**Answer: B**
 
-해설: "Per-call latency decomposition that includes downstream calls" is a capability unique to distributed tracing. X-Ray breaks DynamoDB and the external API into separate Subsegments inside the Lambda Segment and shows which span eats the 2.8 seconds. A's metrics only go as far as the symptom (slowness). C is a best-practice check, not runtime diagnosis. D's right-sizing is meaningless if the cause is the external API. "Why is it slow + causality across multiple services" = X-Ray.
+Explanation: "Per-call latency decomposition that includes downstream calls" is a capability unique to distributed tracing. X-Ray breaks DynamoDB and the external API into separate Subsegments inside the Lambda Segment and shows which span eats the 2.8 seconds. A's metrics only go as far as the symptom (slowness). C is a best-practice check, not runtime diagnosis. D's right-sizing is meaningless if the cause is the external API. "Why is it slow + causality across multiple services" = X-Ray.
 
 ---
 
-**문제 4.** An operator wants shell access to 100 EC2 instances without deploying SSH keys, without opening inbound port 22, and with every access audited. Which is the most appropriate method?
+**Question 4.** An operator wants shell access to 100 EC2 instances without deploying SSH keys, without opening inbound port 22, and with every access audited. Which is the most appropriate method?
 
 A) Place a bastion host
 B) Use Systems Manager Session Manager
 C) Use EC2 Instance Connect only
 D) Site-to-Site VPN
 
-**정답: B**
+**Answer: B**
 
-해설: Session Manager reaches the shell via the instance SSM Agent's outbound connection, so there's no need to open inbound port 22; it controls access with IAM instead of the long-lived credential of an SSH key, and audits every session via CloudTrail/Logs. It conforms to zero trust. A's bastion leaves the burden of key management, port exposure, and auditing. C's EC2 Instance Connect injects a temporary key but still often presupposes an inbound SSH path, so Session Manager is superior for the "no open port, 100 in bulk, audited" requirement. D is a network-connection method, not a shell-access gateway.
+Explanation: Session Manager reaches the shell via the instance SSM Agent's outbound connection, so there's no need to open inbound port 22; it controls access with IAM instead of the long-lived credential of an SSH key, and audits every session via CloudTrail/Logs. It conforms to zero trust. A's bastion leaves the burden of key management, port exposure, and auditing. C's EC2 Instance Connect injects a temporary key but still often presupposes an inbound SSH path, so Session Manager is superior for the "no open port, 100 in bulk, audited" requirement. D is a network-connection method, not a shell-access gateway.
 
 ---
 
-**문제 5.** You want to automatically apply security patches to a 1,000-instance EC2 fleet only within a defined maintenance window, and receive a report of the results. Which is the most appropriate combination?
+**Question 5.** You want to automatically apply security patches to a 1,000-instance EC2 fleet only within a defined maintenance window, and receive a report of the results. Which is the most appropriate combination?
 
 A) A UserData script
 B) Systems Manager Patch Manager + Maintenance Window
 C) Auto Scaling instance refresh
 D) SSH in with Lambda and patch
 
-**정답: B**
+**Answer: B**
 
-해설: "Automatically applying large-scale patches within a defined window (Maintenance Window) + compliance reporting" is the exact use of Patch Manager + Maintenance Window. You define the apply policy with a Patch Baseline and aggregate results as compliance. A's UserData runs once at boot and is unsuitable for repeated patching during operation. C's instance refresh is AMI-replacement-based, which is a different grain from "patch existing instances." D is inferior on SSH dependence, scalability, and auditing all at once.
+Explanation: "Automatically applying large-scale patches within a defined window (Maintenance Window) + compliance reporting" is the exact use of Patch Manager + Maintenance Window. You define the apply policy with a Patch Baseline and aggregate results as compliance. A's UserData runs once at boot and is unsuitable for repeated patching during operation. C's instance refresh is AMI-replacement-based, which is a different grain from "patch existing instances." D is inferior on SSH dependence, scalability, and auditing all at once.
 
 ---
 
-**문제 6.** In a multi-account Organizations environment you want to ① audit the API behavior of all accounts in one place, ② view configuration compliance of all accounts in a unified way, and ③ aggregate security findings. Which is the most appropriate combination?
+**Question 6.** In a multi-account Organizations environment you want to ① audit the API behavior of all accounts in one place, ② view configuration compliance of all accounts in a unified way, and ③ aggregate security findings. Which is the most appropriate combination?
 
 A) Organization Trail only
 B) Config Aggregator only
 C) Security Hub only
 D) Organization Trail + Config Aggregator + Security Hub combined
 
-**정답: D**
+**Answer: D**
 
-해설: The three requirements each correspond to a different tool — ① multi-account API behavior audit is Organization Trail (CloudTrail), ② unified multi-account configuration-compliance viewing is Config Aggregator, and ③ security-finding aggregation is Security Hub. No single tool does it all, so the combination is the answer. Remember multi-account governance as the triangle of "audit (CloudTrail) + state (Config) + security aggregation (Security Hub)." The single-tool options (A, B, C) each satisfy only part of the requirement.
+Explanation: The three requirements each correspond to a different tool — ① multi-account API behavior audit is Organization Trail (CloudTrail), ② unified multi-account configuration-compliance viewing is Config Aggregator, and ③ security-finding aggregation is Security Hub. No single tool does it all, so the combination is the answer. Remember multi-account governance as the triangle of "audit (CloudTrail) + state (Config) + security aggregation (Security Hub)." The single-tool options (A, B, C) each satisfy only part of the requirement.
 
 ---
 
-**문제 7.** An operations team wants to detect "scheduled AWS-side maintenance and failures that actually affect the resources in my account" and set up automation to preemptively move traffic to another AZ. Which is the most appropriate configuration?
+**Question 7.** An operations team wants to detect "scheduled AWS-side maintenance and failures that actually affect the resources in my account" and set up automation to preemptively move traffic to another AZ. Which is the most appropriate configuration?
 
 A) Periodically refresh the Service Health Dashboard page
 B) Receive AWS Health API (Personal) events via EventBridge and run a Lambda auto-response
 C) GuardDuty alerts
 D) Trusted Advisor checks
 
-**정답: B**
+**Answer: B**
 
-해설: AWS-side events that affect my account are Personal Health's domain, and the standard is to receive them via Health API + EventBridge to trigger an auto-response. A's global Service Health doesn't provide personalized impact and is unsuitable for automation, and the case where that page itself had delayed updates during the 2021 us-east-1 outage shows its limits. C's GuardDuty is threat detection and D's Trusted Advisor is best-practice recommendations — both differ from an AWS infrastructure incident.
+Explanation: AWS-side events that affect my account are Personal Health's domain, and the standard is to receive them via Health API + EventBridge to trigger an auto-response. A's global Service Health doesn't provide personalized impact and is unsuitable for automation, and the case where that page itself had delayed updates during the 2021 us-east-1 outage shows its limits. C's GuardDuty is threat detection and D's Trusted Advisor is best-practice recommendations — both differ from an AWS infrastructure incident.
 
 ---
 
-**문제 8.** You want to be alerted automatically when a service limit (e.g., the number of security groups per VPC) is near its ceiling. Which is the most appropriate configuration?
+**Question 8.** You want to be alerted automatically when a service limit (e.g., the number of security groups per VPC) is near its ceiling. Which is the most appropriate configuration?
 
 A) Trusted Advisor (Service Limits) + EventBridge
 B) An IAM policy
 C) Macie
 D) Config Aggregator only
 
-**정답: A**
+**Answer: A**
 
-해설: Service-limit checking is Trusted Advisor's Service Limits category, and you receive it via EventBridge to connect to an SNS notification or an automatic increase request. Service-limit checking is provided even in the free scope, but the full categories and API automation presuppose Business+. B is permission control, C is sensitive-data classification, and D is multi-account configuration aggregation — all unrelated to limit alerts. For reference, the Service Quotas service can also tie some limits to CloudWatch alarms, but on the exam the representative signal for best-practice / limit recommendations is Trusted Advisor.
+Explanation: Service-limit checking is Trusted Advisor's Service Limits category, and you receive it via EventBridge to connect to an SNS notification or an automatic increase request. Service-limit checking is provided even in the free scope, but the full categories and API automation presuppose Business+. B is permission control, C is sensitive-data classification, and D is multi-account configuration aggregation — all unrelated to limit alerts. For reference, the Service Quotas service can also tie some limits to CloudWatch alarms, but on the exam the representative signal for best-practice / limit recommendations is Trusted Advisor.
 
 ---
 
-**문제 9.** You want to set an alarm on EC2 memory utilization, but there's no memory metric in the `AWS/EC2` namespace. What is the correct solution?
+**Question 9.** You want to set an alarm on EC2 memory utilization, but there's no memory metric in the `AWS/EC2` namespace. What is the correct solution?
 
 A) It's already in the standard metrics, so change the region
 B) Install the CloudWatch Agent so the guest OS reports memory directly, and alarm on the custom metric
 C) View memory with X-Ray
 D) Check with Inspector
 
-**정답: B**
+**Answer: B**
 
-해설: Memory and free disk space are guest-OS-internal information the hypervisor (Nitro) can't see, and they simply aren't in the standard metrics. You must install the CloudWatch Agent in the guest so the OS reports directly, enabling memory metrics and alarms. A is the false premise that memory exists in the standard metrics. C and D are irrelevant. This pitfall connects to the point that Compute Optimizer's memory-based right-sizing accuracy also needs the Agent for the same reason.
+Explanation: Memory and free disk space are guest-OS-internal information the hypervisor (Nitro) can't see, and they simply aren't in the standard metrics. You must install the CloudWatch Agent in the guest so the OS reports directly, enabling memory metrics and alarms. A is the false premise that memory exists in the standard metrics. C and D are irrelevant. This pitfall connects to the point that Compute Optimizer's memory-based right-sizing accuracy also needs the Agent for the same reason.
 
 ---
 
-**문제 10.** A Config Rule detected a resource violating "EBS volumes must be encrypted." You want to automatically remediate (or isolate) it without human intervention. Which is the most appropriate configuration?
+**Question 10.** A Config Rule detected a resource violating "EBS volumes must be encrypted." You want to automatically remediate (or isolate) it without human intervention. Which is the most appropriate configuration?
 
 A) Poll with Lambda alone
 B) Config Rule (detect violation) → EventBridge → SSM Automation Runbook for auto-remediation
 C) Step Functions only
 D) Inspector
 
-**정답: B**
+**Answer: B**
 
-해설: The standard pattern for auto-remediation is Config detecting the violation, receiving that event via EventBridge, and having an SSM Automation Runbook execute a standardized remediation procedure (re-encrypt, isolate, tag). Config can also attach a Remediation Action (SSM Automation) directly to some managed Rules. A's Lambda polling has cursor-management, duplication, and scalability problems, C is an orchestration tool but not the standard entry point for Config remediation, and D is vulnerability assessment and irrelevant.
+Explanation: The standard pattern for auto-remediation is Config detecting the violation, receiving that event via EventBridge, and having an SSM Automation Runbook execute a standardized remediation procedure (re-encrypt, isolate, tag). Config can also attach a Remediation Action (SSM Automation) directly to some managed Rules. A's Lambda polling has cursor-management, duplication, and scalability problems, C is an orchestration tool but not the standard entry point for Config remediation, and D is vulnerability assessment and irrelevant.
 
 ---
 
-**문제 11.** A SaaS runs ECS on Fargate microservices and wants to instrument tracing in a standard, vendor-neutral way — leaving room to swap among X-Ray, Prometheus, and Jaeger later — and at the same time automatically track SLOs from traces. Which is the most appropriate combination?
+**Question 11.** A SaaS runs ECS on Fargate microservices and wants to instrument tracing in a standard, vendor-neutral way — leaving room to swap among X-Ray, Prometheus, and Jaeger later — and at the same time automatically track SLOs from traces. Which is the most appropriate combination?
 
 A) X-Ray SDK-only instrumentation
 B) Standard instrumentation with ADOT (OpenTelemetry) + SLO tracking with CloudWatch Application Signals
 C) CloudWatch Agent only
 D) Lambda Active Tracing
 
-**정답: B**
+**Answer: B**
 
-해설: If you want vendor neutrality and portability, the OpenTelemetry standard is the answer, and ADOT is its AWS distribution. Once you instrument with OTel, you can swap the backend, reducing lock-in. Adding Application Signals on top automatically extracts SLIs from traces/metrics and tracks and alarms on SLOs ("meet p99<300ms 99.9% of the time") in a managed way. A is strongly AWS-dependent, C is not standard tracing instrumentation, and D is Lambda-only, not Fargate. Also remember that on ECS/EKS you run the Collector as a sidecar.
+Explanation: If you want vendor neutrality and portability, the OpenTelemetry standard is the answer, and ADOT is its AWS distribution. Once you instrument with OTel, you can swap the backend, reducing lock-in. Adding Application Signals on top automatically extracts SLIs from traces/metrics and tracks and alarms on SLOs ("meet p99<300ms 99.9% of the time") in a managed way. A is strongly AWS-dependent, C is not standard tracing instrumentation, and D is Lambda-only, not Fargate. Also remember that on ECS/EKS you run the Collector as a sidecar.
 
 ---
 
-**문제 12.** A payment service's availability alarm was set to "ALARM when error rate exceeds 5%," but when the service died completely and requests dropped to 0, the alarm didn't fire. Also, you want to view the metrics/logs of three global regions on one screen. What is the correct response to each?
+**Question 12.** A payment service's availability alarm was set to "ALARM when error rate exceeds 5%," but when the service died completely and requests dropped to 0, the alarm didn't fire. Also, you want to view the metrics/logs of three global regions on one screen. What is the correct response to each?
 
 A) Lower the threshold, and view each region's console separately
 B) Set missing-data handling to breaching, and use a Cross-region (Cross-account if needed) CloudWatch Dashboard
 C) Switch to Anomaly Detection, and re-send the metrics to one region
 D) Increase the evaluation period, and use the Service Health Dashboard
 
-**정답: B**
+**Answer: B**
 
-해설: When requests are 0, the error-rate metric itself isn't reported, so the alarm becomes INSUFFICIENT_DATA and under the default (missing) handling doesn't transition to ALARM. Availability alarms must handle missing data as breaching so that "traffic stopped" is also caught as an outage. For global unified visibility, since metrics are region-isolated by default, a Cross-region/Cross-account Dashboard composites multiple regions' widgets into one view. A doesn't solve the no-data problem and only increases operational burden. C's re-sending creates cost and duplication problems, and Anomaly Detection hits the same limit with no data. D's Service Health is an AWS-side status page, not your own metric dashboard.
+Explanation: When requests are 0, the error-rate metric itself isn't reported, so the alarm becomes INSUFFICIENT_DATA and under the default (missing) handling doesn't transition to ALARM. Availability alarms must handle missing data as breaching so that "traffic stopped" is also caught as an outage. For global unified visibility, since metrics are region-isolated by default, a Cross-region/Cross-account Dashboard composites multiple regions' widgets into one view. A doesn't solve the no-data problem and only increases operational burden. C's re-sending creates cost and duplication problems, and Anomaly Detection hits the same limit with no data. D's Service Health is an AWS-side status page, not your own metric dashboard.
 
 ---
 

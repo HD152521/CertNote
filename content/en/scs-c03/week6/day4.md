@@ -94,62 +94,62 @@ Both services bookend data protection. ACM makes the *channel where data moves* 
 
 ## 📝 Practice Questions
 
-**문제 1.** EC2 인스턴스에서 직접 TLS를 종단하려 한다. ACM 퍼블릭 인증서를 EC2에 설치하려 했으나 불가능하다. 가장 적절한 대안은?
+**Question 1.** EC2 인스턴스에서 직접 TLS를 종단하려 한다. ACM 퍼블릭 인증서를 EC2에 설치하려 했으나 불가능하다. 가장 적절한 대안은?
 
 A) ACM 퍼블릭 인증서의 개인키를 export해 EC2에 복사한다  
 B) ALB를 EC2 앞에 두고 ALB에서 ACM 인증서로 TLS를 종단하거나, AWS Private CA에서 발급한 인증서를 export해 EC2에 설치한다  
 C) 인증서를 us-east-1에서 발급하면 EC2에 설치된다  
 D) Macie로 인증서를 배포한다  
 
-**정답: B**  
-해설: ACM 퍼블릭 인증서는 개인키를 내보낼 수 없어 EC2에 직접 설치할 수 없다. 통합 서비스인 ALB/CloudFront/API Gateway에 배포하거나, EC2에서 직접 종단해야 한다면 Private CA가 발급한(export 가능한) 인증서를 설치한다. 퍼블릭 인증서 키는 어떤 리전에서 발급해도 export 불가이며, Macie는 인증서 배포와 무관하다.
+**Answer: B**  
+Explanation: ACM 퍼블릭 인증서는 개인키를 내보낼 수 없어 EC2에 직접 설치할 수 없다. 통합 서비스인 ALB/CloudFront/API Gateway에 배포하거나, EC2에서 직접 종단해야 한다면 Private CA가 발급한(export 가능한) 인증서를 설치한다. 퍼블릭 인증서 키는 어떤 리전에서 발급해도 export 불가이며, Macie는 인증서 배포와 무관하다.
 
 ---
 
-**문제 2.** 인증서 자동 갱신이 조용히 실패해 만료로 인한 장애가 반복된다. 재발 방지에 가장 적절한 조합은?
+**Question 2.** 인증서 자동 갱신이 조용히 실패해 만료로 인한 장애가 반복된다. 재발 방지에 가장 적절한 조합은?
 
 A) Email 검증으로 전환하고 갱신마다 수동 확인  
 B) DNS 검증을 사용해 무인 자동 갱신을 가능하게 하고, EventBridge/CloudWatch DaysToExpiry로 만료 임박을 경보한다  
 C) 인증서를 매년 수동 재발급  
 D) 인증서를 Secrets Manager에 저장  
 
-**정답: B**  
-해설: DNS 검증은 CNAME 레코드가 지속 존재하므로 ACM이 무인으로 도메인 통제를 재확인해 자동 갱신할 수 있다. 추가로 EventBridge 이벤트나 CloudWatch DaysToExpiry 메트릭으로 만료 임박·갱신 실패를 경보하면 조용한 실패를 막는다. Email 검증·수동 재발급은 자동화에 역행하고, Secrets Manager는 ACM 갱신과 무관하다.
+**Answer: B**  
+Explanation: DNS 검증은 CNAME 레코드가 지속 존재하므로 ACM이 무인으로 도메인 통제를 재확인해 자동 갱신할 수 있다. 추가로 EventBridge 이벤트나 CloudWatch DaysToExpiry 메트릭으로 만료 임박·갱신 실패를 경보하면 조용한 실패를 막는다. Email 검증·수동 재발급은 자동화에 역행하고, Secrets Manager는 ACM 갱신과 무관하다.
 
 ---
 
-**문제 3.** "우리 프로덕션 S3 버킷 어딘가에 평문 신용카드 번호가 저장되어 있는지" 확인하려 한다. 적절한 서비스는?
+**Question 3.** "우리 프로덕션 S3 버킷 어딘가에 평문 신용카드 번호가 저장되어 있는지" 확인하려 한다. 적절한 서비스는?
 
 A) Amazon Macie의 민감 데이터 탐지 작업  
 B) AWS Config 규칙  
 C) GuardDuty  
 D) ACM  
 
-**정답: A**  
-해설: Macie는 S3 객체 내용을 스캔해 신용카드 번호 등 민감 데이터를 관리형 식별자로 탐지·분류하고 finding을 생성한다. AWS Config는 리소스 구성 준수를 평가할 뿐 객체 내용을 보지 않고, GuardDuty는 위협 탐지(이상 행위)에 특화되며, ACM은 인증서 관리 서비스다.
+**Answer: A**  
+Explanation: Macie는 S3 객체 내용을 스캔해 신용카드 번호 등 민감 데이터를 관리형 식별자로 탐지·분류하고 finding을 생성한다. AWS Config는 리소스 구성 준수를 평가할 뿐 객체 내용을 보지 않고, GuardDuty는 위협 탐지(이상 행위)에 특화되며, ACM은 인증서 관리 서비스다.
 
 ---
 
-**문제 4.** RDS 데이터베이스 안에 저장된 PII를 탐지하려 한다. Macie를 쓰려 했으나 적절치 않다. 그 이유는?
+**Question 4.** RDS 데이터베이스 안에 저장된 PII를 탐지하려 한다. Macie를 쓰려 했으나 적절치 않다. 그 이유는?
 
 A) Macie는 비용이 너무 비싸서  
 B) Macie는 S3 전용이며 RDS/DynamoDB/EBS 내부 데이터는 스캔하지 못하기 때문  
 C) Macie는 PII를 탐지하지 못하기 때문  
 D) Macie는 us-east-1에서만 동작하기 때문  
 
-**정답: B**  
-해설: Macie의 민감 데이터 탐지 범위는 S3 객체로 한정된다. RDS·DynamoDB·EBS 안의 데이터는 스캔 대상이 아니므로 "DB 내부 PII 탐지"에는 부적절하다. Macie는 PII 탐지가 주 기능이고 여러 리전에서 동작하며, 비용은 표적 스캔으로 통제할 수 있어 핵심 이유가 아니다.
+**Answer: B**  
+Explanation: Macie의 민감 데이터 탐지 범위는 S3 객체로 한정된다. RDS·DynamoDB·EBS 안의 데이터는 스캔 대상이 아니므로 "DB 내부 PII 탐지"에는 부적절하다. Macie는 PII 탐지가 주 기능이고 여러 리전에서 동작하며, 비용은 표적 스캔으로 통제할 수 있어 핵심 이유가 아니다.
 
 ---
 
-**문제 5.** 민감 데이터가 공개 S3 버킷에 업로드되면 즉시 탐지하고 자동으로 비공개 처리하려 한다. 올바른 아키텍처는?
+**Question 5.** 민감 데이터가 공개 S3 버킷에 업로드되면 즉시 탐지하고 자동으로 비공개 처리하려 한다. 올바른 아키텍처는?
 
 A) Macie가 단독으로 탐지하고 자동 교정까지 수행한다  
 B) Macie가 finding 생성 → EventBridge 규칙이 캐치 → Lambda가 BPA 적용·버킷 정책 교정  
 C) ACM이 버킷을 모니터링하고 교정한다  
 D) S3 버전 관리가 자동으로 공개를 막는다  
 
-**정답: B**  
-해설: Macie는 민감 데이터·정책 finding을 *탐지*하고 EventBridge로 송출하는 역할이며, 자동 *대응*은 EventBridge 규칙이 finding을 받아 Lambda로 BPA 적용·정책 교정을 실행하는 식으로 연결한다. Macie 단독은 교정하지 않고, ACM은 인증서 서비스, 버전 관리는 공개 차단과 무관하다.
+**Answer: B**  
+Explanation: Macie는 민감 데이터·정책 finding을 *탐지*하고 EventBridge로 송출하는 역할이며, 자동 *대응*은 EventBridge 규칙이 finding을 받아 Lambda로 BPA 적용·정책 교정을 실행하는 식으로 연결한다. Macie 단독은 교정하지 않고, ACM은 인증서 서비스, 버전 관리는 공개 차단과 무관하다.
 
 ---

@@ -393,80 +393,80 @@ Tomorrow we head into the world of containers. We'll cover how ECS, EKS, Fargate
 
 ## 📝 Practice Questions
 
-**문제 1.** You're implementing a loan-review workflow. Application received → credit check (automatic) → reviewer examination (human, up to 3 days) → approval/rejection notification. What is the most suitable Step Functions configuration for this workflow?
+**Question 1.** You're implementing a loan-review workflow. Application received → credit check (automatic) → reviewer examination (human, up to 3 days) → approval/rejection notification. What is the most suitable Step Functions configuration for this workflow?
 
 A) Express Workflow (fast processing)
 B) Standard Workflow + waitForTaskToken (can wait up to 1 year, reviewer callback)
 C) Standard Workflow + Wait state (3-day timer wait)
 D) Express Workflow + Lambda polling (periodically check the review result)
 
-**정답: B**
+**Answer: B**
 
-해설: The approval step involving a human requires waiting up to 3 days. Standard Workflow can run for up to a year, and waitForTaskToken waits at no cost until a callback arrives from outside. The task token is passed to the reviewer, and when the reviewer presses the approve/reject button, SendTaskSuccess/SendTaskFailure is called with that token and the workflow resumes. A is impossible — the 5-minute limit can't wait 3 days. C's Wait state is a fixed-duration wait, not a callback wait. D is unsuitable because of Express's 5-minute limit and the complexity of implementing polling.
+Explanation: The approval step involving a human requires waiting up to 3 days. Standard Workflow can run for up to a year, and waitForTaskToken waits at no cost until a callback arrives from outside. The task token is passed to the reviewer, and when the reviewer presses the approve/reject button, SendTaskSuccess/SendTaskFailure is called with that token and the workflow resumes. A is impossible — the 5-minute limit can't wait 3 days. C's Wait state is a fixed-duration wait, not a callback wait. D is unsuitable because of Express's 5-minute limit and the complexity of implementing polling.
 
 ---
 
-**문제 2.** One million JSON files are uploaded to an S3 bucket every day. Each file must be processed with Lambda and the aggregated data stored in DynamoDB. What is the most efficient approach?
+**Question 2.** One million JSON files are uploaded to an S3 bucket every day. Each file must be processed with Lambda and the aggregated data stored in DynamoDB. What is the most efficient approach?
 
 A) Trigger a Lambda that lists the S3 files and processes them sequentially
 B) Step Functions Standard Workflow + Distributed Map (up to 10,000 parallel)
 C) Put the file paths into SQS and have Lambda poll and process them
 D) Run a per-file workflow with EventBridge + Step Functions Express
 
-**정답: B**
+**Answer: B**
 
-해설: Distributed Map is optimized for reading the S3 object list directly and processing each object in parallel. Setting MaxConcurrency to 10,000 lets you process one million files in 100 batches. The results are automatically stored in S3. A is too slow because sequential processing takes far too long for one million files. C — SQS is a fine approach, but it requires separate S3 listing and queue-management logic and isn't as clean as Distributed Map. D — triggering a workflow for each and every file with EventBridge is excessive overhead.
+Explanation: Distributed Map is optimized for reading the S3 object list directly and processing each object in parallel. Setting MaxConcurrency to 10,000 lets you process one million files in 100 batches. The results are automatically stored in S3. A is too slow because sequential processing takes far too long for one million files. C — SQS is a fine approach, but it requires separate S3 listing and queue-management logic and isn't as clean as Distributed Map. D — triggering a workflow for each and every file with EventBridge is excessive overhead.
 
 ---
 
-**문제 3.** A mobile app and a web app use the same backend, but the mobile app has a small screen and needs only the user's name and profile picture, while the web app needs the full profile + the 10 most recent orders + the friends list. To handle both clients' needs efficiently with the same API, what should you do?
+**Question 3.** A mobile app and a web app use the same backend, but the mobile app has a small screen and needs only the user's name and profile picture, while the web app needs the full profile + the 10 most recent orders + the friends list. To handle both clients' needs efficiently with the same API, what should you do?
 
 A) Create two REST APIs (one for mobile, one for web)
 B) Branch the response by a client-type header in a single REST API
 C) AppSync GraphQL API (the client specifies the fields it needs in the query)
 D) Detect the client by User-Agent in Lambda and return different responses
 
-**정답: C**
+**Answer: C**
 
-해설: The core advantage of GraphQL is precisely that the client can specify the fields it needs. The mobile app requests `{ user { name, profilePicture } }`, and the web app requests `{ user { name, profilePicture, email, recentOrders { ... }, friends { ... } } }`. A single API endpoint handles both needs with no Over-fetching. A is complex to maintain due to duplication. B and D make the server's branching logic complex and hard to maintain.
+Explanation: The core advantage of GraphQL is precisely that the client can specify the fields it needs. The mobile app requests `{ user { name, profilePicture } }`, and the web app requests `{ user { name, profilePicture, email, recentOrders { ... }, friends { ... } } }`. A single API endpoint handles both needs with no Over-fetching. A is complex to maintain due to duplication. B and D make the server's branching logic complex and hard to maintain.
 
 ---
 
-**문제 4.** In a Step Functions workflow, a Lambda function threw a `PaymentDeclinedException`. You need to roll back an inventory reservation that has already been made. How do you configure this?
+**Question 4.** In a Step Functions workflow, a Lambda function threw a `PaymentDeclinedException`. You need to roll back an inventory reservation that has already been made. How do you configure this?
 
 A) Roll back the inventory directly with try-catch inside the Lambda function
 B) Catch PaymentDeclinedException in a Step Functions Catch block and route to an inventory-cancellation Lambda (Saga pattern)
 C) Detect and handle the Step Functions failure event in an EventBridge Rule
 D) Detect the Lambda error with a CloudWatch Alarm and handle it manually
 
-**정답: B**
+**Answer: B**
 
-해설: A Step Functions Catch block implements the Saga pattern by transitioning to a different state for a specific error type. When PaymentDeclinedException occurs, you can configure a compensating transaction that calls an inventory-cancellation Lambda. This is the standard way to achieve eventual consistency in distributed transactions. A couples inventory-cancellation logic into the payment Lambda, violating the separation-of-concerns principle. C — EventBridge adds extra latency, and accessing Step Functions' context data is complex. D is manual handling, not automation.
+Explanation: A Step Functions Catch block implements the Saga pattern by transitioning to a different state for a specific error type. When PaymentDeclinedException occurs, you can configure a compensating transaction that calls an inventory-cancellation Lambda. This is the standard way to achieve eventual consistency in distributed transactions. A couples inventory-cancellation logic into the payment Lambda, violating the separation-of-concerns principle. C — EventBridge adds extra latency, and accessing Step Functions' context data is complex. D is manual handling, not automation.
 
 ---
 
-**문제 5.** In a collaborative document-editing app, when multiple users edit the same document simultaneously, one user's changes must be reflected in real time to all other users. What is the most suitable AWS service combination?
+**Question 5.** In a collaborative document-editing app, when multiple users edit the same document simultaneously, one user's changes must be reflected in real time to all other users. What is the most suitable AWS service combination?
 
 A) API Gateway REST API + S3 + CloudFront
 B) AppSync GraphQL + Subscription (WebSocket-based real-time Push)
 C) API Gateway WebSocket API + Lambda + DynamoDB
 D) SNS + Lambda + SQS
 
-**정답: B**
+**Answer: B**
 
-해설: AppSync's Subscription fits this scenario perfectly. When a user edits the document, a Mutation runs, and the change is automatically pushed to all users subscribed to the same document. Using it together with Amplify DataStore even adds offline synchronization support. C is also possible, but you'd have to implement the subscription/connection-management logic yourself with WebSocket API + Lambda, which raises the complexity. AppSync has this logic built in, so it can be implemented with far less code.
+Explanation: AppSync's Subscription fits this scenario perfectly. When a user edits the document, a Mutation runs, and the change is automatically pushed to all users subscribed to the same document. Using it together with Amplify DataStore even adds offline synchronization support. C is also possible, but you'd have to implement the subscription/connection-management logic yourself with WebSocket API + Lambda, which raises the complexity. AppSync has this logic built in, so it can be implemented with far less code.
 
 ---
 
-**문제 6.** You're building an image-processing pipeline by combining Step Functions and Lambda. Each step (resizing, adding a watermark, uploading to S3) is implemented with Lambda. Which is more suitable for this pipeline, Standard or Express, and why?
+**Question 6.** You're building an image-processing pipeline by combining Step Functions and Lambda. Each step (resizing, adding a watermark, uploading to S3) is implemented with Lambda. Which is more suitable for this pipeline, Standard or Express, and why?
 
 A) Standard — the execution history of each step is easy to trace in the console
 B) Express — image processing completes within a few seconds and needs high-volume processing, and CloudWatch Logs is sufficient for monitoring
 C) Standard — payment processing is involved, so exactly-once guarantees are needed
 D) Express — since it's processed within 5 minutes, every workflow should be Express
 
-**정답: B**
+**Answer: B**
 
-해설: An image-processing pipeline completes within a few seconds (within the 5-minute limit) and needs high throughput, processing tens of thousands to hundreds of thousands of images a day. Express Workflow can handle over 100,000 executions per second and is far cheaper than Standard. You can view execution logs via CloudWatch Logs, so debugging is possible too. Image processing yields the same result even if the same image is reprocessed, so Express's at-least-once semantics is safe here. A — Standard works too, but it's disadvantageous in terms of cost and throughput. C — an image-processing pipeline doesn't involve payment. D — being within 5 minutes doesn't always mean Express is right; you must also consider throughput and semantics.
+Explanation: An image-processing pipeline completes within a few seconds (within the 5-minute limit) and needs high throughput, processing tens of thousands to hundreds of thousands of images a day. Express Workflow can handle over 100,000 executions per second and is far cheaper than Standard. You can view execution logs via CloudWatch Logs, so debugging is possible too. Image processing yields the same result even if the same image is reprocessed, so Express's at-least-once semantics is safe here. A — Standard works too, but it's disadvantageous in terms of cost and throughput. C — an image-processing pipeline doesn't involve payment. D — being within 5 minutes doesn't always mean Express is right; you must also consider throughput and semantics.
 
 ---

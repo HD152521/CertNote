@@ -147,94 +147,94 @@ Next we cover State Manager and Inventory. "Desired state enforcement" principle
 
 ## 📝 Practice Questions
 
-**문제 1.** 프라이빗 서브넷의 EC2에서 Run Command는 정상 동작하는데 Session Manager만 "연결 실패"가 난다. 가장 가능성 높은 원인은?
+**Question 1.** 프라이빗 서브넷의 EC2에서 Run Command는 정상 동작하는데 Session Manager만 "연결 실패"가 난다. 가장 가능성 높은 원인은?
 
 A) IAM Instance Profile에 AmazonSSMManagedInstanceCore가 없다
 B) VPC 인터페이스 엔드포인트 중 `ssmmessages`가 없다
 C) SSM Agent가 설치되지 않았다
 D) 인스턴스 타입이 너무 작다
 
-**정답: B**
+**Answer: B**
 
-해설: Run Command가 동작한다는 건 IAM(A), 에이전트(C), 기본 `ssm` 엔드포인트 경로가 모두 정상이라는 뜻이다. Session Manager는 양방향 메시지 채널인 `ssmmessages` 엔드포인트를 추가로 쓰는데, 이것만 누락되면 Run Command는 되고 Session Manager만 실패하는 정확히 이 증상이 나온다. 프라이빗 서브넷에서 SSM 전체를 쓰려면 `ssm`, `ssmmessages`, `ec2messages` 세 엔드포인트를 모두 만들어야 한다. 인스턴스 타입(D)은 SSM 동작과 무관하다.
+Explanation: Run Command가 동작한다는 건 IAM(A), 에이전트(C), 기본 `ssm` 엔드포인트 경로가 모두 정상이라는 뜻이다. Session Manager는 양방향 메시지 채널인 `ssmmessages` 엔드포인트를 추가로 쓰는데, 이것만 누락되면 Run Command는 되고 Session Manager만 실패하는 정확히 이 증상이 나온다. 프라이빗 서브넷에서 SSM 전체를 쓰려면 `ssm`, `ssmmessages`, `ec2messages` 세 엔드포인트를 모두 만들어야 한다. 인스턴스 타입(D)은 SSM 동작과 무관하다.
 
 ---
 
-**문제 2.** 3000대 prod fleet에 설정 변경 명령을 Run Command로 배포한다. 잘못된 설정이 들어가도 전체 장애를 막으려면?
+**Question 2.** 3000대 prod fleet에 설정 변경 명령을 Run Command로 배포한다. 잘못된 설정이 들어가도 전체 장애를 막으려면?
 
 A) `--max-concurrency 100% --max-errors 100%`
 B) `--max-concurrency 10% --max-errors 5`로 점진 배포 + 실패 임계치 도달 시 자동 중단
 C) 모든 인스턴스에 동시에 실행 후 모니터링
 D) SSH로 한 대씩 접속해 수동 실행
 
-**정답: B**
+**Answer: B**
 
-해설: `max-concurrency`로 한 번에 10%(300대)씩만 퍼뜨리고, `max-errors 5`로 누적 실패 5개에서 즉시 전체 롤아웃을 중단한다. 잘못된 설정이 들어가면 처음 배치에서 실패가 누적되어 멈추므로 대다수 인스턴스가 보호된다. fail-fast + circuit break 패턴. A는 동시에 다 죽이는 방법, C는 통제 장치 없음, D는 3000대 규모에서 비현실적이고 감사도 어렵다.
+Explanation: `max-concurrency`로 한 번에 10%(300대)씩만 퍼뜨리고, `max-errors 5`로 누적 실패 5개에서 즉시 전체 롤아웃을 중단한다. 잘못된 설정이 들어가면 처음 배치에서 실패가 누적되어 멈추므로 대다수 인스턴스가 보호된다. fail-fast + circuit break 패턴. A는 동시에 다 죽이는 방법, C는 통제 장치 없음, D는 3000대 규모에서 비현실적이고 감사도 어렵다.
 
 ---
 
-**문제 3.** 감사 요구사항: "운영자가 prod 서버에서 실행한 모든 명령이 변조 불가능하게 기록되어야 한다." 현재 SSH 키 + Bastion 구조다. 가장 적절한 전환은?
+**Question 3.** 감사 요구사항: "운영자가 prod 서버에서 실행한 모든 명령이 변조 불가능하게 기록되어야 한다." 현재 SSH 키 + Bastion 구조다. 가장 적절한 전환은?
 
 A) Bastion에 sudo 로깅 강화
 B) Session Manager로 전환 + 세션 로깅(CloudWatch Logs + S3 + KMS) 활성화, IAM으로 접근 통제, CloudTrail로 세션 시작 감사
 C) SSH 키를 자주 회전
 D) VPN 도입
 
-**정답: B**
+**Answer: B**
 
-해설: SSH 환경의 셸 히스토리는 사용자가 지울 수 있어 감사 증거로 신뢰할 수 없다. Session Manager는 세션 입출력을 AWS 측에서 기록하므로 운영자가 변조할 수 없고, IAM(누가 접속 가능)·CloudTrail(언제 세션 시작)·세션 로그(무엇을 실행)의 3단 감사가 완성된다. 동시에 Bastion이 제거되어 22번 포트 노출도 사라진다. A/C는 SSH 모델의 근본 한계를 남기고, D는 감사와 무관하다.
+Explanation: SSH 환경의 셸 히스토리는 사용자가 지울 수 있어 감사 증거로 신뢰할 수 없다. Session Manager는 세션 입출력을 AWS 측에서 기록하므로 운영자가 변조할 수 없고, IAM(누가 접속 가능)·CloudTrail(언제 세션 시작)·세션 로그(무엇을 실행)의 3단 감사가 완성된다. 동시에 Bastion이 제거되어 22번 포트 노출도 사라진다. A/C는 SSH 모델의 근본 한계를 남기고, D는 감사와 무관하다.
 
 ---
 
-**문제 4.** Patch Baseline의 `ApproveAfterDays: 7`이 prod 환경에서 갖는 의미로 가장 정확한 것은?
+**Question 4.** Patch Baseline의 `ApproveAfterDays: 7`이 prod 환경에서 갖는 의미로 가장 정확한 것은?
 
 A) 패치를 7일 동안 설치하지 않고 나중에 한 번에 설치
 B) 보안·중요 패치를 출시 후 7일이 지나면 자동 승인 — 다른 사용자들이 먼저 검증할 bake time 확보
 C) 7일마다 패치 검사
 D) 7일 후 인스턴스 재부팅
 
-**정답: B**
+**Answer: B**
 
-해설: approve-after-days는 패치 출시 후 자동 승인까지의 완충 구간이다. 이 7일 동안 전 세계 다른 사용자들이 패치를 먼저 적용해 문제를 드러내주는 군중 검증 효과를 얻는다. 신뢰성 공학의 bake time을 정책화한 것. dev는 0일(즉시), staging 3일, prod 7일로 환경별 차등을 두는 게 표준이다. 검사 주기(C)나 재부팅(D)과는 무관하다.
+Explanation: approve-after-days는 패치 출시 후 자동 승인까지의 완충 구간이다. 이 7일 동안 전 세계 다른 사용자들이 패치를 먼저 적용해 문제를 드러내주는 군중 검증 효과를 얻는다. 신뢰성 공학의 bake time을 정책화한 것. dev는 0일(즉시), staging 3일, prod 7일로 환경별 차등을 두는 게 표준이다. 검사 주기(C)나 재부팅(D)과는 무관하다.
 
 ---
 
-**문제 5.** Maintenance Window가 `--duration 4 --cutoff 1`이고 새벽 3시에 시작한다. cutoff의 효과는?
+**Question 5.** Maintenance Window가 `--duration 4 --cutoff 1`이고 새벽 3시에 시작한다. cutoff의 효과는?
 
 A) 패치를 1시간만 실행
 B) 윈도우 종료 1시간 전(6시)부터 새 작업을 시작하지 않음 — 이미 시작된 작업은 완료까지 진행
 C) 1시간마다 반복 실행
 D) 작업 시작 후 1시간 timeout
 
-**정답: B**
+**Answer: B**
 
-해설: cutoff는 윈도우 종료 전 새 작업 시작을 막는 안전 마진이다. 3시~7시 윈도우에서 cutoff 1이면 6시 이후로는 새 인스턴스 패치를 시작하지 않는다. 한 작업이 윈도우 경계를 한참 넘겨 폭주하는 것을 방지한다. 이미 6시 이전에 시작된 작업은 끝까지 진행된다.
+Explanation: cutoff는 윈도우 종료 전 새 작업 시작을 막는 안전 마진이다. 3시~7시 윈도우에서 cutoff 1이면 6시 이후로는 새 인스턴스 패치를 시작하지 않는다. 한 작업이 윈도우 경계를 한참 넘겨 폭주하는 것을 방지한다. 이미 6시 이전에 시작된 작업은 끝까지 진행된다.
 
 ---
 
-**문제 6.** 데이터센터의 물리 서버 200대와 EC2 fleet을 단일 패치 정책으로 통합 관리하려면?
+**Question 6.** 데이터센터의 물리 서버 200대와 EC2 fleet을 단일 패치 정책으로 통합 관리하려면?
 
 A) 물리 서버용 별도 패치 도구 운영
 B) 물리 서버에 SSM Agent 설치 + Hybrid Activation 등록(`mi-` ID) 후 동일 Patch Baseline·Group·Maintenance Window 적용
 C) 물리 서버를 모두 EC2로 마이그레이션
 D) 물리 서버는 수동 패치
 
-**정답: B**
+**Answer: B**
 
-해설: Hybrid Activation으로 온프레미스 서버를 SSM 관리 대상(`mi-` 접두사)으로 등록하면 EC2와 동일하게 Run Command·Patch Manager·Inventory를 쓸 수 있다. 같은 태그 기반 타겟팅과 컴플라이언스 리포팅에 포함되어 단일 콘솔에서 하이브리드 fleet을 관리한다. 별도 도구(A)는 운영 부담이 두 배, 마이그레이션(C)은 과도한 비용, 수동(D)은 규모에서 비현실적이다.
+Explanation: Hybrid Activation으로 온프레미스 서버를 SSM 관리 대상(`mi-` 접두사)으로 등록하면 EC2와 동일하게 Run Command·Patch Manager·Inventory를 쓸 수 있다. 같은 태그 기반 타겟팅과 컴플라이언스 리포팅에 포함되어 단일 콘솔에서 하이브리드 fleet을 관리한다. 별도 도구(A)는 운영 부담이 두 배, 마이그레이션(C)은 과도한 비용, 수동(D)은 규모에서 비현실적이다.
 
 ---
 
-**문제 7.** SSM Agent가 인바운드 포트 없이 동작하는 근본 이유는?
+**Question 7.** SSM Agent가 인바운드 포트 없이 동작하는 근본 이유는?
 
 A) AWS가 인스턴스로 명령을 push하기 때문
 B) 에이전트가 SSM 엔드포인트로 아웃바운드 롱폴링하는 pull 모델이라 인바운드 연결이 필요 없음
 C) 보안 그룹이 SSM 트래픽을 자동 허용하기 때문
 D) SSM이 UDP를 쓰기 때문
 
-**정답: B**
+**Answer: B**
 
-해설: SSM Agent는 인스턴스가 SSM 서비스로 나가서(아웃바운드 HTTPS) 할 일을 받아오는 pull 모델이다. 인스턴스는 인바운드 포트를 하나도 열 필요가 없어 공격 표면이 최소화된다. 이 pull 모델이 Session Manager가 22번 포트 없이 셸을 띄우는 근본 원리다. push 모델(A)은 전통 SSH의 방식이고 인바운드 노출이 필요하다.
+Explanation: SSM Agent는 인스턴스가 SSM 서비스로 나가서(아웃바운드 HTTPS) 할 일을 받아오는 pull 모델이다. 인스턴스는 인바운드 포트를 하나도 열 필요가 없어 공격 표면이 최소화된다. 이 pull 모델이 Session Manager가 22번 포트 없이 셸을 띄우는 근본 원리다. push 모델(A)은 전통 SSH의 방식이고 인바운드 노출이 필요하다.
 
 ---
 

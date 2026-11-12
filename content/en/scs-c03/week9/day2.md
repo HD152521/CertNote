@@ -111,63 +111,63 @@ Modern Detective offers **Automated Investigations** for IAM users/roles. Specif
 
 ## 📝 Practice Questions
 
-**문제 1.** GuardDuty가 IAM 역할에 대한 비정상 API 호출 결과를 생성했다. 보안 분석가는 "이 자격증명이 언제부터 새 지역에서 활동했고, 어떤 리소스까지 접근했는지" 근본 원인과 영향 범위를 빠르게 파악하려 한다. 가장 적절한 도구는?
+**Question 1.** GuardDuty가 IAM 역할에 대한 비정상 API 호출 결과를 생성했다. 보안 분석가는 "이 자격증명이 언제부터 새 지역에서 활동했고, 어떤 리소스까지 접근했는지" 근본 원인과 영향 범위를 빠르게 파악하려 한다. 가장 적절한 도구는?
 
 A) Amazon Inspector  
 B) Amazon Detective  
 C) AWS Config  
 D) Amazon Macie  
 
-**정답: B**  
-해설: 결과의 근본 원인·영향 범위를 동작 그래프로 시각화해 "최초 발생 시점, 새 지역·IP, 연관 엔티티"를 추적하는 것은 Detective의 정확한 용도다. Inspector는 취약점 스캔, Config는 리소스 구성 이력, Macie는 S3 민감 데이터 분류로 모두 행위 기반 인시던트 조사와는 다른 목적이다.
+**Answer: B**  
+Explanation: 결과의 근본 원인·영향 범위를 동작 그래프로 시각화해 "최초 발생 시점, 새 지역·IP, 연관 엔티티"를 추적하는 것은 Detective의 정확한 용도다. Inspector는 취약점 스캔, Config는 리소스 구성 이력, Macie는 S3 민감 데이터 분류로 모두 행위 기반 인시던트 조사와는 다른 목적이다.
 
 ---
 
-**문제 2.** 팀이 침해 의심 후 Amazon Detective를 처음 활성화했는데, 사건 발생 이전의 풍부한 행위 데이터가 그래프에 보이지 않는다. 그 이유로 옳은 것은?
+**Question 2.** 팀이 침해 의심 후 Amazon Detective를 처음 활성화했는데, 사건 발생 이전의 풍부한 행위 데이터가 그래프에 보이지 않는다. 그 이유로 옳은 것은?
 
 A) Detective가 잘못 구성되었다  
 B) Detective는 활성화 이후부터 데이터를 축적하므로 베이스라인 형성에 시간이 필요하며, 사고 전 미리 켜두는 것이 모범이다  
 C) Detective는 VPC Flow Logs만 분석하기 때문이다  
 D) 위임 관리자를 지정하지 않았기 때문이다  
 
-**정답: B**  
-해설: Detective는 활성화 시점부터 데이터를 수집·연결하며 의미 있는 베이스라인을 만드는 데 보통 2주 이상이 걸린다. 따라서 사고가 터진 뒤 켜면 과거 컨텍스트가 부족하고, 사고 이전에 상시 켜두는 것이 정답이다. 구성 오류·소스 제한·위임 관리자 미지정 때문이 아니라 데이터 축적 특성 때문이다.
+**Answer: B**  
+Explanation: Detective는 활성화 시점부터 데이터를 수집·연결하며 의미 있는 베이스라인을 만드는 데 보통 2주 이상이 걸린다. 따라서 사고가 터진 뒤 켜면 과거 컨텍스트가 부족하고, 사고 이전에 상시 켜두는 것이 정답이다. 구성 오류·소스 제한·위임 관리자 미지정 때문이 아니라 데이터 축적 특성 때문이다.
 
 ---
 
-**문제 3.** Amazon Detective의 역할에 대한 설명으로 옳은 것은?
+**Question 3.** Amazon Detective의 역할에 대한 설명으로 옳은 것은?
 
 A) 자체적으로 새로운 위협 결과를 생성하고 악성 트래픽을 차단한다  
 B) 기존 결과와 로그를 동작 그래프로 연결해 조사·근본원인 분석을 돕지만, 결과 생성이나 차단은 하지 않는다  
 C) S3 버킷의 PII를 자동 분류한다  
 D) EC2와 ECR의 CVE를 스캔한다  
 
-**정답: B**  
-해설: Detective는 조사 전용 도구로, GuardDuty가 만든 결과와 로그를 그래프로 묶어 "왜·어디까지·어떻게"를 분석한다. 결과 생성은 GuardDuty, 차단은 WAF/SG, PII 분류는 Macie, CVE 스캔은 Inspector의 역할이다. Detective를 탐지/차단 도구로 오인하는 것이 대표적 함정이다.
+**Answer: B**  
+Explanation: Detective는 조사 전용 도구로, GuardDuty가 만든 결과와 로그를 그래프로 묶어 "왜·어디까지·어떻게"를 분석한다. 결과 생성은 GuardDuty, 차단은 WAF/SG, PII 분류는 Macie, CVE 스캔은 Inspector의 역할이다. Detective를 탐지/차단 도구로 오인하는 것이 대표적 함정이다.
 
 ---
 
-**문제 4.** SOC 분석가들이 GuardDuty 결과 폭증으로 경보 피로를 겪는다. Detective의 어떤 기능이 관련 결과·엔티티를 단일 조사 단위로 묶어 신호 대 잡음비를 높여 주는가?
+**Question 4.** SOC 분석가들이 GuardDuty 결과 폭증으로 경보 피로를 겪는다. Detective의 어떤 기능이 관련 결과·엔티티를 단일 조사 단위로 묶어 신호 대 잡음비를 높여 주는가?
 
 A) Trusted IP list  
 B) Finding groups  
 C) Malware Protection  
 D) Macie 분류  
 
-**정답: B**  
-해설: Detective의 finding groups는 같은 자격증명·IP 등 공통 엔티티를 공유하는 다수 결과를 하나의 조사 단위로 자동 그룹핑해 경보 피로를 줄인다. Trusted IP list는 GuardDuty의 결과 억제 설정이고, Malware Protection은 멀웨어 스캔, Macie는 데이터 분류로 결과 그룹핑과 무관하다.
+**Answer: B**  
+Explanation: Detective의 finding groups는 같은 자격증명·IP 등 공통 엔티티를 공유하는 다수 결과를 하나의 조사 단위로 자동 그룹핑해 경보 피로를 줄인다. Trusted IP list는 GuardDuty의 결과 억제 설정이고, Malware Protection은 멀웨어 스캔, Macie는 데이터 분류로 결과 그룹핑과 무관하다.
 
 ---
 
-**문제 5.** 한 계정에서 탈취된 IAM 역할이 다른 계정의 리소스에 접근한 횡적 이동(lateral movement)을, 계정 경계를 넘어 단일 화면에서 추적하려 한다. 가장 적절한 Detective 구성은?
+**Question 5.** 한 계정에서 탈취된 IAM 역할이 다른 계정의 리소스에 접근한 횡적 이동(lateral movement)을, 계정 경계를 넘어 단일 화면에서 추적하려 한다. 가장 적절한 Detective 구성은?
 
 A) 각 계정에서 Detective를 개별로 켜고 따로 조사  
 B) Organizations 위임 관리자(Security Tooling 계정)로 모든 계정 데이터를 단일 동작 그래프에 통합  
 C) Detective 대신 각 계정에서 CloudTrail을 Athena로 수동 쿼리  
 D) GuardDuty만으로 충분하므로 Detective는 불필요  
 
-**정답: B**  
-해설: 계정 경계를 넘는 횡적 이동 추적은 모든 멤버 계정 데이터를 하나의 동작 그래프로 통합해야 가능하며, 이는 Organizations 위임 관리자 모델(GuardDuty·Security Hub와 동일 계정 정렬)로 달성한다. 계정별 개별 조사나 수동 Athena 쿼리는 통합 시야가 없어 비효율적이고, GuardDuty만으로는 깊은 조사·상관이 부족하다.
+**Answer: B**  
+Explanation: 계정 경계를 넘는 횡적 이동 추적은 모든 멤버 계정 데이터를 하나의 동작 그래프로 통합해야 가능하며, 이는 Organizations 위임 관리자 모델(GuardDuty·Security Hub와 동일 계정 정렬)로 달성한다. 계정별 개별 조사나 수동 Athena 쿼리는 통합 시야가 없어 비효율적이고, GuardDuty만으로는 깊은 조사·상관이 부족하다.
 
 ---
 

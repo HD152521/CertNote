@@ -265,101 +265,101 @@ In the next article we look at the layer that distributes traffic on top of this
 
 ## 📝 Practice Questions
 
-**문제 1.** A company stored ML model training results on an EC2 instance's instance store, stopped the instance, and all the data vanished. What is the most appropriate response?
+**Question 1.** A company stored ML model training results on an EC2 instance's instance store, stopped the instance, and all the data vanished. What is the most appropriate response?
 
 A) The data is unrecoverable, so re-run training + going forward, back up with an S3 sync immediately after training finishes
 B) Request data recovery from AWS Support
 C) Change the instance store option to "persistent"
 D) Move to another AZ
 
-**정답: A**
-해설: Instance store is temporary storage physically attached to the host server, and stop is an operation that can relocate the instance to a different host, so the data is permanently lost. There is no way to recover it. Workloads like ML training should always follow the standard pattern of periodically syncing checkpoints to S3 or EFS. Alternatively, store results on EBS, which retains data on stop. C's "persistent instance store" is not a real option. D is irrelevant because the data was already gone the moment you stopped.
+**Answer: A**
+Explanation: Instance store is temporary storage physically attached to the host server, and stop is an operation that can relocate the instance to a different host, so the data is permanently lost. There is no way to recover it. Workloads like ML training should always follow the standard pattern of periodically syncing checkpoints to S3 or EFS. Alternatively, store results on EBS, which retains data on stop. C's "persistent instance store" is not a real option. D is irrelevant because the data was already gone the moment you stopped.
 
 ---
 
-**문제 2.** You want to encrypt an unencrypted production EBS volume with no downtime. What is the most accurate procedure?
+**Question 2.** You want to encrypt an unencrypted production EBS volume with no downtime. What is the most accurate procedure?
 
 A) Convert it directly with `aws ec2 modify-volume --encrypted true`
 B) Create a snapshot → make an encrypted copy with `copy-snapshot --encrypted --kms-key-id` → create a new volume from the encrypted snapshot → swap via detach/attach during a brief downtime
 C) Request conversion from AWS Support
 D) Copy the volume twice
 
-**정답: B**
-해설: There is no API to encrypt a running volume directly. The standard procedure is: (1) create a snapshot → (2) make an encrypted copy by passing the `--encrypted` flag to copy-snapshot (which works even without cross-region) → (3) create a new volume from that snapshot in the same AZ → (4) briefly pause the instance (or, in a multi-attach setup, drain only some traffic) → (5) detach the original volume and attach the new one. Fully downtime-free conversion is impossible, but for RDS you can achieve near-zero-downtime by creating an encrypted read replica and promoting it. A's `modify-volume` API only supports changing size/iops/throughput/type — encryption can't be changed.
+**Answer: B**
+Explanation: There is no API to encrypt a running volume directly. The standard procedure is: (1) create a snapshot → (2) make an encrypted copy by passing the `--encrypted` flag to copy-snapshot (which works even without cross-region) → (3) create a new volume from that snapshot in the same AZ → (4) briefly pause the instance (or, in a multi-attach setup, drain only some traffic) → (5) detach the original volume and attach the new one. Fully downtime-free conversion is impossible, but for RDS you can achieve near-zero-downtime by creating an encrypted read replica and promoting it. A's `modify-volume` API only supports changing size/iops/throughput/type — encryption can't be changed.
 
 ---
 
-**문제 3.** A Lambda function needs to load a large ML model (about 2GB). It exceeds the Lambda layer limit (250MB). What is the most appropriate solution?
+**Question 3.** A Lambda function needs to load a large ML model (about 2GB). It exceeds the Lambda layer limit (250MB). What is the most appropriate solution?
 
 A) Quantize the model to make it smaller
 B) Mount an EFS access point on Lambda and store the model on EFS
 C) Use EC2 instead of Lambda
 D) Keep the model in S3 and download it on every Lambda invocation
 
-**정답: B**
-해설: Lambda has supported EFS mounts since 2020. Mounting through an EFS access point in the same VPC + subnet lets you access the model file inside the function like ordinary file IO. This sidesteps the ZIP/Layer limit (250MB) and the deployment package limit (50MB zipped). D would have to fetch 2GB from S3 on every cold start, making latency explode. C gives up Lambda's serverless advantages. A loses accuracy. Just note that Lambda must be connected to the VPC and cold-start latency grows by the EFS mount time.
+**Answer: B**
+Explanation: Lambda has supported EFS mounts since 2020. Mounting through an EFS access point in the same VPC + subnet lets you access the model file inside the function like ordinary file IO. This sidesteps the ZIP/Layer limit (250MB) and the deployment package limit (50MB zipped). D would have to fetch 2GB from S3 on every cold start, making latency explode. C gives up Lambda's serverless advantages. A loses accuracy. Just note that Lambda must be connected to the VPC and cold-start latency grows by the EFS mount time.
 
 ---
 
-**문제 4.** An analytics team processes 100GB of logs on EC2 daily. It's mostly sequential reads, IOPS is low, but throughput matters. Which is the cost-effective EBS type?
+**Question 4.** An analytics team processes 100GB of logs on EC2 daily. It's mostly sequential reads, IOPS is low, but throughput matters. Which is the cost-effective EBS type?
 
 A) gp3
 B) io2 Block Express
 C) st1 (throughput-optimized HDD)
 D) sc1 (cold HDD)
 
-**정답: C**
-해설: st1 is HDD-based at a cheap $0.051/GB while still delivering up to 500 MB/s throughput on sequential reads/writes. It's the standard for big-data ETL, log processing, and the staging area of a data warehouse. Its low IOPS makes random access slow, but for sequential workloads it's more cost-effective than SSD. sc1 is cheaper but has half the throughput, so it's not enough for a daily processing workload. gp3 and io2 are SSD, so they're expensive; their throughput ceilings (~1GB/s) are similar but the price is 5-10x. B's io2 Block Express can reach 4GB/s but is the most expensive, so it's unsuitable on cost-effectiveness. **Since HDD volumes can't be used as boot volumes**, attach it only as a data volume.
+**Answer: C**
+Explanation: st1 is HDD-based at a cheap $0.051/GB while still delivering up to 500 MB/s throughput on sequential reads/writes. It's the standard for big-data ETL, log processing, and the staging area of a data warehouse. Its low IOPS makes random access slow, but for sequential workloads it's more cost-effective than SSD. sc1 is cheaper but has half the throughput, so it's not enough for a daily processing workload. gp3 and io2 are SSD, so they're expensive; their throughput ceilings (~1GB/s) are similar but the price is 5-10x. B's io2 Block Express can reach 4GB/s but is the most expensive, so it's unsuitable on cost-effectiveness. **Since HDD volumes can't be used as boot volumes**, attach it only as a data volume.
 
 ---
 
-**문제 5.** You want to run Oracle RAC on EC2. Two nodes must access the same data concurrently. What is the appropriate storage configuration?
+**Question 5.** You want to run Oracle RAC on EC2. Two nodes must access the same data concurrently. What is the appropriate storage configuration?
 
 A) Attach a separate gp3 volume to each node
 B) io2 Multi-Attach + a cluster-aware file system (e.g. OCFS2)
 C) Mount EFS on both nodes
 D) Store the data in S3
 
-**정답: B**
-해설: Oracle RAC is a cluster DB that accesses shared storage concurrently. Use EBS Multi-Attach (io1/io2 + Nitro instances + same AZ, up to 16 nodes) to attach the same volume to both nodes. But an ordinary FS like ext4 or xfs isn't cluster-aware, so concurrent writes corrupt it. A cluster file system like Oracle ASM (Automatic Storage Management) or OCFS2 is essential. EFS is NFS, so it can't provide the block-level access Oracle RAC requires. C is suited to general file-sharing workloads. D is unsuitable for an OLTP DB.
+**Answer: B**
+Explanation: Oracle RAC is a cluster DB that accesses shared storage concurrently. Use EBS Multi-Attach (io1/io2 + Nitro instances + same AZ, up to 16 nodes) to attach the same volume to both nodes. But an ordinary FS like ext4 or xfs isn't cluster-aware, so concurrent writes corrupt it. A cluster file system like Oracle ASM (Automatic Storage Management) or OCFS2 is essential. EFS is NFS, so it can't provide the block-level access Oracle RAC requires. C is suited to general file-sharing workloads. D is unsuitable for an OLTP DB.
 
 ---
 
-**문제 6.** You created a new volume from an EBS snapshot, but responses are very slow at first. What is the most appropriate response?
+**Question 6.** You created a new volume from an EBS snapshot, but responses are very slow at first. What is the most appropriate response?
 
 A) Change the volume type to io2
 B) Enable Fast Snapshot Restore (FSR) in that AZ
 C) Re-create the snapshot
 D) Increase the instance type
 
-**정답: B**
-해설: A volume created from a snapshot uses lazy load — it fetches blocks from S3 on first access. That's why the first reads have high latency. Enabling Fast Snapshot Restore preloads all blocks in advance, giving full performance from the start. The cost is $0.75/snapshot/AZ per hour, so it's best to turn it on only for a short window and off again. As an alternative, mounting the volume and reading every block once with `dd if=/dev/xvdf of=/dev/null bs=1M` has the same effect. A and D don't address the essence of lazy load.
+**Answer: B**
+Explanation: A volume created from a snapshot uses lazy load — it fetches blocks from S3 on first access. That's why the first reads have high latency. Enabling Fast Snapshot Restore preloads all blocks in advance, giving full performance from the start. The cost is $0.75/snapshot/AZ per hour, so it's best to turn it on only for a short window and off again. As an alternative, mounting the volume and reading every block once with `dd if=/dev/xvdf of=/dev/null bs=1M` has the same effect. A and D don't address the essence of lazy load.
 
 ---
 
 **문제 5(중복 방지를 위해 재번호): NotApplicable. 이미 5번 출제.
 
-**문제 7.** A company wants to retain EBS snapshots for 90+ days of long-term storage. How do you minimize cost?
+**Question 7.** A company wants to retain EBS snapshots for 90+ days of long-term storage. How do you minimize cost?
 
 A) Leave the snapshot as-is (S3 Standard pricing)
 B) Move it to EBS Snapshot Archive (Glacier-based) with `modify-snapshot-tier` — 75% savings + a 90-day minimum retention commitment + 24-72 hours to restore
 C) Copy the snapshot directly to S3 Glacier
 D) Delete the snapshot and back up the volume
 
-**정답: B**
-해설: EBS Snapshot Archive (launched November 2021) moves a snapshot to a near-Glacier archive tier for a 75% cost reduction. It has a 90-day minimum retention commitment (an early-deletion penalty applies), and after a restore request it takes 24-72 hours to restore to the standard tier before it's usable. It suits long-term retention like compliance or legal hold. C's "copy directly to S3 Glacier" is impossible because users can't get direct S3 access to an EBS snapshot (it's an AWS-managed area). D fails because the backup itself disappears. Managing it centrally with AWS Backup is the operational best practice.
+**Answer: B**
+Explanation: EBS Snapshot Archive (launched November 2021) moves a snapshot to a near-Glacier archive tier for a 75% cost reduction. It has a 90-day minimum retention commitment (an early-deletion penalty applies), and after a restore request it takes 24-72 hours to restore to the standard tier before it's usable. It suits long-term retention like compliance or legal hold. C's "copy directly to S3 Glacier" is impossible because users can't get direct S3 access to an EBS snapshot (it's an AWS-managed area). D fails because the backup itself disappears. Managing it centrally with AWS Backup is the operational best practice.
 
 ---
 
-**문제 8.** A dev team wants multiple ECS tasks (running concurrently in the same VPC) to read/write the same directory. What is the most appropriate storage?
+**Question 8.** A dev team wants multiple ECS tasks (running concurrently in the same VPC) to read/write the same directory. What is the most appropriate storage?
 
 A) Attach an EBS volume to each task
 B) Mount an EFS volume on all tasks
 C) Sync files to an S3 bucket
 D) FSx for Lustre
 
-**정답: B**
-해설: EFS is NFSv4.1-based, replicates automatically across multiple AZs, and supports concurrent access from thousands of clients. Specifying an EFS file system as a `volumes` entry in the ECS task definition lets every task see the same directory. It's the standard for CMS, shared-config, and log-aggregation patterns. A fails because EBS by default attaches to only one instance. C is an object store, not filesystem semantics, and location-based access is awkward. D is a high-performance parallel FS for HPC/ML training — overkill in cost for an ordinary shared directory.
+**Answer: B**
+Explanation: EFS is NFSv4.1-based, replicates automatically across multiple AZs, and supports concurrent access from thousands of clients. Specifying an EFS file system as a `volumes` entry in the ECS task definition lets every task see the same directory. It's the standard for CMS, shared-config, and log-aggregation patterns. A fails because EBS by default attaches to only one instance. C is an object store, not filesystem semantics, and location-based access is awkward. D is a high-performance parallel FS for HPC/ML training — overkill in cost for an ordinary shared directory.
 
 ---
 

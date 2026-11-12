@@ -324,85 +324,85 @@ Tomorrow: Deeper Logs Insights query language — build library of troubleshooti
 
 ## 📝 Practice Questions
 
-**문제 1.** Running 500 Lambda functions, CloudWatch Logs costs exploded. Most effective first action?
+**Question 1.** Running 500 Lambda functions, CloudWatch Logs costs exploded. Most effective first action?
 
 A) Reduce console.log in function code
 B) Set retention period for all Log Groups to 7-30 days via `put-retention-policy` bulk. Auto-apply new Log Groups via EventBridge or Config Rule
 C) Compress all logs
 D) Immediately move logs to S3
 
-**정답: B**
-해설: Log Group default is "Never Expire" — permanent accumulation. Bulk retention policy most impactful single change. Then follow up with code-level log reduction or S3 export. Standard pattern: EventBridge detects `CreateLogGroup` API → auto-apply policy. Auto-remediation via Config Rule also effective.
+**Answer: B**
+Explanation: Log Group default is "Never Expire" — permanent accumulation. Bulk retention policy most impactful single change. Then follow up with code-level log reduction or S3 export. Standard pattern: EventBridge detects `CreateLogGroup` API → auto-apply policy. Auto-remediation via Config Rule also effective.
 
 ---
 
-**문제 2.** VPC Flow Logs need real-time operator view; traffic averages 100GB/day. Where to send for cost and analysis?
+**Question 2.** VPC Flow Logs need real-time operator view; traffic averages 100GB/day. Where to send for cost and analysis?
 
 A) CloudWatch Logs (Ingestion + Storage + Insights)
 B) S3 (long-term retention) + Athena (ad-hoc query)
 C) Kinesis Data Streams + Lambda
 D) DynamoDB
 
-**정답: B**
-해설: VPC Flow Logs high-volume → CloudWatch Logs Ingestion ($0.76/GB) + Storage + Insights scan costs explode. S3 ($0.025/GB) + Athena (scan $5/TB) standard. Hybrid also possible: add CloudWatch for specific patterns needing real-time (REJECT surge) to S3 baseline.
+**Answer: B**
+Explanation: VPC Flow Logs high-volume → CloudWatch Logs Ingestion ($0.76/GB) + Storage + Insights scan costs explode. S3 ($0.025/GB) + Athena (scan $5/TB) standard. Hybrid also possible: add CloudWatch for specific patterns needing real-time (REJECT surge) to S3 baseline.
 
 ---
 
-**문제 3.** Detect Lambda ERROR logs real-time, send Slack alert to operators. Most efficient structure?
+**Question 3.** Detect Lambda ERROR logs real-time, send Slack alert to operators. Most efficient structure?
 
 A) Poll Logs Insights every minute
 B) Subscription Filter ("ERROR" pattern) → Lambda → Slack webhook (seconds latency)
 C) Metric Filter + Alarm → SNS → Slack (minute latency, threshold-based)
 D) Both B and C valid — choose by latency requirement and trigger method
 
-**정답: D**
-해설: Subscription Filter: seconds latency, real-time text match. Metric Filter: metric → alarm → SNS, minute latency but threshold-based (e.g., "10+ errors in 5min") reduces noise. Both standard; exam: "immediate response" → Subscription, "threshold-based" → Metric Filter + Alarm. Many companies use both simultaneously.
+**Answer: D**
+Explanation: Subscription Filter: seconds latency, real-time text match. Metric Filter: metric → alarm → SNS, minute latency but threshold-based (e.g., "10+ errors in 5min") reduces noise. Both standard; exam: "immediate response" → Subscription, "threshold-based" → Metric Filter + Alarm. Many companies use both simultaneously.
 
 ---
 
-**문제 4.** Logs Insights query with 1-week time range incurs cost/speed penalty. Operator standard response?
+**Question 4.** Logs Insights query with 1-week time range incurs cost/speed penalty. Operator standard response?
 
 A) Add more fields to query
 B) Move `filter` early, start narrow time range (1hr → 6hr → 24hr stepping expansion)
 C) Replace Insights with manual console search
 D) Export to S3 then Athena
 
-**정답: B**
-해설: Logs Insights charged by GB scanned. Narrower time range + early filter minimize scanned volume. Stepping expansion standard. D also valid for bulk analysis but B addresses immediate cost problem first.
+**Answer: B**
+Explanation: Logs Insights charged by GB scanned. Narrower time range + early filter minimize scanned volume. Stepping expansion standard. D also valid for bulk analysis but B addresses immediate cost problem first.
 
 ---
 
-**문제 5.** Detect "Out of Memory" in EC2 syslog, auto-restart instance. Most direct structure?
+**Question 5.** Detect "Out of Memory" in EC2 syslog, auto-restart instance. Most direct structure?
 
 A) CloudWatch Logs Subscription Filter → Lambda → SSM Run Command or EC2 Reboot API
 B) Metric Filter → Alarm → SNS → operator manual action
 C) Poll Logs Insights every minute → Lambda
 D) EventBridge → Step Functions
 
-**정답: A**
-해설: Subscription Filter detects "Out of Memory" pattern → Lambda auto-invoked → Lambda calls SSM Run Command (reboot script) or EC2 Reboot API. Immediate auto-remediation pattern. B requires manual intervention, loses immediacy. C is polling inefficiency.
+**Answer: A**
+Explanation: Subscription Filter detects "Out of Memory" pattern → Lambda auto-invoked → Lambda calls SSM Run Command (reboot script) or EC2 Reboot API. Immediate auto-remediation pattern. B requires manual intervention, loses immediacy. C is polling inefficiency.
 
 ---
 
-**문제 6.** 50-account ERROR logs real-time analyzed in central security account. Most appropriate pattern?
+**Question 6.** 50-account ERROR logs real-time analyzed in central security account. Most appropriate pattern?
 
 A) Each account exports to S3, central Athena query
 B) Each account Log Group Subscription Filter → central account Log Destination (Kinesis Data Streams) → OpenSearch
 C) Create IAM Role in 50 accounts, central polls GetLogEvents every minute
 D) Replace with CloudTrail
 
-**정답: B**
-해설: Real-time requirement → Subscription Filter + Cross-Account Kinesis. Create Log Destination in central account, central Destination Policy allows source account `logs:PutSubscriptionFilter`. Central OpenSearch Kibana unified search. CloudWatch Cross-Account Observability (2022) achieves same result more simply, alternative answer.
+**Answer: B**
+Explanation: Real-time requirement → Subscription Filter + Cross-Account Kinesis. Create Log Destination in central account, central Destination Policy allows source account `logs:PutSubscriptionFilter`. Central OpenSearch Kibana unified search. CloudWatch Cross-Account Observability (2022) achieves same result more simply, alternative answer.
 
 ---
 
-**문제 7.** Minimize 7-year-retention audit log costs?
+**Question 7.** Minimize 7-year-retention audit log costs?
 
 A) CloudWatch Logs 7-year retention
 B) Subscription Filter → Firehose → S3 Standard 1yr → S3 Glacier Deep Archive 6yr lifecycle
 C) Replace with CloudTrail
 D) Lambda daily backup
 
-**정답: B**
-해설: CloudWatch Logs Storage ($0.033/GB) vs Glacier Deep Archive ($0.00099/GB) = 33x difference. S3 lifecycle auto-transition, zero operational burden, massive cost reduction. Lifecycle includes auto-expiration after 7 years.
+**Answer: B**
+Explanation: CloudWatch Logs Storage ($0.033/GB) vs Glacier Deep Archive ($0.00099/GB) = 33x difference. S3 lifecycle auto-transition, zero operational burden, massive cost reduction. Lifecycle includes auto-expiration after 7 years.
 

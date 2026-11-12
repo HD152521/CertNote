@@ -143,62 +143,62 @@ Tomorrow we explore **data augmentation and synthesis** techniques to address in
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 팀이 데이터 추출(Glue), 외부 승인 대기, Lambda 후처리, SageMaker 학습을 하나의 흐름으로 묶고 분기·재시도를 선언적으로 관리하려 한다. 가장 적합한 오케스트레이터는?
+**Question 1.** 한 팀이 데이터 추출(Glue), 외부 승인 대기, Lambda 후처리, SageMaker 학습을 하나의 흐름으로 묶고 분기·재시도를 선언적으로 관리하려 한다. 가장 적합한 오케스트레이터는?
 
 A) AWS Step Functions  
 B) SageMaker Pipelines  
 C) Amazon Athena  
 D) AWS Glue Crawler  
 
-**정답: A**  
-해설: Step Functions는 Glue·Lambda·SageMaker·승인 대기 등 이질적인 AWS 서비스와 비-ML 단계를 상태 머신으로 묶고 Choice·Retry·Catch로 분기·재시도를 선언적으로 처리하는 범용 오케스트레이터다. SageMaker Pipelines(B)는 ML 전용이라 비-ML 단계·승인 통합이 제한적이고, Athena·Glue Crawler는 오케스트레이션 도구가 아니다.
+**Answer: A**  
+Explanation: Step Functions는 Glue·Lambda·SageMaker·승인 대기 등 이질적인 AWS 서비스와 비-ML 단계를 상태 머신으로 묶고 Choice·Retry·Catch로 분기·재시도를 선언적으로 처리하는 범용 오케스트레이터다. SageMaker Pipelines(B)는 ML 전용이라 비-ML 단계·승인 통합이 제한적이고, Athena·Glue Crawler는 오케스트레이션 도구가 아니다.
 
 ---
 
-**문제 2.** 순수 ML CI/CD 워크플로에서 "평가 정확도가 0.85 이상일 때만 모델을 레지스트리에 등록"하는 조건부 분기를 SageMaker Pipelines로 구현하려면 사용하는 단계는?
+**Question 2.** 순수 ML CI/CD 워크플로에서 "평가 정확도가 0.85 이상일 때만 모델을 레지스트리에 등록"하는 조건부 분기를 SageMaker Pipelines로 구현하려면 사용하는 단계는?
 
 A) ProcessingStep  
 B) TrainingStep  
 C) ConditionStep  
 D) TuningStep  
 
-**정답: C**  
-해설: ConditionStep은 평가 지표 등의 조건을 평가해 if_steps/else_steps로 분기하므로 "정확도 기준 충족 시에만 모델 등록"을 표현하는 데 정확히 들어맞는다. ProcessingStep(전처리), TrainingStep(학습), TuningStep(하이퍼파라미터 튜닝)은 각각 다른 역할로 조건 분기를 담당하지 않는다.
+**Answer: C**  
+Explanation: ConditionStep은 평가 지표 등의 조건을 평가해 if_steps/else_steps로 분기하므로 "정확도 기준 충족 시에만 모델 등록"을 표현하는 데 정확히 들어맞는다. ProcessingStep(전처리), TrainingStep(학습), TuningStep(하이퍼파라미터 튜닝)은 각각 다른 역할로 조건 분기를 담당하지 않는다.
 
 ---
 
-**문제 3.** ML 파이프라인 자동화가 제공하는 가장 본질적인 두 가지 가치로 옳은 것은?
+**Question 3.** ML 파이프라인 자동화가 제공하는 가장 본질적인 두 가지 가치로 옳은 것은?
 
 A) 비용 0원과 무제한 확장  
 B) 코드 삭제와 로그 비활성화  
 C) 수동 개입 강제와 단계 은닉  
 D) 재현성과 추적성(lineage)  
 
-**정답: D**  
-해설: 자동화 파이프라인의 핵심 가치는 같은 입력이면 같은 결과를 내는 재현성과, 특정 모델이 어떤 데이터·코드·파라미터로 만들어졌는지 거슬러 추적하는 lineage다. 비용이 0이 되거나(A) 로그를 끄거나(B) 수동 개입을 강제하는 것(C)은 자동화의 목적과 반대된다.
+**Answer: D**  
+Explanation: 자동화 파이프라인의 핵심 가치는 같은 입력이면 같은 결과를 내는 재현성과, 특정 모델이 어떤 데이터·코드·파라미터로 만들어졌는지 거슬러 추적하는 lineage다. 비용이 0이 되거나(A) 로그를 끄거나(B) 수동 개입을 강제하는 것(C)은 자동화의 목적과 반대된다.
 
 ---
 
-**문제 4.** 새 데이터가 S3에 도착할 때마다 ML 파이프라인을 자동으로 시작하고 싶다. 가장 일반적인 트리거 구성은?
+**Question 4.** 새 데이터가 S3에 도착할 때마다 ML 파이프라인을 자동으로 시작하고 싶다. 가장 일반적인 트리거 구성은?
 
 A) S3 이벤트 또는 EventBridge 규칙으로 파이프라인 시작  
 B) 사람이 매번 콘솔에서 수동 시작  
 C) RDS 백업 완료 시점에만 시작  
 D) IAM 정책 변경으로 트리거  
 
-**정답: A**  
-해설: S3 객체 생성 이벤트나 EventBridge 규칙(이벤트·cron)으로 파이프라인 실행을 트리거하는 것이 표준 패턴이며, 데이터 도착 시 자동 시작을 구현한다. 수동 시작(B)은 자동화에 어긋나고, RDS 백업(C)·IAM 변경(D)은 데이터 도착과 무관한 신호다.
+**Answer: A**  
+Explanation: S3 객체 생성 이벤트나 EventBridge 규칙(이벤트·cron)으로 파이프라인 실행을 트리거하는 것이 표준 패턴이며, 데이터 도착 시 자동 시작을 구현한다. 수동 시작(B)은 자동화에 어긋나고, RDS 백업(C)·IAM 변경(D)은 데이터 도착과 무관한 신호다.
 
 ---
 
-**문제 5.** 상위에서는 데이터 파이프라인과 승인을 포함한 전체 흐름을 오케스트레이션하고, 그 내부에서 SageMaker 학습 작업을 호출하는 구성에 대한 설명으로 가장 옳은 것은?
+**Question 5.** 상위에서는 데이터 파이프라인과 승인을 포함한 전체 흐름을 오케스트레이션하고, 그 내부에서 SageMaker 학습 작업을 호출하는 구성에 대한 설명으로 가장 옳은 것은?
 
 A) Step Functions와 SageMaker Pipelines는 함께 쓸 수 없다  
 B) SageMaker Pipelines만으로 모든 비-ML 단계를 완벽히 대체할 수 있다  
 C) Step Functions가 상위 오케스트레이션을 맡고 SageMaker 작업을 호출하는 혼합 구성이 가능하다  
 D) 두 도구는 동일하므로 구분이 불필요하다  
 
-**정답: C**  
-해설: Step Functions가 상위에서 데이터·승인 등 전체 흐름을 오케스트레이션하고 그 안에서 SageMaker 학습/처리 작업을 호출하는 혼합 패턴은 실무에서 흔히 쓰인다. 둘은 함께 사용 가능하므로 A는 틀렸고, SageMaker Pipelines는 비-ML 단계 통합이 제한적이라 B도 부정확하며, 역할이 다르므로 D도 틀렸다.
+**Answer: C**  
+Explanation: Step Functions가 상위에서 데이터·승인 등 전체 흐름을 오케스트레이션하고 그 안에서 SageMaker 학습/처리 작업을 호출하는 혼합 패턴은 실무에서 흔히 쓰인다. 둘은 함께 사용 가능하므로 A는 틀렸고, SageMaker Pipelines는 비-ML 단계 통합이 제한적이라 B도 부정확하며, 역할이 다르므로 D도 틀렸다.
 
 ---

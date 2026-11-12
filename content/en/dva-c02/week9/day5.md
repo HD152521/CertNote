@@ -89,156 +89,156 @@ Week 9 services are not independent cards but layers of one defense stack. Each 
 
 ## 📝 Practice Questions
 
-**문제 1.** Mobile app user logs in via Cognito, then uploads to S3 folder directly. Correct flow?
+**Question 1.** Mobile app user logs in via Cognito, then uploads to S3 folder directly. Correct flow?
 
 A) User Pool JWT to S3 Authorization header (no SigV4)
 B) User Pool login → Identity Pool swap JWT for IAM temp credentials → S3 direct
 C) Lambda proxy all uploads; Lambda role calls S3
 D) API Gateway + Cognito Authorizer only; no direct S3
 
-**정답: B**
+**Answer: B**
 
-해설: JWT ≠ IAM credentials. User Pool proves who (JWT). Identity Pool converts to AWS credentials. Role mapping splits folder access by user ID. A) S3 needs SigV4 IAM signature. C·D) Possible, not "direct access."
+Explanation: JWT ≠ IAM credentials. User Pool proves who (JWT). Identity Pool converts to AWS credentials. Role mapping splits folder access by user ID. A) S3 needs SigV4 IAM signature. C·D) Possible, not "direct access."
 
 ---
 
-**문제 2.** RDS password must auto-rotate every 30 days **without downtime**. Best setup?
+**Question 2.** RDS password must auto-rotate every 30 days **without downtime**. Best setup?
 
 A) Parameter Store + EventBridge schedule
 B) Secrets Manager + Single-User rotation
 C) Secrets Manager + Alternating-Users rotation
 D) Lambda + Parameter Store
 
-**정답: C**
+**Answer: C**
 
-해설: Alternating-Users keeps both accounts one cycle → old-password clients still connect. Single-User swaps immediately → brief failure risk. A) Parameter Store no rotation. D) Manual Lambda is anti-pattern.
+Explanation: Alternating-Users keeps both accounts one cycle → old-password clients still connect. Single-User swaps immediately → brief failure risk. A) Parameter Store no rotation. D) Manual Lambda is anti-pattern.
 
 ---
 
-**문제 3.** App gets SQL injection and XSS attacks. Block at request stage. Right service?
+**Question 3.** App gets SQL injection and XSS attacks. Block at request stage. Right service?
 
 A) Security Group
 B) Network ACL
 C) AWS WAF
 D) Shield Standard
 
-**정답: C**
+**Answer: C**
 
-해설: SQL/XSS are L7 payload patterns. WAF parses HTTP and filters by rules. A·B) L4 can't see L7 content. D) Shield is DDoS, not injection.
+Explanation: SQL/XSS are L7 payload patterns. WAF parses HTTP and filters by rules. A·B) L4 can't see L7 content. D) Shield is DDoS, not injection.
 
 ---
 
-**문제 4.** 15MB config file encrypted with KMS, stored in S3. Correct approach?
+**Question 4.** 15MB config file encrypted with KMS, stored in S3. Correct approach?
 
 A) `kms:Encrypt` directly
 B) `GenerateDataKey` → envelope encrypt locally
 C) Secrets Manager (whole file)
 D) Parameter Store Standard
 
-**정답: B**
+**Answer: B**
 
-해설: `kms:Encrypt` max 4KB. Envelope: GenerateDataKey, plaintext DEK encrypt locally, discard DEK, store [encrypted data + encrypted DEK]. C/D) Size limits too small (Secrets Manager 64KB, Parameter Store 4-8KB).
+Explanation: `kms:Encrypt` max 4KB. Envelope: GenerateDataKey, plaintext DEK encrypt locally, discard DEK, store [encrypted data + encrypted DEK]. C/D) Size limits too small (Secrets Manager 64KB, Parameter Store 4-8KB).
 
 ---
 
-**문제 5.** REST API with Cognito Authorizer defaults to which token?
+**Question 5.** REST API with Cognito Authorizer defaults to which token?
 
 A) Access
 B) ID
 C) Refresh
 D) IAM credential
 
-**정답: B**
+**Answer: B**
 
-해설: REST API Cognito Authorizer = ID Token (identity). HTTP API JWT Authorizer = Access Token (scope).
+Explanation: REST API Cognito Authorizer = ID Token (identity). HTTP API JWT Authorizer = Access Token (scope).
 
 ---
 
-**문제 6.** CloudFront HTTPS cert + region + EC2 installability?
+**Question 6.** CloudFront HTTPS cert + region + EC2 installability?
 
 A) Any region / installable
 B) us-east-1 / not installable
 C) Regional / installable
 D) us-west-2 / not installable
 
-**정답: B**
+**Answer: B**
 
-해설: CloudFront control plane in us-east-1. ACM refuses EC2 key export (key isolation).
+Explanation: CloudFront control plane in us-east-1. ACM refuses EC2 key export (key isolation).
 
 ---
 
-**문제 7.** DDoS hits; Auto Scaling soars; bill explodes. Cost protection?
+**Question 7.** DDoS hits; Auto Scaling soars; bill explodes. Cost protection?
 
 A) Shield Standard
 B) Shield Advanced
 C) WAF rate rule
 D) CloudFront cache more
 
-**정답: B**
+**Answer: B**
 
-해설: Shield Advanced refunds DDoS-caused cost. Standard free but no refund. WAF/cache help mitigate, not refund.
+Explanation: Shield Advanced refunds DDoS-caused cost. Standard free but no refund. WAF/cache help mitigate, not refund.
 
 ---
 
-**문제 8.** HTTP API (v2) needs WAF for SQL injection. Direct attach fails. Solution?
+**Question 8.** HTTP API (v2) needs WAF for SQL injection. Direct attach fails. Solution?
 
 A) Rebuild as REST only
 B) CloudFront in front + WAF on CloudFront
 C) NLB in front + WAF
 D) Security Group SQL rules
 
-**정답: B**
+**Answer: B**
 
-해설: HTTP API doesn't support WAF. Workaround: CloudFront + WAF. NLB is L4. Security Group is L4.
+Explanation: HTTP API doesn't support WAF. Workaround: CloudFront + WAF. NLB is L4. Security Group is L4.
 
 ---
 
-**문제 9.** Most secure Cognito auth flow (no plaintext password over network)?
+**Question 9.** Most secure Cognito auth flow (no plaintext password over network)?
 
 A) `USER_PASSWORD_AUTH`
 B) `ADMIN_USER_PASSWORD_AUTH`
 C) `USER_SRP_AUTH`
 D) `CUSTOM_AUTH`
 
-**정답: C**
+**Answer: C**
 
-해설: SRP (Secure Remote Password) proves knowledge without sending password. Others transmit password (TLS only).
+Explanation: SRP (Secure Remote Password) proves knowledge without sending password. Others transmit password (TLS only).
 
 ---
 
-**문제 10.** S3 auto-detect PII (credit cards, SSNs) stored accidentally. Service?
+**Question 10.** S3 auto-detect PII (credit cards, SSNs) stored accidentally. Service?
 
 A) GuardDuty
 B) Macie
 C) Inspector
 D) Config
 
-**정답: B**
+**Answer: B**
 
-해설: Macie ML-detects PII in S3 data. GuardDuty = anomalous behavior. Inspector = code/package CVEs. Config = configuration compliance.
+Explanation: Macie ML-detects PII in S3 data. GuardDuty = anomalous behavior. Inspector = code/package CVEs. Config = configuration compliance.
 
 ---
 
-**문제 11.** Regulations: keys on **dedicated hardware** AWS cannot access. Also want KMS API compatibility. Solution?
+**Question 11.** Regulations: keys on **dedicated hardware** AWS cannot access. Also want KMS API compatibility. Solution?
 
 A) KMS Customer Managed Key
 B) KMS AWS Managed Key
 C) CloudHSM as KMS custom key store
 D) Secrets Manager key storage
 
-**정답: C**
+**Answer: C**
 
-해설: KMS multi-tenant (logical isolation). CloudHSM single-tenant (dedicated HW). **Custom key store** mode keeps keys on CloudHSM, exposes KMS API.
+Explanation: KMS multi-tenant (logical isolation). CloudHSM single-tenant (dedicated HW). **Custom key store** mode keeps keys on CloudHSM, exposes KMS API.
 
 ---
 
-**문제 12.** New WAF rule deployment: test first without breaking users. Approach?
+**Question 12.** New WAF rule deployment: test first without breaking users. Approach?
 
 A) Block mode, monitor logs
 B) Count mode, measure match rate
 C) Disable rule, set alerts
 D) Shield Advanced backup
 
-**정답: B**
+**Answer: B**
 
-해설: Count mode logs matches without blocking. Verify no false positives, then promote to Block. "Safe WAF testing" = Count.
+Explanation: Count mode logs matches without blocking. Verify no false positives, then promote to Block. "Safe WAF testing" = Count.

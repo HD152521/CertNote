@@ -80,62 +80,62 @@ In the next article, we'll look at the tools for **watching over and managing** 
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to decouple an order system and a payment system so that no messages are lost during a traffic spike and the payment system processes them one at a time at its own pace. Which service is most appropriate?
+**Question 1.** You want to decouple an order system and a payment system so that no messages are lost during a traffic spike and the payment system processes them one at a time at its own pace. Which service is most appropriate?
 
 A) Amazon SNS  
 B) Amazon SQS  
 C) Amazon EventBridge  
 D) Amazon ElastiCache  
 
-**정답: B**  
-해설: SQS safely piles messages into a queue to decouple producer and consumer (buffering), so it cushions traffic spikes and prevents loss. SNS is for multi-recipient notifications, EventBridge is for event routing, and ElastiCache is a cache — none are meant for a work queue.
+**Answer: B**  
+Explanation: SQS safely piles messages into a queue to decouple producer and consumer (buffering), so it cushions traffic spikes and prevents loss. SNS is for multi-recipient notifications, EventBridge is for event routing, and ElastiCache is a cache — none are meant for a work queue.
 
 ---
 
-**문제 2.** With a single "order complete" event, you want to send the customer an email, record it in an analytics system, and wake up the shipping system all at once. Which service is most appropriate?
+**Question 2.** With a single "order complete" event, you want to send the customer an email, record it in an analytics system, and wake up the shipping system all at once. Which service is most appropriate?
 
 A) Amazon SQS  
 B) Amazon RDS  
 C) Amazon SNS  
 D) Amazon Redshift  
 
-**정답: C**  
-해설: SNS uses the publish/subscribe (pub/sub) model to deliver a single message to multiple subscribers simultaneously (fan-out). SQS is typically a 1:1 queue where one consumer takes the message, and RDS/Redshift are databases, not notification-dispatch services.
+**Answer: C**  
+Explanation: SNS uses the publish/subscribe (pub/sub) model to deliver a single message to multiple subscribers simultaneously (fan-out). SQS is typically a 1:1 queue where one consumer takes the message, and RDS/Redshift are databases, not notification-dispatch services.
 
 ---
 
-**문제 3.** What is the main benefit of connecting system components with messages instead of direct calls?
+**Question 3.** What is the main benefit of connecting system components with messages instead of direct calls?
 
 A) Tight coupling between components improves speed  
 B) Loose coupling prevents a single component's failure from spreading across the whole  
 C) Reduced database cost  
 D) Automatic IAM permission configuration  
 
-**정답: B**  
-해설: Breaking the middle with messaging creates loose coupling, so even if one component dies, the message is retained and other components are unaffected. Direct calls instead create tight coupling, and cost reduction or IAM configuration is not the direct purpose of messaging.
+**Answer: B**  
+Explanation: Breaking the middle with messaging creates loose coupling, so even if one component dies, the message is retained and other components are unaffected. Direct calls instead create tight coupling, and cost reduction or IAM configuration is not the direct purpose of messaging.
 
 ---
 
-**문제 4.** You want to conditionally route work based on the content of AWS service or SaaS events — for example, automatically running a Lambda when a specific file is uploaded to S3. Which service is most appropriate?
+**Question 4.** You want to conditionally route work based on the content of AWS service or SaaS events — for example, automatically running a Lambda when a specific file is uploaded to S3. Which service is most appropriate?
 
 A) Amazon SQS  
 B) Amazon EventBridge  
 C) Amazon ElastiCache  
 D) Amazon Aurora  
 
-**정답: B**  
-해설: EventBridge is an event bus that receives events from various sources and routes them to targets by rules (content filters), and it also supports scheduled execution. SQS is a simple queue, ElastiCache is a cache, and Aurora is a database, so none have event-routing capability.
+**Answer: B**  
+Explanation: EventBridge is an event bus that receives events from various sources and routes them to targets by rules (content filters), and it also supports scheduled execution. SQS is a simple queue, ElastiCache is a cache, and Aurora is a database, so none have event-routing capability.
 
 ---
 
-**문제 5.** Which is the most accurate description of the difference between SQS and SNS?
+**Question 5.** Which is the most accurate description of the difference between SQS and SNS?
 
 A) SQS pushes to multiple recipients, and SNS is polled by a single consumer  
 B) SQS is a message queue (usually 1:1, consumer pulls), and SNS is publish/subscribe (1:many, pushed to subscribers)  
 C) Both are database services  
 D) SQS is exclusively for sending notifications, and SNS is exclusively for buffering work  
 
-**정답: B**  
-해설: SQS is a message queue the consumer polls and pulls from (usually 1:1, buffering), while SNS is publish/subscribe that pushes one message to multiple subscribers (1:many). A swaps the two, both are not databases, and their purposes are also the reverse of D.
+**Answer: B**  
+Explanation: SQS is a message queue the consumer polls and pulls from (usually 1:1, buffering), while SNS is publish/subscribe that pushes one message to multiple subscribers (1:many). A swaps the two, both are not databases, and their purposes are also the reverse of D.
 
 ---

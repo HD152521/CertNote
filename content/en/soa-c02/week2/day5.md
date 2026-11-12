@@ -175,9 +175,9 @@ B) Basic Monitoring 5-min interval delays CPU detection / enable Detailed Monito
 C) Alarm Evaluation Period too short, false trigger/cancel / extend period
 D) ASG Cooldown too long, blocks consecutive scale / reduce cooldown
 
-**정답: B**
+**Answer: B**
 
-해설: Basic Monitoring 5min interval → metric data points 5min apart → alarm eval 5min periodic → delay. Detailed (1min) enables 1-2min scale-out trigger. Even faster: 1s resolution custom metric (PutMetricData with StorageResolution=1) + Step Scaling. A = vertical vs ASG design, D = Cooldown = inter-scaling delay, unrelated to detection speed.
+Explanation: Basic Monitoring 5min interval → metric data points 5min apart → alarm eval 5min periodic → delay. Detailed (1min) enables 1-2min scale-out trigger. Even faster: 1s resolution custom metric (PutMetricData with StorageResolution=1) + Step Scaling. A = vertical vs ASG design, D = Cooldown = inter-scaling delay, unrelated to detection speed.
 
 ---
 
@@ -188,9 +188,9 @@ B) Log Group Retention — identify Never Expire groups, bulk apply policy
 C) Subscription Filter count — Lambda/Firehose transmission cost rising with volume
 D) CloudWatch Agent config — collection items inflated, custom metric cost increased
 
-**정답: B**
+**Answer: B**
 
-해설: Default Retention = Never Expire → Storage accumulates indefinitely. `describe-log-groups` find `retentionInDays` null groups, bulk change. Next check Ingestion sources (VPC Flow Logs, debug). Auto-apply EventBridge or Config Rule to new. Caveat: Retention shortening reduces Storage only; already-incurred Ingestion ($0.76/GB) unrecoverable — true cause = high-volume source, reduce incoming volume.
+Explanation: Default Retention = Never Expire → Storage accumulates indefinitely. `describe-log-groups` find `retentionInDays` null groups, bulk change. Next check Ingestion sources (VPC Flow Logs, debug). Auto-apply EventBridge or Config Rule to new. Caveat: Retention shortening reduces Storage only; already-incurred Ingestion ($0.76/GB) unrecoverable — true cause = high-volume source, reduce incoming volume.
 
 ---
 
@@ -201,9 +201,9 @@ B) `filter @type = "REPORT" | stats count(@initDuration) as cold, count(*) as to
 C) `select cold_start_count from logs where event_type = 'cold_start' group by 5m`
 D) Not possible in Logs Insights; X-Ray ServiceMap Init segments only
 
-**정답: B**
+**Answer: B**
 
-해설: Lambda REPORT lines auto-include `@initDuration` on cold start, absent on warm. `count(@initDuration)` = cold count. `bin(5m)` time-based trend. A: standard REPORT lacks "COLD" string, fails; C: SQL syntax, not pipe-based; D: wrong.
+Explanation: Lambda REPORT lines auto-include `@initDuration` on cold start, absent on warm. `count(@initDuration)` = cold count. `bin(5m)` time-based trend. A: standard REPORT lacks "COLD" string, fails; C: SQL syntax, not pipe-based; D: wrong.
 
 ---
 
@@ -214,9 +214,9 @@ B) Log user_id → Logs Insights `stats count(*) by user_id` or EMF metadata
 C) API Gateway front-end user call to DynamoDB atomic counter (`UpdateItem ADD`), TTL periods
 D) CloudWatch Anomaly Detection learn per-user patterns, auto-identify anomalous users
 
-**정답: B**
+**Answer: B**
 
-해설: More users → Dimension cardinality explosion → $0.30 per metric × users = cost skyrocket. user_id log field or EMF metadata, not dimension. Analysis ad-hoc Logs Insights only. Not AWS-specific trap — Prometheus label explosion, Datadog tag billing same universal time-series principle.
+Explanation: More users → Dimension cardinality explosion → $0.30 per metric × users = cost skyrocket. user_id log field or EMF metadata, not dimension. Analysis ad-hoc Logs Insights only. Not AWS-specific trap — Prometheus label explosion, Datadog tag billing same universal time-series principle.
 
 ---
 
@@ -227,9 +227,9 @@ B) Stream ALB Access Logs to CloudWatch Logs, Logs Insights `stats count(*) by e
 C) Install CloudWatch Agent on ALB nodes, tail access log file, 5xx lines via metric filter
 D) ALB Access Log Group Subscription Filter → Lambda extract 5xx → PutMetricData
 
-**정답: A**
+**Answer: A**
 
-해설: ALB Access Logs S3-only (no CloudWatch direct option). ALB auto-publishes standard metrics (`HTTPCode_Target_5XX_Count`, `TargetResponseTime`, etc.) → alarm standard. Detailed path/UA/IP analysis S3 + Athena. C: ALB managed, no Agent host. Lesson: prefer service-provided standard metrics over custom extraction when available.
+Explanation: ALB Access Logs S3-only (no CloudWatch direct option). ALB auto-publishes standard metrics (`HTTPCode_Target_5XX_Count`, `TargetResponseTime`, etc.) → alarm standard. Detailed path/UA/IP analysis S3 + Athena. C: ALB managed, no Agent host. Lesson: prefer service-provided standard metrics over custom extraction when available.
 
 ---
 
@@ -240,9 +240,9 @@ B) Call PutMetricData API with EMF schema JSON payload, publish metrics + logs s
 C) EMF CloudWatch Agent format, EC2-only; Lambda/Fargate unsupported
 D) Application writes EMF JSON to S3, CloudWatch polls bucket, auto-extracts
 
-**정답: A**
+**Answer: A**
 
-해설: EMF essence: `_aws.CloudWatchMetrics` metric metadata, low-card as dimension, high-card as field (searchable logs, no metric card explosion). AWS Lambda Powertools auto-generates. Lambda most common EMF use. B: EMF = log output, not API call (key advantage). EMF core design: single log line → metrics + logs unified. B false (EMF's advantage is zero API).
+Explanation: EMF essence: `_aws.CloudWatchMetrics` metric metadata, low-card as dimension, high-card as field (searchable logs, no metric card explosion). AWS Lambda Powertools auto-generates. Lambda most common EMF use. B: EMF = log output, not API call (key advantage). EMF core design: single log line → metrics + logs unified. B false (EMF's advantage is zero API).
 
 ---
 
@@ -253,9 +253,9 @@ B) Needs min 2-week learn; learning interim, baseline unstable → accuracy impr
 C) `ANOMALY_DETECTION_BAND` threshold (std-dev multiplier) set too wide, all values inside band
 D) Source metric 5min gap, insufficient points, alarm INSUFFICIENT_DATA
 
-**정답: B**
+**Answer: B**
 
-해설: `ANOMALY_DETECTION_BAND` needs min 2d-2w learn (cold-start). Learning-phase baseline very wide or inaccurate; alarm eval but practical trigger unlikely. Operators never immediately apply Anomaly Detection to new metrics; wait data accumulation. Exact same cold-start issue as ML recommenders.
+Explanation: `ANOMALY_DETECTION_BAND` needs min 2d-2w learn (cold-start). Learning-phase baseline very wide or inaccurate; alarm eval but practical trigger unlikely. Operators never immediately apply Anomaly Detection to new metrics; wait data accumulation. Exact same cold-start issue as ML recommenders.
 
 ---
 
@@ -266,9 +266,9 @@ B) Each account Log Group Subscription Filter → Cross-Account Kinesis (central
 C) Organization CloudTrail aggregates all account APIs; includes app ERROR logs too
 D) Each account EventBridge rule ERROR pattern → central event bus cross-account
 
-**정답: B**
+**Answer: B**
 
-해설: Real-time requirement → Subscription Filter + Cross-Account Kinesis standard. Source account creates Logs Destination (central), Destination Policy allows source `logs:PutSubscriptionFilter`, central OpenSearch unified. Or CloudWatch Cross-Account Observability (2022) simpler. A: "daily export" violates real-time. 2017 S3 us-east-1 outage: central monitoring account separation from workload fault domain = standard, why Cross-Account critical.
+Explanation: Real-time requirement → Subscription Filter + Cross-Account Kinesis standard. Source account creates Logs Destination (central), Destination Policy allows source `logs:PutSubscriptionFilter`, central OpenSearch unified. Or CloudWatch Cross-Account Observability (2022) simpler. A: "daily export" violates real-time. 2017 S3 us-east-1 outage: central monitoring account separation from workload fault domain = standard, why Cross-Account critical.
 
 ---
 
@@ -279,9 +279,9 @@ B) Metric Filter `/aws/lambda/<funcName>` Log Group, ERROR pattern, `DefaultValu
 C) Lambda runtime wrapper/sidecar call `PutMetricData` on ERROR
 D) Lambda Errors standard metric + Anomaly Detection, dynamically detect ERROR surge
 
-**정답: B**
+**Answer: B**
 
-해설: No code change → Metric Filter answer. Existing log pattern (`?ERROR ?Exception ?CRITICAL`) matches, auto metric. Caveats: forward-only (past logs don't apply), `DefaultValue: 0` required else alarm INSUFFICIENT_DATA trap. A/C require code/wrapper (constraint violation). D: Anomaly Detection adds dynamic band to existing metric, not "create new ERROR count metric" (requirement mismatch).
+Explanation: No code change → Metric Filter answer. Existing log pattern (`?ERROR ?Exception ?CRITICAL`) matches, auto metric. Caveats: forward-only (past logs don't apply), `DefaultValue: 0` required else alarm INSUFFICIENT_DATA trap. A/C require code/wrapper (constraint violation). D: Anomaly Detection adds dynamic band to existing metric, not "create new ERROR count metric" (requirement mismatch).
 
 ---
 
@@ -292,9 +292,9 @@ B) Sum — total response time period, shows load + SLO violation
 C) p99 (Extended Statistic)
 D) Maximum — slowest single request, conservative worst-case user experience
 
-**정답: C**
+**Answer: C**
 
-해설: SLO p99 basis → alarm must eval p99 for consistency. CloudWatch ExtendedStatistic supports `p50`, `p90`, `p95`, `p99`, `p99.9`. Average hides long tail (Tene), Maximum swayed by single outlier. SLO and alarm same statistic = no "quiet alarm but SLO violated" paradox.
+Explanation: SLO p99 basis → alarm must eval p99 for consistency. CloudWatch ExtendedStatistic supports `p50`, `p90`, `p95`, `p99`, `p99.9`. Average hides long tail (Tene), Maximum swayed by single outlier. SLO and alarm same statistic = no "quiet alarm but SLO violated" paradox.
 
 ---
 
@@ -305,9 +305,9 @@ B) Destination CloudWatch Logs → S3. Analyze Athena. CloudWatch sample real-ti
 C) Flow Logs Group Subscription Filter + Lambda pre-filter ACCEPT before ingest
 D) Disable Detailed Monitoring on ENI, lower metric frequency
 
-**정답: B**
+**Answer: B**
 
-해설: Ingestion $0.76/GB → S3 $0.023/GB huge gap. Analyze Athena ($5/TB = $0.005/GB). Hybrid (bulk S3 + sample CloudWatch) common. A: Retention cut Storage only; Ingestion (problem root) uncut. Fintech/gaming actual outage pattern repeated.
+Explanation: Ingestion $0.76/GB → S3 $0.023/GB huge gap. Analyze Athena ($5/TB = $0.005/GB). Hybrid (bulk S3 + sample CloudWatch) common. A: Retention cut Storage only; Ingestion (problem root) uncut. Fintech/gaming actual outage pattern repeated.
 
 ---
 
@@ -318,9 +318,9 @@ B) Subscription Filter → Firehose → S3 Standard 1yr → Glacier Deep Archive
 C) Migrate audit logs DynamoDB, on-demand + TTL auto-expire
 D) Lambda daily query Log Group, compress, backup separate S3, version control
 
-**정답: B**
+**Answer: B**
 
-해설: CloudWatch Logs Storage $0.033/GB·month vs Glacier Deep Archive $0.00099/GB·month = 33x. S3 lifecycle auto-transition/expire. Athena Glacier integration restore-on-need search. Biggest single operator retention cost cut. 7-year audit = SOX/financial regulation context, common requirement.
+Explanation: CloudWatch Logs Storage $0.033/GB·month vs Glacier Deep Archive $0.00099/GB·month = 33x. S3 lifecycle auto-transition/expire. Athena Glacier integration restore-on-need search. Biggest single operator retention cost cut. 7-year audit = SOX/financial regulation context, common requirement.
 
 ---
 

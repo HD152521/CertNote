@@ -79,62 +79,62 @@ With that, we finish the billing, pricing, and support domain. Once you've made 
 
 ## 📝 Practice Questions
 
-**문제 1.** It's certain your workload runs stably all year, and you want a commitment discount, but you also want the discount to be preserved even if you change the instance type and Region. Which pricing model is the best fit?
+**Question 1.** It's certain your workload runs stably all year, and you want a commitment discount, but you also want the discount to be preserved even if you change the instance type and Region. Which pricing model is the best fit?
 
 A) On-Demand  
 B) Spot Instances  
 C) Savings Plans  
 D) Free Tier  
 
-**정답: C**  
-해설: Savings Plans commit to an hourly dollar spend, so the discount applies flexibly even when you change instance type or Region. On-Demand has no discount, Spot carries reclamation risk, and the Free Tier is a free allowance for new users — different from a stable commitment discount.
+**Answer: C**  
+Explanation: Savings Plans commit to an hourly dollar spend, so the discount applies flexibly even when you change instance type or Region. On-Demand has no discount, Spot carries reclamation risk, and the Free Tier is a free allowance for new users — different from a stable commitment discount.
 
 ---
 
-**문제 2.** Which correctly pairs the appropriate tool for the case of visualizing and analyzing costs already incurred by service, and for the case of estimating the expected cost of a new architecture before deployment?
+**Question 2.** Which correctly pairs the appropriate tool for the case of visualizing and analyzing costs already incurred by service, and for the case of estimating the expected cost of a new architecture before deployment?
 
 A) Analysis = Pricing Calculator, Estimation = Cost Explorer  
 B) Analysis = Cost Explorer, Estimation = Pricing Calculator  
 C) Analysis = Budgets, Estimation = CUR  
 D) Analysis = CUR, Estimation = Budgets  
 
-**정답: B**  
-해설: Cost Explorer is an after-the-fact tool that visualizes and analyzes costs already spent, while Pricing Calculator is an advance-estimation tool that calculates expected costs before deployment. Budgets is budget alerts and CUR is detailed raw data, which don't match these two timings' roles.
+**Answer: B**  
+Explanation: Cost Explorer is an after-the-fact tool that visualizes and analyzes costs already spent, while Pricing Calculator is an advance-estimation tool that calculates expected costs before deployment. Budgets is budget alerts and CUR is detailed raw data, which don't match these two timings' roles.
 
 ---
 
-**문제 3.** A company wanting to run production 24 hours a day wants 24/7 phone/chat support and the full set of Trusted Advisor checks, but doesn't need a dedicated TAM. Which support plan is the best fit?
+**Question 3.** A company wanting to run production 24 hours a day wants 24/7 phone/chat support and the full set of Trusted Advisor checks, but doesn't need a dedicated TAM. Which support plan is the best fit?
 
 A) Basic  
 B) Developer  
 C) Business  
 D) Enterprise  
 
-**정답: C**  
-해설: The Business plan provides 24/7 phone/chat/email support and the full set of Trusted Advisor checks, making it a good fit for production operations. Basic has no technical cases, Developer is limited to email during business hours, and Enterprise includes a TAM and the fastest response, exceeding the requirements.
+**Answer: C**  
+Explanation: The Business plan provides 24/7 phone/chat/email support and the full set of Trusted Advisor checks, making it a good fit for production operations. Basic has no technical cases, Developer is limited to email during business hours, and Enterprise includes a TAM and the fastest response, exceeding the requirements.
 
 ---
 
-**문제 4.** In an organization running many AWS accounts, which correctly pairs what handles centrally controlling permissions/policies and what handles combining bills into one to grow volume discounts?
+**Question 4.** In an organization running many AWS accounts, which correctly pairs what handles centrally controlling permissions/policies and what handles combining bills into one to grow volume discounts?
 
 A) Governance = consolidated billing, Billing = Organizations  
 B) Governance = Organizations (OUs/SCPs), Billing = consolidated billing  
 C) Governance = Budgets, Billing = tags  
 D) Governance = Trusted Advisor, Billing = Cost Explorer  
 
-**정답: B**  
-해설: Organizations centrally controls multi-account permissions/policies with OUs and SCPs (governance), while consolidated billing combines bills and aggregates usage to grow volume discounts (billing). Budgets, tags, Trusted Advisor, and Cost Explorer are not the actors in these two roles.
+**Answer: B**  
+Explanation: Organizations centrally controls multi-account permissions/policies with OUs and SCPs (governance), while consolidated billing combines bills and aggregates usage to grow volume discounts (billing). Budgets, tags, Trusted Advisor, and Cost Explorer are not the actors in these two roles.
 
 ---
 
-**문제 5.** Which correctly pairs the 'human' who stays with the customer's environment continuously and advises, and the 'tool' that automatically inspects the environment and recommends best practices?
+**Question 5.** Which correctly pairs the 'human' who stays with the customer's environment continuously and advises, and the 'tool' that automatically inspects the environment and recommends best practices?
 
 A) Human = Trusted Advisor, Tool = TAM  
 B) Human = TAM, Tool = Trusted Advisor  
 C) Human = Cost Explorer, Tool = Budgets  
 D) Human = Business plan, Tool = Enterprise plan  
 
-**정답: B**  
-해설: A TAM is the dedicated technical advisory 'person (human)' provided with the Enterprise plan, and Trusted Advisor is the 'tool' that automatically inspects the environment and recommends best practices like cost and security. Cost Explorer and Budgets are cost tools, and Business/Enterprise are support-plan tiers, not a human/tool.
+**Answer: B**  
+Explanation: A TAM is the dedicated technical advisory 'person (human)' provided with the Enterprise plan, and Trusted Advisor is the 'tool' that automatically inspects the environment and recommends best practices like cost and security. Cost Explorer and Budgets are cost tools, and Business/Enterprise are support-plan tiers, not a human/tool.
 
 ---

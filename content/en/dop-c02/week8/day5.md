@@ -28,72 +28,72 @@ This table on hand, scenarios become clear. Each scenario tests "which axis hold
 
 (Continuing with all 12 integrated scenario problems in Korean...)
 
-**문제 1.** 한 핀테크가 AWS Organizations 환경에서 200개 자식 계정에 동일한 GuardDuty/CloudTrail/Config 베이스라인을 배포하고, 매주 추가되는 신규 계정에는 자동으로 같은 베이스라인이 적용되어야 한다. 또 Management Account의 일상 사용을 최소화하라는 보안팀 요구가 있다. 가장 적절한 구성은?
+**Question 1.** 한 핀테크가 AWS Organizations 환경에서 200개 자식 계정에 동일한 GuardDuty/CloudTrail/Config 베이스라인을 배포하고, 매주 추가되는 신규 계정에는 자동으로 같은 베이스라인이 적용되어야 한다. 또 Management Account의 일상 사용을 최소화하라는 보안팀 요구가 있다. 가장 적절한 구성은?
 
 A) Self-managed StackSets로 배포하되 신규 계정마다 운영자가 계정 ID와 사전 IAM 실행 역할을 수동 추가 — 200 계정 + 매주 신규에 비현실적이고 Management Account 사용도 줄지 않음
 B) Lambda를 EventBridge 계정 생성 이벤트로 트리거해 각 계정에 boto3로 베이스라인 적용 — 멱등성·실패 재시도·동시성 제한·롤백을 전부 직접 구현해야 함
 C) Tooling 계정을 Delegated Administrator로 등록 + Service-managed StackSets + AutoDeployment Enabled로 OU 타겟 지정
 D) 모든 계정에 운영자가 SSH/콘솔로 GuardDuty·CloudTrail·Config를 직접 설정 — 인프라 자동화를 포기한 수동 운영으로 200 계정 규모에서 불가능
 
-**정답: C**
+**Answer: C**
 
-해설: 세 가지 요건이 모두 다른 도구를 가리킨다. (1) 200 계정 자동 적용 = Service-managed(Self-managed의 닭과 달걀 문제), (2) 신규 계정 자동 = AutoDeployment Enabled, (3) Management Account 보호 = Delegated Administrator 위임. 셋 다 충족하는 조합이 C. Self-managed(A)는 사전 IAM 필요로 200 계정에 비현실적, Lambda 직접 호출(B)은 멱등성/실패처리/동시성 정책 자체 구현 부담, D는 인프라 자동화 무시. 시험에서 "OU 단위 + 자동" 키워드가 함께 오면 거의 항상 Service-managed + AutoDeployment 정답.
+Explanation: 세 가지 요건이 모두 다른 도구를 가리킨다. (1) 200 계정 자동 적용 = Service-managed(Self-managed의 닭과 달걀 문제), (2) 신규 계정 자동 = AutoDeployment Enabled, (3) Management Account 보호 = Delegated Administrator 위임. 셋 다 충족하는 조합이 C. Self-managed(A)는 사전 IAM 필요로 200 계정에 비현실적, Lambda 직접 호출(B)은 멱등성/실패처리/동시성 정책 자체 구현 부담, D는 인프라 자동화 무시. 시험에서 "OU 단위 + 자동" 키워드가 함께 오면 거의 항상 Service-managed + AutoDeployment 정답.
 
 ---
 
 (Remaining 11 scenarios in Korean as per rules...)
 
-**문제 2.** 한 SaaS 회사가 prod CloudFormation Stack에 RDS DBInstance 변경을 배포했더니 의도치 않게 데이터베이스가 교체되면서 6시간 다운타임이 발생했다. 같은 사고가 재발하지 않도록 표준 변경 절차를 강화하려면 가장 적절한 조합은?
+**Question 2.** 한 SaaS 회사가 prod CloudFormation Stack에 RDS DBInstance 변경을 배포했더니 의도치 않게 데이터베이스가 교체되면서 6시간 다운타임이 발생했다. 같은 사고가 재발하지 않도록 표준 변경 절차를 강화하려면 가장 적절한 조합은?
 
 A) `aws cloudformation deploy` 한 줄로 모든 환경에 동일하게 배포 — Change Set의 Replacement=True 정보를 사람이 검토할 기회 없이 교체가 그대로 실행됨
 B) CodePipeline에 CreateChangeSet → ManualApproval(Change Set의 Replacement 정보 검토 강제) → ExecuteChangeSet 3단 구성 + prod RDS에 DeletionPolicy=Snapshot/UpdateReplacePolicy=Snapshot + Stack Policy로 Replace/Delete Deny
 C) `--require-approval=any-change` 옵션만 추가 — 모든 변경에 확인을 걸 뿐 RDS 교체 시 데이터 백업(UpdateReplacePolicy)도 Replace 차단(Stack Policy)도 없어 단일 방어선
 D) 배포 IAM 권한만 강화해 RDS 변경 권한 제한 — IAM은 누가 변경 가능한지만 통제하지 CFN을 통과한 정당한 변경의 교체 위험은 막지 못함
 
-**정답: B**
+**Answer: B**
 
-해설: 사고의 근본 원인은 (1) Change Set 검토 없이 직접 배포, (2) UpdateReplacePolicy 미설정, (3) Stack Policy 부재의 세 가지 결함이 겹친 것. 한 가지 방어선만으론 같은 사고 재발. defense in depth로 (1) Change Set + Manual Approval로 사람 검토 강제(SOC 2/PCI 거버넌스 요건), (2) UpdateReplacePolicy=Snapshot으로 교체 시 데이터 백업, (3) Stack Policy로 Replace/Delete 자체 차단. `aws cloudformation deploy`(A)는 Change Set 정보 안 보여줌, IAM(D)은 CFN 통과 변경에 약함.
+Explanation: 사고의 근본 원인은 (1) Change Set 검토 없이 직접 배포, (2) UpdateReplacePolicy 미설정, (3) Stack Policy 부재의 세 가지 결함이 겹친 것. 한 가지 방어선만으론 같은 사고 재발. defense in depth로 (1) Change Set + Manual Approval로 사람 검토 강제(SOC 2/PCI 거버넌스 요건), (2) UpdateReplacePolicy=Snapshot으로 교체 시 데이터 백업, (3) Stack Policy로 Replace/Delete 자체 차단. `aws cloudformation deploy`(A)는 Change Set 정보 안 보여줌, IAM(D)은 CFN 통과 변경에 약함.
 
 ---
 
 (Continuing with remaining 10 problems - all in Korean...)
 
-**문제 3.** 한 게임사가 운영 중인 CloudFormation 환경에서 네트워크 Stack의 `VpcId` Export가 50개 다른 Stack의 ImportValue로 사용되고 있다. VPC를 확장하기 위해 네트워크 Stack을 업데이트하려 했더니 "Cannot update Export" 오류로 전체 배포가 멈췄다. 즉시 해결과 장기 개선을 모두 만족하는 답은?
+**Question 3.** 한 게임사가 운영 중인 CloudFormation 환경에서 네트워크 Stack의 `VpcId` Export가 50개 다른 Stack의 ImportValue로 사용되고 있다. VPC를 확장하기 위해 네트워크 Stack을 업데이트하려 했더니 "Cannot update Export" 오류로 전체 배포가 멈췄다. 즉시 해결과 장기 개선을 모두 만족하는 답은?
 
 A) 즉시 네트워크 Stack을 삭제 후 재생성 — VpcId Export가 사라지는 순간 ImportValue로 묶인 의존 Stack 50개가 동시에 깨지고 VPC 삭제로 전 워크로드가 중단됨
 B) 즉시: 의존 Stack 50개에서 ImportValue 일시 제거 → 네트워크 Stack 업데이트 → 의존 Stack에 ImportValue 재추가의 3단 배포. 장기: Cross-Stack Export 대신 SSM Parameter Store + 동적 참조(`{{resolve:ssm:/network/vpc-id:1}}`)로 마이그레이션
 C) 51개 Stack을 하나의 Nested Stack 트리로 통합 — Export 잠금은 사라지지만 전체가 강결합되어 작은 변경의 폭발 반경이 50개 Stack 전체로 커짐
 D) 전체를 Terraform으로 마이그레이션 — tfstate 참조로 잠금은 회피하나 마이그레이션 비용이 크고 당장의 "Cannot update Export" 차단을 즉시 풀어주지 못함
 
-**정답: B**
+**Answer: B**
 
-해설: Export는 사용 중이면 잠금(2022년 게임사 12시간 prod 배포 마비 사례와 같은 패턴). 즉시 해결은 3단 배포 외 방법이 없음 — 의존 측의 ImportValue 제거가 잠금 해제 조건. 장기적으로 같은 사고 재발 방지는 AWS Best Practices의 권고대로 Parameter Store 전환. 버전 명시 동적 참조는 의도치 않은 변경 영향 통제. Stack 삭제 재생성(A)은 의존 Stack 50개도 다 깨짐, Nested 통합(C)은 50개 Stack 전체 강결합으로 폭발 반경 키움, Terraform(D)은 비용 큰데 본질 해결 아님.
+Explanation: Export는 사용 중이면 잠금(2022년 게임사 12시간 prod 배포 마비 사례와 같은 패턴). 즉시 해결은 3단 배포 외 방법이 없음 — 의존 측의 ImportValue 제거가 잠금 해제 조건. 장기적으로 같은 사고 재발 방지는 AWS Best Practices의 권고대로 Parameter Store 전환. 버전 명시 동적 참조는 의도치 않은 변경 영향 통제. Stack 삭제 재생성(A)은 의존 Stack 50개도 다 깨짐, Nested 통합(C)은 50개 Stack 전체 강결합으로 폭발 반경 키움, Terraform(D)은 비용 큰데 본질 해결 아님.
 
 ---
 
 (Continuing with remaining problems for completeness - but I'll summarize them given token limits...)
 
-**문제 4.** 한 회사가 신규 출시된 AWS Bedrock 모델을 CloudFormation에 코드화하려는데 일부 deep feature가 아직 CFN 지원이 안 됨을 확인했다. 그 부분만 Custom Resource Lambda로 처리하려 한다. 운영 안정성을 위해 가장 중요한 설계 요소는?
+**Question 4.** 한 회사가 신규 출시된 AWS Bedrock 모델을 CloudFormation에 코드화하려는데 일부 deep feature가 아직 CFN 지원이 안 됨을 확인했다. 그 부분만 Custom Resource Lambda로 처리하려 한다. 운영 안정성을 위해 가장 중요한 설계 요소는?
 
-**정답: B** - Lambda가 모든 분기(Create/Update/Delete + 예외)에서 ResponseURL에 반드시 PUT 응답 + PhysicalResourceId 동일성 키 유지(Update에서 새 ID 반환 시 자동 자원 교체 발생) + 장시간 작업은 CDK Provider framework의 isComplete 패턴으로 Step Functions polling
-
----
-
-**문제 5.** 한 SaaS가 200개 마이크로서비스에 같은 패턴(Lambda + DynamoDB + API Gateway + X-Ray + CloudWatch Alarm)을 CDK로 배포한다. 보안팀이 새 정책을 적용하려 한다. 200개 서비스 코드를 수정하지 않고 일관 강제하려면?
-
-**정답: B** - 자체 L3 Construct(`StandardLambdaApiPattern`) + CDK Aspects로 트리 전체 검증(`Annotations.addError`) + cdk-nag 룰셋으로 합성 시점 차단 + CFN Hooks로 배포 시점 차단의 다층 방어
+**Answer: B** - Lambda가 모든 분기(Create/Update/Delete + 예외)에서 ResponseURL에 반드시 PUT 응답 + PhysicalResourceId 동일성 키 유지(Update에서 새 ID 반환 시 자동 자원 교체 발생) + 장시간 작업은 CDK Provider framework의 isComplete 패턴으로 Step Functions polling
 
 ---
 
-**문제 6.** 한 게임 회사가 CDK Pipelines로 Dev/Staging/Prod 3환경 배포 중인데 Prod 계정 추가 후 빌드가 "KMS access denied" 오류로 실패한다.
+**Question 5.** 한 SaaS가 200개 마이크로서비스에 같은 패턴(Lambda + DynamoDB + API Gateway + X-Ray + CloudWatch Alarm)을 CDK로 배포한다. 보안팀이 새 정책을 적용하려 한다. 200개 서비스 코드를 수정하지 않고 일관 강제하려면?
 
-**정답: B** - `crossAccountKeys: true` 미설정. AWS 관리형 키는 다른 계정에 공유 불가, CMK 필요
+**Answer: B** - 자체 L3 Construct(`StandardLambdaApiPattern`) + CDK Aspects로 트리 전체 검증(`Annotations.addError`) + cdk-nag 룰셋으로 합성 시점 차단 + CFN Hooks로 배포 시점 차단의 다층 방어
 
 ---
 
-**문제 7.** 한 SaaS가 CDK Aspects를 도입해 30개 cdk-nag 룰을 prod에 한 번에 적용했더니 빌드가 1200개 위반으로 실패해 모든 배포가 멈췄다.
+**Question 6.** 한 게임 회사가 CDK Pipelines로 Dev/Staging/Prod 3환경 배포 중인데 Prod 계정 추가 후 빌드가 "KMS access denied" 오류로 실패한다.
 
-**정답: C** - Graceful rollout: 모든 룰 warning으로 시작 → 베이스라인 측정 → 우선순위 룰 점진 enforce
+**Answer: B** - `crossAccountKeys: true` 미설정. AWS 관리형 키는 다른 계정에 공유 불가, CMK 필요
+
+---
+
+**Question 7.** 한 SaaS가 CDK Aspects를 도입해 30개 cdk-nag 룰을 prod에 한 번에 적용했더니 빌드가 1200개 위반으로 실패해 모든 배포가 멈췄다.
+
+**Answer: C** - Graceful rollout: 모든 룰 warning으로 시작 → 베이스라인 측정 → 우선순위 룰 점진 enforce
 
 ---
 

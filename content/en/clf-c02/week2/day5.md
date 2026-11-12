@@ -88,62 +88,62 @@ Remember that the exam always asks in the form of "situation → the best-fit se
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to run a light processing job that runs briefly only when a file is uploaded, a few times a day. To avoid incurring cost during idle time, which compute service is the best fit?
+**Question 1.** You want to run a light processing job that runs briefly only when a file is uploaded, a few times a day. To avoid incurring cost during idle time, which compute service is the best fit?
 
 A) Amazon EC2  
 B) AWS Lambda  
 C) Amazon EBS  
 D) Amazon VPC  
 
-**정답: B**  
-해설: Lambda is a serverless service that runs only when an event fires and bills only for what you use, making it a good fit for intermittent, short jobs. EC2 keeps billing while it's on, incurring idle cost; EBS is block storage; and VPC is a network — none of which is the agent that runs code.
+**Answer: B**  
+Explanation: Lambda is a serverless service that runs only when an event fires and bills only for what you use, making it a good fit for intermittent, short jobs. EC2 keeps billing while it's on, incurring idle cost; EBS is block storage; and VPC is a network — none of which is the agent that runs code.
 
 ---
 
-**문제 2.** You need a shared file system where multiple EC2 instances can read and write the same files simultaneously. Which storage is the best fit?
+**Question 2.** You need a shared file system where multiple EC2 instances can read and write the same files simultaneously. Which storage is the best fit?
 
 A) Amazon S3  
 B) Amazon EBS  
 C) Amazon EFS  
 D) Amazon CloudFront  
 
-**정답: C**  
-해설: EFS is file storage that multiple EC2s can mount and share simultaneously. EBS is by default a block disk that attaches to only one instance, unsuitable for concurrent sharing; S3 is object storage; and CloudFront is a content delivery network — so neither is meant for a shared file system.
+**Answer: C**  
+Explanation: EFS is file storage that multiple EC2s can mount and share simultaneously. EBS is by default a block disk that attaches to only one instance, unsuitable for concurrent sharing; S3 is object storage; and CloudFront is a content delivery network — so neither is meant for a shared file system.
 
 ---
 
-**문제 3.** You want to protect a database server so it can't be accessed directly from the internet, while allowing the web server to accept external connections. What is the most appropriate configuration in a VPC?
+**Question 3.** You want to protect a database server so it can't be accessed directly from the internet, while allowing the web server to accept external connections. What is the most appropriate configuration in a VPC?
 
 A) Put both the web server and the DB in a public subnet  
 B) Put the web server in a public subnet and the DB in a private subnet  
 C) Put both the web server and the DB in a private subnet  
 D) Don't divide subnets and don't use security groups  
 
-**정답: B**  
-해설: The standard configuration is to put the web server that needs external connections in a public subnet, and the DB that needs protection in a private subnet with no internet route. Putting both in public exposes the DB, putting both in private means the web server can't accept external connections, and not using subnets or security groups makes protection impossible in the first place.
+**Answer: B**  
+Explanation: The standard configuration is to put the web server that needs external connections in a public subnet, and the DB that needs protection in a private subnet with no internet route. Putting both in public exposes the DB, putting both in private means the web server can't accept external connections, and not using subnets or security groups makes protection impossible in the first place.
 
 ---
 
-**문제 4.** Which most accurately distinguishes S3, EBS, and EFS?
+**Question 4.** Which most accurately distinguishes S3, EBS, and EFS?
 
 A) S3 is block, EBS is object, EFS is file storage  
 B) S3 is object, EBS is single-server block, EFS is shared file storage  
 C) All three are disks that attach to only one EC2  
 D) All three are object storage accessed directly from the internet  
 
-**정답: B**  
-해설: S3 is object storage, EBS is block storage usually attached to one EC2, and EFS is file storage shared by multiple servers. Descriptions with the types swapped, or claims that all three are single-server disks or all three are object storage, are contrary to fact.
+**Answer: B**  
+Explanation: S3 is object storage, EBS is block storage usually attached to one EC2, and EFS is file storage shared by multiple servers. Descriptions with the types swapped, or claims that all three are single-server disks or all three are object storage, are contrary to fact.
 
 ---
 
-**문제 5.** To deliver static content to users worldwide with low latency, you want to cache content at outposts close to users. Which service is the best fit?
+**Question 5.** To deliver static content to users worldwide with low latency, you want to cache content at outposts close to users. Which service is the best fit?
 
 A) Amazon Route 53  
 B) Amazon CloudFront  
 C) Amazon EFS  
 D) Amazon EC2  
 
-**정답: B**  
-해설: CloudFront is a CDN that caches content at edge locations worldwide to deliver it quickly from a location near the user. Route 53 is a DNS that turns a domain name into an address, EFS is shared file storage, and EC2 is a virtual server — so none plays the role of content caching and delivery.
+**Answer: B**  
+Explanation: CloudFront is a CDN that caches content at edge locations worldwide to deliver it quickly from a location near the user. Route 53 is a DNS that turns a domain name into an address, EFS is shared file storage, and EC2 is a virtual server — so none plays the role of content caching and delivery.
 
 ---

@@ -217,68 +217,68 @@ Next: Week 7 synthesis, RDS + ElastiCache + Aurora scenario comprehensives.
 
 ## 📝 Practice Questions
 
-**문제 1.** Aurora storage config is?
+**Question 1.** Aurora storage config is?
 
 A) Single AZ 1 replica
 B) Single AZ 6 replicas
 C) 3 AZ 6 replicas, write quorum 4/6
 D) 2 AZ 3 replicas, write quorum 2/3
 
-**정답: C**
+**Answer: C**
 
-해설: Aurora 3 AZ × 2 replicas = 6, write quorum V_w=4, read quorum V_r=3. V_w + V_r > N (4+3>6) strong consistency. Single AZ failure still write-capable (4 copies V_w), 1 AZ + 1 node loss still read-capable (3 copies V_r). Math-optimized minimums.
+Explanation: Aurora 3 AZ × 2 replicas = 6, write quorum V_w=4, read quorum V_r=3. V_w + V_r > N (4+3>6) strong consistency. Single AZ failure still write-capable (4 copies V_w), 1 AZ + 1 node loss still read-capable (3 copies V_r). Math-optimized minimums.
 
 ---
 
-**문제 2.** Aurora Replica vs RDS Read Replica biggest difference?
+**Question 2.** Aurora Replica vs RDS Read Replica biggest difference?
 
 A) Aurora Replica uses async binlog replication
 B) Aurora Replica no own storage, primary-shared → 10-20ms lag, very short
 C) RDS Read Replica max 30
 D) Identical
 
-**정답: B**
+**Answer: B**
 
-해설: Aurora Replica core: no own disk, shares primary distributed storage. Replication: redo log notification → lag 10-20ms (RDS Read: seconds~tens sec). A: Aurora no binlog. C: RDS max 15 (MySQL/PG/MariaDB 2022 upward). D: Major differences.
+Explanation: Aurora Replica core: no own disk, shares primary distributed storage. Replication: redo log notification → lag 10-20ms (RDS Read: seconds~tens sec). A: Aurora no binlog. C: RDS max 15 (MySQL/PG/MariaDB 2022 upward). D: Major differences.
 
 ---
 
-**문제 3.** SaaS Aurora MySQL globally, Tokyo read latency < 100ms needed, Tokyo region down → 1 min failover. Best config?
+**Question 3.** SaaS Aurora MySQL globally, Tokyo read latency < 100ms needed, Tokyo region down → 1 min failover. Best config?
 
 A) Tokyo Aurora Multi-AZ only
 B) Tokyo Aurora + Virginia/Ireland Cross-Region Read Replicas each
 C) Aurora Global Database (Primary: Tokyo, Secondary: Virginia, Ireland)
 D) DynamoDB Global Tables
 
-**정답: C**
+**Answer: C**
 
-해설: Aurora Global Database: ① dedicated infra cross-region lag < 1 sec ② managed failover RTO < 1 min ③ each secondary region own 15 read replicas → region latency min. B: Cross-Region Read Replica viable but lag/failover automation weak. A: cross-region scatter missing. D: RDBMS compatibility lost. "Auto" failover phrase trap — "managed" still requires operator trigger.
+Explanation: Aurora Global Database: ① dedicated infra cross-region lag < 1 sec ② managed failover RTO < 1 min ③ each secondary region own 15 read replicas → region latency min. B: Cross-Region Read Replica viable but lag/failover automation weak. A: cross-region scatter missing. D: RDBMS compatibility lost. "Auto" failover phrase trap — "managed" still requires operator trigger.
 
 ---
 
-**문제 4.** Aurora Serverless v2 untrue statement?
+**Question 4.** Aurora Serverless v2 untrue statement?
 
 A) 0.5 ACU unit micro-adjust
 B) Cold start barely any, fast expand
 C) v1 vs v2 differ: v2 second-level vs v1 minute-level
 D) Min capacity always ≥ 1 ACU
 
-**정답: D**
+**Answer: D**
 
-해설: D false. Aurora Serverless v2 Min 0.5 ACU (auto-pause to 0 ACU post-2024). v1: 1 ACU min. A: 0.5 unit fine-tuning. B: Firecracker microVM resource adjust, no instance swap. C: v2 hypervisor-level, v1 instance-swap. Exam v1 vs v2: "v2 fine-tune + fast + cold start none."
+Explanation: D false. Aurora Serverless v2 Min 0.5 ACU (auto-pause to 0 ACU post-2024). v1: 1 ACU min. A: 0.5 unit fine-tuning. B: Firecracker microVM resource adjust, no instance swap. C: v2 hypervisor-level, v1 instance-swap. Exam v1 vs v2: "v2 fine-tune + fast + cold start none."
 
 ---
 
-**문제 5.** Aurora Backtrack true statement?
+**Question 5.** Aurora Backtrack true statement?
 
 A) RDS + Aurora both support
 B) Max 35 days rollback
 C) Aurora MySQL only, in-place time-rewind (no new instance)
 D) Identical mechanism to PITR
 
-**정답: C**
+**Answer: C**
 
-해설: Backtrack: Aurora MySQL feature, same cluster past-time in-place (seconds~min). New instance creation doesn't happen. Speed: sec~min. A: RDS unsupported. B: max 72 hours, not 35 days. D: PITR different mechanism (new instance + backup+log replay). Exam "Aurora quick mistake recovery" → Backtrack.
+Explanation: Backtrack: Aurora MySQL feature, same cluster past-time in-place (seconds~min). New instance creation doesn't happen. Speed: sec~min. A: RDS unsupported. B: max 72 hours, not 35 days. D: PITR different mechanism (new instance + backup+log replay). Exam "Aurora quick mistake recovery" → Backtrack.
 
 ---
 
@@ -289,19 +289,19 @@ B) DNS: resolve same endpoint → different replica IP each time (TTL 5 sec)
 C) Network Load Balancer
 D) Application Load Balancer
 
-**정답: B**
+**Answer: B**
 
-해설: Aurora Reader Endpoint DNS round-robin — resolve same endpoint, get different replica IP each time (TTL 5 sec). Long-held connection → one replica pinned, small pool → unbalanced. Fix: short connection lifetime, cluster-aware client, or RDS Proxy. C/D: irrelevant to Aurora endpoint.
+Explanation: Aurora Reader Endpoint DNS round-robin — resolve same endpoint, get different replica IP each time (TTL 5 sec). Long-held connection → one replica pinned, small pool → unbalanced. Fix: short connection lifetime, cluster-aware client, or RDS Proxy. C/D: irrelevant to Aurora endpoint.
 
 ---
 
-**문제 7.** SaaS production Aurora MySQL: developer runs `DELETE FROM orders WHERE created_at > '2024-01-01'` mistake. Fastest recovery (< 30 min)?
+**Question 7.** SaaS production Aurora MySQL: developer runs `DELETE FROM orders WHERE created_at > '2024-01-01'` mistake. Fastest recovery (< 30 min)?
 
 A) PITR new cluster 5 min ago, export/import deleted rows
 B) Backtrack in-place 5 min ago rollback
 C) Multi-AZ failover manual, restart another AZ instance
 D) Recent auto-snapshot restore, new cluster, endpoint switch
 
-**정답: B**
+**Answer: B**
 
-해설: Backtrack: in-place seconds~min (no new instance, no endpoint switch). A: PITR new instance (30 min) + endpoint switch procedure slow. C: failover unrelated data recovery. D: snapshot restore min~hour + new instance steps slow. Exam "Aurora MySQL fast mistake recovery" = Backtrack instant.
+Explanation: Backtrack: in-place seconds~min (no new instance, no endpoint switch). A: PITR new instance (30 min) + endpoint switch procedure slow. C: failover unrelated data recovery. D: snapshot restore min~hour + new instance steps slow. Exam "Aurora MySQL fast mistake recovery" = Backtrack instant.

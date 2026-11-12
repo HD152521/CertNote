@@ -240,96 +240,96 @@ Next article we explore **AWS Control Tower and Landing Zone** that auto-attach 
 
 ## 📝 Practice Questions
 
-**문제 1.** Which statement about SCP is correct?
+**Question 1.** Which statement about SCP is correct?
 
 A) Grants IAM permissions
 B) Applies to Management accounts
 C) Sets maximum limit (ceiling), not granting authorization
 D) Applies differently per region
 
-**정답: C**
-해설: SCP is ceiling. Intersects with IAM policy. Doesn't apply to Management (intentional). Same SCP applies identically to all regions; region differentiation handled via Condition (`aws:RequestedRegion`).
+**Answer: C**
+Explanation: SCP is ceiling. Intersects with IAM policy. Doesn't apply to Management (intentional). Same SCP applies identically to all regions; region differentiation handled via Condition (`aws:RequestedRegion`).
 
 ---
 
-**문제 2.** Remove FullAWSAccess SCP on new OU, attach Allow-list with EC2 only. Result?
+**Question 2.** Remove FullAWSAccess SCP on new OU, attach Allow-list with EC2 only. Result?
 
 A) No effect
 B) All OU accounts: EC2 OK, S3·DynamoDB etc. implicit Deny
 C) Management account only Deny
 D) Org deleted
 
-**정답: B**
-해설: SCP needs explicit Allow to work. Without FullAWSAccess, implicit Deny on unlisted actions. Even if IAM grants S3 Allow, SCP block takes priority.
+**Answer: B**
+Explanation: SCP needs explicit Allow to work. Without FullAWSAccess, implicit Deny on unlisted actions. Even if IAM grants S3 Allow, SCP block takes priority.
 
 ---
 
-**문제 3.** Korea data sovereignty: ap-northeast-2 only. Which SCP?
+**Question 3.** Korea data sovereignty: ap-northeast-2 only. Which SCP?
 
 A) Allow `aws:RequestedRegion = ap-northeast-2`
 B) Deny `aws:RequestedRegion != ap-northeast-2` + NotAction exceptions for global services (IAM, Org, Route53, CloudFront, GA, WAF)
 C) Resource Policy
 D) NACL
 
-**정답: B**
-해설: Deny pattern + global service NotAction exceptions standard. Global services routed to us-east-1 or are global, need exceptions or OU becomes non-functional. Without them, even `iam:CreateRole` blocked.
+**Answer: B**
+Explanation: Deny pattern + global service NotAction exceptions standard. Global services routed to us-east-1 or are global, need exceptions or OU becomes non-functional. Without them, even `iam:CreateRole` blocked.
 
 ---
 
-**문제 4.** Prevent attacker disabling CloudTrail. Best?
+**Question 4.** Prevent attacker disabling CloudTrail. Best?
 
 A) IAM policy only
 B) SCP with `cloudtrail:StopLogging`, `DeleteTrail`, `UpdateTrail` explicit Deny
 C) Network ACL
 D) WAF
 
-**정답: B**
-해설: SCP Deny — no IAM policy can break SCP. Standard baseline after Equifax (2017). Prevents post-breach log tampering. A leaves root and future Roles with gaps.
+**Answer: B**
+Explanation: SCP Deny — no IAM policy can break SCP. Standard baseline after Equifax (2017). Prevents post-breach log tampering. A leaves root and future Roles with gaps.
 
 ---
 
-**문제 5.** Auto-allow new AWS services launched? Which SCP strategy?
+**Question 5.** Auto-allow new AWS services launched? Which SCP strategy?
 
 A) Allow-list
 B) Deny-list (FullAWSAccess + specific action Deny)
 C) Resource Policy
 D) Permission Boundary
 
-**정답: B**
-해설: Deny-list auto-allows new services. AWS launches 100+ yearly. Allow-list needs updates. Trade-off: new service attack surface risk → company must mandate pre-review. AWS itself recommends Deny-list.
+**Answer: B**
+Explanation: Deny-list auto-allows new services. AWS launches 100+ yearly. Allow-list needs updates. Trade-off: new service attack surface risk → company must mandate pre-review. AWS itself recommends Deny-list.
 
 ---
 
-**문제 6.** Pre-validate SCP works correctly? Best?
+**Question 6.** Pre-validate SCP works correctly? Best?
 
 A) Attach directly to operating OU, monitor
 B) PolicyStaging OU (1 test account), validate + IAM Policy Simulator
 C) IAM User add
 D) Permission Boundary workaround
 
-**정답: B**
-해설: PolicyStaging OU standard validation. IAM Policy Simulator supports Org SCP since 2020. AWS Access Analyzer Policy Generation also analyzes CloudTrail 90-day data.
+**Answer: B**
+Explanation: PolicyStaging OU standard validation. IAM Policy Simulator supports Org SCP since 2020. AWS Access Analyzer Policy Generation also analyzes CloudTrail 90-day data.
 
 ---
 
-**문제 7.** SaaS: company-external Principal cannot access ANY S3 bucket in OU. One-place policy block. Best?
+**Question 7.** SaaS: company-external Principal cannot access ANY S3 bucket in OU. One-place policy block. Best?
 
 A) Per-bucket Bucket Policy
 B) Lambda monitor
 C) Resource Control Policy (RCP) OU-level attach (`aws:PrincipalOrgID != o-xxxx` Deny)
 D) GuardDuty alert
 
-**정답: C**
-해설: RCP (2024) Resource-side restriction. Define once, apply to all OU resources. Prevents 2017 Verizon·Accenture S3 public accidents structurally. SCP is Principal-side, RCP is Resource-side — complementary.
+**Answer: C**
+Explanation: RCP (2024) Resource-side restriction. Define once, apply to all OU resources. Prevents 2017 Verizon·Accenture S3 public accidents structurally. SCP is Principal-side, RCP is Resource-side — complementary.
 
 ---
 
-**문제 8.** MFA-force SCP uses `BoolIfExists` not `Bool`. Why?
+**Question 8.** MFA-force SCP uses `BoolIfExists` not `Bool`. Why?
 
 A) Performance
 B) MFA key missing from request → `Bool` doesn't match → Deny doesn't work. `BoolIfExists` matches both key-present and key-absent cases
 C) Cost
 D) Multi-region support
 
-**정답: B**
-해설: Subtle difference but decides SCP function. SAML/some auth paths may lack `aws:MultiFactorAuthPresent` key entirely. `Bool` skips evaluation when key missing. `BoolIfExists` evaluates both cases → Deny both.
+**Answer: B**
+Explanation: Subtle difference but decides SCP function. SAML/some auth paths may lack `aws:MultiFactorAuthPresent` key entirely. `Bool` skips evaluation when key missing. `BoolIfExists` evaluates both cases → Deny both.

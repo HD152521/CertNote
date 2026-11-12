@@ -327,72 +327,72 @@ In the next article, we cover the Lambda deployment lifecycle — environment va
 
 ## 📝 Practice Questions
 
-**문제 1.** Which correctly describes the SQS integration in Lambda ESM (Event Source Mapping)?
+**Question 1.** Which correctly describes the SQS integration in Lambda ESM (Event Source Mapping)?
 
 A) SQS directly pushes new messages to Lambda  
 B) The Lambda service long-polls SQS and fetches messages in batches  
 C) It works via asynchronous invocation like S3  
 D) SQS FIFO queues cannot be integrated with Lambda  
 
-**정답: B**  
-해설: In SQS ESM, the Lambda service actively polls SQS (long polling up to 20 seconds) to fetch messages. It's not SQS invoking Lambda directly. A is wrong — SQS is not push-based. C is wrong — ESM is a different category from asynchronous invocation. D is wrong — FIFO queues are supported too, and ordering is guaranteed per message group ID.
+**Answer: B**  
+Explanation: In SQS ESM, the Lambda service actively polls SQS (long polling up to 20 seconds) to fetch messages. It's not SQS invoking Lambda directly. A is wrong — SQS is not push-based. C is wrong — ESM is a different category from asynchronous invocation. D is wrong — FIFO queues are supported too, and ordering is guaranteed per message group ID.
 
 ---
 
-**문제 2.** In Kinesis Data Streams ESM, what happens when one record keeps failing to process, and what is the fix?
+**Question 2.** In Kinesis Data Streams ESM, what happens when one record keeps failing to process, and what is the fix?
 
 A) Only that record automatically moves to a DLQ  
 B) Lambda automatically skips that record and processes the next one  
 C) The entire shard is blocked and processing of new records stops — resolve with MaximumRetryAttempts and BisectBatchOnFunctionError  
 D) Kinesis automatically splits that shard  
 
-**정답: C**  
-해설: Kinesis ESM by default keeps retrying a failed record to preserve ordering, which can block the entire shard. The fix is to limit the retry count with `MaximumRetryAttempts`, discard old records with `MaximumRecordAgeInSeconds`, and isolate the problem record via binary search with `BisectBatchOnFunctionError`. You can detect this situation when CloudWatch's `IteratorAge` metric continuously increases.
+**Answer: C**  
+Explanation: Kinesis ESM by default keeps retrying a failed record to preserve ordering, which can block the entire shard. The fix is to limit the retry count with `MaximumRetryAttempts`, discard old records with `MaximumRecordAgeInSeconds`, and isolate the problem record via binary search with `BisectBatchOnFunctionError`. You can detect this situation when CloudWatch's `IteratorAge` metric continuously increases.
 
 ---
 
-**문제 3.** When a file is uploaded to S3 and Lambda saves the result back to the same bucket, an infinite loop occurs. What is the most appropriate solution?
+**Question 3.** When a file is uploaded to S3 and Lambda saves the result back to the same bucket, an infinite loop occurs. What is the most appropriate solution?
 
 A) Set the Lambda function timeout to 1 second  
 B) Save the result to a different S3 bucket, or use a prefix/suffix filter  
 C) Use only EventBridge instead of S3 event notifications  
 D) Set Lambda reserved concurrency to 1  
 
-**정답: B**  
-해설: The most reliable solution is to separate the input bucket and the output bucket. If separation is hard, set a prefix/suffix filter on the S3 event notification to trigger only files in a specific path (e.g., `input/`) and save results to a different path (`output/`). A is not a root fix. C is wrong because even with EventBridge, the same problem arises if a same-bucket write event fires. D is wrong — the loop keeps happening even with concurrency of 1.
+**Answer: B**  
+Explanation: The most reliable solution is to separate the input bucket and the output bucket. If separation is hard, set a prefix/suffix filter on the S3 event notification to trigger only files in a specific path (e.g., `input/`) and save results to a different path (`output/`). A is not a root fix. C is wrong because even with EventBridge, the same problem arises if a same-bucket write event fires. D is wrong — the loop keeps happening even with concurrency of 1.
 
 ---
 
-**문제 4.** Why are Destinations recommended over DLQ in Lambda asynchronous invocation?
+**Question 4.** Why are Destinations recommended over DLQ in Lambda asynchronous invocation?
 
 A) Destinations are faster and cheaper  
 B) Destinations handle both success and failure, support SQS, SNS, EventBridge, and Lambda as targets, and include rich metadata  
 C) DLQ supports only SQS, while Destinations support all services  
 D) Destinations can increase the retry count  
 
-**정답: B**  
-해설: Destinations respond to both the success (OnSuccess) and failure (OnFailure) of an asynchronous invocation, and support SQS, SNS, EventBridge, and Lambda as targets. Also, unlike DLQ which delivers only the event payload, they deliver rich metadata including the request context, response, and error information, making debugging easier. C is wrong — DLQ supports SNS too.
+**Answer: B**  
+Explanation: Destinations respond to both the success (OnSuccess) and failure (OnFailure) of an asynchronous invocation, and support SQS, SNS, EventBridge, and Lambda as targets. Also, unlike DLQ which delivers only the event payload, they deliver rich metadata including the request context, response, and error information, making debugging easier. C is wrong — DLQ supports SNS too.
 
 ---
 
-**문제 5.** In SQS ESM, how do you prevent successful messages from being reprocessed when only some messages in a batch fail?
+**Question 5.** In SQS ESM, how do you prevent successful messages from being reprocessed when only some messages in a batch fail?
 
 A) Don't throw exceptions in the function  
 B) Set BatchSize to 1  
 C) Enable `ReportBatchItemFailures` and return a `batchItemFailures` response  
 D) Setting a DLQ handles it automatically  
 
-**정답: C**  
-해설: Set `ReportBatchItemFailures` in `FunctionResponseTypes`, and if the function returns the failed message IDs as a `batchItemFailures` list, Lambda reprocesses only those messages. The successful messages are deleted from SQS. B works but greatly reduces throughput and is inefficient. D is wrong — a DLQ is where final-failure events go; it does not handle partial failures within a batch.
+**Answer: C**  
+Explanation: Set `ReportBatchItemFailures` in `FunctionResponseTypes`, and if the function returns the failed message IDs as a `batchItemFailures` list, Lambda reprocesses only those messages. The successful messages are deleted from SQS. B works but greatly reduces throughput and is inefficient. D is wrong — a DLQ is where final-failure events go; it does not handle partial failures within a batch.
 
 ---
 
-**문제 6.** In DynamoDB Streams, which StreamViewType should you use to receive both the before and after data of a change in Lambda?
+**Question 6.** In DynamoDB Streams, which StreamViewType should you use to receive both the before and after data of a change in Lambda?
 
 A) KEYS_ONLY  
 B) NEW_IMAGE  
 C) OLD_IMAGE  
 D) NEW_AND_OLD_IMAGES  
 
-**정답: D**  
-해설: `NEW_AND_OLD_IMAGES` includes both the previous state (OldImage) and the subsequent state (NewImage) of the changed item. This is used most in audit logging, change detection, and data synchronization scenarios. `KEYS_ONLY` delivers only the keys, `NEW_IMAGE` only the after, and `OLD_IMAGE` only the before. Cost varies with the view type because the stream data size differs.
+**Answer: D**  
+Explanation: `NEW_AND_OLD_IMAGES` includes both the previous state (OldImage) and the subsequent state (NewImage) of the changed item. This is used most in audit logging, change detection, and data synchronization scenarios. `KEYS_ONLY` delivers only the keys, `NEW_IMAGE` only the after, and `OLD_IMAGE` only the before. Cost varies with the view type because the stream data size differs.

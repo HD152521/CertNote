@@ -186,91 +186,91 @@ Pattern 5: Full CI/CD
 
 ## 📝 Final Mock Exam - Part 4
 
-**문제 1.** Collect click events from millions of users in real-time and analyze in multiple systems?
+**Question 1.** Collect click events from millions of users in real-time and analyze in multiple systems?
 
 A) SQS  
 B) SNS  
 C) Kinesis Data Streams  
 D) EventBridge  
 
-**정답: C** - Kinesis Data Streams supports high-volume real-time streaming with multiple simultaneous Consumers.
+**Answer: C** - Kinesis Data Streams supports high-volume real-time streaming with multiple simultaneous Consumers.
 
 ---
 
-**문제 2.** Microservice A processes asynchronously without waiting for B's response?
+**Question 2.** Microservice A processes asynchronously without waiting for B's response?
 
 A) Lambda A synchronously calls Lambda B  
 B) Lambda A → SQS → Lambda B  
 C) Direct API Gateway connection  
 D) Data sharing through DynamoDB  
 
-**정답: B** - SQS async communication loosely couples services so Lambda A doesn't wait for response.
+**Answer: B** - SQS async communication loosely couples services so Lambda A doesn't wait for response.
 
 ---
 
-**문제 3.** ECS task retrieves password from Secrets Manager during execution?
+**Question 3.** ECS task retrieves password from Secrets Manager during execution?
 
 A) Add permission to executionRoleArn  
 B) Add permission to taskRoleArn  
 C) Hardcode in environment variable  
 D) Inject via CloudFormation parameter  
 
-**정답: B** - taskRole is for container app code to access AWS services.
+**Answer: B** - taskRole is for container app code to access AWS services.
 
 ---
 
-**문제 4.** Process payment → send email → update inventory in sequence with retry on failure?
+**Question 4.** Process payment → send email → update inventory in sequence with retry on failure?
 
 A) SQS chain  
 B) Lambda chain (direct Lambda calls)  
 C) Step Functions  
 D) Kinesis  
 
-**정답: C** - Step Functions manages sequential execution, error handling, and auto-retry visually.
+**Answer: C** - Step Functions manages sequential execution, error handling, and auto-retry visually.
 
 ---
 
-**문제 5.** Manage VPC separately and reference from other CloudFormation stacks?
+**Question 5.** Manage VPC separately and reference from other CloudFormation stacks?
 
 A) Manually pass VPC ID as parameter  
 B) Export from Outputs and reference with !ImportValue  
 C) Include all in same stack  
 D) Cross-stack reference not possible  
 
-**정답: B** - Export name in Outputs section, then !ImportValue in other stack.
+**Answer: B** - Export name in Outputs section, then !ImportValue in other stack.
 
 ---
 
-**문제 6.** Handle S3 upload for image resize, metadata analysis, admin notification simultaneously?
+**Question 6.** Handle S3 upload for image resize, metadata analysis, admin notification simultaneously?
 
 A) Set S3 event directly to each Lambda  
 B) S3 → SNS → multiple SQS → each Lambda  
 C) S3 → Kinesis → Lambda  
 D) S3 → EventBridge → 3 Lambda  
 
-**정답: B or D** - Fan-out pattern. Either SNS to multiple SQS (B) or EventBridge to multiple Lambda (D).
+**Answer: B or D** - Fan-out pattern. Either SNS to multiple SQS (B) or EventBridge to multiple Lambda (D).
 
 ---
 
-**문제 7.** Deploy new Beanstalk version without downtime, safest strategy?
+**Question 7.** Deploy new Beanstalk version without downtime, safest strategy?
 
 A) All at once  
 B) Rolling  
 C) Immutable  
 D) Blue/Green  
 
-**정답: C** - Immutable deploys new version to new ASG, validates, then swaps — safest.
+**Answer: C** - Immutable deploys new version to new ASG, validates, then swaps — safest.
 
 ---
 
-**문제 8.** What is actually created when CDK app is deployed?
+**Question 8.** What is actually created when CDK app is deployed?
 
 A) Terraform plan  
 B) CloudFormation stack  
 C) ECS task  
 D) Lambda layer  
 
-**정답: B** - CDK converts code to CloudFormation template and creates CloudFormation stack on `cdk deploy`.
+**Answer: B** - CDK converts code to CloudFormation template and creates CloudFormation stack on `cdk deploy`.
 
 ---
 

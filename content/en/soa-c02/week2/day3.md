@@ -293,97 +293,97 @@ Tomorrow: Metric Filter, EMF deep-dive + Anomaly Detection operational patterns.
 
 ## 📝 Practice Questions
 
-**문제 1.** To view Lambda p99 response time trend at 5-minute intervals, which query is correct?
+**Question 1.** To view Lambda p99 response time trend at 5-minute intervals, which query is correct?
 
 A) `filter @type = "REPORT" | stats avg(@duration)`
 B) `filter @type = "REPORT" | stats pct(@duration, 99) as p99 by bin(5m)`
 C) `stats max(@duration)`
 D) `parse @message | stats sum(@duration)`
 
-**정답: B**
-해설: Lambda REPORT lines include auto-discovered `@duration` field. `pct(@duration, 99)` calculates percentile. `bin(5m)` groups by 5-minute intervals for trend analysis. Average (A) hides long tail; max (C) sensitive to single outliers.
+**Answer: B**
+Explanation: Lambda REPORT lines include auto-discovered `@duration` field. `pct(@duration, 99)` calculates percentile. `bin(5m)` groups by 5-minute intervals for trend analysis. Average (A) hides long tail; max (C) sensitive to single outliers.
 
 ---
 
-**문제 2.** API bill soared calling PutMetricData per HTTP request. Most suitable alternative?
+**Question 2.** API bill soared calling PutMetricData per HTTP request. Most suitable alternative?
 
 A) Batch PutMetricData calls
 B) Embedded Metric Format (EMF) — single console.log auto-extracts metrics, zero API cost
 C) Store metrics in S3, batch-publish hourly
 D) CloudWatch Logs Subscription Filter
 
-**정답: B**
-해설: EMF embeds JSON metrics in logs; CloudWatch auto-extracts. Zero API cost. PowerTools library (Python/Java/TS) auto-generates. Exam: "cost-efficient metrics" almost always → EMF.
+**Answer: B**
+Explanation: EMF embeds JSON metrics in logs; CloudWatch auto-extracts. Zero API cost. PowerTools library (Python/Java/TS) auto-generates. Exam: "cost-efficient metrics" almost always → EMF.
 
 ---
 
-**문제 3.** Insights query over 1-week range too slow/expensive. Most effective improvement order?
+**Question 3.** Insights query over 1-week range too slow/expensive. Most effective improvement order?
 
 A) Select all fields with `fields *`
 B) Narrow time range, move `filter` early, specify needed `fields` only
 C) Add `sort`
 D) Reduce Log Group scope
 
-**정답: B**
-해설: Insights bills by GB scanned. Time range reduction + filter pushdown + needed fields only most effective. 1hr → 6hr → 24hr step expansion standard.
+**Answer: B**
+Explanation: Insights bills by GB scanned. Time range reduction + filter pushdown + needed fields only most effective. 1hr → 6hr → 24hr step expansion standard.
 
 ---
 
-**문제 4.** Two core EMF advantages?
+**Question 4.** Two core EMF advantages?
 
 A) PutMetricData API cost zero
 B) Freely use high-cardinality fields (user_id) as metric dimensions
 C) Integrate metrics + logs as single JSON. Same trace_id instantly connects metric anomaly ↔ source log
 D) Metrics retained permanently
 
-**정답: A, C**
-해설: EMF single console.log line auto-extracts metrics (no API cost) + unifies metrics/logs (same JSON contains trace_id, user_id context). High-cardinality fields only as log fields, not dimensions (prevent cardinality explosion). Metric retention same for EMF or PutMetricData (15 months).
+**Answer: A, C**
+Explanation: EMF single console.log line auto-extracts metrics (no API cost) + unifies metrics/logs (same JSON contains trace_id, user_id context). High-cardinality fields only as log fields, not dimensions (prevent cardinality explosion). Metric retention same for EMF or PutMetricData (15 months).
 
 ---
 
-**문제 5.** Query to track Lambda Cold Start percentage at 5-minute intervals?
+**Question 5.** Query to track Lambda Cold Start percentage at 5-minute intervals?
 
 A) `filter @message like /COLD/`
 B) `filter @type = "REPORT" | stats sum(strcontains(@message, "Init Duration")) / count(*) * 100 as coldPct by bin(5m)`
 C) `select cold_start_count from logs`
 D) Not possible in Logs Insights; use X-Ray
 
-**정답: B**
-해설: Lambda REPORT lines detect cold start by "Init Duration:" text presence (absent in warm start). Alternatively use auto-discovered `@initDuration` field: `filter @initDuration > 0 | stats count(*) by bin(5m)`. Track ratio by time bins.
+**Answer: B**
+Explanation: Lambda REPORT lines detect cold start by "Init Duration:" text presence (absent in warm start). Alternatively use auto-discovered `@initDuration` field: `filter @initDuration > 0 | stats count(*) by bin(5m)`. Track ratio by time bins.
 
 ---
 
-**문제 6.** Identify Lambda memory over-provisioning?
+**Question 6.** Identify Lambda memory over-provisioning?
 
 A) `filter @type = "REPORT" | stats max(@maxMemoryUsed) / max(@memorySize) * 100 as peakPct by @functionName | filter peakPct < 40`
 B) X-Ray trace
 C) AWS Compute Optimizer (requires 14+ days data)
 D) Both A and C standard methods
 
-**정답: D**
-해설: Insights immediate analysis via A. AWS Compute Optimizer learns 14+ days, auto-recommends. Both standard; company maturity determines choice. Compute Optimizer frequent SOA-C02 topic (managed cost optimization service).
+**Answer: D**
+Explanation: Insights immediate analysis via A. AWS Compute Optimizer learns 14+ days, auto-recommends. Both standard; company maturity determines choice. Compute Optimizer frequent SOA-C02 topic (managed cost optimization service).
 
 ---
 
-**문제 7.** View metrics and logs from multiple accounts in one console?
+**Question 7.** View metrics and logs from multiple accounts in one console?
 
 A) Log into each account console individually
 B) CloudWatch Cross-Account Observability + Monitoring Account Sink, connect Source from workload accounts
 C) Export all logs to S3, query Athena
 D) Consolidate all account IAM Roles
 
-**정답: B**
-해설: CloudWatch Observability Access Manager (2022): Sink in Monitoring Account, Source connection from workload accounts. One console unified metrics/logs/X-Ray traces across all accounts. Organization-wide auto-enrollment option available.
+**Answer: B**
+Explanation: CloudWatch Observability Access Manager (2022): Sink in Monitoring Account, Source connection from workload accounts. One console unified metrics/logs/X-Ray traces across all accounts. Organization-wide auto-enrollment option available.
 
 ---
 
-**문제 8.** Analyze VPC Flow Logs via Insights to find IP most REJECT'd?
+**Question 8.** Analyze VPC Flow Logs via Insights to find IP most REJECT'd?
 
 A) `filter action = "REJECT" | stats count(*) by srcaddr`
 B) `parse @message "* * * * * * * * * * * * * *" as ... | filter action = "REJECT" | stats sum(bytes) by src | sort sum desc`
 C) Athena query
 D) X-Ray
 
-**정답: B**
-해설: VPC Flow Logs space-delimited text requires `parse` to extract fields. Simple `action = "REJECT"` doesn't auto-recognize field name inside @message (pre-parse it's single string). Bulk analysis → S3 + Athena more efficient, but Insights usage → answer B.
+**Answer: B**
+Explanation: VPC Flow Logs space-delimited text requires `parse` to extract fields. Simple `action = "REJECT"` doesn't auto-recognize field name inside @message (pre-parse it's single string). Bulk analysis → S3 + Athena more efficient, but Insights usage → answer B.
 

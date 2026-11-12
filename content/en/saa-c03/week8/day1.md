@@ -219,94 +219,94 @@ In the next article we look at the secret-management services that sit one layer
 
 ## 📝 Practice Questions
 
-**문제 1.** A company encrypts objects with S3 SSE-KMS, but KMS call costs got too high and exceeded $50,000/month. What is the best way to cut costs the most while maintaining security?
+**Question 1.** A company encrypts objects with S3 SSE-KMS, but KMS call costs got too high and exceeded $50,000/month. What is the best way to cut costs the most while maintaining security?
 
 A) Turn off SSE-KMS and switch to SSE-S3
 B) Enable S3 Bucket Keys
 C) Envelope-encrypt every object directly on the client side
 D) Switch to the AWS Managed Key (`aws/s3`)
 
-**정답: B**
+**Answer: B**
 
-해설: S3 Bucket Keys, released in April 2020, reuses the same intermediate key at the bucket level for a short window (about 1 week) instead of calling KMS GenerateDataKey per object. It reduces the number of KMS calls by up to 99%, dramatically lowering cost while preserving the security characteristics of SSE-KMS (per-key policies, CloudTrail auditing, etc.). A is a security downgrade (no permission separation via key policy). C carries a heavy operational burden and doesn't achieve the same effect. D has little security impact but also negligible cost savings.
+Explanation: S3 Bucket Keys, released in April 2020, reuses the same intermediate key at the bucket level for a short window (about 1 week) instead of calling KMS GenerateDataKey per object. It reduces the number of KMS calls by up to 99%, dramatically lowering cost while preserving the security characteristics of SSE-KMS (per-key policies, CloudTrail auditing, etc.). A is a security downgrade (no permission separation via key policy). C carries a heavy operational burden and doesn't achieve the same effect. D has little security impact but also negligible cost savings.
 
 ---
 
-**문제 2.** An IAM Role received `kms:Decrypt` permission via an IAM policy, but the role is not listed in the KMS key policy. The key policy also has no "Enable IAM permissions" statement (root + kms:*). Can this role call Decrypt?
+**Question 2.** An IAM Role received `kms:Decrypt` permission via an IAM policy, but the role is not listed in the KMS key policy. The key policy also has no "Enable IAM permissions" statement (root + kms:*). Can this role call Decrypt?
 
 A) Yes. The IAM policy grants the permission
 B) No. The key policy comes first, and without an explicit allow, an IAM policy alone isn't enough
 C) Yes. KMS evaluates as a union with IAM
 D) Yes, but only a warning is logged in CloudTrail
 
-**정답: B**
+**Answer: B**
 
-해설: Unlike other AWS services, KMS puts the key policy first. For an IAM policy to delegate permission, the key policy must either explicitly allow the Principal or contain the "Enable IAM permissions" statement (`"Principal":"AWS":"arn:aws:iam::ACCT:root", "Action":"kms:*"`). With neither present, even a `kms:Decrypt` in the IAM policy is void. This is the biggest asymmetry of the KMS security model and a perennial exam trap. C is the rule that applies to most services other than KMS — KMS is different.
+Explanation: Unlike other AWS services, KMS puts the key policy first. For an IAM policy to delegate permission, the key policy must either explicitly allow the Principal or contain the "Enable IAM permissions" statement (`"Principal":"AWS":"arn:aws:iam::ACCT:root", "Action":"kms:*"`). With neither present, even a `kms:Decrypt` in the IAM policy is void. This is the biggest asymmetry of the KMS security model and a perennial exam trap. C is the rule that applies to most services other than KMS — KMS is different.
 
 ---
 
-**문제 3.** A SecOps team suspects a KMS key has been compromised. They want to block the impact immediately while preserving the key material for later analysis. What is the most appropriate action?
+**Question 3.** A SecOps team suspects a KMS key has been compromised. They want to block the impact immediately while preserving the key material for later analysis. What is the most appropriate action?
 
 A) `schedule-key-deletion --pending-window-in-days 7`
 B) `disable-key`, then run breach analysis and migrate to a new key if needed
 C) Remove all Principals from the key policy
 D) Request immediate deletion from AWS Support
 
-**정답: B**
+**Answer: B**
 
-해설: Disabling the key (disable-key) takes effect immediately and blocks all encryption/decryption. The key material is preserved inside KMS, so you can later recover it with enable or use it to analyze the scope of the breach. A does disable it for 7 days but ultimately leads to deletion, risking the loss of analysis material. C is possible, but if you mistakenly remove even "root permission" the key becomes a zombie key with an unmodifiable policy, requiring AWS Support intervention. D isn't supported — immediate deletion doesn't exist (minimum 7-day pending).
+Explanation: Disabling the key (disable-key) takes effect immediately and blocks all encryption/decryption. The key material is preserved inside KMS, so you can later recover it with enable or use it to analyze the scope of the breach. A does disable it for 7 days but ultimately leads to deletion, risking the loss of analysis material. C is possible, but if you mistakenly remove even "root permission" the key becomes a zombie key with an unmodifiable policy, requiring AWS Support intervention. D isn't supported — immediate deletion doesn't exist (minimum 7-day pending).
 
 ---
 
-**문제 4.** You encrypt a 4TB EBS volume with KMS. How many times does the KMS API get called?
+**Question 4.** You encrypt a 4TB EBS volume with KMS. How many times does the KMS API get called?
 
 A) 4TB / 4KB = about 1 billion times
 B) A very small number, independent of volume size (envelope encryption)
 C) 4TB / 64MB (EBS block) = about 65,536 times
 D) Once per read/write
 
-**정답: B**
+**Answer: B**
 
-해설: EBS uses envelope encryption. It fetches a DEK from KMS once at volume creation, and the EBS host encrypts/decrypts data blocks directly with that DEK. KMS calls happen only in limited moments like volume attach. So whether it's 4TB or 40TB, the KMS call cost is nearly identical. A is a calculation that misunderstands the definition of envelope encryption, and C and D likewise assume KMS is called for every block, which it isn't.
+Explanation: EBS uses envelope encryption. It fetches a DEK from KMS once at volume creation, and the EBS host encrypts/decrypts data blocks directly with that DEK. KMS calls happen only in limited moments like volume attach. So whether it's 4TB or 40TB, the KMS call cost is nearly identical. A is a calculation that misunderstands the definition of envelope encryption, and C and D likewise assume KMS is called for every block, which it isn't.
 
 ---
 
-**문제 5.** A company runs active-active across two regions, us-east-1 and ap-northeast-2. When an S3 object encrypted with SSE-KMS in one region is replicated (CRR) to the other, they want it to be immediately decryptable. What is the most suitable solution?
+**Question 5.** A company runs active-active across two regions, us-east-1 and ap-northeast-2. When an S3 object encrypted with SSE-KMS in one region is replicated (CRR) to the other, they want it to be immediately decryptable. What is the most suitable solution?
 
 A) Create a separate CMK in each region and re-encrypt on replication
 B) Use Multi-Region Keys to synchronize the same keyId (mrk-) to both sides
 C) Call the us-east-1 key directly from ap-northeast-2
 D) Enable S3 Bucket Keys
 
-**정답: B**
+**Answer: B**
 
-해설: Multi-Region Keys (released 2021) were designed for exactly this scenario. They replicate the same key material synchronously across multiple regions while exposing it with the same keyId (prefix `mrk-`). An object replicated via CRR is immediately decryptable with the same keyId in the replica region. A works but carries high re-encryption cost and complexity. C fails because KMS keys are region-bound and can't be called directly. D is just a cost-optimization feature, unrelated to the multi-region problem.
+Explanation: Multi-Region Keys (released 2021) were designed for exactly this scenario. They replicate the same key material synchronously across multiple regions while exposing it with the same keyId (prefix `mrk-`). An object replicated via CRR is immediately decryptable with the same keyId in the replica region. A works but carries high re-encryption cost and complexity. C fails because KMS keys are region-bound and can't be called directly. D is just a cost-optimization feature, unrelated to the multi-region problem.
 
 ---
 
-**문제 6.** A fintech company was required by a compliance audit to "notify SecOps within 5 seconds of every key creation, deletion, and policy-change event." KMS records all APIs in CloudTrail. What is the most suitable automation pattern?
+**Question 6.** A fintech company was required by a compliance audit to "notify SecOps within 5 seconds of every key creation, deletion, and policy-change event." KMS records all APIs in CloudTrail. What is the most suitable automation pattern?
 
 A) CloudTrail → S3 → daily batch analysis
 B) CloudTrail → EventBridge rule (CreateKey/ScheduleKeyDeletion/PutKeyPolicy, etc.) → SNS → SecOps
 C) Manual CloudWatch Logs Insights queries
 D) Config rules only
 
-**정답: B**
+**Answer: B**
 
-해설: CloudTrail events are delivered to EventBridge in near real time, and an EventBridge rule can pattern-match specific KMS API events and dispatch immediately to targets like SNS/Lambda/Slack/PagerDuty. This is the standard pattern that satisfies the "notify within 5 seconds" requirement. A has too much latency, C is manual rather than automated, and D can do state checks but isn't event-driven alerting.
+Explanation: CloudTrail events are delivered to EventBridge in near real time, and an EventBridge rule can pattern-match specific KMS API events and dispatch immediately to targets like SNS/Lambda/Slack/PagerDuty. This is the standard pattern that satisfies the "notify within 5 seconds" requirement. A has too much latency, C is manual rather than automated, and D can do state checks but isn't event-driven alerting.
 
 ---
 
-**문제 7.** A SaaS company operates a multi-tenant system and was given the requirement: "each customer's data must be encrypted with a customer-dedicated key, so that one IAM Role can never decrypt another customer's data." What is the most suitable design?
+**Question 7.** A SaaS company operates a multi-tenant system and was given the requirement: "each customer's data must be encrypted with a customer-dedicated key, so that one IAM Role can never decrypt another customer's data." What is the most suitable design?
 
 A) One common CMK for all customers + separation via IAM policy
 B) A separate CMK per customer + key policy allowing only that customer's dedicated IAM Role + enforce customer ID via kms:EncryptionContext
 C) S3 SSE-S3 is sufficient
 D) A single CloudHSM key + application-level separation
 
-**정답: B**
+**Answer: B**
 
-해설: A per-tenant independent key is the standard pattern for isolating the "blast radius" to the tenant level. If the key policy allows only that tenant's IAM Role, a wrongful call by another tenant's Role is rejected at the key-policy stage. Additionally, forcing the tenant ID into `kms:EncryptionContext` (AAD) creates a double guardrail — even Roles holding the same key fail to decrypt if the context differs. A is a single key, so one mistake in permission separation exposes every tenant. C can't separate keys at all, and D imposes excessive operational burden.
+Explanation: A per-tenant independent key is the standard pattern for isolating the "blast radius" to the tenant level. If the key policy allows only that tenant's IAM Role, a wrongful call by another tenant's Role is rejected at the key-policy stage. Additionally, forcing the tenant ID into `kms:EncryptionContext` (AAD) creates a double guardrail — even Roles holding the same key fail to decrypt if the context differs. A is a single key, so one mistake in permission separation exposes every tenant. C can't separate keys at all, and D imposes excessive operational burden.
 
 ---
 

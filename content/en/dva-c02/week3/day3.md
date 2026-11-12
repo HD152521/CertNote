@@ -326,72 +326,72 @@ In the next article, we cover Lambda's concurrency control — the layered relat
 
 ## 📝 Practice Questions
 
-**문제 1.** When doing a canary deployment with a Lambda alias, across how many versions at most can you split traffic simultaneously?
+**Question 1.** When doing a canary deployment with a Lambda alias, across how many versions at most can you split traffic simultaneously?
 
 A) 1  
 B) 2  
 C) 5  
 D) No limit  
 
-**정답: B**  
-해설: A Lambda alias's weight-based traffic splitting supports exactly 2 versions. There's the primary version (not in AdditionalVersionWeights) and one secondary version (specified in AdditionalVersionWeights). A three-way split across 3 or more is not possible with a single alias; in that case you need Application Load Balancer weighted routing or a separate implementation.
+**Answer: B**  
+Explanation: A Lambda alias's weight-based traffic splitting supports exactly 2 versions. There's the primary version (not in AdditionalVersionWeights) and one secondary version (specified in AdditionalVersionWeights). A three-way split across 3 or more is not possible with a single alias; in that case you need Application Load Balancer weighted routing or a separate implementation.
 
 ---
 
-**문제 2.** Which statement about Lambda layers is FALSE?
+**Question 2.** Which statement about Lambda layers is FALSE?
 
 A) You can attach up to 5 layers to a single function  
 B) Layers are mounted into the /opt directory  
 C) Functions deployed as container images can also use layers  
 D) You can share a layer with another AWS account  
 
-**정답: C**  
-해설: A Lambda function deployed as a container image cannot use layers. Layers only work with functions deployed as ZIP files. When using a container image, you must include dependencies directly in the Dockerfile. A is true. B is true — Python at `/opt/python`, Node.js at `/opt/nodejs/node_modules`. D is true — grant `lambda:GetLayerVersion` to another account.
+**Answer: C**  
+Explanation: A Lambda function deployed as a container image cannot use layers. Layers only work with functions deployed as ZIP files. When using a container image, you must include dependencies directly in the Dockerfile. A is true. B is true — Python at `/opt/python`, Node.js at `/opt/nodejs/node_modules`. D is true — grant `lambda:GetLayerVersion` to another account.
 
 ---
 
-**문제 3.** In the following scenario, what is the most suitable configuration management approach? "Several Lambda functions use the same RDS database password, and the password must be automatically rotated every 90 days."
+**Question 3.** In the following scenario, what is the most suitable configuration management approach? "Several Lambda functions use the same RDS database password, and the password must be automatically rotated every 90 days."
 
 A) Store the password directly in each function's environment variables  
 B) Store it in AWS Secrets Manager and enable automatic rotation  
 C) Store it in SSM Parameter Store Standard  
 D) Store it as an encrypted file in an S3 bucket  
 
-**정답: B**  
-해설: Automatic rotation is the core feature of Secrets Manager. Secrets Manager provides built-in rotation Lambdas for major DBs like RDS and Redshift, and supports cross-account sharing too. A does not support automatic rotation and requires a function redeploy when the environment variable changes. C: SSM Parameter Store does not support automatic rotation natively (possible if integrated with Secrets Manager, but complex). D requires custom implementation and audit trails are hard.
+**Answer: B**  
+Explanation: Automatic rotation is the core feature of Secrets Manager. Secrets Manager provides built-in rotation Lambdas for major DBs like RDS and Redshift, and supports cross-account sharing too. A does not support automatic rotation and requires a function redeploy when the environment variable changes. C: SSM Parameter Store does not support automatic rotation natively (possible if integrated with Secrets Manager, but complex). D requires custom implementation and audit trails are hard.
 
 ---
 
-**문제 4.** What is the total size limit of a Lambda function's environment variables?
+**Question 4.** What is the total size limit of a Lambda function's environment variables?
 
 A) 1KB  
 B) 4KB  
 C) 16KB  
 D) 64KB  
 
-**정답: B**  
-해설: The total size of Lambda environment variables (sum of keys + values) is limited to 4KB. If you need configuration that exceeds this limit, use SSM Parameter Store (Standard 4KB, Advanced 8KB) or Secrets Manager (64KB). This limit is often hit when trying to stuff a complex JSON-format configuration wholesale into environment variables.
+**Answer: B**  
+Explanation: The total size of Lambda environment variables (sum of keys + values) is limited to 4KB. If you need configuration that exceeds this limit, use SSM Parameter Store (Standard 4KB, Advanced 8KB) or Secrets Manager (64KB). This limit is often hit when trying to stuff a complex JSON-format configuration wholesale into environment variables.
 
 ---
 
-**문제 5.** Which CodeDeploy Lambda deployment strategy "increases traffic by 10% every 10 minutes to reach 100%"?
+**Question 5.** Which CodeDeploy Lambda deployment strategy "increases traffic by 10% every 10 minutes to reach 100%"?
 
 A) Canary10Percent5Minutes  
 B) Linear10PercentEvery1Minute  
 C) Linear10PercentEvery10Minutes  
 D) AllAtOnce  
 
-**정답: C**  
-해설: `Linear10PercentEvery10Minutes` shifts 10% of traffic to the new version every 10 minutes, completing the 100% switch after 100 minutes. A `Canary` strategy sends a portion first and switches the rest all at once after an observation period. A `Linear` strategy increases linearly and gradually. `AllAtOnce` is an immediate 100% switch. For a critical payment service where safety is the top priority, a Linear strategy is appropriate.
+**Answer: C**  
+Explanation: `Linear10PercentEvery10Minutes` shifts 10% of traffic to the new version every 10 minutes, completing the 100% switch after 100 minutes. A `Canary` strategy sends a portion first and switches the rest all at once after an observation period. A `Linear` strategy increases linearly and gradually. `AllAtOnce` is an immediate 100% switch. For a critical payment service where safety is the top priority, a Linear strategy is appropriate.
 
 ---
 
-**문제 6.** What is the difference between the $LATEST version and a published version (e.g., version 3) of a Lambda function?
+**Question 6.** What is the difference between the $LATEST version and a published version (e.g., version 3) of a Lambda function?
 
 A) $LATEST runs faster  
 B) Version 3 has its code, memory, timeout, and environment variables frozen at publish time and cannot be changed  
 C) You can set Provisioned Concurrency on $LATEST  
 D) Version 3 is automatically deleted over time  
 
-**정답: B**  
-해설: A published version has all configuration — code, runtime, memory, timeout, environment variables, layers — frozen (immutable) at publish time. $LATEST is changeable at any time. C is the opposite — Provisioned Concurrency cannot be set on $LATEST, only on a published version or an alias. D is wrong — a version is retained permanently unless explicitly deleted (though per-version max concurrency is subject to account limits).
+**Answer: B**  
+Explanation: A published version has all configuration — code, runtime, memory, timeout, environment variables, layers — frozen (immutable) at publish time. $LATEST is changeable at any time. C is the opposite — Provisioned Concurrency cannot be set on $LATEST, only on a published version or an alias. D is wrong — a version is retained permanently unless explicitly deleted (though per-version max concurrency is subject to account limits).

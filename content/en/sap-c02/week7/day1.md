@@ -189,98 +189,98 @@ Tomorrow we drill into EKS node groups, IRSA, and Karpenter. EKS spreads across 
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 글로벌 핀테크가 AWS·GCP·온프레미스 데이터센터에 동일한 K8s 워크로드를 배포한다. 운영팀은 클러스터 컨트롤 플레인 운영(etcd 백업, 버전 업그레이드)의 부담을 AWS에서만큼은 줄이고 싶다. 이 요구를 가장 잘 만족하는 조합은?
+**Question 1.** 한 글로벌 핀테크가 AWS·GCP·온프레미스 데이터센터에 동일한 K8s 워크로드를 배포한다. 운영팀은 클러스터 컨트롤 플레인 운영(etcd 백업, 버전 업그레이드)의 부담을 AWS에서만큼은 줄이고 싶다. 이 요구를 가장 잘 만족하는 조합은?
 
 A) ECS Fargate
 B) EKS + Managed Node Group
 C) App Runner
 D) ECS Anywhere
 
-**정답: B**
-해설: A global fintech deploys identical K8s workloads across AWS, GCP, and on-premises data centers. The ops team wants to minimize control plane operational burden (etcd backup, version upgrades) on AWS. Which combination best meets this requirement?
+**Answer: B**
+Explanation: A global fintech deploys identical K8s workloads across AWS, GCP, and on-premises data centers. The ops team wants to minimize control plane operational burden (etcd backup, version upgrades) on AWS. Which combination best meets this requirement?
 
 Two keywords to decompose: "K8s standard + multi-cloud portability" → EKS (K8s API), "minimize control plane ops burden" → AWS-managed → EKS control plane. ECS (A, D) is AWS-proprietary, breaking portability. App Runner (C) is incompatible with K8s manifests. Advanced learning: further portability through standardizing with Workload Identity Federation instead of IRSA, or abstracting secrets management via External Secrets Operator.
 
 ---
 
-**문제 2.** ECS Task가 시작될 때 ECR에서 이미지 Pull은 잘 되는데, 애플리케이션 코드가 S3 GetObject를 호출하면 AccessDenied가 발생한다. 원인은?
+**Question 2.** ECS Task가 시작될 때 ECR에서 이미지 Pull은 잘 되는데, 애플리케이션 코드가 S3 GetObject를 호출하면 AccessDenied가 발생한다. 원인은?
 
 A) Task Execution Role에 S3 권한이 없음
 B) Task Role에 S3 권한이 없음
 C) VPC Endpoint 미설정
 D) 보안 그룹에서 443 차단
 
-**정답: B**
+**Answer: B**
 An ECS Task pulls images from ECR successfully, but application code calling S3 GetObject encounters AccessDenied. Root cause?
 
 Image pull success means Task Execution Role's ECR/CloudWatch permissions are configured correctly. Application code's AWS API calls use **Task Role** (= `taskRoleArn`). Confusing Task Role and Execution Role costs exam points. A addresses infrastructure ops, irrelevant here. C (VPC Endpoint) is latency/cost optimization; missing it doesn't break functionality (NAT works). D (security group) would cause timeout, not AccessDenied. Bonus: same pattern in EKS appears as Node Role vs. IRSA.
 
 ---
 
-**문제 3.** 한 미디어 스타트업이 코드 한 줄 푸시로 자동 빌드·배포·HTTPS 엔드포인트 부여까지 되는 가장 운영 부담이 적은 옵션을 찾는다. 사이드카·서비스 메시·고급 VPC 통합은 필요 없다. 어느 서비스가 적합한가?
+**Question 3.** 한 미디어 스타트업이 코드 한 줄 푸시로 자동 빌드·배포·HTTPS 엔드포인트 부여까지 되는 가장 운영 부담이 적은 옵션을 찾는다. 사이드카·서비스 메시·고급 VPC 통합은 필요 없다. 어느 서비스가 적합한가?
 
 A) ECS Fargate + ALB
 B) EKS + ArgoCD
 C) App Runner
 D) Elastic Beanstalk
 
-**정답: C**
+**Answer: C**
 A media startup seeks minimal-ops auto-build, deploy, and HTTPS endpoint with a single code push. Sidecars, service mesh, advanced VPC integration aren't needed. Which service fits?
 
 App Runner is the simplest PaaS—point to GitHub repo or ECR image, and build/deploy/domain/auto-scaling are all handled. A requires more ops (ALB, Target Group, Service Definition manual setup). B is heavy (K8s + GitOps). D (Beanstalk) is heavier and EC2-based; App Runner is newer and simpler for containers. Trap: "isn't EC2 Fargate cheaper?" Yes, but App Runner trades higher per-unit cost for lower ops burden. SAP emphasizes ops burden over cost here.
 
 ---
 
-**문제 4.** 트래픽이 매우 변동성 높고 새벽엔 거의 0인 ECS 백오피스 API. 가용성 일부 보장 + 비용 절감 둘 다 원한다. 어떤 Capacity Provider 구성?
+**Question 4.** 트래픽이 매우 변동성 높고 새벽엔 거의 0인 ECS 백오피스 API. 가용성 일부 보장 + 비용 절감 둘 다 원한다. 어떤 Capacity Provider 구성?
 
 A) FARGATE 100%
 B) FARGATE_SPOT 100%
 C) base=2 FARGATE, weight FARGATE=1 + FARGATE_SPOT=4
 D) EC2 Launch Type + Reserved Instance
 
-**정답: C**
+**Answer: C**
 An ECS back-office API has highly variable traffic, nearly zero at dawn. Want both some availability and cost savings. Which Capacity Provider setup?
 
 base=2 maintains 2 stable Fargate Tasks (Spot reclamation won't cause outage) + 80% Spot above that for cost reduction. A is worst cost-wise. B risks simultaneous Spot reclamation and outage. D incurs EC2 costs even at zero dawn traffic, poor for variable loads. Bonus: extend `STOPTIMEOUT` to 60-120s and implement SIGTERM handlers for Spot termination readiness.
 
 ---
 
-**문제 5.** 한 제조사가 100개 공장의 산업용 게이트웨이에서 컨테이너 워크로드를 운영한다. 일부 공장은 며칠씩 인터넷이 끊긴다. 컨트롤 플레인은 공장 내부에서 동작해야 한다. 적합한 서비스는?
+**Question 5.** 한 제조사가 100개 공장의 산업용 게이트웨이에서 컨테이너 워크로드를 운영한다. 일부 공장은 며칠씩 인터넷이 끊긴다. 컨트롤 플레인은 공장 내부에서 동작해야 한다. 적합한 서비스는?
 
 A) ECS Anywhere
 B) EKS Anywhere
 C) Outposts
 D) Snowball Edge
 
-**정답: B**
+**Answer: B**
 A manufacturer operates container workloads on 100 factory gateways. Some factories go internet-down for days. Control plane must operate inside the factory. Which service fits?
 
 "Internet down, control plane autonomous" = control plane must be on-prem. EKS Anywhere is exactly this (control plane + data plane both on-prem). ECS Anywhere (A) has cloud-based control plane; internet loss halts new deployments/scaling. Outposts (C) puts AWS hardware in customer facilities but still requires region control plane contact. Snowball Edge (D) is for data transfer, irrelevant. Bonus: EKS Anywhere uses EKS-D (EKS Distro) open-source K8s internally, ensuring identical versions and behavior cloud and on-prem.
 
 ---
 
-**문제 6.** 한 회사가 EKS Pod에서 S3에 접근해야 한다. 운영팀은 "Pod별로 최소 권한"을 달성하고 싶다. 가장 안전한 방법은?
+**Question 6.** 한 회사가 EKS Pod에서 S3에 접근해야 한다. 운영팀은 "Pod별로 최소 권한"을 달성하고 싶다. 가장 안전한 방법은?
 
 A) 워커 노드 Instance Profile에 S3 권한 부여
 B) Pod 환경 변수로 AWS Access Key Secret 주입
 C) IRSA (IAM Roles for Service Accounts) 또는 EKS Pod Identity
 D) S3 버킷 정책에 노드 IP 허용
 
-**정답: C**
+**Answer: C**
 An EKS Pod needs S3 access. The ops team wants "minimum permissions per Pod." Safest method?
 
 A shares permissions across all Pods on the node, violating least privilege (large blast radius). B has key rotation challenges, risks key exposure in code/logs. D uses IP-based access control (not IAM), unfit for mobile EKS Pods, not least-privilege. C is correct: IRSA maps ServiceAccount → IAM Role via OIDC safely. Pod Identity is IRSA's successor (2023), simpler trust model. Bonus: 2019 Capital One breach was partly due to overpowered EC2 Instance Profiles.
 
 ---
 
-**문제 7.** ECS 컨테이너 안에서 디버깅을 위해 셸에 접속해야 한다. 회사 보안 정책은 SSH 키 사용을 금지하고, 모든 세션을 감사 로깅해야 한다. 가장 적합한 방법은?
+**Question 7.** ECS 컨테이너 안에서 디버깅을 위해 셸에 접속해야 한다. 회사 보안 정책은 SSH 키 사용을 금지하고, 모든 세션을 감사 로깅해야 한다. 가장 적합한 방법은?
 
 A) 노드에 SSH 키를 배포하고 docker exec
 B) Bastion Host + SSM Port Forwarding
 C) ECS Exec (`aws ecs execute-command`)
 D) Cloud9 IDE 연결
 
-**정답: C**
+**Answer: C**
 Must debug by shelling into an ECS container. Company security forbids SSH keys; all sessions must be audit-logged. Most suitable method?
 
 ECS Exec provides SSH-free container shell via SSM Session Manager, with all sessions logged to CloudTrail. Optional S3/CloudWatch Logs full session storage. A violates SSH policy. B accesses node OS, not container internals, high ops burden. D (Cloud9) is an IDE, not container shell access. Bonus: enable ECS Exec by setting `enableExecuteCommand=true` in Task Definition and granting Task Role `ssmmessages:*` permissions.

@@ -92,38 +92,38 @@ aws cloudwatch get-metric-statistics \
 
 ## 📝 Practice Questions
 
-**문제 1.** Lambda가 여러 AWS 서비스를 호출하는데 느리다면 병목지점 파악 방법은?
+**Question 1.** Lambda가 여러 AWS 서비스를 호출하는데 느리다면 병목지점 파악 방법은?
 
 A) Lambda 로그에서 수동 검색  
 B) CloudWatch Metrics의 Duration만 확인  
 C) X-Ray로 각 서비스별 지연 시간 시각화  
 D) 모든 서비스를 EC2로 마이그레이션  
 
-**정답: C**
-해설: X-Ray는 분산 추적으로 각 AWS 서비스 호출의 정확한 지연 시간을 보여준다. S3, DynamoDB, Secrets Manager 중 어느 것이 느린지 즉시 식별 가능.
+**Answer: C**
+Explanation: X-Ray는 분산 추적으로 각 AWS 서비스 호출의 정확한 지연 시간을 보여준다. S3, DynamoDB, Secrets Manager 중 어느 것이 느린지 즉시 식별 가능.
 
 ---
 
-**문제 2.** Lambda 함수의 에러율이 5%에서 10%로 증가하면 자동 알림을 보내려면?
+**Question 2.** Lambda 함수의 에러율이 5%에서 10%로 증가하면 자동 알림을 보내려면?
 
 A) CloudWatch 로그 구독 필터만 사용  
 B) CloudWatch Metric Alarm로 Errors/Invocations 비율 모니터링  
 C) 수동으로 로그 검사  
 D) Lambda 비활성화  
 
-**정답: B**
-해설: CloudWatch Metric Alarm이 에러율 임계값 초과 시 자동 트리거한다. SNS 또는 Lambda로 알림 전달.
+**Answer: B**
+Explanation: CloudWatch Metric Alarm이 에러율 임계값 초과 시 자동 트리거한다. SNS 또는 Lambda로 알림 전달.
 
 ---
 
-**문제 3.** Lambda 함수 비용이 높은 원인을 파악하는 방법은?
+**Question 3.** Lambda 함수 비용이 높은 원인을 파악하는 방법은?
 
 A) AWS Billing Console 확인  
 B) CloudWatch Logs Insights로 Invocations, Duration, Memory 분석 후 Cost Explorer 검증  
 C) 추측  
 D) Lambda 삭제  
 
-**정답: B**
-해설: Invocations, Duration, Memory 사용량 통계로 비용 요인 특정. Duration만 해도 MB-second 계산 가능. 비용 최적화 전략 수립.
+**Answer: B**
+Explanation: Invocations, Duration, Memory 사용량 통계로 비용 요인 특정. Duration만 해도 MB-second 계산 가능. 비용 최적화 전략 수립.
 
 ---

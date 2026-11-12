@@ -85,62 +85,62 @@ If you've reached here, you're ready. Skim this translation table and trap list 
 
 ## 📝 Practice Questions
 
-**문제 1.** AIF-C01 exam structure: correct?
+**Question 1.** AIF-C01 exam structure: correct?
 
 A) 100 questions, 60 min, 800 passing  
 B) 65 questions, 90 min, 700 passing (1000 total)  
 C) 50 questions, 120 min, 600 passing  
 D) 30 questions, 45 min, 900 passing  
 
-**정답: B**  
-해설: AIF-C01 is 65 questions in 90 minutes, passing 700/1000. ~15 unscored evaluation. Other choices wrong on count, time, or score.
+**Answer: B**  
+Explanation: AIF-C01 is 65 questions in 90 minutes, passing 700/1000. ~15 unscored evaluation. Other choices wrong on count, time, or score.
 
 ---
 
-**문제 2.** "Auto-extract amount and item table from scanned invoice" — core verb catches what service?
+**Question 2.** "Auto-extract amount and item table from scanned invoice" — core verb catches what service?
 
 A) Amazon Comprehend  
 B) Amazon Textract  
 C) Amazon Lex  
 D) Amazon Polly  
 
-**정답: B**  
-해설: Verb "extract" on scanned doc = Textract. Comprehend analyzes meaning/sentiment, Lex is chatbot, Polly is voice synth — doc text·table extraction mismatch.
+**Answer: B**  
+Explanation: Verb "extract" on scanned doc = Textract. Comprehend analyzes meaning/sentiment, Lex is chatbot, Polly is voice synth — doc text·table extraction mismatch.
 
 ---
 
-**문제 3.** SageMaker and Bedrock both look plausible. Problem says "train model from scratch with company data directly." Correct answer?
+**Question 3.** SageMaker and Bedrock both look plausible. Problem says "train model from scratch with company data directly." Correct answer?
 
 A) Bedrock — borrows ready FM  
 B) SageMaker — custom model direct training·deployment  
 C) Both correct  
 D) Neither has training  
 
-**정답: B**  
-해설: "Train from scratch" = custom building = SageMaker. Bedrock leverages ready FM (not direct-training), so clearly differ. Both aren't correct (C wrong), SageMaker core is training (D wrong).
+**Answer: B**  
+Explanation: "Train from scratch" = custom building = SageMaker. Bedrock leverages ready FM (not direct-training), so clearly differ. Both aren't correct (C wrong), SageMaker core is training (D wrong).
 
 ---
 
-**문제 4.** Generative AI hallucination cut, most fitting approach?
+**Question 4.** Generative AI hallucination cut, most fitting approach?
 
 A) Infinitely scale model parameters  
 B) Supply trusted docs grounding answers (RAG)  
 C) Temperature maximum-high  
 D) Unconditionally lengthen prompts  
 
-**정답: B**  
-해설: Hallucination fix's standard: real evidence docs (RAG) — model answers within evidence, not fabricate. Model scaling doesn't guarantee hallucination reduction, high temperature feeds freedom to invent (C opposite), prompt length doesn't reduce hallucination itself (D wrong).
+**Answer: B**  
+Explanation: Hallucination fix's standard: real evidence docs (RAG) — model answers within evidence, not fabricate. Model scaling doesn't guarantee hallucination reduction, high temperature feeds freedom to invent (C opposite), prompt length doesn't reduce hallucination itself (D wrong).
 
 ---
 
-**문제 5.** Two services (e.g., Textract vs Comprehend) both seem fitting. Safest verification when picking between them?
+**Question 5.** Two services (e.g., Textract vs Comprehend) both seem fitting. Safest verification when picking between them?
 
 A) Pick first alphabetically  
 B) Problem's core **verb** recheck to distinguish task type  
 C) Pick pricier service  
 D) Always newest service  
 
-**정답: B**  
-해설: Trap questions split on one keyword — problem core verb recheck ("extract/analyze/generate" etc.) distinguishing work type is most reliable. Alphabet order, pricing, release date are task-fitness unrelated.
+**Answer: B**  
+Explanation: Trap questions split on one keyword — problem core verb recheck ("extract/analyze/generate" etc.) distinguishing work type is most reliable. Alphabet order, pricing, release date are task-fitness unrelated.
 
 ---

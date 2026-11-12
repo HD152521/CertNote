@@ -394,67 +394,67 @@ Total: ~$19,500
 
 ## 📝 Practice Questions
 
-**문제 1.** How does the MGN Replication Agent capture disk I/O on an on-premises server?
+**Question 1.** How does the MGN Replication Agent capture disk I/O on an on-premises server?
 
 A) Calls file system APIs to query changed file list
 B) Kernel-level I/O interception driver captures all block writes
 C) Takes periodic full-disk snapshots and compares with previous snapshot
 D) Installs app-level hooks to intercept DB transactions
 
-**정답: B**
+**Answer: B**
 MGN captures all block writes via kernel-level I/O interception driver (Linux: block device layer, Windows: Filter Driver). Operates regardless of file system, app, or DB. File-level replication (A) has consistency issues during copying. Periodic snapshots (C) was SMS's approach, now discontinued. App-level hooks (D) require different implementation per app, not universal.
 
 ---
 
-**문제 2.** You're migrating a 500GB disk server via MGN. After Initial Sync completes, it enters "Stalled" state. Most likely cause?
+**Question 2.** You're migrating a 500GB disk server via MGN. After Initial Sync completes, it enters "Stalled" state. Most likely cause?
 
 A) MGN service down
 B) Network bandwidth insufficient or Replication Server (Staging EC2) problem
 C) 500GB exceeds MGN's maximum supported size
 D) Agent auto-updating
 
-**정답: B**
+**Answer: B**
 "Stalled" occurs when replication lag becomes severe or Replication Server connection fails. Most common cause: network bandwidth saturated (source performing high writes, transmission can't keep pace) or Staging Replication Server (t3.small) issue. Resolution: check Replication Server logs in MGN console; if needed, switch to larger Replication Server type. MGN supports unlimited disk size (AWS docs support 16TB+).
 
 ---
 
-**문제 3.** Most critical difference between Test Cutover and actual Cutover?
+**Question 3.** Most critical difference between Test Cutover and actual Cutover?
 
 A) Test Cutover uses smaller instance type
 B) Test Cutover boots test EC2 while keeping source running; Cutover completes production transition by terminating source
 C) Test Cutover skips encryption
 D) Test Cutover can only run once
 
-**정답: B**
+**Answer: B**
 Test Cutover boots test EC2 from Staging without stopping the source—both run simultaneously. If testing finds issues, terminate test EC2, fix, and retry. Actual Cutover: final sync → production EC2 boot → DNS switch → terminate source (no return unless source was preserved). Test Cutover is repeatable (D is wrong).
 
 ---
 
-**문제 4.** Which service fits "rapidly recover on AWS if on-premises server fails, then return to on-premises once original recovery is complete"?
+**Question 4.** Which service fits "rapidly recover on AWS if on-premises server fails, then return to on-premises once original recovery is complete"?
 
 A) MGN (migration tool)
 B) DRS (Elastic Disaster Recovery, supports Failback)
 C) AWS Backup + Cross-Region Copy
 D) CloudEndure Migration
 
-**정답: B**
+**Answer: B**
 Core keyword: **Failback**—fail over to AWS on source failure, then migrate back to on-premises after recovery. DRS natively supports Failback: DR invoked → run on AWS → original recovers → DRS Failback replication (AWS → on-premises) → Failback Cutover → resume on-premises. MGN is one-way; no Failback concept. CloudEndure Migration replaced by MGN.
 
 ---
 
-**문제 5.** Large migration (800 servers) requires auto-managing wave dependencies, auto-triggering each wave's Test Launch → manual approval → Cutover. Which service?
+**Question 5.** Large migration (800 servers) requires auto-managing wave dependencies, auto-triggering each wave's Test Launch → manual approval → Cutover. Which service?
 
 A) AWS Step Functions
 B) AWS Migration Hub Orchestrator
 C) AWS EventBridge Scheduler
 D) AWS Systems Manager State Manager
 
-**정답: B**
+**Answer: B**
 Migration Hub Orchestrator: migration-specialized workflow automation. Defines waves, calls MGN Test Launch/Cutover APIs, enforces approval gates, validates post-migration, automates DNS switch. Step Functions could implement this but lacks migration-specific plugin integration (MGN, DMS, ADS), requiring all API calls hardcoded. Orchestrator includes migration plugins and dashboards.
 
 ---
 
-**문제 6.** Most common MGN Post-Launch Actions to configure? (multiple apply)
+**Question 6.** Most common MGN Post-Launch Actions to configure? (multiple apply)
 
 A) Auto-create S3 bucket
 B) Auto-install and configure CloudWatch Agent and logging
@@ -462,7 +462,7 @@ C) Auto-join Active Directory domain
 D) Auto-configure VPC Peering
 E) Verify SSM Agent status and restart if needed
 
-**정답: B, C, E**
+**Answer: B, C, E**
 Post-Launch Actions use SSM Automation Runbook for immediate post-Cutover execution. CloudWatch Agent install (B), AD domain join (C), SSM Agent verify (E) are standard Day-1 automation on all migrations. S3 bucket creation (A): migration-agnostic. VPC Peering (D): network-level config, pre-setup more suitable than post-boot automation.
 
 ---

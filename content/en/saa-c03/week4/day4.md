@@ -359,67 +359,67 @@ Storage Gateway is a hybrid structure where an on-premises app uses AWS storage 
 
 ## 📝 Practice Questions
 
-**문제 1.** A media company streams 4K video to users worldwide. The origin server is overloaded, and the same video is requested repeatedly from various edges around the world. Which setting minimizes origin load and raises the cache hit ratio?
+**Question 1.** A media company streams 4K video to users worldwide. The origin server is overloaded, and the same video is requested repeatedly from various edges around the world. Which setting minimizes origin load and raises the cache hit ratio?
 
 A) Set the CloudFront Distribution TTL to 0
 B) Enable CloudFront Origin Shield in a region close to the origin
 C) Block some countries with CloudFront Geo Restriction
 D) Forward all requests to the origin with Lambda@Edge
 
-**정답: B**
-해설: Origin Shield consolidates the cache-miss requests of all the world's Regional Edge Caches into a single path to the origin. Even if a cache miss occurs among worldwide requests for the same video, Origin Shield requests the origin only once. TTL=0 disables the cache. Geo Restriction blocks access. Forwarding to the origin with Lambda@Edge actually raises the load.
+**Answer: B**
+Explanation: Origin Shield consolidates the cache-miss requests of all the world's Regional Edge Caches into a single path to the origin. Even if a cache miss occurs among worldwide requests for the same video, Origin Shield requests the origin only once. TTL=0 disables the cache. Geo Restriction blocks access. Forwarding to the origin with Lambda@Edge actually raises the load.
 
 ---
 
-**문제 2.** A streaming service must serve content only to premium subscribers, and non-subscribers must not access it. When a subscriber logs in, they must be able to access thousands of video files while their subscription is valid. Which CloudFront feature is most suitable?
+**Question 2.** A streaming service must serve content only to premium subscribers, and non-subscribers must not access it. When a subscriber logs in, they must be able to access thousands of video files while their subscription is valid. Which CloudFront feature is most suitable?
 
 A) CloudFront Signed URL (per file)
 B) CloudFront Signed Cookie (whole pattern)
 C) CloudFront WAF IP whitelist
 D) S3 Presigned URL (directly from S3)
 
-**정답: B**
-해설: A Signed Cookie grants access with a single cookie to all files matching a pattern (`/videos/*`). When a subscriber logs in, the server issues a Signed Cookie valid until the subscription's expiry, and the user accesses all videos with that cookie. A Signed URL applies to only one file, so you'd have to create an individual URL for thousands of files. A WAF IP whitelist is unsuitable for dynamic per-user access control.
+**Answer: B**
+Explanation: A Signed Cookie grants access with a single cookie to all files matching a pattern (`/videos/*`). When a subscriber logs in, the server issues a Signed Cookie valid until the subscription's expiry, and the user accesses all videos with that cookie. A Signed URL applies to only one file, so you'd have to create an individual URL for thousands of files. A WAF IP whitelist is unsuitable for dynamic per-user access control.
 
 ---
 
-**문제 3.** A company wants to send 10% of requests to a new-version origin at CloudFront for A/B testing. At the same time, it must pass the user's location info to the origin. What is the suitable solution?
+**Question 3.** A company wants to send 10% of requests to a new-version origin at CloudFront for A/B testing. At the same time, it must pass the user's location info to the origin. What is the suitable solution?
 
 A) CloudFront Functions (Viewer Request event)
 B) Lambda@Edge (Origin Request event) + forward the `CloudFront-Viewer-Country` header from CloudFront
 C) ALB Weighted Target Group
 D) Route 53 Weighted policy
 
-**정답: B**
-해설: A/B-test logic (reading experiment settings from a DB/ElastiCache, splitting off 10%) needs Lambda@Edge's ability to run complex business logic. CloudFront automatically adds the `CloudFront-Viewer-Country` header, and you configure the Origin Request Policy to forward this header to the origin. Lambda@Edge can read this header to select the origin or pass it to the origin. CloudFront Functions can't call external systems, so its ability to implement A/B-test logic is limited.
+**Answer: B**
+Explanation: A/B-test logic (reading experiment settings from a DB/ElastiCache, splitting off 10%) needs Lambda@Edge's ability to run complex business logic. CloudFront automatically adds the `CloudFront-Viewer-Country` header, and you configure the Origin Request Policy to forward this header to the origin. Lambda@Edge can read this header to select the origin or pass it to the origin. CloudFront Functions can't call external systems, so its ability to implement A/B-test logic is limited.
 
 ---
 
-**문제 4.** A manufacturer's factory has an on-premises Windows file server. It wants to migrate files to AWS while the factory's existing Windows apps keep accessing files over SMB. It wants to manage files on AWS while retaining Active Directory authentication. What is the most suitable solution?
+**Question 4.** A manufacturer's factory has an on-premises Windows file server. It wants to migrate files to AWS while the factory's existing Windows apps keep accessing files over SMB. It wants to manage files on AWS while retaining Active Directory authentication. What is the most suitable solution?
 
 A) AWS DataSync + S3 (direct S3 access after a one-time migration)
 B) AWS Storage Gateway FSx File Gateway + Amazon FSx for Windows File Server
 C) AWS Storage Gateway S3 File Gateway + S3 bucket
 D) Migrate files with AWS Snowball Edge, then access S3
 
-**정답: B**
-해설: FSx File Gateway provides an SMB interface to on-premises Windows clients while connecting a local cache and FSx for Windows File Server (with AD-integration support) as the backend. Existing Windows apps keep their SMB connections while data is stored in FSx. A's S3 doesn't support SMB directly. C's S3 File Gateway supports NFS/SMB, but its AD integration isn't as native as FSx for Windows. D is a one-time migration, not permanent hybrid operation.
+**Answer: B**
+Explanation: FSx File Gateway provides an SMB interface to on-premises Windows clients while connecting a local cache and FSx for Windows File Server (with AD-integration support) as the backend. Existing Windows apps keep their SMB connections while data is stored in FSx. A's S3 doesn't support SMB directly. C's S3 File Gateway supports NFS/SMB, but its AD integration isn't as native as FSx for Windows. D is a one-time migration, not permanent hybrid operation.
 
 ---
 
-**문제 5.** A company wants to keep using its on-premises Veeam backup software while moving backup data to AWS. It wants to remove the physical tape infrastructure but can't easily replace the backup software. What is the most suitable solution?
+**Question 5.** A company wants to keep using its on-premises Veeam backup software while moving backup data to AWS. It wants to remove the physical tape infrastructure but can't easily replace the backup software. What is the most suitable solution?
 
 A) Sync backup files to S3 with AWS DataSync
 B) AWS Storage Gateway Tape Gateway (iSCSI VTL → S3/Glacier)
 C) Replace Veeam with AWS Backup
 D) Set up S3 on-premises with Amazon S3 on Outposts
 
-**정답: B**
-해설: Tape Gateway appears as a tape library to on-premises backup software (Veeam, Veritas, etc.) via an iSCSI virtual tape library (VTL). Without replacing the backup software, backups are stored in AWS S3/Glacier instead of on physical tape. DataSync is a file-migration tool and doesn't integrate directly with Veeam. AWS Backup is a separate tool, which would mean replacing Veeam. Outposts places AWS infrastructure on-premises and is unrelated to backup-software integration.
+**Answer: B**
+Explanation: Tape Gateway appears as a tape library to on-premises backup software (Veeam, Veritas, etc.) via an iSCSI virtual tape library (VTL). Without replacing the backup software, backups are stored in AWS S3/Glacier instead of on physical tape. DataSync is a file-migration tool and doesn't integrate directly with Veeam. AWS Backup is a separate tool, which would mean replacing Veeam. Outposts places AWS infrastructure on-premises and is unrelated to backup-software integration.
 
 ---
 
-**문제 6.** Choose the suitable tool between Lambda@Edge and CloudFront Functions.
+**Question 6.** Choose the suitable tool between Lambda@Edge and CloudFront Functions.
 
 Situation A: Normalize the order of query parameters on requests coming into CloudFront to raise the cache hit ratio (?b=2&a=1 → ?a=1&b=2)
 Situation B: Validate a user's JWT token and return 401 if invalid. JWT validation must call an external JWKS endpoint.
@@ -429,5 +429,5 @@ B) Situation A: CloudFront Functions / Situation B: Lambda@Edge
 C) Both CloudFront Functions
 D) Both Lambda@Edge
 
-**정답: B**
-해설: Situation A is lightweight URL manipulation that only reorders query parameters, ideal for CloudFront Functions (under 1ms, 2MB memory). Situation B requires an external JWKS-endpoint HTTP call, which CloudFront Functions don't support. Lambda@Edge has full Node.js/Python runtimes and external network access, so it can validate the JWT with a JWKS call. The crux is choosing the tool that fits in terms of cost and latency.
+**Answer: B**
+Explanation: Situation A is lightweight URL manipulation that only reorders query parameters, ideal for CloudFront Functions (under 1ms, 2MB memory). Situation B requires an external JWKS-endpoint HTTP call, which CloudFront Functions don't support. Lambda@Edge has full Node.js/Python runtimes and external network access, so it can validate the JWT with a JWKS call. The crux is choosing the tool that fits in terms of cost and latency.

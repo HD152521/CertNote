@@ -94,7 +94,7 @@ SAP exam common mappings: (1) "structured 6-pillar workload evaluation" → **WA
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 조직이 Lambda·API Gateway·Step Functions 기반 서버리스 애플리케이션을 운영하며, 콜드 스타트·동시성 한도·실행 시간 같은 서버리스 고유 위험을 WA Tool로 점검하려 한다. 가장 적합한 접근은?
+**Question 1.** 한 조직이 Lambda·API Gateway·Step Functions 기반 서버리스 애플리케이션을 운영하며, 콜드 스타트·동시성 한도·실행 시간 같은 서버리스 고유 위험을 WA Tool로 점검하려 한다. 가장 적합한 접근은?
 
 A) 기본 AWS WA Lens만으로 평가한다
 
@@ -104,12 +104,12 @@ C) Trusted Advisor의 자동 체크만 사용한다
 
 D) Custom Lens를 직접 만들어 모든 질문을 새로 작성한다
 
-**정답: B**
+**Answer: B**
 **해설:** Serverless Lens는 콜드 스타트·동시성·실행 시간·이벤트 소싱 등 서버리스 고유의 베스트 프랙티스 질문을 기본 Lens 위에 얹는다. A는 서버리스 고유 위험이 질문에 없어 누락된다. C(Trusted Advisor)는 자동 스캔일 뿐 구조화된 6 기둥 평가가 아니다. D는 AWS가 이미 제공하는 Serverless Lens를 두고 처음부터 다시 만드는 불필요한 작업으로, Custom Lens는 "AWS 표준에 없는 사내 규정"을 추가할 때 쓴다. 함정: 도메인 특화 점검은 해당 Lens를 추가하는 것이지 기본 Lens로 되는 게 아니다.
 
 ---
 
-**문제 2.** 한 핀테크가 분기마다 WA Review를 수행하며, 각 리뷰 시점의 위험 상태를 동결해 개선 추이(HRI 23개 → 8개 → 3개)를 AWS Support와 공유하려 한다. WA Tool의 어떤 기능을 사용하나?
+**Question 2.** 한 핀테크가 분기마다 WA Review를 수행하며, 각 리뷰 시점의 위험 상태를 동결해 개선 추이(HRI 23개 → 8개 → 3개)를 AWS Support와 공유하려 한다. WA Tool의 어떤 기능을 사용하나?
 
 A) Lens
 
@@ -119,12 +119,12 @@ C) Trusted Advisor
 
 D) Custom Lens
 
-**정답: B**
+**Answer: B**
 **해설:** Milestone은 특정 시점의 답변·위험 상태를 불변 스냅샷으로 저장해 시간축 비교를 가능하게 한다(Git 태그와 같은 발상). 두 Milestone을 비교하면 개선 추이를 정량적으로 보여줄 수 있다. A(Lens)는 도메인 특화 질문 확장이지 시점 추적이 아니다. C는 자동 체크 도구로 추이 동결 기능이 없다. D는 사내 표준을 질문으로 추가하는 기능이다. 함정: "추이 추적·시점 비교·보고"는 Milestone의 직답 키워드다.
 
 ---
 
-**문제 3.** WA Tool에서 HRI(High Risk Issue)는 어떻게 도출되는가?
+**Question 3.** WA Tool에서 HRI(High Risk Issue)는 어떻게 도출되는가?
 
 A) AWS Solutions Architect가 수동으로 검토해 주관적으로 매긴다
 
@@ -134,12 +134,12 @@ C) Trusted Advisor의 비용 체크 결과만으로 결정된다
 
 D) 고객이 직접 위험도를 입력한다
 
-**정답: B**
+**Answer: B**
 **해설:** WA Tool은 각 질문마다 여러 베스트 프랙티스 선택지를 두고, 워크로드가 충족하지 못한 항목의 위험도에 따라 HRI(높음) 또는 MRI(중간)로 **규칙 기반 자동 분류**한다. 사람의 주관(A·D)이 아니라 베스트 프랙티스 미충족이라는 객관 기준으로 산출된다. C는 Trusted Advisor와 혼동한 것으로, TA는 자동 스캔 도구이고 WA Tool은 질문 기반 평가다. 함정: HRI는 "주관적 판단"이 아니라 "베스트 프랙티스 미충족"의 결과다.
 
 ---
 
-**문제 4.** 다음 중 2021년 re:Invent에서 Well-Architected Framework에 새로 추가된 6번째 기둥은?
+**Question 4.** 다음 중 2021년 re:Invent에서 Well-Architected Framework에 새로 추가된 6번째 기둥은?
 
 A) Operational Excellence
 
@@ -149,12 +149,12 @@ C) Sustainability
 
 D) Security
 
-**정답: C**
+**Answer: C**
 **해설:** WA는 2015년 5 기둥(Ops·Security·Reliability·Performance·Cost)으로 출발했고, 2021년 Sustainability(지속 가능성)가 6번째로 추가됐다. EU CSRD 등 탄소 규제 본격화 시기와 맞물린다. A·B·D는 모두 최초 5 기둥에 포함된 기둥이다. 함정: "최근 추가된 기둥", "탄소·전력 효율"은 Sustainability를 가리킨다.
 
 ---
 
-**문제 5.** 한 기업이 "모든 DB는 사내 전용 KMS 키로 암호화", "모든 외부 ALB는 WAF 필수" 같은 AWS 기본 베스트 프랙티스에 없는 **사내 보안 표준**도 WA Tool 평가에 포함하고 싶다. 가장 적합한 방법은?
+**Question 5.** 한 기업이 "모든 DB는 사내 전용 KMS 키로 암호화", "모든 외부 ALB는 WAF 필수" 같은 AWS 기본 베스트 프랙티스에 없는 **사내 보안 표준**도 WA Tool 평가에 포함하고 싶다. 가장 적합한 방법은?
 
 A) Serverless Lens를 적용한다
 
@@ -164,12 +164,12 @@ C) Trusted Advisor 사용자 정의 체크를 만든다
 
 D) Milestone을 더 자주 기록한다
 
-**정답: B**
+**Answer: B**
 **해설:** Custom Lens는 기업이 자사 표준을 JSON으로 정의해 WA Tool 평가 항목으로 등록하는 기능으로, AWS 기본 Lens가 다루지 않는 사내 규정 위반을 HRI로 도출한다. 멀티 계정 환경에서 Custom Lens를 표준화하면 모든 팀이 동일 기준으로 평가받는다. A는 서버리스 도메인 특화일 뿐 사내 표준과 무관하다. C(Trusted Advisor)는 사용자 정의 6 기둥 평가 기능이 없다. D는 시점 기록 빈도일 뿐이다. 함정: "AWS 기본 + 사내 규정 동시 점검"은 Custom Lens의 직답 신호다.
 
 ---
 
-**문제 6.** Trusted Advisor와 WA Tool의 관계로 가장 정확한 설명은?
+**Question 6.** Trusted Advisor와 WA Tool의 관계로 가장 정확한 설명은?
 
 A) 둘은 동일한 도구이며 이름만 다르다
 
@@ -179,7 +179,7 @@ C) WA Tool이 Trusted Advisor를 완전히 대체한다
 
 D) Trusted Advisor만 멀티 계정을 지원한다
 
-**정답: B**
+**Answer: B**
 **해설:** Trusted Advisor는 5개 카테고리를 자동 체크하는 스캐너이고, WA Tool은 광범위한 질문으로 워크로드를 6 기둥으로 구조화 평가하는 도구다. 둘은 상호 보완적이며, 최신 WA Tool은 일부 질문에 TA 결과를 자동으로 끌어와 답을 미리 채운다(A·C 오답). D는 사실과 무관하다. 함정: "자동 스캔 = Trusted Advisor", "질문 기반 구조화 평가 = WA Tool"로 갈린다.
 
 ---

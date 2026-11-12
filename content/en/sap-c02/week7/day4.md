@@ -271,98 +271,98 @@ Tomorrow synthesizes Week 7 with 12-scenario questions. Knowledge accumulated—
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 핀테크가 ECS Fargate 위 마이크로서비스 30개를 운영한다. 다음을 모두 만족해야 한다. ① 모든 통신 mTLS ② 새 버전을 5% 트래픽 카나리 ③ 서비스별 서킷 브레이커. 어떤 도구를 쓰는가?
+**Question 1.** 한 핀테크가 ECS Fargate 위 마이크로서비스 30개를 운영한다. 다음을 모두 만족해야 한다. ① 모든 통신 mTLS ② 새 버전을 5% 트래픽 카나리 ③ 서비스별 서킷 브레이커. 어떤 도구를 쓰는가?
 
 A) ALB Weighted Target Group + ACM Public Certificate
 B) AWS App Mesh + ACM Private CA
 C) Cloud Map만
 D) Route 53 Weighted Routing
 
-**정답: B**
+**Answer: B**
 A fintech runs 30 microservices on ECS Fargate. Must satisfy all: ① all comms mTLS ② new versions 5% canary traffic ③ per-service circuit breaker. Which tools?
 
 Three full-mesh features (mTLS, weighted canary, circuit breaker) = App Mesh domain. ACM Private CA short-lived certs auto-rotation, Virtual Router 5% canary weighting, Virtual Node circuit breaker policy. A: ACM Public external-domain-only, ALB lacks circuit breaker. C: discovery only, no mesh features. D: DNS-level weighting—1% granularity/circuit breaker impossible. Operations note: App Mesh EOL (2026.9) → new adoption standard EKS + Istio; SAP exams ask era-correct answers.
 
 ---
 
-**문제 2.** ECS Cluster내 마이크로서비스 간 단순 디스커버리·재시도·CloudWatch 메트릭이 자동 제공되고 운영 부담이 최소인 옵션은?
+**Question 2.** ECS Cluster내 마이크로서비스 간 단순 디스커버리·재시도·CloudWatch 메트릭이 자동 제공되고 운영 부담이 최소인 옵션은?
 
 A) AWS App Mesh
 B) ECS Service Connect
 C) Cloud Map + 수동 클라이언트 LB
 D) ALB per Service
 
-**정답: B**
+**Answer: B**
 Simple discovery, retries, CloudWatch metrics auto-provided, minimum ops burden for inter-microservice comms in ECS Cluster?
 
 Service Connect: Single ECS Service block enables Envoy auto-inject, Cloud Map auto-register, retries, CloudWatch metrics standard. A: Full mesh bigger ops burden (Virtual Service/Router/Node manifests). C: All manual integration. D: 30 services = 30 ALBs, cost and ops burden high. Trap: "Mesh = App Mesh" simple matching. Service Connect is lightweight standard mesh for ECS.
 
 ---
 
-**문제 3.** 외부 사용자가 HTTPS로 진입하고 JWT 인증·rate limiting이 필요. 내부 East-West는 메시. 외부 진입에 가장 적합한 서비스는?
+**Question 3.** 외부 사용자가 HTTPS로 진입하고 JWT 인증·rate limiting이 필요. 내부 East-West는 메시. 외부 진입에 가장 적합한 서비스는?
 
 A) AWS App Mesh
 B) API Gateway + Cognito
 C) Cloud Map Public Namespace
 D) NLB
 
-**정답: B**
+**Answer: B**
 External HTTPS ingress + JWT auth, rate limiting needed. Internal East-West uses mesh. Most fitting external ingress service?
 
 External ingress + auth + rate-limiting = API Gateway domain. Cognito integration JWT validates, usage plan rate-limits. A: East-West mesh, external ingress unsuitable. C: discovery, not ingress. D: L4 ingress—no HTTP auth, rate-limit. Bonus: API Gateway can act as mesh ingress gateway, substituting service mesh ingress pattern.
 
 ---
 
-**문제 4.** App Mesh의 Virtual Router에서 v1=100, v2=0으로 시작해 매시간 v2 비율을 10%씩 올린다. 이 패턴의 이름은?
+**Question 4.** App Mesh의 Virtual Router에서 v1=100, v2=0으로 시작해 매시간 v2 비율을 10%씩 올린다. 이 패턴의 이름은?
 
 A) Blue/Green
 B) 카나리(Canary)
 C) A/B Test
 D) Shadow Deployment
 
-**정답: B**
+**Answer: B**
 App Mesh Virtual Router: start v1=100, v2=0; hourly increment v2 by 10%. This pattern name?
 
 Gradual weight increase = canary. Blue/Green: 0% → 100% one switch (fast rollback advantage). A/B Test: user segment split (behavioral measurement, not performance). Shadow: traffic replicate (v2 doesn't impact responses, processes same requests for validation). Trap: Blue/Green confused with canary. CodeDeploy "Linear," "Canary" options implement gradual canary pattern.
 
 ---
 
-**문제 5.** Cloud Map Private DNS Namespace의 동작은?
+**Question 5.** Cloud Map Private DNS Namespace의 동작은?
 
 A) 공개 인터넷에서 조회 가능
 B) Route 53 Private Hosted Zone 자동 생성, 연결된 VPC 내부에서만 조회
 C) IPv6 전용
 D) AWS 전체 모든 VPC에서 자동 조회
 
-**정답: B**
+**Answer: B**
 Cloud Map Private DNS Namespace behavior?
 
 Private Namespace auto-creates internal Route 53 Private Hosted Zone, connected to specified VPC only for queries within. Other VPCs need VPC Peering, Transit Gateway + Private Hosted Zone sharing. A: Public Namespace behavior. C: separate option. D: not auto. Trap: forget VPC connection → query failure hard to debug.
 
 ---
 
-**문제 6.** 모든 마이크로서비스 통신을 mTLS로 보호하고 인증서는 24시간 단명으로 자동 회전. 가장 적합한 조합은?
+**Question 6.** 모든 마이크로서비스 통신을 mTLS로 보호하고 인증서는 24시간 단명으로 자동 회전. 가장 적합한 조합은?
 
 A) ACM Public Certificate + ALB Listener
 B) ACM Private CA + App Mesh
 C) Self-signed 인증서 수동 회전
 D) IAM Access Key
 
-**정답: B**
+**Answer: B**
 Protect all microservice comms mTLS, certs 24h short-lived, auto-rotate. Most fitting combo?
 
 ACM Private CA issues short-lived certs with auto-rotation; App Mesh injects Envoy sidecar bilateral mTLS verify. A: Public cert external-domain; no short-lived rotation pattern. C: manual rotation big ops burden, human error risk. D: IAM, mTLS unrelated. Bonus: short cert lifetime core to SPIFFE/SPIRE principles. EKS + cert-manager + ACM Private CA implements same pattern.
 
 ---
 
-**문제 7.** ECS Service Connect가 직접 지원하지 **않는** 기능은?
+**Question 7.** ECS Service Connect가 직접 지원하지 **않는** 기능은?
 
 A) Cloud Map 자동 등록
 B) Envoy 사이드카 자동 주입
 C) 1% 단위 가중치 기반 카나리 라우팅
 D) CloudWatch 메트릭 자동 emit
 
-**정답: C**
+**Answer: C**
 Which feature does ECS Service Connect NOT directly support?
 
 Service Connect is lightweight mesh: discovery, metrics, retries, timeouts standard; 1% weighted canary routing unsupported. Canary needs CodeDeploy Blue/Green + ALB Weighted Target Group, or App Mesh. A, B, D all Service Connect auto-provides. Trap: "Mesh → must do canary." Lightweight vs. full-mesh distinction exactly here.

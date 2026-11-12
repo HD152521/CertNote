@@ -372,63 +372,63 @@ DR scenario: "Route 53 Failover conversion slow" usually means DNS changes witho
 
 ## 📝 Practice Questions
 
-**문제 1.** Company configured Route 53 Failover routing with Primary (us-east-1 ALB) and Secondary (us-west-2 ALB). Primary dies, Secondary should auto-switch. But ALB is inside VPC, no public IP. How configure Route 53 Health Check?
+**Question 1.** Company configured Route 53 Failover routing with Primary (us-east-1 ALB) and Secondary (us-west-2 ALB). Primary dies, Secondary should auto-switch. But ALB is inside VPC, no public IP. How configure Route 53 Health Check?
 
 A) Route 53 Health Checker directly polls ALB DNS
 B) Integrate CloudWatch Alarm (ALB Target Group Unhealthy Host Count > 0) to Health Check
 C) Attach public IP to ALB, configure Health Check
 D) Private ALB doesn't need Health Check
 
-**정답: B**
-해설: If ALB has internet-accessible domain, A works. But "VPC internal, no public IP" means Health Checker can't reach. CloudWatch Alarm (ALB HealthyHostCount or UnhealthyHostCount) integrated to Health Check is private endpoint standard pattern.
+**Answer: B**
+Explanation: If ALB has internet-accessible domain, A works. But "VPC internal, no public IP" means Health Checker can't reach. CloudWatch Alarm (ALB HealthyHostCount or UnhealthyHostCount) integrated to Health Check is private endpoint standard pattern.
 
 ---
 
-**문제 2.** Multinational firm: Korean users must process in ap-northeast-2, German users in eu-central-1 (GDPR + K-ISMS data sovereignty). Which Route 53 routing policy?
+**Question 2.** Multinational firm: Korean users must process in ap-northeast-2, German users in eu-central-1 (GDPR + K-ISMS data sovereignty). Which Route 53 routing policy?
 
 A) Latency-Based Routing (fastest region)
 B) Geolocation (country-based enforce mapping)
 C) Geoproximity (distance-based + Bias adjustment)
 D) Weighted (50:50 distribution)
 
-**정답: B**
-해설: Data sovereignty enforces "legally permitted region," not "fastest region." Geolocation completely deterministically routes by country/continent. Latency-Based might send Korean users to Japan. Geoproximity also distance-based, unsuitable data sovereignty enforcement. Add Default record to Geolocation mapping for country-unmapped user fallback.
+**Answer: B**
+Explanation: Data sovereignty enforces "legally permitted region," not "fastest region." Geolocation completely deterministically routes by country/continent. Latency-Based might send Korean users to Japan. Geoproximity also distance-based, unsuitable data sovereignty enforcement. Add Default record to Geolocation mapping for country-unmapped user fallback.
 
 ---
 
-**문제 3.** Route 53 Geoproximity sets ap-northeast-2 (Seoul) Bias +50. Where does Japan East (Tokyo area) user route?
+**Question 3.** Route 53 Geoproximity sets ap-northeast-2 (Seoul) Bias +50. Where does Japan East (Tokyo area) user route?
 
 A) Always ap-northeast-1 (Tokyo) — geographically closer
 B) Seoul — Bias +50 expands influence radius covering Japan East
 C) Split 50:50 between regions
 D) Fall back to Default record
 
-**정답: B**
-해설: Geoproximity Bias adjusts endpoint geographic influence radius. ap-northeast-2 Bias +50 increases Seoul "gravity," potentially routing adjacent Japan East users to Seoul. Reverse ap-northeast-1 Bias -50 achieves same effect. Geoproximity requires Route 53 Traffic Flow.
+**Answer: B**
+Explanation: Geoproximity Bias adjusts endpoint geographic influence radius. ap-northeast-2 Bias +50 increases Seoul "gravity," potentially routing adjacent Japan East users to Seoul. Reverse ap-northeast-1 Bias -50 achieves same effect. Geoproximity requires Route 53 Traffic Flow.
 
 ---
 
-**문제 4.** Company wants enable Route 53 DNSSEC on example.com Hosted Zone. Correct enablement order?
+**Question 4.** Company wants enable Route 53 DNSSEC on example.com Hosted Zone. Correct enablement order?
 
 A) Register DS record at registrar → create KSK and enable signing in Route 53
 B) Create KSK and enable signing in Route 53 → register DS record at registrar
 C) DNSSEC auto-completes from single Route 53 console toggle
 D) DS record auto-propagates to parent domain
 
-**정답: B**
-해설: Must enable signing first in Route 53, then register DS record. Reverse order causes SERVFAIL: DS registered, validator searches signature, finds none. KSK created as KMS CMK, after `enable-hosted-zone-dnssec` check console for DS record values, manually enter at registrar. If Route 53 also registers domain, Route 53 auto-handles DS registration.
+**Answer: B**
+Explanation: Must enable signing first in Route 53, then register DS record. Reverse order causes SERVFAIL: DS registered, validator searches signature, finds none. KSK created as KMS CMK, after `enable-hosted-zone-dnssec` check console for DS record values, manually enter at registrar. If Route 53 also registers domain, Route 53 auto-handles DS registration.
 
 ---
 
-**문제 5.** On-premises Linux server (10.100.1.50) must resolve AWS VPC RDS private DNS (mydb.cluster-xyz.ap-northeast-2.rds.amazonaws.com). Configuration needed?
+**Question 5.** On-premises Linux server (10.100.1.50) must resolve AWS VPC RDS private DNS (mydb.cluster-xyz.ap-northeast-2.rds.amazonaws.com). Configuration needed?
 
 A) On-premises DNS statically enter AWS RDS IP
 B) Create Route 53 Resolver Inbound Endpoint → on-premises DNS conditional-forward `.rds.amazonaws.com` domain to Inbound EP IP
 C) Create Route 53 Resolver Outbound Endpoint
 D) AWS can't resolve private DNS from on-premises
 
-**정답: B**
-해설: On-premises → AWS DNS resolution = Inbound Endpoint. Inbound EP creates VPC ENI; on-premises DNS conditional-forwards `.rds.amazonaws.com` domain to Inbound EP IP. On-prem server → on-prem DNS → Inbound EP → Route 53 Private Hosted Zone or AWS internal DNS → RDS private IP response. Direct Connect or VPN must exist as network path.
+**Answer: B**
+Explanation: On-premises → AWS DNS resolution = Inbound Endpoint. Inbound EP creates VPC ENI; on-premises DNS conditional-forwards `.rds.amazonaws.com` domain to Inbound EP IP. On-prem server → on-prem DNS → Inbound EP → Route 53 Private Hosted Zone or AWS internal DNS → RDS private IP response. Direct Connect or VPN must exist as network path.
 
 ---
 
@@ -439,19 +439,19 @@ B) ALB — L7 features + Sticky Session + real-time load-balancing
 C) Multi-Value Answer + CloudWatch integration enables session maintenance
 D) Both provide identical functionality
 
-**정답: B**
-해설: Multi-Value Answer returns multiple IPs at DNS level; client randomly picks one. Server load awareness, Sticky Session, real-time connection distribution, L7 path-based routing all ALB features. MVA is DNS-level solution "when simple distribution without ELB needed," not ALB alternative. SAP exams: both options, Sticky Session or real-time load awareness in requirements = ALB is answer.
+**Answer: B**
+Explanation: Multi-Value Answer returns multiple IPs at DNS level; client randomly picks one. Server load awareness, Sticky Session, real-time connection distribution, L7 path-based routing all ALB features. MVA is DNS-level solution "when simple distribution without ELB needed," not ALB alternative. SAP exams: both options, Sticky Session or real-time load awareness in requirements = ALB is answer.
 
 ---
 
-**문제 7.** Company's Calculated Health Check suddenly Unhealthy. Of 3 child Health Checks: 2 Healthy, 1 Unhealthy. Calculated HC threshold set "all 3 of 3 Healthy." Service actually operating normally. What's problem?
+**Question 7.** Company's Calculated Health Check suddenly Unhealthy. Of 3 child Health Checks: 2 Healthy, 1 Unhealthy. Calculated HC threshold set "all 3 of 3 Healthy." Service actually operating normally. What's problem?
 
 A) Route 53 bug
 B) Threshold too high — lower "3 of 3" to "3 of 2"
 C) Calculated HC supports maximum 2 child HCs only
 D) Manually change Unhealthy child HC to Healthy first
 
-**정답: B**
-해설: Calculated HC threshold "3 of 3" = even one child Unhealthy makes entire status Unhealthy. If service actually normal, lower threshold to "3 of 2" for quorum decision. Single Health Checker network issue can make one intermittently Unhealthy; full failover on one Unhealthy is false positive. Threshold design is critical Health Check configuration decision.
+**Answer: B**
+Explanation: Calculated HC threshold "3 of 3" = even one child Unhealthy makes entire status Unhealthy. If service actually normal, lower threshold to "3 of 2" for quorum decision. Single Health Checker network issue can make one intermittently Unhealthy; full failover on one Unhealthy is false positive. Threshold design is critical Health Check configuration decision.
 
 ---

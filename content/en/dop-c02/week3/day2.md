@@ -279,86 +279,86 @@ A build cache is not "set it and forget it." Track the cache hit rate with Cloud
 
 ## 📝 Practice Questions
 
-**문제 1.** What is the most important difference between the S3 cache and the Local Custom Cache?
+**Question 1.** What is the most important difference between the S3 cache and the Local Custom Cache?
 
 A) The S3 cache is always faster
 B) The S3 cache is persistent across builds and accessible from any host; a local cache persists only on the same build host
 C) Only the local cache can store `node_modules`
 D) The S3 cache only works with Lambda compute
 
-**정답: B**
-해설: The key differences are persistence and host dependence. CodeBuild may schedule each build on a different host, so a local cache only helps when the same host is assigned again. The S3 cache references the same bucket from any host, so the previous build's cache can always be reused. In exchange, the S3 cache carries download/upload overhead.
+**Answer: B**
+Explanation: The key differences are persistence and host dependence. CodeBuild may schedule each build on a different host, so a local cache only helps when the same host is assigned again. The S3 cache references the same bucket from any host, so the previous build's cache can always be reused. In exchange, the S3 cache carries download/upload overhead.
 
 ---
 
-**문제 2.** What setting is absolutely required to enable Local Docker Layer Cache?
+**Question 2.** What setting is absolutely required to enable Local Docker Layer Cache?
 
 A) Enabling it together with S3 Cache
 B) `privilegedMode: true` (elevated privileges for Docker-in-Docker)
 C) Enabling VPC mode
 D) Using the ARM container type
 
-**정답: B**
-해설: Local Docker Layer Cache requires running a Docker daemon inside the build container (Docker-in-Docker). For that, `privilegedMode: true` is mandatory. If you configure the Docker layer cache without privilegedMode, the build will start but the layer cache won't actually work.
+**Answer: B**
+Explanation: Local Docker Layer Cache requires running a Docker daemon inside the build container (Docker-in-Docker). For that, `privilegedMode: true` is mandatory. If you configure the Docker layer cache without privilegedMode, the build will start but the layer cache won't actually work.
 
 ---
 
-**문제 3.** `npm install` takes 4 minutes on every build. In an environment where the build host differs every time, what is the most effective caching strategy?
+**Question 3.** `npm install` takes 4 minutes on every build. In an environment where the build host differs every time, what is the most effective caching strategy?
 
 A) Cache `node_modules/**/*` with Local Custom Cache
 B) Cache `node_modules/**/*` and `/root/.npm/**/*` with S3 Cache
 C) Include `npm install` in a Docker layer with BuildKit + ECR Registry Cache
 D) Upgrade the Compute Type to 2XLARGE
 
-**정답: C**
-해설: When the build host differs every time, a local cache is ineffective. The S3 cache (B) is possible too, but when `node_modules` is large the download overhead is significant. BuildKit + ECR Registry Cache (C) stores the cache per Docker layer and fetches it from ECR, so there is no host dependence and the `npm install` layer alone can be selectively reused. D is the wrong approach of adding CPU to an I/O-bound problem.
+**Answer: C**
+Explanation: When the build host differs every time, a local cache is ineffective. The S3 cache (B) is possible too, but when `node_modules` is large the download overhead is significant. BuildKit + ECR Registry Cache (C) stores the cache per Docker layer and fetches it from ECR, so there is no host dependence and the `npm install` layer alone can be selectively reused. D is the wrong approach of adding CPU to an I/O-bound problem.
 
 ---
 
-**문제 4.** You set Build Batch's `fast-fail: false`. When `unit_test` fails, what happens to `lint`?
+**Question 4.** You set Build Batch's `fast-fail: false`. When `unit_test` fails, what happens to `lint`?
 
 A) `lint` is also immediately aborted
 B) `lint` does not depend on `unit_test`, so it keeps running
 C) The whole Batch is aborted
 D) `lint` re-runs `unit_test`
 
-**정답: B**
-해설: With `fast-fail: false`, build nodes that have no dependency relationship keep running unaffected by another node's failure. If `unit_test` and `lint` are running in parallel, `lint` completes independently even when `unit_test` fails. With `fast-fail: true`, `lint` would also be canceled.
+**Answer: B**
+Explanation: With `fast-fail: false`, build nodes that have no dependency relationship keep running unaffected by another node's failure. If `unit_test` and `lint` are running in parallel, `lint` completes independently even when `unit_test` fails. With `fast-fail: true`, `lint` would also be canceled.
 
 ---
 
-**문제 5.** In which scenario is adopting Reserved Capacity (Fleet) effective?
+**Question 5.** In which scenario is adopting Reserved Capacity (Fleet) effective?
 
 A) Fewer than 5 builds per day, 30 minutes per build
 B) 200 or more builds per day, with provisioning overhead at 20% of total time
 C) A single large batch build
 D) Builds that use Lambda compute
 
-**정답: B**
-해설: Reserved Capacity maintains a pool of warmed containers, so it incurs a fixed cost. ROI turns positive when build frequency is high and provisioning time accounts for a meaningful share of the total. At 5 builds per day, the cost of maintaining the Fleet exceeds the savings. At 30 seconds of provisioning per build and 200 builds per day, you save 1 hour — if the cost of that hour exceeds the Fleet cost, adoption is rational.
+**Answer: B**
+Explanation: Reserved Capacity maintains a pool of warmed containers, so it incurs a fixed cost. ROI turns positive when build frequency is high and provisioning time accounts for a meaningful share of the total. At 5 builds per day, the cost of maintaining the Fleet exceeds the savings. At 30 seconds of provisioning per build and 200 builds per day, you save 1 hour — if the cost of that hour exceeds the Fleet cost, adoption is rational.
 
 ---
 
-**문제 6.** What is the most important reason to use ECR Pull Through Cache?
+**Question 6.** What is the most important reason to use ECR Pull Through Cache?
 
 A) To build images directly in ECR
 B) To bypass Docker Hub's anonymous pull limit (100 pulls/6 hours/IP) and have CodeBuild builds fetch base images from ECR
 C) For cross-region image replication
 D) For creating multi-arch images
 
-**정답: B**
-해설: When CodeBuild builds share a NAT Gateway, pull requests to Docker Hub converge on the same public IP. Exceeding the rate limit (100 pulls/6 hours) makes builds fail with a "toomanyrequests" error. With ECR Pull Through Cache configured, only the first pull goes to Docker Hub, and subsequent pulls are served from ECR. You get cost savings and improved reliability at the same time.
+**Answer: B**
+Explanation: When CodeBuild builds share a NAT Gateway, pull requests to Docker Hub converge on the same public IP. Exceeding the rate limit (100 pulls/6 hours) makes builds fail with a "toomanyrequests" error. With ECR Pull Through Cache configured, only the first pull goes to Docker Hub, and subsequent pulls are served from ECR. You get cost savings and improved reliability at the same time.
 
 ---
 
-**문제 7.** What determines the total execution time of a build running under Build Batch?
+**Question 7.** What determines the total execution time of a build running under Build Batch?
 
 A) The sum of the times of all build nodes
 B) The time of the Critical Path (longest path) in the dependency graph
 C) The time of the fastest node
 D) The time of the first node
 
-**정답: B**
-해설: In parallel builds, the total execution time is the Critical Path — the time of the longest path in the dependency chain. For example, with `lint (2 min)`, `unit_test (5 min)`, `integration_test (3 min, depends on unit_test)`, and `package (4 min, depends on lint+integration_test)`, the Critical Path is `unit_test + integration_test + package = 12 minutes`. `lint` finishes in 2 minutes in parallel but does not determine the total. This is the same concept as the Critical Path Method (CPM) in project management.
+**Answer: B**
+Explanation: In parallel builds, the total execution time is the Critical Path — the time of the longest path in the dependency chain. For example, with `lint (2 min)`, `unit_test (5 min)`, `integration_test (3 min, depends on unit_test)`, and `package (4 min, depends on lint+integration_test)`, the Critical Path is `unit_test + integration_test + package = 12 minutes`. `lint` finishes in 2 minutes in parallel but does not determine the total. This is the same concept as the Critical Path Method (CPM) in project management.
 
 ---

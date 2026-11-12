@@ -196,158 +196,158 @@ Here we organize how the Week 5 services play their roles in disaster recovery (
 
 ## 📝 Scenario Practice Questions
 
-**문제 1.** A startup launches a new social media app. Traffic was 100 RPS a day, then suddenly surged to 50,000 RPS after going viral. The DB is PostgreSQL. To handle this traffic without service interruption:
+**Question 1.** A startup launches a new social media app. Traffic was 100 RPS a day, then suddenly surged to 50,000 RPS after going viral. The DB is PostgreSQL. To handle this traffic without service interruption:
 
 A) Switch to RDS PostgreSQL Multi-AZ (secure high availability)
 B) Aurora PostgreSQL Serverless v2 (auto-scaling)
 C) Add 5 RDS PostgreSQL Read Replicas (distribute reads)
 D) Migrate to DynamoDB On-Demand (automatic capacity)
 
-**정답: B**
+**Answer: B**
 
-해설: To respond automatically to a traffic surge, compute capacity must auto-scale. Aurora Serverless v2 auto-scales in seconds from 0.5 to 256 ACU and is PostgreSQL-compatible, so migration is easy. A solves HA but not the capacity-shortage problem. C distributes reads but doesn't increase write capacity, and you'd have to create 5 Replicas in advance, so it responds slowly to a sudden surge. D requires a migration period and can't be applied instantly.
+Explanation: To respond automatically to a traffic surge, compute capacity must auto-scale. Aurora Serverless v2 auto-scales in seconds from 0.5 to 256 ACU and is PostgreSQL-compatible, so migration is easy. A solves HA but not the capacity-shortage problem. C distributes reads but doesn't increase write capacity, and you'd have to create 5 Replicas in advance, so it responds slowly to a sudden surge. D requires a migration period and can't be applied instantly.
 
 ---
 
-**문제 2.** An online banking system stores account transaction records. Every transaction must be recorded immutably for audit purposes, and queries computing the balance at an arbitrary point in the past are needed. What is the most suitable service?
+**Question 2.** An online banking system stores account transaction records. Every transaction must be recorded immutably for audit purposes, and queries computing the balance at an arbitrary point in the past are needed. What is the most suitable service?
 
 A) DynamoDB (restore past state with PITR)
 B) RDS Aurora (transaction guarantees)
 C) Amazon QLDB (Ledger DB, immutable transaction ledger)
 D) S3 + Glacier (cheap long-term retention)
 
-**정답: C**
+**Answer: C**
 
-해설: QLDB is an immutable ledger DB where every data change is recorded in a cryptographically verifiable hash chain. "Immutable for audit purposes" + "computing past balances (arbitrary point-in-time lookups)" are QLDB's core functions. A — DynamoDB PITR can view past state but doesn't guarantee immutability. B supports relational transactions but has no immutable-ledger function. D is object storage with no DB functionality.
+Explanation: QLDB is an immutable ledger DB where every data change is recorded in a cryptographically verifiable hash chain. "Immutable for audit purposes" + "computing past balances (arbitrary point-in-time lookups)" are QLDB's core functions. A — DynamoDB PITR can view past state but doesn't guarantee immutability. B supports relational transactions but has no immutable-ledger function. D is object storage with no DB functionality.
 
 ---
 
-**문제 3.** You're building a game leaderboard system. You must store millions of scores in real time and handle "look up the top 100" and "look up a specific user's rank" within tens of ms. What is the most suitable service?
+**Question 3.** You're building a game leaderboard system. You must store millions of scores in real time and handle "look up the top 100" and "look up a specific user's rank" within tens of ms. What is the most suitable service?
 
 A) DynamoDB + GSI (sorted by score)
 B) RDS MySQL (ORDER BY score query)
 C) ElastiCache Redis Sorted Set (ZSet)
 D) OpenSearch (aggregation query)
 
-**정답: C**
+**Answer: C**
 
-해설: The Redis Sorted Set (ZSet) is a data structure born for leaderboards. You add members with scores via ZADD, get the top N with ZREVRANGE, and look up a specific member's rank with ZRANK in O(log N). When scores change, the sort order updates automatically. Even millions of records are handled in tens of μs in memory. A — a GSI can query by score but is millisecond-level, and there's GSI async-replication lag on real-time rank updates. B — large-scale sort queries put heavy load on the DB. D can aggregate but isn't natural for real-time rank updates.
+Explanation: The Redis Sorted Set (ZSet) is a data structure born for leaderboards. You add members with scores via ZADD, get the top N with ZREVRANGE, and look up a specific member's rank with ZRANK in O(log N). When scores change, the sort order updates automatically. Even millions of records are handled in tens of μs in memory. A — a GSI can query by score but is millisecond-level, and there's GSI async-replication lag on real-time rank updates. B — large-scale sort queries put heavy load on the DB. D can aggregate but isn't natural for real-time rank updates.
 
 ---
 
-**문제 4.** On an Aurora MySQL cluster, an analytics team frequently runs OLAP queries that affect the OLTP workload. To solve this with minimal additional cost:
+**Question 4.** On an Aurora MySQL cluster, an analytics team frequently runs OLAP queries that affect the OLTP workload. To solve this with minimal additional cost:
 
 A) Create a separate Aurora cluster for analytics (2× cost)
 B) Create a Custom Endpoint, designate analytics Reader instances, and have the analytics team use the Custom Endpoint
 C) Run analytics queries in an Aurora Global Database Secondary region
 D) Route analytics and OLTP queries through RDS Proxy
 
-**정답: B**
+**Answer: B**
 
-해설: A Custom Endpoint is a feature that groups specific Reader instances into a separate endpoint. If the analytics team uses the Custom Endpoint, it's separated from the OLTP Readers so they don't affect each other. Since it reuses existing Reader instances, additional cost is lowest. If the analytics load is very large, you can make the analytics Reader instances bigger (r5.8xlarge, etc.). A doubles the cost. C — a Secondary region isn't completely independent and has replication lag. D — RDS Proxy doesn't support this kind of query routing.
+Explanation: A Custom Endpoint is a feature that groups specific Reader instances into a separate endpoint. If the analytics team uses the Custom Endpoint, it's separated from the OLTP Readers so they don't affect each other. Since it reuses existing Reader instances, additional cost is lowest. If the analytics load is very large, you can make the analytics Reader instances bigger (r5.8xlarge, etc.). A doubles the cost. C — a Secondary region isn't completely independent and has replication lag. D — RDS Proxy doesn't support this kind of query routing.
 
 ---
 
-**문제 5.** A company consumes a very large amount of RCU on a DynamoDB table. Analyzing the access pattern reveals that 80% of all reads are concentrated on the same 100 items. What is the most cost-efficient solution?
+**Question 5.** A company consumes a very large amount of RCU on a DynamoDB table. Analyzing the access pattern reveals that 80% of all reads are concentrated on the same 100 items. What is the most cost-efficient solution?
 
 A) Switch to DynamoDB On-Demand mode
 B) Double the DynamoDB Provisioned RCU
 C) Add a DAX cluster to cache the Hot Items
 D) Add a GSI to distribute reads
 
-**정답: C**
+**Answer: C**
 
-해설: 80% of reads concentrating on 100 items is a Hot Item pattern. DAX caches these 100 items in memory so that repeated reads are handled by DAX rather than DynamoDB. As a result, the RCU consumption reaching DynamoDB drops significantly. A — On-Demand bills per request, so it can actually be more expensive. B — raising RCU doesn't reduce the waste. D — a GSI is a tool for accessing by a different partition key, not a solution to the Hot Item problem.
+Explanation: 80% of reads concentrating on 100 items is a Hot Item pattern. DAX caches these 100 items in memory so that repeated reads are handled by DAX rather than DynamoDB. As a result, the RCU consumption reaching DynamoDB drops significantly. A — On-Demand bills per request, so it can actually be more expensive. B — raising RCU doesn't reduce the waste. D — a GSI is a tool for accessing by a different partition key, not a solution to the Hot Item problem.
 
 ---
 
-**문제 6.** Regular maintenance (OS/engine patching) is scheduled on a Multi-AZ RDS MySQL. To minimize downtime while this work runs:
+**Question 6.** Regular maintenance (OS/engine patching) is scheduled on a Multi-AZ RDS MySQL. To minimize downtime while this work runs:
 
 A) Set the maintenance window to the longest possible night hours
 B) With Multi-AZ enabled, it patches the Standby first and then patches the old Primary after failover, minimizing downtime (usually within 60 seconds)
 C) Create a Read Replica and move traffic to it during patching
 D) Create a new instance from a snapshot and patch that
 
-**정답: B**
+**Answer: B**
 
-해설: Multi-AZ RDS maintenance updates the Standby instance first, and when done, switches the Standby to the new Primary via failover. Then it updates the old Primary (now the Standby). The only actual service interruption in this process is the failover time (usually under 60 seconds). This is how Multi-AZ provides HA during operational maintenance. C — a Read Replica can't take write traffic, so it isn't a complete substitute. D requires additional cost and endpoint-switching work.
+Explanation: Multi-AZ RDS maintenance updates the Standby instance first, and when done, switches the Standby to the new Primary via failover. Then it updates the old Primary (now the Standby). The only actual service interruption in this process is the failover time (usually under 60 seconds). This is how Multi-AZ provides HA during operational maintenance. C — a Read Replica can't take write traffic, so it isn't a complete substitute. D requires additional cost and endpoint-switching work.
 
 ---
 
-**문제 7.** In a message feed app, each user must be able to see the latest messages from the people who follow them. Messages are chronological, and you must quickly fetch "the 50 most recent messages in a specific user's feed." If using DynamoDB, what is the table design?
+**Question 7.** In a message feed app, each user must be able to see the latest messages from the people who follow them. Messages are chronological, and you must quickly fetch "the 50 most recent messages in a specific user's feed." If using DynamoDB, what is the table design?
 
 A) PK: messageId, no SK — simple message storage
 B) PK: feedUserId, SK: timestamp — Composite Key with the feed user as partition and time as sort key
 C) PK: senderId — partition per sender
 D) PK: timestamp — all messages in chronological order
 
-**정답: B**
+**Answer: B**
 
-해설: Using DynamoDB's composite primary key (PK + SK), you can efficiently fetch "a specific feed user's latest messages" in a single query. Since feedUserId is the partition key, that user's entire feed is in the same partition, and since timestamp is the sort key, you can immediately fetch the "latest 50" in DESC order. A requires a Scan for per-feed lookups. C — with a partition per sender, you'd have to combine multiple partitions to build a follower feed. D — using timestamp as the PK piles all simultaneously-occurring messages into the same partition (Hot Partition).
+Explanation: Using DynamoDB's composite primary key (PK + SK), you can efficiently fetch "a specific feed user's latest messages" in a single query. Since feedUserId is the partition key, that user's entire feed is in the same partition, and since timestamp is the sort key, you can immediately fetch the "latest 50" in DESC order. A requires a Scan for per-feed lookups. C — with a partition per sender, you'd have to combine multiple partitions to build a follower feed. D — using timestamp as the PK piles all simultaneously-occurring messages into the same partition (Hot Partition).
 
 ---
 
-**문제 8.** An application currently using RDS PostgreSQL has no DBA and wants to automate OS patching, DB patching, backups, and Multi-AZ setup going forward. Which option reduces the most operational burden while maintaining existing PostgreSQL compatibility?
+**Question 8.** An application currently using RDS PostgreSQL has no DBA and wants to automate OS patching, DB patching, backups, and Multi-AZ setup going forward. Which option reduces the most operational burden while maintaining existing PostgreSQL compatibility?
 
 A) Install PostgreSQL directly on EC2 and automate backups with cron
 B) RDS PostgreSQL (enable Multi-AZ, configure automated backups)
 C) Aurora PostgreSQL (shared storage, 15 Readers, 30-second failover, automated backups)
 D) Run a PostgreSQL container on ECS Fargate
 
-**정답: C**
+**Answer: C**
 
-해설: Aurora PostgreSQL has AWS take on more operational burden than RDS PostgreSQL. It adds storage management (auto-expansion, 6-copy management), faster failover (30s vs 60-120s), support for more Readers, and Fast Clone. RDS PostgreSQL (B) is managed too, but Aurora provides higher availability and scaling capability. A and D have the largest operational burden.
+Explanation: Aurora PostgreSQL has AWS take on more operational burden than RDS PostgreSQL. It adds storage management (auto-expansion, 6-copy management), faster failover (30s vs 60-120s), support for more Readers, and Fast Clone. RDS PostgreSQL (B) is managed too, but Aurora provides higher availability and scaling capability. A and D have the largest operational burden.
 
 ---
 
-**문제 9.** In a delivery app, you must store each rider's current location and handle "look up available riders within a 5km radius" in real time. What is the most suitable service?
+**Question 9.** In a delivery app, you must store each rider's current location and handle "look up available riders within a 5km radius" in real time. What is the most suitable service?
 
 A) DynamoDB (store as geographic coordinate attributes)
 B) RDS PostgreSQL + PostGIS extension (spatial queries)
 C) ElastiCache Redis Geospatial Index
 D) OpenSearch Geo Distance Query
 
-**정답: C**
+**Answer: C**
 
-해설: ElastiCache Redis supports a Geospatial Index (GEOADD/GEORADIUS/GEOSEARCH commands). Add rider locations with GEOADD and look up riders within a radius in memory in microseconds with GEORADIUS. Rider location is volatile data updated every second, so speed matters more than persistence. B is possible but RDS struggles to handle real-time millions of location updates and lookups. D is also possible but isn't optimized for real-time in-memory processing the way ElastiCache Redis is.
+Explanation: ElastiCache Redis supports a Geospatial Index (GEOADD/GEORADIUS/GEOSEARCH commands). Add rider locations with GEOADD and look up riders within a radius in memory in microseconds with GEORADIUS. Rider location is volatile data updated every second, so speed matters more than persistence. B is possible but RDS struggles to handle real-time millions of location updates and lookups. D is also possible but isn't optimized for real-time in-memory processing the way ElastiCache Redis is.
 
 ---
 
-**문제 10.** A Lambda-based microservice uses Aurora MySQL. At peak traffic, Lambda concurrency reaches 500 and Aurora starts emitting "max_connections" errors. What is the most suitable solution?
+**Question 10.** A Lambda-based microservice uses Aurora MySQL. At peak traffic, Lambda concurrency reaches 500 and Aurora starts emitting "max_connections" errors. What is the most suitable solution?
 
 A) Upgrade the Aurora instance to a larger class (increase max_connections)
 B) Limit Lambda's reserved concurrency to 100 (forcibly reduce connection count)
 C) Add RDS Proxy between Aurora and Lambda (connection pooling)
 D) Switch to Aurora Serverless v2 (auto-scaling)
 
-**정답: C**
+**Answer: C**
 
-해설: RDS Proxy is the exact solution for this situation. Instead of 500 Lambdas each connecting directly to Aurora, they all connect to the Proxy, and the Proxy maintains a small number of connections to Aurora. Through connection reuse, it can handle 500 Lambda requests within Aurora's max_connections limit. A — even raising max_connections has limits, and a larger instance means significant cost increase. B artificially limits Lambda throughput and may fail to meet business needs. D — Serverless v2 scales compute capacity but doesn't solve the connection-count limit.
+Explanation: RDS Proxy is the exact solution for this situation. Instead of 500 Lambdas each connecting directly to Aurora, they all connect to the Proxy, and the Proxy maintains a small number of connections to Aurora. Through connection reuse, it can handle 500 Lambda requests within Aurora's max_connections limit. A — even raising max_connections has limits, and a larger instance means significant cost increase. B artificially limits Lambda throughput and may fail to meet business needs. D — Serverless v2 scales compute capacity but doesn't solve the connection-count limit.
 
 ---
 
-**문제 11.** A company collects temperature, pressure, and humidity data from 1 million IoT devices per second. Each device sends 1 record per second. To efficiently store this data and quickly look up "a specific device's temperature trend over the past 24 hours":
+**Question 11.** A company collects temperature, pressure, and humidity data from 1 million IoT devices per second. Each device sends 1 record per second. To efficiently store this data and quickly look up "a specific device's temperature trend over the past 24 hours":
 
 A) DynamoDB (PK: deviceId, SK: timestamp)
 B) Amazon Timestream (time-series-specialized DB)
 C) RDS PostgreSQL (timestamp column index)
 D) S3 + Athena (store in Parquet format)
 
-**정답: B**
+**Answer: B**
 
-해설: IoT time-series data is a core use case for Amazon Timestream. Timestream has storage and a query engine optimized for time-series data, so it processes time-range queries far faster than a general DB. It handles 1 million writes per second with auto-scaling, and old data automatically moves to a cheaper storage tier. A is possible too, but handling 1 million writes per second requires very high WCU, and it isn't optimized for time-series analytics queries. C is unsuitable for time-series processing at this scale. D has slow real-time lookups.
+Explanation: IoT time-series data is a core use case for Amazon Timestream. Timestream has storage and a query engine optimized for time-series data, so it processes time-range queries far faster than a general DB. It handles 1 million writes per second with auto-scaling, and old data automatically moves to a cheaper storage tier. A is possible too, but handling 1 million writes per second requires very high WCU, and it isn't optimized for time-series analytics queries. C is unsuitable for time-series processing at this scale. D has slow real-time lookups.
 
 ---
 
-**문제 12.** A SaaS platform accessed by users in 150 countries worldwide stores user settings data. Writes and reads occur simultaneously in each region, and a "last write wins" policy is acceptable on settings conflict. What is the most suitable service?
+**Question 12.** A SaaS platform accessed by users in 150 countries worldwide stores user settings data. Writes and reads occur simultaneously in each region, and a "last write wins" policy is acceptable on settings conflict. What is the most suitable service?
 
 A) Aurora PostgreSQL Global Database (writes only in the Primary)
 B) RDS PostgreSQL Cross-Region Read Replica (reads in each region)
 C) DynamoDB Global Tables (multi-region active-active, LWW)
 D) ElastiCache Redis + Lambda (implement replication yourself)
 
-**정답: C**
+**Answer: C**
 
-해설: "Writes and reads occur simultaneously in each region" requires multi-region active-active. DynamoDB Global Tables accepts writes in multiple regions simultaneously while replicating to the other regions within ~1 second. "Last write wins (LWW)" conflict resolution also exactly matches DynamoDB Global Tables' default policy. A can write only in the Primary, so it's unsuitable for geographically distributed writes. B is a read-only Replica, so writes are impossible in each region. D has the complexity and reliability problems of a self-built implementation.
+Explanation: "Writes and reads occur simultaneously in each region" requires multi-region active-active. DynamoDB Global Tables accepts writes in multiple regions simultaneously while replicating to the other regions within ~1 second. "Last write wins (LWW)" conflict resolution also exactly matches DynamoDB Global Tables' default policy. A can write only in the Primary, so it's unsuitable for geographically distributed writes. B is a read-only Replica, so writes are impossible in each region. D has the complexity and reliability problems of a self-built implementation.
 
 ---

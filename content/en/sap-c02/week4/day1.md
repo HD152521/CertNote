@@ -193,72 +193,72 @@ Outposts, Local Zones, and Wavelength are different answers to the question "Whe
 
 ## 📝 Practice Questions
 
-**문제 1.** 한국 금융감독원 규제로 고객 거래 데이터가 금융사 서울 본사 건물 밖으로 반출되면 안 된다. 동시에 ML 기반 사기 탐지 모델(AWS SageMaker 학습)의 추론을 실시간으로 실행해야 한다. 적합한 구성은?
+**Question 1.** 한국 금융감독원 규제로 고객 거래 데이터가 금융사 서울 본사 건물 밖으로 반출되면 안 된다. 동시에 ML 기반 사기 탐지 모델(AWS SageMaker 학습)의 추론을 실시간으로 실행해야 한다. 적합한 구성은?
 
 A) AWS Lambda (서울 리전)
 B) AWS Outposts (서울 본사 서버실) + SageMaker 추론 엔드포인트 Outposts에 배포
 C) Local Zones (서울 확장)
 D) Wavelength (SK Telecom 5G MEC)
 
-**정답: B**
-해설: "데이터가 건물 밖으로 나갈 수 없다"가 핵심 제약이다. Outposts는 고객 건물 내 AWS 하드웨어로, 데이터가 물리적으로 건물 안에 유지된다. SageMaker 추론을 Outposts에 배포하면 데이터가 외부로 나가지 않는다. Local Zones(C)는 AWS가 운영하는 별도 시설이므로 데이터 주권 요건을 충족하지 않는다. Wavelength(D)는 통신사 시설이다. Lambda(A)는 AWS 리전에서 실행되므로 데이터가 서울 리전 서버로 전송된다.
+**Answer: B**
+Explanation: "데이터가 건물 밖으로 나갈 수 없다"가 핵심 제약이다. Outposts는 고객 건물 내 AWS 하드웨어로, 데이터가 물리적으로 건물 안에 유지된다. SageMaker 추론을 Outposts에 배포하면 데이터가 외부로 나가지 않는다. Local Zones(C)는 AWS가 운영하는 별도 시설이므로 데이터 주권 요건을 충족하지 않는다. Wavelength(D)는 통신사 시설이다. Lambda(A)는 AWS 리전에서 실행되므로 데이터가 서울 리전 서버로 전송된다.
 
 ---
 
-**문제 2.** 뉴욕에서 실시간 주식 거래 분석 시스템을 운영한다. 트레이더가 뉴욕 사무실에서 us-east-1 EC2에 접근하면 약 15ms 지연이 발생한다. 이를 1ms 미만으로 줄여야 한다. 가장 적합한 방법은?
+**Question 2.** 뉴욕에서 실시간 주식 거래 분석 시스템을 운영한다. 트레이더가 뉴욕 사무실에서 us-east-1 EC2에 접근하면 약 15ms 지연이 발생한다. 이를 1ms 미만으로 줄여야 한다. 가장 적합한 방법은?
 
 A) AWS Outposts (뉴욕 사무실)
 B) CloudFront (뉴욕 엣지)
 C) AWS Local Zones (us-east-1-nyc-1a) 활성화 + 뉴욕 Local Zone에 EC2 배포
 D) AWS Wavelength (Verizon 뉴욕)
 
-**정답: C**
-해설: 뉴욕의 AWS Local Zone(us-east-1-nyc-1a)은 뉴욕 도심 데이터센터에 AWS 인프라를 배치해 1ms 미만 지연을 제공한다. 데이터 주권 요건이 없으므로 Outposts(A)는 비용과 복잡성이 과하다. CloudFront(B)는 정적 콘텐츠와 HTTP 캐싱이며 컴퓨팅 작업에는 부적합하다. Wavelength(D)는 5G 모바일 디바이스용이며 사무실 유선 네트워크 환경에서는 불필요한 복잡성이다.
+**Answer: C**
+Explanation: 뉴욕의 AWS Local Zone(us-east-1-nyc-1a)은 뉴욕 도심 데이터센터에 AWS 인프라를 배치해 1ms 미만 지연을 제공한다. 데이터 주권 요건이 없으므로 Outposts(A)는 비용과 복잡성이 과하다. CloudFront(B)는 정적 콘텐츠와 HTTP 캐싱이며 컴퓨팅 작업에는 부적합하다. Wavelength(D)는 5G 모바일 디바이스용이며 사무실 유선 네트워크 환경에서는 불필요한 복잡성이다.
 
 ---
 
-**문제 3.** 자율주행 배달 로봇 스타트업이 배달 경로 최적화와 장애물 회피 알고리즘을 클라우드에서 처리한다. 로봇이 5G 네트워크로 연결되어 있으며, 경로 재계산의 응답 시간이 15ms를 초과하면 안 된다. 로봇이 운행하는 도시에 SK Telecom 5G 인프라가 있다. 가장 적합한 서비스는?
+**Question 3.** 자율주행 배달 로봇 스타트업이 배달 경로 최적화와 장애물 회피 알고리즘을 클라우드에서 처리한다. 로봇이 5G 네트워크로 연결되어 있으며, 경로 재계산의 응답 시간이 15ms를 초과하면 안 된다. 로봇이 운행하는 도시에 SK Telecom 5G 인프라가 있다. 가장 적합한 서비스는?
 
 A) AWS Outposts
 B) Local Zones
 C) AWS Wavelength (SK Telecom)
 D) Global Accelerator + 서울 리전 EC2
 
-**정답: C**
-해설: 5G 연결 디바이스의 초저지연 처리는 Wavelength의 정확한 사용 사례다. Wavelength는 SK Telecom 5G MEC 시설에 AWS EC2를 배치해 5G 링크를 통한 데이터가 5G 코어를 거치지 않고 바로 Wavelength Zone에서 처리된다. 15ms 이내 응답이 가능하다. Outposts(A)는 고객 시설에 AWS를 배치하는 것으로 이동하는 로봇과의 5G 통합에 부적합하다. Local Zones(B)는 도시 내 AWS 시설이지만 5G 코어 우회 기능이 없다. Global Accelerator + 서울 EC2(D)는 5G 코어를 통한 전체 경로를 사용해 15ms 요건을 충족하기 어렵다.
+**Answer: C**
+Explanation: 5G 연결 디바이스의 초저지연 처리는 Wavelength의 정확한 사용 사례다. Wavelength는 SK Telecom 5G MEC 시설에 AWS EC2를 배치해 5G 링크를 통한 데이터가 5G 코어를 거치지 않고 바로 Wavelength Zone에서 처리된다. 15ms 이내 응답이 가능하다. Outposts(A)는 고객 시설에 AWS를 배치하는 것으로 이동하는 로봇과의 5G 통합에 부적합하다. Local Zones(B)는 도시 내 AWS 시설이지만 5G 코어 우회 기능이 없다. Global Accelerator + 서울 EC2(D)는 5G 코어를 통한 전체 경로를 사용해 15ms 요건을 충족하기 어렵다.
 
 ---
 
-**문제 4.** AWS Outposts의 Service Link가 장시간 끊어진 경우 어떤 일이 발생하는가?
+**Question 4.** AWS Outposts의 Service Link가 장시간 끊어진 경우 어떤 일이 발생하는가?
 
 A) Outposts가 완전히 독립적으로 모든 기능을 유지한다
 B) 기존 실행 중인 인스턴스는 계속 동작하지만 새 인스턴스 시작, IAM 인증, 스냅샷 생성 등 관리 작업이 불가능해진다
 C) 모든 인스턴스가 즉시 종료된다
 D) Outposts가 자동으로 로컬 모드로 전환되어 완전히 동작한다
 
-**정답: B**
-해설: AWS Outposts는 Disconnected Mode를 공식 지원하지 않는다. Service Link가 끊어지면 제어 플레인 기능이 중단된다. 기존에 시작된 EC2 인스턴스는 데이터 플레인 수준에서 계속 실행되지만(하이퍼바이저가 로컬에서 계속 동작), 새 인스턴스 시작, IAM 인증(AWS IAM 서비스에 도달 불가), EBS 스냅샷, CloudWatch 메트릭 전송 등이 불가능해진다. 이것이 Outposts 설계에서 Service Link의 고가용성이 중요한 이유다. DX 또는 VPN으로 Service Link의 이중화를 구성하는 것이 권장된다.
+**Answer: B**
+Explanation: AWS Outposts는 Disconnected Mode를 공식 지원하지 않는다. Service Link가 끊어지면 제어 플레인 기능이 중단된다. 기존에 시작된 EC2 인스턴스는 데이터 플레인 수준에서 계속 실행되지만(하이퍼바이저가 로컬에서 계속 동작), 새 인스턴스 시작, IAM 인증(AWS IAM 서비스에 도달 불가), EBS 스냅샷, CloudWatch 메트릭 전송 등이 불가능해진다. 이것이 Outposts 설계에서 Service Link의 고가용성이 중요한 이유다. DX 또는 VPN으로 Service Link의 이중화를 구성하는 것이 권장된다.
 
 ---
 
-**문제 5.** 제조업체가 공장 자동화에 AWS를 활용한다. 공장 내 Outposts Rack의 EC2가 공장 LAN(10.1.0.0/16)의 PLC(프로그래머블 로직 컨트롤러)와 서브밀리초 수준으로 통신해야 한다. 가장 적합한 구성은?
+**Question 5.** 제조업체가 공장 자동화에 AWS를 활용한다. 공장 내 Outposts Rack의 EC2가 공장 LAN(10.1.0.0/16)의 PLC(프로그래머블 로직 컨트롤러)와 서브밀리초 수준으로 통신해야 한다. 가장 적합한 구성은?
 
 A) Outposts EC2 → Service Link → AWS 리전 → VPN → PLC (온프레미스)
 B) Outposts EC2 → Local Gateway (LGW) → 공장 라우터 → PLC
 C) Outposts EC2 → 인터넷 → PLC
 D) Outposts EC2 → Direct Connect → PLC
 
-**정답: B**
-해설: Local Gateway(LGW)는 Outposts와 온프레미스 네트워크를 직접 연결하는 로컬 라우팅 경로를 제공한다. 트래픽이 AWS 리전을 거치지 않아 LAN 수준의 서브밀리초 지연이 달성된다. A는 Service Link → AWS 리전 → VPN 경로로 왕복 지연이 수십 밀리초 이상이 된다. C는 인터넷 경유로 지연과 보안 모두 부적합하다. D는 Direct Connect가 DX Location까지의 물리 연결이 필요하고 공장 LAN 직접 통신이 아니다.
+**Answer: B**
+Explanation: Local Gateway(LGW)는 Outposts와 온프레미스 네트워크를 직접 연결하는 로컬 라우팅 경로를 제공한다. 트래픽이 AWS 리전을 거치지 않아 LAN 수준의 서브밀리초 지연이 달성된다. A는 Service Link → AWS 리전 → VPN 경로로 왕복 지연이 수십 밀리초 이상이 된다. C는 인터넷 경유로 지연과 보안 모두 부적합하다. D는 Direct Connect가 DX Location까지의 물리 연결이 필요하고 공장 LAN 직접 통신이 아니다.
 
 ---
 
-**문제 6.** 게임 회사가 글로벌 멀티플레이어 게임의 실시간 게임 서버를 운영한다. 각 도시(LA, 뉴욕, 도쿄, 서울)의 플레이어에게 1ms 미만 지연을 제공하고 싶다. 부모 리전(us-west-2, ap-northeast-1)의 관리 인프라(매치메이킹, 플레이어 데이터베이스)는 그대로 활용해야 한다. 가장 적합한 아키텍처는?
+**Question 6.** 게임 회사가 글로벌 멀티플레이어 게임의 실시간 게임 서버를 운영한다. 각 도시(LA, 뉴욕, 도쿄, 서울)의 플레이어에게 1ms 미만 지연을 제공하고 싶다. 부모 리전(us-west-2, ap-northeast-1)의 관리 인프라(매치메이킹, 플레이어 데이터베이스)는 그대로 활용해야 한다. 가장 적합한 아키텍처는?
 
 A) 각 도시에 Outposts 랙 설치
 B) 각 도시의 AWS Local Zones에 게임 서버 EC2 배포 + 부모 리전에 매치메이킹 서비스 유지
 C) CloudFront + Lambda@Edge
 D) Wavelength Zone에 게임 서버 배포
 
-**정답: B**
-해설: Local Zones는 대도시에 배치된 AWS 인프라로 1ms 미만 지연을 제공하고 부모 리전의 모든 관리 서비스와 통합된다. 매치메이킹, DB, 인증은 부모 리전에서 처리하고 게임 서버만 Local Zone에 배포하면 비용 효율적이다. Outposts(A)는 고객 시설에 AWS 하드웨어를 배치하는 것으로 도시별 설치가 필요해 운영 복잡성이 매우 높다. CloudFront + Lambda@Edge(C)는 HTTP 기반 정적 콘텐츠와 간단한 로직에 적합하며, 상태 저장 게임 서버에는 부적합하다. Wavelength(D)는 5G 모바일 디바이스가 클라이언트일 때 적합하며, 일반 인터넷 연결 플레이어에게는 과한 구성이다.
+**Answer: B**
+Explanation: Local Zones는 대도시에 배치된 AWS 인프라로 1ms 미만 지연을 제공하고 부모 리전의 모든 관리 서비스와 통합된다. 매치메이킹, DB, 인증은 부모 리전에서 처리하고 게임 서버만 Local Zone에 배포하면 비용 효율적이다. Outposts(A)는 고객 시설에 AWS 하드웨어를 배치하는 것으로 도시별 설치가 필요해 운영 복잡성이 매우 높다. CloudFront + Lambda@Edge(C)는 HTTP 기반 정적 콘텐츠와 간단한 로직에 적합하며, 상태 저장 게임 서버에는 부적합하다. Wavelength(D)는 5G 모바일 디바이스가 클라이언트일 때 적합하며, 일반 인터넷 연결 플레이어에게는 과한 구성이다.

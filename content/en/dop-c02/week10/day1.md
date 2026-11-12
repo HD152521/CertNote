@@ -158,94 +158,94 @@ Next we deep-dive CloudWatch Logs: how logs organize into groups and streams, ho
 
 ## 📝 Practice Questions
 
-**문제 1.** Lambda가 초당 수천 번 호출되는 핫 패스에서 사용자 정의 메트릭을 게시한다. PutMetricData를 매 호출마다 동기로 부르자 API throttling과 응답 지연이 발생했다. 가장 적절한 개선은?
+**Question 1.** Lambda가 초당 수천 번 호출되는 핫 패스에서 사용자 정의 메트릭을 게시한다. PutMetricData를 매 호출마다 동기로 부르자 API throttling과 응답 지연이 발생했다. 가장 적절한 개선은?
 
 A) 메트릭 차원 수를 줄인다
 B) EMF로 전환 — 로그에 메트릭을 임베드해 메트릭 API 호출을 0으로 만든다
 C) High-Resolution Metric으로 전환한다
 D) PutMetricData 호출을 비동기 스레드로 옮긴다
 
-**정답: B**
+**Answer: B**
 
-해설: PutMetricData를 핫 패스에서 동기 호출하면 API throttling(계정·리전 TPS 한도)과 호출 지연이 누적된다. EMF는 메트릭을 별도 API로 보내지 않고 이미 출력하는 로그 JSON에 `_aws` 구조로 끼워 넣어 CloudWatch가 적재 시 자동 추출하므로, 메트릭 API 호출이 0이 되어 throttling과 지연이 동시에 사라진다. 차원 축소(A)는 부분 완화일 뿐 근본 해결이 아니고, High-Resolution(C)은 비용을 오히려 늘리며, 비동기 스레드(D)는 throttling 자체를 없애지 못한다.
+Explanation: PutMetricData를 핫 패스에서 동기 호출하면 API throttling(계정·리전 TPS 한도)과 호출 지연이 누적된다. EMF는 메트릭을 별도 API로 보내지 않고 이미 출력하는 로그 JSON에 `_aws` 구조로 끼워 넣어 CloudWatch가 적재 시 자동 추출하므로, 메트릭 API 호출이 0이 되어 throttling과 지연이 동시에 사라진다. 차원 축소(A)는 부분 완화일 뿐 근본 해결이 아니고, High-Resolution(C)은 비용을 오히려 늘리며, 비동기 스레드(D)는 throttling 자체를 없애지 못한다.
 
 ---
 
-**문제 2.** 같은 데이터를 `{Service, Environment}`로도, `{Environment}`만으로도, 전체 합산으로도 보고 싶다. PutMetricData로는 번거롭다. 가장 효율적인 방법은?
+**Question 2.** 같은 데이터를 `{Service, Environment}`로도, `{Environment}`만으로도, 전체 합산으로도 보고 싶다. PutMetricData로는 번거롭다. 가장 효율적인 방법은?
 
 A) 세 번 PutMetricData 호출
 B) EMF의 `Dimensions: [["Service","Environment"], ["Environment"], []]`로 한 번에 다중 차원 조합 게시
 C) Metric Math로 사후 집계
 D) Anomaly Detection 활성화
 
-**정답: B**
+**Answer: B**
 
-해설: CloudWatch는 publish 시점에 정한 차원 조합으로만 집계를 제공하므로, 여러 집계 관점이 필요하면 그 조합들을 모두 게시해야 한다. EMF는 `Dimensions`를 배열의 배열로 받아 한 번의 로그 출력으로 여러 차원 조합(둘 다 / Environment만 / 전체 합산 `[]`)을 동시에 게시한다. PutMetricData(A)는 조합마다 별도 호출이 필요해 비효율적이고, Metric Math(C)는 이미 publish된 시계열을 결합할 뿐 없는 집계 차원을 사후 생성하지 못한다.
+Explanation: CloudWatch는 publish 시점에 정한 차원 조합으로만 집계를 제공하므로, 여러 집계 관점이 필요하면 그 조합들을 모두 게시해야 한다. EMF는 `Dimensions`를 배열의 배열로 받아 한 번의 로그 출력으로 여러 차원 조합(둘 다 / Environment만 / 전체 합산 `[]`)을 동시에 게시한다. PutMetricData(A)는 조합마다 별도 호출이 필요해 비효율적이고, Metric Math(C)는 이미 publish된 시계열을 결합할 뿐 없는 집계 차원을 사후 생성하지 못한다.
 
 ---
 
-**문제 3.** ALB 5xx 알람이 단발성 스파이크에도 울려 온콜 피로가 심하다. 지속적 이상만 잡되 일시적 튐은 무시하려면?
+**Question 3.** ALB 5xx 알람이 단발성 스파이크에도 울려 온콜 피로가 심하다. 지속적 이상만 잡되 일시적 튐은 무시하려면?
 
 A) `datapoints-to-alarm`을 1로, `evaluation-periods`를 1로
 B) `evaluation-periods 3`, `datapoints-to-alarm 2`로 "3 중 2" 평가
 C) period를 1초로 줄인다
 D) threshold를 0으로 낮춘다
 
-**정답: B**
+**Answer: B**
 
-해설: "M out of N"(여기서 3 중 2)은 시간축 디바운싱이다. 최근 3개 평가 기간 중 2개가 위반이어야 ALARM이 되므로 단발성 스파이크는 걸러지고 지속적 이상만 잡힌다. A는 한 번만 튀어도 울려 노이즈가 최대가 되고, period 단축(C)은 오히려 더 민감해지며, threshold 0(D)은 상시 ALARM을 만든다.
+Explanation: "M out of N"(여기서 3 중 2)은 시간축 디바운싱이다. 최근 3개 평가 기간 중 2개가 위반이어야 ALARM이 되므로 단발성 스파이크는 걸러지고 지속적 이상만 잡힌다. A는 한 번만 튀어도 울려 노이즈가 최대가 되고, period 단축(C)은 오히려 더 민감해지며, threshold 0(D)은 상시 ALARM을 만든다.
 
 ---
 
-**문제 4.** 결제 실패 메트릭은 평소 0이라 데이터포인트 자체가 없다(sparse). 실패가 임계 이상일 때만 울리려면 `treat-missing-data`를?
+**Question 4.** 결제 실패 메트릭은 평소 0이라 데이터포인트 자체가 없다(sparse). 실패가 임계 이상일 때만 울리려면 `treat-missing-data`를?
 
 A) `breaching`
 B) `notBreaching` — 데이터 없음을 정상으로 간주
 C) `missing`만으로 충분
 D) high-resolution으로 전환
 
-**정답: B**
+**Answer: B**
 
-해설: sparse 메트릭은 평소 데이터가 없는 것이 정상 상태다. `notBreaching`으로 두어야 데이터 없음을 정상으로 보고, 실제 실패가 임계를 넘을 때만 ALARM이 된다. `breaching`(A)을 걸면 실패가 없어 데이터가 없는데도 영구 ALARM에 갇힌다. 반대로 하트비트처럼 "데이터 없음 = 장애"인 지표에는 `breaching`을 써야 하므로, 지표 의미에 따라 missing 처리를 정반대로 골라야 한다.
+Explanation: sparse 메트릭은 평소 데이터가 없는 것이 정상 상태다. `notBreaching`으로 두어야 데이터 없음을 정상으로 보고, 실제 실패가 임계를 넘을 때만 ALARM이 된다. `breaching`(A)을 걸면 실패가 없어 데이터가 없는데도 영구 ALARM에 갇힌다. 반대로 하트비트처럼 "데이터 없음 = 장애"인 지표에는 `breaching`을 써야 하므로, 지표 의미에 따라 missing 처리를 정반대로 골라야 한다.
 
 ---
 
-**문제 5.** 하나의 인시던트("체크아웃 장애")가 5xx·지연·처리량 세 알람을 동시에 울려 온콜이 세 통의 페이지를 받는다. 노이즈를 줄이면서 "진짜 인시던트"를 정의하려면?
+**Question 5.** 하나의 인시던트("체크아웃 장애")가 5xx·지연·처리량 세 알람을 동시에 울려 온콜이 세 통의 페이지를 받는다. 노이즈를 줄이면서 "진짜 인시던트"를 정의하려면?
 
 A) 세 알람을 모두 삭제하고 5xx만 남긴다
 B) Composite Alarm으로 `ALARM('High5xx') AND (ALARM('HighLatency') OR ALARM('LowThroughput'))`을 정의하고 통보는 Composite에만 건다
 C) 세 알람의 threshold를 모두 높인다
 D) SNS 구독을 줄인다
 
-**정답: B**
+**Answer: B**
 
-해설: Composite Alarm은 자식 알람을 부울 식으로 결합해 "증상의 특정 조합 = 인시던트"를 정의한다. 개별 알람은 통보 없이 신호로 두고 Composite만 페이지를 보내면, 한 인시던트당 한 번만 깨우면서도 "5xx면서 (지연 또는 처리량 이상)"이라는 정밀한 조건으로 거짓 양성을 줄인다. 알람 삭제(A)는 가시성을 잃고, threshold 상향(C)은 실제 이상도 놓치며, 구독 축소(D)는 근본 문제를 안 푼다.
+Explanation: Composite Alarm은 자식 알람을 부울 식으로 결합해 "증상의 특정 조합 = 인시던트"를 정의한다. 개별 알람은 통보 없이 신호로 두고 Composite만 페이지를 보내면, 한 인시던트당 한 번만 깨우면서도 "5xx면서 (지연 또는 처리량 이상)"이라는 정밀한 조건으로 거짓 양성을 줄인다. 알람 삭제(A)는 가시성을 잃고, threshold 상향(C)은 실제 이상도 놓치며, 구독 축소(D)는 근본 문제를 안 푼다.
 
 ---
 
-**문제 6.** 주문 수가 평일 낮엔 높고 새벽엔 낮으며 주말 패턴이 또 다르다. 정적 임계값으로는 새벽마다 거짓 알람이 난다. 가장 적절한 도구는?
+**Question 6.** 주문 수가 평일 낮엔 높고 새벽엔 낮으며 주말 패턴이 또 다르다. 정적 임계값으로는 새벽마다 거짓 알람이 난다. 가장 적절한 도구는?
 
 A) High-Resolution Metric
 B) Anomaly Detection — 시간대·요일별 정상 밴드를 학습해 이탈만 탐지
 C) Composite Alarm
 D) Metric Filter
 
-**정답: B**
+**Answer: B**
 
-해설: 계절성(일·주 주기)이 있는 지표는 단일 정적 임계값으로 다룰 수 없다. Anomaly Detection은 시계열을 추세·계절·잔차로 분해해 "이 시각·이 요일의 정상 범위"를 동적으로 학습하고, 관측값이 그 밴드를 벗어날 때만 알람한다. High-Resolution(A)은 해상도 문제일 뿐 계절성을 다루지 못하고, Composite(C)는 알람 결합, Metric Filter(D)는 로그에서 메트릭을 추출하는 별개 기능이다.
+Explanation: 계절성(일·주 주기)이 있는 지표는 단일 정적 임계값으로 다룰 수 없다. Anomaly Detection은 시계열을 추세·계절·잔차로 분해해 "이 시각·이 요일의 정상 범위"를 동적으로 학습하고, 관측값이 그 밴드를 벗어날 때만 알람한다. High-Resolution(A)은 해상도 문제일 뿐 계절성을 다루지 못하고, Composite(C)는 알람 결합, Metric Filter(D)는 로그에서 메트릭을 추출하는 별개 기능이다.
 
 ---
 
-**문제 7.** 절대 수치인 `Errors`와 `Invocations`로는 "에러율 1% 초과" 알람을 만들 수 없다. 트래픽과 무관한 비율 알람을 만들려면?
+**Question 7.** 절대 수치인 `Errors`와 `Invocations`로는 "에러율 1% 초과" 알람을 만들 수 없다. 트래픽과 무관한 비율 알람을 만들려면?
 
 A) Errors에만 threshold를 건다
 B) Metric Math로 `(errors / invocations) * 100`을 계산하고 그 결과에 알람을 건다
 C) Anomaly Detection
 D) Composite Alarm
 
-**정답: B**
+**Answer: B**
 
-해설: Metric Math는 여러 메트릭을 수식으로 결합해 파생 지표를 만든다. 에러율 = (errors / invocations) × 100은 트래픽 규모와 무관하게 의미가 일정하므로, 이 수식 결과에 알람을 걸면 트래픽이 늘어도 비율 기준이 유지된다. Errors 절대값(A)에 거는 임계는 트래픽이 늘면 같이 늘어 의미가 흔들리고, Anomaly Detection(C)·Composite(D)는 비율 계산 자체를 제공하지 않는다.
+Explanation: Metric Math는 여러 메트릭을 수식으로 결합해 파생 지표를 만든다. 에러율 = (errors / invocations) × 100은 트래픽 규모와 무관하게 의미가 일정하므로, 이 수식 결과에 알람을 걸면 트래픽이 늘어도 비율 기준이 유지된다. Errors 절대값(A)에 거는 임계는 트래픽이 늘면 같이 늘어 의미가 흔들리고, Anomaly Detection(C)·Composite(D)는 비율 계산 자체를 제공하지 않는다.
 
 ---
 

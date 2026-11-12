@@ -80,7 +80,7 @@ SAP exam frequent mappings: (1) "Auto-identify RTO/RPO gap + recommendations + C
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 팀이 워크로드의 현재 RTO/RPO가 목표를 충족하는지 자동으로 평가받고, 격차를 메우는 구체적 권고를 받아 CI/CD 파이프라인에서 복원력을 게이트로 강제하려 한다. 가장 적합한 도구는?
+**Question 1.** 한 팀이 워크로드의 현재 RTO/RPO가 목표를 충족하는지 자동으로 평가받고, 격차를 메우는 구체적 권고를 받아 CI/CD 파이프라인에서 복원력을 게이트로 강제하려 한다. 가장 적합한 도구는?
 
 A) Well-Architected Tool
 
@@ -90,13 +90,13 @@ C) Trusted Advisor
 
 D) CloudWatch Synthetics
 
-**정답: B**
+**Answer: B**
 
-해설: Resilience Hub는 워크로드를 등록하면 목표 RTO/RPO 대비 격차를 자동 식별하고 "Multi-AZ 추가 시 RTO 30초" 같은 구체적 권고와 FIS 실험을 생성하며, resilience score를 CI/CD에 통합해 복원력 회귀를 게이트로 막을 수 있다. A(WA Tool)는 6 기둥 전체를 사람 답변으로 평가하는 정성 도구로 RTO/RPO 정량 격차를 자동 측정하지 않는다. C는 자동 체크 스캐너이고, D는 엔드포인트 가용성 모니터링일 뿐이다. 함정: "RTO/RPO 정량 격차 + 권고 + CI/CD"는 Resilience Hub의 직답이다.
+Explanation: Resilience Hub는 워크로드를 등록하면 목표 RTO/RPO 대비 격차를 자동 식별하고 "Multi-AZ 추가 시 RTO 30초" 같은 구체적 권고와 FIS 실험을 생성하며, resilience score를 CI/CD에 통합해 복원력 회귀를 게이트로 막을 수 있다. A(WA Tool)는 6 기둥 전체를 사람 답변으로 평가하는 정성 도구로 RTO/RPO 정량 격차를 자동 측정하지 않는다. C는 자동 체크 스캐너이고, D는 엔드포인트 가용성 모니터링일 뿐이다. 함정: "RTO/RPO 정량 격차 + 권고 + CI/CD"는 Resilience Hub의 직답이다.
 
 ---
 
-**문제 2.** 한 회사가 production 환경에서 EC2 종료·네트워크 지연을 의도적으로 주입해 복원력을 검증하되, 에러율이 임계치를 넘으면 실험이 자동으로 중단되기를 원한다. 가장 적합한 구성은?
+**Question 2.** 한 회사가 production 환경에서 EC2 종료·네트워크 지연을 의도적으로 주입해 복원력을 검증하되, 에러율이 임계치를 넘으면 실험이 자동으로 중단되기를 원한다. 가장 적합한 구성은?
 
 A) Lambda로 무작위 EC2를 종료하는 스크립트
 
@@ -106,13 +106,13 @@ C) Systems Manager Run Command로 수동 장애 주입
 
 D) Auto Scaling으로 인스턴스를 줄였다 늘림
 
-**정답: B**
+**Answer: B**
 
-해설: FIS는 Experiment Template으로 장애(EC2 종료·네트워크 지연)를 정의하고, CloudWatch Alarm에 연결된 Stop Condition으로 에러율이 임계치를 넘으면 즉시 실험을 중단해 정상 상태로 복귀한다 — 의도적 장애가 진짜 사고로 번지는 것을 막는 자동 안전 정지(fail-safe)다. A·C는 Stop Condition 같은 안전장치가 없어 통제를 벗어날 위험이 있고, D는 장애 주입이 아니라 일반 스케일링이다. 함정: "의도적 장애 + 알람 시 자동 중단" 두 조건이 함께 나오면 Stop Condition을 내장한 FIS가 유일한 정답이다.
+Explanation: FIS는 Experiment Template으로 장애(EC2 종료·네트워크 지연)를 정의하고, CloudWatch Alarm에 연결된 Stop Condition으로 에러율이 임계치를 넘으면 즉시 실험을 중단해 정상 상태로 복귀한다 — 의도적 장애가 진짜 사고로 번지는 것을 막는 자동 안전 정지(fail-safe)다. A·C는 Stop Condition 같은 안전장치가 없어 통제를 벗어날 위험이 있고, D는 장애 주입이 아니라 일반 스케일링이다. 함정: "의도적 장애 + 알람 시 자동 중단" 두 조건이 함께 나오면 Stop Condition을 내장한 FIS가 유일한 정답이다.
 
 ---
 
-**문제 3.** 한 기업이 온프레미스 데이터센터를 그대로 운영하면서, AWS에 24시간 대기하는 DR 환경을 유지하고 정기적으로 failover drill을 수행하려 한다. 가장 적합한 서비스는?
+**Question 3.** 한 기업이 온프레미스 데이터센터를 그대로 운영하면서, AWS에 24시간 대기하는 DR 환경을 유지하고 정기적으로 failover drill을 수행하려 한다. 가장 적합한 서비스는?
 
 A) Application Migration Service (MGN)
 
@@ -122,13 +122,13 @@ C) DataSync
 
 D) AWS Backup
 
-**정답: B**
+**Answer: B**
 
-해설: DRS는 블록 레벨 연속 복제로 온프레미스를 유지하면서 AWS에 지속적 DR 환경을 유지하고, DR 사이트를 띄워 drill한 뒤 다시 대기 상태로 되돌릴 수 있어 production 영향 없이 정기 검증이 가능하다. A(MGN)는 일회성 마이그레이션 후 종료되어 "지속적 DR"에 부적합하다. C(DataSync)는 파일 전송 도구이고, D(Backup)는 스냅샷 백업이지 실시간 DR 환경이 아니다. 함정: "온프레 유지 + AWS 지속 DR + 정기 drill"은 DRS, "AWS로 영구 이전"은 MGN으로 갈린다.
+Explanation: DRS는 블록 레벨 연속 복제로 온프레미스를 유지하면서 AWS에 지속적 DR 환경을 유지하고, DR 사이트를 띄워 drill한 뒤 다시 대기 상태로 되돌릴 수 있어 production 영향 없이 정기 검증이 가능하다. A(MGN)는 일회성 마이그레이션 후 종료되어 "지속적 DR"에 부적합하다. C(DataSync)는 파일 전송 도구이고, D(Backup)는 스냅샷 백업이지 실시간 DR 환경이 아니다. 함정: "온프레 유지 + AWS 지속 DR + 정기 drill"은 DRS, "AWS로 영구 이전"은 MGN으로 갈린다.
 
 ---
 
-**문제 4.** 한 핀테크가 us-east-1·us-west-2 active-active로 운영 중이다. 자동 health check가 일시적 네트워크 흔들림을 장애로 오판해 트래픽이 불필요하게 튀는 것을 막고, 장애 시 운영자가 직접 신중하게 failover를 결정하길 원한다. 가장 적합한 것은?
+**Question 4.** 한 핀테크가 us-east-1·us-west-2 active-active로 운영 중이다. 자동 health check가 일시적 네트워크 흔들림을 장애로 오판해 트래픽이 불필요하게 튀는 것을 막고, 장애 시 운영자가 직접 신중하게 failover를 결정하길 원한다. 가장 적합한 것은?
 
 A) Route 53 Health Check 자동 failover만 사용
 
@@ -138,13 +138,13 @@ C) Global Accelerator endpoint group 자동 failover
 
 D) Lambda로 자동 DNS 전환
 
-**정답: B**
+**Answer: B**
 
-해설: ARC Routing Control은 자동 health check와 분리된 명시적 ON/OFF 토글로, 운영자가 의도적으로 트래픽 전환을 결정한다. false positive로 인한 불필요한 자동 failover가 더 위험한 미션 크리티컬 시스템에 적합하며, Routing Control 데이터 평면은 5개 리전에 분산돼 단일 리전 장애에도 작동한다. A·C·D는 모두 자동 전환이라 false positive 문제를 그대로 가진다. 함정: "자동 failover의 false positive 우려 + 사람의 명시적 결정"은 ARC Routing Control의 직답이다.
+Explanation: ARC Routing Control은 자동 health check와 분리된 명시적 ON/OFF 토글로, 운영자가 의도적으로 트래픽 전환을 결정한다. false positive로 인한 불필요한 자동 failover가 더 위험한 미션 크리티컬 시스템에 적합하며, Routing Control 데이터 평면은 5개 리전에 분산돼 단일 리전 장애에도 작동한다. A·C·D는 모두 자동 전환이라 false positive 문제를 그대로 가진다. 함정: "자동 failover의 false positive 우려 + 사람의 명시적 결정"은 ARC Routing Control의 직답이다.
 
 ---
 
-**문제 5.** 카오스 엔지니어링 실험에서 Stop Condition의 역할로 가장 정확한 것은?
+**Question 5.** 카오스 엔지니어링 실험에서 Stop Condition의 역할로 가장 정확한 것은?
 
 A) 실험을 더 빠르게 실행한다
 
@@ -154,13 +154,13 @@ C) 실험 결과를 S3에 저장한다
 
 D) 실험 대상 리소스를 자동으로 늘린다
 
-**정답: B**
+**Answer: B**
 
-해설: Stop Condition은 하나 이상의 CloudWatch Alarm과 연결되어, 실험 중 그 알람이 발동(예: 에러율·지연 임계 초과)하면 FIS가 모든 장애 주입을 즉시 중단하고 정상 상태로 복귀시키는 자동 안전 정지(fail-safe) 메커니즘이다. 원자로 SCRAM·엘리베이터 비상 브레이크와 같은 안전 공학 원리다. A·C·D는 Stop Condition의 기능과 무관하다. 함정: Stop Condition은 "실험을 멈추는 안전장치"이지 성능·저장·확장 기능이 아니다.
+Explanation: Stop Condition은 하나 이상의 CloudWatch Alarm과 연결되어, 실험 중 그 알람이 발동(예: 에러율·지연 임계 초과)하면 FIS가 모든 장애 주입을 즉시 중단하고 정상 상태로 복귀시키는 자동 안전 정지(fail-safe) 메커니즘이다. 원자로 SCRAM·엘리베이터 비상 브레이크와 같은 안전 공학 원리다. A·C·D는 Stop Condition의 기능과 무관하다. 함정: Stop Condition은 "실험을 멈추는 안전장치"이지 성능·저장·확장 기능이 아니다.
 
 ---
 
-**문제 6.** 한 워크로드가 단일 AZ의 부분 장애를 겪고 있다. 리전 전체를 failover하지 않고 문제가 된 그 AZ만 즉시 트래픽에서 제외하려 한다. 가장 적합한 방법은?
+**Question 6.** 한 워크로드가 단일 AZ의 부분 장애를 겪고 있다. 리전 전체를 failover하지 않고 문제가 된 그 AZ만 즉시 트래픽에서 제외하려 한다. 가장 적합한 방법은?
 
 A) NACL로 해당 AZ 트래픽 차단
 
@@ -170,8 +170,8 @@ C) ASG에서 인스턴스 Detach
 
 D) ALB Connection Draining
 
-**정답: B**
+**Answer: B**
 
-해설: Zonal Shift는 단일 명령으로 ALB/NLB에서 특정 AZ를 즉시 제외해 트래픽을 나머지 정상 AZ로 재분배하는 정밀 대응으로, 리전 전체를 건드리지 않는다. A(NACL)는 너무 광범위하고 수동적이며, C·D는 개별 인스턴스·연결 단위라 AZ 전체를 깔끔하게 격리하지 못한다. 함정: "리전이 아니라 문제 AZ만 즉시 제외"는 Zonal Shift의 직답이다.
+Explanation: Zonal Shift는 단일 명령으로 ALB/NLB에서 특정 AZ를 즉시 제외해 트래픽을 나머지 정상 AZ로 재분배하는 정밀 대응으로, 리전 전체를 건드리지 않는다. A(NACL)는 너무 광범위하고 수동적이며, C·D는 개별 인스턴스·연결 단위라 AZ 전체를 깔끔하게 격리하지 못한다. 함정: "리전이 아니라 문제 AZ만 즉시 제외"는 Zonal Shift의 직답이다.
 
 ---

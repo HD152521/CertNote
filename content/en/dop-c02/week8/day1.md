@@ -228,94 +228,94 @@ Next we'll see StackSets extending these patterns to thousands of accounts and m
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 200개 마이크로서비스 인프라를 단일 CloudFormation Stack에 담아 운영 중이다. 한 서비스의 IAM 변경 때문에 전체 Stack이 UPDATE_IN_PROGRESS로 30분간 묶이는 문제를 가장 적절히 해결하려면?
+**Question 1.** 한 회사가 200개 마이크로서비스 인프라를 단일 CloudFormation Stack에 담아 운영 중이다. 한 서비스의 IAM 변경 때문에 전체 Stack이 UPDATE_IN_PROGRESS로 30분간 묶이는 문제를 가장 적절히 해결하려면?
 
 A) Nested Stack으로 자식 50개를 만든다
 B) 도메인별로 Stack을 쪼개고 Cross-Stack Export/Import로 연결한다
 C) Terraform으로 마이그레이션
 D) Stack Policy로 변경 차단
 
-**정답: B**
+**Answer: B**
 
-해설: Nested Stack은 자식이 늘어도 부모 Stack 한 트랜잭션 안에서 평가되므로 문제(변경 영향 격리 부재)가 해결되지 않는다. Cross-Stack은 독립 라이프사이클을 가져 한 서비스 변경이 다른 서비스 배포를 막지 않는다. 결합도-응집도 원칙의 적용. Terraform 마이그레이션(C)은 비용이 크고 본질을 해결하지 않으며 CFN의 거버넌스 자산(StackSets, Service Catalog)을 잃는다. Stack Policy(D)는 변경 보호이지 격리 도구가 아니다.
+Explanation: Nested Stack은 자식이 늘어도 부모 Stack 한 트랜잭션 안에서 평가되므로 문제(변경 영향 격리 부재)가 해결되지 않는다. Cross-Stack은 독립 라이프사이클을 가져 한 서비스 변경이 다른 서비스 배포를 막지 않는다. 결합도-응집도 원칙의 적용. Terraform 마이그레이션(C)은 비용이 크고 본질을 해결하지 않으며 CFN의 거버넌스 자산(StackSets, Service Catalog)을 잃는다. Stack Policy(D)는 변경 보호이지 격리 도구가 아니다.
 
 ---
 
-**문제 2.** Cross-Stack에서 Export `prod-network-VpcId`가 다른 Stack의 ImportValue로 사용 중이다. 네트워크 Stack 업데이트로 VPC를 재생성(논리 ID 재사용, 물리 ID 변경)하려 할 때 일어나는 일은?
+**Question 2.** Cross-Stack에서 Export `prod-network-VpcId`가 다른 Stack의 ImportValue로 사용 중이다. 네트워크 Stack 업데이트로 VPC를 재생성(논리 ID 재사용, 물리 ID 변경)하려 할 때 일어나는 일은?
 
 A) 자동으로 의존 Stack까지 업데이트됨
 B) Export 값 변경 시도가 실패해 전체 Stack 업데이트 롤백
 C) Export가 자동 잠금 해제됨
 D) 변경 영향이 의존 Stack에 자동 전파
 
-**정답: B**
+**Answer: B**
 
-해설: 사용 중인 Export의 값은 변경 불가. VPC 재생성은 Export 값(VpcId)을 바꾸므로 Stack 업데이트 자체가 실패한다. 의존 Stack에서 먼저 ImportValue를 제거(3단계 배포의 1단계) → 네트워크 Stack 업데이트 → 의존 Stack에 ImportValue 다시 추가 순으로 진행해야 한다. 2022년 게임사 12시간 prod 배포 마비 사례와 동일한 패턴. AWS Best Practices는 이런 경우 SSM Parameter Store 전환을 권장.
+Explanation: 사용 중인 Export의 값은 변경 불가. VPC 재생성은 Export 값(VpcId)을 바꾸므로 Stack 업데이트 자체가 실패한다. 의존 Stack에서 먼저 ImportValue를 제거(3단계 배포의 1단계) → 네트워크 Stack 업데이트 → 의존 Stack에 ImportValue 다시 추가 순으로 진행해야 한다. 2022년 게임사 12시간 prod 배포 마비 사례와 동일한 패턴. AWS Best Practices는 이런 경우 SSM Parameter Store 전환을 권장.
 
 ---
 
-**문제 3.** 다음 중 `'{{resolve:secretsmanager:prod/db:SecretString:password}}'` 동적 참조에 대해 옳은 설명은?
+**Question 3.** 다음 중 `'{{resolve:secretsmanager:prod/db:SecretString:password}}'` 동적 참조에 대해 옳은 설명은?
 
 A) Secrets Manager 회전 시 RDS 비밀번호가 자동으로 동기화된다
 B) Drift Detection이 시크릿 값 변경을 자동 감지한다
 C) Stack 배포 시점에 CloudFormation Service Role이 GetSecretValue 호출로 fetch해 주입하고, 템플릿/ChangeSet에는 평문이 남지 않는다
 D) S3에 저장된 템플릿 안에 복호화된 평문이 저장된다
 
-**정답: C**
+**Answer: C**
 
-해설: 동적 참조는 fetch 메커니즘. Stack 생성/업데이트 시점에 외부 서비스에서 가져와 임시 주입한다. 회전 동기화(A)는 별도 `SecretTargetAttachment` + 회전 Lambda가 필요. Drift Detection(B)은 템플릿의 `'{{resolve:...}}'` 문자열만 비교하므로 시크릿 값 변경 못 잡음 — EventBridge로 회전 이벤트 잡는 게 표준. 평문이 절대 템플릿/ChangeSet/S3에 저장되지 않는다는 게 동적 참조의 핵심 보안 이점.
+Explanation: 동적 참조는 fetch 메커니즘. Stack 생성/업데이트 시점에 외부 서비스에서 가져와 임시 주입한다. 회전 동기화(A)는 별도 `SecretTargetAttachment` + 회전 Lambda가 필요. Drift Detection(B)은 템플릿의 `'{{resolve:...}}'` 문자열만 비교하므로 시크릿 값 변경 못 잡음 — EventBridge로 회전 이벤트 잡는 게 표준. 평문이 절대 템플릿/ChangeSet/S3에 저장되지 않는다는 게 동적 참조의 핵심 보안 이점.
 
 ---
 
-**문제 4.** Stack Policy와 IAM Policy의 차이로 가장 정확한 것은?
+**Question 4.** Stack Policy와 IAM Policy의 차이로 가장 정확한 것은?
 
 A) Stack Policy는 IAM Policy의 별칭
 B) Stack Policy는 Stack 안의 특정 리소스에 대한 Update 종류(Replace/Delete/Modify)를 통제하는 변경 보호 계층이고, IAM은 사용자/역할의 API 호출 권한을 통제
 C) Stack Policy는 비용 최적화 도구
 D) 둘 다 동일한 시점에 평가됨
 
-**정답: B**
+**Answer: B**
 
-해설: 권한(IAM)과 변경 보호(Stack Policy)는 다른 계층. PowerUser IAM 권한을 가진 운영자가 실수로 prod 템플릿을 잘못 수정해도 Stack Policy가 ProdDatabase의 Replace를 Deny하면 막힌다. NIST SP 800-53 CM-3/CM-5의 "변경 통제와 접근 통제 분리" 원칙의 구현. 변경을 진행하려면 Stack Policy를 일시 해제해야 하므로 사람의 한 단계 확인이 강제된다.
+Explanation: 권한(IAM)과 변경 보호(Stack Policy)는 다른 계층. PowerUser IAM 권한을 가진 운영자가 실수로 prod 템플릿을 잘못 수정해도 Stack Policy가 ProdDatabase의 Replace를 Deny하면 막힌다. NIST SP 800-53 CM-3/CM-5의 "변경 통제와 접근 통제 분리" 원칙의 구현. 변경을 진행하려면 Stack Policy를 일시 해제해야 하므로 사람의 한 단계 확인이 강제된다.
 
 ---
 
-**문제 5.** RDS prod 인스턴스를 보호하기 위해 다음 중 가장 완전한 조합은?
+**Question 5.** RDS prod 인스턴스를 보호하기 위해 다음 중 가장 완전한 조합은?
 
 A) DeletionPolicy: Retain만
 B) Termination Protection만
 C) DeletionPolicy: Snapshot + UpdateReplacePolicy: Snapshot + Stack Policy로 Replace/Delete Deny + Termination Protection
 D) IAM 정책으로 RDS DeleteDBInstance 거부
 
-**정답: C**
+**Answer: C**
 
-해설: 네 가지가 모두 다른 시점에 작동. DeletionPolicy는 Stack 삭제 시, UpdateReplacePolicy는 속성 변경에 의한 교체 시(예: Engine 변경), Stack Policy는 Update API 진입 시점, Termination Protection은 DeleteStack API 호출 자체를 차단. 단일 정책으로는 우회 경로가 항상 존재. defense in depth 원칙. A는 Engine 변경 교체에 약함, B는 update 보호 없음, D는 Stack을 통한 변경에 약함(CFN이 IAM 우회).
+Explanation: 네 가지가 모두 다른 시점에 작동. DeletionPolicy는 Stack 삭제 시, UpdateReplacePolicy는 속성 변경에 의한 교체 시(예: Engine 변경), Stack Policy는 Update API 진입 시점, Termination Protection은 DeleteStack API 호출 자체를 차단. 단일 정책으로는 우회 경로가 항상 존재. defense in depth 원칙. A는 Engine 변경 교체에 약함, B는 update 보호 없음, D는 Stack을 통한 변경에 약함(CFN이 IAM 우회).
 
 ---
 
-**문제 6.** ASG의 UpdatePolicy `AutoScalingRollingUpdate`에서 `WaitOnResourceSignals: true`의 효과는?
+**Question 6.** ASG의 UpdatePolicy `AutoScalingRollingUpdate`에서 `WaitOnResourceSignals: true`의 효과는?
 
 A) ASG의 모든 인스턴스를 동시에 교체
 B) 각 배치 인스턴스가 cfn-signal로 정상 신호를 보낼 때까지 다음 배치 진행 보류 — 부팅 실패 인스턴스가 누적되는 것 방지
 C) 자동 롤백 비활성화
 D) IAM 권한 변경
 
-**정답: B**
+**Answer: B**
 
-해설: cfn-signal은 EC2 UserData에서 `/opt/aws/bin/cfn-signal --exit-code $?`로 호출되며 "정상 부팅 완료"를 알린다. 이게 없으면 ASG는 RUNNING 상태만 보고 다음 배치를 시작해 부팅 실패가 누적되며 서비스 전체가 죽을 수 있다. CreationPolicy.ResourceSignal.Timeout과 짝을 이뤄 안전한 점진 교체를 보장. RollingUpdate는 in-place 교체(개별 인스턴스), ReplacingUpdate는 ASG 단위 블루/그린이라는 차이도 시험 포인트.
+Explanation: cfn-signal은 EC2 UserData에서 `/opt/aws/bin/cfn-signal --exit-code $?`로 호출되며 "정상 부팅 완료"를 알린다. 이게 없으면 ASG는 RUNNING 상태만 보고 다음 배치를 시작해 부팅 실패가 누적되며 서비스 전체가 죽을 수 있다. CreationPolicy.ResourceSignal.Timeout과 짝을 이뤄 안전한 점진 교체를 보장. RollingUpdate는 in-place 교체(개별 인스턴스), ReplacingUpdate는 ASG 단위 블루/그린이라는 차이도 시험 포인트.
 
 ---
 
-**문제 7.** CFN Drift Detection이 자동 수정을 제공하지 않는 이유로 가장 정확한 것은?
+**Question 7.** CFN Drift Detection이 자동 수정을 제공하지 않는 이유로 가장 정확한 것은?
 
 A) 기술적 한계
 B) Drift는 긴급 패치일 수도 실수일 수도 있어 자동 복원이 더 큰 사고로 이어질 위험 — 감지/알림은 CFN, 자동 수정은 Config Rules의 Remediation Action으로 책임 분리
 C) AWS 정책상 금지
 D) 비용 문제
 
-**정답: B**
+**Answer: B**
 
-해설: 자동 수정이 인시던트 대응 중 진행되면 운영자가 손으로 적용한 긴급 패치를 되돌려 장애를 악화시킨다. 그래서 보수적 설계 — CFN은 감지만, Config Rules + SSM Automation Document로 명시적 자동화 정책을 등록한 경우만 자동 복원. 책임 분리(separation of concerns)와 안전성 우선 설계의 전형. CloudTrail로 변경 추적, Config로 평가, SSM Automation으로 복원의 3단 구성이 표준.
+Explanation: 자동 수정이 인시던트 대응 중 진행되면 운영자가 손으로 적용한 긴급 패치를 되돌려 장애를 악화시킨다. 그래서 보수적 설계 — CFN은 감지만, Config Rules + SSM Automation Document로 명시적 자동화 정책을 등록한 경우만 자동 복원. 책임 분리(separation of concerns)와 안전성 우선 설계의 전형. CloudTrail로 변경 추적, Config로 평가, SSM Automation으로 복원의 3단 구성이 표준.
 
 ---
 

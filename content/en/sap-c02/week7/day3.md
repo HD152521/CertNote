@@ -250,98 +250,98 @@ Tomorrow we cover service mesh and service discovery. ECS Service Connect, AWS C
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 SaaS가 ECS Fargate로 백오피스 API를 운영한다. 평균 트래픽은 5 Task로 충분하지만 마케팅 캠페인 때 30 Task까지 폭증한다. 1년 약정 가능, 일부 회수 허용. 비용 최적 구성은?
+**Question 1.** 한 SaaS가 ECS Fargate로 백오피스 API를 운영한다. 평균 트래픽은 5 Task로 충분하지만 마케팅 캠페인 때 30 Task까지 폭증한다. 1년 약정 가능, 일부 회수 허용. 비용 최적 구성은?
 
 A) FARGATE On-Demand 100%, EC2 Instance Savings Plans
 B) FARGATE_SPOT 100%
 C) Compute Savings Plans 5 Task 약정 + Capacity Provider(base=2 FARGATE + FARGATE_SPOT 80%)
 D) EC2 Launch Type + Reserved Instance
 
-**정답: C**
+**Answer: C**
 A SaaS operates back-office API on ECS Fargate. Average traffic needs 5 Tasks; marketing campaigns spike to 30. 1-year commitment possible; some reclamation tolerable. Cost-optimal config?
 
 Two traffic profiles (stable 5-baseline + variable spike) matched with two discount levers: SP anchors stable portion, Spot handles variable. base=2 On-Demand ensures minimum availability on Spot reclamation. A: EC2 Instance SP doesn't apply to Fargate. B: All Spot risks simultaneous reclamation outage. D: EC2 RI inefficient against spike variability. Trap: "Can't use Spot and SP together" is false—different resources, so naturally coexist.
 
 ---
 
-**문제 2.** Fargate Task Definition에 cpu=512(0.5 vCPU), memory=8192(8GB)를 설정하니 등록 실패. 원인은?
+**Question 2.** Fargate Task Definition에 cpu=512(0.5 vCPU), memory=8192(8GB)를 설정하니 등록 실패. 원인은?
 
 A) 메모리는 8192 대신 8GB로 입력해야 함
 B) 0.5 vCPU에 허용되는 메모리는 최대 4GB
 C) Fargate는 8GB 이상 메모리 미지원
 D) Task Role 미설정
 
-**정답: B**
+**Answer: B**
 Fargate Task Definition setting cpu=512 (0.5 vCPU), memory=8192 (8GB) fails registration. Root cause?
 
 Fargate's vCPU-memory matrix: 0.5 vCPU allows only 1-4GB. Need 8GB? Increase vCPU to 1 (1 vCPU + 2-8GB). Matrix stems from Fargate's underlying EC2 families' vCPU-memory ratios (1:2, 1:4, 1:8). A: Unit notation (8192 vs. 8GB) unrelated to registration failure. C: Up to 16GB supported, so false. D: Registration independent of Task Role. Trap: Attempt increasing only memory while keeping vCPU—typical wrong-answer pattern.
 
 ---
 
-**문제 3.** Fargate 콜드 스타트가 평균 60초나 걸린다. 이미지 크기는 4GB이고, 머신러닝 추론용이다. 시작 시간을 가장 효과적으로 줄이는 방법은?
+**Question 3.** Fargate 콜드 스타트가 평균 60초나 걸린다. 이미지 크기는 4GB이고, 머신러닝 추론용이다. 시작 시간을 가장 효과적으로 줄이는 방법은?
 
 A) ECS Service의 desired count를 미리 늘려두기
 B) SOCI(Seekable OCI) 인덱스 생성 후 Fargate에서 lazy 로딩 활용
 C) ECR Replication으로 다른 리전에 복제
 D) Compute Savings Plans 적용
 
-**정답: B**
+**Answer: B**
 Fargate cold-start averages 60 seconds. Image: 4GB, ML inference. Most effective startup reduction?
 
 SOCI standardizes lazy-loading for large images. Container reads only actual-need files from network; rest fetches backgrounded, reducing startup 50-80%. 4GB ML image is SOCI's sweet spot. A: Pre-sizing desired count doesn't solve cold-start (warm-up ≠ cold avoidance). C: Same-region Pull speed unaffected by replication. D: Cost discount, not speed. Trap: "Shrink image itself" is correct but impractical for ML models/libraries—SOCI more realistic.
 
 ---
 
-**문제 4.** 한 회사가 EC2와 Fargate를 동시에 쓴다. 1년 약정 할인을 받되 EC2와 Fargate에 모두 적용되어야 하고, 마이그레이션 중 워크로드를 EC2에서 Fargate로 이동해도 할인이 유지되어야 한다. 어떤 약정을 쓰는가?
+**Question 4.** 한 회사가 EC2와 Fargate를 동시에 쓴다. 1년 약정 할인을 받되 EC2와 Fargate에 모두 적용되어야 하고, 마이그레이션 중 워크로드를 EC2에서 Fargate로 이동해도 할인이 유지되어야 한다. 어떤 약정을 쓰는가?
 
 A) EC2 Instance Savings Plans
 B) Compute Savings Plans
 C) Standard Reserved Instance
 D) Convertible Reserved Instance
 
-**정답: B**
+**Answer: B**
 Company uses EC2 and Fargate simultaneously. Needs 1-year commitment discount applying to both; discount persists during EC2-to-Fargate workload migration. Which commitment?
 
 Only Compute SP applies across EC2 + Fargate + Lambda, auto-tracking through migration. A: EC2 Instance SP (family, region fixed) excludes Fargate. C/D: RI is EC2-only, billing model (capacity reservation vs. pure discount) differs from SP. Bonus: Compute SP's auto-application requires no instance specification or modification.
 
 ---
 
-**문제 5.** 머신러닝 추론 워크로드. 평균 100ms 처리, 시간당 5만 회 호출, 메모리 3GB. 가장 비용 효율적인 컴퓨트는?
+**Question 5.** 머신러닝 추론 워크로드. 평균 100ms 처리, 시간당 5만 회 호출, 메모리 3GB. 가장 비용 효율적인 컴퓨트는?
 
 A) Lambda
 B) Fargate On-Demand
 C) Fargate Spot
 D) EC2 + Reserved Instance
 
-**정답: A**
+**Answer: A**
 ML inference workload: 100ms average processing, 50k/hour calls, 3GB memory. Most cost-efficient compute?
 
 Lambda's 1ms billing dominates short, frequent calls. 100ms × 50k = 5,000s/hour = 1.4 hours' billed time. Fargate (B, C): 1-minute floor + Task overhead while idle = higher cost. EC2 (D): 1 instance × 24h = always-on highest cost. Trap: 3GB within Lambda's 10GB limit. Over-limit or cold-start sensitivity shifts to Fargate. Bonus: Lambda Provisioned Concurrency nearly eliminates cold-start.
 
 ---
 
-**문제 6.** Fargate Spot Task가 SIGTERM을 받았다. 2분 안에 graceful shutdown을 보장하기 위한 표준 패턴은?
+**Question 6.** Fargate Spot Task가 SIGTERM을 받았다. 2분 안에 graceful shutdown을 보장하기 위한 표준 패턴은?
 
 A) `stopTimeout`을 기본값 30초로 두고 SIGTERM은 무시
 B) `stopTimeout`을 120초로 늘리고 애플리케이션에 SIGTERM 핸들러 구현 (in-flight 요청 마무리, ALB deregister, 큐 visibility 해제)
 C) 애플리케이션을 그대로 두고 ALB Health Check만 짧게 설정
 D) Fargate Spot 대신 Lambda로 대체
 
-**정답: B**
+**Answer: B**
 Fargate Spot Task receives SIGTERM. Standard pattern ensuring 2-minute graceful shutdown?
 
 Standard: dual config. Extend `stopTimeout` (default 30s, max 120s) letting ECS wait until SIGKILL. Application code: SIGTERM handler executing ① reject new requests ② complete in-flight responses ③ ALB Target Group deregister ④ SQS message visibility timeout reset ⑤ close DB. A: Ignores graceful shutdown entirely. C: ALB alone can't guarantee in-flight requests. D: Overkill workload replacement. Pinterest case identical.
 
 ---
 
-**문제 7.** Fargate Task가 평균 노드 사용률 60%로 24/7 운영된다. 평균 8 Task가 항상 떠 있다. 1년 약정 가능. 비용 면에서 가장 유리한 선택은?
+**Question 7.** Fargate Task가 평균 노드 사용률 60%로 24/7 운영된다. 평균 8 Task가 항상 떠 있다. 1년 약정 가능. 비용 면에서 가장 유리한 선택은?
 
 A) Fargate On-Demand + Compute SP 1년
 B) Fargate Spot 100%
 C) EC2 Launch Type + Compute SP 1년 + Bin Packing
 D) Lambda 변환
 
-**정답: C**
+**Answer: C**
 Fargate Task: average 60% utilization, 24/7 operation. 8 Tasks always-on. 1-year commitment possible. Most cost-advantageous?
 
 60% utilization + 24/7 + steady load = EC2's domain. Bin-packing spreads multiple Tasks per node, unit cost lower; Compute SP adds 1-year commitment discount. A: Fargate ~2× pricier per vCPU than EC2; even with identical SP, EC2 wins. B: 24/7 stable load + Spot reclamation risk mismatched. D: 24/7 + 8 Tasks → Lambda conversion yields low call frequency, poor efficiency. Trap: Price-list-only view chooses "Fargate + SP" wrongly. 24/7 + high utilization = EC2 superior.

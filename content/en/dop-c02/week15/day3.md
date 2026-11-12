@@ -111,7 +111,7 @@ Next: system running well; when it breaks, **serverless incident auto-response**
 
 ## 📝 Practice Questions
 
-**문제 1.** EKS에서 트래픽 급변에 분 단위가 아닌 초 단위로 대응하고, ASG에 고정된 타입이 아니라 파드 요구에 맞는 다양한 인스턴스를 동적으로 띄우며 Spot도 유연하게 쓰려면?
+**Question 1.** EKS에서 트래픽 급변에 분 단위가 아닌 초 단위로 대응하고, ASG에 고정된 타입이 아니라 파드 요구에 맞는 다양한 인스턴스를 동적으로 띄우며 Spot도 유연하게 쓰려면?
 
 A) Cluster Autoscaler
 
@@ -121,13 +121,13 @@ C) ASG Scheduled Action
 
 D) Spot Fleet 단독
 
-**정답: B**
+**Answer: B**
 
-해설: Cluster Autoscaler는 ASG를 전제로 분 단위로 동작하고 인스턴스 타입이 ASG에 사전 고정된다. Karpenter는 ASG 없이 EC2를 직접 띄우며 펜딩 파드 요구 기반 bin-packing(NP-hard 근사)으로 가장 싸고 잘 맞는 인스턴스 조합을 실시간 선택하고, consolidation으로 단편화 노드를 재배치한다. "빠른 스케일 + 다양한 인스턴스 동적 선택 + Spot 유연"은 Karpenter를 가리킨다. Scheduled Action(C)·Spot Fleet 단독(D)은 동적 스케줄링이 아니다.
+Explanation: Cluster Autoscaler는 ASG를 전제로 분 단위로 동작하고 인스턴스 타입이 ASG에 사전 고정된다. Karpenter는 ASG 없이 EC2를 직접 띄우며 펜딩 파드 요구 기반 bin-packing(NP-hard 근사)으로 가장 싸고 잘 맞는 인스턴스 조합을 실시간 선택하고, consolidation으로 단편화 노드를 재배치한다. "빠른 스케일 + 다양한 인스턴스 동적 선택 + Spot 유연"은 Karpenter를 가리킨다. Scheduled Action(C)·Spot Fleet 단독(D)은 동적 스케줄링이 아니다.
 
 ---
 
-**문제 2.** GitOps(Argo CD/Flux)의 핵심 동작 원리로 가장 정확한 것은?
+**Question 2.** GitOps(Argo CD/Flux)의 핵심 동작 원리로 가장 정확한 것은?
 
 A) kubectl apply를 자동화하는 스크립트일 뿐이다
 
@@ -137,13 +137,13 @@ C) 빌드와 배포를 하나의 파이프라인에 합친다
 
 D) CloudFormation의 별칭이다
 
-**정답: B**
+**Answer: B**
 
-해설: GitOps는 제어 이론의 폐루프 제어를 배포에 적용한 것이다 — 쿠버네티스의 reconciliation loop의 목표 상태 출처를 Git으로 끌어올린다. 결과로 Git이 완전한 감사 로그가 되고, 콘솔에서 손으로 바꿔도 에이전트가 되돌리며(드리프트 자동 교정), 롤백이 git revert가 된다. 선언적 패러다임의 정수다. 단순 스크립트(A)·빌드 합침(C, 오히려 빌드/배포 분리가 핵심)·CloudFormation 별칭(D)은 틀리다.
+Explanation: GitOps는 제어 이론의 폐루프 제어를 배포에 적용한 것이다 — 쿠버네티스의 reconciliation loop의 목표 상태 출처를 Git으로 끌어올린다. 결과로 Git이 완전한 감사 로그가 되고, 콘솔에서 손으로 바꿔도 에이전트가 되돌리며(드리프트 자동 교정), 롤백이 git revert가 된다. 선언적 패러다임의 정수다. 단순 스크립트(A)·빌드 합침(C, 오히려 빌드/배포 분리가 핵심)·CloudFormation 별칭(D)은 틀리다.
 
 ---
 
-**문제 3.** 신규 EKS 클러스터에서 OIDC Provider 셋업 없이 파드별 IAM 자격 증명을 부여하는 현재 권장 표준은?
+**Question 3.** 신규 EKS 클러스터에서 OIDC Provider 셋업 없이 파드별 IAM 자격 증명을 부여하는 현재 권장 표준은?
 
 A) 모든 파드가 노드의 Instance Profile을 공유
 
@@ -153,13 +153,13 @@ C) IAM User 키를 파드에 주입
 
 D) STS GetSessionToken 수동 호출
 
-**정답: B**
+**Answer: B**
 
-해설: IRSA는 클러스터마다 OIDC Provider를 세우고 IAM 신뢰 정책에 OIDC ARN을 박아야 해 클러스터가 늘면 부담이 커진다. EKS Pod Identity는 OIDC 셋업 없이 애드온 + association으로 파드별 IAM을 부여하며, 신뢰 정책에 `pods.eks.amazonaws.com`만 두면 돼 Role 재사용이 쉽다 — 신원 간소화의 후속 표준이다. 노드 프로파일 공유(A)는 최소 권한 위배, IAM User 키(C)·수동 STS(D)는 안티패턴이다.
+Explanation: IRSA는 클러스터마다 OIDC Provider를 세우고 IAM 신뢰 정책에 OIDC ARN을 박아야 해 클러스터가 늘면 부담이 커진다. EKS Pod Identity는 OIDC 셋업 없이 애드온 + association으로 파드별 IAM을 부여하며, 신뢰 정책에 `pods.eks.amazonaws.com`만 두면 돼 Role 재사용이 쉽다 — 신원 간소화의 후속 표준이다. 노드 프로파일 공유(A)는 최소 권한 위배, IAM User 키(C)·수동 STS(D)는 안티패턴이다.
 
 ---
 
-**문제 4.** ECS Fargate에서 Canary/Linear 트래픽 시프트와 즉시 롤백이 필요한 Blue/Green 배포를 하려면?
+**Question 4.** ECS Fargate에서 Canary/Linear 트래픽 시프트와 즉시 롤백이 필요한 Blue/Green 배포를 하려면?
 
 A) 기본 ECS Rolling Update로 충분하다
 
@@ -169,13 +169,13 @@ C) Route 53 Weighted Routing만 쓴다
 
 D) Lambda Alias를 쓴다
 
-**정답: B**
+**Answer: B**
 
-해설: ECS 기본 Rolling Update는 기존 Task를 점진 교체할 뿐 빠른 롤백·세밀한 트래픽 시프트 제어가 약하다. Blue/Green은 CodeDeploy 컨트롤러(`deployment-controller type=CODE_DEPLOY`)를 지정하고 ALB의 두 Target Group(Blue/Green)과 Listener를 요구한다 — 이것이 Canary/Linear 시프트와 즉시 롤백을 준다. Rolling(A)은 그 제어가 없고, Route 53 Weighted(C)·Lambda Alias(D)는 ECS 컨테이너 배포의 표준 트래픽 시프트가 아니다.
+Explanation: ECS 기본 Rolling Update는 기존 Task를 점진 교체할 뿐 빠른 롤백·세밀한 트래픽 시프트 제어가 약하다. Blue/Green은 CodeDeploy 컨트롤러(`deployment-controller type=CODE_DEPLOY`)를 지정하고 ALB의 두 Target Group(Blue/Green)과 Listener를 요구한다 — 이것이 Canary/Linear 시프트와 즉시 롤백을 준다. Rolling(A)은 그 제어가 없고, Route 53 Weighted(C)·Lambda Alias(D)는 ECS 컨테이너 배포의 표준 트래픽 시프트가 아니다.
 
 ---
 
-**문제 5.** 컨테이너 로그를 CloudWatch·Kinesis·S3·OpenSearch 등 여러 목적지로 동시에 분기(fan-out) 라우팅하려면?
+**Question 5.** 컨테이너 로그를 CloudWatch·Kinesis·S3·OpenSearch 등 여러 목적지로 동시에 분기(fan-out) 라우팅하려면?
 
 A) CloudWatch Agent
 
@@ -185,13 +185,13 @@ C) X-Ray
 
 D) Container Insights
 
-**정답: B**
+**Answer: B**
 
-해설: FireLens는 Fluent Bit(경량 로그 프로세서)를 사이드카로 띄워 컨테이너 로그를 여러 목적지로 동시에 fan-out 라우팅한다 — 실시간 분석은 Kinesis, 장기 보관은 S3, 검색은 OpenSearch처럼. Container Insights(D)는 메트릭, X-Ray(C)는 트레이스, CloudWatch Agent(A)는 단일 목적지 중심이라 다목적지 분기에는 FireLens가 표준이다.
+Explanation: FireLens는 Fluent Bit(경량 로그 프로세서)를 사이드카로 띄워 컨테이너 로그를 여러 목적지로 동시에 fan-out 라우팅한다 — 실시간 분석은 Kinesis, 장기 보관은 S3, 검색은 OpenSearch처럼. Container Insights(D)는 메트릭, X-Ray(C)는 트레이스, CloudWatch Agent(A)는 단일 목적지 중심이라 다목적지 분기에는 FireLens가 표준이다.
 
 ---
 
-**문제 6.** "전년 대비 20% 비용 감축" 압박에서 컨테이너 컴퓨트 비용을 30~40% 줄이는 단일 최고의 액션과 그 함정은?
+**Question 6.** "전년 대비 20% 비용 감축" 압박에서 컨테이너 컴퓨트 비용을 30~40% 줄이는 단일 최고의 액션과 그 함정은?
 
 A) Reserved Instance만 구매한다
 
@@ -201,13 +201,13 @@ C) Region을 옮긴다
 
 D) S3 IA로 전환한다
 
-**정답: B**
+**Answer: B**
 
-해설: Graviton은 ARM(RISC) 기반으로 와트당 성능·비용이 우수하고 AWS 자체 설계로 가격을 낮춰 30~40% 절감을 준다. 단 ARM64는 x86과 바이너리 비호환이라 멀티 아키텍처 이미지 빌드가 필요하고 일부 네이티브 의존성이 미지원일 수 있다. Spot은 최대 90% 할인이지만 2분 통보 회수가 있어 PDB·Topology Spread·Karpenter 중단 처리와 함께 써야 안전하다. RI 단독(A)·Region 이동(C)·S3 IA(D)는 컨테이너 컴퓨트 단가의 핵심 레버가 아니다.
+Explanation: Graviton은 ARM(RISC) 기반으로 와트당 성능·비용이 우수하고 AWS 자체 설계로 가격을 낮춰 30~40% 절감을 준다. 단 ARM64는 x86과 바이너리 비호환이라 멀티 아키텍처 이미지 빌드가 필요하고 일부 네이티브 의존성이 미지원일 수 있다. Spot은 최대 90% 할인이지만 2분 통보 회수가 있어 PDB·Topology Spread·Karpenter 중단 처리와 함께 써야 안전하다. RI 단독(A)·Region 이동(C)·S3 IA(D)는 컨테이너 컴퓨트 단가의 핵심 레버가 아니다.
 
 ---
 
-**문제 7.** ECS Fargate와 EKS를 워크로드별로 다르게 고르는(혼합) 것이 단일 도구로 전부를 덮는 것보다 나은 근본 이유는?
+**Question 7.** ECS Fargate와 EKS를 워크로드별로 다르게 고르는(혼합) 것이 단일 도구로 전부를 덮는 것보다 나은 근본 이유는?
 
 A) AWS가 혼합 사용에 할인을 주기 때문
 
@@ -217,9 +217,9 @@ C) EKS가 항상 더 싸기 때문
 
 D) Fargate가 항상 더 안전하기 때문
 
-**정답: B**
+**Answer: B**
 
-해설: Fargate는 노드를 추상화해 운영 부담을 없애지만 노드 수준 최적화(인스턴스 타입·Spot 세밀 제어)의 손잡이를 빼앗고, EKS는 제어를 다 주지만 컨트롤 플레인·CNI·노드 관리라는 운영 세금을 물린다 — "추상화는 공짜가 아니다." 그래서 워크로드별로 추상화 수준을 다르게(결제=EKS, 일반 웹=Fargate) 고르는 혼합이 성숙한 패턴이다. 할인(A)·EKS가 항상 저렴(C)·Fargate가 항상 안전(D)은 근거 없는 일반화다.
+Explanation: Fargate는 노드를 추상화해 운영 부담을 없애지만 노드 수준 최적화(인스턴스 타입·Spot 세밀 제어)의 손잡이를 빼앗고, EKS는 제어를 다 주지만 컨트롤 플레인·CNI·노드 관리라는 운영 세금을 물린다 — "추상화는 공짜가 아니다." 그래서 워크로드별로 추상화 수준을 다르게(결제=EKS, 일반 웹=Fargate) 고르는 혼합이 성숙한 패턴이다. 할인(A)·EKS가 항상 저렴(C)·Fargate가 항상 안전(D)은 근거 없는 일반화다.
 
 ---
 

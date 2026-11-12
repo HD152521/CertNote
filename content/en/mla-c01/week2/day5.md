@@ -122,62 +122,62 @@ Next week (Week 3) covers feature engineering to make data readable by models, a
 
 ## 📝 Practice Questions
 
-**문제 1.** Real-time clickstream needs buffering and auto-loading to S3 without separate processing code. What is most suitable?
+**Question 1.** Real-time clickstream needs buffering and auto-loading to S3 without separate processing code. What is most suitable?
 
 A) Implement consumer app directly on Kinesis Data Streams  
 B) Kinesis Data Firehose  
 C) AWS DMS  
 D) AWS DataSync  
 
-**정답: B**  
-해설: Firehose is fully managed, buffers streams, and auto-loads to S3/Redshift without code, suited for load-only needs. Data Streams (A) requires implementing consumers, DMS (C) is for database replication, DataSync (D) is for on-prem file sync.
+**Answer: B**  
+Explanation: Firehose is fully managed, buffers streams, and auto-loads to S3/Redshift without code, suited for load-only needs. Data Streams (A) requires implementing consumers, DMS (C) is for database replication, DataSync (D) is for on-prem file sync.
 
 ---
 
-**문제 2.** What is the core role Glue Crawler performs?
+**Question 2.** What is the core role Glue Crawler performs?
 
 A) Scans S3 data, infers schema, registers table in Data Catalog  
 B) Loads real-time streams to S3  
 C) Trains SageMaker model  
 D) Provisions Redshift cluster  
 
-**정답: A**  
-해설: Crawler scans S3 data, infers schema, registers table in Glue Data Catalog so Athena and Redshift Spectrum can share it. Stream loading (B) is Firehose, model training (C) is SageMaker, cluster provisioning (D) is Redshift.
+**Answer: A**  
+Explanation: Crawler scans S3 data, infers schema, registers table in Glue Data Catalog so Athena and Redshift Spectrum can share it. Stream loading (B) is Firehose, model training (C) is SageMaker, cluster provisioning (D) is Redshift.
 
 ---
 
-**문제 3.** Why does S3 play the "single source of truth" role in an ML data lake?
+**Question 3.** Why does S3 play the "single source of truth" role in an ML data lake?
 
 A) S3 alone can compress data  
 B) SageMaker training, Glue ETL, Athena queries all use S3 as input/output  
 C) S3 is the only service supporting SQL queries  
 D) S3 is streaming-only  
 
-**정답: B**  
-해설: S3 is the common center repository for all stages — training, ETL, queries — making it the single source of truth. Compression isn't S3-exclusive (A), Athena performs SQL queries (C), S3 is general-purpose object storage, not streaming-only (D).
+**Answer: B**  
+Explanation: S3 is the common center repository for all stages — training, ETL, queries — making it the single source of truth. Compression isn't S3-exclusive (A), Athena performs SQL queries (C), S3 is general-purpose object storage, not streaming-only (D).
 
 ---
 
-**문제 4.** During Athena EDA, costs exceeded expectations because all queries used `SELECT *` scanning entire data. What most appropriately reduces cost?
+**Question 4.** During Athena EDA, costs exceeded expectations because all queries used `SELECT *` scanning entire data. What most appropriately reduces cost?
 
 A) Resave data as CSV  
 B) Select only needed columns and filter by partition keys to reduce scan volume  
 C) Move all queries to Redshift cluster  
 D) Decompress data  
 
-**정답: B**  
-해설: Athena bills on scan volume, so selecting needed columns (using Parquet's column skip) and partition pruning directly reduce bytes scanned. Resaving as CSV (A) is row-based and inefficient, moving to Redshift (C) is overkill for intermittent exploration, decompressing (D) increases scan volume.
+**Answer: B**  
+Explanation: Athena bills on scan volume, so selecting needed columns (using Parquet's column skip) and partition pruning directly reduce bytes scanned. Resaving as CSV (A) is row-based and inefficient, moving to Redshift (C) is overkill for intermittent exploration, decompressing (D) increases scan volume.
 
 ---
 
-**문제 5.** To guarantee processing order for events with same user_id in Kinesis Data Streams, what do you do?
+**Question 5.** To guarantee processing order for events with same user_id in Kinesis Data Streams, what do you do?
 
 A) Assign random PartitionKey to all records  
 B) Use user_id as PartitionKey so same user's records route to same shard  
 C) Reduce shards to 1  
 D) Switch to Firehose  
 
-**정답: B**  
-해설: Records with same PartitionKey route to same shard, preserving shard order, so using user_id preserves per-user event order. Random keys (A) break order, single shard (C) limits throughput, Firehose (D) isn't for order-guaranteed stream processing.
+**Answer: B**  
+Explanation: Records with same PartitionKey route to same shard, preserving shard order, so using user_id preserves per-user event order. Random keys (A) break order, single shard (C) limits throughput, Firehose (D) isn't for order-guaranteed stream processing.
 
 ---

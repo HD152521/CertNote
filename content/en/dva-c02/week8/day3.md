@@ -332,91 +332,91 @@ Next article covers the final safety net of automated pipeline — **CloudFormat
 
 ## 📝 Practice Questions
 
-**문제 1.** In one CodePipeline stage, two actions (build and security scan) should run in parallel. To achieve this, what's needed?
+**Question 1.** In one CodePipeline stage, two actions (build and security scan) should run in parallel. To achieve this, what's needed?
 
 A) Place two actions in separate stages
 B) Set both actions' runOrder to same value (e.g., 1)
 C) Set actions' runOrder to different values (1, 2)
 D) Separate into different pipelines
 
-**정답: B**
+**Answer: B**
 
-해설: Actions in same stage with identical `runOrder` run in parallel. Different runOrder means sequential (lower first). A) Separate stages always sequential. C) runOrder 1 then 2 = sequential. D) Separate pipelines are independent runs — doesn't solve parallel gate problem. When "parallel within stage" is keyword, runOrder matching is the answer.
+Explanation: Actions in same stage with identical `runOrder` run in parallel. Different runOrder means sequential (lower first). A) Separate stages always sequential. C) runOrder 1 then 2 = sequential. D) Separate pipelines are independent runs — doesn't solve parallel gate problem. When "parallel within stage" is keyword, runOrder matching is the answer.
 
 ---
 
-**문제 2.** How does artifact (build output) pass between CodePipeline stages?
+**Question 2.** How does artifact (build output) pass between CodePipeline stages?
 
 A) Direct memory transfer
 B) Per-account/region one S3 artifact bucket, zip-stored, next stage downloads
 C) DynamoDB stream
 D) AWS Step Functions state object
 
-**정답: B**
+**Answer: B**
 
-해설: CodePipeline zips each action's output artifact and stores to S3 artifact bucket, next action downloads as input. Bucket auto-created pipeline creation but explicit possible. This mechanism means ① artifact security (bucket policy, KMS) matters ② cross-region deploy needs separate buckets per region. A/C/D mechanisms themselves wrong. Frequent exam question.
+Explanation: CodePipeline zips each action's output artifact and stores to S3 artifact bucket, next action downloads as input. Bucket auto-created pipeline creation but explicit possible. This mechanism means ① artifact security (bucket policy, KMS) matters ② cross-region deploy needs separate buckets per region. A/C/D mechanisms themselves wrong. Frequent exam question.
 
 ---
 
-**문제 3.** Which statement about CodePipeline V2 **trigger filtering** is correct?
+**Question 3.** Which statement about CodePipeline V2 **trigger filtering** is correct?
 
 A) CodeCommit source supports branch pattern filtering
 B) GitHub source (CodeStar Source Connection) supports branch/file/tag pattern filtering
 C) S3 source supports object path filtering
 D) ECR source supports image tag filtering
 
-**정답: B**
+**Answer: B**
 
-해설: V2 trigger filtering only for **CodeStar Source Connection sources** (GitHub, GitLab, BitBucket). Branch (includes/excludes), file path (includes/excludes), tag patterns supported. A) CodeCommit needs EventBridge rule filtering (no direct pipeline trigger filter support). C) S3 detects object changes, path pattern via EventBridge. D) ECR via EventBridge too. When "V2 trigger filtering + monorepo," GitHub source + file path is answer.
+Explanation: V2 trigger filtering only for **CodeStar Source Connection sources** (GitHub, GitLab, BitBucket). Branch (includes/excludes), file path (includes/excludes), tag patterns supported. A) CodeCommit needs EventBridge rule filtering (no direct pipeline trigger filter support). C) S3 detects object changes, path pattern via EventBridge. D) ECR via EventBridge too. When "V2 trigger filtering + monorepo," GitHub source + file path is answer.
 
 ---
 
-**문제 4.** To enforce **person approval before production CodeDeploy deploy**, what's the best configuration?
+**Question 4.** To enforce **person approval before production CodeDeploy deploy**, what's the best configuration?
 
 A) Lambda Invoke action sending Slack, auto-proceed
 B) Manual Approval category action with SNS topic notification
 C) CloudWatch Alarm based auto-stop
 D) EventBridge rule querying external system
 
-**정답: B**
+**Answer: B**
 
-해설: Manual Approval precisely for "person decision before production." SNS notifies approver, approver responds via console/CLI with PutApprovalResult. 7-day auto-reject if no response. A) Slack message doesn't enforce person approval gate. C) Alarm is auto-stop, not person decision. D) External query possible but manual approval is standard. When "person approval gate," Manual Approval is always standard answer.
+Explanation: Manual Approval precisely for "person decision before production." SNS notifies approver, approver responds via console/CLI with PutApprovalResult. 7-day auto-reject if no response. A) Slack message doesn't enforce person approval gate. C) Alarm is auto-stop, not person decision. D) External query possible but manual approval is standard. When "person approval gate," Manual Approval is always standard answer.
 
 ---
 
-**문제 5.** Source account CodePipeline **deploying to different AWS account's ECS service**. Which is NOT mandatory?
+**Question 5.** Source account CodePipeline **deploying to different AWS account's ECS service**. Which is NOT mandatory?
 
 A) Target account has IAM Role trusting Source account
 B) Source account pipeline role has sts:AssumeRole permission for Target role
 C) Artifact S3 bucket KMS CMK cross-account Key Policy setup
 D) ECS container has CodeDeploy Agent installed
 
-**정답: D**
+**Answer: D**
 
-해설: ECS doesn't need CodeDeploy Agent — ECS service handles task definition change. Cross-Account deploy essentials: A) Target's cross-account role B) Source's AssumeRole permission C) CMK cross-account policy (KMS encrypts artifact). Plus artifact bucket policy Target read. D) is EC2-only. "ECS + Agent" is always trap on exam.
+Explanation: ECS doesn't need CodeDeploy Agent — ECS service handles task definition change. Cross-Account deploy essentials: A) Target's cross-account role B) Source's AssumeRole permission C) CMK cross-account policy (KMS encrypts artifact). Plus artifact bucket policy Target read. D) is EC2-only. "ECS + Agent" is always trap on exam.
 
 ---
 
-**문제 6.** To alert Slack on pipeline failure, best configuration?
+**Question 6.** To alert Slack on pipeline failure, best configuration?
 
 A) EventBridge rule FAILED detection → SNS → email → person copy-paste to Slack
 B) CodeStar Notifications + AWS Chatbot Slack integration
 C) Direct Slack URL registration in pipeline console
 D) CloudTrail logs queried by CloudWatch Logs Insight every 5 min
 
-**정답: B**
+**Answer: B**
 
-해설: CodeStar Notifications pre-connected to AWS Chatbot, Chatbot natively integrates Slack/Chime. Rich card message to channel without Lambda. A) Email then manual copy-paste to Slack. C) No such console option. D) Polling approach very inefficient. When "minimum setup + Slack," CodeStar Notifications + Chatbot is standard.
+Explanation: CodeStar Notifications pre-connected to AWS Chatbot, Chatbot natively integrates Slack/Chime. Rich card message to channel without Lambda. A) Email then manual copy-paste to Slack. C) No such console option. D) Polling approach very inefficient. When "minimum setup + Slack," CodeStar Notifications + Chatbot is standard.
 
 ---
 
-**문제 7.** CodePipeline V2 **execution mode** where new run auto-cancels waiting prior run?
+**Question 7.** CodePipeline V2 **execution mode** where new run auto-cancels waiting prior run?
 
 A) QUEUED
 B) PARALLEL
 C) SUPERSEDED
 D) BLOCKING
 
-**정답: C**
+**Answer: C**
 
-해설: SUPERSEDED is V1 default behavior, named explicitly in V2. Cancels intermediate runs when fast pushes happen — only latest matters, saves resources. QUEUED processes all (no cancellation), PARALLEL all simultaneous. BLOCKING doesn't exist. When "execution mode" keyword appears, SUPERSEDED/QUEUED/PARALLEL trio is answer source.
+Explanation: SUPERSEDED is V1 default behavior, named explicitly in V2. Cancels intermediate runs when fast pushes happen — only latest matters, saves resources. QUEUED processes all (no cancellation), PARALLEL all simultaneous. BLOCKING doesn't exist. When "execution mode" keyword appears, SUPERSEDED/QUEUED/PARALLEL trio is answer source.

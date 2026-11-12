@@ -147,62 +147,62 @@ IAM Access Analyzer analyzes bucket policies, ACLs, and Access Points to automat
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 버킷에 IAM 정책은 GetObject를 Allow하지만 버킷 정책에 동일 객체에 대한 명시적 Deny가 있다. 최종 결과는?
+**Question 1.** 한 버킷에 IAM 정책은 GetObject를 Allow하지만 버킷 정책에 동일 객체에 대한 명시적 Deny가 있다. 최종 결과는?
 
 A) IAM Allow가 우선하므로 접근 허용  
 B) 명시적 Deny가 모든 Allow를 뒤엎으므로 접근 거부  
 C) 두 정책이 충돌해 평가 오류  
 D) 더 최근에 만들어진 정책이 우선  
 
-**정답: B**  
-해설: IAM 평가 모델에서 명시적 Deny는 어떤 Allow보다 항상 우선한다. IAM 정책의 Allow가 있어도 버킷 정책에 명시적 Deny가 있으면 요청은 거부된다. 정책 충돌은 오류가 아니라 Deny 우선 규칙으로 결정론적으로 해결되며, 생성 시점은 평가에 영향을 주지 않는다.
+**Answer: B**  
+Explanation: IAM 평가 모델에서 명시적 Deny는 어떤 Allow보다 항상 우선한다. IAM 정책의 Allow가 있어도 버킷 정책에 명시적 Deny가 있으면 요청은 거부된다. 정책 충돌은 오류가 아니라 Deny 우선 규칙으로 결정론적으로 해결되며, 생성 시점은 평가에 영향을 주지 않는다.
 
 ---
 
-**문제 2.** 모든 PutObject가 반드시 특정 CMK로만 암호화되도록 강제하려 한다. 버킷 기본 암호화만으로 충분한가, 아니면 무엇이 필요한가?
+**Question 2.** 모든 PutObject가 반드시 특정 CMK로만 암호화되도록 강제하려 한다. 버킷 기본 암호화만으로 충분한가, 아니면 무엇이 필요한가?
 
 A) 버킷 기본 암호화만으로 충분하다  
 B) 버킷 정책에 SSE-KMS가 아니면 Deny, 그리고 지정 KMS 키 ID가 아니면 Deny하는 두 조건을 추가한다  
 C) ACL을 BucketOwnerEnforced로 설정한다  
 D) Block Public Access를 켠다  
 
-**정답: B**  
-해설: 버킷 기본 암호화는 헤더 없이 올린 객체에 기본값을 적용할 뿐, 클라이언트가 *다른 키*를 명시해 올리는 것을 막지 못한다. 특정 CMK 강제는 `s3:x-amz-server-side-encryption`과 `s3:x-amz-server-side-encryption-aws-kms-key-id` 조건으로 두 개의 Deny를 걸어야 완성된다. ACL 비활성화와 BPA는 암호화 강제와 무관하다.
+**Answer: B**  
+Explanation: 버킷 기본 암호화는 헤더 없이 올린 객체에 기본값을 적용할 뿐, 클라이언트가 *다른 키*를 명시해 올리는 것을 막지 못한다. 특정 CMK 강제는 `s3:x-amz-server-side-encryption`과 `s3:x-amz-server-side-encryption-aws-kms-key-id` 조건으로 두 개의 Deny를 걸어야 완성된다. ACL 비활성화와 BPA는 암호화 강제와 무관하다.
 
 ---
 
-**문제 3.** 회사 데이터가 담긴 버킷에 대해, 지정된 VPC 엔드포인트를 경유하지 않은 모든 접근(인터넷·타 VPC·타 계정)을 차단하려 한다. 올바른 조건 키는?
+**Question 3.** 회사 데이터가 담긴 버킷에 대해, 지정된 VPC 엔드포인트를 경유하지 않은 모든 접근(인터넷·타 VPC·타 계정)을 차단하려 한다. 올바른 조건 키는?
 
 A) `aws:SecureTransport`  
 B) `s3:x-amz-server-side-encryption`  
 C) `aws:SourceVpce`를 StringNotEquals로 Deny  
 D) `s3:max-keys`  
 
-**정답: C**  
-해설: `aws:SourceVpce` 조건으로 "지정한 VPC 엔드포인트가 아니면 Deny"를 걸면, 그 엔드포인트를 경유하지 않은 모든 경로(인터넷, 다른 VPC, 다른 계정)의 접근이 차단되어 데이터 유출을 막는다. `aws:SecureTransport`는 HTTPS 강제, 암호화 헤더 조건은 저장 암호화 강제, `s3:max-keys`는 페이지네이션 제어로 네트워크 경로 통제와 무관하다.
+**Answer: C**  
+Explanation: `aws:SourceVpce` 조건으로 "지정한 VPC 엔드포인트가 아니면 Deny"를 걸면, 그 엔드포인트를 경유하지 않은 모든 경로(인터넷, 다른 VPC, 다른 계정)의 접근이 차단되어 데이터 유출을 막는다. `aws:SecureTransport`는 HTTPS 강제, 암호화 헤더 조건은 저장 암호화 강제, `s3:max-keys`는 페이지네이션 제어로 네트워크 경로 통제와 무관하다.
 
 ---
 
-**문제 4.** 교차계정 업로드를 받는 버킷에서, 업로더 계정이 객체를 소유해 버킷 소유자가 객체를 읽지 못한다. 가장 권장되는 해결책은?
+**Question 4.** 교차계정 업로드를 받는 버킷에서, 업로더 계정이 객체를 소유해 버킷 소유자가 객체를 읽지 못한다. 가장 권장되는 해결책은?
 
 A) 업로더에게 매번 `bucket-owner-full-control` ACL을 요청한다  
 B) Object Ownership을 BucketOwnerEnforced로 설정해 ACL을 비활성화하고 모든 객체를 버킷 소유자 소유로 만든다  
 C) 버킷을 공개로 전환한다  
 D) 버전 관리를 켠다  
 
-**정답: B**  
-해설: Object Ownership을 BucketOwnerEnforced로 설정하면 ACL이 완전히 비활성화되고 모든 객체를 버킷 소유자가 소유하므로 교차계정 소유권 문제가 근본적으로 사라진다. ACL 강제 방식은 레거시이고 누락 위험이 있으며, 공개 전환은 심각한 보안 위반, 버전 관리는 소유권과 무관하다.
+**Answer: B**  
+Explanation: Object Ownership을 BucketOwnerEnforced로 설정하면 ACL이 완전히 비활성화되고 모든 객체를 버킷 소유자가 소유하므로 교차계정 소유권 문제가 근본적으로 사라진다. ACL 강제 방식은 레거시이고 누락 위험이 있으며, 공개 전환은 심각한 보안 위반, 버전 관리는 소유권과 무관하다.
 
 ---
 
-**문제 5.** 거대한 공유 데이터 레이크 버킷에서 애플리케이션마다 접근 정책이 달라 단일 버킷 정책이 비대해지고 관리가 어렵다. 가장 적절한 접근은?
+**Question 5.** 거대한 공유 데이터 레이크 버킷에서 애플리케이션마다 접근 정책이 달라 단일 버킷 정책이 비대해지고 관리가 어렵다. 가장 적절한 접근은?
 
 A) 모든 권한을 버킷 정책에 계속 누적한다  
 B) 애플리케이션별 S3 Access Point를 만들어 각자 고유 정책과 VPC 제한을 부여한다  
 C) 버킷을 애플리케이션 수만큼 복제한다  
 D) 객체 ACL로 애플리케이션별 권한을 부여한다  
 
-**정답: B**  
-해설: S3 Access Point는 하나의 버킷에 여러 명명된 진입점을 두고 각자 작고 명확한 정책과 네트워크 출처(VPC 전용 등)를 부여해, 비대한 단일 정책을 분할 통치한다. 버킷 정책 누적은 관리성과 가독성을 악화시키고, 버킷 복제는 데이터 중복·비용·정합성 문제를 낳으며, ACL은 레거시로 중앙 가시성이 없다.
+**Answer: B**  
+Explanation: S3 Access Point는 하나의 버킷에 여러 명명된 진입점을 두고 각자 작고 명확한 정책과 네트워크 출처(VPC 전용 등)를 부여해, 비대한 단일 정책을 분할 통치한다. 버킷 정책 누적은 관리성과 가독성을 악화시키고, 버킷 복제는 데이터 중복·비용·정합성 문제를 낳으며, ACL은 레거시로 중앙 가시성이 없다.
 
 ---

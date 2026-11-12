@@ -107,94 +107,94 @@ SAP exam frequent mappings: (1) "Exclude PII columns / specific rows only" → L
 
 ## 📝 Practice Questions
 
-**문제 1.** S3 데이터 레이크의 한 테이블에서, 분석가 그룹에게는 PII 컬럼(주민번호·이메일)을 제외한 나머지 컬럼만 보여주고 싶다. S3 버킷 정책과 IAM만으로는 컬럼 단위 통제가 안 된다. 가장 적합한 것은?
+**Question 1.** S3 데이터 레이크의 한 테이블에서, 분석가 그룹에게는 PII 컬럼(주민번호·이메일)을 제외한 나머지 컬럼만 보여주고 싶다. S3 버킷 정책과 IAM만으로는 컬럼 단위 통제가 안 된다. 가장 적합한 것은?
 
 A) S3 버킷 정책으로 객체 접근 제한
 B) Lake Formation 컬럼 수준 권한(Column-Level Security)
 C) KMS로 컬럼 암호화
 D) PII 컬럼을 별도 버킷으로 분리하고 IAM으로 차단
 
-**정답: B**
+**Answer: B**
 
-해설: 한 Parquet 파일에 모든 컬럼이 섞여 있으므로 S3 버킷 정책·IAM(객체 수준)으로는 컬럼 단위 권한을 낼 수 없다. Lake Formation은 Glue Catalog 위에서 컬럼 단위 권한을 부여해, 같은 테이블을 질의해도 허용된 컬럼만 반환한다(CLS). A·D는 객체/버킷 수준이라 컬럼 입도가 안 나오고, D는 데이터를 분리·복제해 관리 부담이 큼. C(KMS)는 암호화일 뿐 컬럼 단위 노출 제어가 아니다.
+Explanation: 한 Parquet 파일에 모든 컬럼이 섞여 있으므로 S3 버킷 정책·IAM(객체 수준)으로는 컬럼 단위 권한을 낼 수 없다. Lake Formation은 Glue Catalog 위에서 컬럼 단위 권한을 부여해, 같은 테이블을 질의해도 허용된 컬럼만 반환한다(CLS). A·D는 객체/버킷 수준이라 컬럼 입도가 안 나오고, D는 데이터를 분리·복제해 관리 부담이 큼. C(KMS)는 암호화일 뿐 컬럼 단위 노출 제어가 아니다.
 
 ---
 
-**문제 2.** 데이터 레이크에 매주 새 테이블이 수십 개씩 추가된다. 테이블이 추가될 때마다 수동으로 권한을 부여하는 운영 부담이 커지고 있다. 새 테이블에 자동으로 알맞은 권한이 적용되게 하려면?
+**Question 2.** 데이터 레이크에 매주 새 테이블이 수십 개씩 추가된다. 테이블이 추가될 때마다 수동으로 권한을 부여하는 운영 부담이 커지고 있다. 새 테이블에 자동으로 알맞은 권한이 적용되게 하려면?
 
 A) 테이블마다 IAM 정책을 수동으로 추가
 B) Lake Formation LF Tag(태그 기반 접근 제어)
 C) S3 객체 태그
 D) Glue Trigger로 권한 스크립트 실행
 
-**정답: B**
+**Answer: B**
 
-해설: LF Tag는 ABAC(속성 기반 접근 제어)로, 데이터에 분류 태그(예: classification=PII)를 붙이고 사용자/역할에 태그 권한을 주면, 새 테이블·컬럼이 해당 태그를 받는 순간 권한이 자동 적용된다. 자원이 늘어도 정책을 다시 손볼 필요가 없어 스케일링된다. A는 수동 부담이 그대로. C(S3 태그)는 Lake Formation 권한 메커니즘과 무관. D는 직접 스크립트를 짜고 유지해야 해 관리형 ABAC의 이점이 없다.
+Explanation: LF Tag는 ABAC(속성 기반 접근 제어)로, 데이터에 분류 태그(예: classification=PII)를 붙이고 사용자/역할에 태그 권한을 주면, 새 테이블·컬럼이 해당 태그를 받는 순간 권한이 자동 적용된다. 자원이 늘어도 정책을 다시 손볼 필요가 없어 스케일링된다. A는 수동 부담이 그대로. C(S3 태그)는 Lake Formation 권한 메커니즘과 무관. D는 직접 스크립트를 짜고 유지해야 해 관리형 ABAC의 이점이 없다.
 
 ---
 
-**문제 3.** 중앙 데이터 계정(Producer)의 Glue Catalog 데이터를 여러 부서 계정(Consumer)이 공유해야 한다. 동시에 각 부서는 자기 region 행만 보고 PII 컬럼은 제외돼야 한다. 가장 적합한 구성은?
+**Question 3.** 중앙 데이터 계정(Producer)의 Glue Catalog 데이터를 여러 부서 계정(Consumer)이 공유해야 한다. 동시에 각 부서는 자기 region 행만 보고 PII 컬럼은 제외돼야 한다. 가장 적합한 구성은?
 
 A) Producer의 IAM Role을 Consumer가 AssumeRole
 B) RAM으로 Glue Catalog 공유 + Lake Formation으로 행·열 세분 권한
 C) 각 Consumer 계정에 데이터를 COPY로 복제
 D) S3 Cross-Account 버킷 정책
 
-**정답: B**
+**Answer: B**
 
-해설: RAM(Resource Access Manager)이 Producer의 Glue Catalog 리소스를 Consumer 계정에 공유하고, 그 위에 Lake Formation이 컬럼 필터(PII 제외)와 행 필터(region별)를 건다. Consumer는 자기 계정의 Athena/Redshift로 질의하되 LF가 허용한 행·열만 본다. A는 광범위한 역할 위임이라 세분 권한이 안 되고, C는 데이터 복제·동기화 부담과 거버넌스 분산, D(버킷 정책)는 행·열 입도가 안 나온다. "멀티 계정 + 중앙 레이크 + 세분 권한"은 RAM + Lake Formation.
+Explanation: RAM(Resource Access Manager)이 Producer의 Glue Catalog 리소스를 Consumer 계정에 공유하고, 그 위에 Lake Formation이 컬럼 필터(PII 제외)와 행 필터(region별)를 건다. Consumer는 자기 계정의 Athena/Redshift로 질의하되 LF가 허용한 행·열만 본다. A는 광범위한 역할 위임이라 세분 권한이 안 되고, C는 데이터 복제·동기화 부담과 거버넌스 분산, D(버킷 정책)는 행·열 입도가 안 나온다. "멀티 계정 + 중앙 레이크 + 세분 권한"은 RAM + Lake Formation.
 
 ---
 
-**문제 4.** 온프레미스에서 자체 운영하던 Apache Kafka 클러스터를 AWS로 옮기려 한다. 기존 프로듀서·컨슈머 애플리케이션 코드와 Debezium 커넥터를 거의 그대로 재사용하고, 브로커 운영 부담은 줄이고 싶다. 가장 적합한 것은?
+**Question 4.** 온프레미스에서 자체 운영하던 Apache Kafka 클러스터를 AWS로 옮기려 한다. 기존 프로듀서·컨슈머 애플리케이션 코드와 Debezium 커넥터를 거의 그대로 재사용하고, 브로커 운영 부담은 줄이고 싶다. 가장 적합한 것은?
 
 A) Kinesis Data Streams로 마이그레이션
 B) Amazon MSK
 C) SQS
 D) Amazon MQ
 
-**정답: B**
+**Answer: B**
 
-해설: MSK는 Apache Kafka를 매니지드로 제공하므로 Kafka API가 그대로여서 기존 프로듀서·컨슈머 코드와 커넥터(Debezium 등)를 거의 수정 없이 재사용하고, 브로커 프로비저닝·패치·복제·모니터링은 AWS가 맡아 운영 부담이 준다. A(Kinesis)는 AWS 독자 기술이라 SDK·파티셔닝·소비 모델을 전부 다시 짜야 함. C(SQS)는 메시지 큐로 스트림 재생·컨슈머 그룹 모델이 다름. D(MQ)는 ActiveMQ/RabbitMQ 매니지드로 Kafka가 아니다. "기존 Kafka 자산 재사용 + 운영 부담↓"은 MSK.
+Explanation: MSK는 Apache Kafka를 매니지드로 제공하므로 Kafka API가 그대로여서 기존 프로듀서·컨슈머 코드와 커넥터(Debezium 등)를 거의 수정 없이 재사용하고, 브로커 프로비저닝·패치·복제·모니터링은 AWS가 맡아 운영 부담이 준다. A(Kinesis)는 AWS 독자 기술이라 SDK·파티셔닝·소비 모델을 전부 다시 짜야 함. C(SQS)는 메시지 큐로 스트림 재생·컨슈머 그룹 모델이 다름. D(MQ)는 ActiveMQ/RabbitMQ 매니지드로 Kafka가 아니다. "기존 Kafka 자산 재사용 + 운영 부담↓"은 MSK.
 
 ---
 
-**문제 5.** Kafka를 쓰고 싶지만 브로커 수·파티션 용량 계획 같은 클러스터 사이징을 하고 싶지 않고, 처리량에 따라 자동으로 확장되기를 원한다. 가장 적합한 것은?
+**Question 5.** Kafka를 쓰고 싶지만 브로커 수·파티션 용량 계획 같은 클러스터 사이징을 하고 싶지 않고, 처리량에 따라 자동으로 확장되기를 원한다. 가장 적합한 것은?
 
 A) 프로비저닝드 MSK 클러스터를 크게 구성
 B) MSK Serverless
 C) Kinesis Data Streams 프로비저닝드 모드
 D) 자체 Kafka를 EC2에 구축
 
-**정답: B**
+**Answer: B**
 
-해설: MSK Serverless는 브로커 수·파티션 용량 계획 없이 토픽을 만들고 데이터를 보내면 처리량에 맞춰 자동 확장한다. 사이징이 어렵거나 가변적인 워크로드, 클러스터 운영 회피에 최적이다. A는 사이징을 직접 해야 함. C는 Kafka가 아니고 프로비저닝드는 샤드 계획이 필요. D는 운영 부담이 가장 큼. 단, 초고처리량·세밀한 튜닝이 필요하면 프로비저닝드 MSK가 더 유연하다는 한계도 기억할 것.
+Explanation: MSK Serverless는 브로커 수·파티션 용량 계획 없이 토픽을 만들고 데이터를 보내면 처리량에 맞춰 자동 확장한다. 사이징이 어렵거나 가변적인 워크로드, 클러스터 운영 회피에 최적이다. A는 사이징을 직접 해야 함. C는 Kafka가 아니고 프로비저닝드는 샤드 계획이 필요. D는 운영 부담이 가장 큼. 단, 초고처리량·세밀한 튜닝이 필요하면 프로비저닝드 MSK가 더 유연하다는 한계도 기억할 것.
 
 ---
 
-**문제 6.** Glue Data Catalog의 테이블에 대해 "이 컬럼은 NULL 5% 미만, 이메일 형식이어야 함" 같은 품질 규칙을 정의하고 주기적으로 자동 검사하며 위반 시 알림을 받고 싶다. 가장 적합한 것은?
+**Question 6.** Glue Data Catalog의 테이블에 대해 "이 컬럼은 NULL 5% 미만, 이메일 형식이어야 함" 같은 품질 규칙을 정의하고 주기적으로 자동 검사하며 위반 시 알림을 받고 싶다. 가장 적합한 것은?
 
 A) Athena에서 WHERE로 수동 확인
 B) Glue Data Quality(DQDL)
 C) DataBrew 프로파일만 1회 실행
 D) Lambda로 직접 검증 코드 작성
 
-**정답: B**
+**Answer: B**
 
-해설: Glue Data Quality는 DQDL(Data Quality Definition Language)로 카탈로그 테이블에 품질 규칙을 선언하고, 주기적·자동으로 검사해 위반 시 EventBridge로 알린다(규칙 ML 추천도 지원). A는 수동·일회성. C(DataBrew 프로파일)는 통계 프로파일링이지 지속적 규칙 검증·알림 체계가 아님. D는 직접 코드를 짜고 유지해야 해 관리형 품질 프레임워크의 이점이 없다.
+Explanation: Glue Data Quality는 DQDL(Data Quality Definition Language)로 카탈로그 테이블에 품질 규칙을 선언하고, 주기적·자동으로 검사해 위반 시 EventBridge로 알린다(규칙 ML 추천도 지원). A는 수동·일회성. C(DataBrew 프로파일)는 통계 프로파일링이지 지속적 규칙 검증·알림 체계가 아님. D는 직접 코드를 짜고 유지해야 해 관리형 품질 프레임워크의 이점이 없다.
 
 ---
 
-**문제 7.** 대규모 조직에서 분석가들이 필요한 데이터셋을 사내에서 검색하고 구독을 요청하면 승인 워크플로우를 거쳐 접근권이 부여되는 "데이터 마켓플레이스" 경험을 원한다. 프로듀서/컨슈머 경험을 분리하고 Lake Formation·Redshift와 통합돼야 한다. 가장 적합한 것은?
+**Question 7.** 대규모 조직에서 분석가들이 필요한 데이터셋을 사내에서 검색하고 구독을 요청하면 승인 워크플로우를 거쳐 접근권이 부여되는 "데이터 마켓플레이스" 경험을 원한다. 프로듀서/컨슈머 경험을 분리하고 Lake Formation·Redshift와 통합돼야 한다. 가장 적합한 것은?
 
 A) Lake Formation 단독
 B) AWS DataZone
 C) Glue Crawler
 D) QuickSight 대시보드
 
-**정답: B**
+**Answer: B**
 
-해설: DataZone은 비즈니스 도메인 단위 데이터 카탈로그·검색·구독·승인 워크플로우를 제공하는 거버넌스 서비스로, 데이터 프로듀서(게시)와 컨슈머(검색·구독) 경험을 분리하고 Lake Formation·Glue·Redshift·S3와 통합된다. 구독 승인이 실제 LF 권한 부여로 이어진다. A(Lake Formation)는 권한 메커니즘이지 검색·구독 마켓플레이스 경험이 아님. C는 스키마 추론 도구. D는 BI 시각화로 목적이 다르다.
+Explanation: DataZone은 비즈니스 도메인 단위 데이터 카탈로그·검색·구독·승인 워크플로우를 제공하는 거버넌스 서비스로, 데이터 프로듀서(게시)와 컨슈머(검색·구독) 경험을 분리하고 Lake Formation·Glue·Redshift·S3와 통합된다. 구독 승인이 실제 LF 권한 부여로 이어진다. A(Lake Formation)는 권한 메커니즘이지 검색·구독 마켓플레이스 경험이 아님. C는 스키마 추론 도구. D는 BI 시각화로 목적이 다르다.
 
 ---
 

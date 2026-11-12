@@ -74,62 +74,62 @@ In the next article, we'll comprehensively review all of Week 4 — the shared r
 
 ## 📝 Practice Questions
 
-**문제 1.** Protecting data traveling between a web browser and a server from interception is which type of encryption?
+**Question 1.** Protecting data traveling between a web browser and a server from interception is which type of encryption?
 
 A) Encryption at rest  
 B) Encryption in transit  
 C) Disk encryption  
 D) Key rotation  
 
-**정답: B**  
-해설: Protecting data moving across a network is encryption in transit, and TLS/SSL (HTTPS) is the representative technology. Encryption at rest and disk encryption protect stored data, and key rotation is a separate task of periodically refreshing encryption keys.
+**Answer: B**  
+Explanation: Protecting data moving across a network is encryption in transit, and TLS/SSL (HTTPS) is the representative technology. Encryption at rest and disk encryption protect stored data, and key rotation is a separate task of periodically refreshing encryption keys.
 
 ---
 
-**문제 2.** You want to easily create and centrally manage encryption keys used across multiple AWS services such as S3, EBS, and RDS. Which service is most appropriate?
+**Question 2.** You want to easily create and centrally manage encryption keys used across multiple AWS services such as S3, EBS, and RDS. Which service is most appropriate?
 
 A) AWS Secrets Manager  
 B) AWS KMS  
 C) Amazon Macie  
 D) AWS Artifact  
 
-**정답: B**  
-해설: KMS is a fully managed service that integrates across AWS services to create, store, manage, and rotate encryption keys. Secrets Manager is for storing credentials such as passwords, Macie is for detecting S3 sensitive data, and Artifact is a compliance report download portal.
+**Answer: B**  
+Explanation: KMS is a fully managed service that integrates across AWS services to create, store, manage, and rotate encryption keys. Secrets Manager is for storing credentials such as passwords, Macie is for detecting S3 sensitive data, and Artifact is a compliance report download portal.
 
 ---
 
-**문제 3.** Due to strict compliance requirements, you must control encryption keys solely in customer-dedicated hardware. Which service is most appropriate?
+**Question 3.** Due to strict compliance requirements, you must control encryption keys solely in customer-dedicated hardware. Which service is most appropriate?
 
 A) AWS managed keys in AWS KMS  
 B) AWS CloudHSM  
 C) AWS Secrets Manager  
 D) Amazon Inspector  
 
-**정답: B**  
-해설: CloudHSM provides a customer-dedicated Hardware Security Module (HSM) so you can control keys entirely on your own, which fits strict compliance requirements. KMS managed keys are based on AWS-managed shared infrastructure, Secrets Manager is for credential storage, and Inspector is a vulnerability assessment tool.
+**Answer: B**  
+Explanation: CloudHSM provides a customer-dedicated Hardware Security Module (HSM) so you can control keys entirely on your own, which fits strict compliance requirements. KMS managed keys are based on AWS-managed shared infrastructure, Secrets Manager is for credential storage, and Inspector is a vulnerability assessment tool.
 
 ---
 
-**문제 4.** You want to safely store database passwords and API keys without hardcoding them into code, and rotate them automatically on a schedule. Which service is most appropriate?
+**Question 4.** You want to safely store database passwords and API keys without hardcoding them into code, and rotate them automatically on a schedule. Which service is most appropriate?
 
 A) AWS KMS  
 B) AWS CloudHSM  
 C) AWS Secrets Manager  
 D) AWS WAF  
 
-**정답: C**  
-해설: Secrets Manager safely stores credentials such as passwords and API keys and supports automatic rotation. KMS and CloudHSM focus on managing encryption "keys," and WAF is a web attack filtering service.
+**Answer: C**  
+Explanation: Secrets Manager safely stores credentials such as passwords and API keys and supports automatic rotation. KMS and CloudHSM focus on managing encryption "keys," and WAF is a web attack filtering service.
 
 ---
 
-**문제 5.** Which of the following statements about encryption at rest is correct?
+**Question 5.** Which of the following statements about encryption at rest is correct?
 
 A) It protects data being transmitted across a network  
 B) It protects data stored on a disk or in storage so it can't be read without a key  
 C) It refers to HTTPS communication  
 D) It can only be used with EC2  
 
-**정답: B**  
-해설: Encryption at rest protects data stored on disk/in storage so it can't be read without a key. Protecting network transmission and HTTPS correspond to encryption in transit, and encryption at rest is supported across various storage services such as S3, EBS, and RDS.
+**Answer: B**  
+Explanation: Encryption at rest protects data stored on disk/in storage so it can't be read without a key. Protecting network transmission and HTTPS correspond to encryption in transit, and encryption at rest is supported across various storage services such as S3, EBS, and RDS.
 
 ---

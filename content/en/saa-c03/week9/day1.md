@@ -126,94 +126,94 @@ In the next article, we look at the audit tool that answers not "what is happeni
 
 ## 📝 Practice Questions
 
-**문제 1.** An operations team wants to set an alarm on an EC2 instance's memory utilization but can't find a memory metric in the `AWS/EC2` namespace in the CloudWatch console. Which is the correct cause and solution?
+**Question 1.** An operations team wants to set an alarm on an EC2 instance's memory utilization but can't find a memory metric in the `AWS/EC2` namespace in the CloudWatch console. Which is the correct cause and solution?
 
 A) The IAM Role lacks the cloudwatch:GetMetricData permission; adding it makes the metric appear
 B) Memory and free disk space are information inside the guest OS and aren't in the standard metrics; you must install the CloudWatch Agent
 C) The wrong region is selected; switching to the correct region makes it appear
 D) It's a high-resolution metric and needs separate enablement
 
-**정답: B**
+**Answer: B**
 
-해설: CPU, network, and disk I/O are observable at the hypervisor (Nitro) level so they exist in the standard metrics, but memory utilization and free disk space are information inside the guest OS. The hypervisor only knows the total it allocated to the guest, not how much the OS is using inside. So you must install the CloudWatch Agent inside the guest and have the OS report directly. A, C, and D all start from the false premise that memory exists in the standard metrics.
+Explanation: CPU, network, and disk I/O are observable at the hypervisor (Nitro) level so they exist in the standard metrics, but memory utilization and free disk space are information inside the guest OS. The hypervisor only knows the total it allocated to the guest, not how much the OS is using inside. So you must install the CloudWatch Agent inside the guest and have the OS report directly. A, C, and D all start from the false premise that memory exists in the standard metrics.
 
 ---
 
-**문제 2.** A payment service set a CloudWatch Alarm to "alarm when error rate exceeds 5%." One day the service went completely down and requests themselves dropped to 0, but the alarm didn't fire. What is the most appropriate fix?
+**Question 2.** A payment service set a CloudWatch Alarm to "alarm when error rate exceeds 5%." One day the service went completely down and requests themselves dropped to 0, but the alarm didn't fire. What is the most appropriate fix?
 
 A) Lower the threshold from 5% to 1%
 B) Increase the evaluation period
 C) Set missing-data handling to breaching
 D) Switch to Anomaly Detection
 
-**정답: C**
+**Answer: C**
 
-해설: When requests are 0, the error-rate metric itself isn't reported, so the alarm becomes INSUFFICIENT_DATA, and under the default handling (missing) it doesn't transition to ALARM. Availability alarms must treat missing data as breaching so that "traffic stopped" also counts as an outage. A and B only adjust sensitivity when data exists and don't solve the no-data problem. D is useful for learning the normal band, but with no data at all it hits the same limit.
+Explanation: When requests are 0, the error-rate metric itself isn't reported, so the alarm becomes INSUFFICIENT_DATA, and under the default handling (missing) it doesn't transition to ALARM. Availability alarms must treat missing data as breaching so that "traffic stopped" also counts as an outage. A and B only adjust sensitivity when data exists and don't solve the no-data problem. D is useful for learning the normal band, but with no data at all it hits the same limit.
 
 ---
 
-**문제 3.** A team wants to process all ERROR logs in real time. Multiple consumers (a Lambda for alerts, an analytics app, a security SIEM) must read the same log stream simultaneously and independently, and order must be guaranteed. Which is the most suitable destination for a CloudWatch Logs Subscription Filter?
+**Question 3.** A team wants to process all ERROR logs in real time. Multiple consumers (a Lambda for alerts, an analytics app, a security SIEM) must read the same log stream simultaneously and independently, and order must be guaranteed. Which is the most suitable destination for a CloudWatch Logs Subscription Filter?
 
 A) Lambda
 B) Kinesis Data Streams
 C) Kinesis Data Firehose
 D) Direct delivery to S3
 
-**정답: B**
+**Answer: B**
 
-해설: When multiple consumers must read the same stream simultaneously and independently with order guaranteed, Kinesis Data Streams fits (per-shard ordering + multiple consumers). Lambda suits immediate, low-latency, single processing per event; Firehose is for buffering then batch-loading into S3/OpenSearch and is unsuitable for multiple independent consumers. A Subscription Filter cannot deliver directly to S3.
+Explanation: When multiple consumers must read the same stream simultaneously and independently with order guaranteed, Kinesis Data Streams fits (per-shard ordering + multiple consumers). Lambda suits immediate, low-latency, single processing per event; Firehose is for buffering then batch-loading into S3/OpenSearch and is unsuitable for multiple independent consumers. A Subscription Filter cannot deliver directly to S3.
 
 ---
 
-**문제 4.** An application publishes a custom metric via PutMetricData, but including `UserId` (100,000 users) in a dimension caused CloudWatch cost to spike. What is the most effective way to reduce cost?
+**Question 4.** An application publishes a custom metric via PutMetricData, but including `UserId` (100,000 users) in a dimension caused CloudWatch cost to spike. What is the most effective way to reduce cost?
 
 A) Lower the metric resolution from 1 second to 1 minute
 B) Remove the UserId dimension and keep only low-cardinality dimensions (Service, Region), moving per-user tracking to logs/traces
 C) Batch the PutMetricData calls together
 D) Reduce the metric retention period
 
-**정답: B**
+**Answer: B**
 
-해설: CloudWatch metrics are stored and billed as a separate time series per "name + dimension combination." Putting a high-cardinality value like UserId in a dimension explodes the series count and spikes cost. Dimensions should use only low-cardinality values, and fine-grained per-user tracking is the domain of logs (Logs Insights) or traces (X-Ray), not metrics. A and D have limited effect, and C isn't a fundamental fix since billing is by datapoint.
+Explanation: CloudWatch metrics are stored and billed as a separate time series per "name + dimension combination." Putting a high-cardinality value like UserId in a dimension explodes the series count and spikes cost. Dimensions should use only low-cardinality values, and fine-grained per-user tracking is the domain of logs (Logs Insights) or traces (X-Ray), not metrics. A and D have limited effect, and C isn't a fundamental fix since billing is by datapoint.
 
 ---
 
-**문제 5.** In a Lambda function you want to aggregate metrics at high volume while also leaving detailed debugging logs on the same line, and reduce PutMetricData API call cost. Which technique fits best?
+**Question 5.** In a Lambda function you want to aggregate metrics at high volume while also leaving detailed debugging logs on the same line, and reduce PutMetricData API call cost. Which technique fits best?
 
 A) Enable high-resolution metrics
 B) Embed metrics in logs with EMF (Embedded Metric Format)
 C) Composite Alarm
 D) Metric Streams
 
-**정답: B**
+**Answer: B**
 
-해설: EMF is the feature where you embed a metric in a single log line with a special JSON structure and CloudWatch automatically extracts the metric from that log. The application doesn't call PutMetricData — it just writes a log — yet gets both the metric and the detailed log at once. It fits especially well with environments where stdout automatically flows to CloudWatch Logs, like Lambda. A actually increases cost, C is an alarm combination, and D is a metric-export feature.
+Explanation: EMF is the feature where you embed a metric in a single log line with a special JSON structure and CloudWatch automatically extracts the metric from that log. The application doesn't call PutMetricData — it just writes a log — yet gets both the metric and the detailed log at once. It fits especially well with environments where stdout automatically flows to CloudWatch Logs, like Lambda. A actually increases cost, C is an alarm combination, and D is a metric-export feature.
 
 ---
 
-**문제 6.** You operate a global service in three regions: us-east-1, ap-northeast-2, and eu-west-1. The SRE team wants to view the three regions' key metrics and ERROR-log trends on one screen. Which is the most suitable solution?
+**Question 6.** You operate a global service in three regions: us-east-1, ap-northeast-2, and eu-west-1. The SRE team wants to view the three regions' key metrics and ERROR-log trends on one screen. Which is the most suitable solution?
 
 A) Open a separate console per region and compare manually
 B) Composite widgets into one view with a cross-region (and cross-account if needed) CloudWatch Dashboard
 C) Re-send all metrics to us-east-1 via PutMetricData
 D) Use the Service Health Dashboard
 
-**정답: B**
+**Answer: B**
 
-해설: CloudWatch metrics are region-isolated by default, but a cross-region, cross-account Dashboard composites widgets from multiple regions and accounts onto one screen for unified global visibility. A carries a heavy operational burden and is error-prone; C is costly, complex, and creates a data-duplication problem; D is AWS's overall service status page, not your own metric dashboard.
+Explanation: CloudWatch metrics are region-isolated by default, but a cross-region, cross-account Dashboard composites widgets from multiple regions and accounts onto one screen for unified global visibility. A carries a heavy operational burden and is error-prone; C is costly, complex, and creates a data-duplication problem; D is AWS's overall service status page, not your own metric dashboard.
 
 ---
 
-**문제 7.** A team wants to actively check the main user flows (login → search → checkout) from the outside every 5 minutes so that "we find the outage before users do." Which is the most suitable tool?
+**Question 7.** A team wants to actively check the main user flows (login → search → checkout) from the outside every 5 minutes so that "we find the outage before users do." Which is the most suitable tool?
 
 A) CloudWatch RUM
 B) CloudWatch Synthetics Canary
 C) X-Ray
 D) CloudWatch Logs Insights
 
-**정답: B**
+**Answer: B**
 
-해설: A Synthetics Canary is blackbox monitoring that actively checks user flows from the outside with synthetic traffic via a headless browser. It fits the requirement "proactively detect before real users experience it" exactly. RUM, conversely, passively collects real-user performance via JS embedded in real users' browsers. X-Ray is distributed tracing and Logs Insights is log querying — neither is active external checking.
+Explanation: A Synthetics Canary is blackbox monitoring that actively checks user flows from the outside with synthetic traffic via a headless browser. It fits the requirement "proactively detect before real users experience it" exactly. RUM, conversely, passively collects real-user performance via JS embedded in real users' browsers. X-Ray is distributed tracing and Logs Insights is log querying — neither is active external checking.
 
 ---
 

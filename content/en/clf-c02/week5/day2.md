@@ -67,62 +67,62 @@ In the next article, we'll look at how AWS helps us when problems arise — Supp
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to analyze in a graph which services cost the most over the past few months and forecast future costs. Which tool is the best fit?
+**Question 1.** You want to analyze in a graph which services cost the most over the past few months and forecast future costs. Which tool is the best fit?
 
 A) AWS Budgets  
 B) AWS Cost Explorer  
 C) Cost allocation tags  
 D) AWS CloudTrail  
 
-**정답: B**  
-해설: Cost Explorer is an analysis tool that visualizes past cost and usage and forecasts future costs. Budgets is for budget-exceeded alerts, cost allocation tags are merely a cost-breakdown basis and don't perform analysis or forecasting themselves, and CloudTrail is an API audit log, not a cost analysis tool.
+**Answer: B**  
+Explanation: Cost Explorer is an analysis tool that visualizes past cost and usage and forecasts future costs. Budgets is for budget-exceeded alerts, cost allocation tags are merely a cost-breakdown basis and don't perform analysis or forecasting themselves, and CloudTrail is an API audit log, not a cost analysis tool.
 
 ---
 
-**문제 2.** You set a monthly budget and want to automatically receive a notification when actual costs reach a set percentage of that limit, to prevent overruns. Which tool is the best fit?
+**Question 2.** You set a monthly budget and want to automatically receive a notification when actual costs reach a set percentage of that limit, to prevent overruns. Which tool is the best fit?
 
 A) AWS Cost Explorer  
 B) AWS Cost and Usage Report  
 C) AWS Budgets  
 D) AWS Pricing Calculator  
 
-**정답: C**  
-해설: AWS Budgets sets cost and usage budgets and sends notifications when a threshold is reached or exceeded, preventing bill bombs. Cost Explorer is for after-the-fact analysis, CUR is for detailed data export, and Pricing Calculator is for advance cost estimation — threshold alerting is not their core function.
+**Answer: C**  
+Explanation: AWS Budgets sets cost and usage budgets and sends notifications when a threshold is reached or exceeded, preventing bill bombs. Cost Explorer is for after-the-fact analysis, CUR is for detailed data export, and Pricing Calculator is for advance cost estimation — threshold alerting is not their core function.
 
 ---
 
-**문제 3.** An accounting team wants to export the most detailed line-item billing data — broken down to the hourly level — to S3 for custom analysis with Athena. Which is the best fit?
+**Question 3.** An accounting team wants to export the most detailed line-item billing data — broken down to the hourly level — to S3 for custom analysis with Athena. Which is the best fit?
 
 A) AWS Budgets  
 B) AWS Cost and Usage Report (CUR)  
 C) AWS Cost Explorer  
 D) Cost allocation tags  
 
-**정답: B**  
-해설: CUR is the most detailed cost and usage data AWS provides, well suited for exporting to S3 and doing custom analysis with Athena and QuickSight. Cost Explorer is dashboard-level visualization, Budgets is budget alerts, and tags are a cost-breakdown basis — different from raw-data analysis.
+**Answer: B**  
+Explanation: CUR is the most detailed cost and usage data AWS provides, well suited for exporting to S3 and doing custom analysis with Athena and QuickSight. Cost Explorer is dashboard-level visualization, Budgets is budget alerts, and tags are a cost-breakdown basis — different from raw-data analysis.
 
 ---
 
-**문제 4.** Several teams share the same account, and you want to separate the costs each team incurs and settle them by department. Which feature should you use first?
+**Question 4.** Several teams share the same account, and you want to separate the costs each team incurs and settle them by department. Which feature should you use first?
 
 A) Cost allocation tags  
 B) Spot Instances  
 C) AWS Budgets  
 D) Free Tier  
 
-**정답: A**  
-해설: Activating cost allocation tags lets you break costs down by tags like Team and Project and allocate/settle them by department. Budgets is budget alerts, and Spot/Free Tier are pricing models / free allowances, unrelated to separating costs by team.
+**Answer: A**  
+Explanation: Activating cost allocation tags lets you break costs down by tags like Team and Project and allocate/settle them by department. Budgets is budget alerts, and Spot/Free Tier are pricing models / free allowances, unrelated to separating costs by team.
 
 ---
 
-**문제 5.** Which of the following most accurately describes the core difference between Cost Explorer and AWS Budgets?
+**Question 5.** Which of the following most accurately describes the core difference between Cost Explorer and AWS Budgets?
 
 A) Cost Explorer does budget alerts, and Budgets does cost visualization  
 B) Cost Explorer does past analysis and forecasting, and Budgets does budget setting and overrun alerts  
 C) They are identical and differ only in name  
 D) Cost Explorer manages the free-tier allowance, and Budgets manages tags  
 
-**정답: B**  
-해설: Cost Explorer is a tool that analyzes past costs and forecasts the future, while Budgets is a tool that sets a budget and sends alerts when a threshold is exceeded. The two have different roles and are complementary; managing the free allowance or tags is not their intrinsic role.
+**Answer: B**  
+Explanation: Cost Explorer is a tool that analyzes past costs and forecasts the future, while Budgets is a tool that sets a budget and sends alerts when a threshold is exceeded. The two have different roles and are complementary; managing the free allowance or tags is not their intrinsic role.
 
 ---

@@ -136,159 +136,159 @@ When solving Domain 1 scenarios, check 4 layers top-down. Missing elements revea
 
 ---
 
-**문제 1.** 5 OUs·100 accounts. Some OUs forbid unauthorized regions. Best?
+**Question 1.** 5 OUs·100 accounts. Some OUs forbid unauthorized regions. Best?
 
 A) Lambda mass-deploy region-restrict IAM policy to all Roles, reapply periodic
 B) Org SCP + `aws:RequestedRegion` Deny + global service NotAction exceptions
 C) Unauthorized region subnets NACL all-outbound Deny
 D) Config Rule(`region-restrict`) OU-wide, SNS alert security
 
-**정답: B**
+**Answer: B**
 
-해설: SCP pre-enforces. Config post-detects. Lambda mass-deploy has ops burden, misses root. Global service exceptions (IAM/Org/Route53/CloudFront/GA/WAF) REQUIRED or OU non-functional. 4-layer: this is Layer 2 (SCP), A wrongly pulls Layer 4 (Identity) — IAM policy can't cover root+future Roles comprehensively.
+Explanation: SCP pre-enforces. Config post-detects. Lambda mass-deploy has ops burden, misses root. Global service exceptions (IAM/Org/Route53/CloudFront/GA/WAF) REQUIRED or OU non-functional. 4-layer: this is Layer 2 (SCP), A wrongly pulls Layer 4 (Identity) — IAM policy can't cover root+future Roles comprehensively.
 
 ---
 
-**문제 2.** New OU created, FullAWSAccess SCP removed, Allow-list EC2 only. S3 call result?
+**Question 2.** New OU created, FullAWSAccess SCP removed, Allow-list EC2 only. S3 call result?
 
 A) Allowed — S3 global service, regional SCP scope outside
 B) Denied (implicit SCP Deny, no S3 Allow in SCP)
 C) Allowed — bucket Resource Policy `Allow` overrides implicit SCP Deny
 D) Allowed — account IAM Policy `Allow` prioritized over SCP
 
-**정답: B**
+**Answer: B**
 
-해설: SCP ceiling. No action listed = IAM policy irrelevant. Resource Policy doesn't override SCP. Line 9 (Week 2 one-liner 9): SCP is ceiling, intersection with IAM.
+Explanation: SCP ceiling. No action listed = IAM policy irrelevant. Resource Policy doesn't override SCP. Line 9 (Week 2 one-liner 9): SCP is ceiling, intersection with IAM.
 
 ---
 
-**문제 3.** Okta + 50 AWS accounts + console/CLI SSO. Most appropriate?
+**Question 3.** Okta + 50 AWS accounts + console/CLI SSO. Most appropriate?
 
 A) Okta per-account SAML 50x, federated Roles manual mapping
 B) IAM Identity Center + Okta (SAML + SCIM)
 C) Cognito User Pool employees, Identity Pool IAM Roles
 D) AD Connector Okta link, IAM User per account per employee
 
-**정답: B**
+**Answer: B**
 
-해설: Multi-account SSO = IDC. SCIM(provisioning RFC 7644) + SAML(authentication). 50 accounts batch management. C = customers (Cognito). A = 50x work + no sync. D = antipattern 3 (IAM User per account).
+Explanation: Multi-account SSO = IDC. SCIM(provisioning RFC 7644) + SAML(authentication). 50 accounts batch management. C = customers (Cognito). A = 50x work + no sync. D = antipattern 3 (IAM User per account).
 
 ---
 
-**문제 4.** New account auto-create + standard baseline (CloudTrail, IAM Role, tags). Terraform. Best?
+**Question 4.** New account auto-create + standard baseline (CloudTrail, IAM Role, tags). Terraform. Best?
 
 A) Account Factory console, manual baseline after
 B) AFT (Account Factory for Terraform)
 C) CfCT CloudFormation template auto-deploy to new accounts
 D) StackSets baseline resource deploy all accounts
 
-**정답: B**
+**Answer: B**
 
-해설: Terraform IaC = AFT. GitOps PR merge → auto account + baseline. C(CfCT) CloudFormation. D(StackSets) resource deploy but account vending pipeline missing. AFT = Account Factory + Step Functions + 4 Terraform pipelines (global/account customizations).
+Explanation: Terraform IaC = AFT. GitOps PR merge → auto account + baseline. C(CfCT) CloudFormation. D(StackSets) resource deploy but account vending pipeline missing. AFT = Account Factory + Step Functions + 4 Terraform pipelines (global/account customizations).
 
 ---
 
-**문제 5.** Policy: all EBS KMS-encrypted. Block at deploy time. Which guardrail?
+**Question 5.** Policy: all EBS KMS-encrypted. Block at deploy time. Which guardrail?
 
 A) Detective — Config Rule (`encrypted-volumes`) detect, auto-remediate post
 B) Proactive (CloudFormation Hook)
 C) Preventive — SCP `ec2:CreateVolume` with `ec2:Encrypted=false` Deny
 D) Tag Policy enforce encryption tag
 
-**정답: B**
+**Answer: B**
 
-해설: Deploy-time block = Proactive(CFN Hook). Preventive(SCP) `ec2:CreateVolume` Deny also valid, but CFN Hook cleanest for IaC flow. Declarative Policy(2024) also option. Standard = Preventive + Proactive + Detective triple defense.
+Explanation: Deploy-time block = Proactive(CFN Hook). Preventive(SCP) `ec2:CreateVolume` Deny also valid, but CFN Hook cleanest for IaC flow. Declarative Policy(2024) also option. Standard = Preventive + Proactive + Detective triple defense.
 
 ---
 
-**문제 6.** 100 accounts' CloudTrail logs immutable single place. Best?
+**Question 6.** 100 accounts' CloudTrail logs immutable single place. Best?
 
 A) Each account self-managed bucket, IAM Policy removes delete
 B) Log Archive + S3 Object Lock(WORM) + Organization Trail
 C) CloudWatch Logs all accounts, forever retention
 D) S3 aggregate, Athena query change detection
 
-**정답: B**
+**Answer: B**
 
-해설: Log Archive pattern + Object Lock(Compliance mode) = standard. Root can't delete during retention (21 CFR Part 11, SEC 17a-4, SOX). Organization Trail = auto-capture from new accounts. Log Archive vs Audit split = SoD.
+Explanation: Log Archive pattern + Object Lock(Compliance mode) = standard. Root can't delete during retention (21 CFR Part 11, SEC 17a-4, SOX). Organization Trail = auto-capture from new accounts. Log Archive vs Audit split = SoD.
 
 ---
 
-**문제 7.** Dev OU: developer free experiment. Cost runaway risk. Best?
+**Question 7.** Dev OU: developer free experiment. Cost runaway risk. Best?
 
 A) Workloads OU include
 B) Sandbox OU + SCP(p4/p5/x2 expensive Deny) + Budgets Alert + auto Lambda cleanup
 C) Management IAM User
 D) Direct Connect + separate VPC
 
-**정답: B**
+**Answer: B**
 
-해설: Sandbox OU pattern + cost guardrails + auto-cleanup. Month-old unused resource auto-delete standard. A = experiment isolation insufficient, C = antipattern 2 (Management workload), D = network tool.
+Explanation: Sandbox OU pattern + cost guardrails + auto-cleanup. Month-old unused resource auto-delete standard. A = experiment isolation insufficient, C = antipattern 2 (Management workload), D = network tool.
 
 ---
 
-**문제 8.** CFO: split billing by department. Best?
+**Question 8.** CFO: split billing by department. Best?
 
 A) Consolidated Billing + department OU + Cost Allocation Tag + Cost Explorer per-department
 B) Separate Org per department
 C) Remove Linked Account
 D) Trusted Advisor
 
-**정답: A**
+**Answer: A**
 
-해설: Org + tag-based cost split standard. Cost Allocation Tag activate, tag all resources `CostCenter`, `Department`. Tag Policy enforce tagging. B(Org split) loses RI/SP share benefit, fragments governance. A = Layer 1 (Org structure) + billing integration.
+Explanation: Org + tag-based cost split standard. Cost Allocation Tag activate, tag all resources `CostCenter`, `Department`. Tag Policy enforce tagging. B(Org split) loses RI/SP share benefit, fragments governance. A = Layer 1 (Org structure) + billing integration.
 
 ---
 
-**문제 9.** CloudTrail disabling guarantee. Best?
+**Question 9.** CloudTrail disabling guarantee. Best?
 
 A) All accounts' IAM: remove `cloudtrail:StopLogging`, auto-reapply periodic
 B) SCP: `cloudtrail:StopLogging`, `DeleteTrail`, `UpdateTrail` explicit Deny
 C) Trail S3 bucket NACL CloudTrail API traffic Deny
 D) WAF console/API CloudTrail disable-attempt rule block
 
-**정답: B**
+**Answer: B**
 
-해설: SCP Deny unbreakable. Post-Equifax(2017), NIST CSF, PCI-DSS v4.0(2022) mandate log immutability. Standard baseline SCP. A misses root+future Roles = gaps.
+Explanation: SCP Deny unbreakable. Post-Equifax(2017), NIST CSF, PCI-DSS v4.0(2022) mandate log immutability. Standard baseline SCP. A misses root+future Roles = gaps.
 
 ---
 
-**문제 10.** Org just joined, need Landing Zone fast, Audit·Log auto-standard. Best?
+**Question 10.** Org just joined, need Landing Zone fast, Audit·Log auto-standard. Best?
 
 A) CFN/SCP/Config direct multi-month self-build
 B) Control Tower
 C) Service Catalog account·baseline portfolio self-service
 D) Trusted Advisor security·resilience checks manual standard apply
 
-**정답: B**
+**Answer: B**
 
-해설: Control Tower 1h Landing Zone auto. Log Archive·Audit auto, guardrails auto, SRA baseline. C(Service Catalog) is internal Control Tower Account Factory tool, not standalone Landing Zone. D(Trusted Advisor) advisory, doesn't build.
+Explanation: Control Tower 1h Landing Zone auto. Log Archive·Audit auto, guardrails auto, SRA baseline. C(Service Catalog) is internal Control Tower Account Factory tool, not standalone Landing Zone. D(Trusted Advisor) advisory, doesn't build.
 
 ---
 
-**문제 11.** SaaS: company-external Principal access NO OU S3 buckets. One policy one-place block. Best?
+**Question 11.** SaaS: company-external Principal access NO OU S3 buckets. One policy one-place block. Best?
 
 A) Per-bucket Bucket Policy script
 B) Lambda monitor
 C) RCP (`aws:PrincipalOrgID != o-xxxx` Deny) OU-attach
 D) GuardDuty alert
 
-**정답: C**
+**Answer: C**
 
-해설: RCP(2024 Resource-side) one place = all OU resources. Post-2017 S3 public accidents prevent structurally. SCP = Principal-side, RCP = Resource-side complement. A = bucket count risk, B/D = detect only.
+Explanation: RCP(2024 Resource-side) one place = all OU resources. Post-2017 S3 public accidents prevent structurally. SCP = Principal-side, RCP = Resource-side complement. A = bucket count risk, B/D = detect only.
 
 ---
 
-**문제 12.** 100 projects, separate S3/EC2. User accesses only own-project. RBAC = 100 Role explosion. Solution?
+**Question 12.** 100 projects, separate S3/EC2. User accesses only own-project. RBAC = 100 Role explosion. Solution?
 
 A) 100 Permission Set IDC define
 B) ABAC + IDC: IdP attribute → session tag → resource tag match
 C) 100 OU
 D) 100 account
 
-**정답: B**
+**Answer: B**
 
-해설: ABAC(NIST SP 800-162) standard. IdP user attribute(Project) → session tag → resource tag match. One policy = 100 projects handled. New project = attribute set, no policy edit. A/C/D = linear ops burden — RBAC explosion problem unsolved.
+Explanation: ABAC(NIST SP 800-162) standard. IdP user attribute(Project) → session tag → resource tag match. One policy = 100 projects handled. New project = attribute set, no policy edit. A/C/D = linear ops burden — RBAC explosion problem unsolved.
 
 ## Summary
 

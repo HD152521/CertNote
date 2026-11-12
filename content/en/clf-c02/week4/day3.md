@@ -77,62 +77,62 @@ In the next article, we'll cover **data protection**, which is directly tied to 
 
 ## 📝 Practice Questions
 
-**문제 1.** For an audit, you want to download AWS's SOC 2, ISO 27001, and PCI DSS compliance reports. Which service should you use?
+**Question 1.** For an audit, you want to download AWS's SOC 2, ISO 27001, and PCI DSS compliance reports. Which service should you use?
 
 A) AWS Artifact  
 B) AWS Trusted Advisor  
 C) Amazon Inspector  
 D) AWS Config  
 
-**정답: A**  
-해설: AWS Artifact is a portal for self-service downloading of AWS's compliance reports and certificates such as SOC, ISO, and PCI DSS. Trusted Advisor is for best-practice checks, Inspector is for vulnerability assessment, and Config is for resource configuration tracking — none provide compliance report downloads.
+**Answer: A**  
+Explanation: AWS Artifact is a portal for self-service downloading of AWS's compliance reports and certificates such as SOC, ISO, and PCI DSS. Trusted Advisor is for best-practice checks, Inspector is for vulnerability assessment, and Config is for resource configuration tracking — none provide compliance report downloads.
 
 ---
 
-**문제 2.** An EU company must store customer data only within Europe due to legal requirements. How can this be ensured in AWS?
+**Question 2.** An EU company must store customer data only within Europe due to legal requirements. How can this be ensured in AWS?
 
 A) Automatically replicate the data to all Regions  
 B) Select an EU Region as the Region to store the data  
 C) Enable Amazon Macie  
 D) Subscribe to AWS Shield Advanced  
 
-**정답: B**  
-해설: AWS does not arbitrarily move data outside the customer's selected Region, so choosing an EU Region keeps data physically stored within Europe (data sovereignty). Replicating to all Regions would instead send data outside the EU, and Macie and Shield are not features for deciding data location.
+**Answer: B**  
+Explanation: AWS does not arbitrarily move data outside the customer's selected Region, so choosing an EU Region keeps data physically stored within Europe (data sovereignty). Replicating to all Regions would instead send data outside the EU, and Macie and Shield are not features for deciding data location.
 
 ---
 
-**문제 3.** What is the correct understanding of the fact that AWS is PCI DSS certified?
+**Question 3.** What is the correct understanding of the fact that AWS is PCI DSS certified?
 
 A) Customer applications automatically become PCI DSS compliant too  
 B) AWS is responsible for compliance on the infrastructure side, while the customer remains responsible for compliance of their own configuration  
 C) The customer no longer needs to configure any security settings  
 D) PCI DSS applies only to AWS and is unrelated to the customer  
 
-**정답: B**  
-해설: Compliance is also a shared responsibility. AWS is responsible for compliance of the cloud infrastructure (of the cloud), but the customer is responsible for configuring their own data, access controls, and configuration (in the cloud) to meet the regulations. AWS certification does not mean the customer's app is automatically compliant.
+**Answer: B**  
+Explanation: Compliance is also a shared responsibility. AWS is responsible for compliance of the cloud infrastructure (of the cloud), but the customer is responsible for configuring their own data, access controls, and configuration (in the cloud) to meet the regulations. AWS certification does not mean the customer's app is automatically compliant.
 
 ---
 
-**문제 4.** What is the most direct means a customer can control to meet a data sovereignty requirement?
+**Question 4.** What is the most direct means a customer can control to meet a data sovereignty requirement?
 
 A) Choosing the instance type  
 B) Configuring IAM groups  
 C) Selecting the AWS Region where data is stored  
 D) Configuring Auto Scaling  
 
-**정답: C**  
-해설: Where data is physically stored is determined by Region selection, and this is the direct means of meeting data sovereignty. Instance type, IAM groups, and Auto Scaling do not determine the geographic storage location of data.
+**Answer: C**  
+Explanation: Where data is physically stored is determined by Region selection, and this is the direct means of meeting data sovereignty. Instance type, IAM groups, and Auto Scaling do not determine the geographic storage location of data.
 
 ---
 
-**문제 5.** Which of the following is least relevant as a factor to consider when selecting a Region?
+**Question 5.** Which of the following is least relevant as a factor to consider when selecting a Region?
 
 A) Compliance and data sovereignty requirements  
 B) Latency to users  
 C) Service availability in that Region  
 D) The password length of IAM users  
 
-**정답: D**  
-해설: Region selection is based on compliance/data sovereignty, latency, service availability, and cost. The password length of IAM users is merely an account security policy setting and is unrelated to Region selection.
+**Answer: D**  
+Explanation: Region selection is based on compliance/data sovereignty, latency, service availability, and cost. The password length of IAM users is merely an account security policy setting and is unrelated to Region selection.
 
 ---

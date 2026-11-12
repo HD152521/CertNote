@@ -179,72 +179,72 @@ Next week, data security axis begins — IAM, KMS, Secrets Manager, DynamoDB enc
 
 ## 📝 12 Comprehensive Scenario Practice Questions
 
-**문제 1.** A fintech company needs ① security scan (Snyk) ② unit tests ③ lint **in parallel** in one stage, all **must pass** before next stage. CodePipeline config?
+**Question 1.** A fintech company needs ① security scan (Snyk) ② unit tests ③ lint **in parallel** in one stage, all **must pass** before next stage. CodePipeline config?
 
 A) Separate stages sequentially
 B) One stage, runOrder 1, 2, 3
 C) One stage, runOrder 1 for all
 D) Separate pipelines, aggregate via EventBridge
 
-**정답: C**
+**Answer: C**
 
-해설: Same `runOrder=1` in one stage = parallel execution, all must succeed for stage success. A) Separate stages always sequential. B) Different runOrder = sequential (1→2→3). D) Separate pipelines don't provide unified pass gate. Parallel validation in one stage is C.
+Explanation: Same `runOrder=1` in one stage = parallel execution, all must succeed for stage success. A) Separate stages always sequential. B) Different runOrder = sequential (1→2→3). D) Separate pipelines don't provide unified pass gate. Parallel validation in one stage is C.
 
 ---
 
-**문제 2.** Lambda payment function, **10% traffic 10min then 100%**, CloudWatch `ErrorRate > 1%` auto-rollback. Best config?
+**Question 2.** Lambda payment function, **10% traffic 10min then 100%**, CloudWatch `ErrorRate > 1%` auto-rollback. Best config?
 
 A) `LambdaCanary10Percent10Minutes` + Auto Rollback DEPLOYMENT_STOP_ON_ALARM
 B) `LambdaLinear10PercentEvery1Minute` + Auto Rollback DEPLOYMENT_FAILURE
 C) `LambdaAllAtOnce` + post-monitoring
 D) `LambdaCanary10Percent5Minutes` + Manual Approval
 
-**정답: A**
+**Answer: A**
 
-해설: "10% 10min then switch" = Canary exact match. Auto-rollback on Alarm = DEPLOYMENT_STOP_ON_ALARM. B) Linear is gradual increase ≠ "then switch," DEPLOYMENT_FAILURE doesn't trigger on Alarm. C/D don't match requirements. Canary + Alarm combo is answer.
+Explanation: "10% 10min then switch" = Canary exact match. Auto-rollback on Alarm = DEPLOYMENT_STOP_ON_ALARM. B) Linear is gradual increase ≠ "then switch," DEPLOYMENT_FAILURE doesn't trigger on Alarm. C/D don't match requirements. Canary + Alarm combo is answer.
 
 ---
 
-**문제 3.** ECS Fargate Blue/Green CodeDeploy. Which is NOT mandatory?
+**Question 3.** ECS Fargate Blue/Green CodeDeploy. Which is NOT mandatory?
 
 A) ECS service deploymentController.type = CODE_DEPLOY
 B) ALB 2 Target Groups + 2 Listeners
 C) appspec.json with TaskDefinition + LoadBalancerInfo
 D) Fargate task container has CodeDeploy Agent sidecar
 
-**정답: D**
+**Answer: D**
 
-해설: ECS handles everything, Agent unnecessary. A/B/C all mandatory. D always trap — "ECS + Agent" almost always wrong answer on exam.
+Explanation: ECS handles everything, Agent unnecessary. A/B/C all mandatory. D always trap — "ECS + Agent" almost always wrong answer on exam.
 
 ---
 
-**문제 4.** CodeBuild accessing private subnet Aurora, currently fails. Solution?
+**Question 4.** CodeBuild accessing private subnet Aurora, currently fails. Solution?
 
 A) Make Aurora public
 B) VPC mode + subnet + security group + ECR/S3/Secrets endpoint
 C) Lambda wrapper
 D) Manual EC2 bastion run
 
-**정답: B**
+**Answer: B**
 
-해설: VPC mode enables private access. Trade-off: startup +30s, internet outbound gone, each service needs endpoint. A) Public is insecurity. C) Unnecessary complexity. D) Defeats automation. VPC mode + endpoints is standard.
+Explanation: VPC mode enables private access. Trade-off: startup +30s, internet outbound gone, each service needs endpoint. A) Public is insecurity. C) Unnecessary complexity. D) Defeats automation. VPC mode + endpoints is standard.
 
 ---
 
-**문제 5.** Beanstalk production downtime-free, fastest rollback, capacity never drops, 2x cost OK. Strategy?
+**Question 5.** Beanstalk production downtime-free, fastest rollback, capacity never drops, 2x cost OK. Strategy?
 
 A) Rolling
 B) Rolling with Additional Batch
 C) Immutable
 D) All at once
 
-**정답: C**
+**Answer: C**
 
-해설: Immutable meets all: no downtime ✓, fast rollback (delete new ASG) ✓, capacity maintained (old ASG untouched) ✓, 2x cost (temp) ✓. A) Capacity drops. B) Rollback is redeploy. D) Has downtime. Immutable satisfies all four.
+Explanation: Immutable meets all: no downtime ✓, fast rollback (delete new ASG) ✓, capacity maintained (old ASG untouched) ✓, 2x cost (temp) ✓. A) Capacity drops. B) Rollback is redeploy. D) Has downtime. Immutable satisfies all four.
 
 ---
 
-**문제 6.** Source account pipeline → Prod account ECS. Mandatory?
+**Question 6.** Source account pipeline → Prod account ECS. Mandatory?
 
 A) Source pipeline role sts:AssumeRole → Prod role
 B) Prod CrossAccountDeployRole trusting Source
@@ -252,87 +252,87 @@ C) Artifact CMK cross-account policy
 D) Artifact bucket policy Prod read
 E) ECS container CodeDeploy Agent
 
-**정답: A, B, C, D (exclude E)**
+**Answer: A, B, C, D (exclude E)**
 
-해설: Cross-account chain A+B+C+D all essential. E) ECS never needs Agent. Missing any one breaks deployment. Four-part chain is standard cross-account pattern.
+Explanation: Cross-account chain A+B+C+D all essential. E) ECS never needs Agent. Missing any one breaks deployment. Four-part chain is standard cross-account pattern.
 
 ---
 
-**문제 7.** Beanstalk Worker SQS messages occasionally **process twice**. Root cause and fix?
+**Question 7.** Beanstalk Worker SQS messages occasionally **process twice**. Root cause and fix?
 
 A) SQS at-least-once is normal; application must idempotency-check
 B) Beanstalk SQS Daemon bug
 C) ASG over-scaled
 D) Set visibility timeout 0
 
-**정답: A**
+**Answer: A**
 
-해설: SQS Standard delivers at-least-once; Daemon passes to application unchanged. Application must detect duplicate (message ID in DynamoDB). B) Not bug. C) Unrelated. D) Makes duplication worse. Idempotency on application side is answer.
+Explanation: SQS Standard delivers at-least-once; Daemon passes to application unchanged. Application must detect duplicate (message ID in DynamoDB). B) Not bug. C) Unrelated. D) Makes duplication worse. Idempotency on application side is answer.
 
 ---
 
-**문제 8.** Pipeline fails on production deploy; auto-create JIRA incident. Best pattern?
+**Question 8.** Pipeline fails on production deploy; auto-create JIRA incident. Best pattern?
 
 A) CodeStar Notifications → Slack → manual JIRA
 B) EventBridge (FAILED detection) → Lambda → JIRA REST API
 C) CloudWatch Logs Insight 5min polling
 D) Console JIRA integration
 
-**정답: B**
+**Answer: B**
 
-해설: "Complex conditional automation" = EventBridge + Lambda standard. A) Manual step. C) Polling inefficient. D) No console option. EventBridge + Lambda is event-driven automation pattern.
+Explanation: "Complex conditional automation" = EventBridge + Lambda standard. A) Manual step. C) Polling inefficient. D) No console option. EventBridge + Lambda is event-driven automation pattern.
 
 ---
 
-**문제 9.** CodeBuild IMAGE_TAG dynamic value → CodeDeploy in next stage. Mechanism?
+**Question 9.** CodeBuild IMAGE_TAG dynamic value → CodeDeploy in next stage. Mechanism?
 
 A) buildspec.yml `env.variables`
 B) buildspec.yml `env.exported-variables` → `#{BuildVariables.IMAGE_TAG}`
 C) DynamoDB store/retrieve
 D) S3 file pass
 
-**정답: B**
+**Answer: B**
 
-해설: `exported-variables` standard inter-stage variable passing. Build exports → pipeline captures → deploy references. A) Static only. C/D) Possible but extra overhead. Exported-variables is standard.
+Explanation: `exported-variables` standard inter-stage variable passing. Build exports → pipeline captures → deploy references. A) Static only. C/D) Possible but extra overhead. Exported-variables is standard.
 
 ---
 
-**문제 10.** EC2 fleet 100, deployment + CloudWatch `ErrorRate > 5%` alarm. Auto-rollback setup?
+**Question 10.** EC2 fleet 100, deployment + CloudWatch `ErrorRate > 5%` alarm. Auto-rollback setup?
 
 A) AlarmConfiguration + DEPLOYMENT_STOP_ON_ALARM in AutoRollbackConfiguration.Events
 B) CloudWatch directly CodeDeploy API
 C) Lambda on alarm
 D) ASG health check type ELB
 
-**정답: A**
+**Answer: A**
 
-해설: Two settings required: ① alarm registered ② auto-rollback event triggered on alarm. B) CloudWatch can't call CodeDeploy API. C) Manual complexity. D) Unrelated. Both settings together = auto-rollback answer.
+Explanation: Two settings required: ① alarm registered ② auto-rollback event triggered on alarm. B) CloudWatch can't call CodeDeploy API. C) Manual complexity. D) Unrelated. Both settings together = auto-rollback answer.
 
 ---
 
-**문제 11.** Beanstalk environment external RDS, auto-rotate password 30-day. Setup?
+**Question 11.** Beanstalk environment external RDS, auto-rotate password 30-day. Setup?
 
 A) .ebextensions plaintext, manual update
 B) Secrets Manager auto-rotation, application fetches via SDK
 C) S3 file rotation
 D) Hardcode in user data
 
-**정답: B**
+**Answer: B**
 
-해설: Secrets Manager native auto-rotation + Lambda. Application dynamic fetch via SDK = new password instant use. A) Plaintext, manual. C) Rotation hard to automate. D) Rotation impossible. Secrets Manager auto-rotate + SDK fetch is pattern.
+Explanation: Secrets Manager native auto-rotation + Lambda. Application dynamic fetch via SDK = new password instant use. A) Plaintext, manual. C) Rotation hard to automate. D) Rotation impossible. Secrets Manager auto-rotate + SDK fetch is pattern.
 
 ---
 
-**문제 12.** CodeBuild Java unit test results (JUnit XML) visualization in console?
+**Question 12.** CodeBuild Java unit test results (JUnit XML) visualization in console?
 
 A) `artifacts.files` + artifact name
 B) `reports` section, file-format JUNITXML
 C) `cache.paths` LOCAL_CUSTOM_CACHE
 D) `env.exported-variables` JUNIT_XML
 
-**정답: B**
+**Answer: B**
 
-해설: `reports` section processes tests separately, console visualizes. JUnit, Cucumber, TestNG, NUnit, Visual Studio TRX supported. A) Artifacts = general output. C) Cache is dependency. D) Variables = passing values. Reports section is test visualization.
+Explanation: `reports` section processes tests separately, console visualizes. JUnit, Cucumber, TestNG, NUnit, Visual Studio TRX supported. A) Artifacts = general output. C) Cache is dependency. D) Variables = passing values. Reports section is test visualization.
 
 ```yaml
 reports:

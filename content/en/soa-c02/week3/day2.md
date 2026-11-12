@@ -268,9 +268,9 @@ B) OAM Sink in Monitoring Account → Link in Prod/DR → Monitoring Account das
 C) CloudFormation StackSet deploy identical dashboard each account
 D) Cross-Region auto-supported, no setup needed
 
-**정답: B**
+**Answer: B**
 
-해설: OAM (CloudWatch Cross-Account Observability) standard config. Sink = Monitoring Account receives; Link = Source Accounts send. Widget metric definition accountId = multiple-account metrics single widget. StackSet each-account same dashboard = still per-account login needed.
+Explanation: OAM (CloudWatch Cross-Account Observability) standard config. Sink = Monitoring Account receives; Link = Source Accounts send. Widget metric definition accountId = multiple-account metrics single widget. StackSet each-account same dashboard = still per-account login needed.
 
 ---
 
@@ -281,9 +281,9 @@ B) Dashboard Variables — Values environment resource IDs, widget variable refe
 C) Search Expression all-environment metrics single graph
 D) CloudFormation parameters deploy environment-specific dashboards
 
-**정답: B**
+**Answer: B**
 
-해설: Dashboard Variables designed this purpose. Dropdown-type variable environment dev/stage/prod resource IDs Values, widget metrics `${EnvironmentId}` reference. Dropdown change → all widgets change. 3 separate dashboards = 3x maintenance burden.
+Explanation: Dashboard Variables designed this purpose. Dropdown-type variable environment dev/stage/prod resource IDs Values, widget metrics `${EnvironmentId}` reference. Dropdown change → all widgets change. 3 separate dashboards = 3x maintenance burden.
 
 ---
 
@@ -294,9 +294,9 @@ B) SEARCH expression: `SEARCH('{AWS/EC2,InstanceId} MetricName="CPUUtilization"'
 C) Use ASG metrics instead
 D) Lambda daily dashboard update
 
-**정답: B**
+**Answer: B**
 
-해설: SEARCH expression dynamically retrieves metrics matching namespace, Dimension pattern. New instance starts → CPUUtilization metric auto-published → auto-included SEARCH result. Manual listing → update per new instance. ASG metrics only group average, no per-instance tracking.
+Explanation: SEARCH expression dynamically retrieves metrics matching namespace, Dimension pattern. New instance starts → CPUUtilization metric auto-published → auto-included SEARCH result. Manual listing → update per new instance. ASG metrics only group average, no per-instance tracking.
 
 ---
 
@@ -307,9 +307,9 @@ B) Partner can terminate EC2 instances
 C) Instance IDs, traffic patterns, error messages exposed without auth
 D) IAM policy auto-changes
 
-**정답: C**
+**Answer: C**
 
-해설: Public Sharing = anyone with URL sees dashboard. Instance IDs, error patterns, traffic spike patterns = useful attacker info. Read-only so can't directly modify, but information exposure risk. External sharing needs SSO users or separate read-only IAM account.
+Explanation: Public Sharing = anyone with URL sees dashboard. Instance IDs, error patterns, traffic spike patterns = useful attacker info. Read-only so can't directly modify, but information exposure risk. External sharing needs SSO users or separate read-only IAM account.
 
 ---
 
@@ -320,9 +320,9 @@ B) Change history, team review (PR), environment auto-deploy, drift detection
 C) Cost reduced per dashboard
 D) 3+ dashboards free
 
-**정답: B**
+**Answer: B**
 
-해설: IaC management includes code review (PR), Git history "who when what widget added," environment (dev/prod) parameters auto-deploy identical template. Cost/speed unchanged. `AWS::CloudWatch::Dashboard` DashboardBody property JSON.
+Explanation: IaC management includes code review (PR), Git history "who when what widget added," environment (dev/prod) parameters auto-deploy identical template. Cost/speed unchanged. `AWS::CloudWatch::Dashboard` DashboardBody property JSON.
 
 ---
 
@@ -333,7 +333,7 @@ B) Redesign Executive → Service → Operational hierarchy, TV display Service 
 C) Consolidate all metrics single dashboard
 D) Reduce alarms, separate dashboard correlation
 
-**정답: B**
+**Answer: B**
 
-해설: Hierarchical dashboard standard solution. Normally display Level 2 (Golden Signals per-service) on TV. Discover anomaly → drill-down Level 3 (Operational). Level 1 (business KPI) executive reports. Not viewing all 20, but "which level now" clear.
+Explanation: Hierarchical dashboard standard solution. Normally display Level 2 (Golden Signals per-service) on TV. Discover anomaly → drill-down Level 3 (Operational). Level 1 (business KPI) executive reports. Not viewing all 20, but "which level now" clear.
 

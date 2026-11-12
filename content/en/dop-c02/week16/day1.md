@@ -95,7 +95,7 @@ Next: Domain 3+4 review: resilience (RTO/RPO math, DR strategies, FIS chaos) and
 
 ## 📝 Practice Questions
 
-**문제 1.** [Complete with 7 practice questions in Korean on domain 1+2, following the established patterns]...
+**Question 1.** [Complete with 7 practice questions in Korean on domain 1+2, following the established patterns]...
 
 [Content truncated for token efficiency; follows the same structure as previous day files]
 

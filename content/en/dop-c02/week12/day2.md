@@ -260,7 +260,7 @@ The next article explores **auto-healing and control theory** — how to feedbac
 
 ## 📝 Practice Questions
 
-**문제 1.** Automation Document의 단계(step)들 간에 데이터를 전달하는 메커니즘은?
+**Question 1.** Automation Document의 단계(step)들 간에 데이터를 전달하는 메커니즘은?
 
 A) 전역 변수
 
@@ -270,13 +270,13 @@ C) 환경 변수
 
 D) 중앙 결과 저장소(DynamoDB)에 저장
 
-**정답: B**
+**Answer: B**
 
-해설: Automation Document는 DAG의 단계 간에 outputs → inputs 연결로 데이터를 전달한다. 각 step에서 선언한 output이 다음 step에서 `{{ StepName.OutputName }}` 문법으로 참조되며, SSM이 값을 주입한다. 전역 변수(A)나 환경 변수(C)는 이 구조에 없고, DynamoDB(D)는 오버헤드다.
+Explanation: Automation Document는 DAG의 단계 간에 outputs → inputs 연결로 데이터를 전달한다. 각 step에서 선언한 output이 다음 step에서 `{{ StepName.OutputName }}` 문법으로 참조되며, SSM이 값을 주입한다. 전역 변수(A)나 환경 변수(C)는 이 구조에 없고, DynamoDB(D)는 오버헤드다.
 
 ---
 
-**문제 2.** `aws:approve` 스텝의 핵심 특징 3가지는?
+**Question 2.** `aws:approve` 스텝의 핵심 특징 3가지는?
 
 A) 동기적으로 on-call이 대기할 때까지 블로킹, 브라우저 팝업으로 승인
 
@@ -286,13 +286,13 @@ C) 승인 거부 시 자동 롤백
 
 D) 승인 타임아웃 설정 불가
 
-**정답: B**
+**Answer: B**
 
-해설: `aws:approve`는 비동기 인-루프 단계로, 승인자들에게 SNS 메시지를 보내고 Systems Manager 승인 큐에 요청을 등록한 뒤 대기한다. MinRequiredApprovals는 분리된 의무(SOD) 원칙으로, "2명 이상 서명 필요"같은 쿼럼 검사다. 다른 병렬화 가능한 step은 동시 실행되고, 승인 시 해당 step에서 재개된다. 승인 거부는 workflow를 실패로 종료하지만(C처럼 자동 롤백은 아니고) 선택적 rollbackSteps으로 명시적 롤백은 가능하다.
+Explanation: `aws:approve`는 비동기 인-루프 단계로, 승인자들에게 SNS 메시지를 보내고 Systems Manager 승인 큐에 요청을 등록한 뒤 대기한다. MinRequiredApprovals는 분리된 의무(SOD) 원칙으로, "2명 이상 서명 필요"같은 쿼럼 검사다. 다른 병렬화 가능한 step은 동시 실행되고, 승인 시 해당 step에서 재개된다. 승인 거부는 workflow를 실패로 종료하지만(C처럼 자동 롤백은 아니고) 선택적 rollbackSteps으로 명시적 롤백은 가능하다.
 
 ---
 
-**문제 3.** Automation Document의 이상적 특성은 **멱등성**이다. 다음 중 아닌 것은?
+**Question 3.** Automation Document의 이상적 특성은 **멱등성**이다. 다음 중 아닌 것은?
 
 A) AuthorizeSecurityGroupIngress — 규칙이 이미 있으면 무시하고 성공
 
@@ -302,13 +302,13 @@ C) 이전 값에서 1을 뺀다 (DesiredCapacity - 1) — 재실행 시마다 �
 
 D) ModifyInstanceAttribute SourceDestCheck = false — 이미 false면 무시하고 성공
 
-**정답: C**
+**Answer: C**
 
-해설: 멱등성은 f(f(x)) = f(x) — 동일한 상태로 수렴해야 한다. 상태(목표값) 기반 API는 멱등(A, B, D)이지만, 상대적 변경(C)은 멱등이 아니다. 자동화의 재시도나 재실행에 대비해야 하므로, 상태 기반 설정이 필수다.
+Explanation: 멱등성은 f(f(x)) = f(x) — 동일한 상태로 수렴해야 한다. 상태(목표값) 기반 API는 멱등(A, B, D)이지만, 상대적 변경(C)은 멱등이 아니다. 자동화의 재시도나 재실행에 대비해야 하므로, 상태 기반 설정이 필수다.
 
 ---
 
-**문제 4.** GuardDuty가 심각한 보안 발견을 보고했다. 즉시 EC2 인스턴스를 격리하되, 법무팀 승인 없이는 계정 정지까지 가면 안 된다는 정책이 있다. 가장 적합한 설계는?
+**Question 4.** GuardDuty가 심각한 보안 발견을 보고했다. 즉시 EC2 인스턴스를 격리하되, 법무팀 승인 없이는 계정 정지까지 가면 안 된다는 정책이 있다. 가장 적합한 설계는?
 
 A) Automation: GuardDuty → 격리 step → 계정 정지 step (순차)
 
@@ -318,13 +318,13 @@ C) 격리는 Lambda 직접 호출, 법무팀은 이메일로 체크
 
 D) 계정 정지를 빼고 격리만 자동
 
-**정답: B**
+**Answer: B**
 
-해설: 위험한 작업(계정 정지)은 인가된 결정이 필요하고, 빠른 containment(격리)는 지체 없어야 한다. 따라서 격리 step은 자동으로 즉시, 이후 ap승인 gate를 거쳐야 한다. aws:approve는 비동기이므로, 격리 이후 다른 추적 step을 병렬로 실행할 수도 있다. 이메일 체크(C)는 비자동화, 격리만(D)은 미완성.
+Explanation: 위험한 작업(계정 정지)은 인가된 결정이 필요하고, 빠른 containment(격리)는 지체 없어야 한다. 따라서 격리 step은 자동으로 즉시, 이후 ap승인 gate를 거쳐야 한다. aws:approve는 비동기이므로, 격리 이후 다른 추적 step을 병렬로 실행할 수도 있다. 이메일 체크(C)는 비자동화, 격리만(D)은 미완성.
 
 ---
 
-**문제 5.** Automation Document에서 step 재실행 시 다시 같은 step을 두 번 호출하게 되는데, 부작용이 없도록 하려면?
+**Question 5.** Automation Document에서 step 재실행 시 다시 같은 step을 두 번 호출하게 되는데, 부작용이 없도록 하려면?
 
 A) 각 step을 하나의 Lambda로 래핑해 내부에 중복 검사 로직 추가
 
@@ -334,13 +334,13 @@ C) Step action 자체가 멱등(상태 기반)하도록 설계 (SetDesiredCapaci
 
 D) 불가능 — EventBridge 전달처럼 at-least-once는 필연적
 
-**정답: C**
+**Answer: C**
 
-해설: 멱등성은 step action의 설계에서 나온다. AWS API 대부분이 상태 기반이므로(이미 상태 X면 no-op), 제대로 사용하면 자동으로 멱등이다. Lambda 래핑(A)은 추가 복잡도고, 재시도 비활성화(B)는 과도한 실패, at-least-once(D)는 일부 맞지만 실제로는 멱등하게 설계 가능하다.
+Explanation: 멱등성은 step action의 설계에서 나온다. AWS API 대부분이 상태 기반이므로(이미 상태 X면 no-op), 제대로 사용하면 자동으로 멱등이다. Lambda 래핑(A)은 추가 복잡도고, 재시도 비활성화(B)는 과도한 실패, at-least-once(D)는 일부 맞지만 실제로는 멱등하게 설계 가능하다.
 
 ---
 
-**문제 6.** 복잡한 Automation이 중간에 실패했다 — 일부 step은 성공했다. 실패 전 상태로 되돌려야 한다. 메커니즘은?
+**Question 6.** 복잡한 Automation이 중간에 실패했다 — 일부 step은 성공했다. 실패 전 상태로 되돌려야 한다. 메커니즘은?
 
 A) Automation 전체를 다시 처음부터 실행
 
@@ -350,13 +350,13 @@ C) CloudFormation 스택 롤백처럼 자동 수행 (명시 불필요)
 
 D) 수동으로 EC2 콘솔에서 되돌리기
 
-**정답: B**
+**Answer: B**
 
-해설: Automation Document는 선택적 `rollbackSteps` 블록을 가지며, 실패 시 SSM이 롤백 단계를 역순으로 실행한다. 이는 명시적 정의가 필요하고(A, C 아님), 복잡한 작업의 안전망이다.
+Explanation: Automation Document는 선택적 `rollbackSteps` 블록을 가지며, 실패 시 SSM이 롤백 단계를 역순으로 실행한다. 이는 명시적 정의가 필요하고(A, C 아님), 복잡한 작업의 안전망이다.
 
 ---
 
-**문제 7.** EventBridge 규칙이 Automation Document를 Target으로 가리킬 때, 매번 Automation을 호출한다. 각 호출마다 새로운 ExecutionId가 생기고, 또 다른 개별 실행인가?
+**Question 7.** EventBridge 규칙이 Automation Document를 Target으로 가리킬 때, 매번 Automation을 호출한다. 각 호출마다 새로운 ExecutionId가 생기고, 또 다른 개별 실행인가?
 
 A) 아니다 — 같은 호출이 재시도되는 것뿐
 
@@ -366,9 +366,9 @@ C) 주기적 트리거면 yes, 단발 이벤트면 no
 
 D) Execution ID는 중요하지 않음
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge 이벤트 하나당 Automation 실행 하나다. 각 실행은 독립적 ExecutionId를 가지고, 로그·모니터링·재시도도 개별적으로 추적된다. "재시도"는 Automation 내부의 step-level 재시도(aws:waitForAwsResourceProperty에 지정된 재시도)와 다르다.
+Explanation: EventBridge 이벤트 하나당 Automation 실행 하나다. 각 실행은 독립적 ExecutionId를 가지고, 로그·모니터링·재시도도 개별적으로 추적된다. "재시도"는 Automation 내부의 step-level 재시도(aws:waitForAwsResourceProperty에 지정된 재시도)와 다르다.
 
 ---
 

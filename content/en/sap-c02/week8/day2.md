@@ -270,87 +270,87 @@ Next day covers EventBridge for event routing. If Step Functions is the tool for
 
 ## 📝 Practice Questions
 
-**문제 1.** An IoT platform receives 5,000 events per second from vending machines (sales·inventory·temperature). Each event's workflow takes an average of 30 seconds and ends in 4 steps. What's the most cost-efficient Step Functions configuration?
+**Question 1.** An IoT platform receives 5,000 events per second from vending machines (sales·inventory·temperature). Each event's workflow takes an average of 30 seconds and ends in 4 steps. What's the most cost-efficient Step Functions configuration?
 
 A) Standard
 B) Express
 C) Standard with Distributed Map
 D) Lambda chain without Step Functions
 
-**정답: B**
-해설: High-frequency 5,000 events per second + short workflow ending within 5 minutes is Express's precise sweet spot. Standard charges per state transition ($25/M), so 5,000 events/sec × 4 steps × 3,600 × 24 × 30 = astronomical 5 trillion transitions/month cost. Express charges per invocation + time, about 1/100th cost. C (Distributed Map) is for parallelism within a single workflow; this scenario has many workflow instances themselves. D (Lambda chain) requires retry/compensation scattered in code, poor visibility and operational burden. Additional: Coca-Cola, Snap IoT cases all use Express + S3 archive pattern as standard.
+**Answer: B**
+Explanation: High-frequency 5,000 events per second + short workflow ending within 5 minutes is Express's precise sweet spot. Standard charges per state transition ($25/M), so 5,000 events/sec × 4 steps × 3,600 × 24 × 30 = astronomical 5 trillion transitions/month cost. Express charges per invocation + time, about 1/100th cost. C (Distributed Map) is for parallelism within a single workflow; this scenario has many workflow instances themselves. D (Lambda chain) requires retry/compensation scattered in code, poor visibility and operational burden. Additional: Coca-Cola, Snap IoT cases all use Express + S3 archive pattern as standard.
 
 ---
 
-**문제 2.** Payment → Inventory Deduction → Shipment Booking workflow. If shipment booking fails, need refund + inventory restoration. What's the appropriate pattern?
+**Question 2.** Payment → Inventory Deduction → Shipment Booking workflow. If shipment booking fails, need refund + inventory restoration. What's the appropriate pattern?
 
 A) Lambda chain + try/catch in code
 B) Step Functions Standard + Catch + compensation branch
 C) EventBridge Rule chain
 D) SQS DLQ to isolate failed events
 
-**정답: B**
-해설: Distributed transaction compensation is Saga pattern, implemented in Step Functions with each Task's Catch branching to separate compensation state. A has compensation logic scattered in code, poor visibility and maintenance; Lambda 15min timeout also constrains. C (EventBridge chain) is possible but lacks workflow instance tracking and persistent state. D is failure isolation, not compensation. Standard because compensation workflows can take days, running up to 1 year. Additional: Compensation transactions must be idempotent, standard pattern includes `idempotencyKey` in input.
+**Answer: B**
+Explanation: Distributed transaction compensation is Saga pattern, implemented in Step Functions with each Task's Catch branching to separate compensation state. A has compensation logic scattered in code, poor visibility and maintenance; Lambda 15min timeout also constrains. C (EventBridge chain) is possible but lacks workflow instance tracking and persistent state. D is failure isolation, not compensation. Standard because compensation workflows can take days, running up to 1 year. Additional: Compensation transactions must be idempotent, standard pattern includes `idempotencyKey` in input.
 
 ---
 
-**문제 3.** Payment workflow. External payment gateway asynchronously sends result via webhook. Workflow must wait in the meantime. What integration pattern?
+**Question 3.** Payment workflow. External payment gateway asynchronously sends result via webhook. Workflow must wait in the meantime. What integration pattern?
 
 A) Wait State (10 minutes)
 B) .sync (service integration)
 C) .waitForTaskToken
 D) Lambda polling loop
 
-**정답: C**
-해설: `.waitForTaskToken` issues token to Task and durably waits until external system calls `SendTaskSuccess`/`SendTaskFailure`. Webhook receiver (Lambda) receives token and calls, resuming workflow. A (Wait) time-based so unsuitable if external response timing uncertain. B (.sync) for AWS service integration (ECS/EMR/Glue etc) Job completion. D adds polling cost and complexity. Pitfall: Human approval uses same pattern (.waitForTaskToken + SNS email). Additional: Standard only, Express's 5min limit prevents it.
+**Answer: C**
+Explanation: `.waitForTaskToken` issues token to Task and durably waits until external system calls `SendTaskSuccess`/`SendTaskFailure`. Webhook receiver (Lambda) receives token and calls, resuming workflow. A (Wait) time-based so unsuitable if external response timing uncertain. B (.sync) for AWS service integration (ECS/EMR/Glue etc) Job completion. D adds polling cost and complexity. Pitfall: Human approval uses same pattern (.waitForTaskToken + SNS email). Additional: Standard only, Express's 5min limit prevents it.
 
 ---
 
-**문제 4.** 1 million CSV files stored in S3, each processed by Lambda. What's the appropriate pattern?
+**Question 4.** 1 million CSV files stored in S3, each processed by Lambda. What's the appropriate pattern?
 
 A) Map state (inline mode)
 B) Distributed Map + Express child execution
 C) Lambda inside Lambda loop
 D) ECS Batch with 1M tasks
 
-**정답: B**
-해설: Standard Map has 40 concurrent limit, Distributed Map supports 10,000 parallel + ItemReader can read S3 list directly. Use Express child execution for cost/speed optimization. A's 40 concurrent limit too slow for 1M processing. C violates Lambda 15min timeout and payload limit. D's container boot cost exceeds Lambda, large operational burden. Pitfall: Distributed Map uses ItemReader for S3 list, CSV, JSON Lines directly as source—no pre-processing needed. ResultWriter auto-aggregates. Additional: re:Invent 2022 talk.
+**Answer: B**
+Explanation: Standard Map has 40 concurrent limit, Distributed Map supports 10,000 parallel + ItemReader can read S3 list directly. Use Express child execution for cost/speed optimization. A's 40 concurrent limit too slow for 1M processing. C violates Lambda 15min timeout and payload limit. D's container boot cost exceeds Lambda, large operational burden. Pitfall: Distributed Map uses ItemReader for S3 list, CSV, JSON Lines directly as source—no pre-processing needed. ResultWriter auto-aggregates. Additional: re:Invent 2022 talk.
 
 ---
 
-**문제 5.** Step Functions Workflow step fails with "Lambda.ServiceException". Retry 3 times with exponential backoff, on continued failure enter compensation. ASL?
+**Question 5.** Step Functions Workflow step fails with "Lambda.ServiceException". Retry 3 times with exponential backoff, on continued failure enter compensation. ASL?
 
 A) Retry only
 B) Catch only
 C) Retry + Catch both
 D) Lambda caller handles retry
 
-**정답: C**
-해설: Retry re-executes same state (exponential backoff + jitter), Catch branches to different state. Two layers collaborate. Retry 3× → still fails → Catch routes to compensation. A lacks compensation branch. B goes straight to compensation without retry, wasting costs on transient errors. D scattered retry in code loses visibility and standardization. Pitfall: ErrorEquals in Retry should list `["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "States.TaskFailed"]`—transient errors only. `States.ALL` for compensation trigger only. JitterStrategy=FULL (2023) prevents thundering herd.
+**Answer: C**
+Explanation: Retry re-executes same state (exponential backoff + jitter), Catch branches to different state. Two layers collaborate. Retry 3× → still fails → Catch routes to compensation. A lacks compensation branch. B goes straight to compensation without retry, wasting costs on transient errors. D scattered retry in code loses visibility and standardization. Pitfall: ErrorEquals in Retry should list `["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "States.TaskFailed"]`—transient errors only. `States.ALL` for compensation trigger only. JitterStrategy=FULL (2023) prevents thundering herd.
 
 ---
 
-**문제 6.** Standard Workflow pricing model is?
+**Question 6.** Standard Workflow pricing model is?
 
 A) Invocations only
 B) Execution time (seconds) only
 C) State transitions
 D) Free
 
-**정답: C**
-해설: Standard charges $25/M per state transition. One workflow with 4 steps = 4 transitions per execution. Cost = execution frequency × step count. Express is invocation + time model. A close to Express model. B incorrect simplification. D absolutely not free. Pitfall: Standard runs long, so step count is cost driver more than call frequency. "5-step workflow 1M times/month" = 5M transitions = ~$125.
+**Answer: C**
+Explanation: Standard charges $25/M per state transition. One workflow with 4 steps = 4 transitions per execution. Cost = execution frequency × step count. Express is invocation + time model. A close to Express model. B incorrect simplification. D absolutely not free. Pitfall: Standard runs long, so step count is cost driver more than call frequency. "5-step workflow 1M times/month" = 5M transitions = ~$125.
 
 ---
 
-**문제 7.** Launch Fargate container via ECS RunTask, wait for completion, then proceed to next state. Appropriate integration pattern?
+**Question 7.** Launch Fargate container via ECS RunTask, wait for completion, then proceed to next state. Appropriate integration pattern?
 
 A) Request-Response
 B) .sync
 C) .waitForTaskToken
 D) Polling Lambda
 
-**정답: B**
-해설: `arn:aws:states:::ecs:runTask.sync` means Step Functions polls on behalf until ECS Task completes. Internally EventBridge receives ECS Task State Change events and notifies Step Functions. IAM Role needs `iam:PassRole` + `events:PutTargets`/`events:PutRule`. A only starts Task, doesn't wait. C for external callbacks. D unmanaged polling, operational burden. Pitfall: ".sync not working" scenarios 99% are missing IAM permissions. Additional: EMR Step, Glue Job, SageMaker Training/Transform follow same pattern.
+**Answer: B**
+Explanation: `arn:aws:states:::ecs:runTask.sync` means Step Functions polls on behalf until ECS Task completes. Internally EventBridge receives ECS Task State Change events and notifies Step Functions. IAM Role needs `iam:PassRole` + `events:PutTargets`/`events:PutRule`. A only starts Task, doesn't wait. C for external callbacks. D unmanaged polling, operational burden. Pitfall: ".sync not working" scenarios 99% are missing IAM permissions. Additional: EMR Step, Glue Job, SageMaker Training/Transform follow same pattern.
 
 ---
 

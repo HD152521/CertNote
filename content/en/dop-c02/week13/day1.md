@@ -107,7 +107,7 @@ Next article extends HA **beyond single region to multi-region** — Route 53 ro
 
 ## 📝 Practice Questions
 
-**문제 1.** 전통적 RDS Multi-AZ에서 Standby 인스턴스로 직접 읽기 쿼리를 보낼 수 없는 근본 이유는?
+**Question 1.** 전통적 RDS Multi-AZ에서 Standby 인스턴스로 직접 읽기 쿼리를 보낼 수 없는 근본 이유는?
 
 A) Standby가 다른 리전에 있어서
 
@@ -117,13 +117,13 @@ C) AWS가 비용 때문에 의도적으로 막아서
 
 D) Standby는 비동기 복제라 데이터가 오래돼서
 
-**정답: B**
+**Answer: B**
 
-해설: 전통적 RDS Multi-AZ의 동기 복제는 스토리지 엔진 아래의 디스크 블록을 그대로 미러링하는 물리적·블록 레벨 복제다(DRBD 유사). Standby는 Primary와 바이트 단위로 동일한 "그림자 디스크"일 뿐 자기 쿼리 처리 엔진을 돌리지 않으므로 읽기를 받을 수 없다. 반대로 Read Replica는 binlog/WAL 기반 논리적 비동기 복제라 자기 쿼리 엔진을 가져 읽기를 처리한다 — 이 물리/논리 복제의 차이가 "왜 Multi-AZ Standby는 read 불가인데 Read Replica는 가능한가"의 답이다. 리전(A)·비용(C)·복제 지연(D)은 본질이 아니다.
+Explanation: 전통적 RDS Multi-AZ의 동기 복제는 스토리지 엔진 아래의 디스크 블록을 그대로 미러링하는 물리적·블록 레벨 복제다(DRBD 유사). Standby는 Primary와 바이트 단위로 동일한 "그림자 디스크"일 뿐 자기 쿼리 처리 엔진을 돌리지 않으므로 읽기를 받을 수 없다. 반대로 Read Replica는 binlog/WAL 기반 논리적 비동기 복제라 자기 쿼리 엔진을 가져 읽기를 처리한다 — 이 물리/논리 복제의 차이가 "왜 Multi-AZ Standby는 read 불가인데 Read Replica는 가능한가"의 답이다. 리전(A)·비용(C)·복제 지연(D)은 본질이 아니다.
 
 ---
 
-**문제 2.** Aurora의 클러스터 볼륨은 6개 복사본을 3개 AZ에 분산하고 4/6 write 쿼럼, 3/6 read 쿼럼을 쓴다. 이 설계가 보장하는 장애 내성은?
+**Question 2.** Aurora의 클러스터 볼륨은 6개 복사본을 3개 AZ에 분산하고 4/6 write 쿼럼, 3/6 read 쿼럼을 쓴다. 이 설계가 보장하는 장애 내성은?
 
 A) 모든 AZ가 동시에 죽어도 쓰기 가능
 
@@ -133,13 +133,13 @@ C) 디스크 장애가 절대 일어나지 않음을 보장
 
 D) 단일 copy만으로도 쓰기 가능
 
-**정답: B**
+**Answer: B**
 
-해설: 6 copy를 3 AZ에 AZ당 2개씩 두므로, AZ 하나가 통째로 죽으면 2 copy를 잃지만 남은 4 copy로 4/6 write 쿼럼을 채워 쓰기를 계속한다. 그 상태에서 추가로 1 copy가 더 죽어 총 3 copy를 잃어도, 남은 3 copy로 3/6 read 쿼럼을 채워 읽기는 유지된다. 이를 "AZ+1" 장애 모델이라 한다. `W(4)+R(3)=7 > N(6)`이라 쿼럼 교집합이 보장돼 일관성도 유지된다. 모든 AZ 동시 사망(A)이나 단일 copy 쓰기(D)는 쿼럼 수학과 맞지 않고, 디스크 장애가 안 난다(C)는 게 아니라 나도 견디게 설계한 것이다.
+Explanation: 6 copy를 3 AZ에 AZ당 2개씩 두므로, AZ 하나가 통째로 죽으면 2 copy를 잃지만 남은 4 copy로 4/6 write 쿼럼을 채워 쓰기를 계속한다. 그 상태에서 추가로 1 copy가 더 죽어 총 3 copy를 잃어도, 남은 3 copy로 3/6 read 쿼럼을 채워 읽기는 유지된다. 이를 "AZ+1" 장애 모델이라 한다. `W(4)+R(3)=7 > N(6)`이라 쿼럼 교집합이 보장돼 일관성도 유지된다. 모든 AZ 동시 사망(A)이나 단일 copy 쓰기(D)는 쿼럼 수학과 맞지 않고, 디스크 장애가 안 난다(C)는 게 아니라 나도 견디게 설계한 것이다.
 
 ---
 
-**문제 3.** 전통적 MySQL 대비 Aurora가 같은 하드웨어에서 더 높은 쓰기 처리량을 내는 핵심 메커니즘은?
+**Question 3.** 전통적 MySQL 대비 Aurora가 같은 하드웨어에서 더 높은 쓰기 처리량을 내는 핵심 메커니즘은?
 
 A) Aurora는 SSD 대신 더 빠른 메모리만 사용
 
@@ -149,13 +149,13 @@ C) Aurora가 쿼리 엔진을 완전히 새로 작성해 SQL이 빠름
 
 D) Aurora는 복제를 하지 않아서
 
-**정답: B**
+**Answer: B**
 
-해설: 전통적 DB는 데이터 페이지·redo log·binlog·더블라이트 버퍼를 모두 쓰며 쓰기 증폭이 크고, 무거운 페이지를 복제본에 네트워크로 보낸다. Aurora의 통찰은 "로그가 곧 데이터베이스(the log is the database)"로, Writer는 변경된 redo 로그 레코드만 스토리지 계층으로 보내고 페이지 머티리얼라이제이션은 스토리지 노드가 백그라운드로 한다. 네트워크로 흐르는 데이터가 크게 줄어 처리량이 오른다(Aurora SIGMOD 2017 논문). 쿼리 엔진은 MySQL/PostgreSQL 그대로라 C는 틀리고(스토리지·복제 계층만 새로 씀), 복제를 안 하는 것(D)이 아니라 6-copy를 한다.
+Explanation: 전통적 DB는 데이터 페이지·redo log·binlog·더블라이트 버퍼를 모두 쓰며 쓰기 증폭이 크고, 무거운 페이지를 복제본에 네트워크로 보낸다. Aurora의 통찰은 "로그가 곧 데이터베이스(the log is the database)"로, Writer는 변경된 redo 로그 레코드만 스토리지 계층으로 보내고 페이지 머티리얼라이제이션은 스토리지 노드가 백그라운드로 한다. 네트워크로 흐르는 데이터가 크게 줄어 처리량이 오른다(Aurora SIGMOD 2017 논문). 쿼리 엔진은 MySQL/PostgreSQL 그대로라 C는 틀리고(스토리지·복제 계층만 새로 씀), 복제를 안 하는 것(D)이 아니라 6-copy를 한다.
 
 ---
 
-**문제 4.** RDS Multi-AZ 페일오버가 완료됐는데도 애플리케이션이 계속 죽은 옛 노드로 연결을 시도한다. 가장 가능성 높은 원인은?
+**Question 4.** RDS Multi-AZ 페일오버가 완료됐는데도 애플리케이션이 계속 죽은 옛 노드로 연결을 시도한다. 가장 가능성 높은 원인은?
 
 A) 새 Primary가 다른 엔드포인트 이름을 가진다
 
@@ -165,13 +165,13 @@ C) Multi-AZ가 작동하지 않았다
 
 D) RDS가 IP를 바꾸지 않았다
 
-**정답: B**
+**Answer: B**
 
-해설: RDS 페일오버는 엔드포인트 DNS 이름을 유지한 채 그 레코드가 가리키는 IP를 새 Primary로 바꾼다. 따라서 엔드포인트 이름은 그대로(A 틀림)이고 IP는 바뀐다(D 틀림). 그런데 애플리케이션이나 JVM이 DNS 결과를 오래 캐시하면(예: 자바의 무한 DNS 캐시) 옛 IP로 계속 붙고, 커넥션 풀이 끊긴 커넥션을 검증 없이 재사용해도 같은 증상이 난다. 해법은 짧은 DNS TTL, 클라이언트 DNS 캐시 단축, 커넥션 유효성 검사, 또는 RDS Proxy로 페일오버를 클라이언트로부터 숨기는 것이다.
+Explanation: RDS 페일오버는 엔드포인트 DNS 이름을 유지한 채 그 레코드가 가리키는 IP를 새 Primary로 바꾼다. 따라서 엔드포인트 이름은 그대로(A 틀림)이고 IP는 바뀐다(D 틀림). 그런데 애플리케이션이나 JVM이 DNS 결과를 오래 캐시하면(예: 자바의 무한 DNS 캐시) 옛 IP로 계속 붙고, 커넥션 풀이 끊긴 커넥션을 검증 없이 재사용해도 같은 증상이 난다. 해법은 짧은 DNS TTL, 클라이언트 DNS 캐시 단축, 커넥션 유효성 검사, 또는 RDS Proxy로 페일오버를 클라이언트로부터 숨기는 것이다.
 
 ---
 
-**문제 5.** 서버리스(Lambda) 애플리케이션이 트래픽 급증 시 RDS의 max_connections를 소진해 "too many connections" 오류가 난다. 표준 해법은?
+**Question 5.** 서버리스(Lambda) 애플리케이션이 트래픽 급증 시 RDS의 max_connections를 소진해 "too many connections" 오류가 난다. 표준 해법은?
 
 A) DB 인스턴스 타입을 무한정 키운다
 
@@ -181,13 +181,13 @@ C) Lambda 동시성을 0으로 제한
 
 D) Read Replica를 추가
 
-**정답: B**
+**Answer: B**
 
-해설: Lambda는 동시 실행 환경마다 각자 DB 커넥션을 열어 트래픽 급증 시 max_connections를 순식간에 소진한다. RDS Proxy는 클라이언트-DB 사이에서 커넥션을 풀링·다중화(multiplexing)해 실제 DB 커넥션 수를 억제하고, 페일오버 시 클라이언트 커넥션을 유지해 끊김을 줄인다. 이는 PgBouncer/HikariCP와 같은 커넥션 풀 패턴의 관리형 구현으로, 서버리스+RDS 조합에서 사실상 필수다. 인스턴스 확대(A)는 근본 해결이 아니고, 동시성 0(C)은 서비스 중단, Read Replica(D)는 읽기 분산이지 커넥션 폭증 자체를 막지 못한다.
+Explanation: Lambda는 동시 실행 환경마다 각자 DB 커넥션을 열어 트래픽 급증 시 max_connections를 순식간에 소진한다. RDS Proxy는 클라이언트-DB 사이에서 커넥션을 풀링·다중화(multiplexing)해 실제 DB 커넥션 수를 억제하고, 페일오버 시 클라이언트 커넥션을 유지해 끊김을 줄인다. 이는 PgBouncer/HikariCP와 같은 커넥션 풀 패턴의 관리형 구현으로, 서버리스+RDS 조합에서 사실상 필수다. 인스턴스 확대(A)는 근본 해결이 아니고, 동시성 0(C)은 서비스 중단, Read Replica(D)는 읽기 분산이지 커넥션 폭증 자체를 막지 못한다.
 
 ---
 
-**문제 6.** 실수로 대량 DELETE를 실행했고, 5분 전 상태로 Aurora MySQL 클러스터 전체를 가장 빠르게 되돌리려 한다. 가장 적합한 것은?
+**Question 6.** 실수로 대량 DELETE를 실행했고, 5분 전 상태로 Aurora MySQL 클러스터 전체를 가장 빠르게 되돌리려 한다. 가장 적합한 것은?
 
 A) Aurora Backtrack으로 클러스터를 제자리에서 5분 전으로 되감기
 
@@ -197,13 +197,13 @@ C) Read Replica를 Promote
 
 D) S3 백업에서 복원
 
-**정답: A**
+**Answer: A**
 
-해설: Aurora Backtrack(MySQL 호환)은 새 클러스터를 만들지 않고 클러스터 자체를 제자리(in-place)에서 특정 시점으로 되감는 기능으로, 최대 72시간 윈도우 내에서 빠르게 동작한다. "방금 실수를 몇 분 전으로"에 가장 빠르다. 스냅샷 복원(B)이나 PITR은 새 클러스터를 만들어 데이터를 가져오므로 느리고 엔드포인트 교체가 필요하다. 단, Backtrack은 활성화 시점 이후의 변경만 되감을 수 있고 PostgreSQL에는 없다는 점이 함정이다. "특정 테이블만" 또는 "30일 전"은 PITR이 맞다.
+Explanation: Aurora Backtrack(MySQL 호환)은 새 클러스터를 만들지 않고 클러스터 자체를 제자리(in-place)에서 특정 시점으로 되감는 기능으로, 최대 72시간 윈도우 내에서 빠르게 동작한다. "방금 실수를 몇 분 전으로"에 가장 빠르다. 스냅샷 복원(B)이나 PITR은 새 클러스터를 만들어 데이터를 가져오므로 느리고 엔드포인트 교체가 필요하다. 단, Backtrack은 활성화 시점 이후의 변경만 되감을 수 있고 PostgreSQL에는 없다는 점이 함정이다. "특정 테이블만" 또는 "30일 전"은 PITR이 맞다.
 
 ---
 
-**문제 7.** ElastiCache for Redis에서 데이터셋이 단일 노드 메모리를 초과하고 쓰기를 수평 분산해야 한다. 올바른 구성과 그 내부 메커니즘은?
+**Question 7.** ElastiCache for Redis에서 데이터셋이 단일 노드 메모리를 초과하고 쓰기를 수평 분산해야 한다. 올바른 구성과 그 내부 메커니즘은?
 
 A) Cluster Mode Disabled로 Replica만 늘린다
 
@@ -213,9 +213,9 @@ C) 더 큰 단일 노드로 수직 확장만 한다
 
 D) RDS Multi-AZ로 전환한다
 
-**정답: B**
+**Answer: B**
 
-해설: Cluster Mode Enabled는 키 공간을 16384개 해시 슬롯(`CRC16(key) mod 16384`)으로 나눠 여러 shard에 분산(샤딩)하므로, 단일 노드 메모리를 넘는 데이터와 쓰기 수평 분산을 처리한다. 각 shard는 자기 Primary+Replica로 HA도 갖춘다. 해시 슬롯은 일관된 해싱과 같은 사상이라 shard 추가/제거 시 슬롯만 재배치돼 이동 키가 최소화된다(naive `hash mod N`의 대규모 키 이동을 회피). Cluster Mode Disabled(A)는 단일 shard라 데이터 분산이 안 되고, 수직 확장(C)은 단일 노드 한계에 부딪히며, RDS(D)는 캐시가 아니다.
+Explanation: Cluster Mode Enabled는 키 공간을 16384개 해시 슬롯(`CRC16(key) mod 16384`)으로 나눠 여러 shard에 분산(샤딩)하므로, 단일 노드 메모리를 넘는 데이터와 쓰기 수평 분산을 처리한다. 각 shard는 자기 Primary+Replica로 HA도 갖춘다. 해시 슬롯은 일관된 해싱과 같은 사상이라 shard 추가/제거 시 슬롯만 재배치돼 이동 키가 최소화된다(naive `hash mod N`의 대규모 키 이동을 회피). Cluster Mode Disabled(A)는 단일 shard라 데이터 분산이 안 되고, 수직 확장(C)은 단일 노드 한계에 부딪히며, RDS(D)는 캐시가 아니다.
 
 ---
 

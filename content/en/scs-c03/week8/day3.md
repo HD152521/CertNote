@@ -155,63 +155,63 @@ Cost and operations tradeoff:
 
 ## 📝 Practice Questions
 
-**문제 1.** S3에 90일치 CloudTrail 로그가 쌓여 있다. 특정 IAM 역할이 지난 7일간 호출한 API를 비용을 최소화하며 조사하려 한다. 가장 적절한 도구와 기법은?
+**Question 1.** S3에 90일치 CloudTrail 로그가 쌓여 있다. 특정 IAM 역할이 지난 7일간 호출한 API를 비용을 최소화하며 조사하려 한다. 가장 적절한 도구와 기법은?
 
 A) 모든 로그를 OpenSearch로 인덱싱한 뒤 대시보드 검색  
 B) Athena로 쿼리하되 날짜 파티셔닝(또는 Partition Projection)으로 조사 기간만 스캔  
 C) CloudWatch Logs Insights로 S3 로그를 직접 질의  
 D) S3 객체를 모두 다운로드해 로컬에서 grep  
 
-**정답: B**  
-해설: S3에 있는 대용량 로그의 일회성 사후 조사는 Athena가 최적이며, 파티셔닝으로 조사 기간(7일)만 스캔하면 비용·시간이 급감한다. OpenSearch 전체 인덱싱은 일회성 조사에 과한 상시 비용이고, Logs Insights는 CloudWatch Logs만 대상이라 S3를 못 보며, 로컬 grep은 비현실적이다.
+**Answer: B**  
+Explanation: S3에 있는 대용량 로그의 일회성 사후 조사는 Athena가 최적이며, 파티셔닝으로 조사 기간(7일)만 스캔하면 비용·시간이 급감한다. OpenSearch 전체 인덱싱은 일회성 조사에 과한 상시 비용이고, Logs Insights는 CloudWatch Logs만 대상이라 S3를 못 보며, 로컬 grep은 비현실적이다.
 
 ---
 
-**문제 2.** Athena CloudTrail 쿼리의 비용이 예상보다 크게 나온다. 가장 효과적인 절감 방법은?
+**Question 2.** Athena CloudTrail 쿼리의 비용이 예상보다 크게 나온다. 가장 효과적인 절감 방법은?
 
 A) WHERE 절을 제거한다  
 B) 파티션 키로 필터링해 파티션 프루닝을 활성화하고, 로그를 Parquet 같은 컬럼형으로 변환  
 C) 쿼리 결과를 캐시 비활성화  
 D) 리전을 us-east-1로 변경  
 
-**정답: B**  
-해설: Athena는 스캔한 바이트에 과금하므로, 파티션 키 기반 필터로 프루닝을 유도하고 컬럼형 포맷(Parquet/ORC)으로 변환해 필요한 컬럼·파티션만 읽게 하면 비용이 크게 준다. WHERE 제거는 오히려 전체 스캔을 유발하고, 캐시·리전 변경은 스캔량과 무관하다.
+**Answer: B**  
+Explanation: Athena는 스캔한 바이트에 과금하므로, 파티션 키 기반 필터로 프루닝을 유도하고 컬럼형 포맷(Parquet/ORC)으로 변환해 필요한 컬럼·파티션만 읽게 하면 비용이 크게 준다. WHERE 제거는 오히려 전체 스캔을 유발하고, 캐시·리전 변경은 스캔량과 무관하다.
 
 ---
 
-**문제 3.** 사고 대응 중 운영자가 CloudWatch Logs에 들어오는 Lambda 로그에서 AccessDenied 발생 추세를 *즉시* 보려 한다. 별도 적재 없이 가장 빠른 도구는?
+**Question 3.** 사고 대응 중 운영자가 CloudWatch Logs에 들어오는 Lambda 로그에서 AccessDenied 발생 추세를 *즉시* 보려 한다. 별도 적재 없이 가장 빠른 도구는?
 
 A) Athena  
 B) CloudWatch Logs Insights  
 C) OpenSearch 도메인 신규 생성  
 D) S3 Select  
 
-**정답: B**  
-해설: 로그가 이미 CloudWatch Logs에 있고 즉시 질의가 필요하면 Logs Insights가 적합하다. 별도 적재 없이 시간 범위 내에서 바로 질의·집계할 수 있다. Athena/S3 Select는 S3 데이터 대상이고, 사고 대응 중 OpenSearch 도메인을 새로 만들어 적재하는 것은 즉시성이 없다.
+**Answer: B**  
+Explanation: 로그가 이미 CloudWatch Logs에 있고 즉시 질의가 필요하면 Logs Insights가 적합하다. 별도 적재 없이 시간 범위 내에서 바로 질의·집계할 수 있다. Athena/S3 Select는 S3 데이터 대상이고, 사고 대응 중 OpenSearch 도메인을 새로 만들어 적재하는 것은 즉시성이 없다.
 
 ---
 
-**문제 4.** NAT Gateway 뒤에 있는 인스턴스들의 실제 출발지를 VPC Flow Logs로 식별하려 한다. 어떤 필드가 필요한가?
+**Question 4.** NAT Gateway 뒤에 있는 인스턴스들의 실제 출발지를 VPC Flow Logs로 식별하려 한다. 어떤 필드가 필요한가?
 
 A) 기본 필드의 srcaddr만으로 충분하다  
 B) 커스텀 포맷에 pkt-srcaddr(NAT 이전 원본 주소)를 추가  
 C) action 필드  
 D) tcp-flags 필드  
 
-**정답: B**  
-해설: NAT/로드밸런서 뒤의 흐름은 기본 srcaddr가 중간 노드 주소로 보이므로, 커스텀 포맷에 pkt-srcaddr를 추가해야 NAT 이전 실제 출발지를 식별할 수 있다. srcaddr 단독은 원본을 가리지 못하고, action은 허용/거부, tcp-flags는 연결 상태 정보로 출발지 식별과 무관하다.
+**Answer: B**  
+Explanation: NAT/로드밸런서 뒤의 흐름은 기본 srcaddr가 중간 노드 주소로 보이므로, 커스텀 포맷에 pkt-srcaddr를 추가해야 NAT 이전 실제 출발지를 식별할 수 있다. srcaddr 단독은 원본을 가리지 못하고, action은 허용/거부, tcp-flags는 연결 상태 정보로 출발지 식별과 무관하다.
 
 ---
 
-**문제 5.** 여러 로그 소스를 준실시간으로 인덱싱해 SIEM 스타일 대시보드와 전문검색·상관 분석을 상시 제공하려 한다. 가장 적합한 서비스는?
+**Question 5.** 여러 로그 소스를 준실시간으로 인덱싱해 SIEM 스타일 대시보드와 전문검색·상관 분석을 상시 제공하려 한다. 가장 적합한 서비스는?
 
 A) Athena  
 B) CloudWatch Logs Insights  
 C) Amazon OpenSearch Service(Firehose로 적재)  
 D) Amazon Macie  
 
-**정답: C**  
-해설: 준실시간 인덱싱·대시보드·전문검색·반복 상관 분석은 OpenSearch의 영역이며, Firehose로 로그를 적재하는 파이프라인이 표준이다. Athena는 사후 일회성 SQL, Logs Insights는 단기 운영 질의, Macie는 S3 민감데이터 발견 도구로 상시 SIEM 대시보드 용도가 아니다.
+**Answer: C**  
+Explanation: 준실시간 인덱싱·대시보드·전문검색·반복 상관 분석은 OpenSearch의 영역이며, Firehose로 로그를 적재하는 파이프라인이 표준이다. Athena는 사후 일회성 SQL, Logs Insights는 단기 운영 질의, Macie는 S3 민감데이터 발견 도구로 상시 SIEM 대시보드 용도가 아니다.
 
 ---
 

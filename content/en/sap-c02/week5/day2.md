@@ -232,74 +232,74 @@ Cost: $50/month per Traffic Flow policy record. Use only for complex configurati
 
 ## 📝 Practice Questions
 
-**문제 1.** A global media company deploying a new API version initially sends only 5% of total traffic to new version. Old version 95%, new version 5%. Which routing policy is most suitable?
+**Question 1.** A global media company deploying a new API version initially sends only 5% of total traffic to new version. Old version 95%, new version 5%. Which routing policy is most suitable?
 
 A) Latency-Based Routing
 B) Failover
 C) Weighted (95:5)
 D) Geolocation
 
-**정답: C**
-해설: Traffic ratio-based distribution = Weighted. Set old version weight=95, new version weight=5. LBR is performance-based, Failover is Primary/Secondary, Geolocation is region-based—none match this scenario.
+**Answer: C**
+Explanation: Traffic ratio-based distribution = Weighted. Set old version weight=95, new version weight=5. LBR is performance-based, Failover is Primary/Secondary, Geolocation is region-based—none match this scenario.
 
 ---
 
-**문제 2.** By GDPR regulation, EU user data must store only in eu-west-1. Korean user data must store only in ap-northeast-2. Which routing policy most accurately fulfills this requirement?
+**Question 2.** By GDPR regulation, EU user data must store only in eu-west-1. Korean user data must store only in ap-northeast-2. Which routing policy most accurately fulfills this requirement?
 
 A) Latency-Based Routing
 B) Geolocation
 C) Geoproximity
 D) Multi-Value
 
-**정답: B**
-해설: Geolocation routes based on user country/continent, guaranteeing data sovereignty. LBR is performance-based; EU users might route to us-east-1 if momentarily faster, violating sovereignty. Geoproximity requires Traffic Flow + bias adjustment, not country boundaries.
+**Answer: B**
+Explanation: Geolocation routes based on user country/continent, guaranteeing data sovereignty. LBR is performance-based; EU users might route to us-east-1 if momentarily faster, violating sovereignty. Geoproximity requires Traffic Flow + bias adjustment, not country boundaries.
 
 ---
 
-**문제 3.** Connect ALB to `example.com` (Zone Apex). Which record type is suitable?
+**Question 3.** Connect ALB to `example.com` (Zone Apex). Which record type is suitable?
 
 A) CNAME example.com → ALB DNS
 B) A record Alias: example.com → ALB
 C) MX record
 D) AAAA record (IPv6)
 
-**정답: B**
-해설: RFC 1034 forbids CNAME at Zone Apex. AWS Alias A record circumvents DNS standard to point ALB at apex. Alias makes Route 53 internally resolve ALB DNS as A record response, supporting EvaluateTargetHealth.
+**Answer: B**
+Explanation: RFC 1034 forbids CNAME at Zone Apex. AWS Alias A record circumvents DNS standard to point ALB at apex. Alias makes Route 53 internally resolve ALB DNS as A record response, supporting EvaluateTargetHealth.
 
 ---
 
-**문제 4.** On-premises Active Directory DNS server manages `corp.example.com` domain. EC2 in AWS VPC must resolve on-premises domains (e.g., `db.corp.example.com`). Which configuration is needed?
+**Question 4.** On-premises Active Directory DNS server manages `corp.example.com` domain. EC2 in AWS VPC must resolve on-premises domains (e.g., `db.corp.example.com`). Which configuration is needed?
 
 A) Route 53 Inbound Endpoint
 B) Route 53 Outbound Endpoint + Resolver Rule
 C) Create Public Hosted Zone
 D) VPN + Route 53 Failover
 
-**정답: B**
-해설: AWS → on-premises DNS resolution direction = Outbound Endpoint. Set Resolver Rule with `corp.example.com → on-premises DNS IP`; VPC EC2 queries for that domain forward to on-premises DNS. Inbound Endpoint is reverse direction (on-prem→AWS).
+**Answer: B**
+Explanation: AWS → on-premises DNS resolution direction = Outbound Endpoint. Set Resolver Rule with `corp.example.com → on-premises DNS IP`; VPC EC2 queries for that domain forward to on-premises DNS. Inbound Endpoint is reverse direction (on-prem→AWS).
 
 ---
 
-**문제 5.** Combine multiple Health Checks (DB Check, App Check, CDN Check individually) so that any single failure triggers full failover. Which Health Check type?
+**Question 5.** Combine multiple Health Checks (DB Check, App Check, CDN Check individually) so that any single failure triggers full failover. Which Health Check type?
 
 A) Endpoint Health Check (individually)
 B) Calculated Health Check (AND condition)
 C) CloudWatch Alarm Health Check
 D) ARC Routing Control
 
-**정답: B**
-해설: Combining multiple Health Checks via AND/OR logic = Calculated Health Check. All three Healthy = Healthy (AND); any failure = Unhealthy, triggering failover. Endpoint checks only single endpoint.
+**Answer: B**
+Explanation: Combining multiple Health Checks via AND/OR logic = Calculated Health Check. All three Healthy = Healthy (AND); any failure = Unhealthy, triggering failover. Endpoint checks only single endpoint.
 
 ---
 
-**문제 6.** A company wants to distribute multiple EC2 instance IPs (6 total) via Route 53 without Load Balancer. Unhealthy instances should automatically exclude from traffic. Which policy is suitable?
+**Question 6.** A company wants to distribute multiple EC2 instance IPs (6 total) via Route 53 without Load Balancer. Unhealthy instances should automatically exclude from traffic. Which policy is suitable?
 
 A) Simple (return all IPs)
 B) Weighted (each IP equal weight)
 C) Multi-Value Answer
 D) Failover
 
-**정답: C**
-해설: Multi-Value Answer returns up to 8 IPs with Health Check on each, automatically excluding Unhealthy IPs. Simple returns all IPs including Unhealthy. Weighted supports Health Check but Multi-Value's multi-value return is unique.
+**Answer: C**
+Explanation: Multi-Value Answer returns up to 8 IPs with Health Check on each, automatically excluding Unhealthy IPs. Simple returns all IPs including Unhealthy. Weighted supports Health Check but Multi-Value's multi-value return is unique.
 
 ---

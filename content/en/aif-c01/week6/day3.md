@@ -76,38 +76,38 @@ Next text spot-checks all five domains with **comprehensive mock questions (8 it
 
 ## 📝 Practice Questions
 
-**문제 1.** Loan review ML model makes repeated unfavorable decisions to specific demographic. Most related responsible AI principle?
+**Question 1.** Loan review ML model makes repeated unfavorable decisions to specific demographic. Most related responsible AI principle?
 
 A) Fairness  
 B) Availability  
 C) Scalability  
 D) Cost Optimization  
 
-**정답: A**  
-해설: Discriminatory decisions against groups are fairness core. Availability·Scalability·Cost Optimization are system-operations/architecture traits unrelated to decision ethics.
+**Answer: A**  
+Explanation: Discriminatory decisions against groups are fairness core. Availability·Scalability·Cost Optimization are system-operations/architecture traits unrelated to decision ethics.
 
 ---
 
-**문제 2.** Generative AI app wants to policy-apply harmful-topic blocking, PII masking, hallucination suppression to output. Most fitting AWS feature?
+**Question 2.** Generative AI app wants to policy-apply harmful-topic blocking, PII masking, hallucination suppression to output. Most fitting AWS feature?
 
 A) Amazon Polly  
 B) Guardrails for Amazon Bedrock  
 C) AWS KMS  
 D) Amazon Forecast  
 
-**정답: B**  
-해설: Guardrails for Amazon Bedrock policy-applies safety — harmful blocking, PII mask, hallucination suppression. Polly = voice synth, KMS = key management, Forecast = time-series — not output safety-policy.
+**Answer: B**  
+Explanation: Guardrails for Amazon Bedrock policy-applies safety — harmful blocking, PII mask, hallucination suppression. Polly = voice synth, KMS = key management, Forecast = time-series — not output safety-policy.
 
 ---
 
-**문제 3.** AWS shared responsibility: "in the cloud" data protection and access-permission setting responsibility?
+**Question 3.** AWS shared responsibility: "in the cloud" data protection and access-permission setting responsibility?
 
 A) AWS alone  
 B) Customer  
 C) ISP  
 D) No one  
 
-**정답: B**  
-해설: Shared responsibility: AWS handles "of cloud" infrastructure, customer handles "in cloud" data·access(IAM)·encryption config. Data protection and permissions are customer responsibility. ISP not a party.
+**Answer: B**  
+Explanation: Shared responsibility: AWS handles "of cloud" infrastructure, customer handles "in cloud" data·access(IAM)·encryption config. Data protection and permissions are customer responsibility. ISP not a party.
 
 ---

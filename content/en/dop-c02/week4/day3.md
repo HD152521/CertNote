@@ -446,86 +446,86 @@ Automating from CodePipeline?
 
 ## 📝 Practice Questions
 
-**문제 1.** Lambda Canary 배포에서 실제로 트래픽이 시프트되는 메커니즘은?
+**Question 1.** Lambda Canary 배포에서 실제로 트래픽이 시프트되는 메커니즘은?
 
 A) 새 Lambda 함수가 생성되어 Load Balancer가 두 함수로 분배
 B) Alias의 weighted routing config — 하나의 Alias가 두 Version 사이 가중치 비율로 라우팅
 C) Route 53 가중 레코드
 D) API Gateway Stage Variable 전환
 
-**정답: B**
-해설: Lambda Blue/Green은 인프라 변경 없이 Alias의 `AdditionalVersionWeights`로 구현된다. 같은 Alias("live")가 Version 5(90%)와 Version 6(10%)으로 호출을 분배한다. 호출자는 Alias ARN만 알면 되고 버전 전환은 투명하게 일어난다. 새 함수 생성(A)이나 Route 53(C)은 Lambda 배포 메커니즘이 아니다.
+**Answer: B**
+Explanation: Lambda Blue/Green은 인프라 변경 없이 Alias의 `AdditionalVersionWeights`로 구현된다. 같은 Alias("live")가 Version 5(90%)와 Version 6(10%)으로 호출을 분배한다. 호출자는 Alias ARN만 알면 되고 버전 전환은 투명하게 일어난다. 새 함수 생성(A)이나 Route 53(C)은 Lambda 배포 메커니즘이 아니다.
 
 ---
 
-**문제 2.** `LambdaCanary10Percent5Minutes` 배포에서 3분이 지난 시점의 트래픽 분배는?
+**Question 2.** `LambdaCanary10Percent5Minutes` 배포에서 3분이 지난 시점의 트래픽 분배는?
 
 A) 30% 새 버전, 70% 구 버전
 B) 10% 새 버전, 90% 구 버전 (5분 관찰 기간 중)
 C) 50% 새 버전
 D) 100% 새 버전 (이미 완전 전환)
 
-**정답: B**
-해설: Canary는 2단계다. 처음 10%를 지정한 시간(5분) 동안 관찰한다. 3분은 5분 관찰 기간 중이므로 여전히 10%/90% 분배다. 5분이 지나고 알람이 없으면 그때 100%로 전환된다. Linear와 혼동하지 않는 것이 핵심이다. Linear10PercentEvery1Minute이었다면 3분 후 30%가 된다.
+**Answer: B**
+Explanation: Canary는 2단계다. 처음 10%를 지정한 시간(5분) 동안 관찰한다. 3분은 5분 관찰 기간 중이므로 여전히 10%/90% 분배다. 5분이 지나고 알람이 없으면 그때 100%로 전환된다. Linear와 혼동하지 않는 것이 핵심이다. Linear10PercentEvery1Minute이었다면 3분 후 30%가 된다.
 
 ---
 
-**문제 3.** PreTrafficHook이 `PutLifecycleEventHookExecutionStatus`를 호출하지 않고 함수가 정상 종료되면?
+**Question 3.** PreTrafficHook이 `PutLifecycleEventHookExecutionStatus`를 호출하지 않고 함수가 정상 종료되면?
 
 A) 배포가 성공으로 처리된다
 B) CodeDeploy는 Hook 결과를 받지 못해 대기 상태를 유지하다 Timeout(기본 3600초) 후 배포 실패 처리
 C) 자동으로 Succeeded로 처리된다
 D) 배포가 즉시 롤백된다
 
-**정답: B**
-해설: CodeDeploy는 Hook 함수의 Lambda 실행 결과(성공/실패)가 아니라, Hook 함수가 `PutLifecycleEventHookExecutionStatus` API를 호출하여 보고하는 결과를 기다린다. 이 API 호출이 없으면 CodeDeploy는 Hook이 응답하지 않는 것으로 보고, 설정된 Timeout(기본 3600초)까지 기다린 후 배포 실패로 처리한다.
+**Answer: B**
+Explanation: CodeDeploy는 Hook 함수의 Lambda 실행 결과(성공/실패)가 아니라, Hook 함수가 `PutLifecycleEventHookExecutionStatus` API를 호출하여 보고하는 결과를 기다린다. 이 API 호출이 없으면 CodeDeploy는 Hook이 응답하지 않는 것으로 보고, 설정된 Timeout(기본 3600초)까지 기다린 후 배포 실패로 처리한다.
 
 ---
 
-**문제 4.** SAM `AutoPublishAlias: live`가 자동으로 처리하는 것은?
+**Question 4.** SAM `AutoPublishAlias: live`가 자동으로 처리하는 것은?
 
 A) IAM Role 생성만
 B) Lambda Version 게시 + Alias 생성/업데이트 + CodeDeploy Application/Deployment Group 자동 생성 + 배포 실행
 C) CloudWatch Alarm 생성만
 D) ECR 이미지 push만
 
-**정답: B**
-해설: `AutoPublishAlias`는 SAM이 제공하는 강력한 추상화다. `sam deploy` 실행 시 자동으로: (1) 새 Lambda Version 게시, (2) 지정한 이름의 Alias 생성 또는 업데이트, (3) `DeploymentPreference`가 있으면 CodeDeploy Application + Deployment Group 자동 생성, (4) Canary/Linear 배포 자동 실행. 개발자가 CodeDeploy API를 직접 다루지 않아도 된다.
+**Answer: B**
+Explanation: `AutoPublishAlias`는 SAM이 제공하는 강력한 추상화다. `sam deploy` 실행 시 자동으로: (1) 새 Lambda Version 게시, (2) 지정한 이름의 Alias 생성 또는 업데이트, (3) `DeploymentPreference`가 있으면 CodeDeploy Application + Deployment Group 자동 생성, (4) Canary/Linear 배포 자동 실행. 개발자가 CodeDeploy API를 직접 다루지 않아도 된다.
 
 ---
 
-**문제 5.** Provisioned Concurrency가 설정된 Lambda를 Canary 10% 30분으로 배포하는 중 비용 영향은?
+**Question 5.** Provisioned Concurrency가 설정된 Lambda를 Canary 10% 30분으로 배포하는 중 비용 영향은?
 
 A) 배포 중 비용 변화 없음
 B) 30분 동안 구 버전(90%)과 새 버전(10%) 양쪽 모두 PC 비용 발생 — 일시적으로 PC 비용이 약 2배
 C) 새 버전 PC만 비용 발생
 D) PC가 자동 비활성화되어 비용 없음
 
-**정답: B**
-해설: Canary 기간 동안 두 Version이 동시에 활성화되므로, 두 Version 모두 PC(워밍업된 실행 환경)를 유지해야 한다. 30분의 Canary 기간 동안 PC 비용이 약 2배 발생한다. 새 버전으로 100% 전환 완료 후 구 버전 PC를 수동으로 해제해야 정상 비용으로 돌아온다. 자동 해제되지 않는다.
+**Answer: B**
+Explanation: Canary 기간 동안 두 Version이 동시에 활성화되므로, 두 Version 모두 PC(워밍업된 실행 환경)를 유지해야 한다. 30분의 Canary 기간 동안 PC 비용이 약 2배 발생한다. 새 버전으로 100% 전환 완료 후 구 버전 PC를 수동으로 해제해야 정상 비용으로 돌아온다. 자동 해제되지 않는다.
 
 ---
 
-**문제 6.** 한 Lambda Alias에서 동시에 트래픽을 받을 수 있는 최대 Version 수는?
+**Question 6.** 한 Lambda Alias에서 동시에 트래픽을 받을 수 있는 최대 Version 수는?
 
 A) 무제한
 B) 2개 (Primary + Secondary 1개)
 C) 5개
 D) 10개
 
-**정답: B**
-해설: Lambda Alias의 `routing-config.AdditionalVersionWeights`에는 단 하나의 추가 Version만 지정할 수 있다. Primary(function-version)과 Secondary(routing-config) 합쳐 최대 2개다. A/B/C 세 버전 동시 테스트는 단일 Alias로 불가능하다. 시험에서 "세 버전 동시 테스트" 요구사항이 나오면 별도 Alias를 여러 개 만들거나 Application Load Balancer의 가중치 라우팅을 사용하는 대안을 검토해야 한다.
+**Answer: B**
+Explanation: Lambda Alias의 `routing-config.AdditionalVersionWeights`에는 단 하나의 추가 Version만 지정할 수 있다. Primary(function-version)과 Secondary(routing-config) 합쳐 최대 2개다. A/B/C 세 버전 동시 테스트는 단일 Alias로 불가능하다. 시험에서 "세 버전 동시 테스트" 요구사항이 나오면 별도 Alias를 여러 개 만들거나 Application Load Balancer의 가중치 라우팅을 사용하는 대안을 검토해야 한다.
 
 ---
 
-**문제 7.** Canary 배포 10분 경과 후 CloudWatch Alarm이 ALARM 상태가 됐다. CodeDeploy의 자동 동작은?
+**Question 7.** Canary 배포 10분 경과 후 CloudWatch Alarm이 ALARM 상태가 됐다. CodeDeploy의 자동 동작은?
 
 A) 10분을 더 기다린 후 판단
 B) 배포를 즉시 중단하고 Alias 가중치를 구 Version 100%로 복원 (즉시 롤백)
 C) 새 버전으로 100% 전환 후 알람 해제를 기다림
 D) SNS로 알림만 발송
 
-**정답: B**
-해설: Deployment Group의 `auto-rollback-configuration`에 `DEPLOYMENT_STOP_ON_ALARM`이 설정되어 있고, 배포 중 연결된 CloudWatch Alarm이 ALARM 상태가 되면 CodeDeploy는 즉시 배포를 중단하고 Alias 가중치를 이전 Version(100%)으로 복원한다. 이것이 "자동 롤백"의 실제 동작이다. 롤백 완료까지 수초면 충분하다 — Alias 가중치 변경만으로 트래픽이 즉시 구 버전으로 전환된다.
+**Answer: B**
+Explanation: Deployment Group의 `auto-rollback-configuration`에 `DEPLOYMENT_STOP_ON_ALARM`이 설정되어 있고, 배포 중 연결된 CloudWatch Alarm이 ALARM 상태가 되면 CodeDeploy는 즉시 배포를 중단하고 Alias 가중치를 이전 Version(100%)으로 복원한다. 이것이 "자동 롤백"의 실제 동작이다. 롤백 완료까지 수초면 충분하다 — Alias 가중치 변경만으로 트래픽이 즉시 구 버전으로 전환된다.
 
 ---

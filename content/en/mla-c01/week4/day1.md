@@ -139,62 +139,62 @@ Next, we look at the actual built-in algorithms for this Training Job and their 
 
 ## 📝 Practice Questions
 
-**문제 1.** 학습 비용을 최대한 줄이고 싶지만, 인스턴스가 중간에 회수되어 학습이 중단되어도 진행 상황을 잃지 않고 재개되어야 한다. 가장 적합한 구성은?
+**Question 1.** 학습 비용을 최대한 줄이고 싶지만, 인스턴스가 중간에 회수되어 학습이 중단되어도 진행 상황을 잃지 않고 재개되어야 한다. 가장 적합한 구성은?
 
 A) 온디맨드 인스턴스로 학습하고 인스턴스 수를 늘린다  
 B) Managed Spot Training을 켜고 checkpoint_s3_uri로 체크포인트를 저장한다  
 C) Spot 인스턴스만 켜고 체크포인트는 설정하지 않는다  
 D) 학습을 여러 번 반복 실행한다  
 
-**정답: B**  
-해설: Spot은 최대 90% 비용을 절감하지만 회수로 중단될 수 있어, 체크포인트를 S3에 저장하면 마지막 지점부터 재개해 진행분을 잃지 않는다. A는 비용 절감 효과가 없고, C는 중단 시 처음부터 다시 학습해 손실이 발생하며, D는 매번 처음부터 시작하는 비효율적 방식이다.
+**Answer: B**  
+Explanation: Spot은 최대 90% 비용을 절감하지만 회수로 중단될 수 있어, 체크포인트를 S3에 저장하면 마지막 지점부터 재개해 진행분을 잃지 않는다. A는 비용 절감 효과가 없고, C는 중단 시 처음부터 다시 학습해 손실이 발생하며, D는 매번 처음부터 시작하는 비효율적 방식이다.
 
 ---
 
-**문제 2.** 수 TB 규모의 학습 데이터를 여러 epoch에 걸쳐 반복적으로 읽는 대규모 분산 학습에서, 매 epoch마다 S3에서 데이터를 다시 받느라 I/O가 병목이다. 가장 적합한 데이터 소스는?
+**Question 2.** 수 TB 규모의 학습 데이터를 여러 epoch에 걸쳐 반복적으로 읽는 대규모 분산 학습에서, 매 epoch마다 S3에서 데이터를 다시 받느라 I/O가 병목이다. 가장 적합한 데이터 소스는?
 
 A) S3 File 모드  
 B) FSx for Lustre  
 C) 로컬 노트북 디스크  
 D) DynamoDB  
 
-**정답: B**  
-해설: FSx for Lustre는 고성능 병렬 파일시스템으로, 한 번 올려두면 저지연으로 반복 접근할 수 있어 대용량 데이터를 여러 epoch 반복 읽는 학습의 I/O 병목을 해소한다. A는 매 시작 시 전체 다운로드가 필요하고, C는 학습 규모에 맞지 않으며, D는 key-value 저장소로 대량 학습 데이터 스트리밍에 부적합하다.
+**Answer: B**  
+Explanation: FSx for Lustre는 고성능 병렬 파일시스템으로, 한 번 올려두면 저지연으로 반복 접근할 수 있어 대용량 데이터를 여러 epoch 반복 읽는 학습의 I/O 병목을 해소한다. A는 매 시작 시 전체 다운로드가 필요하고, C는 학습 규모에 맞지 않으며, D는 key-value 저장소로 대량 학습 데이터 스트리밍에 부적합하다.
 
 ---
 
-**문제 3.** 직접 작성한 PyTorch 학습 스크립트(train.py)를 SageMaker Training Job으로 실행하려 한다. 올바른 접근은?
+**Question 3.** 직접 작성한 PyTorch 학습 스크립트(train.py)를 SageMaker Training Job으로 실행하려 한다. 올바른 접근은?
 
 A) 빌트인 XGBoost 컨테이너에 스크립트를 넣는다  
 B) PyTorch 프레임워크 Estimator의 entry_point에 train.py를 지정한다  
 C) 추론 엔드포인트를 먼저 생성한다  
 D) Feature Store에 스크립트를 적재한다  
 
-**정답: B**  
-해설: 프레임워크 Estimator(PyTorch 등)는 entry_point로 사용자 학습 스크립트를 받아 해당 프레임워크 컨테이너에서 실행하므로 커스텀 PyTorch 코드 학습에 적합하다. A는 무관한 알고리즘 컨테이너이고, C는 추론용이라 학습 단계와 맞지 않으며, D는 특성 저장소로 학습 코드 실행과 무관하다.
+**Answer: B**  
+Explanation: 프레임워크 Estimator(PyTorch 등)는 entry_point로 사용자 학습 스크립트를 받아 해당 프레임워크 컨테이너에서 실행하므로 커스텀 PyTorch 코드 학습에 적합하다. A는 무관한 알고리즘 컨테이너이고, C는 추론용이라 학습 단계와 맞지 않으며, D는 특성 저장소로 학습 코드 실행과 무관하다.
 
 ---
 
-**문제 4.** SageMaker Training Job이 정상 완료된 직후의 동작으로 옳은 것은?
+**Question 4.** SageMaker Training Job이 정상 완료된 직후의 동작으로 옳은 것은?
 
 A) 학습 인스턴스가 계속 떠 있으면서 추론 요청을 처리한다  
 B) 모델 아티팩트를 output_path의 S3에 저장하고 학습 인스턴스를 자동 종료한다  
 C) 인스턴스가 종료되며 모델도 함께 삭제된다  
 D) 데이터를 자동으로 Feature Store에 적재한다  
 
-**정답: B**  
-해설: Training Job은 학습 완료 후 model.tar.gz를 지정한 S3에 업로드하고 인스턴스를 자동으로 내려 과금을 멈춘다. A는 추론 엔드포인트의 동작이고, C는 모델이 S3에 보존되므로 틀리며, D는 학습 작업이 자동으로 수행하지 않는다.
+**Answer: B**  
+Explanation: Training Job은 학습 완료 후 model.tar.gz를 지정한 S3에 업로드하고 인스턴스를 자동으로 내려 과금을 멈춘다. A는 추론 엔드포인트의 동작이고, C는 모델이 S3에 보존되므로 틀리며, D는 학습 작업이 자동으로 수행하지 않는다.
 
 ---
 
-**문제 5.** Managed Spot Training을 설정할 때 max_run과 max_wait의 관계로 올바른 것은?
+**Question 5.** Managed Spot Training을 설정할 때 max_run과 max_wait의 관계로 올바른 것은?
 
 A) max_wait는 항상 max_run보다 작아야 한다  
 B) max_wait는 max_run보다 크거나 같아야 한다(Spot 용량 대기 시간 포함)  
 C) 둘은 항상 같아야 한다  
 D) max_wait는 Spot에서 의미가 없다  
 
-**정답: B**  
-해설: Spot은 가용 용량을 기다리는 시간이 추가로 필요하므로 대기 포함 총 시간인 max_wait가 실제 학습 시간 상한인 max_run보다 크거나 같아야 한다. A는 반대로 설정한 것이고, C는 대기 시간을 고려하지 못하며, D는 Spot 학습에서 max_wait가 필수 파라미터라는 점과 어긋난다.
+**Answer: B**  
+Explanation: Spot은 가용 용량을 기다리는 시간이 추가로 필요하므로 대기 포함 총 시간인 max_wait가 실제 학습 시간 상한인 max_run보다 크거나 같아야 한다. A는 반대로 설정한 것이고, C는 대기 시간을 고려하지 못하며, D는 Spot 학습에서 max_wait가 필수 파라미터라는 점과 어긋난다.
 
 ---

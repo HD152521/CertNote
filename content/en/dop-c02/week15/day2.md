@@ -98,7 +98,7 @@ Next: containers scale to 100+ microservices, **large-scale ECS/EKS ops** at dep
 
 ## 📝 Practice Questions
 
-**문제 1.** 온프레미스 데이터센터의 방화벽이 인바운드를 차단하는 환경에서, SSM/CodeDeploy 에이전트가 동작하는 방식과 그 근본 원리는?
+**Question 1.** 온프레미스 데이터센터의 방화벽이 인바운드를 차단하는 환경에서, SSM/CodeDeploy 에이전트가 동작하는 방식과 그 근본 원리는?
 
 A) 중앙 AWS가 DC 서버로 명령을 밀어 넣는(push) 방식이며 인바운드 22/443 포트를 열어야 한다
 
@@ -108,13 +108,13 @@ C) DC 서버가 인터넷에 공개돼야 한다
 
 D) VPN 없이는 불가능하다
 
-**정답: B**
+**Answer: B**
 
-해설: 방화벽은 본질적으로 비대칭(아웃바운드 허용, 인바운드 차단)이므로, NAT 뒤 다수 노드를 제어하려면 노드가 중앙에 연결하는 Pull 모델이 정석이다. SSM/CodeDeploy 에이전트는 DC에서 AWS로 아웃바운드 443을 열어 명령을 끌어오므로 인바운드 포트를 하나도 열 필요가 없다(bastion-less와 같은 사상). Push(A)·인터넷 공개(C)·VPN 필수(D)는 하이브리드 운영의 전제와 어긋난다.
+Explanation: 방화벽은 본질적으로 비대칭(아웃바운드 허용, 인바운드 차단)이므로, NAT 뒤 다수 노드를 제어하려면 노드가 중앙에 연결하는 Pull 모델이 정석이다. SSM/CodeDeploy 에이전트는 DC에서 AWS로 아웃바운드 443을 열어 명령을 끌어오므로 인바운드 포트를 하나도 열 필요가 없다(bastion-less와 같은 사상). Push(A)·인터넷 공개(C)·VPN 필수(D)는 하이브리드 운영의 전제와 어긋난다.
 
 ---
 
-**문제 2.** Direct Connect 10Gbps 회선을 사용 중인데 규제상 회선 암호화가 필수다. 최소 변경으로 만족시키려면?
+**Question 2.** Direct Connect 10Gbps 회선을 사용 중인데 규제상 회선 암호화가 필수다. 최소 변경으로 만족시키려면?
 
 A) Direct Connect는 사설 전용선이므로 자동으로 암호화된다
 
@@ -124,13 +124,13 @@ C) S3 SSE-KMS만 켜면 회선이 암호화된다
 
 D) TLS만 강제하면 된다
 
-**정답: B**
+**Answer: B**
 
-해설: DX는 물리적으로 분리된 전용선일 뿐 회선 위 데이터는 평문이다 — 자동 암호화되지 않는다. 회선 암호화가 필요하면 MACsec(IEEE 802.1AE, 전용 연결의 레이어 2 암호화)을 DX 포트에 적용하거나 IPSec over DX(DX 위에 VPN을 얹은 레이어 3 암호화)를 쓴다. SSE-KMS(C)는 S3 저장 데이터 암호화이지 회선과 무관하고, TLS(D)는 애플리케이션 계층이라 "회선 암호화 필수"라는 규제 요구를 직접 충족한다고 보기 어렵다. 자동 암호화(A)는 가장 흔한 오답이다.
+Explanation: DX는 물리적으로 분리된 전용선일 뿐 회선 위 데이터는 평문이다 — 자동 암호화되지 않는다. 회선 암호화가 필요하면 MACsec(IEEE 802.1AE, 전용 연결의 레이어 2 암호화)을 DX 포트에 적용하거나 IPSec over DX(DX 위에 VPN을 얹은 레이어 3 암호화)를 쓴다. SSE-KMS(C)는 S3 저장 데이터 암호화이지 회선과 무관하고, TLS(D)는 애플리케이션 계층이라 "회선 암호화 필수"라는 규제 요구를 직접 충족한다고 보기 어렵다. 자동 암호화(A)는 가장 흔한 오답이다.
 
 ---
 
-**문제 3.** SSM Hybrid Activation에서 ActivationCode/ActivationId(활성화 토큰)와 mi-xxxx(관리형 인스턴스 ID)의 관계로 가장 정확한 것은?
+**Question 3.** SSM Hybrid Activation에서 ActivationCode/ActivationId(활성화 토큰)와 mi-xxxx(관리형 인스턴스 ID)의 관계로 가장 정확한 것은?
 
 A) 둘은 같은 것이다
 
@@ -140,13 +140,13 @@ C) mi-xxxx는 매 명령마다 새로 발급된다
 
 D) 활성화 토큰은 영구적이고 mi-xxxx는 일회용이다
 
-**정답: B**
+**Answer: B**
 
-해설: ActivationCode/ActivationId는 서버를 SSM에 처음 등록할 때만 쓰는 만료·한도 있는 일회성 토큰이고, 등록이 끝나면 의미가 없다. mi-xxxx는 등록 후 서버에 영구적으로 붙어 Run Command·Patch Manager·State Manager의 대상이 된다. 따라서 활성화 토큰이 만료돼도 이미 등록된 서버는 계속 관리되며, 토큰은 신규 등록에만 필요하다. 동일(A)·매 명령 발급(C)·관계 반대(D)는 틀리다.
+Explanation: ActivationCode/ActivationId는 서버를 SSM에 처음 등록할 때만 쓰는 만료·한도 있는 일회성 토큰이고, 등록이 끝나면 의미가 없다. mi-xxxx는 등록 후 서버에 영구적으로 붙어 Run Command·Patch Manager·State Manager의 대상이 된다. 따라서 활성화 토큰이 만료돼도 이미 등록된 서버는 계속 관리되며, 토큰은 신규 등록에만 필요하다. 동일(A)·매 명령 발급(C)·관계 반대(D)는 틀리다.
 
 ---
 
-**문제 4.** AWS EC2 ASG와 DC 서버를 하나의 배포로 같은 릴리즈를 동시에 푸는 표준 방법과 그 한계는?
+**Question 4.** AWS EC2 ASG와 DC 서버를 하나의 배포로 같은 릴리즈를 동시에 푸는 표준 방법과 그 한계는?
 
 A) Ansible만으로 가능하며 한계가 없다
 
@@ -156,13 +156,13 @@ C) Lambda로 양쪽에 배포한다
 
 D) SSM State Manager만으로 가능하다
 
-**정답: B**
+**Answer: B**
 
-해설: CodeDeploy는 On-Premises Instances를 지원해 DC 서버를 등록·태깅하면 EC2와 동일한 AppSpec으로 하나의 배포에 묶을 수 있다. 다만 On-Prem은 ASG와 연동되지 않아 정적 인벤토리이며(서버가 자동으로 늘지 않음), Blue/Green의 새 인스턴스 집합 생성도 제한적이라 주로 In-Place 배포를 쓴다. "On-Prem에 ASG 기반 자동 스케일 배포"는 오답이다. Ansible 무한계(A)·Lambda(C)·State Manager(D)는 단일 AppSpec 통합 배포의 표준이 아니다.
+Explanation: CodeDeploy는 On-Premises Instances를 지원해 DC 서버를 등록·태깅하면 EC2와 동일한 AppSpec으로 하나의 배포에 묶을 수 있다. 다만 On-Prem은 ASG와 연동되지 않아 정적 인벤토리이며(서버가 자동으로 늘지 않음), Blue/Green의 새 인스턴스 집합 생성도 제한적이라 주로 In-Place 배포를 쓴다. "On-Prem에 ASG 기반 자동 스케일 배포"는 오답이다. Ansible 무한계(A)·Lambda(C)·State Manager(D)는 단일 AppSpec 통합 배포의 표준이 아니다.
 
 ---
 
-**문제 5.** 5,000대 DC 서버에 정적 액세스 키를 심지 않고, 사내 PKI를 활용해 AWS API 호출용 임시 자격 증명을 부여하려면?
+**Question 5.** 5,000대 DC 서버에 정적 액세스 키를 심지 않고, 사내 PKI를 활용해 AWS API 호출용 임시 자격 증명을 부여하려면?
 
 A) IAM User 장기 액세스 키를 각 서버에 배포
 
@@ -172,13 +172,13 @@ C) Cognito Identity Pool
 
 D) STS GetSessionToken을 매번 수동 호출
 
-**정답: B**
+**Answer: B**
 
-해설: IAM Roles Anywhere는 사내 PKI의 X.509 인증서로 AWS에 신원을 증명하고 임시 자격 증명을 받는다 — 정적 키가 서버에 존재하지 않는다. PKI의 신뢰 사슬(RFC 5280)을 Trust Anchor로 등록하고, "비밀은 짧게 살수록 안전하다"는 단명 자격 증명 원칙을 구현한다(IRSA·OIDC 연합과 같은 가족). 장기 키(A)는 Codecov류 유출 위험의 안티패턴, Cognito(C)는 앱 사용자 신원용, 수동 GetSessionToken(D)은 인증서 기반 자동화가 아니다.
+Explanation: IAM Roles Anywhere는 사내 PKI의 X.509 인증서로 AWS에 신원을 증명하고 임시 자격 증명을 받는다 — 정적 키가 서버에 존재하지 않는다. PKI의 신뢰 사슬(RFC 5280)을 Trust Anchor로 등록하고, "비밀은 짧게 살수록 안전하다"는 단명 자격 증명 원칙을 구현한다(IRSA·OIDC 연합과 같은 가족). 장기 키(A)는 Codecov류 유출 위험의 안티패턴, Cognito(C)는 앱 사용자 신원용, 수동 GetSessionToken(D)은 인증서 기반 자동화가 아니다.
 
 ---
 
-**문제 6.** 인터넷이 차단된 DC 서버가 AWS Secrets Manager를 조회해야 한다. 최소 변경으로 사설 경로를 만들려면? 그리고 흔히 빠뜨리는 추가 설정은?
+**Question 6.** 인터넷이 차단된 DC 서버가 AWS Secrets Manager를 조회해야 한다. 최소 변경으로 사설 경로를 만들려면? 그리고 흔히 빠뜨리는 추가 설정은?
 
 A) NAT Gateway를 추가해 인터넷으로 나간다
 
@@ -188,13 +188,13 @@ C) Public Endpoint + IAM 정책
 
 D) Lambda Proxy를 만든다
 
-**정답: B**
+**Answer: B**
 
-해설: 인터넷 차단 환경에선 Interface VPC Endpoint(PrivateLink)로 Secrets Manager API를 VPC 내부 사설 IP로 노출하고 DX/TGW로 접근한다 — 트래픽이 인터넷으로 나가지 않는다(Route 53 Resolver로 DNS 해석). 흔히 빠뜨리는 것이 DNS다: Route 53 Resolver Endpoint와 Endpoint의 Private DNS 활성화가 없으면 DC가 여전히 퍼블릭 IP로 해석한다. NAT(A)·Public Endpoint(C)는 인터넷 경로를 요구하고, Lambda Proxy(D)는 불필요한 우회다.
+Explanation: 인터넷 차단 환경에선 Interface VPC Endpoint(PrivateLink)로 Secrets Manager API를 VPC 내부 사설 IP로 노출하고 DX/TGW로 접근한다 — 트래픽이 인터넷으로 나가지 않는다(Route 53 Resolver로 DNS 해석). 흔히 빠뜨리는 것이 DNS다: Route 53 Resolver Endpoint와 Endpoint의 Private DNS 활성화가 없으면 DC가 여전히 퍼블릭 IP로 해석한다. NAT(A)·Public Endpoint(C)는 인터넷 경로를 요구하고, Lambda Proxy(D)는 불필요한 우회다.
 
 ---
 
-**문제 7.** Codecov(2021) 공급망 침해가 하이브리드/CI 자격 증명 설계에 남긴 핵심 교훈은?
+**Question 7.** Codecov(2021) 공급망 침해가 하이브리드/CI 자격 증명 설계에 남긴 핵심 교훈은?
 
 A) 컨테이너 이미지를 자주 스캔해야 한다
 
@@ -204,9 +204,9 @@ C) 모든 트래픽을 암호화해야 한다
 
 D) 멀티 리전 백업이 필수다
 
-**정답: B**
+**Answer: B**
 
-해설: Codecov 침해는 CI 업로더 스크립트 변조로 고객 CI 환경 변수에 박힌 정적 키·토큰이 통째로 유출된 사건이다. 교훈은 "정적 장기 자격 증명을 CI/배포 환경에 두지 말라"이며, 이후 업계는 OIDC 연합·IAM Roles Anywhere·IRSA/Pod Identity 같은 단명 자격 증명으로 이동했다. 이미지 스캔(A)·트래픽 암호화(C)·멀티 리전(D)은 다른 주제다.
+Explanation: Codecov 침해는 CI 업로더 스크립트 변조로 고객 CI 환경 변수에 박힌 정적 키·토큰이 통째로 유출된 사건이다. 교훈은 "정적 장기 자격 증명을 CI/배포 환경에 두지 말라"이며, 이후 업계는 OIDC 연합·IAM Roles Anywhere·IRSA/Pod Identity 같은 단명 자격 증명으로 이동했다. 이미지 스캔(A)·트래픽 암호화(C)·멀티 리전(D)은 다른 주제다.
 
 ---
 

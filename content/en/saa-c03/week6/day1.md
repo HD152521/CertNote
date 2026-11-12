@@ -316,80 +316,80 @@ Tomorrow we cover API Gateway, which stands in front of Lambda. We'll understand
 
 ## 📝 Practice Questions
 
-**문제 1.** A Lambda function handles a user-authentication API behind API Gateway. There's an SLA that must guarantee P99 response latency within 100ms. It uses the Java runtime, so the cold start reaches 2-3 seconds. What is the most suitable solution?
+**Question 1.** A Lambda function handles a user-authentication API behind API Gateway. There's an SLA that must guarantee P99 response latency within 100ms. It uses the Java runtime, so the cold start reaches 2-3 seconds. What is the most suitable solution?
 
 A) Change the runtime to Python (reduces cold start)
 B) Apply Provisioned Concurrency to warm up function instances in advance
 C) Set Reserved Concurrency high
 D) Increase memory to 10,240MB
 
-**정답: B**
+**Answer: B**
 
-해설: Provisioned Concurrency keeps a specified number of Lambda execution environments always in an initialized state, eliminating cold starts. To satisfy a P99 100ms SLA, even the 99th-percentile request must be handled with no cold start. For A, Python has a shorter cold start than Java but can't eliminate it entirely, and for Java, SnapStart is also a valid option. For C, Reserved Concurrency reserves a concurrency limit; it doesn't eliminate cold starts. For D, increasing memory also increases CPU proportionally so execution can be faster, but it doesn't fundamentally solve the cold start.
+Explanation: Provisioned Concurrency keeps a specified number of Lambda execution environments always in an initialized state, eliminating cold starts. To satisfy a P99 100ms SLA, even the 99th-percentile request must be handled with no cold start. For A, Python has a shorter cold start than Java but can't eliminate it entirely, and for Java, SnapStart is also a valid option. For C, Reserved Concurrency reserves a concurrency limit; it doesn't eliminate cold starts. For D, increasing memory also increases CPU proportionally so execution can be faster, but it doesn't fundamentally solve the cold start.
 
 ---
 
-**문제 2.** A Lambda function receives and processes events asynchronously from an SNS topic. When the function still fails after 3 attempts, how should you configure it to reprocess the event or send an alert?
+**Question 2.** A Lambda function receives and processes events asynchronously from an SNS topic. When the function still fails after 3 attempts, how should you configure it to reprocess the event or send an alert?
 
 A) Send it directly to SQS with try-catch inside the Lambda function
 B) Configure an SQS DLQ on the Lambda function and set it to move to the DLQ after 3 retries
 C) Set Lambda Destinations' On-Failure to SQS (after the automatic 2 retries)
 D) Detect Lambda errors with CloudWatch Events and re-invoke
 
-**정답: C**
+**Answer: C**
 
-해설: An asynchronous Lambda does 2 automatic retries by default (3 attempts total). If you set SQS as the On-Failure for Lambda Destinations, the event that failed even after all retries is automatically delivered to SQS. Destinations includes not only the original event but also the execution context and error information, enabling more detailed debugging. B is also a valid approach with a DLQ, but Destinations provides richer information and can also handle the success case, making it more flexible. For A, handling it inside the function raises code complexity and doesn't leverage the DLQ's retry benefits.
+Explanation: An asynchronous Lambda does 2 automatic retries by default (3 attempts total). If you set SQS as the On-Failure for Lambda Destinations, the event that failed even after all retries is automatically delivered to SQS. Destinations includes not only the original event but also the execution context and error information, enabling more detailed debugging. B is also a valid approach with a DLQ, but Destinations provides richer information and can also handle the success case, making it more flexible. For A, handling it inside the function raises code complexity and doesn't leverage the DLQ's retry benefits.
 
 ---
 
-**문제 3.** A Lambda function must call both an RDS in the customer VPC's private subnet and an external payment API (internet). How should you configure it?
+**Question 3.** A Lambda function must call both an RDS in the customer VPC's private subnet and an external payment API (internet). How should you configure it?
 
 A) Placing Lambda in a VPC public subnet gives access to both RDS and the internet
 B) Place Lambda in a VPC private subnet, and add a NAT Gateway in a public subnet for internet access
 C) Keep Lambda outside the VPC and enable a public endpoint on RDS
 D) Split Lambda into two, one inside the VPC and one outside
 
-**정답: B**
+**Answer: B**
 
-해설: A Lambda's VPC ENI always has only a private IP. Even if you place it in a public subnet, internet access through an IGW does not work. The private subnet + NAT Gateway path is the standard way for a VPC Lambda to reach the internet. Since RDS is inside the VPC, it's accessible privately from a Lambda in the same VPC. For C, an RDS public endpoint carries a large security risk. For D, complexity is high and there's communication overhead between the two functions.
+Explanation: A Lambda's VPC ENI always has only a private IP. Even if you place it in a public subnet, internet access through an IGW does not work. The private subnet + NAT Gateway path is the standard way for a VPC Lambda to reach the internet. Since RDS is inside the VPC, it's accessible privately from a Lambda in the same VPC. For C, an RDS public endpoint carries a large security risk. For D, complexity is high and there's communication overhead between the two functions.
 
 ---
 
-**문제 4.** A Lambda function receives events in batches from DynamoDB Streams and processes them. When some items in a batch fail to process, how do you retry only the failed items without reprocessing the successful ones?
+**Question 4.** A Lambda function receives events in batches from DynamoDB Streams and processes them. When some items in a batch fail to process, how do you retry only the failed items without reprocessing the successful ones?
 
 A) Fail the entire batch and retry
 B) Use ReportBatchItemFailures in the function response and return the sequence numbers of the failed items
 C) Set the batch size to 1 to process one item at a time
 D) Set up an SQS DLQ
 
-**정답: B**
+**Answer: B**
 
-해설: Using the `ReportBatchItemFailures` response type lets the Lambda function include in its response the sequence numbers of the specific failed items. The Lambda service retries from those items and doesn't reprocess the already-successful ones. A reprocesses successful items too via a full retry, causing duplicates. C greatly reduces throughput and loses the benefit of batch processing. For D, you can use an On-Failure Destination in DynamoDB Streams event source mapping, but an SQS DLQ isn't directly supported in this context.
+Explanation: Using the `ReportBatchItemFailures` response type lets the Lambda function include in its response the sequence numbers of the specific failed items. The Lambda service retries from those items and doesn't reprocess the already-successful ones. A reprocesses successful items too via a full retry, causing duplicates. C greatly reduces throughput and loses the benefit of batch processing. For D, you can use an On-Failure Destination in DynamoDB Streams event source mapping, but an SQS DLQ isn't directly supported in this context.
 
 ---
 
-**문제 5.** There is a payment-processing Lambda function. This function must not use up the entire account-wide concurrency limit, and at the same time a traffic spike from another, less important function must not interfere with the payment function's execution. How should you configure it?
+**Question 5.** There is a payment-processing Lambda function. This function must not use up the entire account-wide concurrency limit, and at the same time a traffic spike from another, less important function must not interfere with the payment function's execution. How should you configure it?
 
 A) Set Provisioned Concurrency on the payment function
 B) Set Reserved Concurrency on the payment function
 C) Add a throttling rule to the less important function
 D) Increase the account's overall concurrency limit
 
-**정답: B**
+**Answer: B**
 
-해설: Reserved Concurrency plays two roles at once. ① It isolates the set amount so other functions can't use it → guaranteeing the payment function's capacity (protecting it from other functions' spikes). ② It throttles requests beyond the set amount → preventing the payment function from monopolizing the whole limit. This achieves both "protection" and "limitation" at the same time. For A, Provisioned Concurrency is for eliminating cold starts; it doesn't provide concurrency isolation. For C, you can limit the less important function directly, but you'd have to configure it every time a new function is created. For D, raising the overall limit doesn't isolate functions from each other.
+Explanation: Reserved Concurrency plays two roles at once. ① It isolates the set amount so other functions can't use it → guaranteeing the payment function's capacity (protecting it from other functions' spikes). ② It throttles requests beyond the set amount → preventing the payment function from monopolizing the whole limit. This achieves both "protection" and "limitation" at the same time. For A, Provisioned Concurrency is for eliminating cold starts; it doesn't provide concurrency isolation. For C, you can limit the less important function directly, but you'd have to configure it every time a new function is created. For D, raising the overall limit doesn't isolate functions from each other.
 
 ---
 
-**문제 6.** A Lambda function processes events from Kinesis Data Streams. Throughput per shard is insufficient and you want to increase parallel processing. What should you do?
+**Question 6.** A Lambda function processes events from Kinesis Data Streams. Throughput per shard is insufficient and you want to increase parallel processing. What should you do?
 
 A) Increase the Lambda function's memory
 B) Increase Lambda Reserved Concurrency
 C) Increase the number of Kinesis shards (Resharding)
 D) Reduce the batch size
 
-**정답: C**
+**Answer: C**
 
-해설: In Lambda's Kinesis event source mapping, parallelism is determined by the number of shards. Each shard is processed by one Lambda execution context (when Enhanced Fan-Out is disabled). So to increase parallel processing, you have to add Kinesis shards. For A, increasing memory speeds up an individual function but doesn't increase parallelism. For B, Reserved Concurrency sets an upper limit; it doesn't increase parallelism. For D, reducing the batch size causes more invocations, but the one-context-per-shard limit doesn't change.
+Explanation: In Lambda's Kinesis event source mapping, parallelism is determined by the number of shards. Each shard is processed by one Lambda execution context (when Enhanced Fan-Out is disabled). So to increase parallel processing, you have to add Kinesis shards. For A, increasing memory speeds up an individual function but doesn't increase parallelism. For B, Reserved Concurrency sets an upper limit; it doesn't increase parallelism. For D, reducing the batch size causes more invocations, but the one-context-per-shard limit doesn't change.
 
 ---

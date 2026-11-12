@@ -107,7 +107,7 @@ In the next article we move beyond metrics that tell us "what's slow" but not "w
 
 ## 📝 Practice Questions
 
-**문제 1.** To monitor EC2 instance memory usage in CloudWatch, what's the most appropriate approach?
+**Question 1.** To monitor EC2 instance memory usage in CloudWatch, what's the most appropriate approach?
 
 A) Already included in EC2 basic metrics, no additional action required
 
@@ -117,13 +117,13 @@ C) Enable Detailed Monitoring
 
 D) Enable CloudTrail to collect memory events
 
-**정답: B**
+**Answer: B**
 
-해설: Memory usage is a value measurable only inside the guest OS, which the hypervisor cannot observe; therefore, it's not in EC2 basic metrics. **CloudWatch Agent** must be installed on the OS to read internal information like `/proc/meminfo` and push it. A) Basic metrics (CPU, network, DiskOps) are all observed from the hypervisor boundary only. C) Detailed Monitoring makes EC2 *basic* metrics send more frequently (5-minute to 1-minute intervals) but doesn't add a *new* metric like memory — this is the key trap. D) CloudTrail is for API auditing, unrelated to performance metrics.
+Explanation: Memory usage is a value measurable only inside the guest OS, which the hypervisor cannot observe; therefore, it's not in EC2 basic metrics. **CloudWatch Agent** must be installed on the OS to read internal information like `/proc/meminfo` and push it. A) Basic metrics (CPU, network, DiskOps) are all observed from the hypervisor boundary only. C) Detailed Monitoring makes EC2 *basic* metrics send more frequently (5-minute to 1-minute intervals) but doesn't add a *new* metric like memory — this is the key trap. D) CloudTrail is for API auditing, unrelated to performance metrics.
 
 ---
 
-**문제 2.** Which of EC2's `DiskReadOps` vs. `disk_used_percent` is auto-collected as a basic metric, and why?
+**Question 2.** Which of EC2's `DiskReadOps` vs. `disk_used_percent` is auto-collected as a basic metric, and why?
 
 A) Both are basic metrics
 
@@ -133,13 +133,13 @@ C) `disk_used_percent` is basic; `DiskReadOps` requires Agent
 
 D) Both require Agent
 
-**정답: B**
+**Answer: B**
 
-해설: `DiskReadOps` (block I/O count) is observable by the hypervisor at the EBS volume boundary, so it's a basic metric. By contrast, `disk_used_percent` (how full the disk is) requires reading filesystem metadata, so it needs the guest OS's **CloudWatch Agent**. Both words contain "disk," deliberately written to confuse, but the criterion is consistent: "observable from outside the hypervisor vs. must peer inside the OS." Memory follows the same logic and always requires Agent.
+Explanation: `DiskReadOps` (block I/O count) is observable by the hypervisor at the EBS volume boundary, so it's a basic metric. By contrast, `disk_used_percent` (how full the disk is) requires reading filesystem metadata, so it needs the guest OS's **CloudWatch Agent**. Both words contain "disk," deliberately written to confuse, but the criterion is consistent: "observable from outside the hypervisor vs. must peer inside the OS." Memory follows the same logic and always requires Agent.
 
 ---
 
-**문제 3.** Setting `EvaluationPeriods=3`, `Period=60` in a CloudWatch alarm aims to:
+**Question 3.** Setting `EvaluationPeriods=3`, `Period=60` in a CloudWatch alarm aims to:
 
 A) Send the alarm 3 times per minute
 
@@ -149,13 +149,13 @@ C) Activate the alarm for only 3 minutes
 
 D) Send simultaneously to 3 SNS topics
 
-**정답: B**
+**Answer: B**
 
-해설: `Period` is the data point length (60 seconds), `EvaluationPeriods` is the count of consecutive violations needed for state transition (3). So 3 minutes of continuous threshold breach triggers `ALARM`, debouncing the alarm against momentary spikes. More precise control uses `DatapointsToAlarm` for "M of N" conditions. A, C, and D misinterpret the alarm evaluation mechanism.
+Explanation: `Period` is the data point length (60 seconds), `EvaluationPeriods` is the count of consecutive violations needed for state transition (3). So 3 minutes of continuous threshold breach triggers `ALARM`, debouncing the alarm against momentary spikes. More precise control uses `DatapointsToAlarm` for "M of N" conditions. A, C, and D misinterpret the alarm evaluation mechanism.
 
 ---
 
-**문제 4.** To send business metrics (order count, etc.) from a Lambda function to CloudWatch while minimizing execution cost and latency, the best approach is:
+**Question 4.** To send business metrics (order count, etc.) from a Lambda function to CloudWatch while minimizing execution cost and latency, the best approach is:
 
 A) Synchronously call `PutMetricData` inside the handler
 
@@ -165,13 +165,13 @@ C) Run CloudWatch Agent on each invocation
 
 D) Use X-Ray Annotations as substitute
 
-**정답: B**
+**Answer: B**
 
-해설: `PutMetricData` is a synchronous network call; that round-trip extends Lambda execution and increases cost (since Lambda charges by execution time). **EMF** just prints one line of JSON to stdout (logs are sent asynchronously anyway), so metric extraction happens on CloudWatch's side with no added latency in the hot path. AWS Lambda Powertools handles this automatically. C) Agent is for EC2/on-premises, not Lambda. D) Annotations are tracing data, not metrics.
+Explanation: `PutMetricData` is a synchronous network call; that round-trip extends Lambda execution and increases cost (since Lambda charges by execution time). **EMF** just prints one line of JSON to stdout (logs are sent asynchronously anyway), so metric extraction happens on CloudWatch's side with no added latency in the hot path. AWS Lambda Powertools handles this automatically. C) Agent is for EC2/on-premises, not Lambda. D) Annotations are tracing data, not metrics.
 
 ---
 
-**문제 5.** The most common cause of a CloudWatch alarm in `INSUFFICIENT_DATA` state is:
+**Question 5.** The most common cause of a CloudWatch alarm in `INSUFFICIENT_DATA` state is:
 
 A) The threshold was exceeded
 
@@ -181,13 +181,13 @@ C) The alarm is normal
 
 D) SNS subscription not confirmed
 
-**정답: B**
+**Answer: B**
 
-해설: In the push model, if metric data isn't transmitted, CloudWatch has no data to evaluate, so it goes to `INSUFFICIENT_DATA`. This reflects the fundamental ambiguity of the push model — "is it quiet/normal or dead/unable to send?" That's why alarms have missing data handling options (`missing`/`notBreaching`/`breaching`/`ignore`) to force operators to explicitly interpret. A) Breach is `ALARM` state, C) Normal is `OK` state.
+Explanation: In the push model, if metric data isn't transmitted, CloudWatch has no data to evaluate, so it goes to `INSUFFICIENT_DATA`. This reflects the fundamental ambiguity of the push model — "is it quiet/normal or dead/unable to send?" That's why alarms have missing data handling options (`missing`/`notBreaching`/`breaching`/`ignore`) to force operators to explicitly interpret. A) Breach is `ALARM` state, C) Normal is `OK` state.
 
 ---
 
-**문제 6.** To send an alarm when `ERROR` occurrence count in accumulated text logs exceeds a threshold, the correct pathway is:
+**Question 6.** To send an alarm when `ERROR` occurrence count in accumulated text logs exceeds a threshold, the correct pathway is:
 
 A) CloudTrail directly detects ERROR events
 
@@ -197,13 +197,13 @@ C) X-Ray traces ERROR logs
 
 D) Attach alarm directly to Logs Insights query
 
-**정답: B**
+**Answer: B**
 
-해설: In CloudWatch, logs are raw material for metrics. **Metric Filter** detects the `ERROR` pattern in log text, converts occurrence count to a metric, and then an alarm is set on that metric (logs → pattern matching → metric → alarm). A) CloudTrail is for AWS API auditing, not application log pattern detection. C) X-Ray is distributed tracing. D) Logs Insights is an analytics query tool; there's no standard mechanism to attach alarms directly to its query results.
+Explanation: In CloudWatch, logs are raw material for metrics. **Metric Filter** detects the `ERROR` pattern in log text, converts occurrence count to a metric, and then an alarm is set on that metric (logs → pattern matching → metric → alarm). A) CloudTrail is for AWS API auditing, not application log pattern detection. C) X-Ray is distributed tracing. D) Logs Insights is an analytics query tool; there's no standard mechanism to attach alarms directly to its query results.
 
 ---
 
-**문제 7.** To prevent "alarm storms" where a single database failure triggers dozens of dependent service alarms simultaneously, and notify only the root cause, the appropriate feature is:
+**Question 7.** To prevent "alarm storms" where a single database failure triggers dozens of dependent service alarms simultaneously, and notify only the root cause, the appropriate feature is:
 
 A) Raise each alarm's threshold
 
@@ -213,6 +213,6 @@ C) Disable all alarm SNS actions
 
 D) Enable Detailed Monitoring
 
-**정답: B**
+**Answer: B**
 
-해설: **Composite Alarms** combine multiple alarms with logical conditions to implement correlation-based alert suppression — "if DB alarm is ALARM, suppress child service alarms" — so only the root cause reaches operators instead of 50 child notifications burying it. A) Threshold adjustment doesn't stop the storm itself. C) Disabling all will miss real failures. D) Detailed Monitoring is collection frequency, unrelated to alert suppression.
+Explanation: **Composite Alarms** combine multiple alarms with logical conditions to implement correlation-based alert suppression — "if DB alarm is ALARM, suppress child service alarms" — so only the root cause reaches operators instead of 50 child notifications burying it. A) Threshold adjustment doesn't stop the storm itself. C) Disabling all will miss real failures. D) Detailed Monitoring is collection frequency, unrelated to alert suppression.

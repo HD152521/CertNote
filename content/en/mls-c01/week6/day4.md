@@ -99,62 +99,62 @@ Today we consolidated unsupervised/anomaly builtins: RCF(general anomaly), IP In
 
 ## 📝 Practice Questions
 
-**문제 1.** 서버 메트릭 스트림에서 평소와 다른 급변(스파이크)을 실시간으로, 레이블 없이 탐지하려 한다. 가장 적합한 조합은?
+**Question 1.** 서버 메트릭 스트림에서 평소와 다른 급변(스파이크)을 실시간으로, 레이블 없이 탐지하려 한다. 가장 적합한 조합은?
 
 A) PCA로 차원 축소 후 K-Means  
 B) Kinesis Data Analytics의 Random Cut Forest  
 C) IP Insights  
 D) BlazingText supervised  
 
-**정답: B**  
-해설: 레이블 없는 수치 스트림의 실시간 이상 탐지는 Kinesis Data Analytics에 내장된 RANDOM_CUT_FOREST 함수가 정석이다. PCA+K-Means(A)는 이상탐지 전용이 아니고, IP Insights(C)는 엔티티-IP 관계 특화, BlazingText(D)는 텍스트 분류용이다.
+**Answer: B**  
+Explanation: 레이블 없는 수치 스트림의 실시간 이상 탐지는 Kinesis Data Analytics에 내장된 RANDOM_CUT_FOREST 함수가 정석이다. PCA+K-Means(A)는 이상탐지 전용이 아니고, IP Insights(C)는 엔티티-IP 관계 특화, BlazingText(D)는 텍스트 분류용이다.
 
 ---
 
-**문제 2.** 한 웹 서비스가 "특정 사용자 계정이 평소와 전혀 다른 IP 주소에서 로그인"하는 비정상을 탐지하려 한다. 가장 특화된 빌트인은?
+**Question 2.** 한 웹 서비스가 "특정 사용자 계정이 평소와 전혀 다른 IP 주소에서 로그인"하는 비정상을 탐지하려 한다. 가장 특화된 빌트인은?
 
 A) Random Cut Forest  
 B) PCA  
 C) IP Insights  
 D) LDA  
 
-**정답: C**  
-해설: IP Insights는 엔티티(사용자/계정)와 IPv4 주소의 연관 패턴을 학습해 평소와 다른 조합을 탐지하도록 특화돼 있다. RCF(A)는 일반 수치 이상, PCA(B)는 차원 축소, LDA(D)는 토픽 모델이다.
+**Answer: C**  
+Explanation: IP Insights는 엔티티(사용자/계정)와 IPv4 주소의 연관 패턴을 학습해 평소와 다른 조합을 탐지하도록 특화돼 있다. RCF(A)는 일반 수치 이상, PCA(B)는 차원 축소, LDA(D)는 토픽 모델이다.
 
 ---
 
-**문제 3.** 상관관계가 높은 500개의 수치 피처를 분산을 최대한 보존하며 30개 정도로 압축해 다운스트림 모델의 입력으로 쓰려 한다. 가장 적합한 빌트인은?
+**Question 3.** 상관관계가 높은 500개의 수치 피처를 분산을 최대한 보존하며 30개 정도로 압축해 다운스트림 모델의 입력으로 쓰려 한다. 가장 적합한 빌트인은?
 
 A) PCA  
 B) Factorization Machines  
 C) DeepAR  
 D) IP Insights  
 
-**정답: A**  
-해설: 상관된 다수 피처를 분산 보존 소수 주성분으로 압축하는 것은 PCA의 정의 그대로다(매우 큰 차원이면 randomized 모드). FM(B)은 희소 추천, DeepAR(C)는 시계열, IP Insights(D)는 이상 탐지용이다.
+**Answer: A**  
+Explanation: 상관된 다수 피처를 분산 보존 소수 주성분으로 압축하는 것은 PCA의 정의 그대로다(매우 큰 차원이면 randomized 모드). FM(B)은 희소 추천, DeepAR(C)는 시계열, IP Insights(D)는 이상 탐지용이다.
 
 ---
 
-**문제 4.** 라벨이 없는 대규모 문서 코퍼스에서 잠재 주제를 발견하려 한다. 데이터가 매우 크고 GPU로 학습을 가속하고 싶다. LDA와 NTM 중 더 적합한 것과 그 이유로 옳은 것은?
+**Question 4.** 라벨이 없는 대규모 문서 코퍼스에서 잠재 주제를 발견하려 한다. 데이터가 매우 크고 GPU로 학습을 가속하고 싶다. LDA와 NTM 중 더 적합한 것과 그 이유로 옳은 것은?
 
 A) LDA — 신경망 기반이라 GPU에서 빠르다  
 B) LDA — 항상 NTM보다 정확하다  
 C) NTM — 확률적 생성 모델이라 항상 해석이 더 쉽다  
 D) NTM — 신경망 기반으로 대규모·GPU 활용에 유리하다  
 
-**정답: D**  
-해설: NTM은 신경망(오토인코더) 기반 토픽 모델로 대규모 데이터와 GPU 활용에 유리하다. LDA가 신경망 기반(A)이라는 설명은 틀렸고(LDA는 확률 모델), "항상 더 정확/해석 쉽다"(B, C)는 단정도 근거가 없다.
+**Answer: D**  
+Explanation: NTM은 신경망(오토인코더) 기반 토픽 모델로 대규모 데이터와 GPU 활용에 유리하다. LDA가 신경망 기반(A)이라는 설명은 틀렸고(LDA는 확률 모델), "항상 더 정확/해석 쉽다"(B, C)는 단정도 근거가 없다.
 
 ---
 
-**문제 5.** SageMaker에서 "LDA"라는 이름과 관련해 가장 정확한 설명은?
+**Question 5.** SageMaker에서 "LDA"라는 이름과 관련해 가장 정확한 설명은?
 
 A) SageMaker 빌트인 LDA는 차원 축소용 선형판별분석이다  
 B) LDA와 NTM은 모두 지도학습 분류 알고리즘이다  
 C) LDA는 이미지 분류 전용이다  
 D) SageMaker 빌트인 LDA는 토픽 모델(Latent Dirichlet Allocation)이며, 차원축소의 선형판별분석과 이름만 같다  
 
-**정답: D**  
-해설: SageMaker의 빌트인 LDA는 토픽 모델(Latent Dirichlet Allocation)이며, 차원 축소에 쓰는 선형판별분석(Linear Discriminant Analysis)과는 약어만 같고 다른 것이다. 따라서 A는 혼동, LDA/NTM은 비지도 토픽 모델이므로 지도 분류(B)·이미지 전용(C)도 틀렸다.
+**Answer: D**  
+Explanation: SageMaker의 빌트인 LDA는 토픽 모델(Latent Dirichlet Allocation)이며, 차원 축소에 쓰는 선형판별분석(Linear Discriminant Analysis)과는 약어만 같고 다른 것이다. 따라서 A는 혼동, LDA/NTM은 비지도 토픽 모델이므로 지도 분류(B)·이미지 전용(C)도 틀렸다.
 
 ---

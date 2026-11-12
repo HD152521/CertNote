@@ -207,94 +207,94 @@ Next we'll see Custom Resource and Module/Hook expanding CloudFormation's expres
 
 ## 📝 Practice Questions
 
-**문제 1.** 새 멤버 계정이 OU에 추가될 때 자동으로 보안 베이스라인이 적용되고, 운영자가 매번 손대지 않게 하려면 가장 적절한 구성은?
+**Question 1.** 새 멤버 계정이 OU에 추가될 때 자동으로 보안 베이스라인이 적용되고, 운영자가 매번 손대지 않게 하려면 가장 적절한 구성은?
 
 A) Self-managed StackSets + 수동 create-stack-instances
 B) Service-managed StackSets + AutoDeployment Enabled + Organizations Trusted Access
 C) Lambda를 EventBridge로 호출
 D) 각 계정에 IAM Role을 사전 생성한 후 stage별 호출
 
-**정답: B**
+**Answer: B**
 
-해설: Service-managed는 Org Trusted Access를 통해 AWS가 자동으로 멤버 계정에 Execution Role(Service-Linked Role)을 프로비저닝한다. AutoDeployment Enabled가 켜지면 OU에 신규 계정이 가입하는 순간 모든 Stack Instance가 자동 생성. Self-managed(A,D)는 사전 IAM 필요로 닭과 달걀 문제. Lambda 직접 호출(C)은 멱등성·실패처리·동시성 정책을 직접 구현해야 해서 비효율.
+Explanation: Service-managed는 Org Trusted Access를 통해 AWS가 자동으로 멤버 계정에 Execution Role(Service-Linked Role)을 프로비저닝한다. AutoDeployment Enabled가 켜지면 OU에 신규 계정이 가입하는 순간 모든 Stack Instance가 자동 생성. Self-managed(A,D)는 사전 IAM 필요로 닭과 달걀 문제. Lambda 직접 호출(C)은 멱등성·실패처리·동시성 정책을 직접 구현해야 해서 비효율.
 
 ---
 
-**문제 2.** 200 계정에 StackSet으로 보안 가드레일 업데이트를 배포하는데 "처음 5 계정에서 실패가 나면 즉시 전체 중단, 그 이후엔 1%까지 실패 허용"이 필요하다. 가장 적절한 운영 방식은?
+**Question 2.** 200 계정에 StackSet으로 보안 가드레일 업데이트를 배포하는데 "처음 5 계정에서 실패가 나면 즉시 전체 중단, 그 이후엔 1%까지 실패 허용"이 필요하다. 가장 적절한 운영 방식은?
 
 A) FailureToleranceCount=0 한 번에 전체 배포
 B) FailureTolerancePercentage=1 한 번에 전체 배포
 C) 1단계 카나리 5 계정에 FailureToleranceCount=0 → 검증 후 2단계 나머지 195 계정에 FailureTolerancePercentage=1
 D) 자동 스크립트 없이 콘솔로 한 계정씩
 
-**정답: C**
+**Answer: C**
 
-해설: StackSets 자체에 내장 카나리 단계가 없으므로 운영자가 create-stack-instances를 두 번 호출해 직접 단계 구성한다. INTERSECTION 또는 Accounts 명시로 1단계 카나리 계정만 선택, 검증 후 DIFFERENCE로 나머지 계정에 적용. A는 첫 실패에서 전체 중단, B는 카나리 단계 없음, D는 비현실적. 시험에서는 "단계적 배포"라는 키워드와 함께 자주 출제.
+Explanation: StackSets 자체에 내장 카나리 단계가 없으므로 운영자가 create-stack-instances를 두 번 호출해 직접 단계 구성한다. INTERSECTION 또는 Accounts 명시로 1단계 카나리 계정만 선택, 검증 후 DIFFERENCE로 나머지 계정에 적용. A는 첫 실패에서 전체 중단, B는 카나리 단계 없음, D는 비현실적. 시험에서는 "단계적 배포"라는 키워드와 함께 자주 출제.
 
 ---
 
-**문제 3.** Service-managed StackSets에서 AWS가 멤버 계정에 자동 생성하는 IAM Role의 특징으로 가장 정확한 것은?
+**Question 3.** Service-managed StackSets에서 AWS가 멤버 계정에 자동 생성하는 IAM Role의 특징으로 가장 정확한 것은?
 
 A) 사용자가 자유롭게 삭제 가능
 B) Service-Linked Role 메커니즘으로 만들어져 의존성 검사로 임의 삭제 차단, 신뢰 출발점은 Organizations 신뢰 관계
 C) 각 계정의 IAM 관리자가 trust policy를 직접 작성해야 함
 D) Cross-account access key 기반
 
-**정답: B**
+**Answer: B**
 
-해설: Service-Linked Role(SLR)은 AWS 관리형 역할로 서비스 의존성 검사 통과 시에만 삭제 가능하고 권한 수정도 제한된다. 신뢰 관계는 `organizations.amazonaws.com`을 출발점으로 하므로 Org 외부에서 가장 불가능 — 보안 격리의 핵심. Self-managed처럼 운영자가 trust를 직접 만지지 않아 회사 계정 구조 변경 시 운영 부담이 작다.
+Explanation: Service-Linked Role(SLR)은 AWS 관리형 역할로 서비스 의존성 검사 통과 시에만 삭제 가능하고 권한 수정도 제한된다. 신뢰 관계는 `organizations.amazonaws.com`을 출발점으로 하므로 Org 외부에서 가장 불가능 — 보안 격리의 핵심. Self-managed처럼 운영자가 trust를 직접 만지지 않아 회사 계정 구조 변경 시 운영 부담이 작다.
 
 ---
 
-**문제 4.** Delegated Administrator 등록을 권장하는 핵심 이유는?
+**Question 4.** Delegated Administrator 등록을 권장하는 핵심 이유는?
 
 A) 비용 절감
 B) Management Account의 일상 사용을 최소화해 침해 시 폭발 반경 축소 — AWS Well-Architected Security Pillar의 최우선 권고
 C) 리전 확장 가능
 D) IAM 자동 회전 활성화
 
-**정답: B**
+**Answer: B**
 
-해설: Management Account는 모든 멤버 계정에 대한 절대 권한을 갖는 단일 위험점. 사람 로그인을 최소화하고 일상 운영을 Tooling/Security 계정에 위임하는 게 표준. 같은 패턴이 GuardDuty/Config/Security Hub/Access Analyzer에도 적용. Control Tower는 Audit/Log Archive 계정을 자동 Delegated Admin으로 설정해 이 패턴 강제. 2019년 root credential 분실 사고 같은 사례 방지.
+Explanation: Management Account는 모든 멤버 계정에 대한 절대 권한을 갖는 단일 위험점. 사람 로그인을 최소화하고 일상 운영을 Tooling/Security 계정에 위임하는 게 표준. 같은 패턴이 GuardDuty/Config/Security Hub/Access Analyzer에도 적용. Control Tower는 Audit/Log Archive 계정을 자동 Delegated Admin으로 설정해 이 패턴 강제. 2019년 root credential 분실 사고 같은 사례 방지.
 
 ---
 
-**문제 5.** StackSet의 한 Stack Instance가 stateful 리소스(RDS, S3 with data)를 포함한다. 자회사 매각으로 그 계정이 OU를 떠날 때 데이터를 보호하려면?
+**Question 5.** StackSet의 한 Stack Instance가 stateful 리소스(RDS, S3 with data)를 포함한다. 자회사 매각으로 그 계정이 OU를 떠날 때 데이터를 보호하려면?
 
 A) AutoDeployment Enabled만 설정
 B) RetainStacksOnAccountRemoval=true + 리소스마다 DeletionPolicy=Retain (두 정책 모두)
 C) StackSet 삭제 후 재생성
 D) AccountFilterType=DIFFERENCE로 계정 제외
 
-**정답: B**
+**Answer: B**
 
-해설: RetainStacksOnAccountRemoval=false(기본)면 OU 이탈 시 Stack 자동 삭제되고 그 안의 RDS/S3가 같이 사라진다. true로 설정해 Stack 자체를 남기고, 추가로 리소스 DeletionPolicy=Retain으로 어떤 경로의 Stack 삭제에도 데이터 보존. 2021년 핀테크 CloudTrail 유실 사례의 교훈. A는 무관, C는 데이터 손실 위험, D는 향후 배포 제외이지 데이터 보호 아님.
+Explanation: RetainStacksOnAccountRemoval=false(기본)면 OU 이탈 시 Stack 자동 삭제되고 그 안의 RDS/S3가 같이 사라진다. true로 설정해 Stack 자체를 남기고, 추가로 리소스 DeletionPolicy=Retain으로 어떤 경로의 Stack 삭제에도 데이터 보존. 2021년 핀테크 CloudTrail 유실 사례의 교훈. A는 무관, C는 데이터 손실 위험, D는 향후 배포 제외이지 데이터 보호 아님.
 
 ---
 
-**문제 6.** AccountFilterType=DIFFERENCE의 사용 예로 가장 적절한 것은?
+**Question 6.** AccountFilterType=DIFFERENCE의 사용 예로 가장 적절한 것은?
 
 A) OU 외부 계정 추가 포함
 B) OU 안에서 진행 중인 마이그레이션 계정 2개를 임시로 배포 대상에서 제외
 C) OU의 모든 계정
 D) 특정 리전만
 
-**정답: B**
+**Answer: B**
 
-해설: DIFFERENCE = OU - Accounts. OU 전체를 대상으로 하되 일부를 임시 제외할 때 유용. 마이그레이션/장애/예외 상황에 사용. UNION(A)은 OU + 추가 계정 외부 포함, NONE(C)은 OU 전체, 리전 필터(D)는 별도 --regions 옵션. 시험에서는 네 가지 집합 연산의 의미 자체를 묻는다.
+Explanation: DIFFERENCE = OU - Accounts. OU 전체를 대상으로 하되 일부를 임시 제외할 때 유용. 마이그레이션/장애/예외 상황에 사용. UNION(A)은 OU + 추가 계정 외부 포함, NONE(C)은 OU 전체, 리전 필터(D)는 별도 --regions 옵션. 시험에서는 네 가지 집합 연산의 의미 자체를 묻는다.
 
 ---
 
-**문제 7.** 500 계정 환경에서 GuardDuty 활성화 여부를 실시간으로 평가하고 자동 복원까지 하려면 가장 적절한 조합은?
+**Question 7.** 500 계정 환경에서 GuardDuty 활성화 여부를 실시간으로 평가하고 자동 복원까지 하려면 가장 적절한 조합은?
 
 A) StackSets Drift Detection만
 B) StackSets로 GuardDuty 배포 + Config Rule `guardduty-enabled-centralized`를 Conformance Pack으로 평가 + SSM Automation Document를 Config Remediation으로 자동 복원
 C) Lambda 한 개로 직접 체크
 D) 콘솔에서 매일 수동 점검
 
-**정답: B**
+**Answer: B**
 
-해설: 세 도구의 역할 분리 — StackSets는 자원 배포(예방), Config Rules는 평가(감지), SSM Automation은 자동 복원(수정). StackSets Drift Detection은 비주기/수동 트리거이고 자동 수정도 안 됨 → 실시간 단독 솔루션 안 됨. Conformance Pack은 Org 전체에 Config Rules를 일관 배포하는 묶음이라 멀티 계정 평가의 표준. Security Hub로 집계해 가시성 확보까지 표준 3단 구성.
+Explanation: 세 도구의 역할 분리 — StackSets는 자원 배포(예방), Config Rules는 평가(감지), SSM Automation은 자동 복원(수정). StackSets Drift Detection은 비주기/수동 트리거이고 자동 수정도 안 됨 → 실시간 단독 솔루션 안 됨. Conformance Pack은 Org 전체에 Config Rules를 일관 배포하는 묶음이라 멀티 계정 평가의 표준. Security Hub로 집계해 가시성 확보까지 표준 3단 구성.
 
 ---
 

@@ -251,72 +251,72 @@ Next week: NoSQL — DynamoDB — with nearly opposite philosophy to RDS (automa
 
 ## 📝 Week 7 Comprehensive Exam: 12 Scenario Questions
 
-**문제 1.** SaaS company runs production RDS MySQL. 500 Lambda functions burst-invoke, "Too many connections" errors. Simultaneously security team demands: "no password in code + auto-rotate + connection stability" all three. Best config?
+**Question 1.** SaaS company runs production RDS MySQL. 500 Lambda functions burst-invoke, "Too many connections" errors. Simultaneously security team demands: "no password in code + auto-rotate + connection stability" all three. Best config?
 
 A) Lambda env-var password (KMS encrypted) + reserved concurrency 50 + provisioned concurrency
 B) RDS IAM Auth token solo, Lambda per-call SigV4 direct
 C) RDS Proxy + Secrets Manager auto-rotate + Lambda IAM auth to Proxy
 D) Migrate to DynamoDB + DAX cache, eliminate connection concept
 
-**정답: C**
+**Answer: C**
 
-해설: Three requirements need ① RDS Proxy connection pool stability ② Secrets Manager auto-rotate ③ Lambda → Proxy auth via IAM (or Secrets ARN). Proxy auto-recognizes Secrets Manager updates, backend connection refresh seamless. A: concurrency limit hurts throughput. B: connection storm unsolved (15-min token + 200/sec limit). D: data model change excessive. Exam: "Lambda + RDS + three security/stability needs" = RDS Proxy + Secrets Manager combo.
+Explanation: Three requirements need ① RDS Proxy connection pool stability ② Secrets Manager auto-rotate ③ Lambda → Proxy auth via IAM (or Secrets ARN). Proxy auto-recognizes Secrets Manager updates, backend connection refresh seamless. A: concurrency limit hurts throughput. B: connection storm unsolved (15-min token + 200/sec limit). D: data model change excessive. Exam: "Lambda + RDS + three security/stability needs" = RDS Proxy + Secrets Manager combo.
 
 ---
 
-**문제 2.** Fintech wants RDS fulfilling: ① RPO ≈ 0 ② standby supports analytics queries ③ failover < 60 sec. Best option?
+**Question 2.** Fintech wants RDS fulfilling: ① RPO ≈ 0 ② standby supports analytics queries ③ failover < 60 sec. Best option?
 
 A) RDS Multi-AZ Instance (1 sync standby) + 2 Read Replicas for analytics
 B) RDS Multi-AZ Cluster Deployment (2022)
 C) Aurora MySQL Multi-AZ
 D) RDS Single-AZ + 7-day auto-backup + daily snapshot restore
 
-**정답: B (also C valid)**
+**Answer: B (also C valid)**
 
-해설: Multi-AZ Cluster Deployment (MySQL/PostgreSQL 2022+): 1 writer + 2 readable standby + sync quorum → ① RPO≈0 ② standby-readable ③ failover ≤35 sec all three. A: Standby non-readable standard Multi-AZ. C: Aurora also satisfies but engine switch is larger change — Cluster Deployment closer. D: Single-AZ fails ①③.
+Explanation: Multi-AZ Cluster Deployment (MySQL/PostgreSQL 2022+): 1 writer + 2 readable standby + sync quorum → ① RPO≈0 ② standby-readable ③ failover ≤35 sec all three. A: Standby non-readable standard Multi-AZ. C: Aurora also satisfies but engine switch is larger change — Cluster Deployment closer. D: Single-AZ fails ①③.
 
 ---
 
-**문제 3.** ElastiCache Redis Cluster Mode: hot key (popular product) traffic concentrated, one shard CPU 100%, others 5%. Most effective fix?
+**Question 3.** ElastiCache Redis Cluster Mode: hot key (popular product) traffic concentrated, one shard CPU 100%, others 5%. Most effective fix?
 
 A) Disable Cluster Mode, single shard + 5 replicas for read
 B) Hash tag: distribute key across multiple slots/shards (key sharding)
 C) Upgrade instance class for hot shard headroom
 D) Add more replicas
 
-**정답: B (also D viable)**
+**Answer: B (also D viable)**
 
-해설: B core: "shard one key to sub-keys" (e.g., `product:123:shard{0}` ~ `product:123:shard{9}` → different slots/shards). Client random-reads, writes broadcast all shards. D: Read replicas help if reads are hot, but writes stay same shard. A: loses scale. C: bandaid, root issue unsolved. Exam: hot key + Cluster Mode → hash tag answer.
+Explanation: B core: "shard one key to sub-keys" (e.g., `product:123:shard{0}` ~ `product:123:shard{9}` → different slots/shards). Client random-reads, writes broadcast all shards. D: Read replicas help if reads are hot, but writes stay same shard. A: loses scale. C: bandaid, root issue unsolved. Exam: hot key + Cluster Mode → hash tag answer.
 
 ---
 
-**문제 4.** Aurora MySQL: dev `DELETE FROM orders WHERE created_at > '2024-01-01'` mistake. Fastest recovery (< 30 min)?
+**Question 4.** Aurora MySQL: dev `DELETE FROM orders WHERE created_at > '2024-01-01'` mistake. Fastest recovery (< 30 min)?
 
 A) PITR 5 min ago clone, mysqldump deleted rows
 B) Backtrack in-place 5 min ago rewind
 C) Manual failover, restart other AZ instance
 D) Recent auto-snapshot restore new cluster
 
-**정답: B**
+**Answer: B**
 
-해설: Backtrack: in-place seconds~min rewind (no new instance, no endpoint change). A: PITR new instance creation (30 min) + steps slow. C: failover irrelevant data recovery. D: snapshot restore min~hour + new cluster slow. Exam "Aurora MySQL quick mistake recovery" = Backtrack instant.
+Explanation: Backtrack: in-place seconds~min rewind (no new instance, no endpoint change). A: PITR new instance creation (30 min) + steps slow. C: failover irrelevant data recovery. D: snapshot restore min~hour + new cluster slow. Exam "Aurora MySQL quick mistake recovery" = Backtrack instant.
 
 ---
 
-**문제 5.** Game company: real-time 100M-player leaderboard, rank < 10ms, 100K updates/sec. Best?
+**Question 5.** Game company: real-time 100M-player leaderboard, rank < 10ms, 100K updates/sec. Best?
 
 A) DynamoDB GSI + DAX rank cache
 B) Redis Sorted Set (ZADD/ZREVRANK O(log N))
 C) Aurora MySQL custom composite index + ORDER BY
 D) S3 events + Athena batch ORDER BY
 
-**정답: B**
+**Answer: B**
 
-해설: Redis Sorted Set exactly for this. ZADD O(log N), ZREVRANK O(log N) — 100M data, ~27 compares. Skip list + hash internal = fast sort + key. A: DynamoDB GSI N+1, cost. C: 100M ORDER BY minutes. D: batch analytic. Exam: "leaderboard/ranking/real-time score" → Redis Sorted Set instant answer.
+Explanation: Redis Sorted Set exactly for this. ZADD O(log N), ZREVRANK O(log N) — 100M data, ~27 compares. Skip list + hash internal = fast sort + key. A: DynamoDB GSI N+1, cost. C: 100M ORDER BY minutes. D: batch analytic. Exam: "leaderboard/ranking/real-time score" → Redis Sorted Set instant answer.
 
 ---
 
-**문제 6.** Medical SaaS: RDS PostgreSQL stores PII, HIPAA requires 1-year "who ran which query" audit. Missing which item?
+**Question 6.** Medical SaaS: RDS PostgreSQL stores PII, HIPAA requires 1-year "who ran which query" audit. Missing which item?
 
 (A) `pgaudit` extension + CloudWatch Logs export  
 (B) `rds.force_ssl=1` parameter  
@@ -328,87 +328,87 @@ B) B, D only
 C) A, B, C, D all
 D) C, D only
 
-**정답: C (A, B, C, D all)**
+**Answer: C (A, B, C, D all)**
 
-해설: HIPAA RDS standard checklist = all four. (A) Audit log (pgaudit) CloudWatch export → 1-year retention. (B) TLS block plaintext. (C) KMS CMK customer-managed rotate. (D) Vault Lock WORM ransomware defense. Missing any = audit finding.
+Explanation: HIPAA RDS standard checklist = all four. (A) Audit log (pgaudit) CloudWatch export → 1-year retention. (B) TLS block plaintext. (C) KMS CMK customer-managed rotate. (D) Vault Lock WORM ransomware defense. Missing any = audit finding.
 
 ---
 
-**문제 7.** Aurora MySQL + ElastiCache Redis lazy-load 1h TTL: price changes but customers see old 1h. Fix?
+**Question 7.** Aurora MySQL + ElastiCache Redis lazy-load 1h TTL: price changes but customers see old 1h. Fix?
 
 A) TTL 5 min, hot products shorter
 B) Write-Through pattern (update cache on product change)
 C) Abandon cache, Aurora Read Replica direct
 D) Switch Memcached for faster invalidation
 
-**정답: B (A partial)**
+**Answer: B (A partial)**
 
-해설: Core: DB updates unknown to cache. Write-Through at update API → DB + cache simultaneous, stale window eliminated. A: shortens window but incomplete + hit ratio drops. C: cache benefit lost. D: same pattern unresolved. Production: Write-Through + TTL (insurance) together. Robust: CDC/Streams event invalidation.
+Explanation: Core: DB updates unknown to cache. Write-Through at update API → DB + cache simultaneous, stale window eliminated. A: shortens window but incomplete + hit ratio drops. C: cache benefit lost. D: same pattern unresolved. Production: Write-Through + TTL (insurance) together. Robust: CDC/Streams event invalidation.
 
 ---
 
-**문제 8.** Aurora MySQL globally: Tokyo ops, US/EU users < 50ms read latency, Tokyo region down → auto promote. Best?
+**Question 8.** Aurora MySQL globally: Tokyo ops, US/EU users < 50ms read latency, Tokyo region down → auto promote. Best?
 
 A) Aurora Cross-Region Read Replica each, binlog async
 B) Aurora Global Database (Primary: Tokyo, Secondary: US, EU)
 C) Migrate DynamoDB Global Tables, app rewritten key-value
 D) Aurora Multi-AZ expand 3 AZ, Route 53 geolocation
 
-**정답: B**
+**Answer: B**
 
-해설: Aurora Global Database: ① dedicated infra cross-region < 1 sec lag ② managed failover RTO < 1 min ③ each secondary 15 read replica → region latency min. A: Cross-Region Replica viable but lag/failover weak. D: cross-region missing. "Auto" failover trap — "managed" needs operator trigger. Exam "global + < 1 sec + RDBMS" = Aurora Global.
+Explanation: Aurora Global Database: ① dedicated infra cross-region < 1 sec lag ② managed failover RTO < 1 min ③ each secondary 15 read replica → region latency min. A: Cross-Region Replica viable but lag/failover weak. D: cross-region missing. "Auto" failover trap — "managed" needs operator trigger. Exam "global + < 1 sec + RDBMS" = Aurora Global.
 
 ---
 
-**문제 9.** Dev/staging RDS cost minimize: 9-18 weekdays only, weekends/nights unused. Most cost-effective?
+**Question 9.** Dev/staging RDS cost minimize: 9-18 weekdays only, weekends/nights unused. Most cost-effective?
 
 A) Single-AZ db.t3.micro + 1-year RI ~38% off, keep running
 B) Multi-AZ db.t3.medium + Storage Auto Scaling
 C) Aurora Serverless v2 (Min 0 ACU auto-pause)
 D) EventBridge schedule: 18:00 stop, 09:00 start + stop-state storage cost
 
-**정답: C**
+**Answer: C**
 
-해설: Aurora Serverless v2: no traffic → 0 ACU (~$0), scale second-level on demand. Dev/staging pattern = unpredictable brief bursts. A: 24h charge includes nights. B: Multi-AZ 2x. D: RDS Spot unsupported (EC2 only), stop-state charges storage/backup. Exam: "sporadic/unpredictable/dev" = Aurora Serverless v2.
+Explanation: Aurora Serverless v2: no traffic → 0 ACU (~$0), scale second-level on demand. Dev/staging pattern = unpredictable brief bursts. A: 24h charge includes nights. B: Multi-AZ 2x. D: RDS Spot unsupported (EC2 only), stop-state charges storage/backup. Exam: "sporadic/unpredictable/dev" = Aurora Serverless v2.
 
 ---
 
-**문제 10.** Multi-AZ RDS MySQL: minor patch auto-runs, weekday peak → 4 min downtime, transaction failures. Prevention?
+**Question 10.** Multi-AZ RDS MySQL: minor patch auto-runs, weekday peak → 4 min downtime, transaction failures. Prevention?
 
 A) Set `preferred-maintenance-window` to low-traffic time (e.g., Sun 03:00 UTC)
 B) `auto-minor-version-upgrade` false, manual patch after staging test
 C) RDS Proxy → connection stable
 D) Migrate Multi-AZ Cluster (quorum 35 sec failover)
 
-**정답: C (untrue)**
+**Answer: C (untrue)**
 
-해설: RDS Proxy helps connection pooling but instance patch → Proxy offline too. A/B/D all effective: A: window timing; B: manual control; D: Cluster faster failover. C: doesn't solve backend down. Exam "patch downtime": ① window timing ② Multi-AZ ③ Cluster (faster failover).
+Explanation: RDS Proxy helps connection pooling but instance patch → Proxy offline too. A/B/D all effective: A: window timing; B: manual control; D: Cluster faster failover. C: doesn't solve backend down. Exam "patch downtime": ① window timing ② Multi-AZ ③ Cluster (faster failover).
 
 ---
 
-**문제 11.** ElastiCache Redis down → cache empty → DB overwhelmed → cascading failure. Prevention?
+**Question 11.** ElastiCache Redis down → cache empty → DB overwhelmed → cascading failure. Prevention?
 
 A) Redis → Memcached multi-node, distribute failure
 B) Multi-AZ + app single-flight + RDS Proxy + circuit breaker
 C) RDS scale-up double, absorb burst
 D) Reads ElastiCache-only, miss → blank response
 
-**정답: B**
+**Answer: B**
 
-해설: Thundering herd defense = multi-layer: ① cache HA (Multi-AZ) ② single DB call per key (single-flight) ③ DB connection pool (RDS Proxy) ④ failure propagation halt (circuit breaker). A: Memcached no persistence/Multi-AZ — worse. C: cost only. D: app broken on miss. Exam: "cascading failure" = multi-layer defense.
+Explanation: Thundering herd defense = multi-layer: ① cache HA (Multi-AZ) ② single DB call per key (single-flight) ③ DB connection pool (RDS Proxy) ④ failure propagation halt (circuit breaker). A: Memcached no persistence/Multi-AZ — worse. C: cost only. D: app broken on miss. Exam: "cascading failure" = multi-layer defense.
 
 ---
 
-**문제 12.** **DAX (DynamoDB Accelerator) NOT an answer** when?
+**Question 12.** **DAX (DynamoDB Accelerator) NOT an answer** when?
 
 A) DynamoDB read μs-to-ms latency cut (in-memory write-through cache)
 B) DynamoDB read cost cut (cache hits = no RCU)
 C) ElastiCache replacement general-purpose cache
 D) Eventually Consistent repeat fast-path cache
 
-**정답: C**
+**Answer: C**
 
-해설: DAX DynamoDB-only (in-memory write-through). ElastiCache like general data cache unsupported — APIs different. A/B/D all DAX use. Exam "DynamoDB cache" = DAX; "general cache" = ElastiCache distinct.
+Explanation: DAX DynamoDB-only (in-memory write-through). ElastiCache like general data cache unsupported — APIs different. A/B/D all DAX use. Exam "DynamoDB cache" = DAX; "general cache" = ElastiCache distinct.
 
 ---
 

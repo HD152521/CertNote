@@ -133,62 +133,62 @@ Lambda is a lightweight, event-driven, stateless transform tool with 15-minute c
 
 ## 📝 Practice Questions
 
-**문제 1.** 매일 S3에 도착하는 단일 200GB 압축 로그 파일을 디코드하고 복잡한 집계를 수행해야 한다. 다음 중 가장 적절하지 않은 선택은?
+**Question 1.** 매일 S3에 도착하는 단일 200GB 압축 로그 파일을 디코드하고 복잡한 집계를 수행해야 한다. 다음 중 가장 적절하지 않은 선택은?
 
 A) AWS Lambda 단일 함수로 전체 파일을 처리  
 B) AWS Glue Spark 작업  
 C) Amazon EMR Spark 클러스터  
 D) EMR Serverless  
 
-**정답: A**  
-해설: 단일 Lambda 호출은 최대 15분·메모리 10GB 한계가 있어 200GB 파일을 한 번에 디코드·집계할 수 없다. 대규모 복잡 집계는 Glue나 EMR(Serverless 포함) 같은 분산 엔진이 적합하다. Lambda는 작은 파일 단위의 짧은 변환에 한정해야 한다.
+**Answer: A**  
+Explanation: 단일 Lambda 호출은 최대 15분·메모리 10GB 한계가 있어 200GB 파일을 한 번에 디코드·집계할 수 없다. 대규모 복잡 집계는 Glue나 EMR(Serverless 포함) 같은 분산 엔진이 적합하다. Lambda는 작은 파일 단위의 짧은 변환에 한정해야 한다.
 
 ---
 
-**문제 2.** Kinesis Data Firehose의 데이터 변환 Lambda에서 각 레코드를 반환할 때 반드시 포함해야 하는 필드는?
+**Question 2.** Kinesis Data Firehose의 데이터 변환 Lambda에서 각 레코드를 반환할 때 반드시 포함해야 하는 필드는?
 
 A) bucket과 key  
 B) recordId와 result  
 C) timestamp와 shardId  
 D) partitionKey만  
 
-**정답: B**  
-해설: Firehose 변환 Lambda는 각 레코드에 대해 원본 `recordId`와 처리 `result`(Ok/Dropped/ProcessingFailed), 그리고 변환된 `data`를 반환해야 Firehose가 레코드별 성공·실패를 추적할 수 있다. bucket/key는 S3 이벤트 구조이고 나머지는 무관하다.
+**Answer: B**  
+Explanation: Firehose 변환 Lambda는 각 레코드에 대해 원본 `recordId`와 처리 `result`(Ok/Dropped/ProcessingFailed), 그리고 변환된 `data`를 반환해야 Firehose가 레코드별 성공·실패를 추적할 수 있다. bucket/key는 S3 이벤트 구조이고 나머지는 무관하다.
 
 ---
 
-**문제 3.** Lambda 함수가 CPU 바운드 작업으로 자주 타임아웃에 가깝게 느리게 동작한다. 비용까지 함께 개선할 수 있는 1차적 튜닝은?
+**Question 3.** Lambda 함수가 CPU 바운드 작업으로 자주 타임아웃에 가깝게 느리게 동작한다. 비용까지 함께 개선할 수 있는 1차적 튜닝은?
 
 A) 메모리 할당을 늘려 비례 증가하는 CPU로 실행 시간을 단축한다  
 B) 동시성을 0으로 설정한다  
 C) /tmp 디스크를 512MB로 줄인다  
 D) 페이로드 크기를 6MB 이상으로 늘린다  
 
-**정답: A**  
-해설: Lambda는 메모리에 비례해 CPU가 할당되므로, CPU 바운드 작업은 메모리를 늘리면 실행 시간이 단축되고 때로는 총비용까지 감소한다. 동시성을 0으로 하면 함수가 실행되지 않고, 페이로드 한계는 6MB이며 이를 늘릴 수 없다.
+**Answer: A**  
+Explanation: Lambda는 메모리에 비례해 CPU가 할당되므로, CPU 바운드 작업은 메모리를 늘리면 실행 시간이 단축되고 때로는 총비용까지 감소한다. 동시성을 0으로 하면 함수가 실행되지 않고, 페이로드 한계는 6MB이며 이를 늘릴 수 없다.
 
 ---
 
-**문제 4.** S3 이벤트로 비동기 트리거되는 Lambda가 간헐적으로 실패한다. 실패 이벤트가 조용히 유실되지 않도록 보장하는 가장 적절한 방법은?
+**Question 4.** S3 이벤트로 비동기 트리거되는 Lambda가 간헐적으로 실패한다. 실패 이벤트가 조용히 유실되지 않도록 보장하는 가장 적절한 방법은?
 
 A) 함수 메모리를 최대로 설정  
 B) DLQ(SQS) 또는 Lambda Destinations로 실패 이벤트를 격리  
 C) 동기 호출로 전환  
 D) Reserved Concurrency를 0으로 설정  
 
-**정답: B**  
-해설: 비동기 호출은 기본 재시도 후에도 실패하면 이벤트가 사라질 수 있으므로, DLQ(SQS/SNS)나 Lambda Destinations로 실패 이벤트를 격리해 재처리·조사할 수 있게 해야 한다. 메모리 증가나 동기 전환은 유실 방지의 본질적 해법이 아니다.
+**Answer: B**  
+Explanation: 비동기 호출은 기본 재시도 후에도 실패하면 이벤트가 사라질 수 있으므로, DLQ(SQS/SNS)나 Lambda Destinations로 실패 이벤트를 격리해 재처리·조사할 수 있게 해야 한다. 메모리 증가나 동기 전환은 유실 방지의 본질적 해법이 아니다.
 
 ---
 
-**문제 5.** 다음 중 Lambda 기반 변환이 가장 적합한 워크로드는?
+**Question 5.** 다음 중 Lambda 기반 변환이 가장 적합한 워크로드는?
 
 A) 수십 GB를 메모리에 올려 복잡한 셔플 조인을 수행하는 배치  
 B) 사용자 세션 단위로 상태를 누적하는 장시간 윈도우 집계  
 C) S3에 도착하는 1MB 미만 파일을 즉시 정제·포맷 변환하는 이벤트 기반 처리  
 D) 30분 이상 걸리는 대규모 머신러닝 학습  
 
-**정답: C**  
-해설: Lambda는 이벤트 기반·무상태·짧은 수명에 최적이라, 작은 파일이 S3에 도착하는 즉시 정제·변환하는 워크로드에 이상적이다. 대용량 셔플 조인(Glue/EMR), stateful 윈도우 집계(Flink), 장시간 ML 학습(EMR/SageMaker)은 모두 15분·메모리 한계로 Lambda에 부적합하다.
+**Answer: C**  
+Explanation: Lambda는 이벤트 기반·무상태·짧은 수명에 최적이라, 작은 파일이 S3에 도착하는 즉시 정제·변환하는 워크로드에 이상적이다. 대용량 셔플 조인(Glue/EMR), stateful 윈도우 집계(Flink), 장시간 ML 학습(EMR/SageMaker)은 모두 15분·메모리 한계로 Lambda에 부적합하다.
 
 ---

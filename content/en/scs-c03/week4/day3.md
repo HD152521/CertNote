@@ -103,62 +103,62 @@ Network Firewall sends **flow logs** (connection metadata) and **alert logs** (s
 
 ## 📝 Practice Questions
 
-**문제 1.** AWS Network Firewall에서 stateless 규칙 그룹과 stateful 규칙 그룹의 차이로 옳은 것은?
+**Question 1.** AWS Network Firewall에서 stateless 규칙 그룹과 stateful 규칙 그룹의 차이로 옳은 것은?
 
 A) stateless는 연결 상태를 추적하고, stateful은 패킷 단위로만 본다  
 B) stateless는 5-tuple로 패킷을 독립 평가(연결 미추적)하고, stateful은 연결·세션을 추적하며 Suricata 규칙으로 도메인·시그니처 검사를 한다  
 C) 둘 다 동일하며 성능 차이만 있다  
 D) stateful은 인바운드만, stateless는 아웃바운드만 검사한다  
 
-**정답: B**  
-해설: stateless 규칙 그룹은 각 패킷을 5-tuple(소스/대상 IP·포트, 프로토콜)로 독립 평가해 빠른 pass/drop/forward를 수행하며 연결 상태를 추적하지 않는다. stateful 규칙 그룹은 연결 테이블을 유지하고 Suricata 호환 규칙으로 SNI/Host 도메인, 프로토콜 이상, IPS 시그니처를 검사한다. 상태 추적 주체가 반대로 서술되거나 방향을 한정한 보기는 틀렸다.
+**Answer: B**  
+Explanation: stateless 규칙 그룹은 각 패킷을 5-tuple(소스/대상 IP·포트, 프로토콜)로 독립 평가해 빠른 pass/drop/forward를 수행하며 연결 상태를 추적하지 않는다. stateful 규칙 그룹은 연결 테이블을 유지하고 Suricata 호환 규칙으로 SNI/Host 도메인, 프로토콜 이상, IPS 시그니처를 검사한다. 상태 추적 주체가 반대로 서술되거나 방향을 한정한 보기는 틀렸다.
 
 ---
 
-**문제 2.** 도메인 허용 리스트(`example.com`만 아웃바운드 허용)를 stateful 규칙으로 만들었는데 다른 도메인이 여전히 나간다. 가장 가능성 높은 원인은?
+**Question 2.** 도메인 허용 리스트(`example.com`만 아웃바운드 허용)를 stateful 규칙으로 만들었는데 다른 도메인이 여전히 나간다. 가장 가능성 높은 원인은?
 
 A) Suricata 문법 오류  
 B) workload subnet의 라우트 테이블이 트래픽을 firewall endpoint로 보내지 않아 검사 자체가 일어나지 않음  
 C) DNS Firewall이 비활성화됨  
 D) WCU 부족  
 
-**정답: B**  
-해설: Network Firewall는 firewall endpoint를 통과하는 트래픽만 검사한다. 라우트 테이블이 workload subnet의 트래픽을 firewall subnet으로 향하게 하지 않으면 규칙이 아무리 정확해도 검사가 일어나지 않는다. 흔한 실수가 바로 라우팅 누락이다. 문법 오류라면 규칙 배포가 실패하고, DNS Firewall는 다른 계층이며, WCU는 WAF 개념이다.
+**Answer: B**  
+Explanation: Network Firewall는 firewall endpoint를 통과하는 트래픽만 검사한다. 라우트 테이블이 workload subnet의 트래픽을 firewall subnet으로 향하게 하지 않으면 규칙이 아무리 정확해도 검사가 일어나지 않는다. 흔한 실수가 바로 라우팅 누락이다. 문법 오류라면 규칙 배포가 실패하고, DNS Firewall는 다른 계층이며, WCU는 WAF 개념이다.
 
 ---
 
-**문제 3.** Transit Gateway 허브와 중앙 inspection VPC로 모든 VPC 간 트래픽을 Network Firewall로 검사하려 한다. stateful 검사가 깨지지 않게 하려면 반드시 필요한 TGW 설정은?
+**Question 3.** Transit Gateway 허브와 중앙 inspection VPC로 모든 VPC 간 트래픽을 Network Firewall로 검사하려 한다. stateful 검사가 깨지지 않게 하려면 반드시 필요한 TGW 설정은?
 
 A) ECMP 비활성화  
 B) appliance mode 활성화 — 같은 흐름의 패킷이 항상 동일 AZ의 firewall endpoint로 가도록 보장  
 C) DNS 지원 비활성화  
 D) MTU를 9001로 설정  
 
-**정답: B**  
-해설: TGW appliance mode는 한 연결 흐름의 양방향 패킷이 항상 동일 AZ의 어플라이언스(firewall endpoint)로 라우팅되도록 해 대칭성을 보장한다. 이게 없으면 흐름이 AZ를 가로질러 비대칭이 되고, 연결 상태를 추적하는 stateful 검사가 응답 패킷을 알아보지 못해 오작동한다. ECMP·DNS·MTU 설정은 stateful 대칭성과 직접 관련이 없다.
+**Answer: B**  
+Explanation: TGW appliance mode는 한 연결 흐름의 양방향 패킷이 항상 동일 AZ의 어플라이언스(firewall endpoint)로 라우팅되도록 해 대칭성을 보장한다. 이게 없으면 흐름이 AZ를 가로질러 비대칭이 되고, 연결 상태를 추적하는 stateful 검사가 응답 패킷을 알아보지 못해 오작동한다. ECMP·DNS·MTU 설정은 stateful 대칭성과 직접 관련이 없다.
 
 ---
 
-**문제 4.** 멀웨어가 데이터를 DNS 질의의 서브도메인에 인코딩해 외부로 유출(DNS exfiltration)하는 것을 막으려 한다. 가장 적절한 서비스·기능은?
+**Question 4.** 멀웨어가 데이터를 DNS 질의의 서브도메인에 인코딩해 외부로 유출(DNS exfiltration)하는 것을 막으려 한다. 가장 적절한 서비스·기능은?
 
 A) Security Group으로 53번 포트 차단  
 B) Route 53 Resolver DNS Firewall로 알려진 악성/C2 도메인을 BLOCK하고 비정상 질의를 ALERT  
 C) CloudFront OAC  
 D) NACL 인바운드 거부  
 
-**정답: B**  
-해설: DNS Firewall는 VPC 내부의 DNS 질의를 Resolver 단계에서 도메인 기준으로 필터링하며, AWS 관리형 악성·봇넷 C2 도메인 목록 차단과 알림으로 DNS 터널링/exfiltration을 완화한다. 53번 포트를 전면 차단하면 정상 DNS도 막혀 서비스가 깨지고, OAC·NACL은 DNS 질의 내용 기반 통제가 아니다.
+**Answer: B**  
+Explanation: DNS Firewall는 VPC 내부의 DNS 질의를 Resolver 단계에서 도메인 기준으로 필터링하며, AWS 관리형 악성·봇넷 C2 도메인 목록 차단과 알림으로 DNS 터널링/exfiltration을 완화한다. 53번 포트를 전면 차단하면 정상 DNS도 막혀 서비스가 깨지고, OAC·NACL은 DNS 질의 내용 기반 통제가 아니다.
 
 ---
 
-**문제 5.** 관리 부담 없이 VPC 아웃바운드 트래픽에 IPS(침입 방지)와 도메인 필터링을 적용하려 한다. 서드파티 어플라이언스 운영은 피하고 싶다. 가장 적절한 선택은?
+**Question 5.** 관리 부담 없이 VPC 아웃바운드 트래픽에 IPS(침입 방지)와 도메인 필터링을 적용하려 한다. 서드파티 어플라이언스 운영은 피하고 싶다. 가장 적절한 선택은?
 
 A) Gateway Load Balancer + 서드파티 방화벽 어플라이언스  
 B) AWS Network Firewall(관리형 stateful 규칙으로 IPS·도메인 필터링)  
 C) Security Group 규칙만 강화  
 D) AWS WAF를 VPC에 직접 연결  
 
-**정답: B**  
-해설: AWS Network Firewall는 관리형 서비스로, Suricata 호환 stateful 규칙으로 IPS/IDS와 SNI/Host 도메인 필터링을 어플라이언스 운영 부담 없이 제공한다. GWLB(A)는 서드파티 어플라이언스를 삽입할 때 쓰는 방식으로 운영 부담이 따른다. Security Group은 IP/포트 수준이라 IPS·도메인 필터링을 못 하고, WAF는 HTTP(L7) 애플리케이션용이라 VPC 일반 트래픽 검사에 직접 붙이는 통제가 아니다.
+**Answer: B**  
+Explanation: AWS Network Firewall는 관리형 서비스로, Suricata 호환 stateful 규칙으로 IPS/IDS와 SNI/Host 도메인 필터링을 어플라이언스 운영 부담 없이 제공한다. GWLB(A)는 서드파티 어플라이언스를 삽입할 때 쓰는 방식으로 운영 부담이 따른다. Security Group은 IP/포트 수준이라 IPS·도메인 필터링을 못 하고, WAF는 HTTP(L7) 애플리케이션용이라 VPC 일반 트래픽 검사에 직접 붙이는 통제가 아니다.
 
 ---

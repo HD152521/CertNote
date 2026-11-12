@@ -255,86 +255,86 @@ Common issues in heterogeneous DB migration:
 
 ## 📝 Practice Questions
 
-**문제 1.** You need to migrate a 50TB Oracle DB to Aurora PostgreSQL. Zero downtime required, and stored procedures must be converted. Which stages are required?
+**Question 1.** You need to migrate a 50TB Oracle DB to Aurora PostgreSQL. Zero downtime required, and stored procedures must be converted. Which stages are required?
 
 A) Oracle Export → Aurora Import (downtime required)
 B) SCT converts schema and PL/SQL → DMS Full Load + CDC → validation and Cutover
 C) MGN transfers entire Oracle server to EC2
 D) Snowball transfers data, then Aurora loads
 
-**정답: B**
+**Answer: B**
 Heterogeneous engine + stored procedure conversion + zero downtime = standard SCT + DMS Full Load + CDC pattern. A requires downtime; C maintains Oracle licensing; D cannot stream real-time CDC.
 
 ---
 
-**문제 2.** You have a SQL Server app. You want to migrate to Aurora without code changes, cutting Oracle and SQL Server licensing. Best option?
+**Question 2.** You have a SQL Server app. You want to migrate to Aurora without code changes, cutting Oracle and SQL Server licensing. Best option?
 
 A) RDS for SQL Server (BYOL) → no code changes
 B) Aurora PostgreSQL with Babelfish
 C) Aurora MySQL (T-SQL compatibility)
 D) DynamoDB (NoSQL conversion)
 
-**정답: B**
+**Answer: B**
 SQL Server TDS protocol + T-SQL compatibility + Aurora PG = Babelfish. App connects to Aurora as if it were SQL Server. Cuts licensing costs too. A doesn't fully reduce licensing (SQL Server license remains). C: Aurora MySQL lacks T-SQL compatibility. D: requires massive app code changes.
 
 ---
 
-**문제 3.** To use DMS CDC with Oracle, what configuration must be enabled on the source DB?
+**Question 3.** To use DMS CDC with Oracle, what configuration must be enabled on the source DB?
 
 A) Enable Binary Log
 B) Enable ARCHIVELOG mode + Supplemental Logging
 C) Enable WAL logical replication
 D) Enable CDC feature (SQL Server style)
 
-**정답: B**
+**Answer: B**
 Oracle CDC = LogMiner-based. ARCHIVELOG mode preserves Redo Log for DMS to read. Supplemental Logging includes old values of deleted rows in logs, so DMS can identify which rows were deleted. Binary Log is MySQL, WAL is PostgreSQL, CDC feature is SQL Server.
 
 ---
 
-**문제 4.** For MySQL → RDS MySQL migration (homogeneous engine), is SCT needed?
+**Question 4.** For MySQL → RDS MySQL migration (homogeneous engine), is SCT needed?
 
 A) Yes. Always use SCT
 B) No. DMS alone is sufficient for homogeneous engines
 C) Yes. Must convert MySQL version differences
 D) Yes. RDS uses different SQL dialect
 
-**정답: B**
+**Answer: B**
 Homogeneous engine migration (MySQL → RDS MySQL) needs no schema conversion, so DMS alone suffices. SCT is for heterogeneous engines (Oracle → PostgreSQL, SQL Server → Aurora) needing schema/code conversion.
 
 ---
 
-**문제 5.** You want to continuously collect on-premises MySQL DB to S3 in Parquet format for data lake construction. Best approach?
+**Question 5.** You want to continuously collect on-premises MySQL DB to S3 in Parquet format for data lake construction. Best approach?
 
 A) mysqldump → S3 batch upload (once daily)
 B) DMS (MySQL source, S3 target, CDC enabled)
 C) AWS DataSync copy MySQL data files
 D) Kinesis Data Streams + Lambda
 
-**정답: B**
+**Answer: B**
 DMS with MySQL source, S3 target, CDC enabled collects real-time changes to S3 as Parquet or CSV. Change records include op column (I/U/D) preserving change history. mysqldump is batch once daily (not real-time). DataSync copies file systems; direct MySQL data file copying has consistency issues.
 
 ---
 
-**문제 6.** Difference between DMS Fleet Advisor and Application Discovery Service (ADS)?
+**Question 6.** Difference between DMS Fleet Advisor and Application Discovery Service (ADS)?
 
 A) Fleet Advisor handles servers; ADS handles DBs
 B) ADS covers entire server infrastructure (CPU, memory, network); Fleet Advisor specializes in DBs (engine, schema, complexity)
 C) Both have identical functionality
 D) Fleet Advisor supports Oracle only
 
-**정답: B**
+**Answer: B**
 ADS: universal discovery for entire server infrastructure (CPU, memory, disk, network dependencies, OS). Fleet Advisor: DB-specialized (DB engine, version, schema size, stored procedure count, migration complexity assessment). Company-wide migrations use both ADS (entire servers) and Fleet Advisor (DB specialization).
 
 ---
 
-**문제 7.** Top reason to choose DMS Serverless?
+**Question 7.** Top reason to choose DMS Serverless?
 
 A) Completely free
 B) Auto-scale without choosing Replication Instance size, minimal operational burden
 C) On-premises only
 D) Heterogeneous conversion without SCT
 
-**정답: B**
+**Answer: B**
 DMS Serverless: AWS auto-manages Replication Instance (EC2) and auto-scales per traffic. Eliminates instance type selection and manual scaling burden. Billed per DCU (DMS Capacity Unit) usage. SCT still required separately.
 
 ---

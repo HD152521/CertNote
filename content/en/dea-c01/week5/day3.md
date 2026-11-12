@@ -131,62 +131,62 @@ Orchestration links work in a DAG, automating order, dependencies, retries, and 
 
 ## 📝 Practice Questions
 
-**문제 1.** 여러 작업이 순서·조건·재시도로 엮이는데, 한 작업이 다시 자신을 의존하는 순환은 허용되지 않는다. 이런 워크플로를 표현하는 보편 모델은?
+**Question 1.** 여러 작업이 순서·조건·재시도로 엮이는데, 한 작업이 다시 자신을 의존하는 순환은 허용되지 않는다. 이런 워크플로를 표현하는 보편 모델은?
 
 A) 순환 연결 리스트  
 B) DAG(방향성 비순환 그래프)  
 C) 해시 테이블  
 D) 이진 탐색 트리  
 
-**정답: B**  
-해설: 오케스트레이션은 작업을 노드, 의존성을 화살표로 하는 DAG로 표현한다. 비순환이라 위상 정렬이 가능해 실행 순서를 정하고 독립 작업을 병렬화할 수 있다. 순환이 있으면 시작점을 정할 수 없어 정렬이 불가능하다.
+**Answer: B**  
+Explanation: 오케스트레이션은 작업을 노드, 의존성을 화살표로 하는 DAG로 표현한다. 비순환이라 위상 정렬이 가능해 실행 순서를 정하고 독립 작업을 병렬화할 수 있다. 순환이 있으면 시작점을 정할 수 없어 정렬이 불가능하다.
 
 ---
 
-**문제 2.** 한 팀이 이미 온프레미스에서 Apache Airflow DAG를 다수 운영 중이며, 일부 작업은 GCP와 사내 DB도 조율한다. 이를 AWS로 옮기되 기존 DAG 자산을 최대한 재사용하려 한다. 가장 적합한 것은?
+**Question 2.** 한 팀이 이미 온프레미스에서 Apache Airflow DAG를 다수 운영 중이며, 일부 작업은 GCP와 사내 DB도 조율한다. 이를 AWS로 옮기되 기존 DAG 자산을 최대한 재사용하려 한다. 가장 적합한 것은?
 
 A) AWS Glue Workflows  
 B) S3 이벤트 + Lambda 체인  
 C) EventBridge 스케줄러 단독  
 D) Amazon MWAA  
 
-**정답: D**  
-해설: MWAA는 관리형 Apache Airflow로 기존 Airflow DAG를 거의 그대로 재사용할 수 있고, 풍부한 프로바이더로 GCP·온프레미스 등 멀티 환경을 한 DAG에서 조율한다. Glue Workflows는 Glue 리소스에 국한되고, Lambda 체인이나 EventBridge 단독으로는 복잡한 Airflow 자산을 대체하기 어렵다.
+**Answer: D**  
+Explanation: MWAA는 관리형 Apache Airflow로 기존 Airflow DAG를 거의 그대로 재사용할 수 있고, 풍부한 프로바이더로 GCP·온프레미스 등 멀티 환경을 한 DAG에서 조율한다. Glue Workflows는 Glue 리소스에 국한되고, Lambda 체인이나 EventBridge 단독으로는 복잡한 Airflow 자산을 대체하기 어렵다.
 
 ---
 
-**문제 3.** "Glue 작업 실행 → 검증 Lambda → 검증 통과 시 Redshift 적재, 실패 시 SNS 알림"을 분기와 재시도를 포함해 서버리스로 구성하려 한다. 가장 적합한 것은?
+**Question 3.** "Glue 작업 실행 → 검증 Lambda → 검증 통과 시 Redshift 적재, 실패 시 SNS 알림"을 분기와 재시도를 포함해 서버리스로 구성하려 한다. 가장 적합한 것은?
 
 A) AWS Step Functions  
 B) Amazon MWAA  
 C) cron으로 각 작업 개별 트리거  
 D) 단일 거대 Lambda 함수  
 
-**정답: A**  
-해설: Step Functions는 Glue/Lambda/SNS와 네이티브 통합되고 Choice(분기), Retry/Catch(재시도·에러 처리)를 선언적으로 표현하며 서버리스라 운영 부담이 적다. MWAA는 상시 비용·운영이 크고, cron은 의존성·재시도 관리가 빈약하며, 단일 거대 Lambda는 15분 한계와 가시성 문제가 있다.
+**Answer: A**  
+Explanation: Step Functions는 Glue/Lambda/SNS와 네이티브 통합되고 Choice(분기), Retry/Catch(재시도·에러 처리)를 선언적으로 표현하며 서버리스라 운영 부담이 적다. MWAA는 상시 비용·운영이 크고, cron은 의존성·재시도 관리가 빈약하며, 단일 거대 Lambda는 15분 한계와 가시성 문제가 있다.
 
 ---
 
-**문제 4.** Glue 크롤러로 스키마를 갱신한 뒤, 그 완료를 기점으로 Glue 작업 두 개를 순차 실행하는 단순 파이프라인이 있고 다른 AWS 서비스는 끼지 않는다. 추가 서비스 없이 가장 간단히 구성하는 방법은?
+**Question 4.** Glue 크롤러로 스키마를 갱신한 뒤, 그 완료를 기점으로 Glue 작업 두 개를 순차 실행하는 단순 파이프라인이 있고 다른 AWS 서비스는 끼지 않는다. 추가 서비스 없이 가장 간단히 구성하는 방법은?
 
 A) Amazon MWAA 환경을 새로 프로비저닝  
 B) Glue Workflows의 트리거로 크롤러·작업을 체인  
 C) EMR Step으로 구성  
 D) Kinesis Data Streams로 연결  
 
-**정답: B**  
-해설: 흐름이 전부 Glue 크롤러·작업으로 완결되므로 Glue 내장 Glue Workflows의 트리거(완료 이벤트 기반)로 묶으면 추가 서비스 없이 가장 간단하다. MWAA는 과한 운영 부담이고, EMR Step·Kinesis는 이 시나리오와 무관하다.
+**Answer: B**  
+Explanation: 흐름이 전부 Glue 크롤러·작업으로 완결되므로 Glue 내장 Glue Workflows의 트리거(완료 이벤트 기반)로 묶으면 추가 서비스 없이 가장 간단하다. MWAA는 과한 운영 부담이고, EMR Step·Kinesis는 이 시나리오와 무관하다.
 
 ---
 
-**문제 5.** Step Functions의 Standard와 Express 워크플로에 관한 설명으로 옳은 것은?
+**Question 5.** Step Functions의 Standard와 Express 워크플로에 관한 설명으로 옳은 것은?
 
 A) Express는 최대 1년까지 실행할 수 있다  
 B) 둘 다 실행 시간 제한이 없다  
 C) Standard는 장기 실행(최대 1년)·정확히 1회 실행에 적합하고, Express는 5분 이내 대량 고빈도 이벤트 처리에 적합하다  
 D) Standard는 5분, Express는 무제한이다  
 
-**정답: C**  
-해설: Standard는 최대 1년 실행·exactly-once·단계별 과금으로 장기·내구성 ETL에 맞고, Express는 최대 5분·대량 고빈도·실행시간 과금으로 이벤트 스트림 고속 처리에 맞는다. 나머지 보기는 두 타입의 실행 시간 특성을 잘못 기술했다.
+**Answer: C**  
+Explanation: Standard는 최대 1년 실행·exactly-once·단계별 과금으로 장기·내구성 ETL에 맞고, Express는 최대 5분·대량 고빈도·실행시간 과금으로 이벤트 스트림 고속 처리에 맞는다. 나머지 보기는 두 타입의 실행 시간 특성을 잘못 기술했다.
 
 ---

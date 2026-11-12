@@ -547,74 +547,74 @@ SSM Advanced Automation Integrated Architecture
 
 ## 📝 Practice Questions
 
-**문제 1.** Lambda 함수가 RDS 데이터베이스에 연결하기 위한 비밀번호를 안전하게 관리해야 한다. 90일마다 자동으로 비밀번호가 교체되어야 하고, Lambda 코드 재배포 없이 새 비밀번호를 사용해야 한다. 가장 적합한 도구는?
+**Question 1.** Lambda 함수가 RDS 데이터베이스에 연결하기 위한 비밀번호를 안전하게 관리해야 한다. 90일마다 자동으로 비밀번호가 교체되어야 하고, Lambda 코드 재배포 없이 새 비밀번호를 사용해야 한다. 가장 적합한 도구는?
 
 A) Parameter Store Standard - 비밀번호를 SecureString으로 저장
 B) Parameter Store Advanced - NoChangeNotification Policy로 변경 알림
 C) Secrets Manager - RDS와의 자동 회전 통합으로 90일 회전 설정
 D) 환경변수에 암호화된 비밀번호 저장
 
-**정답: C**
-해설: 자동 회전이 핵심 요구사항이다. Parameter Store는 자동 회전 기능이 없어 수동으로 변경해야 한다. Secrets Manager는 RDS와 통합되어 자동 회전 Lambda를 관리해주고, Lambda 함수는 SDK로 최신 값을 자동으로 가져온다. 코드 재배포 없이 새 비밀번호가 적용된다. 비용($0.40/시크릿/월)은 추가되지만 운영 안전성이 크게 향상된다.
+**Answer: C**
+Explanation: 자동 회전이 핵심 요구사항이다. Parameter Store는 자동 회전 기능이 없어 수동으로 변경해야 한다. Secrets Manager는 RDS와 통합되어 자동 회전 Lambda를 관리해주고, Lambda 함수는 SDK로 최신 값을 자동으로 가져온다. 코드 재배포 없이 새 비밀번호가 적용된다. 비용($0.40/시크릿/월)은 추가되지만 운영 안전성이 크게 향상된다.
 
 ---
 
-**문제 2.** 회사 보안 정책상 모든 EC2 접속은 감사 로그로 남아야 하고, 포트 22는 보안 그룹에서 완전히 제거해야 한다. 개발자들은 EC2에 접속하여 로그를 확인하고 디버깅해야 한다. 가장 적합한 솔루션은?
+**Question 2.** 회사 보안 정책상 모든 EC2 접속은 감사 로그로 남아야 하고, 포트 22는 보안 그룹에서 완전히 제거해야 한다. 개발자들은 EC2에 접속하여 로그를 확인하고 디버깅해야 한다. 가장 적합한 솔루션은?
 
 A) Systems Manager Session Manager - IAM 인증, 포트 22 불필요, 자동 세션 로깅
 B) AWS VPN + 프라이빗 서브넷의 Bastion Host
 C) EC2 Instance Connect - 일시적 SSH 키 방식
 D) AWS Direct Connect + SSH 터널
 
-**정답: A**
-해설: Session Manager가 세 가지 요구사항을 모두 충족한다. IAM 기반 접근 제어, 포트 22 불필요(아웃바운드 443만), 모든 세션을 S3/CloudWatch Logs에 자동 저장. EC2 Instance Connect(C)는 포트 22가 여전히 필요하다. Bastion Host(B)는 관리 부담이 높고 포트 22가 필요하다.
+**Answer: A**
+Explanation: Session Manager가 세 가지 요구사항을 모두 충족한다. IAM 기반 접근 제어, 포트 22 불필요(아웃바운드 443만), 모든 세션을 S3/CloudWatch Logs에 자동 저장. EC2 Instance Connect(C)는 포트 22가 여전히 필요하다. Bastion Host(B)는 관리 부담이 높고 포트 22가 필요하다.
 
 ---
 
-**문제 3.** SSM Automation Runbook에 "변경 전 운영팀 리더의 승인이 필요하다"는 요구사항이 있다. Runbook 실행 중 리더가 승인하기 전까지 다음 단계로 넘어가면 안 된다. 어떻게 구현하는가?
+**Question 3.** SSM Automation Runbook에 "변경 전 운영팀 리더의 승인이 필요하다"는 요구사항이 있다. Runbook 실행 중 리더가 승인하기 전까지 다음 단계로 넘어가면 안 된다. 어떻게 구현하는가?
 
 A) Automation을 일시 정지하는 별도 Lambda를 만든다
 B) Runbook의 해당 지점에 `aws:approve` action을 추가하고 승인자 IAM ARN과 SNS 알림을 설정한다
 C) Change Manager를 사용하되 자동 승인 설정을 한다
 D) EventBridge를 통해 수동으로 다음 단계를 트리거한다
 
-**정답: B**
-해설: `aws:approve` action은 Automation에 내장된 인간 승인 대기 단계다. `Approvers`에 IAM 사용자 또는 역할 ARN을 지정하고, `NotificationArn`에 SNS 토픽을 설정하면 승인 요청 알림이 전송된다. 지정된 시간(`MinRequiredApprovals`, `Timeout`) 내에 승인하지 않으면 자동 거부된다. 더 정교한 ITSM 워크플로가 필요하면 Change Manager를 사용한다.
+**Answer: B**
+Explanation: `aws:approve` action은 Automation에 내장된 인간 승인 대기 단계다. `Approvers`에 IAM 사용자 또는 역할 ARN을 지정하고, `NotificationArn`에 SNS 토픽을 설정하면 승인 요청 알림이 전송된다. 지정된 시간(`MinRequiredApprovals`, `Timeout`) 내에 승인하지 않으면 자동 거부된다. 더 정교한 ITSM 워크플로가 필요하면 Change Manager를 사용한다.
 
 ---
 
-**문제 4.** 운영팀이 Parameter Store에 저장된 API 키가 3개월 동안 변경되지 않은 경우 알림을 받고 싶다. 또한 만료 예정일 2주 전에도 알림을 받아야 한다. 어떻게 구현하는가?
+**Question 4.** 운영팀이 Parameter Store에 저장된 API 키가 3개월 동안 변경되지 않은 경우 알림을 받고 싶다. 또한 만료 예정일 2주 전에도 알림을 받아야 한다. 어떻게 구현하는가?
 
 A) Lambda를 매일 실행해 파라미터 생성일과 현재 날짜를 비교한다
 B) Parameter Store Standard에서 CloudWatch Alarm 설정
 C) Parameter Store Advanced의 NoChangeNotification Policy(90일)와 ExpirationNotification Policy(14일)를 함께 설정한다
 D) Config Rule로 파라미터 변경을 추적한다
 
-**정답: C**
-해설: Parameter Store Advanced의 Parameter Policies가 정확한 솔루션이다. `NoChangeNotification`은 지정 기간 동안 값이 변경되지 않으면 EventBridge를 통해 알림을 보낸다. `ExpirationNotification`은 만료 N일 전에 알림을 보낸다. 두 Policy를 함께 설정할 수 있다. Lambda(A)도 동작하지만 불필요한 복잡성이 추가된다. Standard Tier(B)는 Policy 기능이 없다.
+**Answer: C**
+Explanation: Parameter Store Advanced의 Parameter Policies가 정확한 솔루션이다. `NoChangeNotification`은 지정 기간 동안 값이 변경되지 않으면 EventBridge를 통해 알림을 보낸다. `ExpirationNotification`은 만료 N일 전에 알림을 보낸다. 두 Policy를 함께 설정할 수 있다. Lambda(A)도 동작하지만 불필요한 복잡성이 추가된다. Standard Tier(B)는 Policy 기능이 없다.
 
 ---
 
-**문제 5.** Config Rule이 "암호화되지 않은 EBS 볼륨"을 발견했을 때 자동으로 스냅샷을 생성하고 암호화된 볼륨으로 교체하는 작업을 자동화하려 한다. 가장 적합한 구성은?
+**Question 5.** Config Rule이 "암호화되지 않은 EBS 볼륨"을 발견했을 때 자동으로 스냅샷을 생성하고 암호화된 볼륨으로 교체하는 작업을 자동화하려 한다. 가장 적합한 구성은?
 
 A) CloudWatch 알람 → SNS → 이메일 알림
 B) Config Auto Remediation → SSM Automation Runbook(스냅샷 생성 + 암호화 볼륨 생성 + 교체 + 기존 삭제)
 C) GuardDuty → Lambda → 볼륨 암호화
 D) Inspector → Run Command
 
-**정답: B**
-해설: Config Auto Remediation은 비준수 리소스를 발견하면 자동으로 SSM Automation Document를 실행한다. 다단계 작업(스냅샷 → 새 볼륨 생성 → 교체 → 원본 삭제)이 포함되므로 Run Command보다 Automation Runbook이 적합하다. AWS는 `AWSConfigRemediation-*` 네임스페이스의 표준 Runbook을 다수 제공한다.
+**Answer: B**
+Explanation: Config Auto Remediation은 비준수 리소스를 발견하면 자동으로 SSM Automation Document를 실행한다. 다단계 작업(스냅샷 → 새 볼륨 생성 → 교체 → 원본 삭제)이 포함되므로 Run Command보다 Automation Runbook이 적합하다. AWS는 `AWSConfigRemediation-*` 네임스페이스의 표준 Runbook을 다수 제공한다.
 
 ---
 
-**문제 6.** Session Manager를 통해 접속하려는데 사설 VPC에 인터넷 게이트웨이가 없다. 필요한 VPC Endpoint는?
+**Question 6.** Session Manager를 통해 접속하려는데 사설 VPC에 인터넷 게이트웨이가 없다. 필요한 VPC Endpoint는?
 
 A) `ssm`만 필요하다
 B) `ssm`과 `ssmmessages`만 필요하다
 C) `ssm`, `ssmmessages`, `ec2messages`가 모두 필요하다
 D) `ssm`과 별도의 TLS 인증서가 필요하다
 
-**정답: C**
-해설: Session Manager는 세 개의 별도 채널을 사용한다. `ssm`은 제어 채널(인스턴스 등록, heartbeat), `ssmmessages`는 세션 채널(실제 세션 트래픽), `ec2messages`는 EC2 메타데이터 채널(Run Command 포함)이다. 세 개 모두 없으면 Session Manager가 동작하지 않는다. S3 Gateway Endpoint도 세션 로그를 S3에 저장하는 경우 추가로 필요하다.
+**Answer: C**
+Explanation: Session Manager는 세 개의 별도 채널을 사용한다. `ssm`은 제어 채널(인스턴스 등록, heartbeat), `ssmmessages`는 세션 채널(실제 세션 트래픽), `ec2messages`는 EC2 메타데이터 채널(Run Command 포함)이다. 세 개 모두 없으면 Session Manager가 동작하지 않는다. S3 Gateway Endpoint도 세션 로그를 S3에 저장하는 경우 추가로 필요하다.
 
 ---

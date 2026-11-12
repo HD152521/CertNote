@@ -155,60 +155,60 @@ Next we'll shift perspective to the "granting" side: how to safely provide acces
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 보안팀이 조직의 모든 계정에서 CloudTrail이 절대 비활성화되지 않도록 강제하려 한다. 가장 적절한 방법은?
+**Question 1.** 한 보안팀이 조직의 모든 계정에서 CloudTrail이 절대 비활성화되지 않도록 강제하려 한다. 가장 적절한 방법은?
 
 A) 각 계정에 IAM 정책으로 CloudTrail 보호를 배포한다  
 B) Root 또는 상위 OU에 `cloudtrail:StopLogging`과 `cloudtrail:DeleteTrail`을 Deny하는 SCP를 적용한다  
 C) AWS Config Rule로 CloudTrail 상태를 모니터링한다  
 D) 관리 계정에만 SCP를 적용한다  
 
-**정답: B**  
-해설: SCP는 OU/Root에 한 번 적용하면 하위 모든 계정에 상속되는 예방적 통제다. CloudTrail 비활성화 액션을 Deny하면 어떤 계정에서도, root조차도 끄지 못한다. IAM 배포는 새 계정 누락 위험이 있고, Config는 사후 탐지일 뿐 차단하지 못한다. 관리 계정에는 SCP가 적용되지 않으므로 D는 틀리다.
+**Answer: B**  
+Explanation: SCP는 OU/Root에 한 번 적용하면 하위 모든 계정에 상속되는 예방적 통제다. CloudTrail 비활성화 액션을 Deny하면 어떤 계정에서도, root조차도 끄지 못한다. IAM 배포는 새 계정 누락 위험이 있고, Config는 사후 탐지일 뿐 차단하지 못한다. 관리 계정에는 SCP가 적용되지 않으므로 D는 틀리다.
 
 ---
 
-**문제 2.** Prod OU에 `Deny ec2:*` SCP가 걸려 있다. Prod OU 하위의 한 계정에서 IAM 관리자가 `Allow ec2:*` IAM 정책을 만들고, 그 계정에 추가 SCP로 `Allow ec2:RunInstances`도 적용했다. EC2 인스턴스를 시작할 수 있는가?
+**Question 2.** Prod OU에 `Deny ec2:*` SCP가 걸려 있다. Prod OU 하위의 한 계정에서 IAM 관리자가 `Allow ec2:*` IAM 정책을 만들고, 그 계정에 추가 SCP로 `Allow ec2:RunInstances`도 적용했다. EC2 인스턴스를 시작할 수 있는가?
 
 A) 가능하다, 하위 SCP가 상위 OU SCP를 덮어쓰므로  
 B) 가능하다, IAM 정책이 Allow하므로  
 C) 불가능하다, 상위 OU의 명시적 Deny가 상속되어 이기므로  
 D) 조건에 따라 다르다  
 
-**정답: C**  
-해설: SCP 상속은 누적적으로 제한이 강해진다. 상위 OU의 명시적 Deny는 하위로 상속되며, 하위에서 SCP나 IAM으로 다시 열 수 없다. 명시적 Deny는 모든 Allow를 이긴다. 하위 SCP가 상위를 덮어쓰지 않으며, IAM Allow도 SCP Deny를 뚫지 못한다.
+**Answer: C**  
+Explanation: SCP 상속은 누적적으로 제한이 강해진다. 상위 OU의 명시적 Deny는 하위로 상속되며, 하위에서 SCP나 IAM으로 다시 열 수 없다. 명시적 Deny는 모든 Allow를 이긴다. 하위 SCP가 상위를 덮어쓰지 않으며, IAM Allow도 SCP Deny를 뚫지 못한다.
 
 ---
 
-**문제 3.** 리전 제한 SCP를 적용한 직후 사용자들이 콘솔 로그인과 STS 토큰 발급에 실패하기 시작했다. 가장 가능성 높은 원인은?
+**Question 3.** 리전 제한 SCP를 적용한 직후 사용자들이 콘솔 로그인과 STS 토큰 발급에 실패하기 시작했다. 가장 가능성 높은 원인은?
 
 A) SCP가 관리 계정에 적용되었다  
 B) IAM·STS 같은 글로벌 서비스를 `NotAction` 예외로 처리하지 않아 함께 차단되었다  
 C) 리전 제한은 원래 로그인을 막는다  
 D) MFA가 활성화되지 않았다  
 
-**정답: B**  
-해설: 글로벌 서비스(IAM, STS, CloudFront, Route 53 등)는 특정 리전 엔드포인트에 묶이지 않고 내부적으로 us-east-1 등으로 라우팅된다. 리전 제한 Deny에서 이들을 `NotAction`으로 예외하지 않으면 로그인과 토큰 발급까지 막혀 계정이 사용 불능이 된다. 이는 리전 제한 SCP의 대표적 실수다.
+**Answer: B**  
+Explanation: 글로벌 서비스(IAM, STS, CloudFront, Route 53 등)는 특정 리전 엔드포인트에 묶이지 않고 내부적으로 us-east-1 등으로 라우팅된다. 리전 제한 Deny에서 이들을 `NotAction`으로 예외하지 않으면 로그인과 토큰 발급까지 막혀 계정이 사용 불능이 된다. 이는 리전 제한 SCP의 대표적 실수다.
 
 ---
 
-**문제 4.** SCP의 예방적 통제(preventive control)와 AWS Config Rule의 탐지적 통제(detective control)의 차이로 옳은 것은?
+**Question 4.** SCP의 예방적 통제(preventive control)와 AWS Config Rule의 탐지적 통제(detective control)의 차이로 옳은 것은?
 
 A) SCP는 위반을 사후 감지하고, Config는 위반을 사전 차단한다  
 B) SCP는 위반 행위를 사전에 차단하고, Config는 위반 상태를 사후 감지·알림한다  
 C) 둘 다 동일하게 작동한다  
 D) Config가 SCP보다 항상 강력하다  
 
-**정답: B**  
-해설: SCP는 액션 자체를 거부해 사건 발생 전에 차단하는 예방적 통제다. Config Rule은 이미 만들어진 리소스의 준수 여부를 평가해 위반을 감지·알림하는 탐지적 통제다. 막을 수 있으면 막는 SCP가 비용 효율적이며, 탐지가 필요한 영역을 Config가 보완한다.
+**Answer: B**  
+Explanation: SCP는 액션 자체를 거부해 사건 발생 전에 차단하는 예방적 통제다. Config Rule은 이미 만들어진 리소스의 준수 여부를 평가해 위반을 감지·알림하는 탐지적 통제다. 막을 수 있으면 막는 SCP가 비용 효율적이며, 탐지가 필요한 영역을 Config가 보완한다.
 
 ---
 
-**문제 5.** 한 조직이 관리 계정(Management Account)에서 프로덕션 워크로드를 운영하고 있다. 보안 관점에서 이것이 문제인 이유로 가장 적절한 것은?
+**Question 5.** 한 조직이 관리 계정(Management Account)에서 프로덕션 워크로드를 운영하고 있다. 보안 관점에서 이것이 문제인 이유로 가장 적절한 것은?
 
 A) 관리 계정은 비용이 더 비싸다  
 B) 관리 계정에는 SCP가 적용되지 않아 가드레일로 보호할 수 없고, 손상 시 조직 전체가 위험해진다  
 C) 관리 계정에서는 EC2를 띄울 수 없다  
 D) 관리 계정은 CloudTrail을 지원하지 않는다  
 
-**정답: B**  
-해설: SCP는 멤버 계정에만 적용되고 관리 계정에는 효과가 없다. 따라서 관리 계정에 워크로드를 두면 SCP 가드레일의 보호를 받지 못하며, 조직 전체를 통제하는 계정이 손상될 경우 모든 멤버 계정이 위험에 노출된다. 모범 사례는 관리 계정을 결제·조직 관리 전용으로만 사용하는 것이다.
+**Answer: B**  
+Explanation: SCP는 멤버 계정에만 적용되고 관리 계정에는 효과가 없다. 따라서 관리 계정에 워크로드를 두면 SCP 가드레일의 보호를 받지 못하며, 조직 전체를 통제하는 계정이 손상될 경우 모든 멤버 계정이 위험에 노출된다. 모범 사례는 관리 계정을 결제·조직 관리 전용으로만 사용하는 것이다.

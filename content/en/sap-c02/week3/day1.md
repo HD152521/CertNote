@@ -258,84 +258,84 @@ VPC Peering remains a valid choice when directly connecting two VPCs without ove
 
 ## 📝 Practice Questions
 
-**문제 1.** 글로벌 제조업체가 AWS Organizations로 80개 계정을 운영한다. 모든 계정의 VPC가 중앙 보안 VPC(IDS/IPS, 로그 수집)와 공유 서비스 VPC(DNS, AD)에는 접근해야 하지만, 개발 계정과 프로덕션 계정 간의 직접 통신은 차단해야 한다. 운영 부담을 최소화하면서 이 요구사항을 충족하는 방법은?
+**Question 1.** 글로벌 제조업체가 AWS Organizations로 80개 계정을 운영한다. 모든 계정의 VPC가 중앙 보안 VPC(IDS/IPS, 로그 수집)와 공유 서비스 VPC(DNS, AD)에는 접근해야 하지만, 개발 계정과 프로덕션 계정 간의 직접 통신은 차단해야 한다. 운영 부담을 최소화하면서 이 요구사항을 충족하는 방법은?
 
 A) 모든 VPC 간 VPC Peering 구성 + NACL로 Dev↔Prod 차단
 B) TGW 1개를 RAM으로 전체 Org에 공유 + TGW Route Table로 Workload RT와 Shared/Security RT 분리
 C) 각 계정에 별도 TGW 생성 + TGW Inter-Region Peering으로 연결
 D) Direct Connect Gateway로 온프레미스를 중계자로 활용
 
-**정답: B**
-해설: 80개 계정에 VPC가 하나씩만 있어도 VPC Peering은 3,160개가 필요하고(80×79/2), NACL로 Dev↔Prod를 차단하는 것은 CIDR 범위가 겹치거나 변경될 때 유지보수가 불가능하다(A 오답). 각 계정에 TGW를 별도 생성하면 TGW 80개 + 그 간의 피어링 관리가 폭발적으로 증가한다(C 오답). Direct Connect는 온프레미스 연결 서비스지 VPC 간 라우팅 허브가 아니다(D 오답). B의 구성에서 TGW를 RAM으로 전체 Org에 공유하면 모든 계정이 단일 TGW에 Attach할 수 있다. RT-Workload에는 Shared/Security CIDR만 있고 Dev/Prod CIDR는 없으므로 Dev↔Prod가 차단된다. RT-Shared에는 Dev/Prod CIDR가 Propagation되어 Shared와 Security는 모든 VPC와 통신 가능하다.
+**Answer: B**
+Explanation: 80개 계정에 VPC가 하나씩만 있어도 VPC Peering은 3,160개가 필요하고(80×79/2), NACL로 Dev↔Prod를 차단하는 것은 CIDR 범위가 겹치거나 변경될 때 유지보수가 불가능하다(A 오답). 각 계정에 TGW를 별도 생성하면 TGW 80개 + 그 간의 피어링 관리가 폭발적으로 증가한다(C 오답). Direct Connect는 온프레미스 연결 서비스지 VPC 간 라우팅 허브가 아니다(D 오답). B의 구성에서 TGW를 RAM으로 전체 Org에 공유하면 모든 계정이 단일 TGW에 Attach할 수 있다. RT-Workload에는 Shared/Security CIDR만 있고 Dev/Prod CIDR는 없으므로 Dev↔Prod가 차단된다. RT-Shared에는 Dev/Prod CIDR가 Propagation되어 Shared와 Security는 모든 VPC와 통신 가능하다.
 
 ---
 
-**문제 2.** 미국 동부(us-east-1), 유럽(eu-west-1), 아시아(ap-northeast-1) 세 리전에 TGW를 운영하는 기업이 있다. us-east-1 TGW와 eu-west-1 TGW가 Inter-Region Peering으로 연결되어 있고, eu-west-1 TGW와 ap-northeast-1 TGW도 연결되어 있다. us-east-1의 VPC A가 ap-northeast-1의 VPC B와 통신하려 한다. 어떻게 해야 하는가?
+**Question 2.** 미국 동부(us-east-1), 유럽(eu-west-1), 아시아(ap-northeast-1) 세 리전에 TGW를 운영하는 기업이 있다. us-east-1 TGW와 eu-west-1 TGW가 Inter-Region Peering으로 연결되어 있고, eu-west-1 TGW와 ap-northeast-1 TGW도 연결되어 있다. us-east-1의 VPC A가 ap-northeast-1의 VPC B와 통신하려 한다. 어떻게 해야 하는가?
 
 A) 이미 eu-west-1을 통한 전이적 라우팅이 자동으로 설정된다
 B) us-east-1 TGW와 ap-northeast-1 TGW 간에 별도 Inter-Region Peering을 추가해야 한다
 C) VPC A에서 VPC B로 VPC Peering을 직접 구성한다
 D) Cloud Front를 중계자로 사용한다
 
-**정답: B**
-해설: TGW Inter-Region Peering은 전이적이지 않다(A 오답). us-east-1 TGW는 eu-west-1 TGW의 라우트를 학습하지만, eu-west-1을 통해 ap-northeast-1로 라우팅이 자동으로 설정되지 않는다. 세 리전이 완전히 통신하려면 각 TGW 쌍 사이에 피어링이 필요하다(us↔eu, eu↔ap, us↔ap). 리전 간 VPC Peering은 가능하지만 TGW 없이 구성하면 확장성이 없다(C 오답). CloudFront는 CDN 서비스로 VPC 간 라우팅과 무관하다(D 오답).
+**Answer: B**
+Explanation: TGW Inter-Region Peering은 전이적이지 않다(A 오답). us-east-1 TGW는 eu-west-1 TGW의 라우트를 학습하지만, eu-west-1을 통해 ap-northeast-1로 라우팅이 자동으로 설정되지 않는다. 세 리전이 완전히 통신하려면 각 TGW 쌍 사이에 피어링이 필요하다(us↔eu, eu↔ap, us↔ap). 리전 간 VPC Peering은 가능하지만 TGW 없이 구성하면 확장성이 없다(C 오답). CloudFront는 CDN 서비스로 VPC 간 라우팅과 무관하다(D 오답).
 
 ---
 
-**문제 3.** 회사가 TGW를 생성할 때 DefaultRouteTableAssociation=enable로 생성했다. 이후 격리 패턴을 구현하기 위해 새 Route Table을 만들었다. 기존에 생성된 VPC Attachment들의 동작은?
+**Question 3.** 회사가 TGW를 생성할 때 DefaultRouteTableAssociation=enable로 생성했다. 이후 격리 패턴을 구현하기 위해 새 Route Table을 만들었다. 기존에 생성된 VPC Attachment들의 동작은?
 
 A) 기존 Attachment는 자동으로 새 Route Table로 마이그레이션된다
 B) 기존 Attachment는 기본 Route Table에 남아 있어 격리 패턴이 의도대로 동작하지 않을 수 있다
 C) 기존 Attachment는 라우팅이 중단된다
 D) 기존 Attachment는 삭제하고 다시 생성해야 한다
 
-**정답: B**
-해설: DefaultRouteTableAssociation=enable로 생성된 TGW에 Attach된 VPC는 기본 Route Table에 자동 Association된다. 이후에 새 Route Table을 만들어도 기존 Attachment는 기본 RT에 그대로 남는다. 격리 패턴을 완성하려면 기존 Attachment를 기본 RT에서 dis-associate하고 새 RT에 associate해야 하며, 이 과정에서 잠깐 라우팅이 끊어질 수 있다. 따라서 새 TGW를 설계할 때는 처음부터 DefaultRouteTableAssociation=disable로 생성하고 수동으로 RT를 관리하는 것이 권장된다.
+**Answer: B**
+Explanation: DefaultRouteTableAssociation=enable로 생성된 TGW에 Attach된 VPC는 기본 Route Table에 자동 Association된다. 이후에 새 Route Table을 만들어도 기존 Attachment는 기본 RT에 그대로 남는다. 격리 패턴을 완성하려면 기존 Attachment를 기본 RT에서 dis-associate하고 새 RT에 associate해야 하며, 이 과정에서 잠깐 라우팅이 끊어질 수 있다. 따라서 새 TGW를 설계할 때는 처음부터 DefaultRouteTableAssociation=disable로 생성하고 수동으로 RT를 관리하는 것이 권장된다.
 
 ---
 
-**문제 4.** 금융 회사가 50개 스포크 VPC를 TGW를 통해 연결하면서 모든 아웃바운드 인터넷 트래픽을 중앙 Egress VPC의 NAT Gateway를 통해 집중시키려 한다. 설계 시 반드시 확인해야 할 사항은?
+**Question 4.** 금융 회사가 50개 스포크 VPC를 TGW를 통해 연결하면서 모든 아웃바운드 인터넷 트래픽을 중앙 Egress VPC의 NAT Gateway를 통해 집중시키려 한다. 설계 시 반드시 확인해야 할 사항은?
 
 A) 각 스포크 VPC에 인터넷 게이트웨이를 추가한다
 B) Egress VPC의 프라이빗 서브넷 라우트 테이블에 각 스포크 VPC CIDR에 대한 TGW 라우트를 추가한다
 C) TGW Route Table에 0.0.0.0/0을 Blackhole로 설정한다
 D) Egress VPC에 NAT Gateway를 각 AZ당 하나씩 추가하고 각 스포크 VPC에도 동일하게 구성한다
 
-**정답: B**
-해설: 중앙화 Egress 패턴에서 스포크 VPC의 기본 라우트(0.0.0.0/0)는 TGW를 가리킨다. TGW는 이 트래픽을 Egress VPC로 전달한다. Egress VPC의 NAT Gateway가 인터넷으로 내보내고, 리턴 트래픽이 Egress VPC에 도달한다. 이 리턴 트래픽이 올바른 스포크 VPC로 돌아가려면 Egress VPC의 프라이빗 서브넷 RT에 각 스포크 CIDR에 대한 → TGW 라우트가 있어야 한다(B 정답). 없으면 비대칭 라우팅으로 연결이 끊어진다. 스포크 VPC에 개별 인터넷 게이트웨이를 두면 중앙화의 의미가 없다(A 오답). Blackhole은 트래픽을 드롭하므로 인터넷 접근이 불가능해진다(C 오답). D는 중앙화가 아니라 분산 구성이다.
+**Answer: B**
+Explanation: 중앙화 Egress 패턴에서 스포크 VPC의 기본 라우트(0.0.0.0/0)는 TGW를 가리킨다. TGW는 이 트래픽을 Egress VPC로 전달한다. Egress VPC의 NAT Gateway가 인터넷으로 내보내고, 리턴 트래픽이 Egress VPC에 도달한다. 이 리턴 트래픽이 올바른 스포크 VPC로 돌아가려면 Egress VPC의 프라이빗 서브넷 RT에 각 스포크 CIDR에 대한 → TGW 라우트가 있어야 한다(B 정답). 없으면 비대칭 라우팅으로 연결이 끊어진다. 스포크 VPC에 개별 인터넷 게이트웨이를 두면 중앙화의 의미가 없다(A 오답). Blackhole은 트래픽을 드롭하므로 인터넷 접근이 불가능해진다(C 오답). D는 중앙화가 아니라 분산 구성이다.
 
 ---
 
-**문제 5.** 온프레미스에서 Cisco SD-WAN을 운영하는 기업이 AWS TGW와 동적 BGP 라우팅으로 연결하려 한다. 가장 적합한 방식은?
+**Question 5.** 온프레미스에서 Cisco SD-WAN을 운영하는 기업이 AWS TGW와 동적 BGP 라우팅으로 연결하려 한다. 가장 적합한 방식은?
 
 A) Site-to-Site VPN (IKEv2) + BGP
 B) TGW Connect (GRE 터널 + BGP)
 C) Direct Connect (Private VIF) + BGP
 D) VPC Peering + 정적 라우트
 
-**정답: B**
-해설: TGW Connect는 SD-WAN 어플라이언스를 GRE 터널로 TGW에 연결하고, 그 위에서 BGP 세션을 맺어 동적 라우팅을 교환하는 SD-WAN 통합 전용 기능이다. Site-to-Site VPN도 BGP를 지원하지만, SD-WAN 어플라이언스는 보통 GRE 기반의 TGW Connect가 더 자연스러운 통합 방식이고 ECMP로 대역폭을 높일 수 있다(A는 가능하지만 B가 더 최적). Direct Connect는 물리적 전용선으로 온프레미스↔AWS 연결이지만, SD-WAN과의 동적 통합에는 TGW Connect가 더 적합하다(C는 대역폭은 높지만 SD-WAN 동적 통합의 표준 답은 아님). VPC Peering은 VPC 간 연결이지 온프레미스 연결 기술이 아니다(D 오답).
+**Answer: B**
+Explanation: TGW Connect는 SD-WAN 어플라이언스를 GRE 터널로 TGW에 연결하고, 그 위에서 BGP 세션을 맺어 동적 라우팅을 교환하는 SD-WAN 통합 전용 기능이다. Site-to-Site VPN도 BGP를 지원하지만, SD-WAN 어플라이언스는 보통 GRE 기반의 TGW Connect가 더 자연스러운 통합 방식이고 ECMP로 대역폭을 높일 수 있다(A는 가능하지만 B가 더 최적). Direct Connect는 물리적 전용선으로 온프레미스↔AWS 연결이지만, SD-WAN과의 동적 통합에는 TGW Connect가 더 적합하다(C는 대역폭은 높지만 SD-WAN 동적 통합의 표준 답은 아님). VPC Peering은 VPC 간 연결이지 온프레미스 연결 기술이 아니다(D 오답).
 
 ---
 
-**문제 6.** 한 기업이 TGW를 도입하면서 특정 스포크 VPC가 다른 특정 VPC와 절대 통신하지 못하게 해야 한다. TGW Route Table의 Propagation은 이미 설정되어 있다. 추가로 취할 수 있는 조치는?
+**Question 6.** 한 기업이 TGW를 도입하면서 특정 스포크 VPC가 다른 특정 VPC와 절대 통신하지 못하게 해야 한다. TGW Route Table의 Propagation은 이미 설정되어 있다. 추가로 취할 수 있는 조치는?
 
 A) 해당 VPC의 Security Group에서 상대방 VPC CIDR를 차단
 B) TGW Route Table에 상대방 VPC CIDR에 대한 Blackhole 라우트 추가
 C) 두 VPC 사이에 VPC Peering을 역방향으로 설정
 D) NACL에서 TGW의 IP를 차단
 
-**정답: B**
-해설: Propagation으로 이미 상대방 CIDR이 Route Table에 학습된 상태에서 특정 CIDR만 차단하려면 Blackhole 라우트를 추가한다. Blackhole 라우트는 더 구체적인 경로(더 긴 프리픽스)로 설정하면 Propagation으로 학습된 더 광범위한 라우트보다 우선된다. Security Group(A)은 VPC 내 인스턴스 레벨에서 동작하고 TGW 라우팅을 제어하지 않는다. VPC Peering 역방향 설정(C)은 의미가 없다. NACL에서 TGW IP를 차단하면(D) 모든 TGW 트래픽이 차단되어 다른 정상적인 연결도 끊어진다.
+**Answer: B**
+Explanation: Propagation으로 이미 상대방 CIDR이 Route Table에 학습된 상태에서 특정 CIDR만 차단하려면 Blackhole 라우트를 추가한다. Blackhole 라우트는 더 구체적인 경로(더 긴 프리픽스)로 설정하면 Propagation으로 학습된 더 광범위한 라우트보다 우선된다. Security Group(A)은 VPC 내 인스턴스 레벨에서 동작하고 TGW 라우팅을 제어하지 않는다. VPC Peering 역방향 설정(C)은 의미가 없다. NACL에서 TGW IP를 차단하면(D) 모든 TGW 트래픽이 차단되어 다른 정상적인 연결도 끊어진다.
 
 ---
 
-**문제 7.** 회사가 us-east-1, eu-west-1 두 리전의 VPC를 TGW로 운영한다. GDPR 규정으로 EU 사용자 데이터는 eu-west-1에만 저장되어야 하고 us-east-1로 복제되지 않아야 한다. 동시에 두 리전의 운영팀이 공통 Shared 서비스(운영 도구)에는 접근할 수 있어야 한다. 가장 적합한 아키텍처는?
+**Question 7.** 회사가 us-east-1, eu-west-1 두 리전의 VPC를 TGW로 운영한다. GDPR 규정으로 EU 사용자 데이터는 eu-west-1에만 저장되어야 하고 us-east-1로 복제되지 않아야 한다. 동시에 두 리전의 운영팀이 공통 Shared 서비스(운영 도구)에는 접근할 수 있어야 한다. 가장 적합한 아키텍처는?
 
 A) DynamoDB Global Table로 양 리전 데이터 동기화 + TGW Inter-Region Peering
 B) 각 리전에 독립 TGW 운영 + 리전 간 TGW Peering 없음 + 공용 Shared 서비스만 별도 PrivateLink로 노출
 C) AWS Cloud WAN으로 전체 글로벌 네트워크 단일 정책 관리 + 데이터 복제 허용
 D) Route 53 Geolocation Routing으로 트래픽 분리 + TGW Inter-Region Peering
 
-**정답: B**
-해설: GDPR 데이터 주권의 핵심은 EU 데이터가 EU 리전을 벗어나지 않는 것이다. TGW Inter-Region Peering을 구성하면 라우팅이 리전 간에 가능해지고 실수로 데이터가 이동할 위험이 있다(A, D 오답). Cloud WAN도 글로벌 연결성을 제공하므로 데이터가 리전 간에 이동할 수 있는 경로가 생긴다(C 오답). B는 각 리전이 완전히 독립된 TGW를 운영해 데이터가 리전 간에 라우팅되는 경로 자체가 없다. Shared 서비스(예: 중앙 모니터링 도구)는 PrivateLink로 노출해 데이터가 아닌 API 호출만 리전 간에 이동하도록 제한한다.
+**Answer: B**
+Explanation: GDPR 데이터 주권의 핵심은 EU 데이터가 EU 리전을 벗어나지 않는 것이다. TGW Inter-Region Peering을 구성하면 라우팅이 리전 간에 가능해지고 실수로 데이터가 이동할 위험이 있다(A, D 오답). Cloud WAN도 글로벌 연결성을 제공하므로 데이터가 리전 간에 이동할 수 있는 경로가 생긴다(C 오답). B는 각 리전이 완전히 독립된 TGW를 운영해 데이터가 리전 간에 라우팅되는 경로 자체가 없다. Shared 서비스(예: 중앙 모니터링 도구)는 PrivateLink로 노출해 데이터가 아닌 API 호출만 리전 간에 이동하도록 제한한다.

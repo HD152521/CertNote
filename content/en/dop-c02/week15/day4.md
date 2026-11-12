@@ -90,7 +90,7 @@ Next: Week 15 recap all four domains (multi-account, hybrid, containers, serverl
 
 ## 📝 Practice Questions
 
-**문제 1.** 자동 인시던트 대응이 단축하려는 핵심 지표와, 잘 설계된 자동 대응이 반드시 닫아야 하는 단계는?
+**Question 1.** 자동 인시던트 대응이 단축하려는 핵심 지표와, 잘 설계된 자동 대응이 반드시 닫아야 하는 단계는?
 
 A) MTBF — 탐지 단계만 있으면 된다
 
@@ -100,13 +100,13 @@ C) RPO — 복구 단계만 있으면 된다
 
 D) RTO — 진단만 자동화하면 된다
 
-**정답: B**
+**Answer: B**
 
-해설: 가용성 = MTBF/(MTBF+MTTR)이므로 MTTR 단축이 가용성을 끌어올린다. 자동 대응은 탐지→진단→복구→검증 사슬에서 사람의 인지 지연(핸드오프)을 제거하는 SRE의 toil 제거다. 핵심은 검증 단계 — 빠지면 "복구했다고 믿지만 실은 안 됐다"는 위험이 생기므로 폐루프는 검증으로 닫혀야 한다. MTBF만(A)·RPO(C)·RTO(D)는 이 사슬의 정의와 어긋난다.
+Explanation: 가용성 = MTBF/(MTBF+MTTR)이므로 MTTR 단축이 가용성을 끌어올린다. 자동 대응은 탐지→진단→복구→검증 사슬에서 사람의 인지 지연(핸드오프)을 제거하는 SRE의 toil 제거다. 핵심은 검증 단계 — 빠지면 "복구했다고 믿지만 실은 안 됐다"는 위험이 생기므로 폐루프는 검증으로 닫혀야 한다. MTBF만(A)·RPO(C)·RTO(D)는 이 사슬의 정의와 어긋난다.
 
 ---
 
-**문제 2.** 이질적 신호원(CloudWatch Alarm·GuardDuty·Security Hub·Config·스케줄)을 한 흐름으로 모아 내용 기반으로 필터링하고 사고 후 replay까지 하려는 자동 대응의 진입점은?
+**Question 2.** 이질적 신호원(CloudWatch Alarm·GuardDuty·Security Hub·Config·스케줄)을 한 흐름으로 모아 내용 기반으로 필터링하고 사고 후 replay까지 하려는 자동 대응의 진입점은?
 
 A) SNS
 
@@ -116,13 +116,13 @@ C) SQS
 
 D) Kinesis Data Streams
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge는 이벤트 내용을 보고 정밀 필터링하고("severity≥7 AND type prefix X"), 이벤트를 아카이브해 replay로 자동화를 재현·디버깅하며, Pipes로 코드 없이 Source→Filter→Enrich→Target 파이프라인을 만든다. EDA 메시지 브로커로 생산자·소비자를 분리해 신호원을 늘려도 대응 로직을 안 건드린다. SNS(A)는 내용 기반 필터·replay가 약하고, SQS(C)·Kinesis(D)는 다신호원 라우팅 진입점이 아니다.
+Explanation: EventBridge는 이벤트 내용을 보고 정밀 필터링하고("severity≥7 AND type prefix X"), 이벤트를 아카이브해 replay로 자동화를 재현·디버깅하며, Pipes로 코드 없이 Source→Filter→Enrich→Target 파이프라인을 만든다. EDA 메시지 브로커로 생산자·소비자를 분리해 신호원을 늘려도 대응 로직을 안 건드린다. SNS(A)는 내용 기반 필터·replay가 약하고, SQS(C)·Kinesis(D)는 다신호원 라우팅 진입점이 아니다.
 
 ---
 
-**문제 3.** 자동 복구를 Lambda 함수 하나가 아니라 Step Functions로 감싸는 이유로 가장 정확한 것은?
+**Question 3.** 자동 복구를 Lambda 함수 하나가 아니라 Step Functions로 감싸는 이유로 가장 정확한 것은?
 
 A) Lambda보다 무조건 싸기 때문
 
@@ -132,13 +132,13 @@ C) Lambda는 인시던트 대응에 쓸 수 없기 때문
 
 D) Step Functions가 더 빠르기 때문
 
-**정답: B**
+**Answer: B**
 
-해설: Step Functions는 상태별 재시도·타임아웃을 선언적으로 정의하고, 각 단계 입출력이 남는 감사 이력, 임팩트 큰 작업 전 사람 승인 게이트, 실패 시 Escalation 분기를 제공한다. Lambda 단독은 한 함수에 이 모두를 절차적으로 짜야 해 중간 실패 시 어디까지 됐는지 추적이 어렵고 부분 실행 위험이 크다. 비용(A)·Lambda 불가(C)·속도(D)는 이유가 아니다.
+Explanation: Step Functions는 상태별 재시도·타임아웃을 선언적으로 정의하고, 각 단계 입출력이 남는 감사 이력, 임팩트 큰 작업 전 사람 승인 게이트, 실패 시 Escalation 분기를 제공한다. Lambda 단독은 한 함수에 이 모두를 절차적으로 짜야 해 중간 실패 시 어디까지 됐는지 추적이 어렵고 부분 실행 위험이 크다. 비용(A)·Lambda 불가(C)·속도(D)는 이유가 아니다.
 
 ---
 
-**문제 4.** 감사가 필요하고 5분 이상 걸리며 사람 승인 게이트를 포함하는 Runbook에는 Step Functions Standard와 Express 중 무엇이 맞는가?
+**Question 4.** 감사가 필요하고 5분 이상 걸리며 사람 승인 게이트를 포함하는 Runbook에는 Step Functions Standard와 Express 중 무엇이 맞는가?
 
 A) Express — 5분 한도라 충분하다
 
@@ -148,13 +148,13 @@ C) Lambda 단독
 
 D) SSM Document만
 
-**정답: B**
+**Answer: B**
 
-해설: Standard는 최대 1년 실행, 정확히 한 번 워크플로, 완전한 실행 이력을 제공해 감사·승인·긴 대기가 필요한 Runbook에 맞다. Express는 최대 5분·고빈도·이력 제한이라 짧고 빠른 이벤트 처리용이며, 5분 넘는 Runbook을 Express로 짜면 잘린다. "5분 이상 + 감사"는 항상 Standard다. Lambda 단독(C)·SSM Document만(D)은 승인·재시도·감사 보장이 부족하다.
+Explanation: Standard는 최대 1년 실행, 정확히 한 번 워크플로, 완전한 실행 이력을 제공해 감사·승인·긴 대기가 필요한 Runbook에 맞다. Express는 최대 5분·고빈도·이력 제한이라 짧고 빠른 이벤트 처리용이며, 5분 넘는 Runbook을 Express로 짜면 잘린다. "5분 이상 + 감사"는 항상 Standard다. Lambda 단독(C)·SSM Document만(D)은 승인·재시도·감사 보장이 부족하다.
 
 ---
 
-**문제 5.** SQS DLQ 누적 시 자동 Re-drive를 하되 무한 루프(poison message)를 방지하려면? 그 밑의 이론은?
+**Question 5.** SQS DLQ 누적 시 자동 Re-drive를 하되 무한 루프(poison message)를 방지하려면? 그 밑의 이론은?
 
 A) Lambda 타임아웃을 늘린다
 
@@ -164,13 +164,13 @@ C) DLQ에 TTL을 설정한다
 
 D) SQS Long Polling을 켠다
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge·SQS는 at-least-once 전달이라 같은 메시지가 반복될 수 있고, exactly-once 전달은 이론적으로 불가능하다(Two Generals). 그래서 "적어도 한 번 전달 + 멱등 처리 = effectively-once"로 푼다. retry count를 메시지 속성에 기록해 임계 초과 시 멈추는 것은 dedup 가드로 poison message 무한 루프를 막는다. 타임아웃(A)·TTL(C)·Long Polling(D)은 무한 루프 자체를 막지 못한다.
+Explanation: EventBridge·SQS는 at-least-once 전달이라 같은 메시지가 반복될 수 있고, exactly-once 전달은 이론적으로 불가능하다(Two Generals). 그래서 "적어도 한 번 전달 + 멱등 처리 = effectively-once"로 푼다. retry count를 메시지 속성에 기록해 임계 초과 시 멈추는 것은 dedup 가드로 poison message 무한 루프를 막는다. 타임아웃(A)·TTL(C)·Long Polling(D)은 무한 루프 자체를 막지 못한다.
 
 ---
 
-**문제 6.** 자동 복구가 "동시성을 늘리는" 동작을 할 때, 중복 이벤트(at-least-once)로 인한 사고 증폭을 막는 멱등 설계는?
+**Question 6.** 자동 복구가 "동시성을 늘리는" 동작을 할 때, 중복 이벤트(at-least-once)로 인한 사고 증폭을 막는 멱등 설계는?
 
 A) 증분으로 설정한다(add 50씩)
 
@@ -180,13 +180,13 @@ C) 매번 무작위 값으로 설정한다
 
 D) 동시성을 두 배로 늘린다
 
-**정답: B**
+**Answer: B**
 
-해설: 멱등성은 "같은 연산을 몇 번 적용해도 한 번 적용한 것과 같음"(f(f(x))=f(x))이다. 증분(add 50)은 중복 실행 시 +100으로 누적돼 위험하지만, 절대값 설정(set to 200)은 몇 번 실행해도 결과가 200으로 같아 at-least-once 중복에 안전하다. 무작위(C)·두 배(D)는 멱등이 아니어서 사고를 키울 수 있다.
+Explanation: 멱등성은 "같은 연산을 몇 번 적용해도 한 번 적용한 것과 같음"(f(f(x))=f(x))이다. 증분(add 50)은 중복 실행 시 +100으로 누적돼 위험하지만, 절대값 설정(set to 200)은 몇 번 실행해도 결과가 200으로 같아 at-least-once 중복에 안전하다. 무작위(C)·두 배(D)는 멱등이 아니어서 사고를 키울 수 있다.
 
 ---
 
-**문제 7.** 자동화 Role과 Break-glass(비상) Role의 관계로 옳은 것은? 그 이유는?
+**Question 7.** 자동화 Role과 Break-glass(비상) Role의 관계로 옳은 것은? 그 이유는?
 
 A) 동일한 Role을 공유한다
 
@@ -196,9 +196,9 @@ C) Break-glass Role을 자동화에 쓰면 더 빠르다
 
 D) Root 계정을 자동화에 쓴다
 
-**정답: B**
+**Answer: B**
 
-해설: 자동화 Role은 미리 정의된 복구 동작만 할 수 있게 최소 권한으로 한정하고, Break-glass Role은 사람 비상용으로 별도로 둬 자동화에서 절대 쓰지 않는다. 자동화가 Break-glass를 쓸 수 있으면 automation runaway나 탈취 시 그 강력한 권한이 무기가 된다. 모든 자동 수정은 CloudTrail에 남기고 SCP로 자동화 Role 범위를 한 번 더 봉한다. 공유(A)·Break-glass 사용(C)·Root(D)는 모두 위험한 안티패턴이다.
+Explanation: 자동화 Role은 미리 정의된 복구 동작만 할 수 있게 최소 권한으로 한정하고, Break-glass Role은 사람 비상용으로 별도로 둬 자동화에서 절대 쓰지 않는다. 자동화가 Break-glass를 쓸 수 있으면 automation runaway나 탈취 시 그 강력한 권한이 무기가 된다. 모든 자동 수정은 CloudTrail에 남기고 SCP로 자동화 Role 범위를 한 번 더 봉한다. 공유(A)·Break-glass 사용(C)·Root(D)는 모두 위험한 안티패턴이다.
 
 ---
 

@@ -281,72 +281,72 @@ On the exam, most S3 questions are trade-off choices. Temporary file sharing →
 
 ## 📝 Practice Questions
 
-**문제 1.** You need to share sensitive data stored in an S3 bucket with an external partner. Without granting the partner permanent access to the bucket, you want to let them download a specific file for only 24 hours. What should you do?
+**Question 1.** You need to share sensitive data stored in an S3 bucket with an external partner. Without granting the partner permanent access to the bucket, you want to let them download a specific file for only 24 hours. What should you do?
 
 A) Set the bucket to Public and send them the link
 B) Issue a Presigned URL with an 86400-second (24-hour) expiration
 C) Create an IAM user for the partner and grant S3 GetObject permission
 D) Enable S3 Transfer Acceleration
 
-**정답: B**
-해설: A Presigned URL is a time-limited URL signed with IAM credentials. It lets the partner access only a specific file without granting permanent access. Setting the bucket to Public grants access to everyone permanently. Creating an IAM user grants permanent credentials, which becomes a security problem if you later forget to revoke them. Transfer Acceleration is for accelerating uploads.
+**Answer: B**
+Explanation: A Presigned URL is a time-limited URL signed with IAM credentials. It lets the partner access only a specific file without granting permanent access. Setting the bucket to Public grants access to everyone permanently. Creating an IAM user grants permanent credentials, which becomes a security problem if you later forget to revoke them. Transfer Acceleration is for accelerating uploads.
 
 ---
 
-**문제 2.** A company's compliance team needs to prevent all data in a specific S3 bucket from being deleted until a legal lawsuit is complete. It's unknown when the lawsuit will end. Which S3 feature is most suitable?
+**Question 2.** A company's compliance team needs to prevent all data in a specific S3 bucket from being deleted until a legal lawsuit is complete. It's unknown when the lawsuit will end. Which S3 feature is most suitable?
 
 A) Object Lock Compliance Mode (Retention Period 1 year)
 B) S3 Versioning + MFA Delete
 C) Object Lock Legal Hold
 D) S3 Bucket Policy (Deny: s3:DeleteObject)
 
-**정답: C**
-해설: Legal Hold protects objects indefinitely with no expiration date and can only be removed with a separate permission (`s3:PutObjectLegalHold`). When the lawsuit ends, you simply remove the Legal Hold. Compliance Mode requires specifying a specific date, but the lawsuit's end date is unknown. MFA Delete prevents accidental deletion but is not a legal lock. A Bucket Policy can block deletion, but it can be bypassed by modifying the policy itself.
+**Answer: C**
+Explanation: Legal Hold protects objects indefinitely with no expiration date and can only be removed with a separate permission (`s3:PutObjectLegalHold`). When the lawsuit ends, you simply remove the Legal Hold. Compliance Mode requires specifying a specific date, but the lawsuit's end date is unknown. MFA Delete prevents accidental deletion but is not a legal lock. A Bucket Policy can block deletion, but it can be bypassed by modifying the policy itself.
 
 ---
 
-**문제 3.** A photo upload app must store user-uploaded high-resolution images in S3 and, immediately upon upload, generate thumbnails in several sizes and store them in another S3 bucket. It must also record the image upload event in DynamoDB and send a notification to the administrator via SNS. Which architecture is suitable?
+**Question 3.** A photo upload app must store user-uploaded high-resolution images in S3 and, immediately upon upload, generate thumbnails in several sizes and store them in another S3 bucket. It must also record the image upload event in DynamoDB and send a notification to the administrator via SNS. Which architecture is suitable?
 
 A) S3 event → Lambda (generate thumbnails + save to DynamoDB + SNS notification)
 B) S3 event → EventBridge → Lambda (thumbnails), DynamoDB Streams, SNS
 C) S3 event → EventBridge → Rule 1 → Lambda (thumbnails), Rule 2 → Lambda (DDB), Rule 3 → SNS
 D) CloudFront → S3 → Lambda@Edge (thumbnails) → DynamoDB + SNS
 
-**정답: C**
-해설: To branch a single S3 event to several processing systems, you need EventBridge. EventBridge rules deliver the same event in parallel to Lambda (thumbnails), Lambda (DDB save), and SNS (notification). The single Lambda in A makes one function do three jobs, becoming a single point of failure (SPOF) with no separation of concerns. Native S3 event notifications allow only a single destination. D is wrong because CloudFront is unnecessary and Lambda@Edge doesn't fit this pattern.
+**Answer: C**
+Explanation: To branch a single S3 event to several processing systems, you need EventBridge. EventBridge rules deliver the same event in parallel to Lambda (thumbnails), Lambda (DDB save), and SNS (notification). The single Lambda in A makes one function do three jobs, becoming a single point of failure (SPOF) with no separation of concerns. Native S3 event notifications allow only a single destination. D is wrong because CloudFront is unnecessary and Lambda@Edge doesn't fit this pattern.
 
 ---
 
-**문제 4.** A regulator requires financial transaction records to be retained for 7 years in a non-modifiable, non-deletable state. In AWS S3, no one — including the root account — must be able to delete the data. How do you configure this?
+**Question 4.** A regulator requires financial transaction records to be retained for 7 years in a non-modifiable, non-deletable state. In AWS S3, no one — including the root account — must be able to delete the data. How do you configure this?
 
 A) S3 Object Lock Governance Mode, Retention Period 7 years
 B) S3 Object Lock Compliance Mode, Retention Period 7 years
 C) Enable S3 Versioning + MFA Delete
 D) S3 Bucket Policy: Deny s3:DeleteObject for all principals
 
-**정답: B**
-해설: In Compliance Mode, no one — including the root account — can delete an object or remove the lock within the retention period. It meets legal retention requirements in regulated environments. Governance Mode allows a user with the `s3:BypassGovernanceRetention` permission to remove the lock, so it fails the "no one can delete" requirement. Versioning + MFA Delete prevents accidental deletion, which differs from a legal WORM requirement. A Bucket Policy can be bypassed by modifying the policy itself.
+**Answer: B**
+Explanation: In Compliance Mode, no one — including the root account — can delete an object or remove the lock within the retention period. It meets legal retention requirements in regulated environments. Governance Mode allows a user with the `s3:BypassGovernanceRetention` permission to remove the lock, so it fails the "no one can delete" requirement. Versioning + MFA Delete prevents accidental deletion, which differs from a legal WORM requirement. A Bucket Policy can be bypassed by modifying the policy itself.
 
 ---
 
-**문제 5.** A company replicates data from its Seoul (ap-northeast-2) region S3 bucket to Tokyo (ap-northeast-1) for DR. It needs a guarantee that "99.99% of objects are replicated within 15 minutes." Which feature should it enable?
+**Question 5.** A company replicates data from its Seoul (ap-northeast-2) region S3 bucket to Tokyo (ap-northeast-1) for DR. It needs a guarantee that "99.99% of objects are replicated within 15 minutes." Which feature should it enable?
 
 A) S3 Transfer Acceleration
 B) S3 Cross-Region Replication (CRR) + Replication Time Control (RTC)
 C) S3 CRR + S3 Inventory
 D) S3 CRR + CloudFront
 
-**정답: B**
-해설: CRR is the cross-region replication feature, and RTC (Replication Time Control) adds an SLA to replicate 99.99% of objects within 15 minutes. Enabling RTC also lets you monitor replication progress in CloudWatch. Transfer Acceleration is for accelerating uploads. S3 Inventory is a report listing objects in a bucket. CloudFront is a CDN and is unrelated to replication.
+**Answer: B**
+Explanation: CRR is the cross-region replication feature, and RTC (Replication Time Control) adds an SLA to replicate 99.99% of objects within 15 minutes. Enabling RTC also lets you monitor replication progress in CloudWatch. Transfer Acceleration is for accelerating uploads. S3 Inventory is a report listing objects in a bucket. CloudFront is a CDN and is unrelated to replication.
 
 ---
 
-**문제 6.** A development team wants to upload a 5.2GB file to S3 with Python code. The network is unstable and may drop midway. Choose the most reliable upload method and the way to avoid the cost of interrupted upload parts.
+**Question 6.** A development team wants to upload a 5.2GB file to S3 with Python code. The network is unstable and may drop midway. Choose the most reliable upload method and the way to avoid the cost of interrupted upload parts.
 
 A) Single PutObject + full re-upload on failure / no lifecycle needed
 B) Multipart upload + per-part retry / S3 lifecycle rule to delete incomplete multipart after 7 days
 C) S3 Transfer Manager (high-level SDK) + automatic multipart / manual part cleanup
 D) Parallel split upload via S3 Select / part cleanup via EventBridge
 
-**정답: B**
-해설: 5.2GB exceeds the single-PutObject limit (5GB), so a multipart upload is required. Multipart uploads by part, so on a network interruption you only re-upload the affected part. The lifecycle rule `AbortIncompleteMultipartUpload: DaysAfterInitiation: 7` automatically deletes parts not completed within 7 days, preventing cost. The Transfer Manager in C is a high-level API where the AWS SDK handles multipart automatically, but the lifecycle rule must still be configured separately. S3 Select is a query feature, not an upload feature.
+**Answer: B**
+Explanation: 5.2GB exceeds the single-PutObject limit (5GB), so a multipart upload is required. Multipart uploads by part, so on a network interruption you only re-upload the affected part. The lifecycle rule `AbortIncompleteMultipartUpload: DaysAfterInitiation: 7` automatically deletes parts not completed within 7 days, preventing cost. The Transfer Manager in C is a high-level API where the AWS SDK handles multipart automatically, but the lifecycle rule must still be configured separately. S3 Select is a query feature, not an upload feature.

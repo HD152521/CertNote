@@ -126,62 +126,62 @@ Next, we'll do a comprehensive review of Week 3 (cleaning, feature engineering, 
 
 ## 📝 Practice Questions
 
-**문제 1.** 코드를 거의 작성하지 않고 시각적으로 결측치 대치·인코딩·스케일링을 적용하고 데이터 품질을 자동 진단하려 한다. 가장 적합한 SageMaker 도구는?
+**Question 1.** 코드를 거의 작성하지 않고 시각적으로 결측치 대치·인코딩·스케일링을 적용하고 데이터 품질을 자동 진단하려 한다. 가장 적합한 SageMaker 도구는?
 
 A) SageMaker Processing Job  
 B) SageMaker Data Wrangler  
 C) SageMaker Feature Store  
 D) SageMaker Model Monitor  
 
-**정답: B**  
-해설: Data Wrangler는 SageMaker Studio의 시각적(노코드) 데이터 준비 도구로 300여 개 내장 변환과 데이터 품질·인사이트 리포트를 제공한다. Processing Job(A)은 코드 기반 분산 처리, Feature Store(C)는 피처 저장소, Model Monitor(D)는 운영 모델 모니터링 도구다.
+**Answer: B**  
+Explanation: Data Wrangler는 SageMaker Studio의 시각적(노코드) 데이터 준비 도구로 300여 개 내장 변환과 데이터 품질·인사이트 리포트를 제공한다. Processing Job(A)은 코드 기반 분산 처리, Feature Store(C)는 피처 저장소, Model Monitor(D)는 운영 모델 모니터링 도구다.
 
 ---
 
-**문제 2.** 학습 때 계산한 피처와 추론 때 계산한 피처의 정의가 달라 운영 성능이 떨어지는 training-serving skew를 방지하려 한다. 가장 적절한 서비스는?
+**Question 2.** 학습 때 계산한 피처와 추론 때 계산한 피처의 정의가 달라 운영 성능이 떨어지는 training-serving skew를 방지하려 한다. 가장 적절한 서비스는?
 
 A) SageMaker Feature Store  
 B) SageMaker Data Wrangler  
 C) Amazon Athena  
 D) AWS Glue Crawler  
 
-**정답: A**  
-해설: Feature Store는 동일한 피처 정의를 Offline(학습)과 Online(추론)에서 공유해 학습/추론 불일치를 제거한다. Data Wrangler(B)는 변환 정의 도구이고, Athena(C)는 쿼리 엔진, Glue Crawler(D)는 스키마 카탈로그화 도구라 skew 방지가 주목적이 아니다.
+**Answer: A**  
+Explanation: Feature Store는 동일한 피처 정의를 Offline(학습)과 Online(추론)에서 공유해 학습/추론 불일치를 제거한다. Data Wrangler(B)는 변환 정의 도구이고, Athena(C)는 쿼리 엔진, Glue Crawler(D)는 스키마 카탈로그화 도구라 skew 방지가 주목적이 아니다.
 
 ---
 
-**문제 3.** 수 테라바이트 데이터를 커스텀 PySpark 코드로 분산 전처리한 뒤 결과를 S3에 저장하고, 작업이 끝나면 인프라가 자동 종료되길 원한다. 가장 적합한 것은?
+**Question 3.** 수 테라바이트 데이터를 커스텀 PySpark 코드로 분산 전처리한 뒤 결과를 S3에 저장하고, 작업이 끝나면 인프라가 자동 종료되길 원한다. 가장 적합한 것은?
 
 A) Data Wrangler 단독 사용  
 B) Feature Store Online Store  
 C) SageMaker Processing Job (PySparkProcessor)  
 D) SageMaker 엔드포인트  
 
-**정답: C**  
-해설: Processing Job은 컨테이너에 커스텀 코드(PySparkProcessor 등)를 담아 지정한 인스턴스 클러스터에서 분산 처리하고, 작업 후 인프라를 자동 종료한다. Data Wrangler(A)는 초대규모 커스텀 분산 처리에 부적합하고, Online Store(B)는 추론 조회용, 엔드포인트(D)는 실시간 추론 서빙용이다.
+**Answer: C**  
+Explanation: Processing Job은 컨테이너에 커스텀 코드(PySparkProcessor 등)를 담아 지정한 인스턴스 클러스터에서 분산 처리하고, 작업 후 인프라를 자동 종료한다. Data Wrangler(A)는 초대규모 커스텀 분산 처리에 부적합하고, Online Store(B)는 추론 조회용, 엔드포인트(D)는 실시간 추론 서빙용이다.
 
 ---
 
-**문제 4.** Feature Store에서 실시간 추론 시 단일 레코드를 밀리초 단위로 조회해야 한다. 어떤 저장소를 사용해야 하는가?
+**Question 4.** Feature Store에서 실시간 추론 시 단일 레코드를 밀리초 단위로 조회해야 한다. 어떤 저장소를 사용해야 하는가?
 
 A) Offline Store  
 B) Online Store  
 C) S3 Glacier  
 D) Redshift  
 
-**정답: B**  
-해설: Online Store는 단일 레코드의 저지연(ms급) 조회에 최적화되어 실시간 추론에 사용된다. Offline Store(A)는 S3 기반으로 대량 과거 데이터를 학습용으로 조회하는 용도다. Glacier(C)는 콜드 아카이브, Redshift(D)는 데이터 웨어하우스라 실시간 단건 추론 조회에 부적합하다.
+**Answer: B**  
+Explanation: Online Store는 단일 레코드의 저지연(ms급) 조회에 최적화되어 실시간 추론에 사용된다. Offline Store(A)는 S3 기반으로 대량 과거 데이터를 학습용으로 조회하는 용도다. Glacier(C)는 콜드 아카이브, Redshift(D)는 데이터 웨어하우스라 실시간 단건 추론 조회에 부적합하다.
 
 ---
 
-**문제 5.** "예측 시점에 실제로 알 수 있었던 값만으로 학습셋을 구성"해 미래 정보 누수를 막는 Feature Store 기능은?
+**Question 5.** "예측 시점에 실제로 알 수 있었던 값만으로 학습셋을 구성"해 미래 정보 누수를 막는 Feature Store 기능은?
 
 A) point-in-time(시점 기준) 조회  
 B) 자동 스케일링  
 C) 데이터 암호화  
 D) A/B 테스트 라우팅  
 
-**정답: A**  
-해설: Feature Store는 `event_time`을 기록해 특정 과거 시점에 유효했던 피처값을 재현하는 point-in-time 조회를 지원하며, 이는 미래 정보가 학습에 새어 들어가는 누수를 방지한다. 자동 스케일링(B)·암호화(C)·A/B 라우팅(D)은 시점 정확성과 무관한 기능이다.
+**Answer: A**  
+Explanation: Feature Store는 `event_time`을 기록해 특정 과거 시점에 유효했던 피처값을 재현하는 point-in-time 조회를 지원하며, 이는 미래 정보가 학습에 새어 들어가는 누수를 방지한다. 자동 스케일링(B)·암호화(C)·A/B 라우팅(D)은 시점 정확성과 무관한 기능이다.
 
 ---

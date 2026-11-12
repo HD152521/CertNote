@@ -68,62 +68,62 @@ You've worked hard over these six weeks. You've made a full loop through cloud c
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following is correct for the passing score and score range of the CLF-C02 exam?
+**Question 1.** Which of the following is correct for the passing score and score range of the CLF-C02 exam?
 
 A) Range 0–100, pass 60  
 B) Range 100–1,000, pass 700  
 C) Range 0–500, pass 350  
 D) Range 100–900, pass 750  
 
-**정답: B**  
-해설: CLF-C02 is scored on a range of 100 to 1,000, with a passing line of 700. The score ranges and passing lines in the other options do not match the actual exam.
+**Answer: B**  
+Explanation: CLF-C02 is scored on a range of 100 to 1,000, with a passing line of 700. The score ranges and passing lines in the other options do not match the actual exam.
 
 ---
 
-**문제 2.** The exam consists of 65 questions; how many of them are unscored evaluation questions?
+**Question 2.** The exam consists of 65 questions; how many of them are unscored evaluation questions?
 
 A) 5 questions  
 B) 10 questions  
 C) 15 questions  
 D) 25 questions  
 
-**정답: C**  
-해설: Of the 65 questions, 15 are unscored evaluation questions and 50 count toward your actual score. Since you can't tell which are evaluation questions, you must answer every question diligently.
+**Answer: C**  
+Explanation: Of the 65 questions, 15 are unscored evaluation questions and 50 count toward your actual score. Since you can't tell which are evaluation questions, you must answer every question diligently.
 
 ---
 
-**문제 3.** In managing exam time, what is the most correct strategy regarding a question left blank?
+**Question 3.** In managing exam time, what is the most correct strategy regarding a question left blank?
 
 A) If unsure, leave it blank to avoid a penalty  
 B) Eliminate clearly wrong options and always fill in an answer, even a guess  
 C) Skip hard questions from the start and never look at them again  
 D) Fill in C for every question uniformly  
 
-**정답: B**  
-해설: A blank always scores 0, but a guessed answer has a chance of being right, so after eliminating clearly wrong options you must fill in an answer. This exam has no penalty for wrong answers, so leaving a blank is disadvantageous, and permanently giving up on hard questions or blindly filling in one letter is not a good strategy either.
+**Answer: B**  
+Explanation: A blank always scores 0, but a guessed answer has a chance of being right, so after eliminating clearly wrong options you must fill in an answer. This exam has no penalty for wrong answers, so leaving a blank is disadvantageous, and permanently giving up on hard questions or blindly filling in one letter is not a good strategy either.
 
 ---
 
-**문제 4.** When solving 65 questions in 90 minutes, which is the most appropriate recommended pacing strategy?
+**Question 4.** When solving 65 questions in 90 minutes, which is the most appropriate recommended pacing strategy?
 
 A) Stay on the first question until it's perfectly solved before moving on  
 B) Handle easy questions quickly and flag hard ones to return to later  
 C) Solve all questions at once in the final 10 minutes  
 D) Solve the questions in random order  
 
-**정답: B**  
-해설: Handling easy questions quickly to bank time and flagging hard ones to re-examine on a second pass is how you maximize your score in limited time. Lingering on one question or cramming everything at the end leads to running out of time.
+**Answer: B**  
+Explanation: Handling easy questions quickly to bank time and flagging hard ones to re-examine on a second pass is how you maximize your score in limited time. Lingering on one question or cramming everything at the end leads to running out of time.
 
 ---
 
-**문제 5.** Which AWS Support plan is the first to offer 24/7 (around-the-clock) technical support?
+**Question 5.** Which AWS Support plan is the first to offer 24/7 (around-the-clock) technical support?
 
 A) Basic  
 B) Developer  
 C) Business  
 D) Offered in all plans  
 
-**정답: C**  
-해설: 24/7 phone·chat technical support is offered starting with the Business plan. Basic is free basic support, Developer is limited to email during business hours, and not all plans provide 24/7 support.
+**Answer: C**  
+Explanation: 24/7 phone·chat technical support is offered starting with the Business plan. Basic is free basic support, Developer is limited to email during business hours, and not all plans provide 24/7 support.
 
 ---

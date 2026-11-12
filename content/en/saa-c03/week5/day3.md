@@ -346,93 +346,93 @@ Tomorrow we dig deep into DAX in more detail — and the difference between it a
 
 ## 📝 Practice Questions
 
-**문제 1.** What is the most important criterion when choosing a DynamoDB table's partition key?
+**Question 1.** What is the most important criterion when choosing a DynamoDB table's partition key?
 
 A) The shorter the partition key value's length, the better
 B) The partition key must be a numeric type
 C) The partition key value should be varied (High Cardinality) and evenly distributed
 D) The partition key should be updated frequently
 
-**정답: C**
+**Answer: C**
 
-해설: To prevent Hot Partitions, data must spread evenly across many partitions. For that, the partition key must have high cardinality (many distinct values) and requests must be evenly distributed. Keys that are varied and close to random — like userId, orderId, deviceId — are ideal. Length, type, and update frequency are not directly related to performance. Traps like "what if you use a date as the partition key?" come up often on the exam — a date has high cardinality but has the skew problem of writes concentrating on today's date.
+Explanation: To prevent Hot Partitions, data must spread evenly across many partitions. For that, the partition key must have high cardinality (many distinct values) and requests must be evenly distributed. Keys that are varied and close to random — like userId, orderId, deviceId — are ideal. Length, type, and update frequency are not directly related to performance. Traps like "what if you use a date as the partition key?" come up often on the exam — a date has high cardinality but has the skew problem of writes concentrating on today's date.
 
 ---
 
-**문제 2.** Which statement about a DynamoDB GSI (Global Secondary Index) is correct?
+**Question 2.** Which statement about a DynamoDB GSI (Global Secondary Index) is correct?
 
 A) It can only be added at table creation time
 B) It must have the same partition key as the base table
 C) It supports strongly consistent reads
 D) It can be defined with a completely different partition key and sort key, can be added at any time, and supports only eventual consistency
 
-**정답: D**
+**Answer: D**
 
-해설: A GSI can be defined with keys completely independent of the base table's key, and it can be added or removed at any time while the table is running. However, because data is replicated asynchronously from the base table to the GSI, it supports only eventual consistency. A and B are characteristics of an LSI. As for C, even if you request ConsistentRead=true on a GSI, it's actually processed as eventual consistency.
+Explanation: A GSI can be defined with keys completely independent of the base table's key, and it can be added or removed at any time while the table is running. However, because data is replicated asynchronously from the base table to the GSI, it supports only eventual consistency. A and B are characteristics of an LSI. As for C, even if you request ConsistentRead=true on a GSI, it's actually processed as eventual consistency.
 
 ---
 
-**문제 3.** What operation can 1 RCU handle?
+**Question 3.** What operation can 1 RCU handle?
 
 A) One strongly consistent read of an 8KB item
 B) One strongly consistent read of a 4KB item
 C) One eventually consistent read of a 4KB item
 D) Two strongly consistent reads of a 2KB item
 
-**정답: B**
+**Answer: B**
 
-해설: 1 RCU = one strongly consistent read of an item up to 4KB. Or two eventually consistent reads of a 4KB item. A is 8KB, so it needs 2 RCU. C — one eventually consistent read of 4KB is 0.5 RCU (= 1 RCU can handle 2). D — a strongly consistent read of a 2KB item is 1 RCU per read (rounded up), so 2 reads need 2 RCU.
+Explanation: 1 RCU = one strongly consistent read of an item up to 4KB. Or two eventually consistent reads of a 4KB item. A is 8KB, so it needs 2 RCU. C — one eventually consistent read of 4KB is 0.5 RCU (= 1 RCU can handle 2). D — a strongly consistent read of a 2KB item is 1 RCU per read (rounded up), so 2 reads need 2 RCU.
 
 ---
 
-**문제 4.** You connect DynamoDB Streams to Lambda to process order events. For multiple change events to the same order item (same partition key), is correct-order processing in Lambda guaranteed?
+**Question 4.** You connect DynamoDB Streams to Lambda to process order events. For multiple change events to the same order item (same partition key), is correct-order processing in Lambda guaranteed?
 
 A) Not guaranteed. DynamoDB Streams doesn't guarantee order
 B) Guaranteed. Events for the same partition key always enter the same shard in order
 C) Not guaranteed. Lambda processes events in parallel
 D) Guaranteed. Lambda processes all events in order on a single thread
 
-**정답: B**
+**Answer: B**
 
-해설: DynamoDB Streams is sharded based on the partition key. Change events for items with the same partition key are always recorded in the same shard in order. Lambda processes a batch with one execution context per shard, so events for the same partition key are order-guaranteed. However, events for different partition keys go into different shards, so their relative order is not guaranteed.
+Explanation: DynamoDB Streams is sharded based on the partition key. Change events for items with the same partition key are always recorded in the same shard in order. Lambda processes a batch with one execution context per shard, so events for the same partition key are order-guaranteed. However, events for different partition keys go into different shards, so their relative order is not guaranteed.
 
 ---
 
-**문제 5.** What is the main criterion for deciding between DynamoDB On-Demand mode and Provisioned + Auto Scaling mode?
+**Question 5.** What is the main criterion for deciding between DynamoDB On-Demand mode and Provisioned + Auto Scaling mode?
 
 A) Data size — the larger the data, the more On-Demand favors you
 B) Traffic predictability — On-Demand if unpredictable and irregular; Provisioned + AS if predictable and stable
 C) Number of regions — only On-Demand is available for multi-region use
 D) Whether GSIs are used — using a GSI means only On-Demand can be chosen
 
-**정답: B**
+**Answer: B**
 
-해설: The key criterion is the predictability of the traffic pattern. On-Demand bills per request, so it automatically handles sudden traffic spikes, but it's more expensive than Provisioned + Auto Scaling for stable, predictable traffic. Provisioned + Auto Scaling bills based on the configured RCU/WCU, so it enables cost optimization for stable traffic, but has a scaling delay on sudden spikes. A, C, and D are all incorrect statements.
+Explanation: The key criterion is the predictability of the traffic pattern. On-Demand bills per request, so it automatically handles sudden traffic spikes, but it's more expensive than Provisioned + Auto Scaling for stable, predictable traffic. Provisioned + Auto Scaling bills based on the configured RCU/WCU, so it enables cost optimization for stable traffic, but has a scaling delay on sudden spikes. A, C, and D are all incorrect statements.
 
 ---
 
-**문제 6.** On an e-commerce platform, you want to implement an event-driven architecture that automatically updates inventory and sends an email notification each time a new order is INSERTed into a DynamoDB orders table. What is the most suitable approach?
+**Question 6.** On an e-commerce platform, you want to implement an event-driven architecture that automatically updates inventory and sends an email notification each time a new order is INSERTed into a DynamoDB orders table. What is the most suitable approach?
 
 A) Call the inventory update and email send directly from the order Lambda function (synchronously)
 B) Enable DynamoDB Streams and separate the follow-up processing with a Lambda event source mapping
 C) Periodically run a Scan to detect and process new orders
 D) Detect DynamoDB changes with CloudWatch Events
 
-**정답: B**
+**Answer: B**
 
-해설: DynamoDB Streams + Lambda event source mapping is the standard pattern for event-driven architecture. The order Lambda function handles only saving the order, and the follow-up processing (inventory update, email send) is separated into a distinct Lambda via Streams. This pattern is favorable in terms of separation of concerns, automatic retries, and scalability. A tightly couples order processing and follow-up work, so if one fails, the whole thing fails. C is a polling approach with latency and duplicate-processing risk. D doesn't exist — there's no capability to directly detect DynamoDB changes via CloudWatch Events/EventBridge.
+Explanation: DynamoDB Streams + Lambda event source mapping is the standard pattern for event-driven architecture. The order Lambda function handles only saving the order, and the follow-up processing (inventory update, email send) is separated into a distinct Lambda via Streams. This pattern is favorable in terms of separation of concerns, automatic retries, and scalability. A tightly couples order processing and follow-up work, so if one fails, the whole thing fails. C is a polling approach with latency and duplicate-processing risk. D doesn't exist — there's no capability to directly detect DynamoDB changes via CloudWatch Events/EventBridge.
 
 ---
 
-**문제 7.** In DynamoDB, the pattern "look up a user's (userId's) recent orders sorted by date (orderDate)" is frequent. The table primary key is (userId, orderId), and there's an orderDate attribute. To support this query efficiently:
+**Question 7.** In DynamoDB, the pattern "look up a user's (userId's) recent orders sorted by date (orderDate)" is frequent. The table primary key is (userId, orderId), and there's an orderDate attribute. To support this query efficiently:
 
 A) Handle it with Scan + Filter Expression
 B) Create a GSI with orderDate as the partition key
 C) Create an LSI: partition key = userId, sort key = orderDate
 D) Create a separate Orders-by-date table and save to both tables on every write
 
-**정답: C**
+**Answer: C**
 
-해설: An LSI can be defined with the same partition key (userId) and a different sort key (orderDate). "A specific user's (userId's) orders in date order" is a perfect use case for an LSI. Strong consistency is also possible. However, an LSI can only be added at table creation time, so you must design it in advance. B — partitioning the entire table by orderDate causes write concentration on a specific date. A — a Scan reads the entire table, so it's inefficient. D has duplicate-storage and data-consistency problems.
+Explanation: An LSI can be defined with the same partition key (userId) and a different sort key (orderDate). "A specific user's (userId's) orders in date order" is a perfect use case for an LSI. Strong consistency is also possible. However, an LSI can only be added at table creation time, so you must design it in advance. B — partitioning the entire table by orderDate causes write concentration on a specific date. A — a Scan reads the entire table, so it's inefficient. D has duplicate-storage and data-consistency problems.
 
 ---

@@ -31,16 +31,16 @@ Key insight: **"What makes this architecture okay to fail at?" = "What constrain
 
 ## 📝 Practice Questions
 
-**문제 1.** "Minimize cost" + "30 min RTO requirement" → **Pilot Light (not Backup), not Multi-Site**
+**Question 1.** "Minimize cost" + "30 min RTO requirement" → **Pilot Light (not Backup), not Multi-Site**
 
-**문제 2.** "No downtime + global" → **Multi-Site Active-Active + time zone compliance**
+**Question 2.** "No downtime + global" → **Multi-Site Active-Active + time zone compliance**
 
-**문제 3.** "Regulatory 7 years + change immutable" → **Object Lock Compliance, not Governance**
+**Question 3.** "Regulatory 7 years + change immutable" → **Object Lock Compliance, not Governance**
 
-**문제 4.** "Time constraint + data transformation" → **Rehost+optimize vs Refactor-all-upfront**
+**Question 4.** "Time constraint + data transformation" → **Rehost+optimize vs Refactor-all-upfront**
 
-**문제 5.** Hidden constraint "EU data outside EU" → **SCP DenyRegions (root blocker)**
+**Question 5.** Hidden constraint "EU data outside EU" → **SCP DenyRegions (root blocker)**
 
-**문제 6.** Recognizing **PACELC trade-off** behind "RPO 1s multi-region" → **Async replication, not sync**
+**Question 6.** Recognizing **PACELC trade-off** behind "RPO 1s multi-region" → **Async replication, not sync**
 
 ---

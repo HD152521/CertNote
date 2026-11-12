@@ -100,62 +100,62 @@ Tomorrow we look at where the data that compute produces gets stored — the wor
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to run intermittent, event-driven work with irregular traffic without managing servers yourself, paying only for what you use. Which compute service is the best fit?
+**Question 1.** You want to run intermittent, event-driven work with irregular traffic without managing servers yourself, paying only for what you use. Which compute service is the best fit?
 
 A) EC2 On-Demand Instance  
 B) EC2 Reserved Instance  
 C) AWS Lambda  
 D) Dedicated Host  
 
-**정답: C**  
-해설: Lambda runs only when an event fires, bills only for the time it runs, and requires no server management at all. The conditions "irregular, intermittent, no server management, pay for what you use" all point to Lambda. EC2 On-Demand/Reserved require keeping a server running, so cost accrues even while idle, and a Dedicated Host occupies an entire physical server — the exact opposite.
+**Answer: C**  
+Explanation: Lambda runs only when an event fires, bills only for the time it runs, and requires no server management at all. The conditions "irregular, intermittent, no server management, pay for what you use" all point to Lambda. EC2 On-Demand/Reserved require keeping a server running, so cost accrues even while idle, and a Dedicated Host occupies an entire physical server — the exact opposite.
 
 ---
 
-**문제 2.** You want to run a large-scale batch-processing job that can simply be restarted if interrupted, as cheaply as possible. Which EC2 purchase option is the most cost-effective?
+**Question 2.** You want to run a large-scale batch-processing job that can simply be restarted if interrupted, as cheaply as possible. Which EC2 purchase option is the most cost-effective?
 
 A) On-Demand Instance  
 B) Spot Instance  
 C) Reserved Instance (3-year commitment)  
 D) Dedicated Host  
 
-**정답: B**  
-해설: Spot Instances use AWS's spare capacity at up to about 90% off, with the downside that AWS can reclaim them when it needs the capacity. That makes them the best fit for "interruption-tolerant" batch and fault-tolerant work. On-Demand is the most expensive, Reserved Instances are for steady 24/7 workloads, and a Dedicated Host is for licensing/compliance purposes — none of which is about cost efficiency.
+**Answer: B**  
+Explanation: Spot Instances use AWS's spare capacity at up to about 90% off, with the downside that AWS can reclaim them when it needs the capacity. That makes them the best fit for "interruption-tolerant" batch and fault-tolerant work. On-Demand is the most expensive, Reserved Instances are for steady 24/7 workloads, and a Dedicated Host is for licensing/compliance purposes — none of which is about cost efficiency.
 
 ---
 
-**문제 3.** You want to run a container-based application but you don't want to provision or manage the servers (EC2) that run those containers yourself. Which combination fits?
+**Question 3.** You want to run a container-based application but you don't want to provision or manage the servers (EC2) that run those containers yourself. Which combination fits?
 
 A) ECS on EC2  
 B) ECS on Fargate  
 C) EC2 alone  
 D) Reserved Instance + EC2  
 
-**정답: B**  
-해설: Fargate is a "serverless for containers" launch type in which the user does not provision or manage the underlying servers that run the containers. ECS on EC2 requires the user to manage EC2 directly, which violates the condition, and EC2 alone or a Reserved Instance combination pushes both container orchestration and server management onto the user.
+**Answer: B**  
+Explanation: Fargate is a "serverless for containers" launch type in which the user does not provision or manage the underlying servers that run the containers. ECS on EC2 requires the user to manage EC2 directly, which violates the condition, and EC2 alone or a Reserved Instance combination pushes both container orchestration and server management onto the user.
 
 ---
 
-**문제 4.** Which of the following most accurately describes the criterion for choosing an EC2 instance type (instance family)?
+**Question 4.** Which of the following most accurately describes the criterion for choosing an EC2 instance type (instance family)?
 
 A) The General Purpose instance is always the best for every workload  
 B) You choose a type with a different balance to match the nature of the job (relative weight of CPU, memory, disk, GPU)  
 C) The instance type affects only price and is unrelated to performance  
 D) A compute-optimized instance is suited to memory-heavy workloads  
 
-**정답: B**  
-해설: Instance types are engineered with different balances of CPU, memory, storage, and accelerators to match the nature of the job. There is no all-purpose type (A is wrong), and the type choice affects both performance and cost (C is wrong). Memory-intensive work calls for a memory-optimized instance, and compute-optimized is for CPU-intensive work, so D is wrong.
+**Answer: B**  
+Explanation: Instance types are engineered with different balances of CPU, memory, storage, and accelerators to match the nature of the job. There is no all-purpose type (A is wrong), and the type choice affects both performance and cost (C is wrong). Memory-intensive work calls for a memory-optimized instance, and compute-optimized is for CPU-intensive work, so D is wrong.
 
 ---
 
-**문제 5.** Which is the most accurate meaning of the term "Serverless"?
+**Question 5.** Which is the most accurate meaning of the term "Serverless"?
 
 A) There are physically no servers at all  
 B) Servers exist, but the user doesn't provision or manage them; AWS takes that on  
 C) The user has to patch and scale the servers themselves  
 D) Only EC2 counts as serverless  
 
-**정답: B**  
-해설: Serverless doesn't mean there are no servers — it means the user doesn't bear management responsibilities like provisioning, patching, and scaling; AWS takes them on. So A, "no physical servers," is wrong, and C, "the user manages them directly," contradicts the definition of serverless. EC2 is IaaS where the user manages the server, so it is not serverless (D is wrong). Lambda and Fargate are the poster children of serverless.
+**Answer: B**  
+Explanation: Serverless doesn't mean there are no servers — it means the user doesn't bear management responsibilities like provisioning, patching, and scaling; AWS takes them on. So A, "no physical servers," is wrong, and C, "the user manages them directly," contradicts the definition of serverless. EC2 is IaaS where the user manages the server, so it is not serverless (D is wrong). Lambda and Fargate are the poster children of serverless.
 
 ---

@@ -136,91 +136,91 @@ Next we look at the defense layer **before requests reach the app** — WAF, Shi
 
 ## 📝 Practice Questions
 
-**문제 1.** Mobile app user logs in via Cognito, then uploads photos to their S3 folder directly. Correct flow?
+**Question 1.** Mobile app user logs in via Cognito, then uploads photos to their S3 folder directly. Correct flow?
 
 A) Pass User Pool ID Token to S3 Authorization header without SigV4
 B) User Pool login → Identity Pool JWT exchange → IAM temporary credentials → S3 direct access
 C) All uploads route through Lambda proxy; Lambda's role calls S3 on behalf
 D) Require API Gateway + Cognito Authorizer backend; no direct S3 access
 
-**정답: B**
+**Answer: B**
 
-해설: User Pool JWT alone cannot call S3 SDK — AWS SDK requires IAM credentials. Swap JWT for Identity Pool IAM temp credentials, then call S3 directly. Role mapping splits user folders by ID. A) S3 does not recognize JWT; it expects SigV4 IAM signature. C·D) Possible but miss the "direct access" requirement. Identity Pool = "JWT → IAM credentials → direct AWS access."
+Explanation: User Pool JWT alone cannot call S3 SDK — AWS SDK requires IAM credentials. Swap JWT for Identity Pool IAM temp credentials, then call S3 directly. Role mapping splits user folders by ID. A) S3 does not recognize JWT; it expects SigV4 IAM signature. C·D) Possible but miss the "direct access" requirement. Identity Pool = "JWT → IAM credentials → direct AWS access."
 
 ---
 
-**문제 2.** API Gateway **REST API** with Cognito Authorizer requires which token type?
+**Question 2.** API Gateway **REST API** with Cognito Authorizer requires which token type?
 
 A) Refresh Token
 B) Access Token
 C) ID Token
 D) IAM temporary credentials
 
-**정답: C**
+**Answer: C**
 
-해설: REST API Cognito Authorizer defaults to **ID Token** (user identity attributes). HTTP API's JWT Authorizer typically validates Access Token (scope-aware). This difference is exam gold. A) Refresh Token renews; not used for direct API auth. D) IAM credentials come from Identity Pool, not Authorizer validation.
+Explanation: REST API Cognito Authorizer defaults to **ID Token** (user identity attributes). HTTP API's JWT Authorizer typically validates Access Token (scope-aware). This difference is exam gold. A) Refresh Token renews; not used for direct API auth. D) IAM credentials come from Identity Pool, not Authorizer validation.
 
 ---
 
-**문제 3.** Signup must accept only @mycompany.com email and auto-approve. Which trigger?
+**Question 3.** Signup must accept only @mycompany.com email and auto-approve. Which trigger?
 
 A) `PostAuthentication` Lambda
 B) `PreSignUp` Lambda
 C) Identity Pool role mapping
 D) API Gateway Authorizer
 
-**정답: B**
+**Answer: B**
 
-해설: `PreSignUp` runs **before** signup completes, can validate domain and set `autoConfirmUser`/`autoVerifyEmail`. A) PostAuthentication is post-login, not signup validation. C) Role mapping splits permissions, not signup. D) Authorizer validates API requests, not signup.
+Explanation: `PreSignUp` runs **before** signup completes, can validate domain and set `autoConfirmUser`/`autoVerifyEmail`. A) PostAuthentication is post-login, not signup validation. C) Role mapping splits permissions, not signup. D) Authorizer validates API requests, not signup.
 
 ---
 
-**문제 4.** Can you put passwords or other sensitive data in JWT ID Token?
+**Question 4.** Can you put passwords or other sensitive data in JWT ID Token?
 
 A) Yes, JWT is encrypted and safe
 B) No; JWT payload is Base64, anyone can decode — secrets expose plaintext
 C) Yes, but only in Access Token
 D) No; JWT is 100-byte limited
 
-**정답: B**
+**Answer: B**
 
-해설: JWT is `Header.Payload.Signature`, where header/payload are **Base64-only** (encoding, not encryption) — anyone decodes to plaintext. Only Signature (RS256) is secure. So sensitive data leaks if added. Keep tokens to IDs and groups; backend looks up heavy permission data. Tokens are ID cards, not databases.
+Explanation: JWT is `Header.Payload.Signature`, where header/payload are **Base64-only** (encoding, not encryption) — anyone decodes to plaintext. Only Signature (RS256) is secure. So sensitive data leaks if added. Keep tokens to IDs and groups; backend looks up heavy permission data. Tokens are ID cards, not databases.
 
 ---
 
-**문제 5.** Migrate legacy auth users to Cognito without downtime. Best method?
+**Question 5.** Migrate legacy auth users to Cognito without downtime. Best method?
 
 A) CSV import all users at once
 B) `UserMigration` Lambda — first login auto-migrates from legacy system
 C) `PreTokenGeneration` trigger
 D) Identity Pool guest access
 
-**정답: B**
+**Answer: B**
 
-해설: `UserMigration` fires when "user not found" — Lambda tries legacy auth; on success, creates user in User Pool on the spot. Users self-migrate one login at a time — no downtime, no bulk reset. A) CSV import cannot move passwords; all users must reset. C) PreTokenGeneration customizes claims, not migration. D) Guest roles unrelated.
+Explanation: `UserMigration` fires when "user not found" — Lambda tries legacy auth; on success, creates user in User Pool on the spot. Users self-migrate one login at a time — no downtime, no bulk reset. A) CSV import cannot move passwords; all users must reset. C) PreTokenGeneration customizes claims, not migration. D) Guest roles unrelated.
 
 ---
 
-**문제 6.** Identity Pool admin role, regular users role split. Implementation?
+**Question 6.** Identity Pool admin role, regular users role split. Implementation?
 
 A) User Pool MFA setting
 B) Identity Pool role mapping (Rules-based or Token-based)
 C) PreSignUp trigger
 D) KMS Grant
 
-**정답: B**
+**Answer: B**
 
-해설: Identity Pool role mapping checks JWT claims like `cognito:groups` and assumes different IAM roles per group — Admin → AdminRole, Users → UserRole. S3 prefix access then varies by role. A) MFA strengthens auth, not permission split. C) PreSignUp is signup validation. D) KMS is for key permissions.
+Explanation: Identity Pool role mapping checks JWT claims like `cognito:groups` and assumes different IAM roles per group — Admin → AdminRole, Users → UserRole. S3 prefix access then varies by role. A) MFA strengthens auth, not permission split. C) PreSignUp is signup validation. D) KMS is for key permissions.
 
 ---
 
-**문제 7.** User Pool supports Google, Apple, self login. What token does the app receive?
+**Question 7.** User Pool supports Google, Apple, self login. What token does the app receive?
 
 A) Varying formats per IdP; app must branch
 B) Same Cognito JWT regardless of IdP source (federation abstraction)
 C) Social login returns provider token; self login returns JWT
 D) No tokens; IdP auth only
 
-**정답: B**
+**Answer: B**
 
-해설: Federated IdPs mirror into User Pool (JIT provisioning). App always receives **same Cognito JWT** structure — IdP source abstracted away. SAML + OIDC + custom all become one token interface.
+Explanation: Federated IdPs mirror into User Pool (JIT provisioning). App always receives **same Cognito JWT** structure — IdP source abstracted away. SAML + OIDC + custom all become one token interface.

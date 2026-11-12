@@ -399,86 +399,86 @@ Private VPC requires VPC Endpoints:
 
 ## 📝 Practice Questions
 
-**문제 1.** EC2 인스턴스가 SSM Managed Instances 목록에 나타나지 않는다. 인스턴스는 실행 중이며, Amazon Linux 2 최신 AMI를 사용한다. 가장 먼저 확인해야 할 항목은?
+**Question 1.** EC2 인스턴스가 SSM Managed Instances 목록에 나타나지 않는다. 인스턴스는 실행 중이며, Amazon Linux 2 최신 AMI를 사용한다. 가장 먼저 확인해야 할 항목은?
 
 A) AMI에 SSM Agent가 포함되어 있는지 확인한다
 B) Instance Profile에 `AmazonSSMManagedInstanceCore` 정책이 포함된 IAM Role이 부착되어 있는지 확인한다
 C) 보안 그룹에 포트 22 인바운드가 허용되어 있는지 확인한다
 D) 인스턴스가 퍼블릭 서브넷에 있는지 확인한다
 
-**정답: B**
-해설: Amazon Linux 2 최신 AMI에는 SSM Agent가 기본 설치되어 있으므로 A는 이미 충족됐을 가능성이 높다. SSM은 포트 22를 사용하지 않으므로 C는 관계없다. 퍼블릭/프라이빗 서브넷은 추가 조건(VPC Endpoint)에 영향을 주지만 가장 먼저 확인해야 할 것은 IAM Role 누락이다. Managed Instance가 안 되는 원인 1순위가 IAM 권한 누락이다. 확인 명령: `aws ec2 describe-iam-instance-profile-associations --filters "Name=instance-id,Values=i-xxx"`
+**Answer: B**
+Explanation: Amazon Linux 2 최신 AMI에는 SSM Agent가 기본 설치되어 있으므로 A는 이미 충족됐을 가능성이 높다. SSM은 포트 22를 사용하지 않으므로 C는 관계없다. 퍼블릭/프라이빗 서브넷은 추가 조건(VPC Endpoint)에 영향을 주지만 가장 먼저 확인해야 할 것은 IAM Role 누락이다. Managed Instance가 안 되는 원인 1순위가 IAM 권한 누락이다. 확인 명령: `aws ec2 describe-iam-instance-profile-associations --filters "Name=instance-id,Values=i-xxx"`
 
 ---
 
-**문제 2.** 회사가 완전한 사설 VPC(인터넷 게이트웨이 없음)에서 EC2 인스턴스를 SSM으로 관리하려 한다. IAM Role은 이미 올바르게 설정되어 있다. 추가로 필요한 것은?
+**Question 2.** 회사가 완전한 사설 VPC(인터넷 게이트웨이 없음)에서 EC2 인스턴스를 SSM으로 관리하려 한다. IAM Role은 이미 올바르게 설정되어 있다. 추가로 필요한 것은?
 
 A) NAT Gateway 생성
 B) 인터넷 게이트웨이 추가
 C) 세 개의 VPC Interface Endpoint 생성: ssm, ssmmessages, ec2messages
 D) Bastion Host 설정
 
-**정답: C**
-해설: SSM Agent는 HTTPS(443)를 통해 SSM 서비스 엔드포인트에 연결한다. 인터넷이 없는 사설 VPC에서는 VPC Interface Endpoint로 AWS 내부 백본을 통해 통신한다. NAT Gateway는 인터넷 경유이고, Bastion은 SSH 기반으로 SSM의 목적과 무관하다. S3 Gateway Endpoint도 함께 생성하는 것이 표준(Document 다운로드, 결과 저장용). 각 Endpoint의 보안 그룹은 EC2 서브넷에서 443 인바운드를 허용해야 한다.
+**Answer: C**
+Explanation: SSM Agent는 HTTPS(443)를 통해 SSM 서비스 엔드포인트에 연결한다. 인터넷이 없는 사설 VPC에서는 VPC Interface Endpoint로 AWS 내부 백본을 통해 통신한다. NAT Gateway는 인터넷 경유이고, Bastion은 SSH 기반으로 SSM의 목적과 무관하다. S3 Gateway Endpoint도 함께 생성하는 것이 표준(Document 다운로드, 결과 저장용). 각 Endpoint의 보안 그룹은 EC2 서브넷에서 443 인바운드를 허용해야 한다.
 
 ---
 
-**문제 3.** 운영팀이 "현재 우리 인프라에서 Python 2.7이 설치된 EC2가 몇 대인가?"를 알고 싶다. 가장 적합한 도구와 방법은?
+**Question 3.** 운영팀이 "현재 우리 인프라에서 Python 2.7이 설치된 EC2가 몇 대인가?"를 알고 싶다. 가장 적합한 도구와 방법은?
 
 A) 각 EC2에 Run Command로 `python --version`을 실행한다
 B) CloudTrail에서 Python 관련 이벤트를 검색한다
 C) SSM Inventory를 활성화하고 `AWS:Application` 데이터에서 Python 2.7을 필터링한다
 D) Config Rules를 통해 Python 버전을 확인한다
 
-**정답: C**
-해설: Inventory는 모든 Managed Instance의 설치된 소프트웨어를 주기적으로 수집한다. `AWS:Application` 유형에 이름과 버전이 포함된다. Resource Data Sync로 S3에 모으면 Athena SQL로 대규모 분석이 가능하다. Run Command(A)도 동작하지만 일회성이고 결과를 집계하기 어렵다. Inventory는 한 번 설정하면 모든 인스턴스의 소프트웨어 현황을 지속적으로 추적한다.
+**Answer: C**
+Explanation: Inventory는 모든 Managed Instance의 설치된 소프트웨어를 주기적으로 수집한다. `AWS:Application` 유형에 이름과 버전이 포함된다. Resource Data Sync로 S3에 모으면 Athena SQL로 대규모 분석이 가능하다. Run Command(A)도 동작하지만 일회성이고 결과를 집계하기 어렵다. Inventory는 한 번 설정하면 모든 인스턴스의 소프트웨어 현황을 지속적으로 추적한다.
 
 ---
 
-**문제 4.** 온프레미스 데이터센터에 서버 80대가 있고, 이 서버들에 SSM을 통해 Run Command와 Patch Manager를 적용하려 한다. 가장 적합한 접근 방법은?
+**Question 4.** 온프레미스 데이터센터에 서버 80대가 있고, 이 서버들에 SSM을 통해 Run Command와 Patch Manager를 적용하려 한다. 가장 적합한 접근 방법은?
 
 A) SSM은 EC2만 지원하므로 불가능하다
 B) 온프레미스 서버에 Direct Connect를 통해 VPN을 구성한다
 C) Hybrid Activations를 생성하고 각 서버에 SSM Agent를 설치 후 Activation Code/ID로 등록한다
 D) AWS Outposts를 데이터센터에 설치한다
 
-**정답: C**
-해설: Hybrid Activations는 정확히 이 목적을 위해 만들어진 기능이다. Activation 생성 후 서버에 Agent 설치 + 등록 과정을 거치면 `mi-xxxxxxxxx` 형식의 ID가 부여된다. 이후 EC2와 완전히 동일하게 Run Command, Patch Manager, Session Manager를 사용할 수 있다. 80대까지는 Standard Tier(무료) 범위 내이므로 추가 비용 없이 사용 가능하다.
+**Answer: C**
+Explanation: Hybrid Activations는 정확히 이 목적을 위해 만들어진 기능이다. Activation 생성 후 서버에 Agent 설치 + 등록 과정을 거치면 `mi-xxxxxxxxx` 형식의 ID가 부여된다. 이후 EC2와 완전히 동일하게 Run Command, Patch Manager, Session Manager를 사용할 수 있다. 80대까지는 Standard Tier(무료) 범위 내이므로 추가 비용 없이 사용 가능하다.
 
 ---
 
-**문제 5.** 회사가 EC2 접속 시 SSH 키 분배 부담을 없애고, 모든 접속 세션을 자동으로 감사 로그로 남기려 한다. 동시에 포트 22를 보안 그룹에서 완전히 닫고 싶다. 가장 적합한 도구는?
+**Question 5.** 회사가 EC2 접속 시 SSH 키 분배 부담을 없애고, 모든 접속 세션을 자동으로 감사 로그로 남기려 한다. 동시에 포트 22를 보안 그룹에서 완전히 닫고 싶다. 가장 적합한 도구는?
 
 A) Bastion Host를 통한 SSH 접속
 B) AWS VPN + SSH 키 관리
 C) Session Manager (SSM) - IAM 기반 접속, 자동 세션 로깅, 포트 22 불필요
 D) EC2 Instance Connect
 
-**정답: C**
-해설: Session Manager는 IAM 권한으로 접속하며 포트 22가 전혀 필요 없다. 모든 세션 내용이 S3 또는 CloudWatch Logs에 자동으로 저장된다. EC2 Instance Connect(D)는 일시적인 SSH 키를 푸시하는 방식으로 포트 22가 필요하다. Session Manager는 운영 보안 모범 사례로, PCI-DSS, HIPAA 환경에서 특히 권장된다. 포트 포워딩 기능으로 RDS, Redis 등 내부 서비스에도 SSH 없이 직접 접근 가능하다.
+**Answer: C**
+Explanation: Session Manager는 IAM 권한으로 접속하며 포트 22가 전혀 필요 없다. 모든 세션 내용이 S3 또는 CloudWatch Logs에 자동으로 저장된다. EC2 Instance Connect(D)는 일시적인 SSH 키를 푸시하는 방식으로 포트 22가 필요하다. Session Manager는 운영 보안 모범 사례로, PCI-DSS, HIPAA 환경에서 특히 권장된다. 포트 포워딩 기능으로 RDS, Redis 등 내부 서비스에도 SSH 없이 직접 접근 가능하다.
 
 ---
 
-**문제 6.** Default Host Management Configuration(DHMC)에 대한 설명으로 옳은 것은?
+**Question 6.** Default Host Management Configuration(DHMC)에 대한 설명으로 옳은 것은?
 
 A) 모든 EC2 인스턴스에 자동으로 SSM Agent를 설치한다
 B) Instance Profile(IAM Role) 없이도 EC2가 SSM Managed Instance로 등록될 수 있게 한다
 C) Hybrid Activations 없이 온프레미스 서버를 등록할 수 있다
 D) Session Manager의 로깅을 자동으로 활성화한다
 
-**정답: B**
-해설: DHMC는 계정 레벨에서 활성화하면 AWS가 서비스 연결 역할을 생성해 모든 EC2에 자동 적용한다. 이로 인해 개별 인스턴스마다 IAM Role을 부착하는 번거로움이 사라진다. 단, Agent 설치는 별도이고 네트워크 조건도 여전히 필요하다. DHMC는 Instance Profile 부재로 인한 Managed Instance 등록 실패를 근본적으로 방지한다.
+**Answer: B**
+Explanation: DHMC는 계정 레벨에서 활성화하면 AWS가 서비스 연결 역할을 생성해 모든 EC2에 자동 적용한다. 이로 인해 개별 인스턴스마다 IAM Role을 부착하는 번거로움이 사라진다. 단, Agent 설치는 별도이고 네트워크 조건도 여전히 필요하다. DHMC는 Instance Profile 부재로 인한 Managed Instance 등록 실패를 근본적으로 방지한다.
 
 ---
 
-**문제 7.** Session Manager 세션 로그를 S3에 저장할 때 보안을 강화하려 한다. 어떤 구성이 필요한가?
+**Question 7.** Session Manager 세션 로그를 S3에 저장할 때 보안을 강화하려 한다. 어떤 구성이 필요한가?
 
 A) S3 버킷 공개 접근 차단만 설정한다
 B) Session Manager 기본 설정에서 `s3EncryptionEnabled: true` + KMS 키 지정 + S3 버킷 서버 측 암호화 활성화
 C) CloudWatch Logs에만 저장한다
 D) 세션 로그는 암호화할 수 없다
 
-**정답: B**
-해설: Session Manager 세션 로그의 완전한 보안을 위해서는 (1) Session Manager 설정에서 `s3EncryptionEnabled: true`, (2) KMS CMK 지정(`kmsKeyId`), (3) S3 버킷 자체에 SSE-KMS 활성화, 세 가지가 모두 필요하다. CloudWatch Logs에도 `cloudWatchEncryptionEnabled: true`로 설정해야 한다. 이렇게 하면 세션 중 타이핑한 모든 명령과 출력이 암호화되어 저장된다. PCI-DSS 3.4와 HIPAA Security Rule이 요구하는 저장 데이터 암호화를 충족한다.
+**Answer: B**
+Explanation: Session Manager 세션 로그의 완전한 보안을 위해서는 (1) Session Manager 설정에서 `s3EncryptionEnabled: true`, (2) KMS CMK 지정(`kmsKeyId`), (3) S3 버킷 자체에 SSE-KMS 활성화, 세 가지가 모두 필요하다. CloudWatch Logs에도 `cloudWatchEncryptionEnabled: true`로 설정해야 한다. 이렇게 하면 세션 중 타이핑한 모든 명령과 출력이 암호화되어 저장된다. PCI-DSS 3.4와 HIPAA Security Rule이 요구하는 저장 데이터 암호화를 충족한다.
 
 ---

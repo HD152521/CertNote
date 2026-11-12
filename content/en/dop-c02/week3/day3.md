@@ -284,86 +284,86 @@ EOF
 
 ## 📝 Practice Questions
 
-**문제 1.** Of 100 configuration values, 10 are DB passwords that need automatic rotation every 30 days, and the remaining 90 are ordinary settings such as host names and environment flags. What is the cost-optimal configuration?
+**Question 1.** Of 100 configuration values, 10 are DB passwords that need automatic rotation every 30 days, and the remaining 90 are ordinary settings such as host names and environment flags. What is the cost-optimal configuration?
 
 A) All 100 in Secrets Manager ($40/month)
 B) 10 in Secrets Manager + 90 in Parameter Store Standard ($4/month)
 C) 100 in Parameter Store Advanced ($5/month)
 D) 100 in Parameter Store Standard + a custom rotation script ($0/month but no rotation)
 
-**정답: B**
-해설: The optimum is Secrets Manager for only the 10 that need automatic rotation ($0.40 each per month = $4/month) and Parameter Store Standard (free) for the remaining 90. D has the lowest cost but lacks automatic rotation and therefore fails the requirement.
+**Answer: B**
+Explanation: The optimum is Secrets Manager for only the 10 that need automatic rotation ($0.40 each per month = $4/month) and Parameter Store Standard (free) for the remaining 90. D has the lowest cost but lacks automatic rotation and therefore fails the requirement.
 
 ---
 
-**문제 2.** You granted `secretsmanager:GetSecretValue` to the CodeBuild Service Role but get an "AccessDenied" error. What is the most likely cause and fix?
+**Question 2.** You granted `secretsmanager:GetSecretValue` to the CodeBuild Service Role but get an "AccessDenied" error. What is the most likely cause and fix?
 
 A) Exceeding a Secrets Manager service quota → request a limit increase from Support
 B) The secret is encrypted with a CMK → add `kms:Decrypt` for that CMK to the Service Role
 C) buildspec version is 0.1 → change it to 0.2
 D) Subnet misconfiguration → disable VPC mode
 
-**정답: B**
-해설: A secret encrypted with a CMK (Customer Managed Key) triggers a separate KMS API call at the decryption step after GetSecretValue. If the Service Role lacks `kms:Decrypt` for that KMS call, AccessDenied occurs. When you use an AWS managed key, this permission is implicitly allowed.
+**Answer: B**
+Explanation: A secret encrypted with a CMK (Customer Managed Key) triggers a separate KMS API call at the decryption step after GetSecretValue. If the Service Role lacks `kms:Decrypt` for that KMS call, AccessDenied occurs. When you use an AWS managed key, this permission is implicitly allowed.
 
 ---
 
-**문제 3.** Why is Secrets Manager's Multi-User Rotation better than Single User Rotation?
+**Question 3.** Why is Secrets Manager's Multi-User Rotation better than Single User Rotation?
 
 A) It costs less
 B) A valid credential always exists even during rotation, so there is no application downtime
 C) It's simpler to configure
 D) It supports cross-account rotation
 
-**정답: B**
-해설: With Single User Rotation, there can be a very short "window" in which the old password is invalidated the moment the rotation Lambda changes the DB password. Multi-User always has two user accounts and replaces the PENDING account's password while the current CURRENT account is active, so this window does not exist. It's the standard choice for highly available applications.
+**Answer: B**
+Explanation: With Single User Rotation, there can be a very short "window" in which the old password is invalidated the moment the rotation Lambda changes the DB password. Multi-User always has two user accounts and replaces the PENDING account's password while the current CURRENT account is active, so this window does not exist. It's the standard choice for highly available applications.
 
 ---
 
-**문제 4.** What is the most recommended way to use a Secrets Manager secret from a Lambda function?
+**Question 4.** What is the most recommended way to use a Secrets Manager secret from a Lambda function?
 
 A) Store the secret directly in Lambda environment variables (with KMS encryption)
 B) Call GetSecretValue with the SDK on every function invocation
 C) Add the AWS Parameters and Secrets Lambda Extension as a Layer and access it over localhost HTTP
 D) Store a secrets file in S3 and download it at function start
 
-**정답: C**
-해설: The Lambda Extension provides a TTL-based cache that reduces unnecessary API calls and automatically refreshes rotated secrets. With A, values are visible in the console and the function must be redeployed on rotation. B makes an API call on every invocation, risking throttling. D is complex to manage.
+**Answer: C**
+Explanation: The Lambda Extension provides a TTL-based cache that reduces unnecessary API calls and automatically refreshes rotated secrets. With A, values are visible in the console and the function must be redeployed on rotation. B makes an API call on every invocation, risking throttling. D is complex to manage.
 
 ---
 
-**문제 5.** A secret in Secrets Manager was rotated while a build was in progress. What is the effect on the build?
+**Question 5.** A secret in Secrets Manager was rotated while a build was in progress. What is the effect on the build?
 
 A) The build fails immediately
 B) Environment variables were fetched once at build start, so there is no effect; however, if the build attempts a new connection via the SDK, the AWSPREVIOUS grace period applies
 C) CodeBuild automatically injects the new value into the environment variable
 D) The build restarts
 
-**정답: B**
-해설: Values in the `env.secrets-manager` block are fetched exactly once at build start. Even if rotation occurs mid-build, the value already in the environment variable does not change. If build code calls GetSecretValue again via the SDK, it receives the new AWSCURRENT. AWSPREVIOUS remains valid for a period even right after rotation, preventing sudden failures of in-flight connections.
+**Answer: B**
+Explanation: Values in the `env.secrets-manager` block are fetched exactly once at build start. Even if rotation occurs mid-build, the value already in the environment variable does not change. If build code calls GetSecretValue again via the SDK, it receives the new AWSCURRENT. AWSPREVIOUS remains valid for a period even right after rotation, preventing sudden failures of in-flight connections.
 
 ---
 
-**문제 6.** Which of the following is NOT required to fetch a Secrets Manager secret cross-account?
+**Question 6.** Which of the following is NOT required to fetch a Secrets Manager secret cross-account?
 
 A) Allowing the consumer account's Role in the secret's Resource Policy
 B) Allowing cross-account Decrypt in the KMS key Policy
 C) GetSecretValue IAM permission on the consumer account's Role
 D) VPC Peering or PrivateLink
 
-**정답: D**
-해설: Secrets Manager is accessed through the AWS public API endpoint. Network-level VPC connectivity is not required for cross-account access. What is required is the three IAM/policy configurations (Resource Policy, KMS Key Policy, consumer Role IAM Policy). Using a VPC Endpoint routes traffic over the AWS internal network, but it is not mandatory.
+**Answer: D**
+Explanation: Secrets Manager is accessed through the AWS public API endpoint. Network-level VPC connectivity is not required for cross-account access. What is required is the three IAM/policy configurations (Resource Policy, KMS Key Policy, consumer Role IAM Policy). Using a VPC Endpoint routes traffic over the AWS internal network, but it is not mandatory.
 
 ---
 
-**문제 7.** What are the two most important differences between Parameter Store Standard and Advanced?
+**Question 7.** What are the two most important differences between Parameter Store Standard and Advanced?
 
 A) Standard cannot use KMS encryption, Advanced can
 B) Standard is 4KB per parameter / free / no Resource Policy; Advanced is 8KB / $0.05 per month / supports Resource Policy
 C) Only Advanced can be referenced from `env.parameter-store`
 D) Standard only works in ap-northeast-2
 
-**정답: B**
-해설: The practical differences between Standard and Advanced: (1) value size (4KB vs 8KB), (2) cost (free vs $0.05/parameter/month), (3) Resource Policy (absent vs present). KMS SecureString is supported in Standard as well. To do cross-account secret sharing with Parameter Store, you need Advanced (for the Resource Policy).
+**Answer: B**
+Explanation: The practical differences between Standard and Advanced: (1) value size (4KB vs 8KB), (2) cost (free vs $0.05/parameter/month), (3) Resource Policy (absent vs present). KMS SecureString is supported in Standard as well. To do cross-account secret sharing with Parameter Store, you need Advanced (for the Resource Policy).
 
 ---

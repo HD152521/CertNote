@@ -145,60 +145,60 @@ In the next session, we integrate all of Week 2 (evaluation logic → Boundary �
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 GitHub Actions에서 AWS로 배포할 때 장기 access key를 워크플로우에 저장하지 않으려 한다. 가장 적절한 방법은?
+**Question 1.** 한 회사가 GitHub Actions에서 AWS로 배포할 때 장기 access key를 워크플로우에 저장하지 않으려 한다. 가장 적절한 방법은?
 
 A) IAM 사용자를 만들어 access key를 GitHub Secrets에 저장한다  
 B) GitHub을 OIDC provider로 등록하고, `AssumeRoleWithWebIdentity`로 특정 레포·브랜치 조건의 롤을 전환하게 한다  
 C) 루트 사용자 자격증명을 사용한다  
 D) Permission Boundary를 GitHub에 부착한다  
 
-**정답: B**  
-해설: GitHub Actions는 OIDC를 지원하므로, OIDC provider로 등록하고 신뢰 정책에 `token.actions.githubusercontent.com:sub` 조건으로 특정 레포·브랜치를 제한하면 장기 키 없이 임시 자격증명만 받는다. access key 저장은 유출 위험이 있고, 루트 사용은 금기이며, Boundary는 GitHub에 부착하는 개념이 아니다.
+**Answer: B**  
+Explanation: GitHub Actions는 OIDC를 지원하므로, OIDC provider로 등록하고 신뢰 정책에 `token.actions.githubusercontent.com:sub` 조건으로 특정 레포·브랜치를 제한하면 장기 키 없이 임시 자격증명만 받는다. access key 저장은 유출 위험이 있고, 루트 사용은 금기이며, Boundary는 GitHub에 부착하는 개념이 아니다.
 
 ---
 
-**문제 2.** 사용자가 회사 Active Directory로 로그인한 뒤 AWS 콘솔에 접근해야 한다. AD FS가 SAML Assertion을 발급한다. AWS 측에서 이 흐름에 사용되는 STS API는?
+**Question 2.** 사용자가 회사 Active Directory로 로그인한 뒤 AWS 콘솔에 접근해야 한다. AD FS가 SAML Assertion을 발급한다. AWS 측에서 이 흐름에 사용되는 STS API는?
 
 A) `sts:AssumeRole`  
 B) `sts:GetSessionToken`  
 C) `sts:AssumeRoleWithSAML`  
 D) `sts:AssumeRoleWithWebIdentity`  
 
-**정답: C**  
-해설: 엔터프라이즈 SAML IdP(AD FS, Okta 등)가 발급한 SAML Assertion으로 임시 자격증명을 받을 때는 `AssumeRoleWithSAML`을 사용한다. 일반 `AssumeRole`은 IAM 주체 간 전환, `GetSessionToken`은 MFA용 단기 토큰, `AssumeRoleWithWebIdentity`는 OIDC(모바일·웹·CI/CD)용이다.
+**Answer: C**  
+Explanation: 엔터프라이즈 SAML IdP(AD FS, Okta 등)가 발급한 SAML Assertion으로 임시 자격증명을 받을 때는 `AssumeRoleWithSAML`을 사용한다. 일반 `AssumeRole`은 IAM 주체 간 전환, `GetSessionToken`은 MFA용 단기 토큰, `AssumeRoleWithWebIdentity`는 OIDC(모바일·웹·CI/CD)용이다.
 
 ---
 
-**문제 3.** 한 조직이 팀 10개 × 환경 3개의 조합으로 EC2 접근을 제어하려 하는데, 롤이 30개로 폭발하는 것을 피하려 한다. 가장 확장성 있는 접근법은?
+**Question 3.** 한 조직이 팀 10개 × 환경 3개의 조합으로 EC2 접근을 제어하려 하는데, 롤이 30개로 폭발하는 것을 피하려 한다. 가장 확장성 있는 접근법은?
 
 A) 30개 롤을 모두 만든다  
 B) PrincipalTag와 ResourceTag가 일치할 때만 허용하는 ABAC 정책을 사용한다  
 C) 모든 사용자에게 AdministratorAccess를 준다  
 D) SCP로 각 팀을 분리한다  
 
-**정답: B**  
-해설: ABAC는 주체 태그와 리소스 태그가 일치할 때 접근을 허용하는 단일 정책으로 무한히 많은 팀·환경 조합을 커버해 역할 폭발을 막는다. 30개 롤은 RBAC의 한계 그 자체이고, AdministratorAccess는 최소 권한 위반, SCP는 계정 단위 가드레일이라 팀별 리소스 접근 제어에는 부적합하다.
+**Answer: B**  
+Explanation: ABAC는 주체 태그와 리소스 태그가 일치할 때 접근을 허용하는 단일 정책으로 무한히 많은 팀·환경 조합을 커버해 역할 폭발을 막는다. 30개 롤은 RBAC의 한계 그 자체이고, AdministratorAccess는 최소 권한 위반, SCP는 계정 단위 가드레일이라 팀별 리소스 접근 제어에는 부적합하다.
 
 ---
 
-**문제 4.** IAM Identity Center에서 직원이 퇴사했을 때 AWS 접근이 즉시 차단되도록 하려면 가장 효과적인 방법은?
+**Question 4.** IAM Identity Center에서 직원이 퇴사했을 때 AWS 접근이 즉시 차단되도록 하려면 가장 효과적인 방법은?
 
 A) 각 계정에서 IAM 사용자를 수동 삭제한다  
 B) 외부 IdP를 SCIM으로 연동해, IdP에서 사용자 비활성화 시 AWS 접근이 자동 동기화되도록 한다  
 C) access key를 회전한다  
 D) SCP로 퇴사자를 차단한다  
 
-**정답: B**  
-해설: SCIM 프로토콜로 외부 IdP와 Identity Center를 연동하면 IdP에서 사용자를 비활성화하는 순간 AWS 접근도 자동으로 끊긴다. 이것이 신뢰의 단일 출처 모델의 핵심 이점이다. 수동 삭제는 누락 위험이 크고, access key는 페더레이션 환경에 존재하지 않으며, SCP는 개별 퇴사자를 다루는 도구가 아니다.
+**Answer: B**  
+Explanation: SCIM 프로토콜로 외부 IdP와 Identity Center를 연동하면 IdP에서 사용자를 비활성화하는 순간 AWS 접근도 자동으로 끊긴다. 이것이 신뢰의 단일 출처 모델의 핵심 이점이다. 수동 삭제는 누락 위험이 크고, access key는 페더레이션 환경에 존재하지 않으며, SCP는 개별 퇴사자를 다루는 도구가 아니다.
 
 ---
 
-**문제 5.** 여러 직원이 같은 페더레이션 롤을 사용한다. CloudTrail에서 특정 행위를 한 실제 개인을 식별하려면 무엇이 필요한가?
+**Question 5.** 여러 직원이 같은 페더레이션 롤을 사용한다. CloudTrail에서 특정 행위를 한 실제 개인을 식별하려면 무엇이 필요한가?
 
 A) 롤마다 개인을 분리해 만들어야만 가능하다  
 B) IdP에서 session name에 직원 식별자(이메일·사번)를 넣도록 구성하면 `sts:RoleSessionName`으로 식별된다  
 C) CloudTrail은 페더레이션 사용자를 식별할 수 없다  
 D) MFA 로그로만 식별 가능하다  
 
-**정답: B**  
-해설: 페더레이션 세션은 `aws:userid`가 `ROLEID:session-name` 형태로 기록되며, IdP가 session name에 직원 식별자를 넣도록 구성하면 CloudTrail의 `sts:RoleSessionName`으로 실제 개인을 추적할 수 있다. 따라서 롤을 개인별로 쪼갤 필요가 없고, CloudTrail은 페더레이션 사용자도 식별 가능하다.
+**Answer: B**  
+Explanation: 페더레이션 세션은 `aws:userid`가 `ROLEID:session-name` 형태로 기록되며, IdP가 session name에 직원 식별자를 넣도록 구성하면 CloudTrail의 `sts:RoleSessionName`으로 실제 개인을 추적할 수 있다. 따라서 롤을 개인별로 쪼갤 필요가 없고, CloudTrail은 페더레이션 사용자도 식별 가능하다.

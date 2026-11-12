@@ -115,62 +115,62 @@ This one-page picture becomes your compass when meeting scenario problems in the
 
 ## 📝 Practice Questions
 
-**문제 1.** Integrating Week 5's flow, which connects "principle → AWS implementation tool" correctly?
+**Question 1.** Integrating Week 5's flow, which connects "principle → AWS implementation tool" correctly?
 
 A) Transparency - SageMaker Clarify  
 B) Bias·Explainability - SageMaker Clarify  
 C) Safety·PII Protection - AWS CloudTrail  
 D) Operational Monitoring - AI Service Cards  
 
-**정답: B**  
-해설: SageMaker Clarify implements both bias measurement and explainability. A pairs transparency with AI Service Cards correctly, C pairs safety·PII with Bedrock Guardrails, D pairs operational monitoring with Model Monitor, so all other pairs are mismatched.
+**Answer: B**  
+Explanation: SageMaker Clarify implements both bias measurement and explainability. A pairs transparency with AI Service Cards correctly, C pairs safety·PII with Bedrock Guardrails, D pairs operational monitoring with Model Monitor, so all other pairs are mismatched.
 
 ---
 
-**문제 2.** Which is hardest to call "customer responsibility" under the shared responsibility model?
+**Question 2.** Which is hardest to call "customer responsibility" under the shared responsibility model?
 
 A) Set data access permissions with IAM  
 B) Classify data and decide encryption policy  
 C) Operate the physical security of AWS data centers  
 D) Configure VPC network  
 
-**정답: C**  
-해설: Data center physical security is "cloud's own security" and AWS responsibility. A, B, D are all "security IN the cloud" — customer responsibility areas.
+**Answer: C**  
+Explanation: Data center physical security is "cloud's own security" and AWS responsibility. A, B, D are all "security IN the cloud" — customer responsibility areas.
 
 ---
 
-**문제 3.** A team wants to detect deployed model performance drop over time and simultaneously watch if bias increases (bias drift). Most appropriate combination?
+**Question 3.** A team wants to detect deployed model performance drop over time and simultaneously watch if bias increases (bias drift). Most appropriate combination?
 
 A) AI Service Cards alone  
 B) SageMaker Model Monitor(+ Clarify integration)  
 C) AWS PrivateLink alone  
 D) Amazon Macie alone  
 
-**정답: B**  
-해설: Model Monitor supervises post-deployment data·model quality drift and, integrated with Clarify, can watch bias drift too. A is transparency docs, C is network path protection, D is S3 PII detection — none do post-deployment model monitoring.
+**Answer: B**  
+Explanation: Model Monitor supervises post-deployment data·model quality drift and, integrated with Clarify, can watch bias drift too. A is transparency docs, C is network path protection, D is S3 PII detection — none do post-deployment model monitoring.
 
 ---
 
-**문제 4.** Which of these traps is correct (true)?
+**Question 4.** Which of these traps is correct (true)?
 
 A) Sufficient data automatically erases bias  
 B) Model Monitor auto-retrains and redeploys when problems are found  
 C) CloudTrail records "who did what" audit logs, CloudWatch monitors performance·metrics  
 D) Under shared responsibility, customer data access control is AWS responsibility  
 
-**정답: C**  
-해설: CloudTrail is API call audit, CloudWatch is performance·metrics monitoring — correct distinction. A is false (skewed data stays skewed), B is false (Monitor alerts only, humans decide), D is false (access control is customer responsibility).
+**Answer: C**  
+Explanation: CloudTrail is API call audit, CloudWatch is performance·metrics monitoring — correct distinction. A is false (skewed data stays skewed), B is false (Monitor alerts only, humans decide), D is false (access control is customer responsibility).
 
 ---
 
-**문제 5.** A company wants to responsibly launch a generative AI service. Least appropriate measure?
+**Question 5.** A company wants to responsibly launch a generative AI service. Least appropriate measure?
 
 A) Block harmful content and PII from output with Bedrock Guardrails  
 B) High-stakes decisions reviewed by humans (HITL)  
 C) Log all operations with CloudTrail for post-incident audit capability  
 D) Grant all employees unlimited model and data access permissions  
 
-**정답: D**  
-해설: Unlimited access permission violates IAM least privilege and governance directly. A's Guardrails, B's HITL, C's CloudTrail audit logging are all correct responsible AI·security·governance practices.
+**Answer: D**  
+Explanation: Unlimited access permission violates IAM least privilege and governance directly. A's Guardrails, B's HITL, C's CloudTrail audit logging are all correct responsible AI·security·governance practices.
 
 ---

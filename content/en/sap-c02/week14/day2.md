@@ -97,7 +97,7 @@ SAP exam frequent mappings: (1) "Unified backup policy across services, accounts
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 금융사가 규제(SEC Rule 17a-4)에 따라 거래 백업을 7년간 **누구도 — AWS root 사용자조차 — 삭제·변경할 수 없게** 보관해야 한다. 가장 적합한 구성은?
+**Question 1.** 한 금융사가 규제(SEC Rule 17a-4)에 따라 거래 백업을 7년간 **누구도 — AWS root 사용자조차 — 삭제·변경할 수 없게** 보관해야 한다. 가장 적합한 구성은?
 
 A) Backup Vault Governance Lock
 
@@ -107,13 +107,13 @@ C) S3 Glacier Deep Archive
 
 D) RDS 자동 백업 35일 + Manual Snapshot
 
-**정답: B**
+**Answer: B**
 
-해설: Compliance 모드만이 유예 기간 종료 후 root를 포함한 누구도 백업을 삭제·변경할 수 없는 진짜 WORM을 보장하며, 이것이 SEC 17a-4·FINRA 4511 같은 규제 요구를 법적으로 충족한다. A(Governance)는 적절한 IAM 권한을 가진 관리자가 해제할 수 있어 "누구도 불가" 요건을 못 맞춘다. C(Glacier)는 저렴한 저장 계층일 뿐 변경 불가 정책 자체를 강제하지 않는다(Glacier에 Vault Lock을 별도로 걸 수는 있으나 보기의 의도는 저장소). D는 35일 한계와 변경 가능성 때문에 7년 불가역 요건에 부적합하다. 함정: "root도 불가·규제 준수"는 Compliance 모드의 직답이다.
+Explanation: Compliance 모드만이 유예 기간 종료 후 root를 포함한 누구도 백업을 삭제·변경할 수 없는 진짜 WORM을 보장하며, 이것이 SEC 17a-4·FINRA 4511 같은 규제 요구를 법적으로 충족한다. A(Governance)는 적절한 IAM 권한을 가진 관리자가 해제할 수 있어 "누구도 불가" 요건을 못 맞춘다. C(Glacier)는 저렴한 저장 계층일 뿐 변경 불가 정책 자체를 강제하지 않는다(Glacier에 Vault Lock을 별도로 걸 수는 있으나 보기의 의도는 저장소). D는 35일 한계와 변경 가능성 때문에 7년 불가역 요건에 부적합하다. 함정: "root도 불가·규제 준수"는 Compliance 모드의 직답이다.
 
 ---
 
-**문제 2.** 한 기업이 200개 계정으로 구성된 Organization에서 모든 production 계정이 동일한 백업 정책(매일 백업·35일 보존·Cross-Region 복사)을 따르도록 일괄 강제하려 한다. 가장 효율적인 방법은?
+**Question 2.** 한 기업이 200개 계정으로 구성된 Organization에서 모든 production 계정이 동일한 백업 정책(매일 백업·35일 보존·Cross-Region 복사)을 따르도록 일괄 강제하려 한다. 가장 효율적인 방법은?
 
 A) 각 계정 관리자가 수동으로 Backup Plan을 생성한다
 
@@ -123,13 +123,13 @@ C) 계정마다 Lambda로 백업을 트리거한다
 
 D) Trusted Advisor로 백업 누락을 점검한다
 
-**정답: B**
+**Answer: B**
 
-해설: Organizations Backup Policy는 관리 계정(또는 위임 관리자)이 정책을 정의해 OU에 부착하면 그 아래 모든 계정이 백업 정책을 강제 상속하는 메커니즘으로, SCP와 같은 정책 상속 구조를 따른다. 200개 계정을 중앙에서 일괄 통제하므로 가장 효율적이다. A는 200번 수동 작업으로 누락·드리프트가 불가피하고, C는 백업 인프라를 손수 재구현하는 안티패턴이며, D는 점검 도구일 뿐 정책을 강제하지 못한다. 함정: "수백 계정에 표준 일괄 강제"는 Organizations Backup Policy의 직답이다.
+Explanation: Organizations Backup Policy는 관리 계정(또는 위임 관리자)이 정책을 정의해 OU에 부착하면 그 아래 모든 계정이 백업 정책을 강제 상속하는 메커니즘으로, SCP와 같은 정책 상속 구조를 따른다. 200개 계정을 중앙에서 일괄 통제하므로 가장 효율적이다. A는 200번 수동 작업으로 누락·드리프트가 불가피하고, C는 백업 인프라를 손수 재구현하는 안티패턴이며, D는 점검 도구일 뿐 정책을 강제하지 못한다. 함정: "수백 계정에 표준 일괄 강제"는 Organizations Backup Policy의 직답이다.
 
 ---
 
-**문제 3.** 한 회사가 워크로드 계정이 랜섬웨어로 탈취되더라도 백업만은 복구 가능하도록 보호하려 한다. 가장 견고한 아키텍처는?
+**Question 3.** 한 회사가 워크로드 계정이 랜섬웨어로 탈취되더라도 백업만은 복구 가능하도록 보호하려 한다. 가장 견고한 아키텍처는?
 
 A) 같은 계정의 다른 리전에 Cross-Region Copy만 한다
 
@@ -139,13 +139,13 @@ C) S3 Versioning을 켠다
 
 D) Governance Lock을 적용한다
 
-**정답: B**
+**Answer: B**
 
-해설: 랜섬웨어가 워크로드 계정의 관리자 권한을 탈취해도, 백업이 **별도 계정(Cross-Account)**에 있고 그 Vault가 **Compliance Lock(root도 삭제 불가)**이면 공격자가 백업에 손댈 수 없어 몸값 없이 복구할 수 있다. A는 같은 계정이라 계정이 탈취되면 다른 리전 백업도 함께 노출된다. C(Versioning)는 객체 덮어쓰기 보호일 뿐 계정 탈취 시 삭제를 막지 못한다. D(Governance)는 권한 있는(탈취된) 관리자가 해제할 수 있어 부족하다. 함정: "계정 탈취·랜섬웨어 대비"는 Cross-Account + Compliance Lock의 조합 신호다.
+Explanation: 랜섬웨어가 워크로드 계정의 관리자 권한을 탈취해도, 백업이 **별도 계정(Cross-Account)**에 있고 그 Vault가 **Compliance Lock(root도 삭제 불가)**이면 공격자가 백업에 손댈 수 없어 몸값 없이 복구할 수 있다. A는 같은 계정이라 계정이 탈취되면 다른 리전 백업도 함께 노출된다. C(Versioning)는 객체 덮어쓰기 보호일 뿐 계정 탈취 시 삭제를 막지 못한다. D(Governance)는 권한 있는(탈취된) 관리자가 해제할 수 있어 부족하다. 함정: "계정 탈취·랜섬웨어 대비"는 Cross-Account + Compliance Lock의 조합 신호다.
 
 ---
 
-**문제 4.** 한 팀이 AWS Backup의 Cross-Account Copy를 설정했으나 복사가 계속 실패한다. 가장 가능성 높은 원인과 해법은?
+**Question 4.** 한 팀이 AWS Backup의 Cross-Account Copy를 설정했으나 복사가 계속 실패한다. 가장 가능성 높은 원인과 해법은?
 
 A) IAM 사용자에게 AdministratorAccess를 부여한다
 
@@ -155,13 +155,13 @@ C) Backup Plan의 cron 일정을 변경한다
 
 D) 소스 리전을 us-east-1로 바꾼다
 
-**정답: B**
+**Answer: B**
 
-해설: Cross-Account Copy는 백업이 대상 Vault의 KMS 키로 암호화되므로, 대상 계정의 KMS 키 정책에 소스 계정의 복호화·복사 권한을, 대상 Vault의 액세스(리소스 기반) 정책에 소스 계정의 복사 허용을 명시해야 한다. 이 리소스 기반 정책 체인 중 하나라도 빠지면 복사가 조용히 실패한다. A는 IAM 사용자 권한일 뿐 리소스 기반 정책 문제를 해결하지 못하고, C·D는 무관하다. 함정: Cross-Account Copy 실패는 "IAM 권한"이 아니라 "KMS 키 정책·Vault 액세스 정책(리소스 기반)" 문제다.
+Explanation: Cross-Account Copy는 백업이 대상 Vault의 KMS 키로 암호화되므로, 대상 계정의 KMS 키 정책에 소스 계정의 복호화·복사 권한을, 대상 Vault의 액세스(리소스 기반) 정책에 소스 계정의 복사 허용을 명시해야 한다. 이 리소스 기반 정책 체인 중 하나라도 빠지면 복사가 조용히 실패한다. A는 IAM 사용자 권한일 뿐 리소스 기반 정책 문제를 해결하지 못하고, C·D는 무관하다. 함정: Cross-Account Copy 실패는 "IAM 권한"이 아니라 "KMS 키 정책·Vault 액세스 정책(리소스 기반)" 문제다.
 
 ---
 
-**문제 5.** 한 조직이 "모든 prod 리소스가 매일 백업되고 35일 보존되며 Cross-Region 복사되는지" 자동으로 검증하고 미준수 리소스를 식별하려 한다. 가장 적합한 도구는?
+**Question 5.** 한 조직이 "모든 prod 리소스가 매일 백업되고 35일 보존되며 Cross-Region 복사되는지" 자동으로 검증하고 미준수 리소스를 식별하려 한다. 가장 적합한 도구는?
 
 A) Trusted Advisor
 
@@ -171,13 +171,13 @@ C) AWS Config 수동 규칙
 
 D) CloudTrail
 
-**정답: B**
+**Answer: B**
 
-해설: Backup Audit Manager는 "매일 백업 + 35일 보존 + Cross-Region 복사" 같은 컨트롤을 정의하면 실제 백업 상태를 이 컨트롤과 대조해 미준수 리소스를 자동 식별하고 리포트를 생성하며, Security Hub로 알림을 통합할 수 있다. A(Trusted Advisor)는 백업 정책 준수 평가 기능이 없고, C(Config)는 일반 구성 평가 도구로 백업 전용 컨트롤을 직접 제공하지 않으며, D(CloudTrail)는 API 감사 로그일 뿐이다. 함정: "백업 정책 준수 자동 평가·미준수 식별"은 Backup Audit Manager의 직답이다.
+Explanation: Backup Audit Manager는 "매일 백업 + 35일 보존 + Cross-Region 복사" 같은 컨트롤을 정의하면 실제 백업 상태를 이 컨트롤과 대조해 미준수 리소스를 자동 식별하고 리포트를 생성하며, Security Hub로 알림을 통합할 수 있다. A(Trusted Advisor)는 백업 정책 준수 평가 기능이 없고, C(Config)는 일반 구성 평가 도구로 백업 전용 컨트롤을 직접 제공하지 않으며, D(CloudTrail)는 API 감사 로그일 뿐이다. 함정: "백업 정책 준수 자동 평가·미준수 식별"은 Backup Audit Manager의 직답이다.
 
 ---
 
-**문제 6.** 한 회사가 새로 생성되는 모든 EBS·RDS 리소스가 사람의 개입 없이 자동으로 백업 정책에 포함되기를 원한다. 가장 적합한 접근은?
+**Question 6.** 한 회사가 새로 생성되는 모든 EBS·RDS 리소스가 사람의 개입 없이 자동으로 백업 정책에 포함되기를 원한다. 가장 적합한 접근은?
 
 A) 리소스가 생길 때마다 관리자가 수동으로 Backup Plan에 추가한다
 
@@ -187,8 +187,8 @@ C) 각 서비스의 네이티브 백업을 개별 설정한다
 
 D) CloudFormation으로 매번 백업을 명시한다
 
-**정답: B**
+**Answer: B**
 
-해설: AWS Backup의 태그 기반 리소스 선택은 "Environment=prod 태그를 가진 모든 리소스"를 Plan에 자동 편입하는 선언적 정책이다. 새 리소스가 생겨도 태그만 맞으면 자동으로 백업 대상이 되어, 명령형 백업의 고질적 문제인 "누락"을 구조적으로 방지한다(Kubernetes·Terraform과 같은 desired-state 사상). A는 매번 수동 작업으로 누락 위험이 크고, C·D는 리소스마다 손수 설정해야 해 자동 편입이 안 된다. 함정: "새 리소스도 자동으로 백업 정책에 포함"은 태그 기반 선택의 직답이다.
+Explanation: AWS Backup의 태그 기반 리소스 선택은 "Environment=prod 태그를 가진 모든 리소스"를 Plan에 자동 편입하는 선언적 정책이다. 새 리소스가 생겨도 태그만 맞으면 자동으로 백업 대상이 되어, 명령형 백업의 고질적 문제인 "누락"을 구조적으로 방지한다(Kubernetes·Terraform과 같은 desired-state 사상). A는 매번 수동 작업으로 누락 위험이 크고, C·D는 리소스마다 손수 설정해야 해 자동 편입이 안 된다. 함정: "새 리소스도 자동으로 백업 정책에 포함"은 태그 기반 선택의 직답이다.
 
 ---

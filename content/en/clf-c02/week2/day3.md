@@ -88,62 +88,62 @@ Tomorrow we move to the edge services that deliver content to users faster from 
 
 ## 📝 Practice Questions
 
-**문제 1.** What refers to the logically isolated, dedicated virtual network a user owns inside the AWS cloud?
+**Question 1.** What refers to the logically isolated, dedicated virtual network a user owns inside the AWS cloud?
 
 A) S3 bucket  
 B) VPC  
 C) Security group  
 D) Internet gateway  
 
-**정답: B**  
-해설: A VPC (Virtual Private Cloud) is the logically isolated, private network space a user owns inside the AWS cloud. An S3 bucket is a container for object storage, a security group is a resource-level firewall, and an internet gateway is the passage for a VPC to communicate with the internet — so none of them is the network space itself.
+**Answer: B**  
+Explanation: A VPC (Virtual Private Cloud) is the logically isolated, private network space a user owns inside the AWS cloud. An S3 bucket is a container for object storage, a security group is a resource-level firewall, and an internet gateway is the passage for a VPC to communicate with the internet — so none of them is the network space itself.
 
 ---
 
-**문제 2.** You want to protect a database server so it can't be accessed directly from the internet. What is the most appropriate placement?
+**Question 2.** You want to protect a database server so it can't be accessed directly from the internet. What is the most appropriate placement?
 
 A) Put it in a public subnet and open all ports with the security group  
 B) Put it in a private subnet and allow access only from web servers in the same VPC  
 C) Put the database in an S3 bucket  
 D) Attach an internet gateway directly to the database  
 
-**정답: B**  
-해설: The standard is to put a resource that must not be directly accessible from the internet in a private subnet with no route to the internet gateway, and use the security group to allow only traffic coming from trusted internal resources (the web servers). Putting it in a public subnet with all ports open is the opposite and dangerous; putting a DB in S3 doesn't make sense conceptually; and attaching an IGW directly to the DB would expose it externally.
+**Answer: B**  
+Explanation: The standard is to put a resource that must not be directly accessible from the internet in a private subnet with no route to the internet gateway, and use the security group to allow only traffic coming from trusted internal resources (the web servers). Putting it in a public subnet with all ports open is the opposite and dangerous; putting a DB in S3 doesn't make sense conceptually; and attaching an IGW directly to the DB would expose it externally.
 
 ---
 
-**문제 3.** Which statement about a Security Group is correct?
+**Question 3.** Which statement about a Security Group is correct?
 
 A) Only explicitly allowed traffic passes, and response traffic is automatically allowed (stateful)  
 B) You must explicitly write deny rules to block traffic  
 C) It applies at the subnet level and does not remember state  
 D) It is the passage that connects the internet and the VPC  
 
-**정답: A**  
-해설: A security group uses allow rules only (any traffic not explicitly allowed is automatically blocked) and is stateful, so if you allow inbound, the corresponding outbound response is automatically allowed without a rule. Writing separate deny rules is the NACL's way (B is wrong), subnet-level and stateless are also NACL characteristics (C is wrong), and the internet-connection passage is the internet gateway (D is wrong).
+**Answer: A**  
+Explanation: A security group uses allow rules only (any traffic not explicitly allowed is automatically blocked) and is stateful, so if you allow inbound, the corresponding outbound response is automatically allowed without a rule. Writing separate deny rules is the NACL's way (B is wrong), subnet-level and stateless are also NACL characteristics (C is wrong), and the internet-connection passage is the internet gateway (D is wrong).
 
 ---
 
-**문제 4.** What is the direct condition that makes a subnet act as a "public subnet"?
+**Question 4.** What is the direct condition that makes a subnet act as a "public subnet"?
 
 A) The subnet's name contains "public"  
 B) The route table has a route to the internet gateway  
 C) The subnet has at least one EC2  
 D) The subnet has the largest IP range  
 
-**정답: B**  
-해설: A subnet becomes public not because of its name but because its route table has a route pointing to the internet gateway. With the same settings, if that route is absent, it's a private subnet. The name (A), the presence of an EC2 (C), and the size of the IP range (D) do not determine public vs. private.
+**Answer: B**  
+Explanation: A subnet becomes public not because of its name but because its route table has a route pointing to the internet gateway. With the same settings, if that route is absent, it's a private subnet. The name (A), the presence of an EC2 (C), and the size of the IP range (D) do not determine public vs. private.
 
 ---
 
-**문제 5.** Which component, attached to a VPC, lets resources inside the VPC communicate two-way with the internet?
+**Question 5.** Which component, attached to a VPC, lets resources inside the VPC communicate two-way with the internet?
 
 A) Security group  
 B) Internet Gateway  
 C) EBS volume  
 D) Lifecycle policy  
 
-**정답: B**  
-해설: An internet gateway is attached to a VPC and serves as the "front gate" that lets resources inside the VPC communicate with the internet. A security group does resource-level traffic control, an EBS volume is block storage, and a lifecycle policy is an S3 object management rule — none of which is the internet-communication passage.
+**Answer: B**  
+Explanation: An internet gateway is attached to a VPC and serves as the "front gate" that lets resources inside the VPC communicate with the internet. A security group does resource-level traffic control, an EBS volume is block storage, and a lifecycle policy is an S3 object management rule — none of which is the internet-communication passage.
 
 ---

@@ -118,7 +118,7 @@ SAP exam frequent mappings: (1) "OWASP Top 10 immediate protection + minimal ope
 
 ## 📝 Practice Questions
 
-**문제 1.** 웹 애플리케이션을 OWASP Top 10(SQL 인젝션·XSS 등)으로부터 즉시 보호하되, 룰을 직접 작성·유지보수하는 운영 부담을 최소화하고 싶다. 가장 적합한 것은?
+**Question 1.** 웹 애플리케이션을 OWASP Top 10(SQL 인젝션·XSS 등)으로부터 즉시 보호하되, 룰을 직접 작성·유지보수하는 운영 부담을 최소화하고 싶다. 가장 적합한 것은?
 
 A) 모든 WAF 룰을 Custom으로 직접 작성
 
@@ -128,13 +128,13 @@ C) Shield Standard
 
 D) NACL로 포트 차단
 
-**정답: B**
+**Answer: B**
 
 **해설:** AWS Managed Rule Groups는 OWASP Top 10 기반 Core Rule Set 등을 즉시 제공하고 AWS가 신종 공격에 맞춰 룰을 갱신해 운영 부담이 최소다. A(Custom 전부)는 작성·유지보수 부담이 크고 신종 공격 대응이 느리다. C(Shield Standard)는 L3/L4 DDoS 방어이지 L7 웹 취약점 필터가 아니다. D(NACL)는 L3/L4 IP·포트 제어이지 HTTP 페이로드 검사가 불가하다. 함정: "OWASP 즉시 보호 + 운영 최소"는 Custom이 아니라 Managed Rule Groups.
 
 ---
 
-**문제 2.** L7 HTTP flood DDoS를 받았고, 그로 인한 자동 스케일 아웃 요금 폭증을 면제받고 싶으며, 공격 중 24/7 전문가 지원이 필요하다. 가장 적합한 것은?
+**Question 2.** L7 HTTP flood DDoS를 받았고, 그로 인한 자동 스케일 아웃 요금 폭증을 면제받고 싶으며, 공격 중 24/7 전문가 지원이 필요하다. 가장 적합한 것은?
 
 A) Shield Standard
 
@@ -144,13 +144,13 @@ C) WAF Rate-Based Rule만
 
 D) CloudFront만
 
-**정답: B**
+**Answer: B**
 
 **해설:** Shield Advanced는 L7 DDoS 보호 + Cost Protection(DDoS 유발 추가 요금 면제) + SRT 24/7 지원을 모두 제공한다. A(Standard)는 무료지만 L3/L4만 자동 완화하고 L7 보호·Cost Protection·SRT가 없다. C(Rate-Based만)는 L7 완화에 도움되지만 비용 보호·전문가 지원이 없다. D(CloudFront)는 캐싱·배포이지 DDoS 비용 보호·SRT가 아니다. 함정: "L7 DDoS + Cost Protection + 24/7 SRT" 세 키워드는 Shield Advanced 전용.
 
 ---
 
-**문제 3.** 500개 계정 Organization의 모든 인터넷 향 ALB에 동일한 WAF Managed Rule을 적용하고, 신규로 추가되는 계정·리소스에도 자동 적용하며, 누군가 WAF를 끄면 자동 탐지·시정하고 싶다. 가장 적합한 것은?
+**Question 3.** 500개 계정 Organization의 모든 인터넷 향 ALB에 동일한 WAF Managed Rule을 적용하고, 신규로 추가되는 계정·리소스에도 자동 적용하며, 누군가 WAF를 끄면 자동 탐지·시정하고 싶다. 가장 적합한 것은?
 
 A) AWS Config Rule
 
@@ -160,13 +160,13 @@ C) SCP
 
 D) Control Tower
 
-**정답: B**
+**Answer: B**
 
 **해설:** Firewall Manager는 Organization 단위로 WAF·Shield·SG·Network Firewall 정책을 일괄 배포하고, 신규 계정·리소스에 자동 적용하며 드리프트(WAF 비활성화 등)를 자동 탐지·시정한다. A(Config)는 비준수 평가가 본업이지 WAF 정책 능동 배포가 아니다. C(SCP)는 행위 금지(거부 가드레일)이지 보안 룰 배포가 아니다. D(Control Tower)는 랜딩 존 거버넌스이지 WAF 정책 배포 엔진이 아니다. 함정: "보안 정책 멀티 계정 배포 + 신규 자동 + 드리프트 시정"은 Firewall Manager.
 
 ---
 
-**문제 4.** VPC 내부를 흐르는 모든 트래픽에 IDS/IPS를 적용하고, 암호화된 트래픽도 복호화해 검사(TLS Inspection)해야 한다. 가장 적합한 것은?
+**Question 4.** VPC 내부를 흐르는 모든 트래픽에 IDS/IPS를 적용하고, 암호화된 트래픽도 복호화해 검사(TLS Inspection)해야 한다. 가장 적합한 것은?
 
 A) WAF
 
@@ -176,13 +176,13 @@ C) Shield Advanced
 
 D) Security Group
 
-**정답: B**
+**Answer: B**
 
 **해설:** Network Firewall은 Suricata 룰 기반 L3-7 IDS/IPS로, VPC 내부 트래픽을 inline으로 검사하고 TLS Inspection까지 지원한다. A(WAF)는 엣지(CF/ALB/APIGW)의 L7 웹 요청만 검사하고 VPC 전반 트래픽·TLS Inspection은 못 한다. C(Shield)는 DDoS 방어이지 IDS/IPS가 아니다. D(SG)는 스테이트풀 IP/포트 필터이지 페이로드 검사·IPS가 아니다. 함정: "VPC 내부 IDS/IPS + TLS Inspection"은 Network Firewall.
 
 ---
 
-**문제 5.** VPC 내 EC2가 멀웨어 C2 서버나 알려진 악성 도메인에 접근하지 못하게 이름 해석 단계에서 차단하고 싶다. 가장 적합한 것은?
+**Question 5.** VPC 내 EC2가 멀웨어 C2 서버나 알려진 악성 도메인에 접근하지 못하게 이름 해석 단계에서 차단하고 싶다. 가장 적합한 것은?
 
 A) Security Group으로 악성 IP 차단
 
@@ -192,13 +192,13 @@ C) Route 53 Resolver DNS Firewall
 
 D) NACL로 IP 차단
 
-**정답: C**
+**Answer: C**
 
 **해설:** DNS Firewall은 VPC에서 나가는 DNS 쿼리를 관리형/커스텀 악성 도메인 리스트로 차단해, 이름 해석 단계에서 C2·악성 도메인 접근을 막는다. A·D(SG/NACL)는 IP 기반인데 악성 도메인 IP는 수시로 바뀌어 도메인 차단에 부적합하다. B(WAF)는 인바운드 L7 웹 요청 필터이지 아웃바운드 DNS 쿼리 차단이 아니다. 함정: "악성 도메인 차단(이름 기반)"은 DNS Firewall, IP 기반(SG/NACL)은 부적합.
 
 ---
 
-**문제 6.** 특정 국가에서 오는 웹 요청만 차단하고 싶다(규제·라이선스 사유). 가장 적합한 것은?
+**Question 6.** 특정 국가에서 오는 웹 요청만 차단하고 싶다(규제·라이선스 사유). 가장 적합한 것은?
 
 A) NACL
 
@@ -208,13 +208,13 @@ C) Shield
 
 D) Security Group
 
-**정답: B**
+**Answer: B**
 
 **해설:** WAF Geo Match Rule은 요청의 출발지 국가를 식별해 특정 국가를 차단/허용한다. A(NACL)·D(SG)는 IP 기반이라 국가 단위 매핑·관리가 비현실적이다. C(Shield)는 DDoS 방어이지 지역 기반 필터가 아니다. 함정: "특정 국가 차단"은 WAF Geo Match.
 
 ---
 
-**문제 7.** 단일 IP가 5분 동안 비정상적으로 많은 요청을 보내는 L7 flood·brute force를 자동으로 차단하고 싶다. 가장 적합한 것은?
+**Question 7.** 단일 IP가 5분 동안 비정상적으로 많은 요청을 보내는 L7 flood·brute force를 자동으로 차단하고 싶다. 가장 적합한 것은?
 
 A) Shield Standard
 
@@ -224,7 +224,7 @@ C) NACL
 
 D) Network Firewall
 
-**정답: B**
+**Answer: B**
 
 **해설:** WAF Rate-Based Rule은 5분 윈도우 동안 단일 IP의 요청 수가 임계값을 넘으면 자동 차단해 L7 flood·brute force·credential stuffing을 완화한다. A(Shield Standard)는 L3/L4 DDoS 자동 완화이지 IP별 요청 빈도 제한이 아니다. C(NACL)는 빈도 기반 제한 기능이 없다. D(Network Firewall)는 VPC 내부 IDS/IPS이지 엣지 웹 요청의 IP별 rate limiting이 본업이 아니다. 함정: "단일 IP 요청 빈도 제한(L7)"은 WAF Rate-Based Rule.
 

@@ -288,94 +288,94 @@ In the next article we'll look at the **Kinesis** family (Data Streams, Firehose
 
 ## 📝 Practice Questions
 
-**문제 1.** When a Datadog alarm fires, you need to trigger AWS Lambda and also send a notification to Slack. What is the most appropriate configuration?
+**Question 1.** When a Datadog alarm fires, you need to trigger AWS Lambda and also send a notification to Slack. What is the most appropriate configuration?
 
 A) Datadog → SNS → Lambda, SNS → Slack HTTPS subscription
 B) Datadog → API Gateway → Lambda + Slack
 C) EventBridge Partner Source (Datadog) → Rule → Lambda target + API Destination (Slack) target
 D) Datadog → Kinesis → Lambda
 
-**정답: C**
+**Answer: C**
 
-해설: EventBridge provides about 40 SaaS Partner Sources including Datadog, and events flow automatically into the Partner Bus. Register two targets on a Rule (Lambda + Slack API Destination) and one event triggers both. A is wrong because there's no direct Datadog → SNS integration and it would need intermediate webhook conversion. B requires writing code for both API Gateway and Lambda and handling SaaS authentication yourself. D is wrong because Kinesis is for stream processing — excessive infrastructure for a one-off event.
+Explanation: EventBridge provides about 40 SaaS Partner Sources including Datadog, and events flow automatically into the Partner Bus. Register two targets on a Rule (Lambda + Slack API Destination) and one event triggers both. A is wrong because there's no direct Datadog → SNS integration and it would need intermediate webhook conversion. B requires writing code for both API Gateway and Lambda and handling SaaS authentication yourself. D is wrong because Kinesis is for stream processing — excessive infrastructure for a one-off event.
 
 ---
 
-**문제 2.** You want to automate, with no code, a job that every day at 3 AM KST creates an RDS snapshot and exports it to S3. What is the most appropriate setup?
+**Question 2.** You want to automate, with no code, a job that every day at 3 AM KST creates an RDS snapshot and exports it to S3. What is the most appropriate setup?
 
 A) Lambda + a cron library for self-scheduling
 B) EventBridge Scheduler + Universal Target (RDS API called directly) + time zone Asia/Seoul
 C) A crontab on an EC2 instance
 D) AWS Batch + Job Queue
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge Scheduler supports 270+ time zones and 270+ AWS API Universal Targets, so it can call RDS CreateDBSnapshot directly without Lambda. The existing EventBridge Rule schedule is UTC-fixed so you'd have to convert KST yourself, but Scheduler lets you specify the time zone. A requires writing code + a Lambda self-cron is an anti-pattern. C is an EC2 operational burden. D is wrong because Batch is a compute queue model, not a simple time-trigger tool.
+Explanation: EventBridge Scheduler supports 270+ time zones and 270+ AWS API Universal Targets, so it can call RDS CreateDBSnapshot directly without Lambda. The existing EventBridge Rule schedule is UTC-fixed so you'd have to convert KST yourself, but Scheduler lets you specify the time zone. A requires writing code + a Lambda self-cron is an anti-pattern. C is an EC2 operational burden. D is wrong because Batch is a compute queue model, not a simple time-trigger tool.
 
 ---
 
-**문제 3.** There's a pipeline that receives messages from an SQS queue, filters some, enriches with Lambda, and sends to Step Functions. Currently about 300 lines of Lambda code do this. What is the most simplifying approach?
+**Question 3.** There's a pipeline that receives messages from an SQS queue, filters some, enriches with Lambda, and sends to Step Functions. Currently about 300 lines of Lambda code do this. What is the most simplifying approach?
 
 A) Optimize the Lambda better
 B) Configure EventBridge Pipes with Source=SQS, Filter, Enrich=Lambda, Target=Step Functions
 C) Change SQS to SNS
 D) Poll SQS directly from Step Functions
 
-**정답: B**
+**Answer: B**
 
-해설: This is exactly the use case for EventBridge Pipes. Build Source (SQS) → Filter (JSON pattern) → Enrich (Lambda) → Target (Step Functions) with configuration and no code. Lambda is left with only the enrich logic, while batch poll, error handling, and target invocation are handled by Pipes in a managed way. A isn't a fundamental simplification. C loses SQS's buffer characteristic. D is wrong because SFN isn't an SQS poller.
+Explanation: This is exactly the use case for EventBridge Pipes. Build Source (SQS) → Filter (JSON pattern) → Enrich (Lambda) → Target (Step Functions) with configuration and no code. Lambda is left with only the enrich logic, while batch poll, error handling, and target invocation are handled by Pipes in a managed way. A isn't a fundamental simplification. C loses SQS's buffer characteristic. D is wrong because SFN isn't an SQS poller.
 
 ---
 
-**문제 4.** You want to deliver events to an external SaaS (e.g., Salesforce) via webhook. It requires OAuth authentication with automatic token refresh, and you must protect the SaaS's rate limit (10 calls per second). What is the most appropriate configuration?
+**Question 4.** You want to deliver events to an external SaaS (e.g., Salesforce) via webhook. It requires OAuth authentication with automatic token refresh, and you must protect the SaaS's rate limit (10 calls per second). What is the most appropriate configuration?
 
 A) Handle OAuth directly in Lambda + self-throttle
 B) EventBridge API Destination + Connection (OAuth Client Credentials) + invocation-rate-limit-per-second=10
 C) API Gateway → SaaS
 D) Use HTTP Invoke from Step Functions
 
-**정답: B**
+**Answer: B**
 
-해설: API Destinations + Connections support automatic token refresh for the OAuth Client Credentials flow and self-throttle via invocation-rate-limit-per-second. Excess events go into a retry queue, and on final failure to a DLQ. A requires implementing OAuth refresh, throttle, and retry all yourself. C is for inbound APIs, not outbound. D is possible with an SFN HTTP Task but requires configuring auth/throttle yourself, and EventBridge API Destination is more suitable.
+Explanation: API Destinations + Connections support automatic token refresh for the OAuth Client Credentials flow and self-throttle via invocation-rate-limit-per-second. Excess events go into a retry queue, and on final failure to a DLQ. A requires implementing OAuth refresh, throttle, and retry all yourself. C is for inbound APIs, not outbound. D is possible with an SFN HTTP Task but requires configuring auth/throttle yourself, and EventBridge API Destination is more suitable.
 
 ---
 
-**문제 5.** Some payment events that occurred yesterday couldn't be processed due to a bug. You need to flow those same events back through the processing pipeline. For a system built with EventBridge?
+**Question 5.** Some payment events that occurred yesterday couldn't be processed due to a bug. You need to flow those same events back through the processing pipeline. For a system built with EventBridge?
 
 A) Manually copy the messages from the DLQ
 B) Use EventBridge Archive + Replay to flow yesterday's specific time-range events again
 C) Restore from an S3 backup and re-publish via PutEvents
 D) Impossible. Events are one-time
 
-**정답: B**
+**Answer: B**
 
-해설: If you set up EventBridge Archive in advance, the bus's events are automatically retained in the archive, and you can flow events back through a desired time range and filter via the Replay API. For example, sending only yesterday's 14:00-15:00 payment events back through the payment-processing rule. A is wrong because the DLQ is a different system's (SQS) mechanism and EventBridge has a different flow. C is possible but very inefficient, and without an archive you'd need a backup in S3. D reflects not knowing the archive feature.
+Explanation: If you set up EventBridge Archive in advance, the bus's events are automatically retained in the archive, and you can flow events back through a desired time range and filter via the Replay API. For example, sending only yesterday's 14:00-15:00 payment events back through the payment-processing rule. A is wrong because the DLQ is a different system's (SQS) mechanism and EventBridge has a different flow. C is possible but very inefficient, and without an archive you'd need a backup in S3. D reflects not knowing the archive feature.
 
 ---
 
-**문제 6.** In a company organization, you need to send GuardDuty Findings from 200 workload accounts to a central security account's SecurityHub. What is the simplest architecture?
+**Question 6.** In a company organization, you need to send GuardDuty Findings from 200 workload accounts to a central security account's SecurityHub. What is the simplest architecture?
 
 A) Each account's Lambda → central account SQS → SecurityHub
 B) A rule on each account's EventBridge Default Bus → cross-account forwarding targeting the central account's EventBridge Bus → the central rule sends to SecurityHub
 C) Each account's SNS → central account SQS → Lambda
 D) Handle it with AWS Config only
 
-**정답: B**
+**Answer: B**
 
-해설: GuardDuty Findings are automatically published to each account's Default Bus. A rule on each account forwards the event to the central security account bus, and a rule on the central bus sends it to the SecurityHub Import target. All EventBridge configuration, zero code. A requires operating 200 Lambdas. C requires 200 SNS + central processing code. D is wrong because Config is for tracking resource configuration changes, not Finding routing.
+Explanation: GuardDuty Findings are automatically published to each account's Default Bus. A rule on each account forwards the event to the central security account bus, and a rule on the central bus sends it to the SecurityHub Import target. All EventBridge configuration, zero code. A requires operating 200 Lambdas. C requires 200 SNS + central processing code. D is wrong because Config is for tracking resource configuration changes, not Finding routing.
 
 ---
 
-**문제 7.** The event schemas flowing on an EventBridge bus differ per microservice and evolve over time. You want subscribing Lambda teams to write code safely. What is the most appropriate tool?
+**Question 7.** The event schemas flowing on an EventBridge bus differ per microservice and evolve over time. You want subscribing Lambda teams to write code safely. What is the most appropriate tool?
 
 A) Store schemas in DynamoDB
 B) EventBridge Schema Registry + Schema Discovery + Code Bindings
 C) Handle all cases with try-except inside Lambda
 D) Step Functions input validation
 
-**정답: B**
+**Answer: B**
 
-해설: Schema Registry auto-analyzes the bus's events via Discovery to infer schemas and version them. With Code Bindings it auto-generates Java/TypeScript/Python/Go classes for type-safe use in the IDE. Compatibility checks on schema change are automatic too. A requires self-operation. C is only defensive code, not a real solution. D is SFN-only and has no schema management capability.
+Explanation: Schema Registry auto-analyzes the bus's events via Discovery to infer schemas and version them. With Code Bindings it auto-generates Java/TypeScript/Python/Go classes for type-safe use in the IDE. Compatibility checks on schema change are automatic too. A requires self-operation. C is only defensive code, not a real solution. D is SFN-only and has no schema management capability.
 
 ---
 

@@ -293,72 +293,72 @@ CloudTrail is not just for post-incident analysis. Integrated with EventBridge, 
 
 ## 📝 Practice Questions
 
-**문제 1.** 보안팀이 "누가 프로덕션 S3 버킷에서 고객 PII 데이터를 다운로드했는지" 추적해야 한다. 필요한 CloudTrail 설정은?
+**Question 1.** 보안팀이 "누가 프로덕션 S3 버킷에서 고객 PII 데이터를 다운로드했는지" 추적해야 한다. 필요한 CloudTrail 설정은?
 
 A) Management Events만 활성화하면 충분하다
 B) S3 Data Events 활성화 — 특정 버킷의 GetObject/PutObject 추적
 C) CloudTrail Insights 활성화
 D) GuardDuty S3 Protection만으로 충분하다
 
-**정답: B**
-해설: S3 객체 다운로드(GetObject)는 Data Event다. Management Events는 `PutBucketPolicy`, `CreateBucket` 같은 컨트롤 플레인 작업만 추적한다. Data Events를 대상 버킷에 활성화해야 객체 레벨 접근이 기록된다. 비용($0.10/100K events)이 발생하므로 민감 버킷만 선택적으로 활성화하는 것이 효율적이다.
+**Answer: B**
+Explanation: S3 객체 다운로드(GetObject)는 Data Event다. Management Events는 `PutBucketPolicy`, `CreateBucket` 같은 컨트롤 플레인 작업만 추적한다. Data Events를 대상 버킷에 활성화해야 객체 레벨 접근이 기록된다. 비용($0.10/100K events)이 발생하므로 민감 버킷만 선택적으로 활성화하는 것이 효율적이다.
 
 ---
 
-**문제 2.** 회사가 30개 AWS 계정을 운영한다. 모든 계정의 API 호출을 중앙에서 수집하고, 미래에 추가되는 계정도 자동으로 포함하려면?
+**Question 2.** 회사가 30개 AWS 계정을 운영한다. 모든 계정의 API 호출을 중앙에서 수집하고, 미래에 추가되는 계정도 자동으로 포함하려면?
 
 A) 각 계정에 동일한 Trail 설정을 CloudFormation StackSet으로 배포
 B) Organizations 관리 계정에서 Organization Trail 생성 → Log Archive Account의 중앙 S3로 저장
 C) EventBridge cross-account 규칙으로 이벤트를 중앙 계정으로 전달
 D) CloudWatch Logs로 모든 계정의 로그를 통합
 
-**정답: B**
-해설: Organization Trail은 현재 조직 내 모든 멤버 계정 + 미래에 추가되는 계정을 자동으로 포함한다. 멤버 계정 사용자는 이 Trail을 볼 수도, 수정할 수도 없다. StackSet은 현재 계정에만 배포되고 미래 계정에는 수동 배포가 필요하다. Organization Trail이 이 요구사항에 정확히 맞는 답이다.
+**Answer: B**
+Explanation: Organization Trail은 현재 조직 내 모든 멤버 계정 + 미래에 추가되는 계정을 자동으로 포함한다. 멤버 계정 사용자는 이 Trail을 볼 수도, 수정할 수도 없다. StackSet은 현재 계정에만 배포되고 미래 계정에는 수동 배포가 필요하다. Organization Trail이 이 요구사항에 정확히 맞는 답이다.
 
 ---
 
-**문제 3.** CloudTrail Log File Validation의 목적은?
+**Question 3.** CloudTrail Log File Validation의 목적은?
 
 A) S3 저장 비용 절감
 B) 로그 파일이 변조됐는지 SHA-256 해시 체인으로 감지하는 컴플라이언스 기능
 C) 실시간 이벤트 스트리밍 속도 향상
 D) CloudWatch Logs 통합 활성화
 
-**정답: B**
-해설: Log File Validation은 1시간마다 다이제스트 파일을 생성하고, 각 로그 파일의 SHA-256 해시를 기록한다. 다이제스트 파일 자체도 AWS의 RSA 키로 서명된다. `aws cloudtrail validate-logs`로 지정 기간의 모든 로그 파일 무결성을 검증할 수 있다. 컴플라이언스 감사(SOC 2, PCI-DSS, HIPAA)에서 로그 무결성 입증에 필수다.
+**Answer: B**
+Explanation: Log File Validation은 1시간마다 다이제스트 파일을 생성하고, 각 로그 파일의 SHA-256 해시를 기록한다. 다이제스트 파일 자체도 AWS의 RSA 키로 서명된다. `aws cloudtrail validate-logs`로 지정 기간의 모든 로그 파일 무결성을 검증할 수 있다. 컴플라이언스 감사(SOC 2, PCI-DSS, HIPAA)에서 로그 무결성 입증에 필수다.
 
 ---
 
-**문제 4.** Root 사용자가 콘솔에 로그인하면 즉시 SNS 알림을 받으려 한다. 어떤 구성이 필요한가?
+**Question 4.** Root 사용자가 콘솔에 로그인하면 즉시 SNS 알림을 받으려 한다. 어떤 구성이 필요한가?
 
 A) CloudWatch Alarm + CloudTrail 메트릭
 B) EventBridge Rule(aws.signin source + Root userIdentity 패턴) → SNS Target
 C) CloudTrail Insights 활성화
 D) Config Rule로 Root 로그인 탐지
 
-**정답: B**
-해설: CloudTrail의 모든 이벤트는 EventBridge default bus로 자동 전달된다. EventBridge Rule에서 `source: aws.signin`, `detail.userIdentity.type: Root` 패턴을 설정하면 Root 로그인 시 즉시 Rule이 트리거된다. SNS를 타겟으로 연결하면 이메일/SMS 알림이 전송된다. CloudTrail Insights는 API 호출량 패턴 이상을 감지하는 것으로 개별 이벤트 실시간 대응에 적합하지 않다.
+**Answer: B**
+Explanation: CloudTrail의 모든 이벤트는 EventBridge default bus로 자동 전달된다. EventBridge Rule에서 `source: aws.signin`, `detail.userIdentity.type: Root` 패턴을 설정하면 Root 로그인 시 즉시 Rule이 트리거된다. SNS를 타겟으로 연결하면 이메일/SMS 알림이 전송된다. CloudTrail Insights는 API 호출량 패턴 이상을 감지하는 것으로 개별 이벤트 실시간 대응에 적합하지 않다.
 
 ---
 
-**문제 5.** CloudTrail Event History 콘솔에서 6개월 전 이벤트를 검색했는데 없다. 이유는?
+**Question 5.** CloudTrail Event History 콘솔에서 6개월 전 이벤트를 검색했는데 없다. 이유는?
 
 A) 리전 필터가 잘못 설정됐다
 B) Event History는 90일까지만 무료 보관한다. 6개월 데이터는 Trail이 없었다면 영구 소실됐다
 C) 해당 이벤트는 Data Event라 별도 조회가 필요하다
 D) IAM 권한이 부족하다
 
-**정답: B**
-해설: Event History는 계정 생성 시 자동으로 활성화되지만 90일만 보관한다. Trail을 만들어 S3에 저장하지 않았다면 90일 이후 이벤트는 조회 불가다. Trail이 있었다면 S3 객체를 직접 다운로드하거나 Athena, CloudTrail Lake로 쿼리하면 된다. "Trail을 만들지 않아 6개월 전 이벤트를 잃어버린 경우"는 실제 운영에서 보안 감사 시 자주 발생하는 상황이다.
+**Answer: B**
+Explanation: Event History는 계정 생성 시 자동으로 활성화되지만 90일만 보관한다. Trail을 만들어 S3에 저장하지 않았다면 90일 이후 이벤트는 조회 불가다. Trail이 있었다면 S3 객체를 직접 다운로드하거나 Athena, CloudTrail Lake로 쿼리하면 된다. "Trail을 만들지 않아 6개월 전 이벤트를 잃어버린 경우"는 실제 운영에서 보안 감사 시 자주 발생하는 상황이다.
 
 ---
 
-**문제 6.** Management Events와 Data Events의 차이를 가장 정확히 설명한 것은?
+**Question 6.** Management Events와 Data Events의 차이를 가장 정확히 설명한 것은?
 
 A) Management Events는 유료, Data Events는 무료다
 B) Management Events는 리소스 생명주기 및 설정 변경(Create/Delete/Update), Data Events는 리소스 내부 데이터 접근(S3 GetObject, Lambda Invoke, DynamoDB GetItem)이다. Management는 기본 ON 무료, Data는 기본 OFF 유료
 C) Management Events는 콘솔 작업만, Data Events는 API 호출만 기록한다
 D) 두 종류 모두 Trail 없이는 기록되지 않는다
 
-**정답: B**
-해설: Management Events는 AWS 리소스의 생성/삭제/수정/설정 같은 컨트롤 플레인 작업이다. 기본으로 켜져 있고 무료다. Data Events는 S3 객체 접근, Lambda 호출, DynamoDB Item 수준 접근처럼 데이터 플레인 작업이다. 양이 매우 많아 기본으로 꺼져 있고 건당 비용이 발생한다. Management Events는 Event History에서 90일 무료 조회 가능하고, Trail 없이도 기록된다.
+**Answer: B**
+Explanation: Management Events는 AWS 리소스의 생성/삭제/수정/설정 같은 컨트롤 플레인 작업이다. 기본으로 켜져 있고 무료다. Data Events는 S3 객체 접근, Lambda 호출, DynamoDB Item 수준 접근처럼 데이터 플레인 작업이다. 양이 매우 많아 기본으로 꺼져 있고 건당 비용이 발생한다. Management Events는 Event History에서 90일 무료 조회 가능하고, Trail 없이도 기록된다.

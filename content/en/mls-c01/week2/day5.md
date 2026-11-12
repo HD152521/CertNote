@@ -84,62 +84,62 @@ Week 2 covered the entire process of getting data to models—transformation (Gl
 
 ## 📝 Practice Questions
 
-**문제 1.** 운영 인력이 적은 팀이 매일 표준 Spark 변환을 돌리고, 그 결과로 모델을 재학습하는 ML CI/CD를 lineage 추적과 함께 구성하려 한다. 가장 자연스러운 조합은?
+**Question 1.** 운영 인력이 적은 팀이 매일 표준 Spark 변환을 돌리고, 그 결과로 모델을 재학습하는 ML CI/CD를 lineage 추적과 함께 구성하려 한다. 가장 자연스러운 조합은?
 
 A) EMR 상시 클러스터 + 수동 학습  
 B) Glue 서버리스 ETL + SageMaker Pipelines  
 C) Lambda 단일 함수로 전부 처리  
 D) Athena 쿼리만으로 학습까지 수행  
 
-**정답: B**  
-해설: 운영 부담을 최소화하는 Glue 서버리스 ETL로 변환을 처리하고, ML 전용이며 lineage·모델 레지스트리가 내장된 SageMaker Pipelines로 재학습 CI/CD를 구성하는 것이 요구사항(운영 최소·추적성)에 가장 부합한다. 상시 EMR+수동(A)은 운영 부담이 크고, Lambda 단일 함수(C)·Athena만으로(D)는 Spark 변환과 모델 학습을 감당하기 어렵다.
+**Answer: B**  
+Explanation: 운영 부담을 최소화하는 Glue 서버리스 ETL로 변환을 처리하고, ML 전용이며 lineage·모델 레지스트리가 내장된 SageMaker Pipelines로 재학습 CI/CD를 구성하는 것이 요구사항(운영 최소·추적성)에 가장 부합한다. 상시 EMR+수동(A)은 운영 부담이 크고, Lambda 단일 함수(C)·Athena만으로(D)는 Spark 변환과 모델 학습을 감당하기 어렵다.
 
 ---
 
-**문제 2.** 1:999로 극히 불균형한 데이터에서 소수 클래스를 단순 복제 대신 보간으로 합성해 늘리고, 평가는 거짓 안심을 피하려 한다. 알맞은 조합은?
+**Question 2.** 1:999로 극히 불균형한 데이터에서 소수 클래스를 단순 복제 대신 보간으로 합성해 늘리고, 평가는 거짓 안심을 피하려 한다. 알맞은 조합은?
 
 A) SMOTE 오버샘플링 + PR-AUC 평가  
 B) 언더샘플링 + 정확도 평가  
 C) 데이터 복제 + 정확도 평가  
 D) 합성 데이터로만 검증  
 
-**정답: A**  
-해설: SMOTE는 소수 샘플과 최근접 이웃 사이를 보간해 새 샘플을 합성하므로 단순 복제의 과적합 위험을 줄이고, 불균형에서 정확도는 거짓 안심을 주므로 PR-AUC로 평가하는 것이 옳다. 정확도 평가(B·C)는 불균형에서 부적절하고, 검증은 실데이터로 해야 하므로 D도 틀렸다.
+**Answer: A**  
+Explanation: SMOTE는 소수 샘플과 최근접 이웃 사이를 보간해 새 샘플을 합성하므로 단순 복제의 과적합 위험을 줄이고, 불균형에서 정확도는 거짓 안심을 주므로 PR-AUC로 평가하는 것이 옳다. 정확도 평가(B·C)는 불균형에서 부적절하고, 검증은 실데이터로 해야 하므로 D도 틀렸다.
 
 ---
 
-**문제 3.** 수 TB 데이터를 8개 노드로 데이터 병렬 학습할 때 각 노드의 중복 다운로드를 없애고 시작 지연을 줄이려 한다. 가장 적절한 설계는?
+**Question 3.** 수 TB 데이터를 8개 노드로 데이터 병렬 학습할 때 각 노드의 중복 다운로드를 없애고 시작 지연을 줄이려 한다. 가장 적절한 설계는?
 
 A) 단일 거대 파일 + FullyReplicated + File mode  
 B) DynamoDB에서 직접 읽기  
 C) 여러 파일로 분할 + ShardedByS3Key + (반복 읽기 시) FSx for Lustre  
 D) 모든 노드가 전체 데이터를 다운로드  
 
-**정답: C**  
-해설: 데이터를 여러 S3 객체로 분할해야 ShardedByS3Key가 노드별 분배 효과를 내며, 반복 읽기가 많으면 FSx for Lustre를 공유 고속 스토리지로 붙여 지연을 줄인다. 단일 거대 파일+FullyReplicated(A)와 전체 다운로드(D)는 중복과 시작 지연을 키우고, DynamoDB 직접 읽기(C)는 대규모 분산 학습 데이터 공급에 부적합하다.
+**Answer: C**  
+Explanation: 데이터를 여러 S3 객체로 분할해야 ShardedByS3Key가 노드별 분배 효과를 내며, 반복 읽기가 많으면 FSx for Lustre를 공유 고속 스토리지로 붙여 지연을 줄인다. 단일 거대 파일+FullyReplicated(A)와 전체 다운로드(D)는 중복과 시작 지연을 키우고, DynamoDB 직접 읽기(C)는 대규모 분산 학습 데이터 공급에 부적합하다.
 
 ---
 
-**문제 4.** 데이터 변환 워크플로에 비-ML 단계(외부 승인 대기, Lambda 후처리)와 SageMaker 학습이 함께 섞여 있고 복잡한 분기·재시도가 필요하다. 상위 오케스트레이터로 가장 적합한 것은?
+**Question 4.** 데이터 변환 워크플로에 비-ML 단계(외부 승인 대기, Lambda 후처리)와 SageMaker 학습이 함께 섞여 있고 복잡한 분기·재시도가 필요하다. 상위 오케스트레이터로 가장 적합한 것은?
 
 A) SageMaker Pipelines 단독  
 B) FSx for Lustre  
 C) Glue Crawler  
 D) AWS Step Functions  
 
-**정답: D**  
-해설: Step Functions는 Glue·Lambda·SageMaker·승인 대기 등 이질적 서비스를 상태 머신으로 묶고 Choice·Retry·Catch로 분기·재시도를 선언적으로 처리하는 범용 오케스트레이터라 ML+비ML 혼합 워크플로에 적합하다. SageMaker Pipelines 단독(A)은 비-ML·승인 통합이 제한적이고, Glue Crawler(C)·FSx(D)는 오케스트레이션 도구가 아니다.
+**Answer: D**  
+Explanation: Step Functions는 Glue·Lambda·SageMaker·승인 대기 등 이질적 서비스를 상태 머신으로 묶고 Choice·Retry·Catch로 분기·재시도를 선언적으로 처리하는 범용 오케스트레이터라 ML+비ML 혼합 워크플로에 적합하다. SageMaker Pipelines 단독(A)은 비-ML·승인 통합이 제한적이고, Glue Crawler(C)·FSx(D)는 오케스트레이션 도구가 아니다.
 
 ---
 
-**문제 5.** MLS-C01 데이터 엔지니어링 영역에서 도구 선택형 문제를 풀 때 가장 핵심이 되는 판단 기준은?
+**Question 5.** MLS-C01 데이터 엔지니어링 영역에서 도구 선택형 문제를 풀 때 가장 핵심이 되는 판단 기준은?
 
 A) 항상 가장 최신에 출시된 서비스를 고른다  
 B) 비용·운영 부담·규모·접근 패턴 등 요구사항 단서에 맞는 선택을 한다  
 C) 무조건 가장 강력한(비싼) 옵션을 고른다  
 D) 모든 문제에서 EMR을 정답으로 본다  
 
-**정답: B**  
-해설: 이 영역의 출제 패턴은 거의 항상 비용·운영 부담·규모·접근 패턴의 트레이드오프 판단이며, 정답은 단일 기술이 아니라 문제의 요구사항 단서("운영 최소", "매우 큰 데이터", "임의 접근 필요" 등)에 맞는 선택이다. 최신·최강·특정 도구를 무조건 고르는 A·C·D는 상황 적합성을 무시한 잘못된 접근이다.
+**Answer: B**  
+Explanation: 이 영역의 출제 패턴은 거의 항상 비용·운영 부담·규모·접근 패턴의 트레이드오프 판단이며, 정답은 단일 기술이 아니라 문제의 요구사항 단서("운영 최소", "매우 큰 데이터", "임의 접근 필요" 등)에 맞는 선택이다. 최신·최강·특정 도구를 무조건 고르는 A·C·D는 상황 적합성을 무시한 잘못된 접근이다.
 
 ---

@@ -37,7 +37,7 @@ B) 100
 C) 200  
 D) 300  
 
-**정답: C** - Concurrency = Requests/sec (100) × Avg execution time (2) = 200
+**Answer: C** - Concurrency = Requests/sec (100) × Avg execution time (2) = 200
 
 ---
 
@@ -48,7 +48,7 @@ B) 14 WCU
 C) 4 WCU  
 D) 2 WCU  
 
-**정답: B** - ceil(7/1) × 2 = 7 × 2 = 14 WCU (transactions cost 2x)
+**Answer: B** - ceil(7/1) × 2 = 7 × 2 = 14 WCU (transactions cost 2x)
 
 ---
 
@@ -59,7 +59,7 @@ B) KMS API call limit exceeded (throttling)
 C) Encryption performance degradation  
 D) Bucket size limit  
 
-**정답: B** - High traffic SSE-KMS calls KMS API for every object access, can hit KMS call limits.
+**Answer: B** - High traffic SSE-KMS calls KMS API for every object access, can hit KMS call limits.
 
 ---
 
@@ -70,7 +70,7 @@ B) HTTP integration type
 C) AWS_PROXY (Lambda Proxy) integration  
 D) MOCK integration  
 
-**정답: C** - Lambda Proxy passes all original HTTP info (method, headers, query, body) as Lambda event.
+**Answer: C** - Lambda Proxy passes all original HTTP info (method, headers, query, body) as Lambda event.
 
 ---
 
@@ -81,7 +81,7 @@ B) Order guaranteed
 C) Message/record retention period exists  
 D) Unlimited throughput  
 
-**정답: C** - Both have retention periods (SQS max 14 days, Kinesis max 365 days).
+**Answer: C** - Both have retention periods (SQS max 14 days, Kinesis max 365 days).
 
 ---
 
@@ -92,7 +92,7 @@ B) Auto rollback
 C) Manual rollback required  
 D) Alarm triggered  
 
-**정답: B** - CodeDeploy auto-rollbacks to previous version on ValidateService failure.
+**Answer: B** - CodeDeploy auto-rollbacks to previous version on ValidateService failure.
 
 ---
 
@@ -103,7 +103,7 @@ B) Metric Filter
 C) CloudTrail  
 D) EventBridge  
 
-**정답: B** - Metric Filter converts log patterns to CloudWatch metrics for alarming.
+**Answer: B** - Metric Filter converts log patterns to CloudWatch metrics for alarming.
 
 ---
 
@@ -114,7 +114,7 @@ B) 5 minutes
 C) 15 minutes (longer than processing)  
 D) 12 hours  
 
-**정답: C** - Set VisibilityTimeout longer than processing time (10 min → 15+ min).
+**Answer: C** - Set VisibilityTimeout longer than processing time (10 min → 15+ min).
 
 ---
 
@@ -125,7 +125,7 @@ B) User Pool (social provider integration)
 C) SAML federation  
 D) OpenID Connect  
 
-**정답: B** - Cognito User Pool directly integrates Facebook, Google, Apple etc. for social login.
+**Answer: B** - Cognito User Pool directly integrates Facebook, Google, Apple etc. for social login.
 
 ---
 
@@ -136,7 +136,7 @@ B) RPO < 1 sec, RTO < 1 min
 C) RPO < 1 hour, RTO < 4 hours  
 D) RPO = 0, RTO = 0  
 
-**정답: B** - Aurora Global provides <1 second replication lag (RPO) and <1 minute failover (RTO).
+**Answer: B** - Aurora Global provides <1 second replication lag (RPO) and <1 minute failover (RTO).
 
 ---
 
@@ -147,7 +147,7 @@ B) Configure Lambda in VPC, ensure RDS connectivity via security group/subnet
 C) NAT gateway required  
 D) VPN connection needed  
 
-**정답: B** - Lambda must be in VPC with proper security group and subnet config to reach RDS.
+**Answer: B** - Lambda must be in VPC with proper security group and subnet config to reach RDS.
 
 ---
 
@@ -158,7 +158,7 @@ B) Multipart upload
 C) PUT presigned URL  
 D) S3 gateway endpoint  
 
-**정답: C** - Lambda generates PUT presigned URL, client uploads directly to S3 bypassing server.
+**Answer: C** - Lambda generates PUT presigned URL, client uploads directly to S3 bypassing server.
 
 ---
 
@@ -169,7 +169,7 @@ B) Status code
 C) High cardinality (UserId, UUID etc)  
 D) Country code  
 
-**정답: C** - High cardinality partition key distributes data/traffic evenly, preventing hot partition.
+**Answer: C** - High cardinality partition key distributes data/traffic evenly, preventing hot partition.
 
 ---
 
@@ -180,7 +180,7 @@ B) Set DeletionPolicy: Retain
 C) Enable S3 versioning  
 D) Deny deletion via bucket policy  
 
-**정답: B** - `DeletionPolicy: Retain` keeps resource when stack is deleted.
+**Answer: B** - `DeletionPolicy: Retain` keeps resource when stack is deleted.
 
 ---
 
@@ -191,7 +191,7 @@ B) Wait state
 C) Parallel state  
 D) Map state  
 
-**정답: C** - Parallel state executes multiple branches concurrently, proceeds after all complete.
+**Answer: C** - Parallel state executes multiple branches concurrently, proceeds after all complete.
 
 ---
 
@@ -202,7 +202,7 @@ B) rate: 0.05, fixed_target: 1
 C) SamplingRate: 100%  
 D) Not possible in X-Ray  
 
-**정답: A** - `fixed_target: 0, rate: 1.0` tracks all requests (watch cost).
+**Answer: A** - `fixed_target: 0, rate: 1.0` tracks all requests (watch cost).
 
 ---
 
@@ -213,7 +213,7 @@ B) {"statusCode": ..., "headers": ..., "body": ...}
 C) HTTP response object direct  
 D) JSON body only  
 
-**정답: B** - Lambda Proxy must return `{statusCode, headers, body}` format.
+**Answer: B** - Lambda Proxy must return `{statusCode, headers, body}` format.
 
 ---
 
@@ -224,7 +224,7 @@ B) Redis - persistence, prevent session loss
 C) Both same  
 D) Use RDS instead  
 
-**정답: B** - Use Redis for session persistence to prevent data loss, or Memcached for simple cache.
+**Answer: B** - Use Redis for session persistence to prevent data loss, or Memcached for simple cache.
 
 ---
 
@@ -235,7 +235,7 @@ B) GitHub webhook event-driven
 C) Manual trigger  
 D) S3 event  
 
-**정답: B** - CodePipeline starts immediately via GitHub webhook on push event.
+**Answer: B** - CodePipeline starts immediately via GitHub webhook on push event.
 
 ---
 
@@ -246,7 +246,7 @@ B) Increase DynamoDB RCU or switch to on-demand
 C) Increase Lambda concurrency  
 D) Enable API Gateway caching  
 
-**정답: B** - This error means DynamoDB read capacity exceeded, increase RCU or use on-demand mode.
+**Answer: B** - This error means DynamoDB read capacity exceeded, increase RCU or use on-demand mode.
 
 ---
 
@@ -257,7 +257,7 @@ B) Deleted after 7-30 day waiting period
 C) Cannot be deleted permanently  
 D) Requires AWS approval  
 
-**정답: B** - CMK deletion has 7-30 day scheduled deletion period, can be cancelled during this time.
+**Answer: B** - CMK deletion has 7-30 day scheduled deletion period, can be cancelled during this time.
 
 ---
 
@@ -268,7 +268,7 @@ B) Use MessageDeduplicationId
 C) Set VisibilityTimeout  
 D) Set DLQ  
 
-**정답: B** - FIFO MessageDeduplicationId prevents duplicate message processing within 5 minutes.
+**Answer: B** - FIFO MessageDeduplicationId prevents duplicate message processing within 5 minutes.
 
 ---
 
@@ -279,7 +279,7 @@ B) Use DependsOn attribute
 C) Separate into different stacks  
 D) Cannot control order  
 
-**정답: B** - `DependsOn` attribute controls resource creation order.
+**Answer: B** - `DependsOn` attribute controls resource creation order.
 
 ---
 
@@ -290,7 +290,7 @@ B) Check X-Ray service map and trace for external HTTP subsegment timing
 C) Check API Gateway logs  
 D) Check Lambda environment variables  
 
-**정답: B** - X-Ray SDK auto-records external HTTP calls, service map visualizes delay.
+**Answer: B** - X-Ray SDK auto-records external HTTP calls, service map visualizes delay.
 
 ---
 
@@ -301,7 +301,7 @@ B) Maintains full capacity during deployment
 C) Easiest rollback  
 D) Lowest cost  
 
-**정답: B** - Rolling with Additional Batch creates extra instances maintaining full capacity during deployment.
+**Answer: B** - Rolling with Additional Batch creates extra instances maintaining full capacity during deployment.
 
 ---
 
@@ -312,7 +312,7 @@ B) Firehose is managed delivery (near RT), Streams is direct processing (real-ti
 C) Streams is more expensive  
 D) Only Firehose supports multiple Consumers  
 
-**정답: B** - Firehose serverlessly delivers to S3/Redshift, Streams requires direct processing.
+**Answer: B** - Firehose serverlessly delivers to S3/Redshift, Streams requires direct processing.
 
 ---
 
@@ -323,7 +323,7 @@ B) Defines which entities can assume this role
 C) Defines role permission scope  
 D) Controls role cost  
 
-**정답: B** - Trust Policy defines which services/users/accounts can AssumeRole.
+**Answer: B** - Trust Policy defines which services/users/accounts can AssumeRole.
 
 ---
 
@@ -334,7 +334,7 @@ B) Specify different Lambda/endpoint per environment (dev/staging/prod)
 C) Configure caching  
 D) Configure auth  
 
-**정답: B** - Stage Variables allow same API structure to route to different Lambda aliases/endpoints per environment.
+**Answer: B** - Stage Variables allow same API structure to route to different Lambda aliases/endpoints per environment.
 
 ---
 
@@ -345,7 +345,7 @@ B) Returns to queue after VisibilityTimeout
 C) Deleted  
 D) Stays in processing forever  
 
-**정답: B** - Failed Lambda (timeout included) returns message to queue after VisibilityTimeout.
+**Answer: B** - Failed Lambda (timeout included) returns message to queue after VisibilityTimeout.
 
 ---
 
@@ -356,7 +356,7 @@ B) Use messaging services like SQS, SNS, EventBridge
 C) Integrate all services in one Lambda  
 D) Share data through RDS  
 
-**정답: B** - SQS, SNS, EventBridge messaging reduces direct service dependencies enabling loose coupling.
+**Answer: B** - SQS, SNS, EventBridge messaging reduces direct service dependencies enabling loose coupling.
 
 ---
 

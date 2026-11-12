@@ -345,79 +345,79 @@ For encryption, "who controls the key" is the crux. If you need an audit trail a
 
 ## 📝 Practice Questions
 
-**문제 1.** A security audit team must audit all data access on an S3 bucket (who read which object and when). For compliance, automatic annual rotation of the encryption key is also required. What is the most suitable encryption method?
+**Question 1.** A security audit team must audit all data access on an S3 bucket (who read which object and when). For compliance, automatic annual rotation of the encryption key is also required. What is the most suitable encryption method?
 
 A) SSE-S3 (default encryption)
 B) SSE-KMS (customer-managed KMS key, CloudTrail logging enabled)
 C) SSE-C (customer-provided key)
 D) CSE (client-side encryption)
 
-**정답: B**
-해설: SSE-KMS records KMS API calls in CloudTrail, providing an audit log of who did what, when, and with which key. A KMS customer-managed key (CMK) can be configured for automatic annual rotation. SSE-S3 has AWS fully manage the keys, so audit logs and key-rotation control are not possible. SSE-C doesn't store the key on AWS, so the CloudTrail audit trail is weak. CSE means the S3 service itself can't see the data, so S3-level access auditing is limited.
+**Answer: B**
+Explanation: SSE-KMS records KMS API calls in CloudTrail, providing an audit log of who did what, when, and with which key. A KMS customer-managed key (CMK) can be configured for automatic annual rotation. SSE-S3 has AWS fully manage the keys, so audit logs and key-rotation control are not possible. SSE-C doesn't store the key on AWS, so the CloudTrail audit trail is weak. CSE means the S3 service itself can't see the data, so S3-level access auditing is limited.
 
 ---
 
-**문제 2.** A company's central data-lake S3 bucket is accessed by a data-analytics team (prefix: /analytics/), a marketing team (prefix: /marketing/), and an HR team (prefix: /hr/). Each team should access only its own prefix, and access paths should be managed independently per team. How do you keep the bucket policy simple?
+**Question 2.** A company's central data-lake S3 bucket is accessed by a data-analytics team (prefix: /analytics/), a marketing team (prefix: /marketing/), and an HR team (prefix: /hr/). Each team should access only its own prefix, and access paths should be managed independently per team. How do you keep the bucket policy simple?
 
 A) Create a separate S3 bucket for each team
 B) Create S3 Access Points per team and set a prefix-restriction policy on each Access Point
 C) Add per-team conditions into a single bucket policy
 D) Control per-team access with ACLs
 
-**정답: B**
-해설: S3 Access Points give each team an independent endpoint and policy. As teams grow, you just add an Access Point, and the bucket policy stays simple as "allow only access through the Access Points." A scatters the data, making cross-analysis hard. C makes the bucket policy more complex as teams grow. D relies on legacy ACLs and makes fine-grained per-prefix control hard.
+**Answer: B**
+Explanation: S3 Access Points give each team an independent endpoint and policy. As teams grow, you just add an Access Point, and the bucket policy stays simple as "allow only access through the Access Points." A scatters the data, making cross-analysis hard. C makes the bucket policy more complex as teams grow. D relies on legacy ACLs and makes fine-grained per-prefix control hard.
 
 ---
 
-**문제 3.** A data-analytics EC2 instance reads sensitive data from an S3 bucket. The security team wants to prevent data exfiltration over the internet and stop this instance from accessing any S3 outside the approved bucket. How do you configure it?
+**Question 3.** A data-analytics EC2 instance reads sensitive data from an S3 bucket. The security team wants to prevent data exfiltration over the internet and stop this instance from accessing any S3 outside the approved bucket. How do you configure it?
 
 A) Add the EC2 instance's IP to a whitelist in the S3 bucket policy
 B) VPC Gateway Endpoint for S3 + Endpoint policy (allow only specific buckets) + S3 bucket policy (allow access only from the VPC Endpoint)
 C) NAT Gateway + Security Group to restrict traffic
 D) Restrict S3 access with CloudFront OAC
 
-**정답: B**
-해설: A VPC Gateway Endpoint provides a path to access S3 without the internet. Allowing only specific buckets in the Endpoint policy blocks access to other S3 buckets. Allowing only this VPC Endpoint via the `aws:SourceVpce` condition in the S3 bucket policy also blocks access over the internet. A fails because EC2 IPs can change and a NAT Gateway IP is shared by multiple instances. C doesn't stop traffic from reaching S3 over the internet. D is for static content distribution, not data-exfiltration prevention.
+**Answer: B**
+Explanation: A VPC Gateway Endpoint provides a path to access S3 without the internet. Allowing only specific buckets in the Endpoint policy blocks access to other S3 buckets. Allowing only this VPC Endpoint via the `aws:SourceVpce` condition in the S3 bucket policy also blocks access over the internet. A fails because EC2 IPs can change and a NAT Gateway IP is shared by multiple instances. C doesn't stop traffic from reaching S3 over the internet. D is for static content distribution, not data-exfiltration prevention.
 
 ---
 
-**문제 4.** A dev team hosts a React app in an S3 bucket and distributes it via CloudFront. To block direct (public) access to the S3 bucket and allow access only through CloudFront, what do you do?
+**Question 4.** A dev team hosts a React app in an S3 bucket and distributes it via CloudFront. To block direct (public) access to the S3 bucket and allow access only through CloudFront, what do you do?
 
 A) Set the S3 bucket to Public + place CloudFront in front
 B) Configure OAC (Origin Access Control) on the CloudFront Distribution + fully enable BPA on the S3 bucket + allow only the CloudFront OAC Principal in the bucket policy
 C) Configure OAI (Origin Access Identity) on the CloudFront Distribution + disable BPA on the S3 bucket
 D) S3 Transfer Acceleration + distribute directly without CloudFront
 
-**정답: B**
-해설: OAC is OAI's latest successor and supports SSE-KMS buckets too. Fully enabling BPA blocks direct access to the S3 bucket. Allowing CloudFront's OAC Service Principal (`cloudfront.amazonaws.com`) in the bucket policy lets only CloudFront access S3. A requires opening S3 to the public. C's OAI is legacy, and disabling BPA opens up the possibility of public access via other paths.
+**Answer: B**
+Explanation: OAC is OAI's latest successor and supports SSE-KMS buckets too. Fully enabling BPA blocks direct access to the S3 bucket. Allowing CloudFront's OAC Service Principal (`cloudfront.amazonaws.com`) in the bucket policy lets only CloudFront access S3. A requires opening S3 to the public. C's OAI is legacy, and disabling BPA opens up the possibility of public access via other paths.
 
 ---
 
-**문제 5.** A company wants to allow only HTTPS on all S3 requests and block access over HTTP. How do you configure it?
+**Question 5.** A company wants to allow only HTTPS on all S3 requests and block access over HTTP. How do you configure it?
 
 A) Configure an HTTP-to-HTTPS redirect in CloudFront
 B) Add a Deny statement with the `aws:SecureTransport: "false"` condition to the bucket policy
 C) Check the "disable HTTP" option in the S3 bucket settings
 D) Block port 80 traffic with a security group
 
-**정답: B**
-해설: A Deny with the `aws:SecureTransport: "false"` condition blocks all S3 requests that arrive without TLS (HTTPS). Add this policy to the bucket policy and SDK, CLI, and direct HTTP requests are all blocked. A only redirects traffic that goes through CloudFront and doesn't stop direct S3 API calls. S3 has no "disable HTTP" option. S3 is a public service, so there are no security groups.
+**Answer: B**
+Explanation: A Deny with the `aws:SecureTransport: "false"` condition blocks all S3 requests that arrive without TLS (HTTPS). Add this policy to the bucket policy and SDK, CLI, and direct HTTP requests are all blocked. A only redirects traffic that goes through CloudFront and doesn't stop direct S3 API calls. S3 has no "disable HTTP" option. S3 is a public service, so there are no security groups.
 
 ---
 
-**문제 6.** There is an analytics workload reading more than 10,000 objects per second from an SSE-KMS-encrypted S3 bucket. KMS API call costs are higher than expected. How do you reduce the KMS cost while keeping encryption?
+**Question 6.** There is an analytics workload reading more than 10,000 objects per second from an SSE-KMS-encrypted S3 bucket. KMS API call costs are higher than expected. How do you reduce the KMS cost while keeping encryption?
 
 A) Change the encryption method to SSE-S3
 B) Enable the S3 Bucket Keys feature
 C) Decrypt the data locally and store it in a cache
 D) Delete the KMS key and create a new key every week
 
-**정답: B**
-해설: S3 Bucket Keys cache a temporary key generated by KMS at the S3 level, so instead of calling the KMS API on every object request, DEKs are generated from the Bucket Key. It can reduce the number of KMS calls by up to 99%. SSE-KMS and its audit-trail features are retained as is. A loses the KMS audit trail and fails the compliance requirement. C carries the security risk of keeping plaintext data in a local cache. D risks making existing data undecryptable.
+**Answer: B**
+Explanation: S3 Bucket Keys cache a temporary key generated by KMS at the S3 level, so instead of calling the KMS API on every object request, DEKs are generated from the Bucket Key. It can reduce the number of KMS calls by up to 99%. SSE-KMS and its audit-trail features are retained as is. A loses the KMS audit trail and fails the compliance requirement. C carries the security risk of keeping plaintext data in a local cache. D risks making existing data undecryptable.
 
 ---
 
-**문제 7.** Select all cases below where an "explicit Deny" occurs in S3 access evaluation.
+**Question 7.** Select all cases below where an "explicit Deny" occurs in S3 access evaluation.
 
 A) Deny s3:DeleteObject in an SCP
 B) Deny a request with aws:SecureTransport=false in the bucket policy
@@ -425,5 +425,5 @@ C) The IAM policy has no s3:PutObject (no Allow)
 D) Accessing a BPA-enabled bucket with a Public ACL
 E) A VPC Endpoint policy allows only a specific bucket and access is made to a different bucket
 
-**정답: A, B, D, E**
-해설: A - an SCP Deny is an explicit Deny applied across the whole organization. B - a Deny statement in the bucket policy. D - BPA forcibly blocks the Public ACL, so it has an explicit-Deny effect. E - a bucket not permitted by the VPC Endpoint policy is treated as Deny. C is not an "explicit Deny" but an "implicit Deny (absence of Allow)." Lacking an Allow in the IAM policy is not an explicit Deny, and access may still be possible if there's an Allow at another layer (the bucket policy). Note, however, that for cross-account access, Allow is required on both sides.
+**Answer: A, B, D, E**
+Explanation: A - an SCP Deny is an explicit Deny applied across the whole organization. B - a Deny statement in the bucket policy. D - BPA forcibly blocks the Public ACL, so it has an explicit-Deny effect. E - a bucket not permitted by the VPC Endpoint policy is treated as Deny. C is not an "explicit Deny" but an "implicit Deny (absence of Allow)." Lacking an Allow in the IAM policy is not an explicit Deny, and access may still be possible if there's an Allow at another layer (the bucket policy). Note, however, that for cross-account access, Allow is required on both sides.

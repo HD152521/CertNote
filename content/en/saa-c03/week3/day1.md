@@ -232,67 +232,67 @@ Placement Groups are the tool for mapping a distributed system's network-latency
 
 ## 📝 Practice Questions
 
-**문제 1.** A company is migrating an SAP HANA database to AWS. SAP HANA requires per-physical-CPU-socket licensing and uses specific CPU microarchitecture instructions (AVX-512) directly. What is the most suitable EC2 configuration?
+**Question 1.** A company is migrating an SAP HANA database to AWS. SAP HANA requires per-physical-CPU-socket licensing and uses specific CPU microarchitecture instructions (AVX-512) directly. What is the most suitable EC2 configuration?
 
 A) m6i.8xlarge, Dedicated Instance
 B) x2idn.metal, Dedicated Host
 C) r6i.32xlarge, On-Demand
 D) m7g.16xlarge, Dedicated Host
 
-**정답: B**
-해설: SAP HANA needs multiple TB of RAM, so the X family (extreme memory optimization) is the fit. `.metal` accesses the physical CPU directly without a hypervisor, so it can use AVX-512 instructions as-is. A Dedicated Host exposes the physical socket/core count for license counting. m7g is ARM (Graviton) and is incompatible with x86-only SAP HANA. A Dedicated Instance has no physical-host visibility, so it can't be used for socket-based licensing.
+**Answer: B**
+Explanation: SAP HANA needs multiple TB of RAM, so the X family (extreme memory optimization) is the fit. `.metal` accesses the physical CPU directly without a hypervisor, so it can use AVX-512 instructions as-is. A Dedicated Host exposes the physical socket/core count for license counting. m7g is ARM (Graviton) and is incompatible with x86-only SAP HANA. A Dedicated Instance has no physical-host visibility, so it can't be used for socket-based licensing.
 
 ---
 
-**문제 2.** There is a batch job that runs large-scale ML model training every night from 02:00 to 06:00. If training is interrupted, it can restart from the last checkpoint, and model weights are saved to S3. What is the cost-minimizing strategy?
+**Question 2.** There is a batch job that runs large-scale ML model training every night from 02:00 to 06:00. If training is interrupted, it can restart from the last checkpoint, and model weights are saved to S3. What is the cost-minimizing strategy?
 
 A) On-Demand p4d.24xlarge
 B) Spot p4d.24xlarge + EventBridge interruption handler
 C) Reserved p4d.24xlarge, 1 year
 D) Savings Plans Compute + p4d.24xlarge On-Demand
 
-**정답: B**
-해설: Checkpoint saving allows restart after interruption, so Spot interruptions are tolerable. p4d.24xlarge Spot can save up to 70% versus On-Demand. Use EventBridge to catch the `EC2 Spot Instance Interruption Warning` event, save the last checkpoint, and shut down gracefully. RI or SP would waste the other 20 hours of cost on a workload used only 4 hours each night. Spot + checkpoint is the standard cost-optimization pattern for ML training.
+**Answer: B**
+Explanation: Checkpoint saving allows restart after interruption, so Spot interruptions are tolerable. p4d.24xlarge Spot can save up to 70% versus On-Demand. Use EventBridge to catch the `EC2 Spot Instance Interruption Warning` event, save the last checkpoint, and shut down gracefully. RI or SP would waste the other 20 hours of cost on a workload used only 4 hours each night. Spot + checkpoint is the standard cost-optimization pattern for ML training.
 
 ---
 
-**문제 3.** A financial transaction processing system runs on 10 EC2 instances in us-east-1. Each instance must be independent from the others' physical hardware failures, and the instance count may exceed 10. Which Placement Group is appropriate?
+**Question 3.** A financial transaction processing system runs on 10 EC2 instances in us-east-1. Each instance must be independent from the others' physical hardware failures, and the instance count may exceed 10. Which Placement Group is appropriate?
 
 A) Cluster Placement Group
 B) Spread Placement Group
 C) Partition Placement Group
 D) No Placement Group needed
 
-**정답: C**
-해설: A Spread Placement Group has a limit of 7 per AZ and can't accommodate exceeding 10. A Partition Placement Group allows up to 7 partitions per AZ and hundreds of instances per partition, with physical racks isolated between partitions. Since each partition is an independent failure domain, the blast radius of a single rack failure is limited. Cluster packs instances together for low latency — the opposite of fault isolation.
+**Answer: C**
+Explanation: A Spread Placement Group has a limit of 7 per AZ and can't accommodate exceeding 10. A Partition Placement Group allows up to 7 partitions per AZ and hundreds of instances per partition, with physical racks isolated between partitions. Since each partition is an independent failure domain, the blast radius of a single rack failure is limited. Cluster packs instances together for low latency — the opposite of fault isolation.
 
 ---
 
-**문제 4.** A startup wants to minimize cost over a 3-year commitment while keeping open the possibility of changing the instance family or moving to another region later. What is the most suitable purchase option?
+**Question 4.** A startup wants to minimize cost over a 3-year commitment while keeping open the possibility of changing the instance family or moving to another region later. What is the most suitable purchase option?
 
 A) Standard Reserved Instance, 3-year All Upfront
 B) Convertible Reserved Instance, 3-year
 C) Compute Savings Plans, 3-year
 D) EC2 Instance Savings Plans, 3-year
 
-**정답: C**
-해설: Compute Savings Plans provide the highest flexibility, letting you freely change EC2 family, instance size, region, OS, and tenancy. The discount is ~66%, lower than Standard RI (~72%), but it's the only choice that meets the "may change family and region" requirement. EC2 Instance SP fixes region and family, and Convertible RI can only be exchanged for equal-or-higher types, limiting flexibility.
+**Answer: C**
+Explanation: Compute Savings Plans provide the highest flexibility, letting you freely change EC2 family, instance size, region, OS, and tenancy. The discount is ~66%, lower than Standard RI (~72%), but it's the only choice that meets the "may change family and region" requirement. EC2 Instance SP fixes region and family, and Convertible RI can only be exchanged for equal-or-higher types, limiting flexibility.
 
 ---
 
-**문제 5.** c6i.4xlarge On-Demand costs $0.68 per hour. If you buy a 3-year All Upfront Standard RI whose equivalent hourly cost is $0.20, how many months is the break-even point? (RI total cost = $0.20 × 24 × 365 × 3 = $5,256)
+**Question 5.** c6i.4xlarge On-Demand costs $0.68 per hour. If you buy a 3-year All Upfront Standard RI whose equivalent hourly cost is $0.20, how many months is the break-even point? (RI total cost = $0.20 × 24 × 365 × 3 = $5,256)
 
 A) About 6 months
 B) About 13 months
 C) About 18 months
 D) About 24 months
 
-**정답: B**
-해설: If the RI upfront cost is $5,256, the difference between the monthly On-Demand cost ($0.68 × 24 × 30 = $489.6/month) and the RI monthly equivalent ($0.20 × 24 × 30 = $144/month) is $345.6/month. The break-even isn't $5,256 / $345.6 ≈ 15 months — because the RI is prepaid, cumulative savings actually recover the upfront cost at around 12-13 months. As a rule, if the same workload is certain for over a year, RI wins; otherwise Savings Plans or On-Demand is wiser.
+**Answer: B**
+Explanation: If the RI upfront cost is $5,256, the difference between the monthly On-Demand cost ($0.68 × 24 × 30 = $489.6/month) and the RI monthly equivalent ($0.20 × 24 × 30 = $144/month) is $345.6/month. The break-even isn't $5,256 / $345.6 ≈ 15 months — because the RI is prepaid, cumulative savings actually recover the upfront cost at around 12-13 months. As a rule, if the same workload is certain for over a year, RI wins; otherwise Savings Plans or On-Demand is wiser.
 
 ---
 
-**문제 6.** Which mapping of workloads to instance families is correct?
+**Question 6.** Which mapping of workloads to instance families is correct?
 
 ① Real-time Apache Kafka broker (high disk I/O, low latency)
 ② Deep-learning model pre-training (GPU-intensive)
@@ -304,17 +304,17 @@ B) ①-I family, ②-G family, ③-R family, ④-T family
 C) ①-R family, ②-P family, ③-I family, ④-T family
 D) ①-T family, ②-P family, ③-R family, ④-I family
 
-**정답: A**
-해설: A Kafka broker is local NVMe I/O-intensive → I family (i4i). Deep-learning training is GPU-intensive → P family (p4d/p5, NVIDIA A100/H100). SAP BW with 512GB RAM → R family (r6i/r7g). Intermittent microservice traffic → T family (leveraging CPU credit burst). The G family is mainly for ML inference and graphics rendering, while P is training-only.
+**Answer: A**
+Explanation: A Kafka broker is local NVMe I/O-intensive → I family (i4i). Deep-learning training is GPU-intensive → P family (p4d/p5, NVIDIA A100/H100). SAP BW with 512GB RAM → R family (r6i/r7g). Intermittent microservice traffic → T family (leveraging CPU credit burst). The G family is mainly for ML inference and graphics rendering, while P is training-only.
 
 ---
 
-**문제 7.** A company runs an HPC cluster on c5n.18xlarge instances in us-east-1. It wants to minimize inter-node MPI communication latency while enabling 100Gbps network performance. What configuration is needed?
+**Question 7.** A company runs an HPC cluster on c5n.18xlarge instances in us-east-1. It wants to minimize inter-node MPI communication latency while enabling 100Gbps network performance. What configuration is needed?
 
 A) Spread Placement Group + Enhanced Networking (ENA)
 B) Cluster Placement Group + Elastic Fabric Adapter (EFA)
 C) Partition Placement Group + ENA
 D) Multi-AZ placement + Enhanced Networking
 
-**정답: B**
-해설: A Cluster Placement Group places instances on adjacent racks, cutting latency to the μs level. EFA (Elastic Fabric Adapter) supports OS-bypass networking, letting the MPI library access the network hardware directly without going through the kernel. The c5n family supports EFA, and the Cluster PG + EFA combination is the standard pattern for 100Gbps low-latency HPC. Spread distributes instances for isolation — the opposite of minimizing latency.
+**Answer: B**
+Explanation: A Cluster Placement Group places instances on adjacent racks, cutting latency to the μs level. EFA (Elastic Fabric Adapter) supports OS-bypass networking, letting the MPI library access the network hardware directly without going through the kernel. The c5n family supports EFA, and the Cluster PG + EFA combination is the standard pattern for 100Gbps low-latency HPC. Spread distributes instances for isolation — the opposite of minimizing latency.

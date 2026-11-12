@@ -141,91 +141,91 @@ Next: Week 9 recap — KMS, Secrets Manager, Cognito, WAF/Shield/ACM stitched to
 
 ## 📝 Practice Questions
 
-**문제 1.** Block SQL injection attacks at the request stage. Right service?
+**Question 1.** Block SQL injection attacks at the request stage. Right service?
 
 A) Shield Advanced
 B) AWS WAF
 C) Network ACL
 D) Security Group
 
-**정답: B**
+**Answer: B**
 
-해설: SQL injection is L7 (app layer), requiring HTTP payload parsing. WAF's SQLi Match rules detect it. A) Shield is L3/L4 DDoS, doesn't inspect payload. C·D) NACL/SG are L3/L4 (IP/port only), can't see L7 content. "Content-based web attack" → WAF.
+Explanation: SQL injection is L7 (app layer), requiring HTTP payload parsing. WAF's SQLi Match rules detect it. A) Shield is L3/L4 DDoS, doesn't inspect payload. C·D) NACL/SG are L3/L4 (IP/port only), can't see L7 content. "Content-based web attack" → WAF.
 
 ---
 
-**문제 2.** DDoS hits; Auto Scaling and data transfer soar; bill explodes. Protect cost. Right choice?
+**Question 2.** DDoS hits; Auto Scaling and data transfer soar; bill explodes. Protect cost. Right choice?
 
 A) Shield Standard
 B) Shield Advanced
 C) WAF rate-based rule
 D) Strengthen CloudFront caching
 
-**정답: B**
+**Answer: B**
 
-해설: Shield Advanced alone refunds DDoS-caused cost spikes as credits. Standard is free but no cost protection or SRT. C) WAF rate limit helps mitigate but doesn't refund costs. D) Caching reduces origin load, not billing protection. "DDoS cost protection" → Advanced.
+Explanation: Shield Advanced alone refunds DDoS-caused cost spikes as credits. Standard is free but no cost protection or SRT. C) WAF rate limit helps mitigate but doesn't refund costs. D) Caching reduces origin load, not billing protection. "DDoS cost protection" → Advanced.
 
 ---
 
-**문제 3.** CloudFront HTTPS needs ACM cert. Which region?
+**Question 3.** CloudFront HTTPS needs ACM cert. Which region?
 
 A) Origin's region
 B) ap-northeast-2
 C) us-east-1
 D) Any region works
 
-**정답: C**
+**Answer: C**
 
-해설: CloudFront global control plane in **us-east-1**. Certs from other regions won't attach. Regional resources use their own region. "CloudFront cert region" = us-east-1.
+Explanation: CloudFront global control plane in **us-east-1**. Certs from other regions won't attach. Regional resources use their own region. "CloudFront cert region" = us-east-1.
 
 ---
 
-**문제 4.** Install ACM cert directly on EC2 for TLS termination. Result?
+**Question 4.** Install ACM cert directly on EC2 for TLS termination. Result?
 
 A) Works fine
 B) ACM refuses export; EC2 direct install impossible
 C) Works if us-east-1 issued
 D) Private CA required
 
-**정답: B**
+**Answer: B**
 
-해설: ACM doesn't export private keys (key isolation). EC2 TLS needs the key file. Use ALB/CloudFront + ACM in front, or EC2 gets separate cert (Let's Encrypt). "ACM on EC2" always wrong.
+Explanation: ACM doesn't export private keys (key isolation). EC2 TLS needs the key file. Use ALB/CloudFront + ACM in front, or EC2 gets separate cert (Let's Encrypt). "ACM on EC2" always wrong.
 
 ---
 
-**문제 5.** Test new WAF rule safely — observe without blocking. Which action?
+**Question 5.** Test new WAF rule safely — observe without blocking. Which action?
 
 A) Block
 B) Allow
 C) Count
 D) CAPTCHA
 
-**정답: C**
+**Answer: C**
 
-해설: Count logs matching requests without blocking. Deploy first, observe for false positives, then promote to Block. "Safe rule testing" = Count.
+Explanation: Count logs matching requests without blocking. Deploy first, observe for false positives, then promote to Block. "Safe rule testing" = Count.
 
 ---
 
-**문제 6.** API Gateway **HTTP API** needs WAF for SQL injection. Direct attach fails. Solution?
+**Question 6.** API Gateway **HTTP API** needs WAF for SQL injection. Direct attach fails. Solution?
 
 A) Change to REST API only
 B) Put CloudFront in front; attach WAF to CloudFront
 C) Use NLB in front
 D) Security Group SQL rules
 
-**정답: B**
+**Answer: B**
 
-해설: HTTP API doesn't support WAF directly. Workaround: CloudFront + WAF on CloudFront. A) Rebuild as REST (possible but not only option). C) NLB is L4, no HTTP parsing. D) SG is L4.
+Explanation: HTTP API doesn't support WAF directly. Workaround: CloudFront + WAF on CloudFront. A) Rebuild as REST (possible but not only option). C) NLB is L4, no HTTP parsing. D) SG is L4.
 
 ---
 
-**문제 7.** Detect customer credit cards/SSNs auto-stored in S3. Right service?
+**Question 7.** Detect customer credit cards/SSNs auto-stored in S3. Right service?
 
 A) GuardDuty
 B) Inspector
 C) Macie
 D) Detective
 
-**정답: C**
+**Answer: C**
 
-해설: **Macie** ML-detects PII in S3 data. A) GuardDuty finds anomalous API calls/behavior. B) Inspector scans code/packages for CVEs. D) Detective investigates incident cause. "S3 data PII" = Macie.
+Explanation: **Macie** ML-detects PII in S3 data. A) GuardDuty finds anomalous API calls/behavior. B) Inspector scans code/packages for CVEs. D) Detective investigates incident cause. "S3 data PII" = Macie.

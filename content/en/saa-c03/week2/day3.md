@@ -165,96 +165,96 @@ The SG is stateful · ENI · Allow-only; the NACL is stateless · subnet · Allo
 
 ## 📝 Practice Questions
 
-**문제 1.** An instance called external HTTP on port 80, but no response comes back. The SG allows outbound 80. How should the NACL be configured?
+**Question 1.** An instance called external HTTP on port 80, but no response comes back. The SG allows outbound 80. How should the NACL be configured?
 
 A) Allow outbound 80 only
 B) Allow outbound 80 + inbound ephemeral port range
 C) Allow inbound 80 only
 D) Allow inbound 443
 
-**정답: B**
-해설: Because the NACL is stateless, response traffic also needs explicit allow. Outbound 80 + inbound 1024-65535 (ephemeral). With an SG, one outbound line would have done it. This trap is the most frequent NACL pitfall on the SAA.
+**Answer: B**
+Explanation: Because the NACL is stateless, response traffic also needs explicit allow. Outbound 80 + inbound 1024-65535 (ephemeral). With an SG, one outbound line would have done it. This trap is the most frequent NACL pitfall on the SAA.
 
 ---
 
-**문제 2.** What is the decisive difference between SG and NACL that comes up often on the exam?
+**Question 2.** What is the decisive difference between SG and NACL that comes up often on the exam?
 
 A) SG is stateful, NACL is stateless
 B) SG attaches to a subnet, NACL attaches to an ENI
 C) NACL is Allow only, SG is Allow + Deny
 D) SG is IP only, NACL can reference an SG
 
-**정답: A**
-해설: SG = stateful (response auto-allowed), NACL = stateless (response allowed separately). Unit of application: SG = ENI, NACL = subnet. For Allow/Deny, NACL does both, SG does Allow only. SG can use IP/SG/prefix list all as source; NACL is IP only.
+**Answer: A**
+Explanation: SG = stateful (response auto-allowed), NACL = stateless (response allowed separately). Unit of application: SG = ENI, NACL = subnet. For Allow/Deny, NACL does both, SG does Allow only. SG can use IP/SG/prefix list all as source; NACL is IP only.
 
 ---
 
-**문제 3.** You need to block a specific IP range. In SG or NACL?
+**Question 3.** You need to block a specific IP range. In SG or NACL?
 
 A) Add a Deny rule in the SG
 B) Add a Deny rule in the NACL
 C) IAM policy
 D) Block at the IGW
 
-**정답: B**
-해설: The SG can only Allow; it has no Deny rule. Explicit blocking is the NACL's domain. A broad IP blacklist is the NACL's representative use. For more aggressive blocking you can go to AWS WAF (L7) or AWS Network Firewall, and for global blocking, combine with Shield Advanced.
+**Answer: B**
+Explanation: The SG can only Allow; it has no Deny rule. Explicit blocking is the NACL's domain. A broad IP blacklist is the NACL's representative use. For more aggressive blocking you can go to AWS WAF (L7) or AWS Network Firewall, and for global blocking, combine with Shield Advanced.
 
 ---
 
-**문제 4.** If you can't see the payload in Flow Logs, what's the alternative?
+**Question 4.** If you can't see the payload in Flow Logs, what's the alternative?
 
 A) CloudTrail
 B) VPC Traffic Mirroring
 C) GuardDuty
 D) CloudWatch Logs
 
-**정답: B**
-해설: Full payload replication is Traffic Mirroring. Used for DPI, IDS, and forensics. CloudTrail is API auditing, so it's unrelated. GuardDuty automatically analyzes Flow Logs/CloudTrail/DNS Logs but doesn't look at the payload.
+**Answer: B**
+Explanation: Full payload replication is Traffic Mirroring. Used for DPI, IDS, and forensics. CloudTrail is API auditing, so it's unrelated. GuardDuty automatically analyzes Flow Logs/CloudTrail/DNS Logs but doesn't look at the payload.
 
 ---
 
-**문제 5.** One ENI has 5 SGs attached, each with different rules. How are they evaluated?
+**Question 5.** One ENI has 5 SGs attached, each with different rules. How are they evaluated?
 
 A) First match from top to bottom
 B) Evaluated as the union of all rules of all SGs; if any one allows, it passes
 C) The first-attached SG takes priority
 D) Alphabetical order
 
-**정답: B**
-해설: SGs are a union. If 5 SGs have 300 rules total, their union takes effect. That's why simplifying SGs by role is key to operational stability. Union evaluation is an *Allow-accumulating* model, unlike the *Deny-first* model (IAM).
+**Answer: B**
+Explanation: SGs are a union. If 5 SGs have 300 rules total, their union takes effect. That's why simplifying SGs by role is key to operational stability. Union evaluation is an *Allow-accumulating* model, unlike the *Deny-first* model (IAM).
 
 ---
 
-**문제 6.** You created a Custom NACL but communication doesn't work. What's the most likely cause?
+**Question 6.** You created a Custom NACL but communication doesn't work. What's the most likely cause?
 
 A) The SGs all deny
 B) A Custom NACL defaults to deny-all, so it needs explicit allow
 C) The Default NACL takes priority
 D) There's no IGW
 
-**정답: B**
-해설: The Default NACL allows all, while a Custom NACL defaults to deny-all. When you make a new Custom NACL, you have to add all the explicit Allow rules. This is a *fail-secure* design — a newly created NACL starts from a safe state (deny).
+**Answer: B**
+Explanation: The Default NACL allows all, while a Custom NACL defaults to deny-all. When you make a new Custom NACL, you have to add all the explicit Allow rules. This is a *fail-secure* design — a newly created NACL starts from a safe state (deny).
 
 ---
 
-**문제 7.** What is NOT captured by VPC Flow Logs?
+**Question 7.** What is NOT captured by VPC Flow Logs?
 
 A) Queries to the AWS DNS server (169.254.169.253)
 B) L2 traffic such as ARP
 C) Communication with the DHCP server
 D) Everything is captured
 
-**정답: B**
-해설: Flow Logs capture only L3+ (IP and above). ARP, L2 multicast, and some 169.254.169.254 metadata packets aren't captured. DNS queries are captured separately by Route 53 Resolver Query Logs. DHCP is UDP 67/68 so it does get captured, but since EC2 only generates it at boot, it's rarely seen.
+**Answer: B**
+Explanation: Flow Logs capture only L3+ (IP and above). ARP, L2 multicast, and some 169.254.169.254 metadata packets aren't captured. DNS queries are captured separately by Route 53 Resolver Query Logs. DHCP is UDP 67/68 so it does get captured, but since EC2 only generates it at boot, it's rarely seen.
 
 ---
 
-**문제 8.** You want to send the full payload of one ENI's traffic to an IDS (Suricata). What is the most appropriate solution?
+**Question 8.** You want to send the full payload of one ENI's traffic to an IDS (Suricata). What is the most appropriate solution?
 
 A) VPC Flow Logs v5
 B) VPC Traffic Mirroring to an NLB, with Suricata behind it
 C) GuardDuty
 D) Network ACL Logging
 
-**정답: B**
-해설: Traffic Mirroring replicates ENI traffic to an NLB or another ENI. Placing a cluster of Suricata/Zeek IDS behind an NLB is the standard *VPC IDS* pattern. Flow Logs are metadata only, and GuardDuty is automated threat detection but doesn't look at the payload.
+**Answer: B**
+Explanation: Traffic Mirroring replicates ENI traffic to an NLB or another ENI. Placing a cluster of Suricata/Zeek IDS behind an NLB is the standard *VPC IDS* pattern. Flow Logs are metadata only, and GuardDuty is automated threat detection but doesn't look at the payload.

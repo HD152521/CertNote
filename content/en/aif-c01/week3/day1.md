@@ -86,62 +86,62 @@ Tomorrow we'll explore when LLM "predicts the next token," what that token reall
 
 ## 📝 Practice Questions
 
-**문제 1.** 다음 중 생성형 AI와 전통 머신러닝의 가장 본질적인 차이를 가장 잘 설명한 것은?
+**Question 1.** 다음 중 생성형 AI와 전통 머신러닝의 가장 본질적인 차이를 가장 잘 설명한 것은?
 
 A) Generative AI uses GPUs while traditional ML uses only CPUs  
 B) Generative AI creates new content, while traditional ML mainly makes judgments/predictions  
 C) Generative AI doesn't need data  
 D) Traditional ML is always more accurate than generative AI  
 
-**정답: B**  
-해설: The core difference is the nature of output. Traditional ML (especially discriminative models) outputs classification/prediction like "is this spam?", while generative AI creates new content like "write me a reply." A is wrong because both can use GPUs. C is wrong because both learn from data. D can't be generalized as it depends on the task.
+**Answer: B**  
+Explanation: The core difference is the nature of output. Traditional ML (especially discriminative models) outputs classification/prediction like "is this spam?", while generative AI creates new content like "write me a reply." A is wrong because both can use GPUs. C is wrong because both learn from data. D can't be generalized as it depends on the task.
 
 ---
 
-**문제 2.** 파운데이션 모델(Foundation Model)의 핵심 경제적 이점은 무엇인가?
+**Question 2.** 파운데이션 모델(Foundation Model)의 핵심 경제적 이점은 무엇인가?
 
 A) Must train new models from scratch for each task  
 B) Expensively pre-train one model once, then reuse for many downstream tasks  
 C) Training costs nothing  
 D) Can only be used for image generation  
 
-**정답: B**  
-해설: Foundation Model's core is pre-training one large model on internet-scale data as a base, then reusing it for various tasks via prompts or fine-tuning, greatly reducing the cost of training from scratch per task. A is the opposite, C is wrong because pre-training is very expensive, and D is wrong because FMs work with text, images, multimodal, etc.
+**Answer: B**  
+Explanation: Foundation Model's core is pre-training one large model on internet-scale data as a base, then reusing it for various tasks via prompts or fine-tuning, greatly reducing the cost of training from scratch per task. A is the opposite, C is wrong because pre-training is very expensive, and D is wrong because FMs work with text, images, multimodal, etc.
 
 ---
 
-**문제 3.** LLM(대규모 언어 모델)이 문장을 생성하는 기본 원리는 무엇인가?
+**Question 3.** LLM(대규모 언어 모델)이 문장을 생성하는 기본 원리는 무엇인가?
 
 A) Searches database for pre-written answers  
 B) Repeatedly predicts probabilistically what token comes next based on text so far  
 C) Always guarantees 100% same output for same input  
 D) Human programmers hard-code grammar rules  
 
-**정답: B**  
-해설: LLM's essence is predicting "probability of next token given previous text" and repeating to complete a sentence. A is wrong because it generates, not retrieves. C is wrong because LLMs are non-deterministic—same input can produce different outputs. D is the old rule-based approach; modern LLMs learn patterns from data.
+**Answer: B**  
+Explanation: LLM's essence is predicting "probability of next token given previous text" and repeating to complete a sentence. A is wrong because it generates, not retrieves. C is wrong because LLMs are non-deterministic—same input can produce different outputs. D is the old rule-based approach; modern LLMs learn patterns from data.
 
 ---
 
-**문제 4.** 여러 회사의 파운데이션 모델(Claude, Titan, Llama 등)을 인프라 관리 없이 단일 API로 호출하고 싶다. 가장 적합한 AWS 서비스는?
+**Question 4.** 여러 회사의 파운데이션 모델(Claude, Titan, Llama 등)을 인프라 관리 없이 단일 API로 호출하고 싶다. 가장 적합한 AWS 서비스는?
 
 A) Install models directly on Amazon EC2  
 B) Amazon Bedrock  
 C) Amazon S3  
 D) AWS Lambda alone  
 
-**정답: B**  
-해설: Amazon Bedrock is a fully managed service that calls FMs from multiple providers through a single API, letting you use massive models via API only, without buying GPUs or hosting. A requires managing infrastructure yourself, contradicting the requirement. C is object storage, D is serverless computing—neither provides FM services as their primary business.
+**Answer: B**  
+Explanation: Amazon Bedrock is a fully managed service that calls FMs from multiple providers through a single API, letting you use massive models via API only, without buying GPUs or hosting. A requires managing infrastructure yourself, contradicting the requirement. C is object storage, D is serverless computing—neither provides FM services as their primary business.
 
 ---
 
-**문제 5.** 다음 중 생성형 AI보다 전통 ML이 더 적합한 작업은?
+**Question 5.** 다음 중 생성형 AI보다 전통 ML이 더 적합한 작업은?
 
 A) Writing natural reply sentences to customer inquiries  
 B) Generating marketing images  
 C) Predicting next quarter's revenue with precise numbers  
 D) Summarizing long reports  
 
-**정답: C**  
-해설: Accurate numerical prediction is an area where traditional ML like regression excels, where determinism and accuracy matter. A, B, D all involve creating new text/images, suited to generative AI. The decision criterion is "create new content needed? (generative) or just accurate judgment/prediction? (traditional ML)"
+**Answer: C**  
+Explanation: Accurate numerical prediction is an area where traditional ML like regression excels, where determinism and accuracy matter. A, B, D all involve creating new text/images, suited to generative AI. The decision criterion is "create new content needed? (generative) or just accurate judgment/prediction? (traditional ML)"
 
 ---

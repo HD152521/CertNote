@@ -91,62 +91,62 @@ In the next session, we'll review Week 3 completely—concepts of generative AI,
 
 ## 📝 Practice Questions
 
-**문제 1.** Which most accurately explains "hallucination" in generative AI?
+**Question 1.** Which most accurately explains "hallucination" in generative AI?
 
 A) A phenomenon where the model's response speed slows  
 B) A phenomenon where a model generates false content as if it were true, plausibly  
 C) A phenomenon where the model refuses to respond  
 D) A model's capability to convert images to text  
 
-**정답: B**  
-해설: Hallucination is when a model generates false or unsupported content confidently as fact. It occurs because LLMs do "predicting plausible next tokens," not "verifying truth." A confuses it with performance issues, C with refusal responses, D with multimodal capabilities—all incorrect.
+**Answer: B**  
+Explanation: Hallucination is when a model generates false or unsupported content confidently as fact. It occurs because LLMs do "predicting plausible next tokens," not "verifying truth." A confuses it with performance issues, C with refusal responses, D with multimodal capabilities—all incorrect.
 
 ---
 
-**문제 2.** A hiring AI repeatedly produces results disadvantageous to a specific gender. Which combination of the most related concept and the AWS tool for measuring bias is correct?
+**Question 2.** A hiring AI repeatedly produces results disadvantageous to a specific gender. Which combination of the most related concept and the AWS tool for measuring bias is correct?
 
 A) Hallucination - Amazon Bedrock  
 B) Bias - Amazon SageMaker Clarify  
 C) Non-determinism - Amazon S3  
 D) Latency - AWS Lambda  
 
-**정답: B**  
-해설: Unfair results against a group (gender, etc.) is a bias issue, and AWS measures data and model bias with SageMaker Clarify, providing explainability. A's hallucination is about fact distortion—different. C and D are unrelated to this scenario.
+**Answer: B**  
+Explanation: Unfair results against a group (gender, etc.) is a bias issue, and AWS measures data and model bias with SageMaker Clarify, providing explainability. A's hallucination is about fact distortion—different. C and D are unrelated to this scenario.
 
 ---
 
-**문제 3.** Which is NOT an appropriate method to reduce hallucination?
+**Question 3.** Which is NOT an appropriate method to reduce hallucination?
 
 A) Use RAG, providing trustworthy documents together  
 B) Instruct in the prompt "Say 'I don't know' if unsure"  
 C) Have humans finally review important outputs (Human-in-the-loop)  
 D) Increase temperature to its maximum to encourage diverse answers  
 
-**정답: D**  
-해설: Raising temperature increases selection of less probable tokens, potentially generating more bizarre or fabricated answers. For hallucination reduction, RAG, source/humility instructions, and human review are effective; lowering temperature is standard. So D is not appropriate.
+**Answer: D**  
+Explanation: Raising temperature increases selection of less probable tokens, potentially generating more bizarre or fabricated answers. For hallucination reduction, RAG, source/humility instructions, and human review are effective; lowering temperature is standard. So D is not appropriate.
 
 ---
 
-**문제 4.** Which of the following is the most critical use case (risky) for applying generative AI?
+**Question 4.** Which of the following is the most critical use case (risky) for applying generative AI?
 
 A) Writing draft marketing copy  
 B) Summarizing documents, then having humans review  
 C) Automatically making final loan approval/rejection decisions without human review  
 D) Code autocomplete suggestions  
 
-**정답: C**  
-해설: Auto-finalizing loan approval/rejection without human review is high-risk because hallucination, bias, and non-determinism risks directly affect people's opportunities—requiring mandatory human oversight and governance. A, B, and D are drafts/assistance where humans can review and correct, relatively safer.
+**Answer: C**  
+Explanation: Auto-finalizing loan approval/rejection without human review is high-risk because hallucination, bias, and non-determinism risks directly affect people's opportunities—requiring mandatory human oversight and governance. A, B, and D are drafts/assistance where humans can review and correct, relatively safer.
 
 ---
 
-**문제 5.** "Non-determinism" means the same prompt can produce different outputs. What is the most appropriate measure to increase consistency?
+**Question 5.** "Non-determinism" means the same prompt can produce different outputs. What is the most appropriate measure to increase consistency?
 
 A) Set temperature low (close to 0)  
 B) Increase context window size  
 C) Add more examples unconditionally  
 D) Switching to a larger model always makes it deterministic  
 
-**정답: A**  
-해설: Since non-determinism mainly comes from sampling, lowering temperature (and Top-P/Top-K) makes the model conservatively select the highest-probability tokens, increasing output consistency. B relates to memory capacity, not directly to determinism. C doesn't guarantee consistency. D—model size doesn't guarantee determinism. A is correct.
+**Answer: A**  
+Explanation: Since non-determinism mainly comes from sampling, lowering temperature (and Top-P/Top-K) makes the model conservatively select the highest-probability tokens, increasing output consistency. B relates to memory capacity, not directly to determinism. C doesn't guarantee consistency. D—model size doesn't guarantee determinism. A is correct.
 
 ---

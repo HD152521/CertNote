@@ -151,62 +151,62 @@ CloudWatch is a *first-line detector*: "quantize patterns from single log group,
 
 ## 📝 Practice Questions
 
-**문제 1.** CloudTrail 로그에서 루트 계정 사용을 탐지해 즉시 알림을 보내려 한다. 올바른 구성 순서는?
+**Question 1.** CloudTrail 로그에서 루트 계정 사용을 탐지해 즉시 알림을 보내려 한다. 올바른 구성 순서는?
 
 A) CloudTrail → S3 → Athena 쿼리 스케줄링 → 이메일  
 B) CloudTrail을 CloudWatch Logs로 전송 → Metric Filter로 루트 사용 패턴 매칭 → Alarm(임계 1) → SNS  
 C) GuardDuty를 활성화하면 자동으로 처리된다  
 D) VPC Flow Logs에 Metric Filter를 적용  
 
-**정답: B**  
-해설: 루트 사용 탐지의 표준 경로는 CloudTrail 로그를 CloudWatch Logs로 보내고, JSON 패턴 Metric Filter로 루트 주체 호출을 카운트한 뒤, 임계 1 이상이면 발동하는 Alarm을 SNS에 연결하는 것이다. S3+Athena는 사후 배치 분석이라 "즉시"가 아니고, GuardDuty는 루트 사용 자체를 핵심 탐지로 다루지 않으며, VPC Flow Logs에는 API 호출 정보가 없다.
+**Answer: B**  
+Explanation: 루트 사용 탐지의 표준 경로는 CloudTrail 로그를 CloudWatch Logs로 보내고, JSON 패턴 Metric Filter로 루트 주체 호출을 카운트한 뒤, 임계 1 이상이면 발동하는 Alarm을 SNS에 연결하는 것이다. S3+Athena는 사후 배치 분석이라 "즉시"가 아니고, GuardDuty는 루트 사용 자체를 핵심 탐지로 다루지 않으며, VPC Flow Logs에는 API 호출 정보가 없다.
 
 ---
 
-**문제 2.** 5분 동안 콘솔 로그인 실패가 5회 이상이면 경보하도록 알람을 만들었는데 한 번도 발동하지 않는다. 메트릭 필터와 알람을 점검했을 때 가장 가능성 높은 원인은?
+**Question 2.** 5분 동안 콘솔 로그인 실패가 5회 이상이면 경보하도록 알람을 만들었는데 한 번도 발동하지 않는다. 메트릭 필터와 알람을 점검했을 때 가장 가능성 높은 원인은?
 
 A) 알람의 Statistic을 Average로 설정해 카운트 합이 임계를 넘지 못한다  
 B) SNS 토픽이 암호화되어 있다  
 C) 로그 그룹 보존 기간이 너무 길다  
 D) CloudFront 스코프가 잘못되었다  
 
-**정답: A**  
-해설: 카운트 기반 보안 탐지는 지정 기간 동안 발생 횟수의 합이 중요하므로 `Sum` 통계를 써야 한다. `Average`로 평가하면 5분 평균이 임계 5에 도달하지 못해 영원히 발동하지 않는다. SNS 암호화·보존 기간은 발동 여부와 무관하고, CloudFront 스코프는 WAF 개념으로 이 문맥과 관계없다.
+**Answer: A**  
+Explanation: 카운트 기반 보안 탐지는 지정 기간 동안 발생 횟수의 합이 중요하므로 `Sum` 통계를 써야 한다. `Average`로 평가하면 5분 평균이 임계 5에 도달하지 못해 영원히 발동하지 않는다. SNS 암호화·보존 기간은 발동 여부와 무관하고, CloudFront 스코프는 WAF 개념으로 이 문맥과 관계없다.
 
 ---
 
-**문제 3.** 트래픽이 시간대와 요일에 따라 크게 변동하는 애플리케이션의 NetworkOut 급증(데이터 유출 의심)을 정적 임계 없이 탐지하려 한다. 가장 적절한 것은?
+**Question 3.** 트래픽이 시간대와 요일에 따라 크게 변동하는 애플리케이션의 NetworkOut 급증(데이터 유출 의심)을 정적 임계 없이 탐지하려 한다. 가장 적절한 것은?
 
 A) 고정 임계 알람을 보수적으로 낮게 설정  
 B) CloudWatch Anomaly Detection으로 학습된 밴드를 벗어나는 값을 탐지  
 C) Subscription Filter로 모든 로그를 Lambda로 전송  
 D) 로그 그룹 보존 기간을 무기한으로 설정  
 
-**정답: B**  
-해설: 패턴이 시간에 따라 변동해 정적 임계를 정하기 어려운 메트릭에는 Anomaly Detection이 적합하다. ML 모델이 과거 패턴으로 예상 밴드를 만들고 이를 벗어나면 발동한다. 고정 임계를 낮게 잡으면 정상 피크에서 오탐이 폭증하고, Subscription Filter는 탐지가 아니라 스트리밍 전달이며, 보존 기간은 탐지와 무관하다.
+**Answer: B**  
+Explanation: 패턴이 시간에 따라 변동해 정적 임계를 정하기 어려운 메트릭에는 Anomaly Detection이 적합하다. ML 모델이 과거 패턴으로 예상 밴드를 만들고 이를 벗어나면 발동한다. 고정 임계를 낮게 잡으면 정상 피크에서 오탐이 폭증하고, Subscription Filter는 탐지가 아니라 스트리밍 전달이며, 보존 기간은 탐지와 무관하다.
 
 ---
 
-**문제 4.** 여러 멤버 계정의 로그를 중앙 로깅 계정으로 실시간 집계하려 한다. 핵심 구성 요소는?
+**Question 4.** 여러 멤버 계정의 로그를 중앙 로깅 계정으로 실시간 집계하려 한다. 핵심 구성 요소는?
 
 A) 각 계정에서 S3 버킷 복제(replication)만 설정  
 B) 각 로그 그룹의 Subscription Filter를 중앙 계정의 Kinesis Data Firehose destination으로 연결하고, destination access policy로 소스 계정을 허용  
 C) 각 계정에서 Metric Filter를 만들면 자동으로 중앙 집계된다  
 D) CloudWatch Alarm을 cross-account로 공유  
 
-**정답: B**  
-해설: 실시간 로그 집계는 Subscription Filter가 핵심이며, cross-account 시 *대상* 계정에 destination(Kinesis/Firehose)을 만들고 그 access policy로 소스 계정을 허용해야 한다. S3 복제는 실시간 이벤트 스트리밍이 아니고, Metric Filter는 같은 계정 내 숫자 변환일 뿐 cross-account 집계를 하지 않으며, 알람 공유로는 원본 로그가 모이지 않는다.
+**Answer: B**  
+Explanation: 실시간 로그 집계는 Subscription Filter가 핵심이며, cross-account 시 *대상* 계정에 destination(Kinesis/Firehose)을 만들고 그 access policy로 소스 계정을 허용해야 한다. S3 복제는 실시간 이벤트 스트리밍이 아니고, Metric Filter는 같은 계정 내 숫자 변환일 뿐 cross-account 집계를 하지 않으며, 알람 공유로는 원본 로그가 모이지 않는다.
 
 ---
 
-**문제 5.** 로그 그룹에 KMS CMK 암호화를 설정했더니 로그가 더 이상 수집되지 않는다. 가장 먼저 확인할 것은?
+**Question 5.** 로그 그룹에 KMS CMK 암호화를 설정했더니 로그가 더 이상 수집되지 않는다. 가장 먼저 확인할 것은?
 
 A) IAM 사용자에게 CloudWatch 읽기 권한이 있는지  
 B) KMS 키 정책에 `logs.<region>.amazonaws.com` 서비스 주체의 키 사용 권한이 있는지  
 C) 로그 그룹 보존 기간 설정  
 D) SNS 토픽 구독 상태  
 
-**정답: B**  
-해설: CloudWatch Logs가 KMS로 암호화하려면 *키 정책*에 CloudWatch Logs 서비스 주체의 Encrypt/Decrypt/GenerateDataKey 권한이 명시돼야 한다. KMS는 IAM 권한과 키 정책 두 게이트를 모두 통과해야 하며, 서비스 주체 권한이 없으면 수집이 실패한다. IAM 읽기 권한, 보존 기간, SNS 구독은 수집 실패 원인과 무관하다.
+**Answer: B**  
+Explanation: CloudWatch Logs가 KMS로 암호화하려면 *키 정책*에 CloudWatch Logs 서비스 주체의 Encrypt/Decrypt/GenerateDataKey 권한이 명시돼야 한다. KMS는 IAM 권한과 키 정책 두 게이트를 모두 통과해야 하며, 서비스 주체 권한이 없으면 수집이 실패한다. IAM 읽기 권한, 보존 기간, SNS 구독은 수집 실패 원인과 무관하다.
 
 ---

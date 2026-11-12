@@ -115,62 +115,62 @@ These signals connect to *actual isolation, forensics, recovery* workflows next 
 
 ## 📝 Practice Questions
 
-**문제 1.** 인터넷에 노출된 EC2가 침해된 것으로 보인다. 50개 계정 조직에서 (a) 사전에 약점을 알고, (b) 공격을 탐지하고, (c) 근본원인을 조사하고, (d) 자동으로 격리·티켓팅하려 한다. 가장 적절한 통합 설계는?
+**Question 1.** 인터넷에 노출된 EC2가 침해된 것으로 보인다. 50개 계정 조직에서 (a) 사전에 약점을 알고, (b) 공격을 탐지하고, (c) 근본원인을 조사하고, (d) 자동으로 격리·티켓팅하려 한다. 가장 적절한 통합 설계는?
 
 A) GuardDuty 하나만 켜고 나머지는 수동으로 처리한다  
 B) Inspector(취약점) + GuardDuty(위협) + Detective(조사) + Security Hub 집계 → EventBridge → Lambda/SSM 자동 대응, 모두 Security Tooling 계정에 위임  
 C) WAF와 Shield만으로 모든 것을 처리한다  
 D) CloudTrail 로그를 Athena로 수동 쿼리해 사람이 분석한다  
 
-**정답: B**  
-해설: 네 요구가 서로 다른 탐지 기능에 대응하므로 전문 도구를 통합해야 한다. Inspector가 사전 약점을, GuardDuty가 공격을, Detective가 근본원인을 담당하고, Security Hub가 ASFF로 집계해 EventBridge로 격리·티켓 자동화를 트리거하며, 모든 서비스를 Security Tooling 계정에 위임해 멀티계정 일관성을 확보한다. GuardDuty 단독·WAF/Shield(예방)·수동 Athena 분석은 이 통합 요구를 충족하지 못한다.
+**Answer: B**  
+Explanation: 네 요구가 서로 다른 탐지 기능에 대응하므로 전문 도구를 통합해야 한다. Inspector가 사전 약점을, GuardDuty가 공격을, Detective가 근본원인을 담당하고, Security Hub가 ASFF로 집계해 EventBridge로 격리·티켓 자동화를 트리거하며, 모든 서비스를 Security Tooling 계정에 위임해 멀티계정 일관성을 확보한다. GuardDuty 단독·WAF/Shield(예방)·수동 Athena 분석은 이 통합 요구를 충족하지 못한다.
 
 ---
 
-**문제 2.** 한 분석가가 "Amazon Detective로 위협을 실시간 탐지하고 악성 트래픽을 차단하겠다"고 설계했다. 이 설계의 오류는?
+**Question 2.** 한 분석가가 "Amazon Detective로 위협을 실시간 탐지하고 악성 트래픽을 차단하겠다"고 설계했다. 이 설계의 오류는?
 
 A) Detective는 멀티계정에서 동작하지 않는다  
 B) Detective는 탐지나 차단을 하지 않고, 기존 결과·로그를 조사·근본원인 분석하는 도구다 — 탐지는 GuardDuty, 차단은 WAF/SG의 역할이다  
 C) Detective는 EC2만 지원한다  
 D) Detective는 비용이 너무 비싸다  
 
-**정답: B**  
-해설: Detective는 결과를 생성하거나 트래픽을 차단하지 않으며, GuardDuty 등이 만든 결과와 로그를 동작 그래프로 조사해 "왜·어디까지·어떻게"를 분석하는 조사 전용 도구다. 위협 탐지는 GuardDuty, 차단은 WAF/SG/NACL의 역할이다. Detective는 멀티계정을 지원하며 EC2 외 다양한 엔티티를 다루므로 나머지 보기는 틀렸다.
+**Answer: B**  
+Explanation: Detective는 결과를 생성하거나 트래픽을 차단하지 않으며, GuardDuty 등이 만든 결과와 로그를 동작 그래프로 조사해 "왜·어디까지·어떻게"를 분석하는 조사 전용 도구다. 위협 탐지는 GuardDuty, 차단은 WAF/SG/NACL의 역할이다. Detective는 멀티계정을 지원하며 EC2 외 다양한 엔티티를 다루므로 나머지 보기는 틀렸다.
 
 ---
 
-**문제 3.** Inspector를 켰는데 일부 EC2가 스캔되지 않고, GuardDuty는 호스트 내부 악성 프로세스를 탐지하지 못한다. 두 문제의 올바른 해결 조합은?
+**Question 3.** Inspector를 켰는데 일부 EC2가 스캔되지 않고, GuardDuty는 호스트 내부 악성 프로세스를 탐지하지 못한다. 두 문제의 올바른 해결 조합은?
 
 A) Inspector는 SSM 관리 상태(또는 agentless) 확인, GuardDuty는 Runtime Monitoring 활성화  
 B) 둘 다 VPC Flow Logs를 S3에 저장하면 해결된다  
 C) Inspector는 ECR continuous를 켜고, GuardDuty는 Trusted IP를 추가한다  
 D) 둘 다 Security Hub만 켜면 자동 해결된다  
 
-**정답: A**  
-해설: Inspector의 EC2 에이전트 기반 스캔은 인스턴스가 SSM으로 관리되어야 하므로 SSM 상태를 확인(또는 agentless 사용)해야 하고, GuardDuty 기초는 네트워크/API만 보므로 호스트 내부 프로세스 가시성은 Runtime Monitoring으로 확보한다. Flow Logs 저장·ECR continuous(이미지 대상)·Trusted IP(결과 억제)·Security Hub(집계)는 이 두 문제의 직접 해결책이 아니다.
+**Answer: A**  
+Explanation: Inspector의 EC2 에이전트 기반 스캔은 인스턴스가 SSM으로 관리되어야 하므로 SSM 상태를 확인(또는 agentless 사용)해야 하고, GuardDuty 기초는 네트워크/API만 보므로 호스트 내부 프로세스 가시성은 Runtime Monitoring으로 확보한다. Flow Logs 저장·ECR continuous(이미지 대상)·Trusted IP(결과 억제)·Security Hub(집계)는 이 두 문제의 직접 해결책이 아니다.
 
 ---
 
-**문제 4.** 멀티리전·다계정 조직에서 신규 계정이 자동으로 탐지에 포함되고, 모든 리전 결과를 단일 창에서 보며, 워크로드 팀이 탐지를 끄지 못하게 하려 한다. 가장 적절한 베이스라인은?
+**Question 4.** 멀티리전·다계정 조직에서 신규 계정이 자동으로 탐지에 포함되고, 모든 리전 결과를 단일 창에서 보며, 워크로드 팀이 탐지를 끄지 못하게 하려 한다. 가장 적절한 베이스라인은?
 
 A) 각 계정·리전에서 서비스를 수동으로 켜고 콘솔을 번갈아 본다  
 B) 탐지 서비스를 Security Tooling 계정에 위임 + auto-enable + Security Hub aggregation Region 구성  
 C) 관리(management) 계정에서 모든 것을 직접 운영한다  
 D) 결과를 이메일로만 받는다  
 
-**정답: B**  
-해설: 위임 관리자(Security Tooling 계정) + 조직 모드 auto-enable은 신규 계정 자동 포함과 멤버의 임의 비활성화 방지를 동시에 달성하고, Security Hub aggregation Region은 멀티리전 결과를 단일 리전에 집계한다. 수동 활성화·콘솔 순회는 사각지대를 낳고, 관리 계정 직접 운영은 권한 집중 위험이며, 이메일 수신만으로는 통합·자동화가 불가능하다.
+**Answer: B**  
+Explanation: 위임 관리자(Security Tooling 계정) + 조직 모드 auto-enable은 신규 계정 자동 포함과 멤버의 임의 비활성화 방지를 동시에 달성하고, Security Hub aggregation Region은 멀티리전 결과를 단일 리전에 집계한다. 수동 활성화·콘솔 순회는 사각지대를 낳고, 관리 계정 직접 운영은 권한 집중 위험이며, 이메일 수신만으로는 통합·자동화가 불가능하다.
 
 ---
 
-**문제 5.** 다음 중 이번 주 탐지 통합에서 "함정"으로 자주 지적되는 항목이 아닌 것은?
+**Question 5.** 다음 중 이번 주 탐지 통합에서 "함정"으로 자주 지적되는 항목이 아닌 것은?
 
 A) Detective를 위협 탐지·차단 도구로 오인하는 것  
 B) GuardDuty 기초만으로 호스트 내부 프로세스를 본다고 가정하는 것  
 C) 모든 탐지 서비스의 위임 관리자를 동일 Security Tooling 계정으로 정렬하고 auto-enable을 켜는 것  
 D) Security Hub 결과가 모든 리전에 글로벌로 보인다고 가정하는 것  
 
-**정답: C**  
-해설: 모든 탐지 서비스를 동일 Security Tooling 계정에 위임하고 auto-enable을 켜는 것은 함정이 아니라 *권장 베이스라인*이다 — 데이터·권한·조사 일관성과 신규 계정 자동 포함을 보장한다. 나머지는 모두 실제 빈출 함정이다: Detective는 조사 도구이지 탐지·차단이 아니고, GuardDuty 기초는 호스트 내부를 못 보며(Runtime Monitoring 필요), Security Hub 결과는 리전별이라 aggregation Region이 필요하다. 함정이 *아닌* 것을 고르는 문제이므로 정답은 위임 정렬 구성이다.
+**Answer: C**  
+Explanation: 모든 탐지 서비스를 동일 Security Tooling 계정에 위임하고 auto-enable을 켜는 것은 함정이 아니라 *권장 베이스라인*이다 — 데이터·권한·조사 일관성과 신규 계정 자동 포함을 보장한다. 나머지는 모두 실제 빈출 함정이다: Detective는 조사 도구이지 탐지·차단이 아니고, GuardDuty 기초는 호스트 내부를 못 보며(Runtime Monitoring 필요), Security Hub 결과는 리전별이라 aggregation Region이 필요하다. 함정이 *아닌* 것을 고르는 문제이므로 정답은 위임 정렬 구성이다.
 
 ---

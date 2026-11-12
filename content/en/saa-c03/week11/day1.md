@@ -96,94 +96,94 @@ In the next article, we'll see how AWS's **4-tier DR strategy (from Backup-Resto
 
 ## 📝 Practice Questions
 
-**문제 1.** A company must have zero downtime for database writes even during a single-AZ failure, with zero data loss (RPO 0). What is the most appropriate configuration?
+**Question 1.** A company must have zero downtime for database writes even during a single-AZ failure, with zero data loss (RPO 0). What is the most appropriate configuration?
 
 A) RDS Cross-Region Read Replica
 B) RDS Multi-AZ (synchronous standby)
 C) DB backup to S3 One Zone-IA
 D) DynamoDB Global Tables
 
-**정답: B**
+**Answer: B**
 
-해설: RDS Multi-AZ **synchronously replicates** every write on the primary to a standby in another AZ, so it guarantees RPO 0, and on a primary failure it recovers near-uninterrupted via automatic failover (about 60–120 seconds). A Cross-Region Read Replica (A) uses asynchronous replication, so it's not RPO 0 and has no automatic failover. One Zone-IA (C) is single-AZ storage, so it's actually more vulnerable to AZ failure. DynamoDB Global Tables (D) is Active-Active NoSQL, not a replacement for an RDS workload, and its cross-region replication is eventually consistent (not RPO 0). The key signal is "synchronous replication for RPO 0."
+Explanation: RDS Multi-AZ **synchronously replicates** every write on the primary to a standby in another AZ, so it guarantees RPO 0, and on a primary failure it recovers near-uninterrupted via automatic failover (about 60–120 seconds). A Cross-Region Read Replica (A) uses asynchronous replication, so it's not RPO 0 and has no automatic failover. One Zone-IA (C) is single-AZ storage, so it's actually more vulnerable to AZ failure. DynamoDB Global Tables (D) is Active-Active NoSQL, not a replacement for an RDS workload, and its cross-region replication is eventually consistent (not RPO 0). The key signal is "synchronous replication for RPO 0."
 
 ---
 
-**문제 2.** An architect must design a service to continue in another region even when the entire us-east-1 region is paralyzed. Which of the following does NOT satisfy this requirement?
+**Question 2.** An architect must design a service to continue in another region even when the entire us-east-1 region is paralyzed. Which of the following does NOT satisfy this requirement?
 
 A) Configuring a secondary region with Aurora Global Database
 B) Distributing across 3 AZs with RDS Multi-AZ
 C) S3 Cross-Region Replication
 D) DynamoDB Global Tables
 
-**정답: B**
+**Answer: B**
 
-해설: RDS Multi-AZ is AZ isolation **within the same region**, so it's powerless against a whole-region failure — it's an HA tool, not a DR tool. To survive a region-level incident like the 2021 us-east-1 outage, you absolutely need replication that crosses the region boundary. Aurora Global (A), CRR (C), and DDB Global Tables (D) all provide cross-region replication so the service can continue in a secondary region. When you see "whole-region failure," filter out every Multi-AZ option as wrong.
+Explanation: RDS Multi-AZ is AZ isolation **within the same region**, so it's powerless against a whole-region failure — it's an HA tool, not a DR tool. To survive a region-level incident like the 2021 us-east-1 outage, you absolutely need replication that crosses the region boundary. Aurora Global (A), CRR (C), and DDB Global Tables (D) all provide cross-region replication so the service can continue in a secondary region. When you see "whole-region failure," filter out every Multi-AZ option as wrong.
 
 ---
 
-**문제 3.** A global game company wants to run player profiles across 5 regions as a low-latency NoSQL that can be **read and written in all regions simultaneously**. What is the most appropriate choice?
+**Question 3.** A global game company wants to run player profiles across 5 regions as a low-latency NoSQL that can be **read and written in all regions simultaneously**. What is the most appropriate choice?
 
 A) Aurora Global Database
 B) DynamoDB Global Tables
 C) RDS Cross-Region Read Replica
 D) ElastiCache Global Datastore
 
-**정답: B**
+**Answer: B**
 
-해설: DynamoDB Global Tables provides **Active-Active, writable-everywhere** NoSQL across multiple regions, auto-resolves conflicts with last-writer-wins, and typically keeps replication lag under 1 second. Aurora Global (A) allows writes in only one region (single writer), so it doesn't fit "write in all regions simultaneously." A Cross-Region Read Replica (C) is a read-only copy. ElastiCache Global Datastore (D) is a cache layer, not a durable profile store, and it also takes writes only in the primary region. "Multi-region simultaneous-write NoSQL" = Global Tables.
+Explanation: DynamoDB Global Tables provides **Active-Active, writable-everywhere** NoSQL across multiple regions, auto-resolves conflicts with last-writer-wins, and typically keeps replication lag under 1 second. Aurora Global (A) allows writes in only one region (single writer), so it doesn't fit "write in all regions simultaneously." A Cross-Region Read Replica (C) is a read-only copy. ElastiCache Global Datastore (D) is a cache layer, not a durable profile store, and it also takes writes only in the primary region. "Multi-region simultaneous-write NoSQL" = Global Tables.
 
 ---
 
-**문제 4.** After an RDS Multi-AZ failover, the application keeps trying to connect to the dead instance for a while. What is the most likely cause and remedy?
+**Question 4.** After an RDS Multi-AZ failover, the application keeps trying to connect to the dead instance for a while. What is the most likely cause and remedy?
 
 A) The standby isn't synchronized — restart replication
 B) Client-side DNS caching is excessively long — shorten the connection pool's DNS TTL
 C) Cross-Zone Load Balancing is disabled — enable it
 D) RDS doesn't support Multi-AZ — switch to Aurora
 
-**정답: B**
+**Answer: B**
 
-해설: RDS failover works by repointing the IP that the endpoint (CNAME) resolves to at the new primary, so if the application or JVM caches DNS results for a long time, it can't see the changed IP and keeps connecting to the dead instance. The remedy is to set a short DNS TTL (e.g., 5 seconds) on the connection pool and runtime. A is wrong because a synchronous standby is already up to date at failover, C is an ELB setting unrelated to DB failover, and D misdiagnoses the cause (RDS does support Multi-AZ). This is a textbook case where cache-invalidation timing dictates recovery speed in distributed systems.
+Explanation: RDS failover works by repointing the IP that the endpoint (CNAME) resolves to at the new primary, so if the application or JVM caches DNS results for a long time, it can't see the changed IP and keeps connecting to the dead instance. The remedy is to set a short DNS TTL (e.g., 5 seconds) on the connection pool and runtime. A is wrong because a synchronous standby is already up to date at failover, C is an ELB setting unrelated to DB failover, and D misdiagnoses the cause (RDS does support Multi-AZ). This is a textbook case where cache-invalidation timing dictates recovery speed in distributed systems.
 
 ---
 
-**문제 5.** A team wants to make RPO 0 between two **regions** via synchronous replication. What is the fundamental problem with this approach?
+**Question 5.** A team wants to make RPO 0 between two **regions** via synchronous replication. What is the fundamental problem with this approach?
 
 A) AWS technically doesn't support cross-region synchronous replication at all, so it's impossible
 B) Latency from inter-region distance slows every write, and availability drops on a partition (the CAP trade-off)
 C) It costs nothing, so there's no problem
 D) It's automatically solved by Multi-AZ
 
-**정답: B**
+**Answer: B**
 
-해설: Inter-region distance (thousands of km) forces round-trip latencies of tens to hundreds of ms, so if synchronous replication makes every write wait for a remote commit, write latency grows fatally (PACELC's normal-time consistency-latency trade-off). Moreover, by the CAP theorem, preserving strong consistency during a network partition means blocking writes, sacrificing availability. That's why Multi-Region usually chooses availability with asynchronous replication (RPO of seconds). A is an exaggeration (technical attempts are possible but impractical), C is plainly wrong, and D is wrong because Multi-AZ doesn't solve region-level problems.
+Explanation: Inter-region distance (thousands of km) forces round-trip latencies of tens to hundreds of ms, so if synchronous replication makes every write wait for a remote commit, write latency grows fatally (PACELC's normal-time consistency-latency trade-off). Moreover, by the CAP theorem, preserving strong consistency during a network partition means blocking writes, sacrificing availability. That's why Multi-Region usually chooses availability with asynchronous replication (RPO of seconds). A is an exaggeration (technical attempts are possible but impractical), C is plainly wrong, and D is wrong because Multi-AZ doesn't solve region-level problems.
 
 ---
 
-**문제 6.** A cost-sensitive company wants to prepare for regional failure but tolerates an RPO of 1 hour and an RTO of several hours. What is the most cost-effective starting point for DR?
+**Question 6.** A cost-sensitive company wants to prepare for regional failure but tolerates an RPO of 1 hour and an RTO of several hours. What is the most cost-effective starting point for DR?
 
 A) Full-stack Active-Active across two regions
 B) Cross-Region snapshots/backups + recover on failure (Backup & Restore)
 C) RDS Multi-AZ
 D) Synchronously replicate all data
 
-**정답: B**
+**Answer: B**
 
-해설: A loose target of RPO 1 hour and RTO several hours is well served by the cheapest Backup & Restore (copy Cross-Region snapshots, then rebuild infrastructure on failure). Active-Active (A) is the top-priced option for near-0 RTO/RPO and is overkill for the requirement, Multi-AZ (C) isn't for regional-failure protection, and synchronous replication (D) is impractical and expensive across regions. The key is "loose RTO/RPO + cost-sensitive = pick the cheapest tier." Over-engineering beyond the required resilience level is itself a waste.
+Explanation: A loose target of RPO 1 hour and RTO several hours is well served by the cheapest Backup & Restore (copy Cross-Region snapshots, then rebuild infrastructure on failure). Active-Active (A) is the top-priced option for near-0 RTO/RPO and is overkill for the requirement, Multi-AZ (C) isn't for regional-failure protection, and synchronous replication (D) is impractical and expensive across regions. The key is "loose RTO/RPO + cost-sensitive = pick the cheapest tier." Over-engineering beyond the required resilience level is itself a waste.
 
 ---
 
-**문제 7.** Instances were placed across two AZs behind an NLB, but traffic isn't evenly distributed because instances are concentrated in one AZ. What is the most appropriate action?
+**Question 7.** Instances were placed across two AZs behind an NLB, but traffic isn't evenly distributed because instances are concentrated in one AZ. What is the most appropriate action?
 
 A) Enable Cross-Zone Load Balancing on the NLB
 B) Consolidate all instances into one AZ
 C) ALB lacks this feature, so keep only the NLB
 D) Replace with Route 53 Weighted
 
-**정답: A**
+**Answer: A**
 
-해설: NLB has Cross-Zone Load Balancing **off by default**, so each AZ's load balancer node sends traffic only to targets in its own AZ, and if instance distribution is uneven, traffic becomes uneven too. Enabling it spreads traffic evenly across targets in all AZs (ALB is on by default). B goes the opposite direction and harms availability, C is the reverse of the truth (ALB is on by default), and D can't solve an instance-level distribution problem with DNS weighting. The exam point is that the NLB's default differs from the ALB's.
+Explanation: NLB has Cross-Zone Load Balancing **off by default**, so each AZ's load balancer node sends traffic only to targets in its own AZ, and if instance distribution is uneven, traffic becomes uneven too. Enabling it spreads traffic evenly across targets in all AZs (ALB is on by default). B goes the opposite direction and harms availability, C is the reverse of the truth (ALB is on by default), and D can't solve an instance-level distribution problem with DNS weighting. The exam point is that the NLB's default differs from the ALB's.
 
 ---
 

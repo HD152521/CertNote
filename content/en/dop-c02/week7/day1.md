@@ -246,38 +246,38 @@ Execution flow: ValidateOrder Lambda → on success ProcessPayment → ShipOrder
 
 ## 📝 Practice Questions
 
-**문제 1.** Lambda 함수를 무중단 배포하고 새 버전으로 트래픽을 점진적으로 전환하려면?
+**Question 1.** Lambda 함수를 무중단 배포하고 새 버전으로 트래픽을 점진적으로 전환하려면?
 
 A) Lambda 함수를 업데이트하고 즉시 배포  
 B) 새 버전을 발행 → Alias를 새 버전으로 업데이트하되 트래픽 가중치 설정 (예: 10% 신규, 90% 기존)  
 C) S3에서 새 코드 배포  
 D) Lambda를 삭제하고 재생성  
 
-**정답: B**
-해설: Lambda 버전은 불변 스냅샷이고 별칭은 가변 포인터다. Alias를 새 버전으로 업데이트하되 routing-config로 가중치를 설정하면 (예: 90% version 1, 10% version 2) 무중단 트래픽 전환이 가능하다.
+**Answer: B**
+Explanation: Lambda 버전은 불변 스냅샷이고 별칭은 가변 포인터다. Alias를 새 버전으로 업데이트하되 routing-config로 가중치를 설정하면 (예: 90% version 1, 10% version 2) 무중단 트래픽 전환이 가능하다.
 
 ---
 
-**문제 2.** AWS SAM 템플릿에서 Lambda 함수 버전을 자동으로 발행하고 CodeDeploy로 배포하려면?
+**Question 2.** AWS SAM 템플릿에서 Lambda 함수 버전을 자동으로 발행하고 CodeDeploy로 배포하려면?
 
 A) SAM 템플릿에 `AutoPublishAlias` 설정, CodeDeploy AppSpec에 Hooks 정의  
 B) CloudFormation 콘솔에서 수동 배포  
 C) Lambda 콘솔에서 일일이 버전 발행  
 D) 버전 관리 없이 $LATEST만 사용  
 
-**정답: A**
-해설: SAM의 `AutoPublishAlias` 속성이 배포 시 자동으로 새 버전을 발행하고 Alias를 업데이트한다. CodeDeploy AppSpec의 `BeforeAllowTraffic`/`AfterAllowTraffic` Hooks가 배포 검증을 담당한다.
+**Answer: A**
+Explanation: SAM의 `AutoPublishAlias` 속성이 배포 시 자동으로 새 버전을 발행하고 Alias를 업데이트한다. CodeDeploy AppSpec의 `BeforeAllowTraffic`/`AfterAllowTraffic` Hooks가 배포 검증을 담당한다.
 
 ---
 
-**문제 3.** CodeDeploy Lambda 배포 중 테스트가 실패하면?
+**Question 3.** CodeDeploy Lambda 배포 중 테스트가 실패하면?
 
 A) 배포가 진행되고 모든 트래픽이 새 버전으로 전환  
 B) Alias가 이전 버전으로 자동 롤백  
 C) 수동으로 Alias 롤백 필요  
 D) CloudWatch에만 로그 기록, 배포 계속  
 
-**정답: B**
-해설: CodeDeploy 배포 중 BeforeAllowTraffic 또는 AfterAllowTraffic 테스트 실패 시 자동으로 Alias가 이전 버전으로 롤백된다. 클라이언트는 영향을 받지 않는다.
+**Answer: B**
+Explanation: CodeDeploy 배포 중 BeforeAllowTraffic 또는 AfterAllowTraffic 테스트 실패 시 자동으로 Alias가 이전 버전으로 롤백된다. 클라이언트는 영향을 받지 않는다.
 
 ---

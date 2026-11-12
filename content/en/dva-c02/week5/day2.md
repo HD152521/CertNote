@@ -188,62 +188,62 @@ The internal operation of versioning, lifecycle, and replication we looked at to
 
 ## 📝 Practice Questions
 
-**문제 1.** After enabling versioning on an S3 bucket, you deleted a specific file with the DELETE API. When you then send a GET request for the same key, what is the result?
+**Question 1.** After enabling versioning on an S3 bucket, you deleted a specific file with the DELETE API. When you then send a GET request for the same key, what is the result?
 
 A) The content of the most recently uploaded version is returned
 B) A 404 Not Found is returned, and previous versions are accessible via their version IDs
 C) The content of the oldest version is returned
 D) An empty response (200 OK) is returned
 
-**정답: B**
-해설: In a versioning-enabled bucket, running a DELETE without a version ID does not actually delete the object but adds a Delete Marker. Because the delete marker becomes the latest version, a GET request without a version ID returns 404. Previous versions physically exist and can be accessed by specifying a particular version ID. To actually permanently delete a specific version, you must specify the version ID in the DELETE request.
+**Answer: B**
+Explanation: In a versioning-enabled bucket, running a DELETE without a version ID does not actually delete the object but adds a Delete Marker. Because the delete marker becomes the latest version, a GET request without a version ID returns 404. Previous versions physically exist and can be accessed by specifying a particular version ID. To actually permanently delete a specific version, you must specify the version ID in the DELETE request.
 
 ---
 
-**문제 2.** Which of the following is an impossible transition in an S3 lifecycle policy?
+**Question 2.** Which of the following is an impossible transition in an S3 lifecycle policy?
 
 A) Standard → Standard-IA (after 30 days)
 B) Glacier Flexible Retrieval → Glacier Deep Archive
 C) Standard-IA → Standard (after 30 days)
 D) Standard-IA → Glacier Flexible Retrieval
 
-**정답: C**
-해설: S3 lifecycle transitions are one-directional and can only move toward a cheaper (less frequently accessed) class. A reverse transition from Standard-IA to Standard is not possible via a lifecycle policy. To go back to the original class, you must copy the object directly while specifying the storage class. A (Standard→IA after 30 days), B (Glacier→Deep Archive), and D (IA→Glacier) are all valid transition directions.
+**Answer: C**
+Explanation: S3 lifecycle transitions are one-directional and can only move toward a cheaper (less frequently accessed) class. A reverse transition from Standard-IA to Standard is not possible via a lifecycle policy. To go back to the original class, you must copy the object directly while specifying the storage class. A (Standard→IA after 30 days), B (Glacier→Deep Archive), and D (IA→Glacier) are all valid transition directions.
 
 ---
 
-**문제 3.** Which is the correct description of S3 replication?
+**Question 3.** Which is the correct description of S3 replication?
 
 A) When you enable replication, existing objects are automatically replicated too
 B) CRR can be used only for disaster recovery, and SRR only for cost savings
 C) For replication to work, both the source and destination buckets must have versioning enabled
 D) Delete markers are always replicated
 
-**정답: C**
-해설: The key requirement of S3 replication is that both the source and destination buckets have versioning enabled, because replication operates based on version IDs. A is wrong — existing objects are not replicated, and you must use S3 Batch Replication separately. B is wrong — CRR is also used for latency optimization, and SRR is also used for dev-environment separation or log aggregation. D is wrong — delete-marker replication is OFF by default and is optionally enabled.
+**Answer: C**
+Explanation: The key requirement of S3 replication is that both the source and destination buckets have versioning enabled, because replication operates based on version IDs. A is wrong — existing objects are not replicated, and you must use S3 Batch Replication separately. B is wrong — CRR is also used for latency optimization, and SRR is also used for dev-environment separation or log aggregation. D is wrong — delete-marker replication is OFF by default and is optionally enabled.
 
 ---
 
-**문제 4.** Which of the following is a correct description of S3 Object Lock Compliance mode?
+**Question 4.** Which of the following is a correct description of S3 Object Lock Compliance mode?
 
 A) A user with IAM administrator privileges can delete before the retention period
 B) The root account can release the retention at any time
 C) If you request it from AWS Support, deletion before the retention period is possible
 D) Until the retention period expires, no one — including the root account — can delete the object or change the mode
 
-**정답: D**
-해설: Compliance mode provides the strongest WORM protection. The root account, IAM administrators, and AWS Support all cannot delete the object or change the mode before the retention period. This is the key difference from Governance mode — in Governance mode, a user with the `s3:BypassGovernanceRetention` permission can bypass the retention. In financial and medical regulatory environments, you must use Compliance mode to meet requirements such as SEC Rule 17a-4.
+**Answer: D**
+Explanation: Compliance mode provides the strongest WORM protection. The root account, IAM administrators, and AWS Support all cannot delete the object or change the mode before the retention period. This is the key difference from Governance mode — in Governance mode, a user with the `s3:BypassGovernanceRetention` permission can bypass the retention. In financial and medical regulatory environments, you must use Compliance mode to meet requirements such as SEC Rule 17a-4.
 
 ---
 
-**문제 5.** In a versioning-enabled S3 bucket, storage costs came out much higher than expected. What is the most likely cause and solution?
+**Question 5.** In a versioning-enabled S3 bucket, storage costs came out much higher than expected. What is the most likely cause and solution?
 
 A) CRR is enabled, incurring replication costs → disable CRR
 B) Previous versions are not being automatically deleted, so all versions are being stored → set NoncurrentVersionExpiration via a lifecycle policy
 C) Versioning itself has an additional cost → suspend versioning
 D) MFA Delete is enabled, incurring additional cost → disable MFA Delete
 
-**정답: B**
-해설: With versioning enabled, a new version is created each time you overwrite an object, and all previous versions are stored as well. Previous versions are not automatically deleted, and each incurs its own storage cost. Overwrite a file 10 times a day and you can create 300 versions in a month. The solution is to use a `NoncurrentVersionExpiration` rule to automatically delete previous versions older than a certain period (e.g., 30 days). Versioning itself has no additional cost, and MFA Delete is unrelated to cost.
+**Answer: B**
+Explanation: With versioning enabled, a new version is created each time you overwrite an object, and all previous versions are stored as well. Previous versions are not automatically deleted, and each incurs its own storage cost. Overwrite a file 10 times a day and you can create 300 versions in a month. The solution is to use a `NoncurrentVersionExpiration` rule to automatically delete previous versions older than a certain period (e.g., 30 days). Versioning itself has no additional cost, and MFA Delete is unrelated to cost.
 
 ---

@@ -321,86 +321,86 @@ cache:
 
 ## 📝 Practice Questions
 
-**문제 1.** A build in CodeBuild VPC mode fails with an "ENI creation failed" error. What is the most likely cause?
+**Question 1.** A build in CodeBuild VPC mode fails with an "ENI creation failed" error. What is the most likely cause?
 
 A) A syntax error in buildspec.yml
 B) The Service Role is missing the `ec2:CreateNetworkInterface` permission
 C) An incorrect runtime-version specification
 D) Running an ARM image on an x86 compute type
 
-**정답: B**
-해설: In VPC mode, CodeBuild creates an ENI in the specified subnets at build start. For that, the Service Role needs EC2 network permissions such as `ec2:CreateNetworkInterface`, `ec2:DescribeNetworkInterfaces`, and `ec2:DeleteNetworkInterface`. Without them, it fails at the ENI creation step.
+**Answer: B**
+Explanation: In VPC mode, CodeBuild creates an ENI in the specified subnets at build start. For that, the Service Role needs EC2 network permissions such as `ec2:CreateNetworkInterface`, `ec2:DescribeNetworkInterfaces`, and `ec2:DeleteNetworkInterface`. Without them, it fails at the ENI creation step.
 
 ---
 
-**문제 2.** A CodeBuild build in a private subnet must download packages from `npmjs.com`. What is the cost-efficient and secure approach?
+**Question 2.** A CodeBuild build in a private subnet must download packages from `npmjs.com`. What is the cost-efficient and secure approach?
 
 A) Change the subnet to public
 B) Internet access through a NAT Gateway
 C) Mirror npm with a CodeArtifact Upstream Repository + a VPC Endpoint for CodeArtifact
 D) Add an Internet Gateway directly to the private subnet's route table
 
-**정답: C**
-해설: CodeArtifact can be configured with public registries such as npm, PyPI, and Maven as upstreams. Adding a VPC Endpoint for CodeArtifact lets you fetch packages over the internal network without the internet. A NAT Gateway (B) works but incurs cost, and D is technically impossible (by definition a private subnet has no direct route to an IGW).
+**Answer: C**
+Explanation: CodeArtifact can be configured with public registries such as npm, PyPI, and Maven as upstreams. Adding a VPC Endpoint for CodeArtifact lets you fetch packages over the internal network without the internet. A NAT Gateway (B) works but incurs cost, and D is technically impossible (by definition a private subnet has no direct route to an IGW).
 
 ---
 
-**문제 3.** Why do you set `imagePullCredentialsType=SERVICE_ROLE` when using a custom ECR image as the build environment?
+**Question 3.** Why do you set `imagePullCredentialsType=SERVICE_ROLE` when using a custom ECR image as the build environment?
 
 A) For Docker Hub authentication
 B) To pull the image using the CodeBuild Service Role's ECR permissions (same-account or cross-account ECR)
 C) To run ARM images on x86
 D) To enable privilegedMode
 
-**정답: B**
-해설: `SERVICE_ROLE` makes CodeBuild pull the image from ECR using the Service Role's IAM permissions. The Service Role must have `ecr:GetAuthorizationToken` and `ecr:BatchGetImage`. When using cross-account ECR, the ECR Repository Policy in the account holding the image must also allow the build account's Role.
+**Answer: B**
+Explanation: `SERVICE_ROLE` makes CodeBuild pull the image from ECR using the Service Role's IAM permissions. The Service Role must have `ecr:GetAuthorizationToken` and `ecr:BatchGetImage`. When using cross-account ECR, the ECR Repository Policy in the account holding the image must also allow the build account's Role.
 
 ---
 
-**문제 4.** You need to build ARM Graviton alongside x86 to produce a multi-arch Docker image. What is the most efficient approach?
+**Question 4.** You need to build ARM Graviton alongside x86 to produce a multi-arch Docker image. What is the most efficient approach?
 
 A) Build arm64 as well on an x86 machine with QEMU emulation
 B) Define two nodes, ARM_CONTAINER and LINUX_CONTAINER, in Build Batch `build-list`, build each natively, then combine with `docker manifest`
 C) Build twice sequentially in a single buildspec
 D) Delegate the arm64 build to a Lambda Function
 
-**정답: B**
-해설: Building both architectures natively in parallel with Build Batch is the fastest and most stable. QEMU emulation (A) has poor performance, C cannot be parallelized so it takes twice as long, and D — Lambda has no Docker build environment. The standard is native arm64 builds followed by creating a multi-arch manifest with docker manifest.
+**Answer: B**
+Explanation: Building both architectures natively in parallel with Build Batch is the fastest and most stable. QEMU emulation (A) has poor performance, C cannot be parallelized so it takes twice as long, and D — Lambda has no Docker build environment. The standard is native arm64 builds followed by creating a multi-arch manifest with docker manifest.
 
 ---
 
-**문제 5.** What is the most important reason to add an S3 Gateway Endpoint to a VPC?
+**Question 5.** What is the most important reason to add an S3 Gateway Endpoint to a VPC?
 
 A) To enable S3 data encryption
 B) To route S3 traffic over the AWS internal network without NAT, for free, reducing NAT costs
 C) To make S3 buckets public
 D) To enable cross-region replication
 
-**정답: B**
-해설: The S3 Gateway Endpoint is the only free VPC Endpoint type. Using it means traffic from within the VPC to S3 does not traverse the NAT Gateway, saving NAT data transfer costs. Since CodeBuild frequently reads and writes build caches and artifacts in S3, the effect is significant.
+**Answer: B**
+Explanation: The S3 Gateway Endpoint is the only free VPC Endpoint type. Using it means traffic from within the VPC to S3 does not traverse the NAT Gateway, saving NAT data transfer costs. Since CodeBuild frequently reads and writes build caches and artifacts in S3, the effect is significant.
 
 ---
 
-**문제 6.** Builds are failing due to the Docker Hub rate limit. What is the most permanent solution without infrastructure changes?
+**Question 6.** Builds are failing due to the Docker Hub rate limit. What is the most permanent solution without infrastructure changes?
 
 A) Upgrade to a paid Docker Hub plan
 B) Configure ECR Pull Through Cache with Docker Hub as the upstream and change the Dockerfile's FROM image to the ECR path
 C) Reduce build frequency
 D) Add a sleep to the build to wait for the rate limit to recover
 
-**정답: B**
-해설: ECR Pull Through Cache fetches from Docker Hub only on the first pull and caches it in ECR. Subsequent builds are served from ECR and are free of the Docker Hub rate limit. A paid plan (A) is possible too, but it incurs cost and may not cover pulls across the whole team. The fundamental solution is B.
+**Answer: B**
+Explanation: ECR Pull Through Cache fetches from Docker Hub only on the first pull and caches it in ECR. Subsequent builds are served from ECR and are free of the Docker Hub rate limit. A paid plan (A) is possible too, but it incurs cost and may not cover pulls across the whole team. The fundamental solution is B.
 
 ---
 
-**문제 7.** In VPC mode builds, what problem can occur with 100 concurrent builds and a `/24` subnet (256 IPs)?
+**Question 7.** In VPC mode builds, what problem can occur with 100 concurrent builds and a `/24` subnet (256 IPs)?
 
 A) The build containers crash
 B) Each build consumes 1 ENI = 1 IP, so the subnet's IPs can be exhausted
 C) The Security Group rule limit is exceeded
 D) The KMS quota is exceeded
 
-**정답: B**
-해설: Each VPC mode build creates one ENI in the specified subnet, and an ENI consumes an IP from the subnet's IP pool. A `/24` subnet has about 251 usable IPs (5 are reserved by AWS). 100 concurrent builds consume 100 IPs. If other resources (RDS, Lambda, etc.) also use IPs in the same subnet, exhaustion can occur. Remedies: a subnet with a larger CIDR, or limiting concurrency with `concurrentBuildLimit`.
+**Answer: B**
+Explanation: Each VPC mode build creates one ENI in the specified subnet, and an ENI consumes an IP from the subnet's IP pool. A `/24` subnet has about 251 usable IPs (5 are reserved by AWS). 100 concurrent builds consume 100 IPs. If other resources (RDS, Lambda, etc.) also use IPs in the same subnet, exhaustion can occur. Remedies: a subnet with a larger CIDR, or limiting concurrency with `concurrentBuildLimit`.
 
 ---

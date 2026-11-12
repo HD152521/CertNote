@@ -128,7 +128,7 @@ Next, we explore the four DR strategies—Backup & Restore, Pilot Light, Warm St
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to send users worldwide to whichever region gives them the lowest latency, while making sure that during a regional failure only healthy regions answer. Which Route 53 configuration fits best?
+**Question 1.** You want to send users worldwide to whichever region gives them the lowest latency, while making sure that during a regional failure only healthy regions answer. Which Route 53 configuration fits best?
 
 A) Simple Routing
 
@@ -138,13 +138,13 @@ C) Weighted Routing fixed at 50:50
 
 D) Geolocation Routing only
 
-**정답: B**
+**Answer: B**
 
-해설: Latency-based Routing answers with the fastest region for each user based on measured network latency, optimizing global performance. Attaching a health check to each record automatically removes a failed region from the candidate answers, giving you performance optimization and automatic failover at once. Simple (A) is a single record with no distribution or failover, fixed Weighted (C) ignores latency, and Geolocation (D) is geography-based so it cannot pick the faster region within the same continent. Note, however, that because of DNS cache TTL the failover is not instantaneous.
+Explanation: Latency-based Routing answers with the fastest region for each user based on measured network latency, optimizing global performance. Attaching a health check to each record automatically removes a failed region from the candidate answers, giving you performance optimization and automatic failover at once. Simple (A) is a single record with no distribution or failover, fixed Weighted (C) ignores latency, and Geolocation (D) is geography-based so it cannot pick the faster region within the same continent. Note, however, that because of DNS cache TTL the failover is not instantaneous.
 
 ---
 
-**문제 2.** In DynamoDB Global Tables, two regions update the same item differently at almost the same moment. How is the conflict resolved, and what is the risk?
+**Question 2.** In DynamoDB Global Tables, two regions update the same item differently at almost the same moment. How is the conflict resolved, and what is the risk?
 
 A) Both are cancelled by a transaction rollback
 
@@ -154,13 +154,13 @@ C) The first write always wins
 
 D) A conflict error is returned to the user
 
-**정답: B**
+**Answer: B**
 
-해설: DynamoDB Global Tables is multi-master and resolves conflicts with Last Write Wins (LWW) — the later wall-clock timestamp wins. But clocks on distributed nodes are never perfectly synchronized (clock skew), so a write that actually happened earlier can carry a "later" timestamp and win, silently erasing the truly latest write — a silent lost update. That is why "updating the same key from multiple regions simultaneously" is an anti-pattern. The original Dynamo paper chose to preserve both versions for shopping carts instead of LWW, showing that conflict resolution requires domain knowledge. Rollback (A), first-write-wins (C), and conflict errors (D) are not DynamoDB behaviors.
+Explanation: DynamoDB Global Tables is multi-master and resolves conflicts with Last Write Wins (LWW) — the later wall-clock timestamp wins. But clocks on distributed nodes are never perfectly synchronized (clock skew), so a write that actually happened earlier can carry a "later" timestamp and win, silently erasing the truly latest write — a silent lost update. That is why "updating the same key from multiple regions simultaneously" is an anti-pattern. The original Dynamo paper chose to preserve both versions for shopping carts instead of LWW, showing that conflict resolution requires domain knowledge. Rollback (A), first-write-wins (C), and conflict errors (D) are not DynamoDB behaviors.
 
 ---
 
-**문제 3.** What is the fundamental reason Aurora Global Database never experiences cross-region write conflicts at all?
+**Question 3.** What is the fundamental reason Aurora Global Database never experiences cross-region write conflicts at all?
 
 A) Because all regions replicate synchronously
 
@@ -170,13 +170,13 @@ C) Because Aurora merges conflicts automatically
 
 D) Because there is only one region
 
-**정답: B**
+**Answer: B**
 
-해설: Aurora Global uses a single-leader replication model: writes occur only in the Primary region, and up to five Secondary regions are read-only. Because there is exactly one write point, cross-region write conflicts cannot occur by construction — a design that sidesteps the difficulty of reconciling relational transactions and constraints with conflict resolution. Replication is asynchronous with sub-second lag, not synchronous (A is wrong); conflicts are prevented rather than merged (C); and there are multiple regions (D is wrong). The opposite extreme is DynamoDB Global Tables' multi-master model.
+Explanation: Aurora Global uses a single-leader replication model: writes occur only in the Primary region, and up to five Secondary regions are read-only. Because there is exactly one write point, cross-region write conflicts cannot occur by construction — a design that sidesteps the difficulty of reconciling relational transactions and constraints with conflict resolution. Replication is asynchronous with sub-second lag, not synchronous (A is wrong); conflicts are prevented rather than merged (C); and there are multiple regions (D is wrong). The opposite extreme is DynamoDB Global Tables' multi-master model.
 
 ---
 
-**문제 4.** You encrypted S3 objects with KMS and replicated them to another region with CRR, but the objects cannot be decrypted in the destination region. What is the cause and the fix?
+**Question 4.** You encrypted S3 objects with KMS and replicated them to another region with CRR, but the objects cannot be decrypted in the destination region. What is the cause and the fix?
 
 A) CRR does not support encryption
 
@@ -186,13 +186,13 @@ C) Versioning is turned off
 
 D) S3 does not support encrypted data across regions
 
-**정답: B**
+**Answer: B**
 
-해설: An ordinary KMS key is confined to one region and cannot be used elsewhere. Replicating an encrypted object to another region does not help if that region lacks the same key — decryption is impossible. A KMS Multi-Region Key shares the same key material and key ID (mrk-) across regions, so data encrypted in one region can be decrypted with the replica MRK in another (sharing the KEK layer of envelope encryption across regions). CRR does support encryption (A is wrong), versioning is a CRR prerequisite but not the cause of the decryption failure (C), and S3 does support encrypted data across regions (D is wrong).
+Explanation: An ordinary KMS key is confined to one region and cannot be used elsewhere. Replicating an encrypted object to another region does not help if that region lacks the same key — decryption is impossible. A KMS Multi-Region Key shares the same key material and key ID (mrk-) across regions, so data encrypted in one region can be decrypted with the replica MRK in another (sharing the KEK layer of envelope encryption across regions). CRR does support encryption (A is wrong), versioning is a CRR prerequisite but not the cause of the decryption failure (C), and S3 does support encrypted data across regions (D is wrong).
 
 ---
 
-**문제 5.** For non-HTTP (game UDP) traffic, you want failover to a healthy region to be instantaneous on backend region failure, regardless of the client's DNS cache. Which is most appropriate?
+**Question 5.** For non-HTTP (game UDP) traffic, you want failover to a healthy region to be instantaneous on backend region failure, regardless of the client's DNS cache. Which is most appropriate?
 
 A) Route 53 Failover Routing (with a short TTL)
 
@@ -202,13 +202,13 @@ C) CloudFront
 
 D) Route 53 Latency Routing
 
-**정답: B**
+**Answer: B**
 
-해설: Route 53-based failover changes the answered IP itself, so a delay of at least one client DNS cache TTL is unavoidable (the limitation of A and D). Global Accelerator provides two fixed IPs advertised worldwide via anycast, and when a backend region dies it reroutes traffic to a healthy region immediately based on health checks — since the IP never changes, failover is instantaneous regardless of client DNS caching. It also supports TCP/UDP (L4), which suits non-HTTP workloads. CloudFront (C) is for HTTP/HTTPS content caching and is unsuitable for UDP game traffic.
+Explanation: Route 53-based failover changes the answered IP itself, so a delay of at least one client DNS cache TTL is unavoidable (the limitation of A and D). Global Accelerator provides two fixed IPs advertised worldwide via anycast, and when a backend region dies it reroutes traffic to a healthy region immediately based on health checks — since the IP never changes, failover is instantaneous regardless of client DNS caching. It also supports TCP/UDP (L4), which suits non-HTTP workloads. CloudFront (C) is for HTTP/HTTPS content caching and is unsuitable for UDP game traffic.
 
 ---
 
-**문제 6.** Which mechanism reduces false positives (judging a healthy endpoint as failed) caused by transient network glitches in Route 53 health checks?
+**Question 6.** Which mechanism reduces false positives (judging a healthy endpoint as failed) caused by transient network glitches in Route 53 health checks?
 
 A) Checking once from a single location
 
@@ -218,13 +218,13 @@ C) Judging solely from user traffic
 
 D) Increasing the DNS TTL
 
-**정답: B**
+**Answer: B**
 
-해설: A Route 53 health check is not a single ping but simultaneous probes from many checker locations worldwide, and the endpoint is judged healthy only when at least a certain proportion of checkers (about 18%) report it healthy. This global quorum consensus prevents false positives caused by one checker's transient network problem. In addition, Calculated checks (AND/OR combinations of several checks) and CloudWatch Alarm-based checks express composite conditions. A single probe (A), judging from user traffic (C), and TTL tuning (D) are not health-check false-positive prevention mechanisms.
+Explanation: A Route 53 health check is not a single ping but simultaneous probes from many checker locations worldwide, and the endpoint is judged healthy only when at least a certain proportion of checkers (about 18%) report it healthy. This global quorum consensus prevents false positives caused by one checker's transient network problem. In addition, Calculated checks (AND/OR combinations of several checks) and CloudWatch Alarm-based checks express composite conditions. A single probe (A), judging from user traffic (C), and TTL tuning (D) are not health-check false-positive prevention mechanisms.
 
 ---
 
-**문제 7.** You want to validate the DR failover procedure safely in normal times and be able to toggle failover even when the main control plane is impaired. Which is most appropriate?
+**Question 7.** You want to validate the DR failover procedure safely in normal times and be able to toggle failover even when the main control plane is impaired. Which is most appropriate?
 
 A) Editing Route 53 records manually by hand
 
@@ -234,9 +234,9 @@ C) Rewriting DNS with Lambda every time
 
 D) CloudFront Origin Failover
 
-**정답: B**
+**Answer: B**
 
-해설: Route 53 ARC does not leave failover to health-check automation alone; it toggles explicitly through Routing Control and continuously verifies the Secondary region's capacity, configuration, and replication readiness with Readiness Check, making DR drills safe. The key point is that ARC's data plane is distributed across five regions, so failover can still be executed even when the main control plane is impaired (control/data plane separation, the static stability principle — the fewer systems you depend on during a failure, the safer). Manual edits (A) and ad-hoc rewrites (C) offer no validation or safety, and CloudFront Origin Failover (D) is HTTP origin-level failover, not a general-purpose DR toggle.
+Explanation: Route 53 ARC does not leave failover to health-check automation alone; it toggles explicitly through Routing Control and continuously verifies the Secondary region's capacity, configuration, and replication readiness with Readiness Check, making DR drills safe. The key point is that ARC's data plane is distributed across five regions, so failover can still be executed even when the main control plane is impaired (control/data plane separation, the static stability principle — the fewer systems you depend on during a failure, the safer). Manual edits (A) and ad-hoc rewrites (C) offer no validation or safety, and CloudFront Origin Failover (D) is HTTP origin-level failover, not a general-purpose DR toggle.
 
 ---
 

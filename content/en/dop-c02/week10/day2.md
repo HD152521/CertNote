@@ -148,94 +148,94 @@ Next we deep-dive Container Insights and Lambda Insights, and EMF. How observabi
 
 ## 📝 Practice Questions
 
-**문제 1.** 여러 출처(컨테이너 인스턴스)가 같은 서비스의 로그를 보낸다. CloudWatch가 시간 순서를 보장하는 경계는?
+**Question 1.** 여러 출처(컨테이너 인스턴스)가 같은 서비스의 로그를 보낸다. CloudWatch가 시간 순서를 보장하는 경계는?
 
 A) Log Group 전체
 B) Log Stream 내부 — 한 스트림 안에서만 순서 보장
 C) 리전 전체
 D) 계정 전체
 
-**정답: B**
+**Answer: B**
 
-해설: CloudWatch Logs는 한 Log Stream 내부에서만 이벤트의 시간 순서를 보장하고, 서로 다른 스트림 사이에는 보장하지 않는다. Kafka가 파티션 안에서만 순서를 보장하는 것과 같은 모델로, 출처마다 스트림을 분리해 병렬 쓰기 처리량을 얻으면서 각 출처 내부의 인과 순서를 유지한다. Log Group(A)은 정책·권한·필터의 단위일 뿐 순서 보장 단위가 아니다.
+Explanation: CloudWatch Logs는 한 Log Stream 내부에서만 이벤트의 시간 순서를 보장하고, 서로 다른 스트림 사이에는 보장하지 않는다. Kafka가 파티션 안에서만 순서를 보장하는 것과 같은 모델로, 출처마다 스트림을 분리해 병렬 쓰기 처리량을 얻으면서 각 출처 내부의 인과 순서를 유지한다. Log Group(A)은 정책·권한·필터의 단위일 뿐 순서 보장 단위가 아니다.
 
 ---
 
-**문제 2.** 수백 개 Lambda 함수의 Log Group이 자동 생성되며 로그 비용이 누적된다. 근본 원인과 해법은?
+**Question 2.** 수백 개 Lambda 함수의 Log Group이 자동 생성되며 로그 비용이 누적된다. 근본 원인과 해법은?
 
 A) Lambda 메모리 과다 — 메모리 축소
 B) 기본 retention이 무제한 — EventBridge로 새 Log Group 생성을 감지해 자동 retention 적용 또는 Config 규칙으로 비준수 교정
 C) 리전이 비쌈 — 리전 변경
 D) IAM 권한 과다
 
-**정답: B**
+**Answer: B**
 
-해설: Lambda가 자동 생성하는 Log Group의 기본 retention은 Never Expire(무제한)라 로그가 영원히 쌓인다. 조직 차원의 해법은 새 Log Group 생성 이벤트를 EventBridge로 잡아 Lambda가 자동으로 retention을 걸거나, AWS Config 규칙으로 "retention 없는 Log Group"을 비준수로 탐지해 자동 교정하는 것이다. 메모리(A)·리전(C)·IAM(D)은 로그 보존 비용과 무관하다.
+Explanation: Lambda가 자동 생성하는 Log Group의 기본 retention은 Never Expire(무제한)라 로그가 영원히 쌓인다. 조직 차원의 해법은 새 Log Group 생성 이벤트를 EventBridge로 잡아 Lambda가 자동으로 retention을 걸거나, AWS Config 규칙으로 "retention 없는 Log Group"을 비준수로 탐지해 자동 교정하는 것이다. 메모리(A)·리전(C)·IAM(D)은 로그 보존 비용과 무관하다.
 
 ---
 
-**문제 3.** 로그를 실시간으로 OpenSearch에 적재하려 한다. 가장 적절한 경로는?
+**Question 3.** 로그를 실시간으로 OpenSearch에 적재하려 한다. 가장 적절한 경로는?
 
 A) Subscription Filter → Kinesis Data Firehose → OpenSearch
 B) 매시간 export task로 S3에 내린 뒤 수동 색인
 C) Lambda가 Log Group을 1분마다 폴링
 D) S3 동기화
 
-**정답: A**
+**Answer: A**
 
-해설: Subscription Filter는 로그 도착 즉시 실시간으로 라우팅하고, Kinesis Firehose는 완전관리형 버퍼로 OpenSearch에 배치 적재하기 가장 단순한 경로다. 샤드 관리가 없고 버퍼링·재시도를 자동 처리한다. export task(B)는 일회성 배치라 실시간이 아니고, 폴링(C)은 지연·비용·throttling 문제가 있으며, S3 동기화(D)는 OpenSearch로 직접 가지 않는다.
+Explanation: Subscription Filter는 로그 도착 즉시 실시간으로 라우팅하고, Kinesis Firehose는 완전관리형 버퍼로 OpenSearch에 배치 적재하기 가장 단순한 경로다. 샤드 관리가 없고 버퍼링·재시도를 자동 처리한다. export task(B)는 일회성 배치라 실시간이 아니고, 폴링(C)은 지연·비용·throttling 문제가 있으며, S3 동기화(D)는 OpenSearch로 직접 가지 않는다.
 
 ---
 
-**문제 4.** 형식을 바꿀 수 없는 외부 NGINX 액세스 로그에서 5xx만 메트릭으로 만들어 알람을 걸려면?
+**Question 4.** 형식을 바꿀 수 없는 외부 NGINX 액세스 로그에서 5xx만 메트릭으로 만들어 알람을 걸려면?
 
 A) EMF로 NGINX 로그를 재작성
 B) Metric Filter `[..., status_code=5*, ...]` + 그 메트릭에 CloudWatch Alarm
 C) Logs Insights를 5분마다 수동 실행
 D) X-Ray
 
-**정답: B**
+**Answer: B**
 
-해설: EMF는 내가 짜는 애플리케이션 코드에 적용하는 것이라 형식을 바꿀 수 없는 외부 로그(NGINX·Apache·syslog)에는 못 쓴다. Metric Filter는 공백 구분 위치 기반 패턴으로 status_code 필드가 5로 시작하는 라인을 매칭해 메트릭을 추출하고, 그 메트릭에 알람을 건다. Insights 수동 실행(C)은 실시간 알람이 아니고, X-Ray(D)는 분산 추적으로 로그 메트릭 추출과 무관하다.
+Explanation: EMF는 내가 짜는 애플리케이션 코드에 적용하는 것이라 형식을 바꿀 수 없는 외부 로그(NGINX·Apache·syslog)에는 못 쓴다. Metric Filter는 공백 구분 위치 기반 패턴으로 status_code 필드가 5로 시작하는 라인을 매칭해 메트릭을 추출하고, 그 메트릭에 알람을 건다. Insights 수동 실행(C)은 실시간 알람이 아니고, X-Ray(D)는 분산 추적으로 로그 메트릭 추출과 무관하다.
 
 ---
 
-**문제 5.** Logs Insights 쿼리 비용이 높다. 비용·성능을 개선하는 가장 직접적 방법은?
+**Question 5.** Logs Insights 쿼리 비용이 높다. 비용·성능을 개선하는 가장 직접적 방법은?
 
 A) Log Group을 더 많이 만든다
 B) 쿼리의 시간 범위를 좁히고 `filter`를 일찍 걸어 스캔 데이터량을 줄인다
 C) retention을 늘린다
 D) Live Tail로 대체
 
-**정답: B**
+**Answer: B**
 
-해설: Logs Insights는 역색인 없이 쿼리 시점에 지정 시간 범위를 풀스캔하는 엔진이라 과금이 스캔 데이터량 기준이다. 시간 범위를 좁히고 파이프 초반에 `filter`를 걸어 스캔·처리할 데이터를 줄이면 비용과 지연이 함께 준다. retention 증가(C)는 오히려 비용을 늘리고, Live Tail(D)은 실시간 관찰용이라 사후 통계 쿼리를 대체하지 못한다.
+Explanation: Logs Insights는 역색인 없이 쿼리 시점에 지정 시간 범위를 풀스캔하는 엔진이라 과금이 스캔 데이터량 기준이다. 시간 범위를 좁히고 파이프 초반에 `filter`를 걸어 스캔·처리할 데이터를 줄이면 비용과 지연이 함께 준다. retention 증가(C)는 오히려 비용을 늘리고, Live Tail(D)은 실시간 관찰용이라 사후 통계 쿼리를 대체하지 못한다.
 
 ---
 
-**문제 6.** 모든 로그를 7년 컴플라이언스 보관하되 운영 조회는 최근 2주만 필요하다. 비용 최적 설계는?
+**Question 6.** 모든 로그를 7년 컴플라이언스 보관하되 운영 조회는 최근 2주만 필요하다. 비용 최적 설계는?
 
 A) CloudWatch에 7년 무제한 보존
 B) CloudWatch retention 14일 + Subscription Filter(전량) → Firehose → S3, S3 라이프사이클로 Glacier 전환, 장기 조회는 Athena
 C) 모든 로그를 매일 수동 다운로드
 D) OpenSearch에 7년 보관
 
-**정답: B**
+**Answer: B**
 
-해설: 핫/콜드 계층화가 정답이다. CloudWatch Logs는 retention 14일로 운영 조회만 담당하고, 동시에 빈 패턴 구독 필터로 전량을 Firehose → S3로 흘려 7년 보관한다. S3는 라이프사이클로 Glacier/Deep Archive 전환해 보관 비용을 최소화하고, 드문 장기 조회는 Athena로 직접 쿼리한다. CloudWatch 7년 보존(A)·OpenSearch 7년(D)은 저장 비용이 과도하고, 수동 다운로드(C)는 비현실적이다.
+Explanation: 핫/콜드 계층화가 정답이다. CloudWatch Logs는 retention 14일로 운영 조회만 담당하고, 동시에 빈 패턴 구독 필터로 전량을 Firehose → S3로 흘려 7년 보관한다. S3는 라이프사이클로 Glacier/Deep Archive 전환해 보관 비용을 최소화하고, 드문 장기 조회는 Athena로 직접 쿼리한다. CloudWatch 7년 보존(A)·OpenSearch 7년(D)은 저장 비용이 과도하고, 수동 다운로드(C)는 비현실적이다.
 
 ---
 
-**문제 7.** 멀티계정 조직에서 로그를 물리적으로 이동·가공하지 않고 중앙 모니터링 계정에서 통합 조회만 하려면(2023+ 모던 방식)?
+**Question 7.** 멀티계정 조직에서 로그를 물리적으로 이동·가공하지 않고 중앙 모니터링 계정에서 통합 조회만 하려면(2023+ 모던 방식)?
 
 A) Subscription Destination + Kinesis(1세대)
 B) Cross-Account Observability — 모니터링 계정 Sink + 출처 계정 연결로 콘솔 통합 조회
 C) 각 계정 로그를 S3로 복사
 D) 계정마다 별도 대시보드 수동 운영
 
-**정답: B**
+**Answer: B**
 
-해설: Cross-Account Observability(2023+)는 모니터링 계정이 Sink를 만들고 출처 계정이 이를 신뢰하도록 연결하면, 별도 Kinesis 파이프라인 없이 모니터링 계정 콘솔에서 출처 계정의 로그·메트릭·추적을 통합 조회한다(단방향). 1세대 Subscription Destination(A)은 로그를 물리적으로 중앙으로 이동·재적재할 때 쓰는 방식이고, 이동 없는 통합 조회에는 2세대가 단순하다.
+Explanation: Cross-Account Observability(2023+)는 모니터링 계정이 Sink를 만들고 출처 계정이 이를 신뢰하도록 연결하면, 별도 Kinesis 파이프라인 없이 모니터링 계정 콘솔에서 출처 계정의 로그·메트릭·추적을 통합 조회한다(단방향). 1세대 Subscription Destination(A)은 로그를 물리적으로 중앙으로 이동·재적재할 때 쓰는 방식이고, 이동 없는 통합 조회에는 2세대가 단순하다.
 
 ---
 

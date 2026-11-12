@@ -103,7 +103,7 @@ In the next article, we wrap up the final pre-exam checkpoint with a mock exam t
 
 ## 📝 Practice Questions
 
-**문제 1.** A company runs an RDS MySQL instance 24/7 year-round and wants the largest cost saving. Which commitment should it choose?
+**Question 1.** A company runs an RDS MySQL instance 24/7 year-round and wants the largest cost saving. Which commitment should it choose?
 
 A) Compute Savings Plan
 
@@ -113,13 +113,13 @@ C) EC2 Instance Savings Plan
 
 D) Spot Instance
 
-**정답: B**
+**Answer: B**
 
-해설: **Savings Plans do not apply to RDS, Redshift, ElastiCache, or OpenSearch.** The commitment discount for these managed data services can still only be obtained via the **Reserved Instance (RI)** model. The Savings Plans in A and C fit EC2/Fargate/Lambda compute but can't apply to RDS, a trap. Spot (D) is unsuited to a stateful DB (data-loss risk on reclamation). "RDS/Redshift/ElastiCache running steadily = RI" is the key signal.
+Explanation: **Savings Plans do not apply to RDS, Redshift, ElastiCache, or OpenSearch.** The commitment discount for these managed data services can still only be obtained via the **Reserved Instance (RI)** model. The Savings Plans in A and C fit EC2/Fargate/Lambda compute but can't apply to RDS, a trap. Spot (D) is unsuited to a stateful DB (data-loss risk on reclamation). "RDS/Redshift/ElastiCache running steadily = RI" is the key signal.
 
 ---
 
-**문제 2.** A team runs a nightly batch data-processing job. The job is stateless and restartable after interruption, and they want to cut cost as much as possible. What is the appropriate compute option?
+**Question 2.** A team runs a nightly batch data-processing job. The job is stateless and restartable after interruption, and they want to cut cost as much as possible. What is the appropriate compute option?
 
 A) On-Demand EC2
 
@@ -129,13 +129,13 @@ C) Spot Instance
 
 D) Compute Savings Plan
 
-**정답: C**
+**Answer: C**
 
-해설: **Spot Instances** provide spare EC2 capacity up to 90% cheaper but AWS can reclaim it after a 2-minute warning. So they're ideal for **stateless, fault-tolerant, interruption-resumable** workloads (nightly batch, big-data processing). A is the most expensive, and B/D are commitment discounts for steadily-running workloads, over-committed for "interruption-OK batch." As in the Pinterest case, Spot safely enjoys its 90% discount "when redesigned to be checkpointable." Signal words: "stateless / interruption OK / batch" = Spot.
+Explanation: **Spot Instances** provide spare EC2 capacity up to 90% cheaper but AWS can reclaim it after a 2-minute warning. So they're ideal for **stateless, fault-tolerant, interruption-resumable** workloads (nightly batch, big-data processing). A is the most expensive, and B/D are commitment discounts for steadily-running workloads, over-committed for "interruption-OK batch." As in the Pinterest case, Spot safely enjoys its 90% discount "when redesigned to be checkpointable." Signal words: "stateless / interruption OK / batch" = Spot.
 
 ---
 
-**문제 3.** Private-subnet EC2 instances read and write bulk data to S3. Currently all traffic passes through a NAT Gateway, incurring large data-processing cost. What is the most effective saving?
+**Question 3.** Private-subnet EC2 instances read and write bulk data to S3. Currently all traffic passes through a NAT Gateway, incurring large data-processing cost. What is the most effective saving?
 
 A) Replace the NAT Gateway with a NAT Instance
 
@@ -145,13 +145,13 @@ C) Add an Interface Endpoint (PrivateLink)
 
 D) Place CloudFront in front
 
-**정답: B**
+**Answer: B**
 
-해설: A **Gateway Endpoint for S3/DynamoDB is itself free** and lets private-subnet traffic go directly to S3 without passing through NAT, immediately eliminating the NAT data-processing charge. Replacing with a NAT Instance (A) only adds operational burden and isn't a root fix; an Interface Endpoint (C) has hourly and per-GB charges so it isn't always a saving (for S3 the Gateway Endpoint is the answer); and CloudFront (D) is for internet-distribution caching, unrelated to internal S3 access-path cost. "Private EC2 → S3 bulk, NAT cost ↓ = Gateway Endpoint" is a regular answer.
+Explanation: A **Gateway Endpoint for S3/DynamoDB is itself free** and lets private-subnet traffic go directly to S3 without passing through NAT, immediately eliminating the NAT data-processing charge. Replacing with a NAT Instance (A) only adds operational burden and isn't a root fix; an Interface Endpoint (C) has hourly and per-GB charges so it isn't always a saving (for S3 the Gateway Endpoint is the answer); and CloudFront (D) is for internet-distribution caching, unrelated to internal S3 access-path cost. "Private EC2 → S3 bulk, NAT cost ↓ = Gateway Endpoint" is a regular answer.
 
 ---
 
-**문제 4.** A company stores temporary log data with a 7-day lifetime in S3. A proposal suggests storing it in Standard-IA immediately to save cost. What is the problem with this proposal?
+**Question 4.** A company stores temporary log data with a 7-day lifetime in S3. A proposal suggests storing it in Standard-IA immediately to save cost. What is the problem with this proposal?
 
 A) IA doesn't allow immediate access, so logs can't be read
 
@@ -161,13 +161,13 @@ C) IA has low durability, so logs may be lost
 
 D) No problem, it's the best choice
 
-**정답: B**
+**Answer: B**
 
-해설: **Standard-IA and One Zone-IA have a 30-day minimum storage duration.** Delete before 30 days and you pay for the remaining period, so **putting 7-day-lifetime data in IA gets billed for 30 days** and actually costs more. A is wrong (IA also allows immediate millisecond access), and C is wrong (Standard-IA has the same 11 9s durability as Standard). Short-lived data should sit in Standard and expire via Lifecycle. The "minimum storage duration (IA 30 days, Glacier 90 days, Deep Archive 180 days)" trap is a cost-domain regular.
+Explanation: **Standard-IA and One Zone-IA have a 30-day minimum storage duration.** Delete before 30 days and you pay for the remaining period, so **putting 7-day-lifetime data in IA gets billed for 30 days** and actually costs more. A is wrong (IA also allows immediate millisecond access), and C is wrong (Standard-IA has the same 11 9s durability as Standard). Short-lived data should sit in Standard and expire via Lifecycle. The "minimum storage duration (IA 30 days, Glacier 90 days, Deep Archive 180 days)" trap is a cost-domain regular.
 
 ---
 
-**문제 5.** When the operations team reaches its monthly budget limit, it wants to go beyond alerts and automatically stop non-production EC2 instances. What is the appropriate tool?
+**Question 5.** When the operations team reaches its monthly budget limit, it wants to go beyond alerts and automatically stop non-production EC2 instances. What is the appropriate tool?
 
 A) Cost Explorer
 
@@ -177,13 +177,13 @@ C) CUR + Athena
 
 D) Cost Allocation Tags
 
-**정답: B**
+**Answer: B**
 
-해설: Simple visibility/forecasting is Cost Explorer, but to also perform an **automatic action on reaching a budget threshold (stop instances, apply IAM policy)** you need **AWS Budgets' Budgets Actions**. Cost Explorer (A) only analyzes and detects anomalies and can't auto-block. CUR + Athena (C) is for granular post-hoc analysis, and Cost Allocation Tags (D) is for cost attribution (department separation). "Budget reached → auto-block/stop = Budgets Actions" is the key signal.
+Explanation: Simple visibility/forecasting is Cost Explorer, but to also perform an **automatic action on reaching a budget threshold (stop instances, apply IAM policy)** you need **AWS Budgets' Budgets Actions**. Cost Explorer (A) only analyzes and detects anomalies and can't auto-block. CUR + Athena (C) is for granular post-hoc analysis, and Cost Allocation Tags (D) is for cost attribution (department separation). "Budget reached → auto-block/stop = Budgets Actions" is the key signal.
 
 ---
 
-**문제 6.** A company wants to analyze, granularly by tag and time unit with SQL, a bill composed of hundreds of line items. What is the most appropriate method?
+**Question 6.** A company wants to analyze, granularly by tag and time unit with SQL, a bill composed of hundreds of line items. What is the most appropriate method?
 
 A) Look at Cost Explorer's graphs
 
@@ -193,13 +193,13 @@ C) Get a report from Budgets
 
 D) Build a CloudWatch dashboard
 
-**정답: B**
+**Answer: B**
 
-해설: The rawest, most granular cost data is the **CUR (Cost and Usage Report)**, and exporting it to S3 and querying with **Athena via SQL** enables arbitrary analysis by tag, time, and resource. Cost Explorer (A) is good for visualization/forecasting but falls short of arbitrary-SQL-level granularity. Budgets (C) is for budget control, and CloudWatch (D) is for operational metrics, unsuited to billing line-item analysis. "Granular / tag-unit analysis = CUR + Athena" is a regular answer.
+Explanation: The rawest, most granular cost data is the **CUR (Cost and Usage Report)**, and exporting it to S3 and querying with **Athena via SQL** enables arbitrary analysis by tag, time, and resource. Cost Explorer (A) is good for visualization/forecasting but falls short of arbitrary-SQL-level granularity. Budgets (C) is for budget control, and CloudWatch (D) is for operational metrics, unsuited to billing line-item analysis. "Granular / tag-unit analysis = CUR + Athena" is a regular answer.
 
 ---
 
-**문제 7.** A startup runs an API with very irregular traffic and much idle time. It wants to make idle cost near zero and also reduce operational burden. What is the most appropriate compute choice?
+**Question 7.** A startup runs an API with very irregular traffic and much idle time. It wants to make idle cost near zero and also reduce operational burden. What is the most appropriate compute choice?
 
 A) EC2 committed with a Reserved Instance
 
@@ -209,9 +209,9 @@ C) On-Demand EC2 left on 24/7
 
 D) A Spot Instance pool
 
-**정답: B**
+**Answer: B**
 
-해설: A **workload with irregular traffic and much idle** favors **serverless (Lambda)**, billed only for request/execution time, converging idle cost to 0 for a total-cost win. A is a commitment fit for steadily-running full workloads, wasteful with much idle; C keeps billing during idle so it's the most expensive; and Spot (D), though cheap, has heavy operational burden (handling reclamation) and is unsuited to irregular API responses. The key is the Shared-Responsibility judgment "spiky + much idle = serverless wins on total cost."
+Explanation: A **workload with irregular traffic and much idle** favors **serverless (Lambda)**, billed only for request/execution time, converging idle cost to 0 for a total-cost win. A is a commitment fit for steadily-running full workloads, wasteful with much idle; C keeps billing during idle so it's the most expensive; and Spot (D), though cheap, has heavy operational burden (handling reclamation) and is unsuited to irregular API responses. The key is the Shared-Responsibility judgment "spiky + much idle = serverless wins on total cost."
 
 ---
 

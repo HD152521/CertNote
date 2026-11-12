@@ -232,91 +232,91 @@ Next article goes deeper into RDS cost optimization and troubleshooting — Rese
 
 ## 📝 Practice Questions
 
-**문제 1.** A financial company needs to switch a non-encrypted RDS MySQL to KMS encryption with minimal downtime. What's the correct procedure?
+**Question 1.** A financial company needs to switch a non-encrypted RDS MySQL to KMS encryption with minimal downtime. What's the correct procedure?
 
 A) Console "Modify" → toggle Encryption and apply immediately
 B) Create snapshot → copy snapshot with encryption option → restore new instance from encrypted copy → switch application endpoint
 C) Run `aws rds modify-db-instance --storage-encrypted`
 D) Enabling Multi-AZ automatically encrypts
 
-**정답: B**
+**Answer: B**
 
-해설: RDS only allows encryption setting at instance creation, so non-encrypted → encrypted requires snapshot path. ① Take snapshot of existing instance ② Use `copy-db-snapshot --kms-key-id` to create encrypted copy ③ Run `restore-db-instance-from-db-snapshot` on the copy to create new instance ④ Redirect application endpoint to new instance (or Route 53 weighted routing for gradual switch). Downtime only during endpoint switchover. A/C unsupported by RDS. D Multi-AZ is availability feature, unrelated to encryption.
+Explanation: RDS only allows encryption setting at instance creation, so non-encrypted → encrypted requires snapshot path. ① Take snapshot of existing instance ② Use `copy-db-snapshot --kms-key-id` to create encrypted copy ③ Run `restore-db-instance-from-db-snapshot` on the copy to create new instance ④ Redirect application endpoint to new instance (or Route 53 weighted routing for gradual switch). Downtime only during endpoint switchover. A/C unsupported by RDS. D Multi-AZ is availability feature, unrelated to encryption.
 
 ---
 
-**문제 2.** Lambda function accesses RDS MySQL without hardcoding password. Workload is low frequency (100 calls/hour). What's the most suitable auth method?
+**Question 2.** Lambda function accesses RDS MySQL without hardcoding password. Workload is low frequency (100 calls/hour). What's the most suitable auth method?
 
 A) Lambda environment variable with password (KMS encrypted)
 B) AWS Secrets Manager with fetch + Lambda
 C) RDS IAM Database Authentication
 D) Parameter Store SecureString
 
-**정답: C**
+**Answer: C**
 
-해설: ① Goal: eliminate password itself ② Workload: low-frequency (100/hr = 0.03/sec), so IAM token issuance overhead negligible. C is cleanest. B is viable but password still exists + rotation policy needed. A/D expose password to environment/SSM, missing "no password in code" requirement. Exam: "Lambda + RDS + avoid password + low frequency" → IAM auth; "high frequency Lambda + stable connections" → RDS Proxy + Secrets Manager.
+Explanation: ① Goal: eliminate password itself ② Workload: low-frequency (100/hr = 0.03/sec), so IAM token issuance overhead negligible. C is cleanest. B is viable but password still exists + rotation policy needed. A/D expose password to environment/SSM, missing "no password in code" requirement. Exam: "Lambda + RDS + avoid password + low frequency" → IAM auth; "high frequency Lambda + stable connections" → RDS Proxy + Secrets Manager.
 
 ---
 
-**문제 3.** Which statement about RDS automatic backup and manual snapshot is correct?
+**Question 3.** Which statement about RDS automatic backup and manual snapshot is correct?
 
 A) Automatic backups can be copied directly across regions
 B) Manual snapshots persist even after DB instance deletion
 C) Automatic backups retain unlimited duration
 D) Manual snapshots support PITR
 
-**정답: B**
+**Answer: B**
 
-해설: B correct. Manual snapshots outlive DB deletion until explicitly deleted (cost continues). A: auto-backup cannot copy across regions directly — must convert to manual snapshot first. C: auto-backup max 35 days. D: PITR uses auto-backup transaction logs, so manual snapshots cannot do PITR, only restore to specific snapshot time.
+Explanation: B correct. Manual snapshots outlive DB deletion until explicitly deleted (cost continues). A: auto-backup cannot copy across regions directly — must convert to manual snapshot first. C: auto-backup max 35 days. D: PITR uses auto-backup transaction logs, so manual snapshots cannot do PITR, only restore to specific snapshot time.
 
 ---
 
-**문제 4.** Production RDS PostgreSQL suddenly shows slow queries. Need to determine "which wait event is the query blocked on." Most fitting tool?
+**Question 4.** Production RDS PostgreSQL suddenly shows slow queries. Need to determine "which wait event is the query blocked on." Most fitting tool?
 
 A) CloudWatch CPUUtilization graph
 B) Enhanced Monitoring process list
 C) Performance Insights
 D) VPC Flow Logs
 
-**정답: C**
+**Answer: C**
 
-해설: "Which wait event is query stuck on" is DB engine interior info — Performance Insights answers exactly this. PI DBLoad chart stacks active sessions by wait event (CPU, IO:DataFileRead, Lock:tuple etc.) visually. A: CloudWatch shows instance-level metrics (CPU, IOPS), not which query causes it. B: Enhanced Monitoring is OS process-level, not DB wait events. D: Flow Logs are network traffic only.
+Explanation: "Which wait event is query stuck on" is DB engine interior info — Performance Insights answers exactly this. PI DBLoad chart stacks active sessions by wait event (CPU, IO:DataFileRead, Lock:tuple etc.) visually. A: CloudWatch shows instance-level metrics (CPU, IOPS), not which query causes it. B: Enhanced Monitoring is OS process-level, not DB wait events. D: Flow Logs are network traffic only.
 
 ---
 
-**문제 5.** RDS MySQL `binlog_format` change from `ROW` to `STATEMENT` in parameter group doesn't take effect immediately. Cause and fix?
+**Question 5.** RDS MySQL `binlog_format` change from `ROW` to `STATEMENT` in parameter group doesn't take effect immediately. Cause and fix?
 
 A) IAM permission insufficient — add `rds:ModifyDBParameterGroup`
 B) `binlog_format` is static parameter — DB instance restart required
 C) Multi-AZ only — Single-AZ cannot change
 D) Aurora only
 
-**정답: B**
+**Answer: B**
 
-해설: RDS parameters are **dynamic** (immediate) or **static** (restart needed). `binlog_format` is static — after parameter group edit, `aws rds reboot-db-instance` needed. Console "Pending reboot" indicator shows this state. A: permission issue not root cause, it's engine behavior. C/D: unrelated.
+Explanation: RDS parameters are **dynamic** (immediate) or **static** (restart needed). `binlog_format` is static — after parameter group edit, `aws rds reboot-db-instance` needed. Console "Pending reboot" indicator shows this state. A: permission issue not root cause, it's engine behavior. C/D: unrelated.
 
 ---
 
-**문제 6.** DB instance with both automatic backup and manual snapshot is being deleted. What persists after deletion?
+**Question 6.** DB instance with both automatic backup and manual snapshot is being deleted. What persists after deletion?
 
 A) Automatic backup only
 B) Manual snapshot only
 C) Both
 D) Neither
 
-**정답: B**
+**Answer: B**
 
-해설: Instance deletion: ① auto-backup deleted together (but "Final snapshot" option creates last manual snapshot to keep) ② manual snapshot stays. "Preserve data forever" → either make Final snapshot or create manual snapshot beforehand. Auto-backup retain option (2021 feature) lets auto-backup persist briefly post-deletion, but default is deletion with instance.
+Explanation: Instance deletion: ① auto-backup deleted together (but "Final snapshot" option creates last manual snapshot to keep) ② manual snapshot stays. "Preserve data forever" → either make Final snapshot or create manual snapshot beforehand. Auto-backup retain option (2021 feature) lets auto-backup persist briefly post-deletion, but default is deletion with instance.
 
 ---
 
-**문제 7.** Medical SaaS stores PII on RDS, HIPAA requires 1-year audit log retention of "who ran which query." Most suitable config?
+**Question 7.** Medical SaaS stores PII on RDS, HIPAA requires 1-year audit log retention of "who ran which query." Most suitable config?
 
 A) Enable Performance Insights
 B) Enable Audit log → CloudWatch Logs export → KMS-encrypted log group with 1-year retention
 C) Enable Enhanced Monitoring
 D) Use RDS Proxy logs
 
-**정답: B**
+**Answer: B**
 
-해설: Audit requirement = DB engine audit log (MySQL MariaDB Audit Plugin, PostgreSQL pgaudit). CloudWatch Logs export gives KMS encryption, IAM access control, retention policy (1 year etc.) — all standard. A: Performance Insights is perf analysis, not audit. C: Enhanced Monitoring is OS metrics only. D: RDS Proxy logs are connection metadata, not query audit.
+Explanation: Audit requirement = DB engine audit log (MySQL MariaDB Audit Plugin, PostgreSQL pgaudit). CloudWatch Logs export gives KMS encryption, IAM access control, retention policy (1 year etc.) — all standard. A: Performance Insights is perf analysis, not audit. C: Enhanced Monitoring is OS metrics only. D: RDS Proxy logs are connection metadata, not query audit.

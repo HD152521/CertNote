@@ -226,62 +226,62 @@ Tomorrow we cover the schema-less world, DynamoDB. We'll see why the partition k
 
 ## 📝 Practice Questions
 
-**문제 1.** A financial services company needs fast access to the same DB data from 3 regions — the US (us-east-1), Europe (eu-west-1), and Seoul (ap-northeast-2) — for a global application. Data consistency tolerates sub-second lag. What is the most suitable solution?
+**Question 1.** A financial services company needs fast access to the same DB data from 3 regions — the US (us-east-1), Europe (eu-west-1), and Seoul (ap-northeast-2) — for a global application. Data consistency tolerates sub-second lag. What is the most suitable solution?
 
 A) Place independent RDS MySQL instances in each region and synchronize from the application
 B) Set up Aurora Global Database with us-east-1 as Primary and configure eu-west-1 and ap-northeast-2 as Secondaries
 C) Place RDS MySQL in us-east-1 and create a Cross-Region Read Replica in each region
 D) Use DynamoDB Global Tables
 
-**정답: B**
-해설: Aurora Global Database achieves sub-second cross-region replication lag via storage-layer replication. It supports up to 5 Secondary regions, so a 3-region setup is more than sufficient. A struggles to guarantee data consistency. C's RDS Cross-Region Read Replica has a replication lag of seconds to tens of seconds, longer than Aurora Global DB. D is NoSQL, so it may be unsuitable for a financial service that requires a relational schema.
+**Answer: B**
+Explanation: Aurora Global Database achieves sub-second cross-region replication lag via storage-layer replication. It supports up to 5 Secondary regions, so a 3-region setup is more than sufficient. A struggles to guarantee data consistency. C's RDS Cross-Region Read Replica has a replication lag of seconds to tens of seconds, longer than Aurora Global DB. D is NoSQL, so it may be unsuitable for a financial service that requires a relational schema.
 
 ---
 
-**문제 2.** On an Aurora MySQL cluster, an operator accidentally ran a bad DELETE query and important data was deleted. A few minutes have already passed. What is the fastest way to restore the current cluster to its pre-deletion state?
+**Question 2.** On an Aurora MySQL cluster, an operator accidentally ran a bad DELETE query and important data was deleted. A few minutes have already passed. What is the fastest way to restore the current cluster to its pre-deletion state?
 
 A) Restore a new cluster from the most recent snapshot (expected 20 minutes)
 B) Use Aurora Backtrack to rewind the current cluster to the point before deletion (a few minutes)
 C) Promote a Read Replica to Primary and manually restore the deleted data
 D) Create a new cluster with PITR to just before the deletion (15-20 minutes)
 
-**정답: B**
-해설: Backtrack is an Aurora MySQL-only feature that quickly rewinds the current cluster to a past point (within minutes). Since you don't need to create a new cluster, no endpoint change is needed either. A and D require creating a new cluster, so they take longer and require endpoint-switching work. C is wrong because a Read Replica also receives write replication, so the delete would have been replicated too — the data is already gone from the Replica.
+**Answer: B**
+Explanation: Backtrack is an Aurora MySQL-only feature that quickly rewinds the current cluster to a past point (within minutes). Since you don't need to create a new cluster, no endpoint change is needed either. A and D require creating a new cluster, so they take longer and require endpoint-switching work. C is wrong because a Read Replica also receives write replication, so the delete would have been replicated too — the data is already gone from the Replica.
 
 ---
 
-**문제 3.** A startup is about to launch a new SaaS service. The traffic pattern is hard to predict, and traffic is expected to fluctuate sharply for the first several weeks after launch. It wants to automatically adjust capacity while minimizing cost. What is the most suitable Aurora option?
+**Question 3.** A startup is about to launch a new SaaS service. The traffic pattern is hard to predict, and traffic is expected to fluctuate sharply for the first several weeks after launch. It wants to automatically adjust capacity while minimizing cost. What is the most suitable Aurora option?
 
 A) Aurora MySQL Provisioned (fixed db.r6g.large)
 B) Aurora Serverless v1 (can pause completely at a minimum of 0 ACU)
 C) Aurora Serverless v2 (minimum 0.5 ACU, second-scale scaling)
 D) Aurora MySQL + Auto Scaling Read Replicas
 
-**정답: C**
-해설: Aurora Serverless v2 auto-scales in seconds across the 0.5-256 ACU range, responding quickly to traffic fluctuations. v1 scales slowly (minutes) and has connection-drop issues during scaling, making it unsuitable for production. A is fixed capacity and can lead to waste or shortfalls. D scales reads but does not auto-adjust write capacity.
+**Answer: C**
+Explanation: Aurora Serverless v2 auto-scales in seconds across the 0.5-256 ACU range, responding quickly to traffic fluctuations. v1 scales slowly (minutes) and has connection-drop issues during scaling, making it unsuitable for production. A is fixed capacity and can lead to waste or shortfalls. D scales reads but does not auto-adjust write capacity.
 
 ---
 
-**문제 4.** Two of an Aurora cluster's 6 copies are lost simultaneously (Copy 5 and Copy 6 in AZ-c). What is the impact on the cluster's read/write operation?
+**Question 4.** Two of an Aurora cluster's 6 copies are lost simultaneously (Copy 5 and Copy 6 in AZ-c). What is the impact on the cluster's read/write operation?
 
 A) The cluster stops completely
 B) Only writes work; reads stop
 C) Both writes and reads keep operating normally
 D) Only reads work; writes stop
 
-**정답: C**
-해설: Aurora storage commits writes with a 4/6 Quorum and serves reads with a 3/6 Quorum out of 6 copies. If Copies 5 and 6 are lost, Copies 1, 2, 3, 4 remain. Writes: 4/6 → 4 of 4 responses is sufficient (OK). Reads: 3/6 → 3 of 4 responses is sufficient (OK). Therefore the cluster keeps operating normally. Note that Aurora automatically regenerates the lost copies in the background (self-healing).
+**Answer: C**
+Explanation: Aurora storage commits writes with a 4/6 Quorum and serves reads with a 3/6 Quorum out of 6 copies. If Copies 5 and 6 are lost, Copies 1, 2, 3, 4 remain. Writes: 4/6 → 4 of 4 responses is sufficient (OK). Reads: 3/6 → 3 of 4 responses is sufficient (OK). Therefore the cluster keeps operating normally. Note that Aurora automatically regenerates the lost copies in the background (self-healing).
 
 ---
 
-**문제 5.** An application performs both writes and reads on an Aurora cluster. The operations team wants to reserve 2 specific Reader instances exclusively for analytics queries (separating OLTP reads from analytics reads). Which Aurora feature implements this?
+**Question 5.** An application performs both writes and reads on an Aurora cluster. The operations team wants to reserve 2 specific Reader instances exclusively for analytics queries (separating OLTP reads from analytics reads). Which Aurora feature implements this?
 
 A) Create 2 Reader Endpoints
 B) Create a Custom Endpoint and designate the analytics Reader instances
 C) Use Instance Endpoints directly
 D) Migrate to Aurora Serverless v2
 
-**정답: B**
-해설: A Custom Endpoint is a feature that groups specific Reader instances in a cluster into a separate endpoint. If the analytics team uses the Custom Endpoint and the OLTP app uses the Reader Endpoint, the traffic is completely separated. A is impossible — there is one Reader Endpoint per cluster. C directly designates only one specific instance, so it has no load balancing and becomes a single point of failure. D is unrelated to this problem.
+**Answer: B**
+Explanation: A Custom Endpoint is a feature that groups specific Reader instances in a cluster into a separate endpoint. If the analytics team uses the Custom Endpoint and the OLTP app uses the Reader Endpoint, the traffic is completely separated. A is impossible — there is one Reader Endpoint per cluster. C directly designates only one specific instance, so it has no load balancing and becomes a single point of failure. D is unrelated to this problem.
 
 ---

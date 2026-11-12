@@ -199,8 +199,8 @@ B) R53 ARC Safety Rule forbidding failover if AuroraGlobalDBReplicationLag > 5 s
 C) CloudWatch Alarm → Lambda → Route 53 record auto-change
 D) Replace DB with DynamoDB Global Tables
 
-**정답: B**
-해설: "Lag-conditional failover block + manual switch" = R53 ARC. SafetyRule Assertion Control sets Lag condition; actual switch human-operated via Routing Control. Auto Failover (A, C) can't recognize Lag state, causing data loss > 5 sec. D requires Aurora OLTP to DynamoDB refactor, unrelated to scenario.
+**Answer: B**
+Explanation: "Lag-conditional failover block + manual switch" = R53 ARC. SafetyRule Assertion Control sets Lag condition; actual switch human-operated via Routing Control. Auto Failover (A, C) can't recognize Lag state, causing data loss > 5 sec. D requires Aurora OLTP to DynamoDB refactor, unrelated to scenario.
 
 ---
 
@@ -211,8 +211,8 @@ B) Weighted (50:50)
 C) Geolocation + Health Check integration (Primary Geolocation + Failover Default record on Health Check failure)
 D) Latency-Based Routing
 
-**정답: C**
-해설: Geolocation fixed per-country mapping. Normally EU→eu-west-1, AS→ap-northeast-2; if eu-west-1 fails, EU record's Health Check Unhealthy, Route 53 fallbacks to Default (ap-northeast-2). A without Default record returns NODATA on failure or unmapped users. D performance-based unsuitable for data sovereignty.
+**Answer: C**
+Explanation: Geolocation fixed per-country mapping. Normally EU→eu-west-1, AS→ap-northeast-2; if eu-west-1 fails, EU record's Health Check Unhealthy, Route 53 fallbacks to Default (ap-northeast-2). A without Default record returns NODATA on failure or unmapped users. D performance-based unsuitable for data sovereignty.
 
 ---
 
@@ -223,8 +223,8 @@ B) Issue Signed Cookies at login (auto-include all subsequent .ts requests)
 C) CloudFront Functions validate JWT all requests
 D) S3 bucket policy IP whitelist
 
-**정답: B**
-해설: HLS hundreds-thousands .ts segments need per-file Signed URL as inefficient. Signed Cookies issued once at login auto-include all requests, covering entire content directory. C CloudFront Functions can't call external systems (no network calls), needing Lambda@Edge, costing per segment. D IP whitelist fails on user IP change.
+**Answer: B**
+Explanation: HLS hundreds-thousands .ts segments need per-file Signed URL as inefficient. Signed Cookies issued once at login auto-include all requests, covering entire content directory. C CloudFront Functions can't call external systems (no network calls), needing Lambda@Edge, costing per segment. D IP whitelist fails on user IP change.
 
 ---
 
@@ -235,8 +235,8 @@ B) Global Accelerator + AWS Shield Advanced
 C) Route 53 LBR + ALB + WAF
 D) API Gateway + Lambda@Edge
 
-**정답: B**
-해설: UDP + static IP (firewall whitelist) = AGA mandatory. CloudFront no UDP support. AGA + Shield Advanced absorbs L3/L4 DDoS at PoP from AGA Anycast IP. CloudFront WAF L7, inapplicable to UDP. Route 53 LBR no static IP.
+**Answer: B**
+Explanation: UDP + static IP (firewall whitelist) = AGA mandatory. CloudFront no UDP support. AGA + Shield Advanced absorbs L3/L4 DDoS at PoP from AGA Anycast IP. CloudFront WAF L7, inapplicable to UDP. Route 53 LBR no static IP.
 
 ---
 
@@ -247,8 +247,8 @@ B) No. Managed Planned Failover waits complete Secondary sync before switch, zer
 C) Yes. Aurora Storage Layer fixed ~1 second data loss (RPO ~1 sec) always occurs
 D) Switch fails mid-transaction conflict, must manually promote Secondary then retry
 
-**정답: B**
-해설: Aurora Global Managed Planned Failover syncs Secondary fully with Primary before demoting Primary and promoting Secondary. RPO = 0, no data loss. Unplanned (disaster, Primary dies suddenly) loses Replication Lag data. This difference frequently tested.
+**Answer: B**
+Explanation: Aurora Global Managed Planned Failover syncs Secondary fully with Primary before demoting Primary and promoting Secondary. RPO = 0, no data loss. Unplanned (disaster, Primary dies suddenly) loses Replication Lag data. This difference frequently tested.
 
 ---
 
@@ -259,8 +259,8 @@ B) EC2 Instance Savings Plans 1 year
 C) Spot Instances
 D) Reserved Instances (3-year All Upfront)
 
-**정답: B**
-해설: Fixed instance family + 1-year + max savings = EC2 Instance Savings Plans higher discount than Compute (72% vs 66%). No family change means higher discount with stricter commitment. Spot unsuitablefor 100 stateful production (interruption risk). RI 3-year too long, only 1-year needed.
+**Answer: B**
+Explanation: Fixed instance family + 1-year + max savings = EC2 Instance Savings Plans higher discount than Compute (72% vs 66%). No family change means higher discount with stricter commitment. Spot unsuitablefor 100 stateful production (interruption risk). RI 3-year too long, only 1-year needed.
 
 ---
 
@@ -271,8 +271,8 @@ B) CloudFront Origin Failover immediate per-request retry on HTTP codes; Route 5
 C) Both identical: detect Health Check failure then change DNS record
 D) Route 53 Failover bypasses client DNS cache faster than CloudFront
 
-**정답: B**
-해설: CloudFront Origin Failover immediately retries request to Secondary on Primary 5xx/timeout. Per-request, millisecond switch. Route 53 Failover: Health Check detects failure (tens seconds), changes DNS, but client TTL cache means full switch takes minutes. Same CloudFront Distribution Origin switch = CloudFront Origin Failover; global region change = Route 53 Failover.
+**Answer: B**
+Explanation: CloudFront Origin Failover immediately retries request to Secondary on Primary 5xx/timeout. Per-request, millisecond switch. Route 53 Failover: Health Check detects failure (tens seconds), changes DNS, but client TTL cache means full switch takes minutes. Same CloudFront Distribution Origin switch = CloudFront Origin Failover; global region change = Route 53 Failover.
 
 ---
 
@@ -283,8 +283,8 @@ B) Global Accelerator (eu-west-1 100%, ap-northeast-2 standby) + AGA Health Chec
 C) Route 53 LBR + CloudFront Multi-Origin
 D) CloudFront Lambda@Edge region routing
 
-**정답: B**
-해설: "No DNS cache delay, switch within seconds" = AGA. Packet-level region switching unfazed by DNS TTL. eu-west-1 high priority (Traffic Dial 100%), ap-northeast-2 Health Check auto-failover target. Route 53 Failover (A) has DNS TTL delay causing "minutes delay." Keyword "DNS cache delay unacceptable" signals AGA choice.
+**Answer: B**
+Explanation: "No DNS cache delay, switch within seconds" = AGA. Packet-level region switching unfazed by DNS TTL. eu-west-1 high priority (Traffic Dial 100%), ap-northeast-2 Health Check auto-failover target. Route 53 Failover (A) has DNS TTL delay causing "minutes delay." Keyword "DNS cache delay unacceptable" signals AGA choice.
 
 ---
 
@@ -295,8 +295,8 @@ B) ALB
 C) Origin payment service (holds RSA private key)
 D) CloudFront decrypts, passes plaintext to Origin
 
-**정답: C**
-해설: FLE encrypts specified fields at CloudFront Edge with RSA public key. Encrypted data passes edge to Origin. Only RSA private-key holding Origin payment service decrypts. HTTPS Point-to-Point (decrypt each hop); FLE adds End-to-End layer.
+**Answer: C**
+Explanation: FLE encrypts specified fields at CloudFront Edge with RSA public key. Encrypted data passes edge to Origin. Only RSA private-key holding Origin payment service decrypts. HTTPS Point-to-Point (decrypt each hop); FLE adds End-to-End layer.
 
 ---
 
@@ -307,8 +307,8 @@ B) AWS Systems Manager Automation (Runbook)
 C) AWS Lambda (direct code)
 D) AWS CloudFormation (stack redeploy)
 
-**정답: B**
-해설: DR Runbook automation = SSM Automation. Integrate R53 ARC: "switch Routing Control → Aurora Failover → validate app reconnection → alert" as sequential Runbook. SSM supports API calls, script execution, parallel/branch, manual approval. Lambda possible but Runbook visualization/reusability/approval SSM stronger.
+**Answer: B**
+Explanation: DR Runbook automation = SSM Automation. Integrate R53 ARC: "switch Routing Control → Aurora Failover → validate app reconnection → alert" as sequential Runbook. SSM supports API calls, script execution, parallel/branch, manual approval. Lambda possible but Runbook visualization/reusability/approval SSM stronger.
 
 ---
 
@@ -319,8 +319,8 @@ B) Warm Standby (us-west-2)
 C) Backup & Restore (S3 snapshots, cross-region copy)
 D) Pilot Light (DB replication always)
 
-**정답: C**
-해설: RTO 4hr, RPO 1hr = Backup & Restore achievable. Hourly snapshots/backups to us-west-2 = RPO 1hr. Failure: provision EC2+RDS in us-west-2 = RTO <4hr. Cost ~5% infrastructure. Warm Standby 30~50%, Active-Active 100%+. Cost paramount scenario: "meet requirements cheapest" wins.
+**Answer: C**
+Explanation: RTO 4hr, RPO 1hr = Backup & Restore achievable. Hourly snapshots/backups to us-west-2 = RPO 1hr. Failure: provision EC2+RDS in us-west-2 = RTO <4hr. Cost ~5% infrastructure. Warm Standby 30~50%, Active-Active 100%+. Cost paramount scenario: "meet requirements cheapest" wins.
 
 ---
 
@@ -331,7 +331,7 @@ B) DS record not registered at registrar yet or misconfigured — verify DS reco
 C) DNSSEC only Private Hosted Zone; Public zones SERVFAIL — convert to Private
 D) Auto-managed KSK expired, signature validation broken — manually rollover to new KSK console
 
-**정답: B**
-해설: DNSSEC SERVFAIL commonest cause: DS record not registered at registrar. Missing DS breaks trust chain. DNSSEC-validating resolver can't verify, classifies BOGUS, returns SERVFAIL. After activation, verify DS registered at registrar, check propagation via `dig DS example.com @8.8.8.8`. Non-DNSSEC resolvers ignore DNSSEC flag, receive normal response (A wrong). DNSSEC only Public zones in AWS (B correct).
+**Answer: B**
+Explanation: DNSSEC SERVFAIL commonest cause: DS record not registered at registrar. Missing DS breaks trust chain. DNSSEC-validating resolver can't verify, classifies BOGUS, returns SERVFAIL. After activation, verify DS registered at registrar, check propagation via `dig DS example.com @8.8.8.8`. Non-DNSSEC resolvers ignore DNSSEC flag, receive normal response (A wrong). DNSSEC only Public zones in AWS (B correct).
 
 ---

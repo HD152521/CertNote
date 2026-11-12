@@ -81,62 +81,62 @@ Next, we'll see remaining AI services (Lex, Kendra, Personalize, Forecast) and *
 
 ## 📝 Practice Questions
 
-**문제 1.** You want to detect objects and faces in user-uploaded photos and automatically filter inappropriate content. Which is the most appropriate service?
+**Question 1.** You want to detect objects and faces in user-uploaded photos and automatically filter inappropriate content. Which is the most appropriate service?
 
 A) Amazon Comprehend  
 B) Amazon Rekognition  
 C) Amazon Polly  
 D) Amazon Translate  
 
-**정답: B**  
-해설: Rekognition is a computer vision service providing object and face detection and inappropriate content filtering from images and video. A is text NLP, C is speech synthesis, D is translation—all unrelated to image analysis.
+**Answer: B**  
+Explanation: Rekognition is a computer vision service providing object and face detection and inappropriate content filtering from images and video. A is text NLP, C is speech synthesis, D is translation—all unrelated to image analysis.
 
 ---
 
-**문제 2.** You want to extract key-value pairs like "Total" and "Date" and table data from a scanned invoice image into structured form. Which is the most appropriate service?
+**Question 2.** You want to extract key-value pairs like "Total" and "Date" and table data from a scanned invoice image into structured form. Which is the most appropriate service?
 
 A) Amazon Textract  
 B) Amazon Transcribe  
 C) Amazon Rekognition  
 D) Amazon Polly  
 
-**정답: A**  
-해설: Textract extracts not just text but table and form key-value structure—a document processing service. While C (Rekognition) reads text in images, Textract specializes in structured document extraction. B is speech recognition, D is speech synthesis—both unrelated.
+**Answer: A**  
+Explanation: Textract extracts not just text but table and form key-value structure—a document processing service. While C (Rekognition) reads text in images, Textract specializes in structured document extraction. B is speech recognition, D is speech synthesis—both unrelated.
 
 ---
 
-**문제 3.** You want to automatically classify thousands of customer reviews as positive or negative and extract entities like people and places from text. Which service is appropriate?
+**Question 3.** You want to automatically classify thousands of customer reviews as positive or negative and extract entities like people and places from text. Which service is appropriate?
 
 A) Amazon Translate  
 B) Amazon Comprehend  
 C) Amazon Textract  
 D) Amazon Lex  
 
-**정답: B**  
-해설: Comprehend provides text meaning analysis (NLP): sentiment analysis, entity recognition, key phrase extraction. A is translation, C is document extraction. D (Lex), a chatbot building service, isn't primarily for bulk text meaning analysis.
+**Answer: B**  
+Explanation: Comprehend provides text meaning analysis (NLP): sentiment analysis, entity recognition, key phrase extraction. A is translation, C is document extraction. D (Lex), a chatbot building service, isn't primarily for bulk text meaning analysis.
 
 ---
 
-**문제 4.** You want to convert call center recording to text and then analyze the text's customer sentiment. Which service combination is appropriate?
+**Question 4.** You want to convert call center recording to text and then analyze the text's customer sentiment. Which service combination is appropriate?
 
 A) Polly → Translate  
 B) Transcribe → Comprehend  
 C) Rekognition → Textract  
 D) Translate → Polly  
 
-**정답: B**  
-해설: The pipeline is appropriate: Transcribe converts speech to text (STT), then Comprehend analyzes the text for sentiment. A is illogical (text to speech then translate). C is for images/documents. D is translation then speech synthesis—doesn't fit call sentiment analysis.
+**Answer: B**  
+Explanation: The pipeline is appropriate: Transcribe converts speech to text (STT), then Comprehend analyzes the text for sentiment. A is illogical (text to speech then translate). C is for images/documents. D is translation then speech synthesis—doesn't fit call sentiment analysis.
 
 ---
 
-**문제 5.** You want to convert your website's guidance text to natural-sounding human voice and play it. Which is the most appropriate service?
+**Question 5.** You want to convert your website's guidance text to natural-sounding human voice and play it. Which is the most appropriate service?
 
 A) Amazon Transcribe  
 B) Amazon Polly  
 C) Amazon Comprehend  
 D) Amazon Rekognition  
 
-**정답: B**  
-해설: Polly synthesizes text into natural-sounding speech—a TTS service. A (Transcribe) is the opposite, converting speech to text (STT). C is text meaning analysis, D is image analysis—both unrelated to speech synthesis.
+**Answer: B**  
+Explanation: Polly synthesizes text into natural-sounding speech—a TTS service. A (Transcribe) is the opposite, converting speech to text (STT). C is text meaning analysis, D is image analysis—both unrelated to speech synthesis.
 
 ---

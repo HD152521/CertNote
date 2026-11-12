@@ -122,62 +122,62 @@ Next, we'll explore how AWS Glue catalogs collected data and transforms it via E
 
 ## 📝 Practice Questions
 
-**문제 1.** A team wants to collect website clickstream data and load it to S3. They want to minimize infrastructure management burden while storing in S3 near-real-time. What is the most suitable service?
+**Question 1.** A team wants to collect website clickstream data and load it to S3. They want to minimize infrastructure management burden while storing in S3 near-real-time. What is the most suitable service?
 
 A) Write directly to S3 using Kinesis Data Streams  
 B) Load to S3 using Kinesis Data Firehose  
 C) Replicate clickstream using AWS DMS  
 D) Transfer data using AWS Snowball  
 
-**정답: B**  
-해설: Firehose is fully managed, serverless, requiring no shard management, and automatically batches load to S3 based on buffer size/time conditions. This is the textbook answer for "minimize management burden + S3 loading." Kinesis Data Streams (A) cannot write directly to S3 and requires building a consumer application, creating management burden. DMS (C) is for relational DB replication, not suited for clickstreams. Snowball (D) is for one-time physical transfer of large volumes.
+**Answer: B**  
+Explanation: Firehose is fully managed, serverless, requiring no shard management, and automatically batches load to S3 based on buffer size/time conditions. This is the textbook answer for "minimize management burden + S3 loading." Kinesis Data Streams (A) cannot write directly to S3 and requires building a consumer application, creating management burden. DMS (C) is for relational DB replication, not suited for clickstreams. Snowball (D) is for one-time physical transfer of large volumes.
 
 ---
 
-**문제 2.** For a dataset with 100 columns and 5TB size, only 5 columns are used in ML training. What storage format minimizes I/O cost and scan volume during training?
+**Question 2.** For a dataset with 100 columns and 5TB size, only 5 columns are used in ML training. What storage format minimizes I/O cost and scan volume during training?
 
 A) CSV (GZIP compression)  
 B) JSON  
 C) Parquet  
 D) Uncompressed text  
 
-**정답: C**  
-해설: Parquet is columnar, so you read only the 5 needed columns, dramatically reducing I/O. It also supports column-level compression and predicate pushdown. CSV (A) is row-based even when GZIP-compressed, so you must read all 100 columns. JSON (B) is text-based, making it large and expensive to parse. Uncompressed text (D) is most inefficient.
+**Answer: C**  
+Explanation: Parquet is columnar, so you read only the 5 needed columns, dramatically reducing I/O. It also supports column-level compression and predicate pushdown. CSV (A) is row-based even when GZIP-compressed, so you must read all 100 columns. JSON (B) is text-based, making it large and expensive to parse. Uncompressed text (D) is most inefficient.
 
 ---
 
-**문제 3.** An on-premises data center has 200TB of training images, and the internet connection is 50Mbps. What is the most practical way to move this data to S3?
+**Question 3.** An on-premises data center has 200TB of training images, and the internet connection is 50Mbps. What is the most practical way to move this data to S3?
 
 A) Transfer via internet using AWS DataSync  
 B) Physical transfer using AWS Snowball device  
 C) Stream using Kinesis Data Firehose  
 D) S3 multipart upload script  
 
-**정답: B**  
-해설: Transferring 200TB at 50Mbps takes over a year, making it impractical. This petabyte-scale/high-volume + slow-connection scenario calls for Snowball (physical device shipping). DataSync (A) and multipart uploads (D) are only viable with sufficient bandwidth. Firehose (C) is a streaming ingestion tool, not designed for large-scale one-time migration.
+**Answer: B**  
+Explanation: Transferring 200TB at 50Mbps takes over a year, making it impractical. This petabyte-scale/high-volume + slow-connection scenario calls for Snowball (physical device shipping). DataSync (A) and multipart uploads (D) are only viable with sufficient bandwidth. Firehose (C) is a streaming ingestion tool, not designed for large-scale one-time migration.
 
 ---
 
-**문제 4.** Building an ML data lake, you want to safely preserve original data while tracking transformation stages. What is the most appropriate design principle?
+**Question 4.** Building an ML data lake, you want to safely preserve original data while tracking transformation stages. What is the most appropriate design principle?
 
 A) Overwrite original data with transformation results to save storage  
 B) Organize into Raw/Cleaned/Curated zones and never overwrite the original  
 C) Store all data flat in a bucket root  
 D) Delete original immediately after transformation  
 
-**정답: B**  
-해설: Medallion Architecture (Bronze/Silver/Gold = Raw/Cleaned/Curated) preserves originals immutably and keeps each transformation stage in a separate zone. If a bug is found in transformation logic, you can return to Raw and reprocess; data lineage tracking becomes easy. Overwriting originals (A) or deleting (D) create reprocessing impossibility and data loss risk. Flat storage (C) is hard to manage and partition.
+**Answer: B**  
+Explanation: Medallion Architecture (Bronze/Silver/Gold = Raw/Cleaned/Curated) preserves originals immutably and keeps each transformation stage in a separate zone. If a bug is found in transformation logic, you can return to Raw and reprocess; data lineage tracking becomes easy. Overwriting originals (A) or deleting (D) create reprocessing impossibility and data loss risk. Flat storage (C) is hard to manage and partition.
 
 ---
 
-**문제 5.** Which scenario is better suited for Kinesis Data Streams than Kinesis Data Firehose?
+**Question 5.** Which scenario is better suited for Kinesis Data Streams than Kinesis Data Firehose?
 
 A) Load data to S3 while minimizing management burden  
 B) Process with sub-second latency and have multiple consumers independently read the same stream  
 C) Just auto-load to Redshift  
 D) Operate serverless without infrastructure  
 
-**정답: B**  
-해설: KDS supports shard-based sub-second latency and multiple consumers (each maintaining its own offset), making it ideal for scenarios where a single stream is consumed simultaneously by a real-time dashboard and an ML pipeline. A·C·D are all strengths of fully managed, serverless Firehose focused on storage loading.
+**Answer: B**  
+Explanation: KDS supports shard-based sub-second latency and multiple consumers (each maintaining its own offset), making it ideal for scenarios where a single stream is consumed simultaneously by a real-time dashboard and an ML pipeline. A·C·D are all strengths of fully managed, serverless Firehose focused on storage loading.
 
 ---

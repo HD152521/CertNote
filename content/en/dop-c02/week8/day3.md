@@ -275,94 +275,94 @@ Next we explore **CDK** itself. SAM applied Transform Macro abstraction over YAM
 
 (All practice problems in Korean - preserved from original)
 
-**문제 1.** Custom Resource Lambda가 어떤 분기에서도 ResponseURL에 응답을 보내지 못하면 발생하는 일은?
+**Question 1.** Custom Resource Lambda가 어떤 분기에서도 ResponseURL에 응답을 보내지 못하면 발생하는 일은?
 
 A) 자동 성공으로 처리
 B) CFN이 기본 1시간(설정 시 최대 3일) 대기 후 Stack을 실패 처리 — 그동안 전체 Stack이 IN_PROGRESS로 묶임
 C) 자동 재시도 3회
 D) Layer로 자동 우회
 
-**정답: B**
+**Answer: B**
 
-해설: CFN과 Lambda 간 비동기 응답 프로토콜의 핵심. Lambda timeout, 예외, return 누락 어떤 경로든 응답이 안 오면 CFN은 ResponseURL polling을 계속한다. 모든 try/finally 분기에 응답 보장이 필수이고, AWS는 `cfn-response` 모듈 또는 CDK Provider framework 사용을 권장한다. Stack이 묶이면 다른 변경도 막혀 운영 사고로 이어짐.
+Explanation: CFN과 Lambda 간 비동기 응답 프로토콜의 핵심. Lambda timeout, 예외, return 누락 어떤 경로든 응답이 안 오면 CFN은 ResponseURL polling을 계속한다. 모든 try/finally 분기에 응답 보장이 필수이고, AWS는 `cfn-response` 모듈 또는 CDK Provider framework 사용을 권장한다. Stack이 묶이면 다른 변경도 막혀 운영 사고로 이어짐.
 
 ---
 
-**문제 2.** Custom Resource Update 시 Lambda가 새 PhysicalResourceId를 반환하면 CFN의 동작은?
+**Question 2.** Custom Resource Update 시 Lambda가 새 PhysicalResourceId를 반환하면 CFN의 동작은?
 
 A) 동일 자원의 정상 Update
 B) CFN이 이전 PhysicalResourceId로 Delete 호출 + 새 ID로 Create — 자원 교체로 해석
 C) Stack 실패
 D) 동작 변화 없음
 
-**정답: B**
+**Answer: B**
 
-해설: PhysicalResourceId가 외부 자원의 동일성 키. 키가 바뀌면 다른 자원으로 간주해 자동 교체. RDS DBInstanceIdentifier 변경이 교체를 유발하는 것과 같은 모델. 2020년 핀테크 결제 API key 자동 회전 사고와 같은 패턴 — 매 Update마다 새 키 생성하도록 짜면 이전 자원이 자동 삭제되어 진행 중인 트랜잭션 실패. Update 분기에선 `event['PhysicalResourceId']` 유지가 표준.
+Explanation: PhysicalResourceId가 외부 자원의 동일성 키. 키가 바뀌면 다른 자원으로 간주해 자동 교체. RDS DBInstanceIdentifier 변경이 교체를 유발하는 것과 같은 모델. 2020년 핀테크 결제 API key 자동 회전 사고와 같은 패턴 — 매 Update마다 새 키 생성하도록 짜면 이전 자원이 자동 삭제되어 진행 중인 트랜잭션 실패. Update 분기에선 `event['PhysicalResourceId']` 유지가 표준.
 
 ---
 
-**문제 3.** CDK Provider framework의 isComplete 핸들러가 풀어주는 문제는?
+**Question 3.** CDK Provider framework의 isComplete 핸들러가 풀어주는 문제는?
 
 A) IAM 자동 생성
 B) Lambda 15분 timeout 한계 — 장시간 작업(RDS 스냅샷 크로스 리전 복사, ECR 복제 등)을 Step Functions polling으로 우아하게 처리
 C) 비용 절감
 D) 자동 Drift Detection
 
-**정답: B**
+**Answer: B**
 
-해설: Lambda invocation은 최대 15분이지만 외부 자원 작업은 더 길 수 있음. onEventHandler는 작업 시작, isCompleteHandler는 주기적으로 완료 여부 확인. CDK가 Step Functions를 자동 생성해 polling 인프라를 캡슐화. queryInterval/totalTimeout으로 polling 주기와 최대 대기 시간 조절. 수동으로 Step Functions를 작성하지 않아도 되는 추상화의 가치.
+Explanation: Lambda invocation은 최대 15분이지만 외부 자원 작업은 더 길 수 있음. onEventHandler는 작업 시작, isCompleteHandler는 주기적으로 완료 여부 확인. CDK가 Step Functions를 자동 생성해 polling 인프라를 캡슐화. queryInterval/totalTimeout으로 polling 주기와 최대 대기 시간 조절. 수동으로 Step Functions를 작성하지 않아도 되는 추상화의 가치.
 
 ---
 
-**문제 4.** CloudFormation Hooks와 AWS Config Rules의 가장 정확한 차이는?
+**Question 4.** CloudFormation Hooks와 AWS Config Rules의 가장 정확한 차이는?
 
 A) 둘 다 동일한 시점에 평가
 B) Hooks는 변경 전(pre-provision) 차단(proactive prevention), Config Rules는 변경 후(post-provision) 평가/알람/자동 수정(reactive detection)
 C) Hooks는 IAM 전용
 D) Config Rules는 비용이 더 비쌈
 
-**정답: B**
+**Answer: B**
 
-해설: 사전 vs 사후가 핵심 차이. Hooks는 K8s ValidatingAdmissionWebhook과 같은 admission control 패턴 — 위반 변경이 절대 발생하지 않게 차단. Config Rules는 일어난 변경을 평가하고 알람 또는 Remediation Action으로 사후 대응. NIST SP 800-204C의 "policy-as-code with admission control" 권고 구현. Control Tower Proactive Guardrails가 내부적으로 Hooks 사용.
+Explanation: 사전 vs 사후가 핵심 차이. Hooks는 K8s ValidatingAdmissionWebhook과 같은 admission control 패턴 — 위반 변경이 절대 발생하지 않게 차단. Config Rules는 일어난 변경을 평가하고 알람 또는 Remediation Action으로 사후 대응. NIST SP 800-204C의 "policy-as-code with admission control" 권고 구현. Control Tower Proactive Guardrails가 내부적으로 Hooks 사용.
 
 ---
 
-**문제 5.** prod CFN 변경에 SOC 2 / PCI-DSS의 change management 통제 요건을 충족하려면 가장 적절한 패턴은?
+**Question 5.** prod CFN 변경에 SOC 2 / PCI-DSS의 change management 통제 요건을 충족하려면 가장 적절한 패턴은?
 
 A) `aws cloudformation deploy` 한 줄로 자동화
 B) CodePipeline에 CreateChangeSet → Manual Approval → ExecuteChangeSet 3단계 구성 + Change Set의 Replacement 정보를 사람이 검토 후 승인
 C) IAM 권한만 강화
 D) Drift Detection만으로 충분
 
-**정답: B**
+**Answer: B**
 
-해설: `aws cloudformation deploy`는 Change Set 정보를 보여주지 않고 바로 실행 → Replacement=True 같은 위험 변경을 놓침(2021년 SaaS RDS Engine 사고). 표준 패턴은 Change Set으로 미리보기 → 사람 검토 → 승인 시 실행 3단계. ManualApproval Action이 사람의 한 단계 확인을 강제해 SOC 2 CC8.1(Change Management) 요건 자동화 충족. Drift Detection은 사후 감지이지 변경 통제 아님.
+Explanation: `aws cloudformation deploy`는 Change Set 정보를 보여주지 않고 바로 실행 → Replacement=True 같은 위험 변경을 놓침(2021년 SaaS RDS Engine 사고). 표준 패턴은 Change Set으로 미리보기 → 사람 검토 → 승인 시 실행 3단계. ManualApproval Action이 사람의 한 단계 확인을 강제해 SOC 2 CC8.1(Change Management) 요건 자동화 충족. Drift Detection은 사후 감지이지 변경 통제 아님.
 
 ---
 
-**문제 6.** Drift Detection이 감지하지 못하는 변경 중 가장 위험한 것은?
+**Question 6.** Drift Detection이 감지하지 못하는 변경 중 가장 위험한 것은?
 
 A) S3 버킷 콘솔 삭제
 B) Custom Resource로 만든 외부 시스템(Slack 채널, GitHub webhook 등) 자원의 외부 변경 — CFN은 외부 시스템 상태를 모르므로 감지 불가, 별도 audit log 필요
 C) EC2 인스턴스 타입 변경
 D) RDS 비밀번호 회전
 
-**정답: B**
+**Answer: B**
 
-해설: CFN Drift Detection은 CFN이 추적하는 AWS 리소스 속성만 비교. Custom Resource는 외부 시스템 자원의 PhysicalResourceId만 기록하고 실제 자원 상태는 추적하지 않음. Slack 채널이 외부에서 archive되거나 권한이 변경돼도 CFN drift로 잡히지 않음. 외부 시스템 audit log streaming(Slack Audit Log, GitHub Audit Log)을 별도로 SIEM에 보내야 함. A/C는 모두 CFN drift로 감지 가능, D는 동적 참조 평문 보호 영역.
+Explanation: CFN Drift Detection은 CFN이 추적하는 AWS 리소스 속성만 비교. Custom Resource는 외부 시스템 자원의 PhysicalResourceId만 기록하고 실제 자원 상태는 추적하지 않음. Slack 채널이 외부에서 archive되거나 권한이 변경돼도 CFN drift로 잡히지 않음. 외부 시스템 audit log streaming(Slack Audit Log, GitHub Audit Log)을 별도로 SIEM에 보내야 함. A/C는 모두 CFN drift로 감지 가능, D는 동적 참조 평문 보호 영역.
 
 ---
 
-**문제 7.** CFN Hooks를 도입할 때 안전한 rollout 전략으로 가장 적절한 것은?
+**Question 7.** CFN Hooks를 도입할 때 안전한 rollout 전략으로 가장 적절한 것은?
 
 A) 처음부터 FAIL 모드로 모든 리소스에 적용
 B) WARN 모드로 시작해 베이스라인 위반 측정 → 위반 해소 → FAIL 모드로 전환 (graceful rollout)
 C) 한 번에 모든 hook 활성화
 D) Hook 비활성화
 
-**정답: B**
+**Answer: B**
 
-해설: WARN은 위반을 로그/알람만 남기고 변경 진행, FAIL은 차단. 처음부터 FAIL이면 기존 비준수 리소스의 모든 변경이 차단되어 운영 마비. WARN으로 베이스라인 측정 → 기존 위반 정리 → FAIL 전환의 단계적 접근이 표준. K8s OPA Gatekeeper도 동일한 dryrun → warn → deny rollout 패턴 권장. 거버넌스 도입의 일반 원칙.
+Explanation: WARN은 위반을 로그/알람만 남기고 변경 진행, FAIL은 차단. 처음부터 FAIL이면 기존 비준수 리소스의 모든 변경이 차단되어 운영 마비. WARN으로 베이스라인 측정 → 기존 위반 정리 → FAIL 전환의 단계적 접근이 표준. K8s OPA Gatekeeper도 동일한 dryrun → warn → deny rollout 패턴 권장. 거버넌스 도입의 일반 원칙.
 
 ---
 

@@ -12,16 +12,16 @@ Key mappings: (1) "Zero transaction loss + multi-region" → **DDB Global Tables
 
 ## 📝 Practice Questions
 
-**문제 1.** 양 리전 동시 거래 기록 → **DDB Global Tables Last-Writer-Wins**
+**Question 1.** 양 리전 동시 거래 기록 → **DDB Global Tables Last-Writer-Wins**
 
-**문제 2.** 비밀번호 자동 30일 교체, 무중단 → **Secrets Manager RDS native**
+**Question 2.** 비밀번호 자동 30일 교체, 무중단 → **Secrets Manager RDS native**
 
-**문제 3.** 50개 계정 위협 중앙 감시 → **GuardDuty Security Hub delegated admin**
+**Question 3.** 50개 계정 위협 중앙 감시 → **GuardDuty Security Hub delegated admin**
 
-**문제 4.** 7년 거래 로그 root 불가 → **Object Lock Compliance**
+**Question 4.** 7년 거래 로그 root 불가 → **Object Lock Compliance**
 
-**문제 5.** SCP로 송금 리전 제한 → **DenyRegions condition**
+**Question 5.** SCP로 송금 리전 제한 → **DenyRegions condition**
 
-**문제 6.** Production 복구 검증 정기 테스트 → **FIS + Stop Condition**
+**Question 6.** Production 복구 검증 정기 테스트 → **FIS + Stop Condition**
 
 ---

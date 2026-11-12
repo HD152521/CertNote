@@ -96,62 +96,62 @@ Rules = [
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 팀이 기존에 사용하던 Apache Airflow DAG을 거의 수정 없이 AWS에서 관리형으로 운영하고자 한다. 가장 적합한 서비스는?
+**Question 1.** 한 팀이 기존에 사용하던 Apache Airflow DAG을 거의 수정 없이 AWS에서 관리형으로 운영하고자 한다. 가장 적합한 서비스는?
 
 A) AWS Step Functions  
 B) Amazon EventBridge Scheduler  
 C) AWS Batch  
 D) Amazon MWAA  
 
-**정답: D**  
-해설: Amazon MWAA(Managed Workflows for Apache Airflow)는 관리형 Airflow로 기존 DAG을 거의 그대로 운영할 수 있습니다. Step Functions는 상태 기계 기반으로 DAG 문법이 다르고, EventBridge·Batch는 Airflow 호환 워크플로 엔진이 아닙니다.
+**Answer: D**  
+Explanation: Amazon MWAA(Managed Workflows for Apache Airflow)는 관리형 Airflow로 기존 DAG을 거의 그대로 운영할 수 있습니다. Step Functions는 상태 기계 기반으로 DAG 문법이 다르고, EventBridge·Batch는 Airflow 호환 워크플로 엔진이 아닙니다.
 
 ---
 
-**문제 2.** 보안 감사 결과 "특정 IAM 사용자가 언제 어떤 Glue API를 호출했는지" 추적할 수 있어야 한다는 요구가 나왔다. 가장 적합한 서비스는?
+**Question 2.** 보안 감사 결과 "특정 IAM 사용자가 언제 어떤 Glue API를 호출했는지" 추적할 수 있어야 한다는 요구가 나왔다. 가장 적합한 서비스는?
 
 A) Amazon CloudWatch Alarm  
 B) AWS CloudTrail  
 C) AWS X-Ray  
 D) Amazon Macie  
 
-**정답: B**  
-해설: CloudTrail은 계정 내 API 호출(누가·언제·무엇을)을 기록하는 감사 로그 서비스입니다. CloudWatch Alarm은 지표 임계치 알림, X-Ray는 분산 추적, Macie는 민감정보 탐지로 목적이 다릅니다.
+**Answer: B**  
+Explanation: CloudTrail은 계정 내 API 호출(누가·언제·무엇을)을 기록하는 감사 로그 서비스입니다. CloudWatch Alarm은 지표 임계치 알림, X-Ray는 분산 추적, Macie는 민감정보 탐지로 목적이 다릅니다.
 
 ---
 
-**문제 3.** S3에 저장하는 데이터를 암호화하되 키 회전, 키별 접근 통제, 키 사용 내역 감사가 모두 필요하다. 가장 적합한 방식은?
+**Question 3.** S3에 저장하는 데이터를 암호화하되 키 회전, 키별 접근 통제, 키 사용 내역 감사가 모두 필요하다. 가장 적합한 방식은?
 
 A) 암호화하지 않고 버킷을 프라이빗으로만 둔다  
 B) SSE-S3(S3 관리형 키)  
 C) SSE-KMS(고객 관리 KMS 키)  
 D) 클라이언트가 평문으로 업로드 후 IAM으로만 보호  
 
-**정답: C**  
-해설: SSE-KMS의 고객 관리 키(CMK)는 키 정책으로 접근을 통제하고 자동 회전을 지원하며 CloudTrail로 키 사용을 감사할 수 있습니다. SSE-S3는 키 통제·감사가 제한적이고, 나머지는 암호화 요구를 충족하지 못합니다.
+**Answer: C**  
+Explanation: SSE-KMS의 고객 관리 키(CMK)는 키 정책으로 접근을 통제하고 자동 회전을 지원하며 CloudTrail로 키 사용을 감사할 수 있습니다. SSE-S3는 키 통제·감사가 제한적이고, 나머지는 암호화 요구를 충족하지 못합니다.
 
 ---
 
-**문제 4.** 여러 S3 버킷에 고객 PII가 어디에 얼마나 있는지 파악되지 않아 컴플라이언스 위험이 있다. 민감 데이터를 자동으로 발견·분류하려 한다. 가장 적합한 서비스는?
+**Question 4.** 여러 S3 버킷에 고객 PII가 어디에 얼마나 있는지 파악되지 않아 컴플라이언스 위험이 있다. 민감 데이터를 자동으로 발견·분류하려 한다. 가장 적합한 서비스는?
 
 A) Amazon Macie  
 B) AWS Config  
 C) Amazon GuardDuty  
 D) AWS Trusted Advisor  
 
-**정답: A**  
-해설: Amazon Macie는 머신러닝으로 S3 내 PII·금융정보 등 민감 데이터를 자동 발견·분류합니다. Config는 리소스 구성 추적, GuardDuty는 위협 탐지, Trusted Advisor는 모범 사례 점검으로 민감정보 분류 기능이 없습니다.
+**Answer: A**  
+Explanation: Amazon Macie는 머신러닝으로 S3 내 PII·금융정보 등 민감 데이터를 자동 발견·분류합니다. Config는 리소스 구성 추적, GuardDuty는 위협 탐지, Trusted Advisor는 모범 사례 점검으로 민감정보 분류 기능이 없습니다.
 
 ---
 
-**문제 5.** Glue ETL 잡이 적재 전에 "order_id가 비어 있지 않고 amount가 0 이상이며 order_id가 거의 고유한지"를 자동 검증하고, 규칙 위반 데이터는 격리하려 한다. 가장 적합한 기능은?
+**Question 5.** Glue ETL 잡이 적재 전에 "order_id가 비어 있지 않고 amount가 0 이상이며 order_id가 거의 고유한지"를 자동 검증하고, 규칙 위반 데이터는 격리하려 한다. 가장 적합한 기능은?
 
 A) CloudWatch Logs Insights  
 B) S3 수명주기 정책  
 C) Redshift VACUUM  
 D) Glue Data Quality 규칙(DQDL)  
 
-**정답: D**  
-해설: Glue Data Quality는 DQDL로 완전성(IsComplete)·유효성(ColumnValues)·고유성(Uniqueness) 등 규칙을 정의해 검증하고 위반 데이터를 격리할 수 있습니다. 나머지는 로그 조회·스토리지 관리·테이블 정리 용도로 품질 검증 기능이 아닙니다.
+**Answer: D**  
+Explanation: Glue Data Quality는 DQDL로 완전성(IsComplete)·유효성(ColumnValues)·고유성(Uniqueness) 등 규칙을 정의해 검증하고 위반 데이터를 격리할 수 있습니다. 나머지는 로그 조회·스토리지 관리·테이블 정리 용도로 품질 검증 기능이 아닙니다.
 
 ---

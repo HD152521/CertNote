@@ -165,7 +165,7 @@ Next: expanding this standard to on-prem datacenters, **hybrid CI/CD** at depth.
 
 ## 📝 Practice Questions
 
-**문제 1.** 조직이 단일 계정에서 수십 개 계정으로 분리하는 가장 근본적인 보안·운영상 이유는?
+**Question 1.** 조직이 단일 계정에서 수십 개 계정으로 분리하는 가장 근본적인 보안·운영상 이유는?
 
 A) 계정이 많을수록 AWS 할인율이 높아져서
 
@@ -175,13 +175,13 @@ C) 계정마다 다른 region을 강제로 쓰게 하려고
 
 D) 단일 계정은 CloudFormation을 쓸 수 없어서
 
-**정답: B**
+**Answer: B**
 
-해설: 한 계정 안의 분리는 사람이 IAM 정책을 정확히 쓴다는 전제에 의존하지만, 계정을 쪼개면 분리가 기본값이 된다 — 다른 계정 리소스는 명시적 cross-account 신뢰 없이는 보이지도 않는다. 이는 분산 시스템의 격벽 패턴과 shared-nothing 사상의 조직 단위 적용으로, 폭발 반경(blast radius)을 한 계정 안으로 한정한다. 할인율(A)·region 강제(C)·CloudFormation(D)은 근거가 없다.
+Explanation: 한 계정 안의 분리는 사람이 IAM 정책을 정확히 쓴다는 전제에 의존하지만, 계정을 쪼개면 분리가 기본값이 된다 — 다른 계정 리소스는 명시적 cross-account 신뢰 없이는 보이지도 않는다. 이는 분산 시스템의 격벽 패턴과 shared-nothing 사상의 조직 단위 적용으로, 폭발 반경(blast radius)을 한 계정 안으로 한정한다. 할인율(A)·region 강제(C)·CloudFormation(D)은 근거가 없다.
 
 ---
 
-**문제 2.** SCP(Service Control Policy)에 대한 설명으로 가장 정확한 것은?
+**Question 2.** SCP(Service Control Policy)에 대한 설명으로 가장 정확한 것은?
 
 A) SCP는 계정에 직접 권한을 부여한다
 
@@ -191,13 +191,13 @@ C) SCP는 IAM 정책을 대체한다
 
 D) SCP는 Management 계정에 가장 먼저 적용된다
 
-**정답: B**
+**Answer: B**
 
-해설: SCP는 권한을 주지 못하고 상한만 정한다 — `Allow *`를 써도 IAM 정책이 별도로 허용하지 않으면 아무 권한도 생기지 않는다. 진짜 역할은 Root 사용 금지·CloudTrail 비활성화 금지 같은 Deny 가드레일이다. 같은 계정 내 유효 권한은 SCP·Permission Boundary·Identity 정책 셋 모두가 Allow해야 하는 교집합이며, Management 계정에는 SCP가 적용되지 않으므로 그 계정은 결제·조직 구조만 다뤄야 한다. 권한 직접 부여(A)·IAM 대체(C)·Management 우선 적용(D)은 모두 틀리다.
+Explanation: SCP는 권한을 주지 못하고 상한만 정한다 — `Allow *`를 써도 IAM 정책이 별도로 허용하지 않으면 아무 권한도 생기지 않는다. 진짜 역할은 Root 사용 금지·CloudTrail 비활성화 금지 같은 Deny 가드레일이다. 같은 계정 내 유효 권한은 SCP·Permission Boundary·Identity 정책 셋 모두가 Allow해야 하는 교집합이며, Management 계정에는 SCP가 적용되지 않으므로 그 계정은 결제·조직 구조만 다뤄야 한다. 권한 직접 부여(A)·IAM 대체(C)·Management 우선 적용(D)은 모두 틀리다.
 
 ---
 
-**문제 3.** 100명 개발자가 수백 개 계정을 필요로 하는 환경에서, 신규 계정을 표준 베이스라인(VPC/Config/CloudTrail/GuardDuty)과 함께 자동 프로비저닝하려면?
+**Question 3.** 100명 개발자가 수백 개 계정을 필요로 하는 환경에서, 신규 계정을 표준 베이스라인(VPC/Config/CloudTrail/GuardDuty)과 함께 자동 프로비저닝하려면?
 
 A) 플랫폼 팀이 콘솔에서 계정마다 수동 생성
 
@@ -207,13 +207,13 @@ C) 각 개발자가 자기 신용카드로 계정 가입
 
 D) Lambda로 매일 계정을 무작위 생성
 
-**정답: B**
+**Answer: B**
 
-해설: Account Factory(특히 AFT)는 계정 생성 요청을 받아 파이프라인으로 계정을 프로비저닝하고 그 위에 표준 베이스라인을 자동으로 심는다. 이는 불변 인프라·선언적 패러다임을 계정 수준으로 끌어올린 것으로, "계정의 표준 상태"가 Git에 코드로 남아 감사·재현·롤백이 가능하다. 수동 생성(A)은 누락·확장 불가, 개발자 개별 가입(C)·무작위 생성(D)은 거버넌스 붕괴다.
+Explanation: Account Factory(특히 AFT)는 계정 생성 요청을 받아 파이프라인으로 계정을 프로비저닝하고 그 위에 표준 베이스라인을 자동으로 심는다. 이는 불변 인프라·선언적 패러다임을 계정 수준으로 끌어올린 것으로, "계정의 표준 상태"가 Git에 코드로 남아 감사·재현·롤백이 가능하다. 수동 생성(A)은 누락·확장 불가, 개발자 개별 가입(C)·무작위 생성(D)은 거버넌스 붕괴다.
 
 ---
 
-**문제 4.** Tooling 계정 Hub-Spoke 구조에서 cross-account 파이프라인 배포가 "Access Denied (KMS)" 오류로 실패한다. 가장 흔한 원인과 해결은?
+**Question 4.** Tooling 계정 Hub-Spoke 구조에서 cross-account 파이프라인 배포가 "Access Denied (KMS)" 오류로 실패한다. 가장 흔한 원인과 해결은?
 
 A) S3 버킷 정책만 수정하면 된다
 
@@ -223,13 +223,13 @@ C) 파이프라인을 재시작하면 해결된다
 
 D) ECR을 비활성화하면 된다
 
-**정답: B**
+**Answer: B**
 
-해설: Tooling 계정의 암호화된 S3 아티팩트를 Spoke의 CloudFormation이 읽으려면 S3 버킷 정책과 KMS 키 정책 둘 다 Spoke의 접근/복호화를 허용해야 한다. 초심자는 S3만 고치고 KMS를 잊어 배포가 깨진다. 멀티 리전 DR까지 고려하면 Multi-Region Key로 같은 키 ID를 양쪽 region에서 참조하게 해 정책을 단순화한다. S3만 수정(A)·재시작(C)·ECR 비활성화(D)는 근본 원인을 못 짚는다.
+Explanation: Tooling 계정의 암호화된 S3 아티팩트를 Spoke의 CloudFormation이 읽으려면 S3 버킷 정책과 KMS 키 정책 둘 다 Spoke의 접근/복호화를 허용해야 한다. 초심자는 S3만 고치고 KMS를 잊어 배포가 깨진다. 멀티 리전 DR까지 고려하면 Multi-Region Key로 같은 키 ID를 양쪽 region에서 참조하게 해 정책을 단순화한다. S3만 수정(A)·재시작(C)·ECR 비활성화(D)는 근본 원인을 못 짚는다.
 
 ---
 
-**문제 5.** 개발자에게 IAM Role 생성을 셀프서비스로 위임하되, 만든 Role이 회사 정책 상한(예: 특정 region만)을 넘지 못하게 안전하게 강제하려면?
+**Question 5.** 개발자에게 IAM Role 생성을 셀프서비스로 위임하되, 만든 Role이 회사 정책 상한(예: 특정 region만)을 넘지 못하게 안전하게 강제하려면?
 
 A) 개발자에게 AdministratorAccess를 준다
 
@@ -239,13 +239,13 @@ C) 모든 Role 생성을 금지한다
 
 D) SCP만으로 개별 Role을 제어한다
 
-**정답: B**
+**Answer: B**
 
-해설: Permission Boundary는 주체(principal) 수준의 권한 상한이다. Role 생성 권한을 줄 때 `iam:PermissionsBoundary` 조건으로 새 Role에 Boundary 부착을 강제하면, 개발자가 만드는 모든 Role이 Boundary를 넘을 수 없어 권한 상승이 차단된다 — 셀프서비스 위임을 안전하게 만든다. Admin 부여(A)는 권한 상승 구멍, 전면 금지(C)는 셀프서비스 포기, SCP(D)는 계정·OU 상한이지 개별 Role 생성 시점의 강제 메커니즘이 아니다.
+Explanation: Permission Boundary는 주체(principal) 수준의 권한 상한이다. Role 생성 권한을 줄 때 `iam:PermissionsBoundary` 조건으로 새 Role에 Boundary 부착을 강제하면, 개발자가 만드는 모든 Role이 Boundary를 넘을 수 없어 권한 상승이 차단된다 — 셀프서비스 위임을 안전하게 만든다. Admin 부여(A)는 권한 상승 구멍, 전면 금지(C)는 셀프서비스 포기, SCP(D)는 계정·OU 상한이지 개별 Role 생성 시점의 강제 메커니즘이 아니다.
 
 ---
 
-**문제 6.** Organizations 환경에서 GuardDuty·Config 베이스라인을 모든 계정에 배포하고, 앞으로 OU에 새로 들어올 계정에도 자동 적용되게 하려면?
+**Question 6.** Organizations 환경에서 GuardDuty·Config 베이스라인을 모든 계정에 배포하고, 앞으로 OU에 새로 들어올 계정에도 자동 적용되게 하려면?
 
 A) Self-Managed StackSets로 각 계정에 Role을 수동 생성
 
@@ -255,13 +255,13 @@ C) Lambda 스크립트로 매일 신규 계정을 스캔
 
 D) 각 계정 관리자가 콘솔에서 수동으로 켠다
 
-**정답: B**
+**Answer: B**
 
-해설: Service-Managed StackSets는 Organizations와 통합해 실행 Role을 AWS가 관리하고 OU 타깃팅과 Auto-Deployment를 지원한다 — OU에 새 계정이 들어오면 자동으로 베이스라인이 배포된다. "신규 계정에도 자동 적용"은 항상 Service-Managed + Auto-Deployment다. Self-Managed(A)는 Role 수동 셋업 필요, 스크립트(C)·수동(D)은 누락 위험의 안티패턴이다.
+Explanation: Service-Managed StackSets는 Organizations와 통합해 실행 Role을 AWS가 관리하고 OU 타깃팅과 Auto-Deployment를 지원한다 — OU에 새 계정이 들어오면 자동으로 베이스라인이 배포된다. "신규 계정에도 자동 적용"은 항상 Service-Managed + Auto-Deployment다. Self-Managed(A)는 Role 수동 셋업 필요, 스크립트(C)·수동(D)은 누락 위험의 안티패턴이다.
 
 ---
 
-**문제 7.** Platform Engineering의 "Golden Path" 개념과 Service Catalog의 관계로 가장 정확한 것은?
+**Question 7.** Platform Engineering의 "Golden Path" 개념과 Service Catalog의 관계로 가장 정확한 것은?
 
 A) Golden Path는 개발자에게 표준을 강제로 막는 차단 장치다
 
@@ -271,9 +271,9 @@ C) Golden Path는 비용 최적화 전용 기능이다
 
 D) Golden Path는 Service Catalog 없이는 존재할 수 없다
 
-**정답: B**
+**Answer: B**
 
-해설: Golden Path의 핵심 통찰은 "강제보다 유인이 강하다"이다 — 표준 경로가 가장 쉽고 빠르면 개발자가 자발적으로 그 길을 택한다(행동경제학의 넛지). Service Catalog는 검증된 파이프라인 템플릿을 셀프서비스로 제공해 Golden Path를 구현하고, Permission Boundary·SCP는 경로를 벗어나려는 시도에 가드레일을 친다. "유인 + 가드레일"이 셀프서비스 거버넌스의 정수다. 강제 차단(A)·비용 전용(C)·Service Catalog 종속(D)은 개념을 좁게 오해한 것이다.
+Explanation: Golden Path의 핵심 통찰은 "강제보다 유인이 강하다"이다 — 표준 경로가 가장 쉽고 빠르면 개발자가 자발적으로 그 길을 택한다(행동경제학의 넛지). Service Catalog는 검증된 파이프라인 템플릿을 셀프서비스로 제공해 Golden Path를 구현하고, Permission Boundary·SCP는 경로를 벗어나려는 시도에 가드레일을 친다. "유인 + 가드레일"이 셀프서비스 거버넌스의 정수다. 강제 차단(A)·비용 전용(C)·Service Catalog 종속(D)은 개념을 좁게 오해한 것이다.
 
 ---
 

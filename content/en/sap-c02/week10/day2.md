@@ -91,75 +91,75 @@ SAP exam common mappings: (1) "internal docs + minimal ops" → Knowledge Bases 
 
 ## 📝 Practice Questions
 
-**문제 1.** 사내 정책 문서 수천 건 기반 챗봇을 구축한다. 문서는 자주 갱신되고, 운영 부담을 최소화하며, 답변이 어느 문서에 근거했는지 출처를 제시해야 한다. 가장 적합한 구성은?
+**Question 1.** 사내 정책 문서 수천 건 기반 챗봇을 구축한다. 문서는 자주 갱신되고, 운영 부담을 최소화하며, 답변이 어느 문서에 근거했는지 출처를 제시해야 한다. 가장 적합한 구성은?
 
 A) Bedrock으로 정책 문서를 fine-tuning한 커스텀 모델
 B) Bedrock Knowledge Bases(관리형 RAG)
 C) 모델을 SageMaker에 호스팅하고 정책으로 재학습
 D) Comprehend로 문서를 분류 후 규칙 기반 응답
 
-**정답: B**
-해설: Knowledge Bases는 청킹·임베딩·벡터 검색을 자동화한 관리형 RAG로, 문서를 S3에 갱신하면 즉시 반영되고(최신성), 검색된 청크의 출처를 인용할 수 있으며, 운영 부담이 거의 없다. A·C(fine-tuning/재학습)는 문서가 자주 바뀌는데 재학습이 느리고 비싸며 출처 인용이 안 되고 환각 위험이 있어 사내 지식 챗봇에 부적합 — 시험에서 거의 오답. D는 생성형 답변이 아니다. 함정: "사내 문서 + 자주 갱신 + 출처"는 RAG, fine-tuning은 오답.
+**Answer: B**
+Explanation: Knowledge Bases는 청킹·임베딩·벡터 검색을 자동화한 관리형 RAG로, 문서를 S3에 갱신하면 즉시 반영되고(최신성), 검색된 청크의 출처를 인용할 수 있으며, 운영 부담이 거의 없다. A·C(fine-tuning/재학습)는 문서가 자주 바뀌는데 재학습이 느리고 비싸며 출처 인용이 안 되고 환각 위험이 있어 사내 지식 챗봇에 부적합 — 시험에서 거의 오답. D는 생성형 답변이 아니다. 함정: "사내 문서 + 자주 갱신 + 출처"는 RAG, fine-tuning은 오답.
 
 ---
 
-**문제 2.** LLM 챗봇 응답에서 고객 PII(주민번호·카드번호)를 마스킹하고 유해·폭력적 표현을 차단해야 한다. 가장 적합한 것은?
+**Question 2.** LLM 챗봇 응답에서 고객 PII(주민번호·카드번호)를 마스킹하고 유해·폭력적 표현을 차단해야 한다. 가장 적합한 것은?
 
 A) AWS WAF
 B) Bedrock Guardrails
 C) Amazon Macie
 D) Lambda로 정규식 후처리
 
-**정답: B**
-해설: Bedrock Guardrails는 LLM 입출력에 특화된 안전 필터로, PII 마스킹·유해 콘텐츠 차단·금지 주제·프롬프트 인젝션 방어를 관리형으로 제공한다("LLM을 위한 WAF"). A(WAF)는 HTTP 계층 웹 공격 방어용이지 LLM 출력 필터가 아니다. C(Macie)는 S3 내 PII 탐지용. D(정규식)는 직접 구현 부담이 크고 유해 표현 탐지가 빈약. 함정: "LLM 응답의 PII·유해 차단"은 Guardrails.
+**Answer: B**
+Explanation: Bedrock Guardrails는 LLM 입출력에 특화된 안전 필터로, PII 마스킹·유해 콘텐츠 차단·금지 주제·프롬프트 인젝션 방어를 관리형으로 제공한다("LLM을 위한 WAF"). A(WAF)는 HTTP 계층 웹 공격 방어용이지 LLM 출력 필터가 아니다. C(Macie)는 S3 내 PII 탐지용. D(정규식)는 직접 구현 부담이 크고 유해 표현 탐지가 빈약. 함정: "LLM 응답의 PII·유해 차단"은 Guardrails.
 
 ---
 
-**문제 3.** 챗봇이 단순 답변을 넘어 "주문 조회 API를 호출하고 결과를 보고 환불 API를 실행"하는 식으로 외부 시스템을 자율적으로 오케스트레이션해야 한다. 어떤 기능인가?
+**Question 3.** 챗봇이 단순 답변을 넘어 "주문 조회 API를 호출하고 결과를 보고 환불 API를 실행"하는 식으로 외부 시스템을 자율적으로 오케스트레이션해야 한다. 어떤 기능인가?
 
 A) Knowledge Bases만
 B) Bedrock Agents(Function Calling / Tool Use)
 C) Lambda + Claude 직접 호출
 D) Step Functions
 
-**정답: B**
-해설: Bedrock Agents는 LLM에 도구 사용(Function Calling)과 다단계 추론을 더해, 외부 API를 자율적으로 호출하고 결과를 바탕으로 다음 행동을 결정하는 오케스트레이션을 한다. A(KB)는 문서 검색만. C(Lambda+Claude)는 오케스트레이션 로직을 직접 코딩해야 해 관리형 Agents보다 부담이 크다. D(Step Functions)는 워크플로우 엔진이지 LLM 기반 자율 추론이 아니다. 함정: "외부 API 호출까지 자율 수행"은 Agents.
+**Answer: B**
+Explanation: Bedrock Agents는 LLM에 도구 사용(Function Calling)과 다단계 추론을 더해, 외부 API를 자율적으로 호출하고 결과를 바탕으로 다음 행동을 결정하는 오케스트레이션을 한다. A(KB)는 문서 검색만. C(Lambda+Claude)는 오케스트레이션 로직을 직접 코딩해야 해 관리형 Agents보다 부담이 크다. D(Step Functions)는 워크플로우 엔진이지 LLM 기반 자율 추론이 아니다. 함정: "외부 API 호출까지 자율 수행"은 Agents.
 
 ---
 
-**문제 4.** Bedrock 모델 호출 트래픽이 예측 가능하고 일정하며, 처리량 SLA(보장된 TPS)가 필요하고 장기 사용으로 단가를 낮추고 싶다. 어떤 옵션인가?
+**Question 4.** Bedrock 모델 호출 트래픽이 예측 가능하고 일정하며, 처리량 SLA(보장된 TPS)가 필요하고 장기 사용으로 단가를 낮추고 싶다. 어떤 옵션인가?
 
 A) On-Demand(토큰당 과금)
 B) Provisioned Throughput(model unit 예약)
 C) Spot
 D) Savings Plans
 
-**정답: B**
-해설: Provisioned Throughput은 일정 처리량(model unit)을 시간 단위로 예약해 보장된 처리량(SLA)을 제공하고, 약정 기간만큼 장기 할인을 받는다. A(On-Demand)는 토큰당 과금으로 처리량 보장이 없다. C(Spot)는 Bedrock 모델 호출에 해당하지 않는다. D(Savings Plans)는 컴퓨팅(EC2/Lambda/Fargate) 약정이지 Bedrock 처리량 예약이 아니다. 함정: "처리량 SLA + 예측 가능 + 장기 할인"은 Provisioned Throughput.
+**Answer: B**
+Explanation: Provisioned Throughput은 일정 처리량(model unit)을 시간 단위로 예약해 보장된 처리량(SLA)을 제공하고, 약정 기간만큼 장기 할인을 받는다. A(On-Demand)는 토큰당 과금으로 처리량 보장이 없다. C(Spot)는 Bedrock 모델 호출에 해당하지 않는다. D(Savings Plans)는 컴퓨팅(EC2/Lambda/Fargate) 약정이지 Bedrock 처리량 예약이 아니다. 함정: "처리량 SLA + 예측 가능 + 장기 할인"은 Provisioned Throughput.
 
 ---
 
-**문제 5.** 보안 정책상 Bedrock 호출 트래픽이 인터넷을 경유하지 않고 VPC 내부에서만 처리되어야 한다. 어떻게 구성하는가?
+**Question 5.** 보안 정책상 Bedrock 호출 트래픽이 인터넷을 경유하지 않고 VPC 내부에서만 처리되어야 한다. 어떻게 구성하는가?
 
 A) NAT Gateway
 B) Internet Gateway
 C) VPC Interface Endpoint(PrivateLink)
 D) Site-to-Site VPN
 
-**정답: C**
-해설: VPC Interface Endpoint(PrivateLink)는 Bedrock 서비스에 대한 ENI를 VPC 내에 만들어, 트래픽이 인터넷이나 AWS 퍼블릭 엔드포인트를 거치지 않고 AWS 백본 내부에서 처리되게 한다. A(NAT)·B(IGW)는 오히려 인터넷을 경유한다. D(VPN)는 온프레미스-VPC 연결용이지 VPC 내 서비스 호출의 인터넷 미경유와 무관. 함정: "AWS 서비스 인터넷 미경유 호출"은 Interface Endpoint(PrivateLink).
+**Answer: C**
+Explanation: VPC Interface Endpoint(PrivateLink)는 Bedrock 서비스에 대한 ENI를 VPC 내에 만들어, 트래픽이 인터넷이나 AWS 퍼블릭 엔드포인트를 거치지 않고 AWS 백본 내부에서 처리되게 한다. A(NAT)·B(IGW)는 오히려 인터넷을 경유한다. D(VPN)는 온프레미스-VPC 연결용이지 VPC 내 서비스 호출의 인터넷 미경유와 무관. 함정: "AWS 서비스 인터넷 미경유 호출"은 Interface Endpoint(PrivateLink).
 
 ---
 
-**문제 6.** 모델이 특정 도메인 말투로 일관되게 답하고, 항상 정해진 JSON 형식으로 출력하도록 모델의 행동 자체를 조정해야 한다. 지식 주입이 아니라 행동·형식 학습이 목적이다. 가장 적합한 것은?
+**Question 6.** 모델이 특정 도메인 말투로 일관되게 답하고, 항상 정해진 JSON 형식으로 출력하도록 모델의 행동 자체를 조정해야 한다. 지식 주입이 아니라 행동·형식 학습이 목적이다. 가장 적합한 것은?
 
 A) Bedrock Knowledge Bases(RAG)
 B) Bedrock Fine-tuning / Continued Pre-training
 C) Guardrails
 D) Provisioned Throughput
 
-**정답: B**
-해설: Fine-tuning은 모델의 행동·스타일·출력 형식을 조정하는 데 적합하다 — "특정 말투", "항상 JSON 형식" 같은 행동 학습이 그 용도다. A(RAG)는 지식 주입용이지 행동 조정용이 아니다. C(Guardrails)는 안전 필터. D(Provisioned Throughput)는 처리량 예약. 함정: 지식 주입=RAG, 행동·형식·말투 조정=fine-tuning. 이 문제는 명시적으로 "행동·형식 학습"이 목적이므로 예외적으로 fine-tuning이 정답.
+**Answer: B**
+Explanation: Fine-tuning은 모델의 행동·스타일·출력 형식을 조정하는 데 적합하다 — "특정 말투", "항상 JSON 형식" 같은 행동 학습이 그 용도다. A(RAG)는 지식 주입용이지 행동 조정용이 아니다. C(Guardrails)는 안전 필터. D(Provisioned Throughput)는 처리량 예약. 함정: 지식 주입=RAG, 행동·형식·말투 조정=fine-tuning. 이 문제는 명시적으로 "행동·형식 학습"이 목적이므로 예외적으로 fine-tuning이 정답.
 
 ---
 

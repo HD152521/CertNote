@@ -100,14 +100,14 @@ Common SAP exam mappings: (1) "hourly + all items + SQL analysis" → **CUR + At
 
 ## 📝 Practice Questions
 
-**문제 1.** FinOps 팀이 시간 단위로 모든 청구 항목을 SQL로 쪼개 단가(UsageType) 수준의 심층 분석을 하려 한다. 가장 적합한 것은?
+**Question 1.** FinOps 팀이 시간 단위로 모든 청구 항목을 SQL로 쪼개 단가(UsageType) 수준의 심층 분석을 하려 한다. 가장 적합한 것은?
 
 A) Cost Explorer
 B) CUR을 S3로 출력 후 Athena로 쿼리
 C) AWS Budgets
 D) Trusted Advisor
 
-**정답: B**
+**Answer: B**
 
 **해설:** CUR은 시간 단위로 약 200개 컬럼의 모든 청구 항목을 S3(보통 Parquet)에 출력하며, Athena로 임의 차원·임의 집계의 SQL 분석이 가능하다. lineItem/UsageType 컬럼으로 단가 수준 분석을 한다. A(Cost Explorer)는 일 단위 시각화로 컬럼 단위 심층 분석이 불가능하고 API 호출당 과금도 있다. C(Budgets)는 임계치 감시 도구다. D(Trusted Advisor)는 룰 기반 점검이다. 함정: "시간 단위 + 모든 항목 + SQL"은 항상 CUR이다.
 

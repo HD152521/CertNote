@@ -95,7 +95,7 @@ Next we move beyond following *what happened* via tracing, to *who did what* aud
 
 ## 📝 Practice Questions
 
-**문제 1.** To search "all traces for a specific userId in X-Ray console," where should userId be placed?
+**Question 1.** To search "all traces for a specific userId in X-Ray console," where should userId be placed?
 
 A) Metadata
 
@@ -105,13 +105,13 @@ C) Segment name
 
 D) Subsegment name
 
-**정답: B**
+**Answer: B**
 
-해설: Only **Annotation** is indexed for console search/filtering (`annotation.userId = "..."`). Metadata attaches to traces as data but isn't searchable — putting userId there means "specific user trace finding" won't work. Annotation is capped at 50 per trace with simple value types; large payloads or debug data belong in Metadata.
+Explanation: Only **Annotation** is indexed for console search/filtering (`annotation.userId = "..."`). Metadata attaches to traces as data but isn't searchable — putting userId there means "specific user trace finding" won't work. Annotation is capped at 50 per trace with simple value types; large payloads or debug data belong in Metadata.
 
 ---
 
-**문제 2.** Integrated X-Ray SDK in ECS Fargate, but no traces appear in console. No error logs. Most likely cause?
+**Question 2.** Integrated X-Ray SDK in ECS Fargate, but no traces appear in console. No error logs. Most likely cause?
 
 A) Put over 50 Annotations
 
@@ -121,13 +121,13 @@ C) 5% sampling rate
 
 D) ALB in front blocks
 
-**정답: B**
+**Answer: B**
 
-해설: X-Ray SDK fires spans to local **UDP 2000** fire-and-forget; the **daemon** receives and sends to X-Ray. On ECS, you must launch the daemon as sidecar (`amazon/aws-xray-daemon`); without it, spans vanish silently — UDP doesn't error, so debugging is hard. C) Even with 5% sampling, some traces should appear. D) ALB doesn't block tracing.
+Explanation: X-Ray SDK fires spans to local **UDP 2000** fire-and-forget; the **daemon** receives and sends to X-Ray. On ECS, you must launch the daemon as sidecar (`amazon/aws-xray-daemon`); without it, spans vanish silently — UDP doesn't error, so debugging is hard. C) Even with 5% sampling, some traces should appear. D) ALB doesn't block tracing.
 
 ---
 
-**문제 3.** Most appropriate way to enable X-Ray in Lambda, and how it differs from EC2?
+**Question 3.** Most appropriate way to enable X-Ray in Lambda, and how it differs from EC2?
 
 A) Lambda also needs daemon installation like EC2
 
@@ -137,13 +137,13 @@ C) Lambda doesn't support X-Ray
 
 D) Lambda uses CloudWatch Agent for tracing
 
-**정답: B**
+**Answer: B**
 
-해설: Lambda is serverless with no infrastructure to run a daemon, so AWS includes it in the environment. Users only toggle **Active Tracing**. EC2/ECS/EKS need daemon processes or sidecars (UDP 2000). The difference: "who manages the daemon."
+Explanation: Lambda is serverless with no infrastructure to run a daemon, so AWS includes it in the environment. Users only toggle **Active Tracing**. EC2/ECS/EKS need daemon processes or sidecars (UDP 2000). The difference: "who manages the daemon."
 
 ---
 
-**문제 4.** X-Ray default sampling rule `fixed_target: 1, rate: 0.05`; what does `fixed_target` accomplish?
+**Question 4.** X-Ray default sampling rule `fixed_target: 1, rate: 0.05`; what does `fixed_target` accomplish?
 
 A) Trace only 1% of all requests
 
@@ -153,13 +153,13 @@ C) Trace 1/minute
 
 D) Trace only first 1 second
 
-**정답: B**
+**Answer: B**
 
-해설: `fixed_target` is "guaranteed traces per second"; `rate` is "ratio applied to remaining requests." Low-traffic services (1 req/sec) with 5% alone sample every ~20 seconds (useless). `fixed_target: 1` keeps minimum sample even when traffic is light. High-traffic gets 1 guarantee plus 5%, preventing explosion. The split balances scales.
+Explanation: `fixed_target` is "guaranteed traces per second"; `rate` is "ratio applied to remaining requests." Low-traffic services (1 req/sec) with 5% alone sample every ~20 seconds (useless). `fixed_target: 1` keeps minimum sample even when traffic is light. High-traffic gets 1 guarantee plus 5%, preventing explosion. The split balances scales.
 
 ---
 
-**문제 5.** To trace request delays behind ALB to a backend, where does meaningful tracing begin?
+**Question 5.** To trace request delays behind ALB to a backend, where does meaningful tracing begin?
 
 A) ALB appears as first Segment
 
@@ -169,13 +169,13 @@ C) Install X-Ray daemon on ALB
 
 D) CloudWatch only
 
-**정답: B**
+**Answer: B**
 
-해설: ALB passes headers but doesn't create span, so doesn't appear in service map. Meaningful tracing starts from **API Gateway** (stage X-Ray enable) or X-Ray SDK-instrumented apps. "ALB unsupported" is a frequent trap.
+Explanation: ALB passes headers but doesn't create span, so doesn't appear in service map. Meaningful tracing starts from **API Gateway** (stage X-Ray enable) or X-Ray SDK-instrumented apps. "ALB unsupported" is a frequent trap.
 
 ---
 
-**문제 6.** Mechanism stitching traces from microservice A calling B into one trace?
+**Question 6.** Mechanism stitching traces from microservice A calling B into one trace?
 
 A) Same CloudWatch Logs group
 
@@ -185,13 +185,13 @@ C) Same IAM role
 
 D) Same VPC
 
-**정답: B**
+**Answer: B**
 
-해설: **Context propagation** heart: A calls B with `X-Amzn-Trace-Id` (`Root`, `Parent`, `Sampled`), B attaches its span as child to same trace. `Sampled` propagates so tracing stays consistent — no half-traces. X-Ray SDK's `patch_all()` automates header injection.
+Explanation: **Context propagation** heart: A calls B with `X-Amzn-Trace-Id` (`Root`, `Parent`, `Sampled`), B attaches its span as child to same trace. `Sampled` propagates so tracing stays consistent — no half-traces. X-Ray SDK's `patch_all()` automates header injection.
 
 ---
 
-**문제 7.** To attach KB-sized request/response payload for debugging to X-Ray (not for search), appropriate choice?
+**Question 7.** To attach KB-sized request/response payload for debugging to X-Ray (not for search), appropriate choice?
 
 A) Annotation (50/trace limit)
 
@@ -201,6 +201,6 @@ C) CloudWatch Logs only
 
 D) Encode in Segment name
 
-**정답: B**
+**Answer: B**
 
-해설: **Metadata** lacks indexing but holds arbitrary JSON, unlimited size — suited for debug payloads. Annotation is indexed, searchable, but 50/trace and simple values. Index trade-off: search capability vs. storage cost. "Search-free + large object" → Metadata; "searchable + identifier" → Annotation.
+Explanation: **Metadata** lacks indexing but holds arbitrary JSON, unlimited size — suited for debug payloads. Annotation is indexed, searchable, but 50/trace and simple values. Index trade-off: search capability vs. storage cost. "Search-free + large object" → Metadata; "searchable + identifier" → Annotation.

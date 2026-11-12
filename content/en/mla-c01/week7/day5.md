@@ -92,62 +92,62 @@ Most-confused comparisons nailed down:
 
 ## 📝 Practice Questions
 
-**문제 1.** MLOps의 3대 원칙(자동화·재현성·거버넌스)과 이를 구현하는 도구의 연결로 가장 적절하지 않은 것은?
+**Question 1.** MLOps의 3대 원칙(자동화·재현성·거버넌스)과 이를 구현하는 도구의 연결로 가장 적절하지 않은 것은?
 
 A) 재현성 → CloudFormation/CDK(IaC)  
 B) 거버넌스 → Model Registry 승인 워크플로  
 C) 자동화 → EventBridge 트리거 + CodePipeline  
 D) 거버넌스 → CloudFront 캐싱  
 
-**정답: D**  
-해설: CloudFront는 콘텐츠 전송 CDN으로 모델 거버넌스와 무관하다. A는 인프라 재현성, B는 승인·감사 거버넌스, C는 트리거·파이프라인 자동화로 모두 올바른 연결이다.
+**Answer: D**  
+Explanation: CloudFront는 콘텐츠 전송 CDN으로 모델 거버넌스와 무관하다. A는 인프라 재현성, B는 승인·감사 거버넌스, C는 트리거·파이프라인 자동화로 모두 올바른 연결이다.
 
 ---
 
-**문제 2.** 한 ML 워크플로가 Glue ETL → SageMaker 학습 → Lambda 후처리 → SNS 알림으로 여러 서비스를 거치고, 또 다른 워크플로는 SageMaker 전처리→학습→평가→등록만으로 구성된다. 각각에 가장 적합한 오케스트레이터는?
+**Question 2.** 한 ML 워크플로가 Glue ETL → SageMaker 학습 → Lambda 후처리 → SNS 알림으로 여러 서비스를 거치고, 또 다른 워크플로는 SageMaker 전처리→학습→평가→등록만으로 구성된다. 각각에 가장 적합한 오케스트레이터는?
 
 A) 둘 다 SageMaker Pipelines  
 B) 전자는 Step Functions, 후자는 SageMaker Pipelines  
 C) 전자는 EventBridge, 후자는 CloudFormation  
 D) 둘 다 MWAA  
 
-**정답: B**  
-해설: 여러 AWS 서비스에 걸친 워크플로는 Step Functions가, SageMaker 작업만으로 계보·Registry 통합이 필요한 워크플로는 Pipelines가 적합하다. A·D는 범위 구분을 못 하고, C는 EventBridge(트리거)·CloudFormation(IaC)을 오케스트레이터로 잘못 지정했다.
+**Answer: B**  
+Explanation: 여러 AWS 서비스에 걸친 워크플로는 Step Functions가, SageMaker 작업만으로 계보·Registry 통합이 필요한 워크플로는 Pipelines가 적합하다. A·D는 범위 구분을 못 하고, C는 EventBridge(트리거)·CloudFormation(IaC)을 오케스트레이터로 잘못 지정했다.
 
 ---
 
-**문제 3.** 모델 평가 정확도가 기준 미만이면 등록을 막고, 승인된 후에는 자동으로 프로덕션까지 배포하려 한다. 올바른 구성 요소 연결은?
+**Question 3.** 모델 평가 정확도가 기준 미만이면 등록을 막고, 승인된 후에는 자동으로 프로덕션까지 배포하려 한다. 올바른 구성 요소 연결은?
 
 A) ConditionStep(품질 게이트) → Registry 승인 → EventBridge → CodePipeline 배포  
 B) Batch Transform → QuickSight → Athena  
 C) Data Wrangler → Ground Truth → Feature Store  
 D) CloudFront → S3 → SNS  
 
-**정답: A**  
-해설: 정확도 게이트는 Pipelines의 ConditionStep, 승인은 Registry, 승인 이벤트 감지는 EventBridge, 배포는 CodePipeline이 담당하는 표준 MLOps 사슬이다. B는 분석, C는 데이터 준비/레이블링, D는 콘텐츠 전송으로 배포 자동화 흐름과 무관하다.
+**Answer: A**  
+Explanation: 정확도 게이트는 Pipelines의 ConditionStep, 승인은 Registry, 승인 이벤트 감지는 EventBridge, 배포는 CodePipeline이 담당하는 표준 MLOps 사슬이다. B는 분석, C는 데이터 준비/레이블링, D는 콘텐츠 전송으로 배포 자동화 흐름과 무관하다.
 
 ---
 
-**문제 4.** 조직이 이미 온프레미스를 포함한 복잡한 의존성을 Apache Airflow DAG로 운영 중이다. 이를 관리형으로 AWS에서 이어가려 할 때와, 완전히 새 프로젝트를 SageMaker 안에서 시작할 때의 권장 도구를 옳게 짝지은 것은?
+**Question 4.** 조직이 이미 온프레미스를 포함한 복잡한 의존성을 Apache Airflow DAG로 운영 중이다. 이를 관리형으로 AWS에서 이어가려 할 때와, 완전히 새 프로젝트를 SageMaker 안에서 시작할 때의 권장 도구를 옳게 짝지은 것은?
 
 A) 기존 Airflow → MWAA, 새 SageMaker 프로젝트 → SageMaker Pipelines  
 B) 기존 Airflow → SageMaker Pipelines, 새 프로젝트 → MWAA  
 C) 둘 다 Step Functions  
 D) 둘 다 EventBridge  
 
-**정답: A**  
-해설: 기존 Airflow 자산·하이브리드는 MWAA로 이어가고, SageMaker 네이티브 신규 워크플로는 Pipelines가 우선이다. B는 뒤바뀌었고, C·D는 두 상황의 차이를 반영하지 못한다.
+**Answer: A**  
+Explanation: 기존 Airflow 자산·하이브리드는 MWAA로 이어가고, SageMaker 네이티브 신규 워크플로는 Pipelines가 우선이다. B는 뒤바뀌었고, C·D는 두 상황의 차이를 반영하지 못한다.
 
 ---
 
-**문제 5.** SageMaker Projects를 사용하는 표준 MLOps에서 "코드 푸시"와 "모델 Approved"가 각각 트리거하는 대상으로 옳은 것은?
+**Question 5.** SageMaker Projects를 사용하는 표준 MLOps에서 "코드 푸시"와 "모델 Approved"가 각각 트리거하는 대상으로 옳은 것은?
 
 A) 코드 푸시 → Deploy 파이프라인, 모델 승인 → Build 파이프라인  
 B) 코드 푸시 → Build 파이프라인(학습·등록), 모델 승인 → Deploy 파이프라인(배포)  
 C) 코드 푸시 → CloudFront 무효화, 모델 승인 → Athena 쿼리  
 D) 둘 다 동일한 단일 파이프라인을 트리거  
 
-**정답: B**  
-해설: 코드 푸시는 모델을 학습·등록하는 Build 파이프라인(CI)을, 모델 승인은 엔드포인트를 배포하는 Deploy 파이프라인(CD)을 트리거하며 두 흐름은 분리되어 있다. A는 뒤바뀌었고, C는 무관한 서비스, D는 CI/CD 분리 구조와 맞지 않는다.
+**Answer: B**  
+Explanation: 코드 푸시는 모델을 학습·등록하는 Build 파이프라인(CI)을, 모델 승인은 엔드포인트를 배포하는 Deploy 파이프라인(CD)을 트리거하며 두 흐름은 분리되어 있다. A는 뒤바뀌었고, C는 무관한 서비스, D는 CI/CD 분리 구조와 맞지 않는다.
 
 ---

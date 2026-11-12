@@ -123,7 +123,7 @@ The next article examines **X-Ray's sampling and cost tuning at operational scal
 
 ## 📝 Practice Questions
 
-**문제 1.** 초당 2건만 들어오는 결제 API에 FixedRate 5%만 걸었더니, 장애가 난 시점의 trace가 통째로 안 잡혔다. 저트래픽 엔드포인트의 추적 가시성을 보장하는 메커니즘은?
+**Question 1.** 초당 2건만 들어오는 결제 API에 FixedRate 5%만 걸었더니, 장애가 난 시점의 trace가 통째로 안 잡혔다. 저트래픽 엔드포인트의 추적 가시성을 보장하는 메커니즘은?
 
 A) FixedRate를 100%로 올린다
 
@@ -133,13 +133,13 @@ C) X-Ray Group을 만든다
 
 D) Priority를 9000으로 올린다
 
-**정답: B**
+**Answer: B**
 
-해설: 순수 비율 샘플링(FixedRate)만 쓰면 트래픽이 적은 엔드포인트는 표본이 거의 안 잡혀 장애 순간을 놓칠 수 있다. ReservoirSize는 "매 초 최소 N건은 비율과 무관하게 무조건 수집"을 보장해 저트래픽 구간의 가시성을 확보한다. FixedRate 100%(A)는 가능하지만 트래픽이 높아지면 비용이 폭증하므로 reservoir로 보장량만 확보하는 것이 경제적이다. Group(C)은 Service Map 슬라이싱, Priority(D)는 규칙 평가 순서로 무관하다.
+Explanation: 순수 비율 샘플링(FixedRate)만 쓰면 트래픽이 적은 엔드포인트는 표본이 거의 안 잡혀 장애 순간을 놓칠 수 있다. ReservoirSize는 "매 초 최소 N건은 비율과 무관하게 무조건 수집"을 보장해 저트래픽 구간의 가시성을 확보한다. FixedRate 100%(A)는 가능하지만 트래픽이 높아지면 비용이 폭증하므로 reservoir로 보장량만 확보하는 것이 경제적이다. Group(C)은 Service Map 슬라이싱, Priority(D)는 규칙 평가 순서로 무관하다.
 
 ---
 
-**문제 2.** "정상 trace는 1%만, 그러나 에러가 난 trace와 p99로 느린 trace는 100% 유지"하고 싶다. X-Ray 네이티브 head-based 샘플링만으로 이게 어려운 이유와 해결은?
+**Question 2.** "정상 trace는 1%만, 그러나 에러가 난 trace와 p99로 느린 trace는 100% 유지"하고 싶다. X-Ray 네이티브 head-based 샘플링만으로 이게 어려운 이유와 해결은?
 
 A) 가능하다 — FixedRate를 1%로 하면 된다
 
@@ -149,13 +149,13 @@ C) Reservoir를 0으로 한다
 
 D) Priority를 조정하면 된다
 
-**정답: B**
+**Answer: B**
 
-해설: X-Ray 네이티브 샘플링은 head-based로, 요청이 들어오는 순간 수집 여부를 정하고 전파한다. 이 시점엔 그 요청이 에러를 낼지 느릴지 모르므로 "결과가 흥미로운 trace만 유지"가 구조적으로 불가능하다. tail-based 샘플링은 모든 trace를 일단 수집한 뒤 trace가 완성되는 시점에 선택하므로 "에러·고지연 100% 유지, 정상 1%"가 가능하다. ADOT Collector의 tail_sampling processor가 이를 제공한다. FixedRate 1%(A)는 에러 trace의 99%를 무작위로 버린다.
+Explanation: X-Ray 네이티브 샘플링은 head-based로, 요청이 들어오는 순간 수집 여부를 정하고 전파한다. 이 시점엔 그 요청이 에러를 낼지 느릴지 모르므로 "결과가 흥미로운 trace만 유지"가 구조적으로 불가능하다. tail-based 샘플링은 모든 trace를 일단 수집한 뒤 trace가 완성되는 시점에 선택하므로 "에러·고지연 100% 유지, 정상 1%"가 가능하다. ADOT Collector의 tail_sampling processor가 이를 제공한다. FixedRate 1%(A)는 에러 trace의 99%를 무작위로 버린다.
 
 ---
 
-**문제 3.** 다음 샘플링 규칙들이 있다. `/checkout/payment` 요청에 적용되는 규칙은?
+**Question 3.** 다음 샘플링 규칙들이 있다. `/checkout/payment` 요청에 적용되는 규칙은?
 
 ```
 Priority 100: URLPath=/checkout/*  (Reservoir 100, Rate 1.0)
@@ -171,13 +171,13 @@ C) 세 규칙이 모두 합산 적용
 
 D) Priority 200
 
-**정답: B**
+**Answer: B**
 
-해설: 샘플링 규칙은 Priority 오름차순(낮은 숫자 먼저)으로 평가되고, 매칭되는 첫 규칙이 적용된 뒤 종료된다. `/checkout/payment`는 Priority 100의 `/checkout/*`에 매칭되므로 Reservoir 100 + Rate 1.0(전수 추적)이 적용되고, 그 아래 규칙들은 평가되지 않는다. 구체적 규칙을 낮은 Priority로, 포괄 규칙(`*`)을 높은 Priority로 두는 것이 정석이다(ACL·라우팅의 구체적 우선 원리와 동일). 규칙은 합산(C)이 아니라 첫 매칭만 적용된다.
+Explanation: 샘플링 규칙은 Priority 오름차순(낮은 숫자 먼저)으로 평가되고, 매칭되는 첫 규칙이 적용된 뒤 종료된다. `/checkout/payment`는 Priority 100의 `/checkout/*`에 매칭되므로 Reservoir 100 + Rate 1.0(전수 추적)이 적용되고, 그 아래 규칙들은 평가되지 않는다. 구체적 규칙을 낮은 Priority로, 포괄 규칙(`*`)을 높은 Priority로 두는 것이 정석이다(ACL·라우팅의 구체적 우선 원리와 동일). 규칙은 합산(C)이 아니라 첫 매칭만 적용된다.
 
 ---
 
-**문제 4.** ReservoirSize를 10으로 설정했는데, 같은 서비스가 100개 인스턴스에서 돈다. 실제 수집되는 reservoir trace는 초당 몇 건에 가까운가?
+**Question 4.** ReservoirSize를 10으로 설정했는데, 같은 서비스가 100개 인스턴스에서 돈다. 실제 수집되는 reservoir trace는 초당 몇 건에 가까운가?
 
 A) 약 1000건 (10 × 100 인스턴스)
 
@@ -187,13 +187,13 @@ C) 0건
 
 D) 인스턴스당 10건씩 독립
 
-**정답: B**
+**Answer: B**
 
-해설: X-Ray의 reservoir는 인스턴스마다 독립적이지 않다. 각 SDK 인스턴스가 `GetSamplingTargets`로 X-Ray에 자기 몫의 reservoir 할당량을 요청하고, X-Ray가 전체 reservoir(10)를 인스턴스들에 분배한다. 따라서 100대가 돌아도 전체 reservoir 수집은 약 10건/초로 유지되지 10×100=1000이 되지 않는다. 이 분산 조율을 모르면 "왜 예상보다 적게/많이 잡히나"를 오해하게 된다.
+Explanation: X-Ray의 reservoir는 인스턴스마다 독립적이지 않다. 각 SDK 인스턴스가 `GetSamplingTargets`로 X-Ray에 자기 몫의 reservoir 할당량을 요청하고, X-Ray가 전체 reservoir(10)를 인스턴스들에 분배한다. 따라서 100대가 돌아도 전체 reservoir 수집은 약 10건/초로 유지되지 10×100=1000이 되지 않는다. 이 분산 조율을 모르면 "왜 예상보다 적게/많이 잡히나"를 오해하게 된다.
 
 ---
 
-**문제 5.** 평균 응답시간(p50)은 100ms로 정상인데 일부 사용자가 "느리다"고 호소한다. 어느 subsegment가 꼬리 지연을 만드는지 찾으려면?
+**Question 5.** 평균 응답시간(p50)은 100ms로 정상인데 일부 사용자가 "느리다"고 호소한다. 어느 subsegment가 꼬리 지연을 만드는지 찾으려면?
 
 A) 평균 메트릭에 알람을 더 건다
 
@@ -203,13 +203,13 @@ C) Reservoir를 늘린다
 
 D) Group을 만든다
 
-**정답: B**
+**Answer: B**
 
-해설: 평균은 tail latency를 숨긴다 — p50이 좋아도 p99가 나쁘면 일부 사용자는 끔찍한 경험을 한다("The Tail at Scale", Jeff Dean 2013). 메트릭(집계)은 "느리다"를 알려주지만 "왜 느린지"는 개별 trace를 봐야 안다. `duration > 2` 같은 검색으로 느린 trace를 골라내고, 그 trace의 subsegment 타임라인에서 어느 다운스트림 호출이 시간을 잡아먹었는지 본다. 평균 알람 추가(A)는 꼬리를 못 보고, Reservoir·Group은 무관하다.
+Explanation: 평균은 tail latency를 숨긴다 — p50이 좋아도 p99가 나쁘면 일부 사용자는 끔찍한 경험을 한다("The Tail at Scale", Jeff Dean 2013). 메트릭(집계)은 "느리다"를 알려주지만 "왜 느린지"는 개별 trace를 봐야 안다. `duration > 2` 같은 검색으로 느린 trace를 골라내고, 그 trace의 subsegment 타임라인에서 어느 다운스트림 호출이 시간을 잡아먹었는지 본다. 평균 알람 추가(A)는 꼬리를 못 보고, Reservoir·Group은 무관하다.
 
 ---
 
-**문제 6.** 한 다운스트림 서비스의 fault rate가 평소 0.1%에서 서서히 올랐지만 고정 임계값(5%) 아래라 CloudWatch 알람이 안 울렸다. 이 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 잡는 도구는?
+**Question 6.** 한 다운스트림 서비스의 fault rate가 평소 0.1%에서 서서히 올랐지만 고정 임계값(5%) 아래라 CloudWatch 알람이 안 울렸다. 이 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 잡는 도구는?
 
 A) 고정 임계값을 1%로 낮춘다
 
@@ -219,13 +219,13 @@ C) Reservoir 증설
 
 D) Service Map을 더 자주 새로고침
 
-**정답: B**
+**Answer: B**
 
-해설: 고정 임계값 알람은 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 놓친다. X-Ray Insights는 서비스별 정상 baseline(fault rate)을 학습해 baseline 대비 이상 상승을 탐지하고 Insight를 생성, EventBridge로 발행해 자동 알림·대응을 연결한다. 임계값을 무작정 낮추면(A) 정상 변동에도 거짓 알람이 폭증한다. baseline 학습 탐지가 고정 임계값의 사각지대를 보완하며, 둘은 보완 관계다.
+Explanation: 고정 임계값 알람은 "절대값은 낮지만 평소 대비 비정상"인 초기 열화를 놓친다. X-Ray Insights는 서비스별 정상 baseline(fault rate)을 학습해 baseline 대비 이상 상승을 탐지하고 Insight를 생성, EventBridge로 발행해 자동 알림·대응을 연결한다. 임계값을 무작정 낮추면(A) 정상 변동에도 거짓 알람이 폭증한다. baseline 학습 탐지가 고정 임계값의 사각지대를 보완하며, 둘은 보완 관계다.
 
 ---
 
-**문제 7.** Powertools Tracer에서 `POWERTOOLS_TRACER_CAPTURE_RESPONSE=false`로 설정하는 주된 이유는?
+**Question 7.** Powertools Tracer에서 `POWERTOOLS_TRACER_CAPTURE_RESPONSE=false`로 설정하는 주된 이유는?
 
 A) 추적을 완전히 끈다
 
@@ -235,9 +235,9 @@ C) annotation 검색을 빠르게 한다
 
 D) 샘플링 비율을 높인다
 
-**정답: B**
+**Answer: B**
 
-해설: 기본적으로 Powertools Tracer는 함수 응답을 metadata로 캡처하는데, 응답 페이로드가 크면 trace 크기가 부풀어 저장·전송 비용이 는다. `CAPTURE_RESPONSE=false`는 이 캡처를 꺼서 비용을 줄인다. "검색하지 않을 큰 데이터는 굳이 trace에 싣지 마라"는 원리의 비용 측면이다. 추적을 끄는 것(A)이 아니라 응답 캡처만 끄며, annotation 검색(C)·샘플링(D)과는 무관하다.
+Explanation: 기본적으로 Powertools Tracer는 함수 응답을 metadata로 캡처하는데, 응답 페이로드가 크면 trace 크기가 부풀어 저장·전송 비용이 는다. `CAPTURE_RESPONSE=false`는 이 캡처를 꺼서 비용을 줄인다. "검색하지 않을 큰 데이터는 굳이 trace에 싣지 마라"는 원리의 비용 측면이다. 추적을 끄는 것(A)이 아니라 응답 캡처만 끄며, annotation 검색(C)·샘플링(D)과는 무관하다.
 
 ---
 

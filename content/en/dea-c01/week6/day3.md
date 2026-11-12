@@ -105,62 +105,62 @@ VACUUM sales.orders;
 
 ## 📝 Practice Questions
 
-**문제 1.** 전통적 Hive 스타일 Parquet 테이블 대비 오픈 테이블 포맷(Iceberg/Hudi/Delta)이 제공하는 핵심 기능이 아닌 것은?
+**Question 1.** 전통적 Hive 스타일 Parquet 테이블 대비 오픈 테이블 포맷(Iceberg/Hudi/Delta)이 제공하는 핵심 기능이 아닌 것은?
 
 A) ACID 트랜잭션  
 B) 행 수준 UPDATE/DELETE  
 C) 과거 시점 시간 여행 조회  
 D) 컬럼형 압축 자체를 처음 도입  
 
-**정답: D**  
-해설: 컬럼형 압축은 Parquet/ORC가 이미 제공하던 기능으로 테이블 포맷의 신규 기능이 아닙니다. ACID, 행 수준 DML, 시간 여행이 오픈 테이블 포맷이 추가한 핵심 가치입니다.
+**Answer: D**  
+Explanation: 컬럼형 압축은 Parquet/ORC가 이미 제공하던 기능으로 테이블 포맷의 신규 기능이 아닙니다. ACID, 행 수준 DML, 시간 여행이 오픈 테이블 포맷이 추가한 핵심 가치입니다.
 
 ---
 
-**문제 2.** GDPR 삭제 요청에 따라 특정 고객의 행만 효율적으로 삭제해야 한다. 가장 적합한 접근은?
+**Question 2.** GDPR 삭제 요청에 따라 특정 고객의 행만 효율적으로 삭제해야 한다. 가장 적합한 접근은?
 
 A) 전체 테이블을 매번 CSV로 다시 내보낸다  
 B) Iceberg/Hudi/Delta 테이블에서 DELETE 문으로 행 수준 삭제한다  
 C) S3 버킷 버전 관리를 끈다  
 D) Glue 크롤러를 재실행한다  
 
-**정답: B**  
-해설: 오픈 테이블 포맷은 행 수준 DELETE를 지원해 파티션 전체 재작성 없이 특정 행을 효율적으로 삭제하므로 GDPR/CCPA 삭제 요청에 적합합니다. 나머지는 행 단위 삭제를 해결하지 못합니다.
+**Answer: B**  
+Explanation: 오픈 테이블 포맷은 행 수준 DELETE를 지원해 파티션 전체 재작성 없이 특정 행을 효율적으로 삭제하므로 GDPR/CCPA 삭제 요청에 적합합니다. 나머지는 행 단위 삭제를 해결하지 못합니다.
 
 ---
 
-**문제 3.** 업서트와 증분(CDC) 쿼리에 특화되어 있고 Copy-on-Write/Merge-on-Read 모드를 제공하는 테이블 포맷은?
+**Question 3.** 업서트와 증분(CDC) 쿼리에 특화되어 있고 Copy-on-Write/Merge-on-Read 모드를 제공하는 테이블 포맷은?
 
 A) Apache Hudi  
 B) CSV  
 C) Avro  
 D) ORC  
 
-**정답: A**  
-해설: Apache Hudi는 CoW/MoR 모드와 인덱스 기반 업서트·증분 쿼리에 강점이 있어 CDC 적재에 적합합니다. CSV/Avro/ORC는 파일 포맷이지 트랜잭션형 테이블 포맷이 아닙니다.
+**Answer: A**  
+Explanation: Apache Hudi는 CoW/MoR 모드와 인덱스 기반 업서트·증분 쿼리에 강점이 있어 CDC 적재에 적합합니다. CSV/Avro/ORC는 파일 포맷이지 트랜잭션형 테이블 포맷이 아닙니다.
 
 ---
 
-**문제 4.** Athena 엔진 v3에서 Iceberg 테이블을 특정 과거 타임스탬프 시점으로 조회하는 올바른 구문은?
+**Question 4.** Athena 엔진 v3에서 Iceberg 테이블을 특정 과거 타임스탬프 시점으로 조회하는 올바른 구문은?
 
 A) `SELECT * FROM orders ROLLBACK TO ...`  
 B) `SELECT * FROM orders FOR TIMESTAMP AS OF TIMESTAMP '2026-06-20 00:00:00'`  
 C) `SELECT * FROM orders SNAPSHOT NOW()`  
 D) `SELECT * FROM orders WHERE _version < 5`  
 
-**정답: B**  
-해설: Athena의 시간 여행 구문은 `FOR TIMESTAMP AS OF` 또는 `FOR VERSION AS OF`입니다. 나머지 구문은 Athena Iceberg 시간 여행 문법이 아닙니다.
+**Answer: B**  
+Explanation: Athena의 시간 여행 구문은 `FOR TIMESTAMP AS OF` 또는 `FOR VERSION AS OF`입니다. 나머지 구문은 Athena Iceberg 시간 여행 문법이 아닙니다.
 
 ---
 
-**문제 5.** Merge-on-Read(MoR) 테이블의 읽기 성능이 시간이 지나며 저하되는 주된 이유와 해결책으로 옳은 것은?
+**Question 5.** Merge-on-Read(MoR) 테이블의 읽기 성능이 시간이 지나며 저하되는 주된 이유와 해결책으로 옳은 것은?
 
 A) 스냅샷이 즉시 삭제되므로 — 버전 관리 비활성화  
 B) delete/log 파일이 누적되어 읽기 시 병합 비용 증가 — 주기적 compaction  
 C) 파티션 키가 자동 변경되므로 — 크롤러 재실행  
 D) 압축이 풀리므로 — 암호화 해제  
 
-**정답: B**  
-해설: MoR은 변경·삭제를 별도 delete/log 파일로 기록하고 읽을 때 병합하므로, 파일이 쌓이면 읽기 비용이 증가합니다. 주기적 compaction(OPTIMIZE)으로 병합해 성능을 회복합니다. 나머지는 원인·해결로 부적절합니다.
+**Answer: B**  
+Explanation: MoR은 변경·삭제를 별도 delete/log 파일로 기록하고 읽을 때 병합하므로, 파일이 쌓이면 읽기 비용이 증가합니다. 주기적 compaction(OPTIMIZE)으로 병합해 성능을 회복합니다. 나머지는 원인·해결로 부적절합니다.
 
 ---

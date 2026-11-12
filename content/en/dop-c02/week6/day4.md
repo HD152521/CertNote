@@ -301,84 +301,84 @@ Selection: "HTTP API + minimal operations" → App Runner. "ECS + simple config"
 
 ## 📝 Practice Questions
 
-**문제 1.** "단순 웹 API, 3인 팀, 인프라 전문가 없음, 자동 스케일링 필요"라는 시나리오의 가장 적절한 서비스는?
+**Question 1.** "단순 웹 API, 3인 팀, 인프라 전문가 없음, 자동 스케일링 필요"라는 시나리오의 가장 적절한 서비스는?
 
 A) EC2 + ALB + Auto Scaling Group  
 B) ECS Fargate + Application Auto Scaling  
 C) AWS App Runner  
 D) Lightsail Containers  
 
-**정답: C**  
-해설: App Runner가 추상화 최상위이며 인프라 설정 없이 자동 스케일링을 지원한다. Lightsail Containers(D)는 Auto Scaling을 지원하지 않으므로 시험 함정 답이다. ECS Fargate(B)는 Task Definition, ALB, Target Group 등 복잡한 설정이 필요하다.
+**Answer: C**  
+Explanation: App Runner가 추상화 최상위이며 인프라 설정 없이 자동 스케일링을 지원한다. Lightsail Containers(D)는 Auto Scaling을 지원하지 않으므로 시험 함정 답이다. ECS Fargate(B)는 Task Definition, ALB, Target Group 등 복잡한 설정이 필요하다.
 
 ---
 
-**문제 2.** App Runner Service가 ECR에 새 이미지 push 시 자동으로 배포되도록 설정하는 방법은?
+**Question 2.** App Runner Service가 ECR에 새 이미지 push 시 자동으로 배포되도록 설정하는 방법은?
 
 A) EventBridge Rule로 ECR push 이벤트 감지 후 Lambda에서 apprunner:UpdateService 호출  
 B) Service 생성 시 `AutoDeploymentsEnabled: true` 설정  
 C) CodePipeline의 ECR Source Action 연결  
 D) CloudWatch Events로 ECR push 이벤트 모니터링  
 
-**정답: B**  
-해설: App Runner의 AutoDeploymentsEnabled가 ECR 이미지 변경을 자동으로 감지해 배포를 트리거한다. 추가적인 Lambda나 EventBridge 설정이 필요 없다. GitHub 소스 기반에서는 GitHub 커밋을 자동 감지한다.
+**Answer: B**  
+Explanation: App Runner의 AutoDeploymentsEnabled가 ECR 이미지 변경을 자동으로 감지해 배포를 트리거한다. 추가적인 Lambda나 EventBridge 설정이 필요 없다. GitHub 소스 기반에서는 GitHub 커밋을 자동 감지한다.
 
 ---
 
-**문제 3.** App Runner에서 VPC 안의 RDS PostgreSQL에 접근하려면 어떤 구성이 필요한가?
+**Question 3.** App Runner에서 VPC 안의 RDS PostgreSQL에 접근하려면 어떤 구성이 필요한가?
 
 A) VPC Peering 설정  
 B) VPC Connector 생성 + Service에 연결 (아웃바운드 전용)  
 C) NAT Gateway를 통한 우회  
 D) Lambda 프록시 함수 생성  
 
-**정답: B**  
-해설: VPC Connector가 App Runner에서 VPC 내부 리소스(RDS, ElastiCache)로의 아웃바운드 연결을 제공한다. VPC Connector는 단방향—App Runner → VPC 방향만 가능하다. VPC에서 App Runner로의 인바운드는 Private Ingress(VPC Ingress Connection)를 사용해야 한다.
+**Answer: B**  
+Explanation: VPC Connector가 App Runner에서 VPC 내부 리소스(RDS, ElastiCache)로의 아웃바운드 연결을 제공한다. VPC Connector는 단방향—App Runner → VPC 방향만 가능하다. VPC에서 App Runner로의 인바운드는 Private Ingress(VPC Ingress Connection)를 사용해야 한다.
 
 ---
 
-**문제 4.** App Runner의 Auto Scaling이 ECS Fargate와 다른 핵심 차이는?
+**Question 4.** App Runner의 Auto Scaling이 ECS Fargate와 다른 핵심 차이는?
 
 A) App Runner는 메모리 기반, ECS는 CPU 기반  
 B) App Runner는 MaxConcurrency(인스턴스당 동시 요청 수) 기반, ECS는 CPU/메모리/ALB RPS 기반  
 C) App Runner는 수동 스케일링만 지원  
 D) App Runner는 스케일 인(축소)을 지원하지 않음  
 
-**정답: B**  
-해설: App Runner의 Auto Scaling 기본 지표는 MaxConcurrency—하나의 인스턴스가 처리하는 동시 요청 수다. 현재 동시 요청이 MaxConcurrency × 인스턴스 수를 초과하면 새 인스턴스가 시작된다. ECS는 Application Auto Scaling을 통해 CPU, 메모리, ALB 요청 수 등 다양한 지표를 사용한다.
+**Answer: B**  
+Explanation: App Runner의 Auto Scaling 기본 지표는 MaxConcurrency—하나의 인스턴스가 처리하는 동시 요청 수다. 현재 동시 요청이 MaxConcurrency × 인스턴스 수를 초과하면 새 인스턴스가 시작된다. ECS는 Application Auto Scaling을 통해 CPU, 메모리, ALB 요청 수 등 다양한 지표를 사용한다.
 
 ---
 
-**문제 5.** ECS Copilot CLI의 `copilot pipeline init`이 자동으로 생성하는 것은?
+**Question 5.** ECS Copilot CLI의 `copilot pipeline init`이 자동으로 생성하는 것은?
 
 A) Terraform 파일  
 B) CodePipeline + CodeBuild 구성이 담긴 CloudFormation 스택  
 C) GitHub Actions 워크플로우 파일  
 D) Kubernetes Helm Chart  
 
-**정답: B**  
-해설: Copilot은 내부적으로 CloudFormation을 사용한다. `copilot pipeline init`은 `copilot/pipelines/<name>/manifest.yml`을 생성하고, `copilot pipeline deploy`로 이를 CodePipeline + CodeBuild CloudFormation 스택으로 배포한다. 이 파이프라인이 git push 시 자동으로 `copilot svc deploy`를 실행해 ECS Service를 업데이트한다.
+**Answer: B**  
+Explanation: Copilot은 내부적으로 CloudFormation을 사용한다. `copilot pipeline init`은 `copilot/pipelines/<name>/manifest.yml`을 생성하고, `copilot pipeline deploy`로 이를 CodePipeline + CodeBuild CloudFormation 스택으로 배포한다. 이 파이프라인이 git push 시 자동으로 `copilot svc deploy`를 실행해 ECS Service를 업데이트한다.
 
 ---
 
-**문제 6.** App Runner의 AccessRole과 InstanceRole의 차이는?
+**Question 6.** App Runner의 AccessRole과 InstanceRole의 차이는?
 
 A) AccessRole은 로그 수집, InstanceRole은 ECR pull  
 B) AccessRole은 ECR에서 이미지를 pull하는 App Runner 서비스 자체의 권한, InstanceRole은 컨테이너 내 애플리케이션 코드가 AWS API를 호출하는 권한  
 C) AccessRole과 InstanceRole은 동일한 역할  
 D) AccessRole은 VPC Connector 접근, InstanceRole은 CloudWatch 로그 쓰기  
 
-**정답: B**  
-해설: AccessRole(=ECS Task Execution Role)은 `build.apprunner.amazonaws.com`이 AssumeRole해서 ECR에서 이미지를 pull하는 데 사용한다. InstanceRole(=ECS Task Role)은 컨테이너 내에서 실행되는 애플리케이션 코드가 S3, DynamoDB, Secrets Manager 등 AWS 서비스에 접근할 때 사용한다. 두 Role을 혼동하면 이미지를 pull하는 Role에 애플리케이션 권한을 과도하게 부여하는 보안 취약점이 생긴다.
+**Answer: B**  
+Explanation: AccessRole(=ECS Task Execution Role)은 `build.apprunner.amazonaws.com`이 AssumeRole해서 ECR에서 이미지를 pull하는 데 사용한다. InstanceRole(=ECS Task Role)은 컨테이너 내에서 실행되는 애플리케이션 코드가 S3, DynamoDB, Secrets Manager 등 AWS 서비스에 접근할 때 사용한다. 두 Role을 혼동하면 이미지를 pull하는 Role에 애플리케이션 권한을 과도하게 부여하는 보안 취약점이 생긴다.
 
 ---
 
-**문제 7.** "온프레미스 서버에서 실행 중인 Java 애플리케이션을 최소 코드 변경으로 ECS Fargate로 마이그레이션"하는 AWS 서비스는?
+**Question 7.** "온프레미스 서버에서 실행 중인 Java 애플리케이션을 최소 코드 변경으로 ECS Fargate로 마이그레이션"하는 AWS 서비스는?
 
 A) AWS Migration Hub  
 B) App2Container  
 C) ECS Copilot  
 D) AWS Server Migration Service  
 
-**정답: B**  
-해설: App2Container는 실행 중인 Java(.NET도 지원) 프로세스를 분석해 Dockerfile과 ECS/EKS 배포 설정을 자동 생성하는 도구다. 서버에 App2Container를 설치하고 `analyze` → `containerize` → `generate app-deployment` 순서로 실행하면 컨테이너화와 ECR push, CloudFormation 스택 생성까지 자동화된다. "레거시 앱 컨테이너화 마이그레이션"이라는 키워드에는 App2Container가 답이다.
+**Answer: B**  
+Explanation: App2Container는 실행 중인 Java(.NET도 지원) 프로세스를 분석해 Dockerfile과 ECS/EKS 배포 설정을 자동 생성하는 도구다. 서버에 App2Container를 설치하고 `analyze` → `containerize` → `generate app-deployment` 순서로 실행하면 컨테이너화와 ECR push, CloudFormation 스택 생성까지 자동화된다. "레거시 앱 컨테이너화 마이그레이션"이라는 키워드에는 App2Container가 답이다.

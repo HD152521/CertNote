@@ -92,7 +92,7 @@ SAP exam frequent mappings: (1) "Reduce cost, power, carbon simultaneously with 
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 회사가 x86 EC2에서 웹·앱 워크로드를 운영 중이며, 경영진이 비용과 탄소 배출을 동시에 줄이라고 지시했다. 동급 성능을 유지하면서 가장 효과적인 단일 액션은?
+**Question 1.** 한 회사가 x86 EC2에서 웹·앱 워크로드를 운영 중이며, 경영진이 비용과 탄소 배출을 동시에 줄이라고 지시했다. 동급 성능을 유지하면서 가장 효과적인 단일 액션은?
 
 A) Intel x86 최신 세대로 업그레이드
 
@@ -102,12 +102,12 @@ C) GPU 인스턴스(F1)로 전환
 
 D) 더 큰 인스턴스 타입으로 통합
 
-**정답: B**
-해설: Graviton은 ARM Neoverse 기반으로 동급 x86 대비 가격 성능비(최대 40% 개선)와 전력 효율이 모두 우위라, 한 번의 전환으로 Cost·Sustainability 두 기둥을 동시에 만족한다 — Pro 정답의 전형. A는 비용·탄소 대폭 개선이 어렵고, C(F1/GPU)는 특수 워크로드용으로 비용이 오르며, D는 right-sizing 역행이다. 함정: "비용·환경 동시 개선 + 동급 성능"은 거의 항상 Graviton이다.
+**Answer: B**
+Explanation: Graviton은 ARM Neoverse 기반으로 동급 x86 대비 가격 성능비(최대 40% 개선)와 전력 효율이 모두 우위라, 한 번의 전환으로 Cost·Sustainability 두 기둥을 동시에 만족한다 — Pro 정답의 전형. A는 비용·탄소 대폭 개선이 어렵고, C(F1/GPU)는 특수 워크로드용으로 비용이 오르며, D는 right-sizing 역행이다. 함정: "비용·환경 동시 개선 + 동급 성능"은 거의 항상 Graviton이다.
 
 ---
 
-**문제 2.** 한 대기업이 EU CSRD에 따라 클라우드 사용으로 인한 Scope 3 탄소 배출을 ESG 보고서에 포함해야 한다. AWS 사용분의 월별 탄소 배출 데이터를 얻으려면 무엇을 사용하나?
+**Question 2.** 한 대기업이 EU CSRD에 따라 클라우드 사용으로 인한 Scope 3 탄소 배출을 ESG 보고서에 포함해야 한다. AWS 사용분의 월별 탄소 배출 데이터를 얻으려면 무엇을 사용하나?
 
 A) Trusted Advisor
 
@@ -117,12 +117,12 @@ C) Cost Explorer
 
 D) Sustainability Lens
 
-**정답: B**
-해설: CCFT는 AWS 사용으로 인한 Scope 1·2·3 탄소 배출을 월별로 보고하며, 이 데이터가 그대로 고객 ESG 보고(Scope 3)에 들어간다. A(Trusted Advisor)는 비용·보안 체크지 탄소 측정이 아니다. C(Cost Explorer)는 비용 데이터다. D(Sustainability Lens)는 아키텍처 가이드일 뿐 측정 도구가 아니다. 함정: "탄소 측정·ESG·Scope 3"은 CCFT, Sustainability Lens는 설계 가이드로 구분한다.
+**Answer: B**
+Explanation: CCFT는 AWS 사용으로 인한 Scope 1·2·3 탄소 배출을 월별로 보고하며, 이 데이터가 그대로 고객 ESG 보고(Scope 3)에 들어간다. A(Trusted Advisor)는 비용·보안 체크지 탄소 측정이 아니다. C(Cost Explorer)는 비용 데이터다. D(Sustainability Lens)는 아키텍처 가이드일 뿐 측정 도구가 아니다. 함정: "탄소 측정·ESG·Scope 3"은 CCFT, Sustainability Lens는 설계 가이드로 구분한다.
 
 ---
 
-**문제 3.** 한 회사의 클라우드 비용이 평소와 다르게 갑자기 급증했는데, 어떤 워크로드나 서비스가 원인인지 모른다. 사전에 정한 예산 임계치와 무관하게 비정상적 지출 패턴을 자동으로 탐지·알림받고 싶다. 가장 적합한 도구는?
+**Question 3.** 한 회사의 클라우드 비용이 평소와 다르게 갑자기 급증했는데, 어떤 워크로드나 서비스가 원인인지 모른다. 사전에 정한 예산 임계치와 무관하게 비정상적 지출 패턴을 자동으로 탐지·알림받고 싶다. 가장 적합한 도구는?
 
 A) AWS Budgets
 
@@ -132,12 +132,12 @@ C) Cost and Usage Report
 
 D) Compute Optimizer
 
-**정답: B**
-해설: Cost Anomaly Detection은 과거 지출 패턴을 ML로 학습해 "평소와 다른 갑작스러운 급증"을 동적으로 탐지·알림한다. A(Budgets)는 사전에 정한 정적 임계치 초과 시 알림하는 것으로 "예측 못 한 이상"은 못 잡는다. C(CUR)는 상세 청구 데이터지 자동 이상 탐지가 아니다. D는 right-sizing 권고다. 함정: "예측 못 한 비정상 급증 탐지"는 Cost Anomaly Detection, "사전 임계치 알림"은 Budgets다.
+**Answer: B**
+Explanation: Cost Anomaly Detection은 과거 지출 패턴을 ML로 학습해 "평소와 다른 갑작스러운 급증"을 동적으로 탐지·알림한다. A(Budgets)는 사전에 정한 정적 임계치 초과 시 알림하는 것으로 "예측 못 한 이상"은 못 잡는다. C(CUR)는 상세 청구 데이터지 자동 이상 탐지가 아니다. D는 right-sizing 권고다. 함정: "예측 못 한 비정상 급증 탐지"는 Cost Anomaly Detection, "사전 임계치 알림"은 Budgets다.
 
 ---
 
-**문제 4.** 프라이빗 서브넷의 EC2 인스턴스들이 S3에 대량의 데이터를 읽고 쓰는데, 현재 NAT Gateway를 경유해 NAT 데이터 처리 비용이 크다. 이 비용을 제거하는 가장 적합한 방법은?
+**Question 4.** 프라이빗 서브넷의 EC2 인스턴스들이 S3에 대량의 데이터를 읽고 쓰는데, 현재 NAT Gateway를 경유해 NAT 데이터 처리 비용이 크다. 이 비용을 제거하는 가장 적합한 방법은?
 
 A) NAT Gateway를 더 큰 크기로 변경
 
@@ -147,12 +147,12 @@ C) S3 버킷을 퍼블릭으로 전환
 
 D) CloudFront를 S3 앞에 배치
 
-**정답: B**
-해설: S3·DynamoDB용 Gateway VPC Endpoint는 무료이며, 프라이빗 서브넷에서 NAT Gateway를 거치지 않고 AWS 백본으로 직행해 NAT 데이터 처리 비용과 egress를 없앤다. A는 비용을 줄이지 못하고, C는 보안 위반이며, D(CloudFront)는 인터넷 egress·캐싱용이지 VPC 내부 S3 접근의 NAT 비용 제거가 아니다. 함정: "NAT 데이터 처리 비용 제거"는 VPC(Gateway) Endpoint다.
+**Answer: B**
+Explanation: S3·DynamoDB용 Gateway VPC Endpoint는 무료이며, 프라이빗 서브넷에서 NAT Gateway를 거치지 않고 AWS 백본으로 직행해 NAT 데이터 처리 비용과 egress를 없앤다. A는 비용을 줄이지 못하고, C는 보안 위반이며, D(CloudFront)는 인터넷 egress·캐싱용이지 VPC 내부 S3 접근의 NAT 비용 제거가 아니다. 함정: "NAT 데이터 처리 비용 제거"는 VPC(Gateway) Endpoint다.
 
 ---
 
-**문제 5.** 한 Organization이 비용 분리를 위해 부서별로 계정을 나눴지만, 약정 할인(SP/RI)과 볼륨 할인은 전체에서 공유하고 싶다. 가장 적합한 구성은?
+**Question 5.** 한 Organization이 비용 분리를 위해 부서별로 계정을 나눴지만, 약정 할인(SP/RI)과 볼륨 할인은 전체에서 공유하고 싶다. 가장 적합한 구성은?
 
 A) 각 계정이 독립 결제로 분리
 
@@ -162,12 +162,12 @@ C) 모든 워크로드를 단일 계정으로 통합
 
 D) On-Demand만 사용
 
-**정답: B**
-해설: Organizations 통합 결제는 SP/RI를 전 계정에 공유하고, 사용량을 합산해 더 높은 볼륨 티어 할인을 적용한다. 계정을 비용 분리 목적으로 나누되 할인은 공유하는 것이 멀티 계정 비용 설계의 핵심이다. A는 할인 공유·볼륨 합산을 잃고, C는 비용 분리를 포기하며, D는 약정 할인을 포기한다. 함정: "계정 분리 + 할인 공유"는 통합 결제다.
+**Answer: B**
+Explanation: Organizations 통합 결제는 SP/RI를 전 계정에 공유하고, 사용량을 합산해 더 높은 볼륨 티어 할인을 적용한다. 계정을 비용 분리 목적으로 나누되 할인은 공유하는 것이 멀티 계정 비용 설계의 핵심이다. A는 할인 공유·볼륨 합산을 잃고, C는 비용 분리를 포기하며, D는 약정 할인을 포기한다. 함정: "계정 분리 + 할인 공유"는 통합 결제다.
 
 ---
 
-**문제 6.** 다음 중 Cost와 Sustainability 두 기둥이 **항상 같은 방향으로 개선되지는 않는** 경우의 예로 가장 적절한 것은?
+**Question 6.** 다음 중 Cost와 Sustainability 두 기둥이 **항상 같은 방향으로 개선되지는 않는** 경우의 예로 가장 적절한 것은?
 
 A) 유휴 인스턴스를 종료한다 (둘 다 ↓)
 
@@ -177,7 +177,7 @@ C) HPC 처리량을 위해 FSx for Lustre를 도입한다 (비용 ↑, 성능 �
 
 D) Auto Scaling으로 유휴 시간을 줄인다 (둘 다 ↓)
 
-**정답: C**
-해설: FSx for Lustre는 처리량·성능을 위해 비용이 오르는 경우로, "비용↓"라는 Cost 목표와 반드시 일치하지 않는다. Sustainability 관점에서도 고성능 스토리지가 항상 저탄소는 아니다. A·B·D는 모두 Cost와 Sustainability가 동시에 개선되는 전형적 일치 사례다. 함정: 두 기둥은 대개 일치하지만(유휴 제거·Graviton), 고성능을 위해 비용을 감수하는 경우처럼 trade-off가 존재함을 Pro는 구분해야 한다.
+**Answer: C**
+Explanation: FSx for Lustre는 처리량·성능을 위해 비용이 오르는 경우로, "비용↓"라는 Cost 목표와 반드시 일치하지 않는다. Sustainability 관점에서도 고성능 스토리지가 항상 저탄소는 아니다. A·B·D는 모두 Cost와 Sustainability가 동시에 개선되는 전형적 일치 사례다. 함정: 두 기둥은 대개 일치하지만(유휴 제거·Graviton), 고성능을 위해 비용을 감수하는 경우처럼 trade-off가 존재함을 Pro는 구분해야 한다.
 
 ---

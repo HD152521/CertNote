@@ -81,62 +81,62 @@ Next, we'll see **Amazon SageMaker**—the service where you "train and deploy M
 
 ## 📝 Practice Questions
 
-**문제 1.** A startup wants to call foundation models from multiple companies (Claude, Llama, Titan, etc.) through a single API without buying GPUs or hosting directly. What is the most appropriate service?
+**Question 1.** A startup wants to call foundation models from multiple companies (Claude, Llama, Titan, etc.) through a single API without buying GPUs or hosting directly. What is the most appropriate service?
 
 A) Install each model directly on Amazon EC2  
 B) Amazon Bedrock  
 C) Amazon S3  
 D) AWS Glue  
 
-**정답: B**  
-해설: Bedrock is a fully managed service providing FMs from multiple providers via a single API in a serverless manner. A requires direct infrastructure management, contradicting the requirement. C is object storage, D is a data integration (ETL) service—neither's primary business is providing FMs.
+**Answer: B**  
+Explanation: Bedrock is a fully managed service providing FMs from multiple providers via a single API in a serverless manner. A requires direct infrastructure management, contradicting the requirement. C is object storage, D is a data integration (ETL) service—neither's primary business is providing FMs.
 
 ---
 
-**문제 2.** You want a chatbot to answer with latest information based on internal company documents, but you want to avoid the cost of retraining the model every time. What is the most appropriate approach?
+**Question 2.** You want a chatbot to answer with latest information based on internal company documents, but you want to avoid the cost of retraining the model every time. What is the most appropriate approach?
 
 A) Configure Bedrock Guardrails  
 B) Use Bedrock Knowledge Bases with RAG  
 C) Train the model completely from scratch  
 D) Manually edit model parameters  
 
-**정답: B**  
-해설: Knowledge Bases automates RAG by embedding company documents, storing in a vector DB, and searching related content when queried to attach to the model. You can reflect latest knowledge without retraining. A is safety filtering, not knowledge injection. C is the high-cost approach you want to avoid. D is practically impossible.
+**Answer: B**  
+Explanation: Knowledge Bases automates RAG by embedding company documents, storing in a vector DB, and searching related content when queried to attach to the model. You can reflect latest knowledge without retraining. A is safety filtering, not knowledge injection. C is the high-cost approach you want to avoid. D is practically impossible.
 
 ---
 
-**문제 3.** You want to consistently filter inputs and outputs of a generative AI chatbot to prevent profanity, competitor mentions, and personal info exposure. Which Bedrock feature should you use?
+**Question 3.** You want to consistently filter inputs and outputs of a generative AI chatbot to prevent profanity, competitor mentions, and personal info exposure. Which Bedrock feature should you use?
 
 A) Knowledge Bases  
 B) Agents  
 C) Guardrails  
 D) JumpStart  
 
-**정답: C**  
-해설: Guardrails is a safety mechanism filtering harmful content, denied topics, sensitive info (PII), banned words, etc., independent of the model, consistently applicable to multiple models. A is search-based knowledge injection. B is multi-step task execution. D is SageMaker's pre-trained model catalog—all unrelated to this problem.
+**Answer: C**  
+Explanation: Guardrails is a safety mechanism filtering harmful content, denied topics, sensitive info (PII), banned words, etc., independent of the model, consistently applicable to multiple models. A is search-based knowledge injection. B is multi-step task execution. D is SageMaker's pre-trained model catalog—all unrelated to this problem.
 
 ---
 
-**문제 4.** You want the model to autonomously perform multi-step tasks in response to requests like "Check my order status and change shipping address if possible," calling external APIs to complete actual work. What is the appropriate feature?
+**Question 4.** You want the model to autonomously perform multi-step tasks in response to requests like "Check my order status and change shipping address if possible," calling external APIs to complete actual work. What is the appropriate feature?
 
 A) Bedrock Agents  
 B) Bedrock Guardrails  
 C) Simple text generation call  
 D) Amazon Polly  
 
-**정답: A**  
-해설: Agents let models reason multi-step, calling external APIs like Lambda or Knowledge Bases to perform actual tasks. B is safety filtering. C is simple generation without external action. D is a text-to-speech service—unrelated.
+**Answer: A**  
+Explanation: Agents let models reason multi-step, calling external APIs like Lambda or Knowledge Bases to perform actual tasks. B is safety filtering. C is simple generation without external action. D is a text-to-speech service—unrelated.
 
 ---
 
-**문제 5.** When choosing a model in Bedrock, which criterion is most distant from consideration?
+**Question 5.** When choosing a model in Bedrock, which criterion is most distant from consideration?
 
 A) Accuracy and reasoning ability needed for the task  
 B) Cost per token and response latency  
 C) Required modality (text, images, embeddings)  
 D) Physical location of the GPU on which the model was trained  
 
-**정답: D**  
-해설: Bedrock is serverless and abstracts infrastructure, so users needn't worry about GPU physical location. A, B, and C are all core trade-offs in actual model selection (accuracy, cost/latency, modality). The principle is "the most expensive model isn't always right."
+**Answer: D**  
+Explanation: Bedrock is serverless and abstracts infrastructure, so users needn't worry about GPU physical location. A, B, and C are all core trade-offs in actual model selection (accuracy, cost/latency, modality). The principle is "the most expensive model isn't always right."
 
 ---

@@ -190,96 +190,96 @@ Lodge this table in your head and just seeing the first line of a scenario narro
 
 ## 📝 Practice Questions
 
-**문제 1.** A company has to connect all of 8 VPCs and 2 on-premises DCs. What is the most appropriate solution?
+**Question 1.** A company has to connect all of 8 VPCs and 2 on-premises DCs. What is the most appropriate solution?
 
 A) Full-mesh VPC Peering across all
 B) Transit Gateway hub-and-spoke
 C) VPC Endpoint
 D) NAT Gateway
 
-**정답: B**
-해설: A full mesh of 8 VPCs is 28 peerings, and adding on-premises makes it unmanageable. TGW consolidates it into 10 attachments in a hub-and-spoke. Route table separation also enables prod/dev isolation. A larger organization (dozens of regions) can consider Cloud WAN.
+**Answer: B**
+Explanation: A full mesh of 8 VPCs is 28 peerings, and adding on-premises makes it unmanageable. TGW consolidates it into 10 attachments in a hub-and-spoke. Route table separation also enables prod/dev isolation. A larger organization (dozens of regions) can consider Cloud WAN.
 
 ---
 
-**문제 2.** You need private access to S3 from a Private subnet and want to minimize cost?
+**Question 2.** You need private access to S3 from a Private subnet and want to minimize cost?
 
 A) NAT Gateway
 B) S3 Gateway Endpoint (free)
 C) Interface Endpoint
 D) VPN
 
-**정답: B**
-해설: S3 and DynamoDB support the Gateway Endpoint, which is free. It automatically adds a prefix list to the route table. Since data flows over the AWS internal network without going through the internet, it also saves the NAT data transfer cost. Even with just 1TB per month flowing to S3, you can save the roughly $45/TB NAT data transfer cost with a Gateway Endpoint.
+**Answer: B**
+Explanation: S3 and DynamoDB support the Gateway Endpoint, which is free. It automatically adds a prefix list to the route table. Since data flows over the AWS internal network without going through the internet, it also saves the NAT data transfer cost. Even with just 1TB per month flowing to S3, you can save the roughly $45/TB NAT data transfer cost with a Gateway Endpoint.
 
 ---
 
-**문제 3.** To communicate between Datadog SaaS and AWS without going through the internet?
+**Question 3.** To communicate between Datadog SaaS and AWS without going through the internet?
 
 A) VPC Peering
 B) Interface Endpoint (PrivateLink)
 C) Gateway Endpoint
 D) Transit Gateway
 
-**정답: B**
-해설: Private connection with an external ISV SaaS is a PrivateLink Interface Endpoint. When Datadog publishes an endpoint service, an ENI is created in our VPC for private communication. Gateway is S3/DynamoDB only, and Peering is only between VPCs. The same pattern applies to nearly all major SaaS — Snowflake, MongoDB Atlas, Databricks.
+**Answer: B**
+Explanation: Private connection with an external ISV SaaS is a PrivateLink Interface Endpoint. When Datadog publishes an endpoint service, an ENI is created in our VPC for private communication. Gateway is S3/DynamoDB only, and Peering is only between VPCs. The same pattern applies to nearly all major SaaS — Snowflake, MongoDB Atlas, Databricks.
 
 ---
 
-**문제 4.** What is a limitation of VPC Peering?
+**Question 4.** What is a limitation of VPC Peering?
 
 A) Only the same account is possible
 B) Non-transitive (even with A-B and B-C, A-C is not possible)
 C) Only the same AZ is possible
 D) It's not free
 
-**정답: B**
-해설: Peering is 1:1 and doesn't transit. This is why a full mesh explodes as N². TGW solves it with transitive routing. Peering itself is free (only data transfer is charged), and both different accounts and different regions are possible.
+**Answer: B**
+Explanation: Peering is 1:1 and doesn't transit. This is why a full mesh explodes as N². TGW solves it with transitive routing. Peering itself is free (only data transfer is charged), and both different accounts and different regions are possible.
 
 ---
 
-**문제 5.** You need consistent 1Gbps bandwidth and low latency between an on-premises DC and AWS. What is the most appropriate solution?
+**Question 5.** You need consistent 1Gbps bandwidth and low latency between an on-premises DC and AWS. What is the most appropriate solution?
 
 A) Site-to-Site VPN
 B) Direct Connect
 C) ClientVPN
 D) Internet Gateway
 
-**정답: B**
-해설: Consistent bandwidth and low latency = a dedicated line, Direct Connect. VPN goes over the public internet so it varies. Because DX installation takes a long time, the standard pattern is to use VPN temporarily and cut over after DX is complete. If you need stronger security (L2 encryption), turn on the MACsec option, and if you need HA, a triple configuration of DX from two different carriers + VPN backup.
+**Answer: B**
+Explanation: Consistent bandwidth and low latency = a dedicated line, Direct Connect. VPN goes over the public internet so it varies. Because DX installation takes a long time, the standard pattern is to use VPN temporarily and cut over after DX is complete. If you need stronger security (L2 encryption), turn on the MACsec option, and if you need HA, a triple configuration of DX from two different carriers + VPN backup.
 
 ---
 
-**문제 6.** To prevent access to arbitrary S3 buckets through an Interface Endpoint?
+**Question 6.** To prevent access to arbitrary S3 buckets through an Interface Endpoint?
 
 A) Block the NAT GW
 B) Allow only specific buckets with an Endpoint Policy
 C) Block Route 53
 D) Use only an IAM policy
 
-**정답: B**
-해설: The Endpoint Policy is the last line of defense for access through the endpoint. Core to preventing data exfiltration. Because an IAM policy alone leaves the possibility of a bypass by another account's identity, apply the endpoint policy together. The `aws:PrincipalOrgID` condition released in 2020 made "only identities belonging to my Org" possible, making it even stronger.
+**Answer: B**
+Explanation: The Endpoint Policy is the last line of defense for access through the endpoint. Core to preventing data exfiltration. Because an IAM policy alone leaves the possibility of a bypass by another account's identity, apply the endpoint policy together. The `aws:PrincipalOrgID` condition released in 2020 made "only identities belonging to my Org" possible, making it even stronger.
 
 ---
 
-**문제 7.** Which of the following is NOT possible as a TGW attachment?
+**Question 7.** Which of the following is NOT possible as a TGW attachment?
 
 A) VPC
 B) Site-to-Site VPN
 C) Direct Connect Gateway
 D) S3 Bucket
 
-**정답: D**
-해설: S3 is accessed via a VPC Endpoint, not an attachment. TGW attachments are only network units (VPC, VPN, DX, Peering, Connect). A Connect attachment is for SD-WAN appliance integration and lets you terminate a GRE tunnel on the TGW.
+**Answer: D**
+Explanation: S3 is accessed via a VPC Endpoint, not an attachment. TGW attachments are only network units (VPC, VPN, DX, Peering, Connect). A Connect attachment is for SD-WAN appliance integration and lets you terminate a GRE tunnel on the TGW.
 
 ---
 
-**문제 8.** To manage a multi-region, multi-account network spanning 50 regions as *policy as code*?
+**Question 8.** To manage a multi-region, multi-account network spanning 50 regions as *policy as code*?
 
 A) Full-mesh VPC Peering
 B) Site-to-Site VPN
 C) AWS Cloud WAN
 D) Direct Connect dedicated lines
 
-**정답: C**
-해설: Cloud WAN (released in 2021) is TGW's global backbone extension. It manages segments (prod/dev), attachments, and route propagation all at once with JSON policy. You could also build it manually with TGW Peering, but at the scale of dozens of regions, Cloud WAN is the standard. It doesn't come up often on the exam yet, but its appearance frequency has been increasing since 2024.
+**Answer: C**
+Explanation: Cloud WAN (released in 2021) is TGW's global backbone extension. It manages segments (prod/dev), attachments, and route propagation all at once with JSON policy. You could also build it manually with TGW Peering, but at the scale of dozens of regions, Cloud WAN is the standard. It doesn't come up often on the exam yet, but its appearance frequency has been increasing since 2024.

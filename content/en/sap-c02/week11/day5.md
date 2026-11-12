@@ -139,7 +139,7 @@ Next week (Week 12) is **Cost Optimization Deep-Dive** — Savings Plans math, C
 
 ## 📝 Practice Questions
 
-**문제 1.** 멀티 리전 RDS 스냅샷을 두 리전에서 모두 복호화하며 DR 환경을 구성해야 한다. 추가 KMS 호출이나 re-encrypt 없이 즉시 복원하고, 리전별 키 접근 권한은 따로 통제하고 싶다.
+**Question 1.** 멀티 리전 RDS 스냅샷을 두 리전에서 모두 복호화하며 DR 환경을 구성해야 한다. 추가 KMS 호출이나 re-encrypt 없이 즉시 복원하고, 리전별 키 접근 권한은 따로 통제하고 싶다.
 
 A) Cross-Region Copy + 매번 re-encrypt
 
@@ -149,13 +149,13 @@ C) AWS Managed Key
 
 D) BYOK를 두 리전에 각각 import
 
-**정답: B**
+**Answer: B**
 
 **해설:** MRK는 같은 키 머터리얼을 여러 리전에 복제하고 키 ID가 동일해, 한 리전의 ciphertext를 다른 리전 Replica로 직접 복호화한다. 리전별 Key Policy로 접근 통제도 분리된다. A는 리전 종속이라 비효율적. C는 정책·회전 통제 불가, 리전 종속. D는 두 import 키가 서로 다른 키가 되어 동일 ciphertext를 양쪽에서 복호화 못 하고 자동 로테이션도 불가. 함정: "Cross-Region 동일 키 복호화 + DR"은 MRK.
 
 ---
 
-**문제 2.** S3 버킷에 카드 번호·SSN이 저장된 적 있는지 자동 탐지·분류하고 버킷별 민감도를 우선순위화해야 한다.
+**Question 2.** S3 버킷에 카드 번호·SSN이 저장된 적 있는지 자동 탐지·분류하고 버킷별 민감도를 우선순위화해야 한다.
 
 A) Inspector v2
 
@@ -165,13 +165,13 @@ C) GuardDuty S3 Protection
 
 D) Config Rule
 
-**정답: B**
+**Answer: B**
 
 **해설:** Macie는 ML로 S3 객체 내용을 스캔해 PII/PCI를 분류하고 민감도 점수를 매긴다. A(Inspector)는 EC2·ECR·Lambda CVE 취약점. C(GuardDuty S3 Protection)는 "접근 행동의 이상"이지 콘텐츠 검사가 아니다. D(Config)는 설정 평가이지 객체 내용 분류가 아니다. 함정: "S3 내용에 민감 데이터"=Macie, "S3 접근 행동 이상"=GuardDuty.
 
 ---
 
-**문제 3.** EC2·컨테이너 이미지(ECR)·Lambda에서 알려진 CVE를 지속 자동 탐지하고, 신규 CVE 공개 시 추가 스캔 없이 자동 재평가되어야 한다.
+**Question 3.** EC2·컨테이너 이미지(ECR)·Lambda에서 알려진 CVE를 지속 자동 탐지하고, 신규 CVE 공개 시 추가 스캔 없이 자동 재평가되어야 한다.
 
 A) Inspector v2
 
@@ -181,13 +181,13 @@ C) GuardDuty
 
 D) Macie
 
-**정답: A**
+**Answer: A**
 
 **해설:** Inspector v2는 EC2·ECR·Lambda 인벤토리를 CVE DB와 지속 대조하고 신규 CVE 등록 시 자동 재평가한다. B(Patch Manager)는 패치 "적용"이지 취약점 "탐지·평가"가 아니다(보완 관계). C(GuardDuty)는 행동·위협 탐지이지 CVE 평가가 아니다. D(Macie)는 S3 데이터. 함정: "CVE 자동 탐지·재평가"=Inspector, "패치 적용"=Patch Manager.
 
 ---
 
-**문제 4.** EC2가 알려진 악성 IP와 통신하고 평소 안 쓰던 리전에서 IAM 자격 증명이 사용되는 등 이상 행동을 에이전트 없이 탐지해야 한다.
+**Question 4.** EC2가 알려진 악성 IP와 통신하고 평소 안 쓰던 리전에서 IAM 자격 증명이 사용되는 등 이상 행동을 에이전트 없이 탐지해야 한다.
 
 A) Inspector v2
 
@@ -197,13 +197,13 @@ C) Macie
 
 D) WAF
 
-**정답: B**
+**Answer: B**
 
 **해설:** GuardDuty는 VPC FL·CloudTrail·DNS를 분석하고 위협 인텔(악성 IP)+ML 행동 베이스라이닝으로 이상을 탐지하며 에이전트가 필요 없다. A는 CVE 평가, C는 S3 데이터, D는 L7 웹 필터. 함정: "악성 IP 통신·비정상 행동·에이전트 없음"=GuardDuty.
 
 ---
 
-**문제 5.** 30개 계정에서 CIS·PCI 표준 준수 현황을 자동 점검하고 GuardDuty·Inspector·Macie Finding을 단일 대시보드로 통합하려 한다.
+**Question 5.** 30개 계정에서 CIS·PCI 표준 준수 현황을 자동 점검하고 GuardDuty·Inspector·Macie Finding을 단일 대시보드로 통합하려 한다.
 
 A) Trusted Advisor
 
@@ -213,13 +213,13 @@ C) Audit Manager
 
 D) Detective
 
-**정답: B**
+**Answer: B**
 
 **해설:** Security Hub는 CIS·PCI·NIST 표준을 자동 점검하고 모든 보안 Finding을 ASFF로 통합하며 Org 위임 관리자로 전 계정을 관리한다. A는 일반 모범 사례 점검이지 보안 표준 통합 허브가 아니다. C는 감사 증거 수집이지 실시간 점검·대시보드가 아니다. D는 사건 조사. 함정: "표준 자동 점검 + Finding 통합 대시보드"=Security Hub.
 
 ---
 
-**문제 6.** GuardDuty가 EC2 자격 증명 탈취 의심을 탐지했다. 이 인스턴스가 언제부터 어떤 자격 증명으로 어떤 리소스와 통신했는지 시계열 그래프로 깊이 조사해 근본 원인을 파악해야 한다.
+**Question 6.** GuardDuty가 EC2 자격 증명 탈취 의심을 탐지했다. 이 인스턴스가 언제부터 어떤 자격 증명으로 어떤 리소스와 통신했는지 시계열 그래프로 깊이 조사해 근본 원인을 파악해야 한다.
 
 A) CloudTrail 콘솔 수동 검색
 
@@ -229,13 +229,13 @@ C) X-Ray
 
 D) Macie
 
-**정답: B**
+**Answer: B**
 
 **해설:** Detective는 VPC FL·CloudTrail·GuardDuty Finding을 통합해 행동 그래프를 만들고 엔티티 관계·시간축을 시각화해 근본 원인 조사를 돕는다(Finding에서 바로 점프). A는 수동 조인이라 느리고 누락이 쉽다. C는 앱 분산 추적. D는 S3 데이터. 함정: "사건 시계열·관계 시각화·근본 원인"=Detective.
 
 ---
 
-**문제 7.** L7 HTTP flood DDoS를 받았고, 그로 인한 자동 스케일 아웃 요금 폭증을 면제받고 싶으며, 공격 중 24/7 전문가 지원이 필요하다.
+**Question 7.** L7 HTTP flood DDoS를 받았고, 그로 인한 자동 스케일 아웃 요금 폭증을 면제받고 싶으며, 공격 중 24/7 전문가 지원이 필요하다.
 
 A) Shield Standard
 
@@ -245,13 +245,13 @@ C) WAF Rate-Based만
 
 D) CloudFront만
 
-**정답: B**
+**Answer: B**
 
 **해설:** Shield Advanced는 L7 DDoS 보호 + Cost Protection(요금 면제) + SRT 24/7을 모두 제공한다. A는 무료지만 L3/4만, L7·Cost Protection·SRT 없음. C는 L7 완화에 일부 도움되나 비용 보호·전문가 지원 없음. D는 캐싱·배포이지 DDoS 비용 보호가 아니다. 함정: "L7 DDoS + Cost Protection + SRT" 세 키워드는 Shield Advanced 전용.
 
 ---
 
-**문제 8.** VPC 내부 트래픽에 IDS/IPS를 적용하고 암호화 트래픽도 복호화해 검사(TLS Inspection)해야 한다.
+**Question 8.** VPC 내부 트래픽에 IDS/IPS를 적용하고 암호화 트래픽도 복호화해 검사(TLS Inspection)해야 한다.
 
 A) WAF
 
@@ -261,13 +261,13 @@ C) Shield
 
 D) GuardDuty
 
-**정답: B**
+**Answer: B**
 
 **해설:** Network Firewall은 Suricata 룰 기반 L3-7 IDS/IPS로 VPC 내부 트래픽을 inline 검사하고 TLS Inspection을 지원한다. A(WAF)는 엣지 L7 웹만, VPC 전반·TLS Inspection 불가. C(Shield)는 DDoS 방어. D(GuardDuty)는 로그 기반 탐지이지 inline IPS·TLS Inspection이 아니다. 함정: "VPC 내부 IDS/IPS + TLS Inspection"=Network Firewall.
 
 ---
 
-**문제 9.** VPC 내 EC2가 멀웨어 C2 서버나 알려진 악성 도메인에 접근하지 못하게 이름 해석 단계에서 차단하고 싶다.
+**Question 9.** VPC 내 EC2가 멀웨어 C2 서버나 알려진 악성 도메인에 접근하지 못하게 이름 해석 단계에서 차단하고 싶다.
 
 A) NACL로 IP 차단
 
@@ -277,13 +277,13 @@ C) Route 53 Resolver DNS Firewall
 
 D) Security Group
 
-**정답: C**
+**Answer: C**
 
 **해설:** DNS Firewall은 VPC 출발 DNS 쿼리를 악성 도메인 리스트로 차단해 이름 해석 단계에서 C2·악성 도메인 접근을 막는다. A·D(NACL/SG)는 IP 기반인데 악성 도메인 IP가 수시로 바뀌어 부적합. B(WAF)는 인바운드 L7 웹 필터이지 아웃바운드 DNS 차단이 아니다. 함정: "악성 도메인 차단(이름 기반)"=DNS Firewall.
 
 ---
 
-**문제 10.** 500개 계정 Organization의 모든 인터넷 향 ALB에 동일 WAF Managed Rule을 적용하고, 신규 계정·리소스에도 자동 적용하며, 누군가 WAF를 끄면 자동 탐지·시정하고 싶다.
+**Question 10.** 500개 계정 Organization의 모든 인터넷 향 ALB에 동일 WAF Managed Rule을 적용하고, 신규 계정·리소스에도 자동 적용하며, 누군가 WAF를 끄면 자동 탐지·시정하고 싶다.
 
 A) AWS Config Rule
 
@@ -293,13 +293,13 @@ C) SCP
 
 D) Control Tower
 
-**정답: B**
+**Answer: B**
 
 **해설:** Firewall Manager는 Org 단위로 WAF·Shield·SG·Network Firewall 정책을 일괄 배포하고 신규 계정·리소스에 자동 적용하며 드리프트를 자동 시정한다. A(Config)는 비준수 평가가 본업이지 능동 배포가 아니다. C(SCP)는 행위 금지(거부)이지 정책 배포가 아니다. D(Control Tower)는 랜딩 존 거버넌스. 함정: "보안 정책 멀티 계정 배포 + 신규 자동 + 드리프트 시정"=Firewall Manager.
 
 ---
 
-**문제 11.** 단일 테넌트 전용 HSM에서 FIPS 140-2 Level 3 키 관리가 필요하면서, 개발팀은 기존 KMS API(`Encrypt`/`Decrypt`)를 그대로 쓰고 싶다.
+**Question 11.** 단일 테넌트 전용 HSM에서 FIPS 140-2 Level 3 키 관리가 필요하면서, 개발팀은 기존 KMS API(`Encrypt`/`Decrypt`)를 그대로 쓰고 싶다.
 
 A) 순수 KMS CMK(멀티 테넌트)
 
@@ -309,13 +309,13 @@ C) Secrets Manager
 
 D) Imported Key Material
 
-**정답: B**
+**Answer: B**
 
 **해설:** Custom Key Store는 KMS API를 유지하면서 실제 키를 고객 전용 CloudHSM(단일 테넌트·FIPS L3)에만 보관한다. A는 멀티 테넌트라 단일 테넌트 L3 요건 미달. C는 비밀 저장소이지 HSM 키 관리가 아니다. D는 import 키도 KMS 멀티 테넌트 HSM에 저장되어 단일 테넌트 요건 미달. 함정: "단일 테넌트 + FIPS L3 + KMS API 유지"=Custom Key Store + CloudHSM.
 
 ---
 
-**문제 12.** 연 1회 HIPAA 감사를 위해 통제별 증거(접근 로그·암호화 설정·백업 정책 등)를 감사 기간에 걸쳐 자동 수집하고 감사관 제출용 보고서를 생성해야 한다.
+**Question 12.** 연 1회 HIPAA 감사를 위해 통제별 증거(접근 로그·암호화 설정·백업 정책 등)를 감사 기간에 걸쳐 자동 수집하고 감사관 제출용 보고서를 생성해야 한다.
 
 A) Security Hub
 
@@ -325,7 +325,7 @@ C) Detective
 
 D) Config
 
-**정답: B**
+**Answer: B**
 
 **해설:** Audit Manager는 HIPAA 등 프레임워크의 통제별로 CloudTrail·Config·Security Hub 증거를 자동 수집·축적하고 감사 보고서를 생성한다. A(Security Hub)는 현재 시점 표준 점검이지 기간 증거 축적·보고서 자동화가 아니다. C(Detective)는 사건 조사. D(Config)는 평가 엔진(증거 소스 역할)이지 보고서 패키징이 아니다. 함정: "감사 증거 자동 수집 + 보고서"=Audit Manager, "실시간 점검"=Security Hub.
 

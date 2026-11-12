@@ -138,93 +138,93 @@ In the next article, we'll transcend backup/restore units, exploring how databas
 
 ## 📝 Practice Questions
 
-**문제 1.** 회사가 RDS·EBS·DynamoDB·EFS를 하나의 정책으로 통합 백업하고 컴플라이언스 보고서까지 자동 생성하려 한다. 가장 적합한 도구는?
+**Question 1.** 회사가 RDS·EBS·DynamoDB·EFS를 하나의 정책으로 통합 백업하고 컴플라이언스 보고서까지 자동 생성하려 한다. 가장 적합한 도구는?
 
 A) DLM(Data Lifecycle Manager)
 B) AWS Backup — Backup Plan으로 멀티 서비스 통합, Backup Audit Manager Framework로 컴플라이언스 자동 검증
 C) 서비스별 수동 스냅샷
 D) Lambda 커스텀 스크립트
 
-**정답: B**
+**Answer: B**
 
-해설: DLM은 EBS/AMI 전용이라 RDS·DynamoDB·EFS를 다루지 못한다. AWS Backup은 EBS/RDS/Aurora/DynamoDB/EFS/FSx/S3 등을 하나의 Backup Plan으로 통합 백업하고, Backup Audit Manager의 Control 기반 Framework로 "모든 prod 리소스가 백업되는가, 보존 기간이 충분한가" 등을 지속 검증해 컴플라이언스 리포트를 자동 생성한다.
+Explanation: DLM은 EBS/AMI 전용이라 RDS·DynamoDB·EFS를 다루지 못한다. AWS Backup은 EBS/RDS/Aurora/DynamoDB/EFS/FSx/S3 등을 하나의 Backup Plan으로 통합 백업하고, Backup Audit Manager의 Control 기반 Framework로 "모든 prod 리소스가 백업되는가, 보존 기간이 충분한가" 등을 지속 검증해 컴플라이언스 리포트를 자동 생성한다.
 
 ---
 
-**문제 2.** Ransomware 공격자가 운영 계정의 관리자 권한을 탈취해 백업까지 삭제하는 시나리오를 막아야 한다. 가장 강력한 구조는?
+**Question 2.** Ransomware 공격자가 운영 계정의 관리자 권한을 탈취해 백업까지 삭제하는 시나리오를 막아야 한다. 가장 강력한 구조는?
 
 A) 운영 계정 내 IAM 정책으로 삭제 권한만 제거
 B) Cross-Account로 백업을 별도 중앙 계정 Vault에 복제하고, 그 금고에 Compliance 모드 Vault Lock을 적용
 C) 백업 빈도를 높임
 D) MFA를 모든 사용자에게 강제
 
-**정답: B**
+**Answer: B**
 
-해설: 운영 계정이 통째로 침해되면 그 계정 내 IAM 정책(A)은 공격자가 우회한다. 진짜 방어는 백업을 다른 보안 경계(별도 계정)에 두는 것이다. 멤버 계정의 CopyAction이 중앙 백업 계정 금고로 복제하고, 그 금고에 Compliance Vault Lock을 걸면 멤버 계정의 어떤 권한으로도, 심지어 중앙 계정 루트로도 보존 기간 내 복구 지점을 삭제할 수 없다. "관리자도 못 지운다"가 곧 "공격자도 못 지운다"다.
+Explanation: 운영 계정이 통째로 침해되면 그 계정 내 IAM 정책(A)은 공격자가 우회한다. 진짜 방어는 백업을 다른 보안 경계(별도 계정)에 두는 것이다. 멤버 계정의 CopyAction이 중앙 백업 계정 금고로 복제하고, 그 금고에 Compliance Vault Lock을 걸면 멤버 계정의 어떤 권한으로도, 심지어 중앙 계정 루트로도 보존 기간 내 복구 지점을 삭제할 수 없다. "관리자도 못 지운다"가 곧 "공격자도 못 지운다"다.
 
 ---
 
-**문제 3.** 운영자가 Vault Lock을 Compliance 모드로 적용한 직후 보존 기간 설정이 잘못됐음을 깨달았다. 되돌릴 수 있나?
+**Question 3.** 운영자가 Vault Lock을 Compliance 모드로 적용한 직후 보존 기간 설정이 잘못됐음을 깨달았다. 되돌릴 수 있나?
 
 A) IAM 권한이 있으면 언제든 가능
 B) changeable-for-days(cooling-off, 최소 3일) 기간 내라면 변경·해제 가능하지만, 그 기간이 지나면 루트·AWS를 포함해 영구히 불가
 C) AWS Support에 요청하면 해제해 준다
 D) 절대 불가능, 적용 즉시 영구
 
-**정답: B**
+**Answer: B**
 
-해설: Compliance Vault Lock은 `changeable-for-days`로 지정한 cooling-off 기간(최소 3일) 동안만 변경·해제할 수 있고, 그 기간이 지나면 발급자·루트 계정·AWS 누구도 풀 수 없는 진짜 불변 상태가 된다. 이 유예 기간은 비가역적 영구화 전에 설정을 검증하고 되돌릴 마지막 창이다. Governance 모드는 권한자가 언제든 해제 가능해 이 제약이 없다.
+Explanation: Compliance Vault Lock은 `changeable-for-days`로 지정한 cooling-off 기간(최소 3일) 동안만 변경·해제할 수 있고, 그 기간이 지나면 발급자·루트 계정·AWS 누구도 풀 수 없는 진짜 불변 상태가 된다. 이 유예 기간은 비가역적 영구화 전에 설정을 검증하고 되돌릴 마지막 창이다. Governance 모드는 권한자가 언제든 해제 가능해 이 제약이 없다.
 
 ---
 
-**문제 4.** 오후 2시 30분에 실행된 잘못된 DELETE 쿼리 직전 상태로 RDS를 되돌려야 한다. 어제 새벽 스냅샷밖에 없으면 하루치를 잃는다. 어떤 기능이 필요한가?
+**Question 4.** 오후 2시 30분에 실행된 잘못된 DELETE 쿼리 직전 상태로 RDS를 되돌려야 한다. 어제 새벽 스냅샷밖에 없으면 하루치를 잃는다. 어떤 기능이 필요한가?
 
 A) Manual Snapshot 복원
 B) Point-in-Time Recovery(PITR) — 베이스 스냅샷 복원 후 트랜잭션 로그를 지정 시각까지 재생해 임의의 초 단위 시점으로 새 인스턴스 복원
 C) Read Replica promote
 D) Multi-AZ 페일오버
 
-**정답: B**
+**Answer: B**
 
-해설: PITR은 주기적 베이스 스냅샷 + 연속 트랜잭션 로그(binlog/WAL) 조합으로 동작한다. 지정한 시각을 주면 그 직전 베이스 스냅샷을 복원한 뒤 로그를 그 시각까지 재생해 임의 시점 상태를 새 인스턴스로 재구성한다. 항상 새 리소스로 복원하므로 원본은 보존된다. 단 PITR은 자동 백업 보존 기간(기본 1~35일) 내에서만 작동한다.
+Explanation: PITR은 주기적 베이스 스냅샷 + 연속 트랜잭션 로그(binlog/WAL) 조합으로 동작한다. 지정한 시각을 주면 그 직전 베이스 스냅샷을 복원한 뒤 로그를 그 시각까지 재생해 임의 시점 상태를 새 인스턴스로 재구성한다. 항상 새 리소스로 복원하므로 원본은 보존된다. 단 PITR은 자동 백업 보존 기간(기본 1~35일) 내에서만 작동한다.
 
 ---
 
-**문제 5.** Backup Plan에서 백업을 90일 후 Cold Storage로 옮기고 100일 후 삭제하도록 설정하려 했더니 정책이 거부된다. 이유는?
+**Question 5.** Backup Plan에서 백업을 90일 후 Cold Storage로 옮기고 100일 후 삭제하도록 설정하려 했더니 정책이 거부된다. 이유는?
 
 A) Cold Storage는 RDS 백업을 지원하지 않는다
 B) Cold Storage로 이동한 백업은 최소 90일을 Cold에 머물러야 하므로, 이동 시점과 삭제 시점의 차이가 90일 미만이면 거부된다
 C) 보존 기간은 365일 이상이어야 한다
 D) Cold Storage 이동은 180일 후에만 가능하다
 
-**정답: B**
+**Answer: B**
 
-해설: AWS Backup은 Cold Storage로 옮긴 복구 지점이 최소 90일간 Cold에 머물도록 강제한다. 따라서 `MoveToColdStorageAfterDays`와 `DeleteAfterDays`의 차이가 최소 90일 이상이어야 한다. 90일 이동 후 100일 삭제는 차이가 10일뿐이라 거부된다. Cold는 Warm보다 약 75% 저렴하지만 복원이 느리므로, RTO가 빡빡한 백업은 Warm에 둬야 한다.
+Explanation: AWS Backup은 Cold Storage로 옮긴 복구 지점이 최소 90일간 Cold에 머물도록 강제한다. 따라서 `MoveToColdStorageAfterDays`와 `DeleteAfterDays`의 차이가 최소 90일 이상이어야 한다. 90일 이동 후 100일 삭제는 차이가 10일뿐이라 거부된다. Cold는 Warm보다 약 75% 저렴하지만 복원이 느리므로, RTO가 빡빡한 백업은 Warm에 둬야 한다.
 
 ---
 
-**문제 6.** 수백 개 prod 리소스 중 일부가 백업 계획에서 누락됐는지를 장애 전에 자동으로 탐지하려 한다. 어떤 도구가 적합한가?
+**Question 6.** 수백 개 prod 리소스 중 일부가 백업 계획에서 누락됐는지를 장애 전에 자동으로 탐지하려 한다. 어떤 도구가 적합한가?
 
 A) CloudWatch 알람
 B) Backup Audit Manager Framework — BACKUP_RESOURCES_PROTECTED_BY_BACKUP_PLAN 등 Control로 미보호 리소스를 지속 평가
 C) 수동 태그 점검
 D) S3 Inventory
 
-**정답: B**
+**Answer: B**
 
-해설: Backup Audit Manager는 Control 기반으로 환경을 지속 평가한다. `BACKUP_RESOURCES_PROTECTED_BY_BACKUP_PLAN` Control은 지정 범위(예: prod 태그) 리소스 중 백업 계획에 포함되지 않은 것을 찾아내고, 다른 Control은 보존 기간·Cross-Region 복사·Vault Lock 여부를 검증한다. 내부적으로 AWS Config 평가 엔진 위에서 동작해 새 리소스 등장 직후 미보호 상태를 감지하므로, 누락이 장애 때가 아니라 발생 즉시 드러난다.
+Explanation: Backup Audit Manager는 Control 기반으로 환경을 지속 평가한다. `BACKUP_RESOURCES_PROTECTED_BY_BACKUP_PLAN` Control은 지정 범위(예: prod 태그) 리소스 중 백업 계획에 포함되지 않은 것을 찾아내고, 다른 Control은 보존 기간·Cross-Region 복사·Vault Lock 여부를 검증한다. 내부적으로 AWS Config 평가 엔진 위에서 동작해 새 리소스 등장 직후 미보호 상태를 감지하므로, 누락이 장애 때가 아니라 발생 즉시 드러난다.
 
 ---
 
-**문제 7.** 회사가 매일 백업은 잘 돌고 있다고 믿었는데, 실제 장애 시 복원이 IAM 권한·의존 리소스 문제로 실패했다. 이를 사전에 방지하려면?
+**Question 7.** 회사가 매일 백업은 잘 돌고 있다고 믿었는데, 실제 장애 시 복원이 IAM 권한·의존 리소스 문제로 실패했다. 이를 사전에 방지하려면?
 
 A) 백업 빈도를 더 높인다
 B) Restore Testing Plan으로 정기적 자동 복원 테스트를 수행해 백업이 실제 복원 가능한지 검증한다
 C) Vault Lock을 적용한다
 D) Cold Storage로 옮긴다
 
-**정답: B**
+**Answer: B**
 
-해설: Backup Plan은 백업 생성만 자동화하고 복원 가능 여부는 검증하지 않는다. 손상된 백업, 복원 시 IAM 권한 부족, 보안 그룹·서브넷 등 의존 리소스 누락으로 정작 장애 때 복원이 실패할 수 있다. Restore Testing Plan은 정기적으로 실제 복원을 자동 수행해 "백업이 진짜 살아 있는지"를 증명한다. 복원해본 적 없는 백업은 백업이 없는 것과 크게 다르지 않다.
+Explanation: Backup Plan은 백업 생성만 자동화하고 복원 가능 여부는 검증하지 않는다. 손상된 백업, 복원 시 IAM 권한 부족, 보안 그룹·서브넷 등 의존 리소스 누락으로 정작 장애 때 복원이 실패할 수 있다. Restore Testing Plan은 정기적으로 실제 복원을 자동 수행해 "백업이 진짜 살아 있는지"를 증명한다. 복원해본 적 없는 백업은 백업이 없는 것과 크게 다르지 않다.
 
 ---

@@ -239,7 +239,7 @@ The next article ties all of Week 12 together: **the five-stage pipeline and the
 
 ## 📝 Practice Questions
 
-**문제 1.** ChatOps의 핵심 가치는?
+**Question 1.** ChatOps의 핵심 가치는?
 
 A) 채팅이 더 빠르다
 
@@ -249,13 +249,13 @@ C) 이모지를 쓸 수 있다
 
 D) 이메일보다 덜 공식적이다
 
-**정답: B**
+**Answer: B**
 
-해설: ChatOps는 단순히 "채팅으로 말하자"가 아니라 **투명한 운영**이다. 모든 사람이 alert를 같은 채널에서 보고(context 공유), 명령어가 thread에 기록되고(감시·감사), Slack 히스토리가 검색 가능한 사건 기록이 된다(조직 학습). 이전 "on-call이 몰래 문제를 고치고 '해결됨'만 공고"와 다르다.
+Explanation: ChatOps는 단순히 "채팅으로 말하자"가 아니라 **투명한 운영**이다. 모든 사람이 alert를 같은 채널에서 보고(context 공유), 명령어가 thread에 기록되고(감시·감사), Slack 히스토리가 검색 가능한 사건 기록이 된다(조직 학습). 이전 "on-call이 몰래 문제를 고치고 '해결됨'만 공고"와 다르다.
 
 ---
 
-**문제 2.** AWS Chatbot이 Slack 채널의 명령어 `/scale-out-prod-api-10`을 실행할 때, 안전하게 하려면?
+**Question 2.** AWS Chatbot이 Slack 채널의 명령어 `/scale-out-prod-api-10`을 실행할 때, 안전하게 하려면?
 
 A) Chatbot 자신이 root 권한으로 실행
 
@@ -265,13 +265,13 @@ C) 모든 AWS 권한을 Chatbot role에 주되, Slack 채널 멤버만 명령 �
 
 D) Chatbot을 사용하지 말고 on-call이 AWS 콘솔에서 직접 작업
 
-**정답: B**
+**Answer: B**
 
-해설: Guardrail Policy는 **최소 권한 원칙**을 chat 명령어 실행에 적용한 것. Chatbot role이 명시적으로 allowed(scale out) 또는 denied(delete DB)를 지정해야 의도 이상의 작업이 실행되지 않는다. 모든 권한(C)은 "누군가 /delete-database 치면?"을 열어둔다.
+Explanation: Guardrail Policy는 **최소 권한 원칙**을 chat 명령어 실행에 적용한 것. Chatbot role이 명시적으로 allowed(scale out) 또는 denied(delete DB)를 지정해야 의도 이상의 작업이 실행되지 않는다. 모든 권한(C)은 "누군가 /delete-database 치면?"을 열어둔다.
 
 ---
 
-**문제 3.** AWS Incident Manager의 "응답 계획(Response Plan)"에 미리 설정할 수 있는 것은?
+**Question 3.** AWS Incident Manager의 "응답 계획(Response Plan)"에 미리 설정할 수 있는 것은?
 
 A) Slack 채널 ARN (자동 오픈)
 
@@ -283,13 +283,13 @@ D) SSM Automation 시작 (자동 실행)
 
 E) 모두 다
 
-**정답: E**
+**Answer: E**
 
-해설: Response Plan은 템플릿으로, incident 타입별로 어떤 채널을 오픈하고 누가 IC인지, 누구에게 연락하고, 어떤 Automation을 시작할지 모두 미리 지정한다. Incident Manager는 이 계획에 따라 자동으로 인시던트 생명주기를 구성한다.
+Explanation: Response Plan은 템플릿으로, incident 타입별로 어떤 채널을 오픈하고 누가 IC인지, 누구에게 연락하고, 어떤 Automation을 시작할지 모두 미리 지정한다. Incident Manager는 이 계획에 따라 자동으로 인시던트 생명주기를 구성한다.
 
 ---
 
-**문제 4.** 타임라인(Timeline)의 용도는?
+**Question 4.** 타임라인(Timeline)의 용도는?
 
 A) 인시던트 중 뭐가 일어났는지 시간순 기록 — 포스트모템의 기초
 
@@ -299,13 +299,13 @@ C) 다음 유사 인시던트 시 "이전엔 이렇게 했다"로 재사용
 
 D) A, C 맞음 (B는 타임라인 목적이 아님 — 블레임 추적은 blameless culture 위배)
 
-**정답: D**
+**Answer: D**
 
-해설: Timeline은 "무엇이·언제·누가·왜"를 기록하는 사건 로그다. 포스트모템(RCA)의 필수 입력이고, 조직 학습을 위해 재사용된다. 그러나 "누가 실수했나"를 추적하는 용도는 아니다 — blameless post-mortems는 사람이 아니라 **시스템과 프로세스**를 개선하는 데 집중한다.
+Explanation: Timeline은 "무엇이·언제·누가·왜"를 기록하는 사건 로그다. 포스트모템(RCA)의 필수 입력이고, 조직 학습을 위해 재사용된다. 그러나 "누가 실수했나"를 추적하는 용도는 아니다 — blameless post-mortems는 사람이 아니라 **시스템과 프로세스**를 개선하는 데 집중한다.
 
 ---
 
-**문제 5.** 인시던트 커맨더(IC)의 역할로 틀린 것은?
+**Question 5.** 인시던트 커맨더(IC)의 역할로 틀린 것은?
 
 A) 최종 결정권자
 
@@ -315,13 +315,13 @@ C) 역할 배분 (DBA는 복구, Platform은 모니터링)
 
 D) 외부(고객, 언론, CEO)로 하나의 음성 (다른 팀이 각각 말하면 일관성 깨짐)
 
-**정답: B**
+**Answer: B**
 
-해설: IC는 war room의 사령관인데, 직접 모든 일을 하는 게 아니라 **위임**한다. DBA 리드에게 "복구 작업 지휘", Platform 리드에게 "모니터링" 등을 시킨다. IC는 정보 수집 → 의사결정 → 위임 → 상황 업데이트에 집중한다. 모든 작업을 직접 하면 한 사람이 병목이 되어 응답이 느려진다.
+Explanation: IC는 war room의 사령관인데, 직접 모든 일을 하는 게 아니라 **위임**한다. DBA 리드에게 "복구 작업 지휘", Platform 리드에게 "모니터링" 등을 시킨다. IC는 정보 수집 → 의사결정 → 위임 → 상황 업데이트에 집중한다. 모든 작업을 직접 하면 한 사람이 병목이 되어 응답이 느려진다.
 
 ---
 
-**문제 6.** "Major Incident Response (MIR) war room에서 모두가 얘기하다 보니 혼란스러웠다. 어떤 원칙으로 구조화할까?"
+**Question 6.** "Major Incident Response (MIR) war room에서 모두가 얘기하다 보니 혼란스러웠다. 어떤 원칙으로 구조화할까?"
 
 A) 더 많이 말하는 사람이 리더
 
@@ -331,9 +331,9 @@ C) 모두가 동시에 말한다 (진짜 생각이 나온다)
 
 D) 의사 결정이 느려지니 IC가 모든 권한을 쥔다
 
-**정답: B**
+**Answer: B**
 
-해설: **command discipline**의 핵심은 IC가 speak last다. 모두가 의견을 내놓은 후, IC가 정보를 종합해 결정한다. 이렇게 하면 IC는 모든 perspective를 들었고 best decision이 나올 확률이 높다. speak first하면 IC 의견에 모두가 따라가는 바이어스(anchor)가 생긴다.
+Explanation: **command discipline**의 핵심은 IC가 speak last다. 모두가 의견을 내놓은 후, IC가 정보를 종합해 결정한다. 이렇게 하면 IC는 모든 perspective를 들었고 best decision이 나올 확률이 높다. speak first하면 IC 의견에 모두가 따라가는 바이어스(anchor)가 생긴다.
 
 ---
 

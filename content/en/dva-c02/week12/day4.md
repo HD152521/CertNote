@@ -140,7 +140,7 @@ Next: Week 12 review synthesizing containers/IaC, then observability/troubleshoo
 
 ## 📝 Practice Questions
 
-**문제 1.** CDK 프로젝트를 새 계정·리전에 처음 배포하려는데 "bootstrap" 관련 오류가 난다. `cdk bootstrap`이 하는 일과 실행 빈도로 옳은 것은?
+**Question 1.** CDK 프로젝트를 새 계정·리전에 처음 배포하려는데 "bootstrap" 관련 오류가 난다. `cdk bootstrap`이 하는 일과 실행 빈도로 옳은 것은?
 
 A) 매 배포마다 실행하며, Lambda 코드를 압축한다
 
@@ -150,13 +150,13 @@ C) CDK 코드를 CloudFormation으로 변환만 한다
 
 D) 기존 스택을 삭제한다
 
-**정답: B**
+**Answer: B**
 
-해설: `cdk bootstrap`은 CDK가 배포 과정에서 자산(Lambda zip, Docker 이미지)을 올려둘 S3 버킷·ECR 리포지토리와 배포용 IAM 역할 등 "배포를 가능하게 하는 발판"을 미리 까는 일회성 작업으로, **계정과 리전의 조합마다 한 번씩** 한다. 이는 "스스로를 돌리기 위한 최소 자원을 먼저 만든다"는 부트스트래핑 개념이다. A) 매 배포가 아니라 일회성이다. C) 코드→템플릿 변환은 `cdk synth`다. D) 삭제는 `cdk destroy`다.
+Explanation: `cdk bootstrap`은 CDK가 배포 과정에서 자산(Lambda zip, Docker 이미지)을 올려둘 S3 버킷·ECR 리포지토리와 배포용 IAM 역할 등 "배포를 가능하게 하는 발판"을 미리 까는 일회성 작업으로, **계정과 리전의 조합마다 한 번씩** 한다. 이는 "스스로를 돌리기 위한 최소 자원을 먼저 만든다"는 부트스트래핑 개념이다. A) 매 배포가 아니라 일회성이다. C) 코드→템플릿 변환은 `cdk synth`다. D) 삭제는 `cdk destroy`다.
 
 ---
 
-**문제 2.** `cdk synth`와 `cdk deploy`의 차이로 옳은 것은?
+**Question 2.** `cdk synth`와 `cdk deploy`의 차이로 옳은 것은?
 
 A) synth는 즉시 자원을 배포하고, deploy는 미리보기만 한다
 
@@ -166,13 +166,13 @@ C) 둘은 완전히 동일하다
 
 D) synth는 Terraform용, deploy는 CloudFormation용이다
 
-**정답: B**
+**Answer: B**
 
-해설: `cdk synth`는 로컬에서 CDK 코드를 실행해 CloudFormation 템플릿(JSON)을 생성할 뿐, AWS에 아무것도 배포하지 않는다. `cdk deploy`는 그 템플릿을 CloudFormation에 제출해 실제 자원을 프로비저닝한다. 이는 컴파일러의 "소스→중간 표현(synth)"과 "실행(deploy)" 분리와 같다. A는 역할이 뒤바뀐 설명이고, C·D는 사실과 다르다.
+Explanation: `cdk synth`는 로컬에서 CDK 코드를 실행해 CloudFormation 템플릿(JSON)을 생성할 뿐, AWS에 아무것도 배포하지 않는다. `cdk deploy`는 그 템플릿을 CloudFormation에 제출해 실제 자원을 프로비저닝한다. 이는 컴파일러의 "소스→중간 표현(synth)"과 "실행(deploy)" 분리와 같다. A는 역할이 뒤바뀐 설명이고, C·D는 사실과 다르다.
 
 ---
 
-**문제 3.** API Gateway 뒤의 Lambda A가 작업의 일부를 Lambda B에 넘기려 한다. 비용·결합도·내결함성 측면에서 권장되는 구성은?
+**Question 3.** API Gateway 뒤의 Lambda A가 작업의 일부를 Lambda B에 넘기려 한다. 비용·결합도·내결함성 측면에서 권장되는 구성은?
 
 A) Lambda A가 Lambda B를 동기(RequestResponse)로 직접 호출
 
@@ -182,13 +182,13 @@ C) Lambda A와 B를 하나의 거대 함수로 합침
 
 D) Lambda A가 Lambda B를 1초마다 폴링
 
-**정답: B**
+**Answer: B**
 
-해설: 동기 직접 호출은 A가 B를 기다리며 **이중 과금**되고, B의 장애·지연이 A로 **전파**되며, 둘의 확장이 묶인다. SQS를 끼우면 A는 메시지를 넣고 즉시 반환해 기다리지 않고(비용·타임아웃 해결), B는 자기 속도로 소비하며(독립 확장), B가 잠시 죽어도 메시지가 큐에 남는다(내결함성). 이는 생산자-소비자를 유계 버퍼로 분리하는 고전 패턴이다. A는 안티패턴, C는 단일 책임을 깨고, D는 비효율적 폴링이다.
+Explanation: 동기 직접 호출은 A가 B를 기다리며 **이중 과금**되고, B의 장애·지연이 A로 **전파**되며, 둘의 확장이 묶인다. SQS를 끼우면 A는 메시지를 넣고 즉시 반환해 기다리지 않고(비용·타임아웃 해결), B는 자기 속도로 소비하며(독립 확장), B가 잠시 죽어도 메시지가 큐에 남는다(내결함성). 이는 생산자-소비자를 유계 버퍼로 분리하는 고전 패턴이다. A는 안티패턴, C는 단일 책임을 깨고, D는 비효율적 폴링이다.
 
 ---
 
-**문제 4.** 하나의 주문 완료 이벤트가 발생하면 (1) 재고 시스템, (2) 이메일 발송, (3) 분석 파이프라인이 **동시에** 그 이벤트를 받아 각자 처리해야 한다. 가장 적합한 구성은?
+**Question 4.** 하나의 주문 완료 이벤트가 발생하면 (1) 재고 시스템, (2) 이메일 발송, (3) 분석 파이프라인이 **동시에** 그 이벤트를 받아 각자 처리해야 한다. 가장 적합한 구성은?
 
 A) SQS 하나에 세 소비자를 붙인다
 
@@ -198,13 +198,13 @@ C) Lambda가 세 시스템을 순서대로 동기 호출한다
 
 D) DynamoDB Streams로 직접 세 곳에 쓴다
 
-**정답: B**
+**Answer: B**
 
-해설: "한 이벤트를 여러 시스템이 **동시에**" 받는 것은 펍/섭 팬아웃이고, 이는 **SNS**의 모델이다. 각 구독자(또는 SNS→SQS→소비자)가 같은 메시지의 복사본을 받아 독립적으로 처리한다. A) SQS는 한 메시지를 한 소비자가 가져가 삭제하므로(1:1) 세 곳이 모두 받지 못한다. C) 순차 동기 호출은 결합·전파 문제가 있다. D) Streams는 테이블 변경을 흘리는 용도로 이 요구에 직접 맞지 않는다.
+Explanation: "한 이벤트를 여러 시스템이 **동시에**" 받는 것은 펍/섭 팬아웃이고, 이는 **SNS**의 모델이다. 각 구독자(또는 SNS→SQS→소비자)가 같은 메시지의 복사본을 받아 독립적으로 처리한다. A) SQS는 한 메시지를 한 소비자가 가져가 삭제하므로(1:1) 세 곳이 모두 받지 못한다. C) 순차 동기 호출은 결합·전파 문제가 있다. D) Streams는 테이블 변경을 흘리는 용도로 이 요구에 직접 맞지 않는다.
 
 ---
 
-**문제 5.** SQS 표준 큐로 메시지를 받는 Lambda 소비자가, 같은 메시지를 가끔 두 번 처리해 중복 레코드가 생긴다. 근본 원인과 올바른 대응은?
+**Question 5.** SQS 표준 큐로 메시지를 받는 Lambda 소비자가, 같은 메시지를 가끔 두 번 처리해 중복 레코드가 생긴다. 근본 원인과 올바른 대응은?
 
 A) SQS 버그이므로 AWS에 문의한다
 
@@ -214,13 +214,13 @@ C) 큐를 삭제하고 다시 만든다
 
 D) Lambda 메모리를 늘린다
 
-**정답: B**
+**Answer: B**
 
-해설: SQS 표준 큐는 **at-least-once(최소 한 번)** 전달을 보장하므로 같은 메시지가 두 번 이상 올 수 있다 — 이는 두 장군 문제로 인해 분산 시스템에서 "정확히 한 번 전달"이 사실상 불가능하기 때문이다. 정답은 전달을 바꾸려 하기보다 소비자를 **멱등**하게 만드는 것이다: 멱등성 키 + DynamoDB `attribute_not_exists` 조건부 쓰기로 이미 처리한 ID를 무시한다. 또는 엄격한 중복 제거가 필요하면 FIFO 큐를 쓴다. A·C·D는 원인을 오해한 대응이다.
+Explanation: SQS 표준 큐는 **at-least-once(최소 한 번)** 전달을 보장하므로 같은 메시지가 두 번 이상 올 수 있다 — 이는 두 장군 문제로 인해 분산 시스템에서 "정확히 한 번 전달"이 사실상 불가능하기 때문이다. 정답은 전달을 바꾸려 하기보다 소비자를 **멱등**하게 만드는 것이다: 멱등성 키 + DynamoDB `attribute_not_exists` 조건부 쓰기로 이미 처리한 ID를 무시한다. 또는 엄격한 중복 제거가 필요하면 FIFO 큐를 쓴다. A·C·D는 원인을 오해한 대응이다.
 
 ---
 
-**문제 6.** SAM 템플릿과 CDK가 공통으로 가지는 성질로 옳은 것은?
+**Question 6.** SAM 템플릿과 CDK가 공통으로 가지는 성질로 옳은 것은?
 
 A) 둘 다 멀티 클라우드를 지원한다
 
@@ -230,13 +230,13 @@ C) 둘 다 반드시 TypeScript로 작성한다
 
 D) 둘 다 CloudFormation을 대체하는 별개 엔진이다
 
-**정답: B**
+**Answer: B**
 
-해설: SAM은 `Transform` 매크로로 짧은 YAML을 긴 CloudFormation으로 펼치고, CDK는 `synth`로 프로그래밍 언어 코드를 CloudFormation 템플릿으로 합성한다 — **둘 다 종착지가 CloudFormation**이다. 차이는 입력 형태(SAM=YAML 매크로, CDK=프로그래밍 언어)와 특화(SAM=서버리스)다. A) 멀티 클라우드는 Terraform/Pulumi다. C) CDK는 여러 언어를 지원하고 SAM은 YAML이다. D) 별개 엔진이 아니라 CloudFormation 위에 올라탄다.
+Explanation: SAM은 `Transform` 매크로로 짧은 YAML을 긴 CloudFormation으로 펼치고, CDK는 `synth`로 프로그래밍 언어 코드를 CloudFormation 템플릿으로 합성한다 — **둘 다 종착지가 CloudFormation**이다. 차이는 입력 형태(SAM=YAML 매크로, CDK=프로그래밍 언어)와 특화(SAM=서버리스)다. A) 멀티 클라우드는 Terraform/Pulumi다. C) CDK는 여러 언어를 지원하고 SAM은 YAML이다. D) 별개 엔진이 아니라 CloudFormation 위에 올라탄다.
 
 ---
 
-**문제 7.** 지연에 민감한 동기 REST API의 Lambda가 첫 호출에서 콜드 스타트로 느리다. 콜드 스타트를 줄이는 방법으로 적절하지 않은 것은?
+**Question 7.** 지연에 민감한 동기 REST API의 Lambda가 첫 호출에서 콜드 스타트로 느리다. 콜드 스타트를 줄이는 방법으로 적절하지 않은 것은?
 
 A) Provisioned Concurrency로 실행 환경을 미리 워밍
 
@@ -246,6 +246,6 @@ C) (Java 등) SnapStart로 스냅샷에서 복원
 
 D) Lambda A가 Lambda B를 동기로 호출하도록 변경
 
-**정답: D**
+**Answer: D**
 
-해설: 콜드 스타트 완화책은 Provisioned Concurrency(미리 워밍된 환경 유지), SnapStart(초기화된 스냅샷에서 복원), 패키지 크기 축소다. D) Lambda 간 동기 직접 호출은 콜드 스타트와 무관할 뿐 아니라 비용·결합도·오류 전파를 키우는 **안티패턴**이라 오히려 상황을 악화시킨다. 콜드 스타트는 함수 자체의 초기화 비용 문제이지 호출 방식으로 푸는 게 아니다.
+Explanation: 콜드 스타트 완화책은 Provisioned Concurrency(미리 워밍된 환경 유지), SnapStart(초기화된 스냅샷에서 복원), 패키지 크기 축소다. D) Lambda 간 동기 직접 호출은 콜드 스타트와 무관할 뿐 아니라 비용·결합도·오류 전파를 키우는 **안티패턴**이라 오히려 상황을 악화시킨다. 콜드 스타트는 함수 자체의 초기화 비용 문제이지 호출 방식으로 푸는 게 아니다.

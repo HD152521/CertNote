@@ -208,38 +208,38 @@ From Week 3 on, the DVA-specific layers — IAM, Lambda, DynamoDB, API Gateway, 
 
 ## 📝 Week 2 종합 연습 문제 (시나리오 12문항)
 
-**문제 1.** An e-commerce company's ALB + ASG production system spikes to 20x its normal RPS during the first 5 minutes of a sale that starts at 7 PM daily. It uses a Target Tracking (CPU 60%) scaling policy, but users are getting 5xx. What is the most appropriate improvement?
+**Question 1.** An e-commerce company's ALB + ASG production system spikes to 20x its normal RPS during the first 5 minutes of a sale that starts at 7 PM daily. It uses a Target Tracking (CPU 60%) scaling policy, but users are getting 5xx. What is the most appropriate improvement?
 
 A) Permanently raise the ASG's min size to the spike peak so there are always enough instances — survives the spike but idle-instance cost for 23 hours is enormous
 B) Use Predictive Scaling + Scheduled Scaling to raise desired ahead of time at 6:55, and Step Scaling for aggressive scale-out during the spike
 C) Lower the Target Tracking CPU target to 30% to trigger scale-out earlier — this doubles the instance count even at normal load (wasteful) and the boot delay remains
 D) Replace the ALB with an NLB to distribute connections faster at L4 — boot delay is the cause, so swapping the LB won't clear the 5xx and only loses HTTP routing
 
-**정답: B**
-해설: Target Tracking adjusts reactively off the metric: 30-second CloudWatch + a 2-3 minute instance boot on scale-out = 3-5 minutes of total delay. For a 5-minute spike that's already too late. With **Scheduled Scaling**, raising desired ahead of time at 6:55 (predictive scaling does it automatically if there's a learned pattern) means the instances take the spike already warmed up. Add Step Scaling for an aggressive +5 during the spike. C wastes instances at normal load. D loses the ALB's HTTP features.
+**Answer: B**
+Explanation: Target Tracking adjusts reactively off the metric: 30-second CloudWatch + a 2-3 minute instance boot on scale-out = 3-5 minutes of total delay. For a 5-minute spike that's already too late. With **Scheduled Scaling**, raising desired ahead of time at 6:55 (predictive scaling does it automatically if there's a learned pattern) means the instances take the spike already warmed up. Add Step Scaling for an aggressive +5 during the spike. C wastes instances at normal load. D loses the ALB's HTTP features.
 
 ---
 
-**문제 2.** A company runs ML training on an EC2 instance every midnight and uploads the results to S3. It wants to minimize cost, and the job only needs to finish within 24 hours. What is the most appropriate purchase option?
+**Question 2.** A company runs ML training on an EC2 instance every midnight and uploads the results to S3. It wants to minimize cost, and the job only needs to finish within 24 hours. What is the most appropriate purchase option?
 
 A) On-Demand, starting and stopping at each midnight to bill only by the hour — flexible but has no discount versus Spot, so it misses the cost-minimization goal
 B) A 1-year Reserved Instance commitment to lower the hourly rate — but it's used only a few hours a day while committing to 24/7, so most of the time is wasted
 C) Spot Instance + periodically saving a checkpoint to S3
 D) A Dedicated Host to secure a whole physical server for stable execution — a BYOL-license-only option, the most expensive, exactly opposite to the cost goal
-**정답: C**
-해설: A short window in the early hours each day + checkpoints to handle reclamation → Spot is the fit. 90% savings. On reclamation, catch the 2-minute warning from IMDS `/latest/meta-data/spot/instance-action`, sync current progress to S3, and do a graceful shutdown. On the next run, resume from the checkpoint. A costs full price every day. B wastes an RI commitment on short usage. D is BYOL-license-only and expensive.
+**Answer: C**
+Explanation: A short window in the early hours each day + checkpoints to handle reclamation → Spot is the fit. 90% savings. On reclamation, catch the 2-minute warning from IMDS `/latest/meta-data/spot/instance-action`, sync current progress to S3, and do a graceful shutdown. On the next run, resume from the checkpoint. A costs full price every day. B wastes an RI commitment on short usage. D is BYOL-license-only and expensive.
 
 ---
 
-**문제 3.** A developer trying to pull IAM credentials from an EC2 instance's IMDS finds that `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/MyRole` returns a 401. What is the most likely cause?
+**Question 3.** A developer trying to pull IAM credentials from an EC2 instance's IMDS finds that `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/MyRole` returns a 401. What is the most likely cause?
 
 A) No IAM Role is attached to the instance — but that returns a 404 at that path, not a 401, so it doesn't match the symptom
 B) IMDSv2 is required but `curl` uses only an IMDSv1 GET (you must obtain a token via PUT first)
 C) 169.254.169.254/32 is blocked in web-sg's outbound rules — a link-local IP isn't controlled by SGs, so this can't be the cause
 D) The subnet NACL blocks 169.254.0.0/16 link-local traffic with a deny rule — link-local isn't subject to NACLs, so this can't be the cause
 
-**정답: B**
-해설: Since 2024, new instances default to IMDSv2 required. A GET without a token returns 401. The correct method:
+**Answer: B**
+Explanation: Since 2024, new instances default to IMDSv2 required. A GET without a token returns 401. The correct method:
 ```bash
 TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
@@ -250,51 +250,51 @@ If it were A, you'd get a 404. C/D fail because 169.254.169.254 is link-local an
 
 ---
 
-**문제 4.** A company runs two EC2 instances that must read and write in the same directory. Concurrent access is required, and the two EC2s are in different AZs. What is the most appropriate solution?
+**Question 4.** A company runs two EC2 instances that must read and write in the same directory. Concurrent access is required, and the two EC2s are in different AZs. What is the most appropriate solution?
 
 A) Attach an io2 EBS volume to both EC2s at once via Multi-Attach and set up a cluster file system — Multi-Attach only supports the same AZ, so it's impossible in this different-AZ scenario
 B) Mount an EFS file system on both EC2s over NFS
 C) Use an S3 bucket as shared storage and have the two EC2s sync files periodically — being an object store, it lacks POSIX filesystem semantics and concurrent read/write locking
 D) Give each EC2 an instance store and replicate data bidirectionally — host-bound ephemeral storage, so neither shared nor durable
 
-**정답: B**
-해설: EFS is NFSv4.1-based with automatic multi-AZ replication and supports thousands of clients accessing concurrently. Plain EBS Multi-Attach has thorny constraints: ① io1/io2 only, ② same AZ only, ③ requires a cluster-aware FS. With the EC2s in two AZs, Multi-Attach is impossible. C is an object store, not filesystem semantics. D is host-bound.
+**Answer: B**
+Explanation: EFS is NFSv4.1-based with automatic multi-AZ replication and supports thousands of clients accessing concurrently. Plain EBS Multi-Attach has thorny constraints: ① io1/io2 only, ② same AZ only, ③ requires a cluster-aware FS. With the EC2s in two AZs, Multi-Attach is impossible. C is an object store, not filesystem semantics. D is host-bound.
 
 ---
 
-**문제 5.** A company runs microservices behind an ALB. `api.example.com/orders/*` must go to the orders service and `api.example.com/users/*` to the users service. The two services each run on their own ASG. What is the most accurate configuration?
+**Question 5.** A company runs microservices behind an ALB. `api.example.com/orders/*` must go to the orders service and `api.example.com/users/*` to the users service. The two services each run on their own ASG. What is the most accurate configuration?
 
 A) Create a dedicated ALB per service and attach each ALB to a separate subdomain — it works, but two ALBs for path branching under the same host wastes cost and operational effort
 B) Create two target groups on one listener of a single ALB, and use listener rules for path-pattern matching: `/orders/*` → orders-tg, `/users/*` → users-tg
 C) Move to an NLB and branch services by destination port on a TCP listener — NLB is L4 and can't see the URL path, so path routing is impossible
 D) Use a Route 53 routing policy to branch `/orders/*` and `/users/*` to each service's IP — DNS only sees the host name, not the path, so it's impossible
 
-**정답: B**
-해설: ALB has native routing based on path-pattern and host-header. Register listener rules in priority order and have each rule forward to a target group. C's NLB is L4 and unaware of paths. D's Route 53 is DNS and can't branch on path (host name only). A wastes cost and adds operational complexity. One ALB is enough.
+**Answer: B**
+Explanation: ALB has native routing based on path-pattern and host-header. Register listener rules in priority order and have each rule forward to a target group. C's NLB is L4 and unaware of paths. D's Route 53 is DNS and can't branch on path (host name only). A wastes cost and adds operational complexity. One ALB is enough.
 
 ---
 
-**문제 6.** An EC2 instance calls `aws s3 cp s3://bucket/app.tar.gz /opt/` inside user-data but gets an `Unable to locate credentials` error. What is the most likely cause?
+**Question 6.** An EC2 instance calls `aws s3 cp s3://bucket/app.tar.gz /opt/` inside user-data but gets an `Unable to locate credentials` error. What is the most likely cause?
 
 A) The specified S3 bucket doesn't exist or the object key is wrong — that yields `NoSuchBucket`/`NoSuchKey`, not `Unable to locate credentials`
 B) No IAM Instance Profile is attached to the instance, or that Role lacks `s3:GetObject` permission
 C) The CLI's default region differs from the bucket's region, so endpoint resolution fails — a region mismatch produces an endpoint error, not a credentials error
 D) The IMDSv2 token's TTL expired and cut off credential lookups — botocore 1.13+ re-issues the token automatically, so this isn't the cause of this error
 
-**정답: B**
-해설: The AWS CLI/SDK looks for credentials in order: ① explicit access key, ② environment variables, ③ ~/.aws/credentials, ④ the instance profile via IMDS. `Unable to locate credentials` means none of these were found. An EC2 instance normally receives an IAM Role's temporary credentials through the instance profile, and if the profile isn't attached or lacks permission, you get this error. A would be `NoSuchBucket`, C would be something like `endpoint not found`, and D is auto-reissued by the SDK on IMDSv2 token expiry (botocore 1.13+).
+**Answer: B**
+Explanation: The AWS CLI/SDK looks for credentials in order: ① explicit access key, ② environment variables, ③ ~/.aws/credentials, ④ the instance profile via IMDS. `Unable to locate credentials` means none of these were found. An EC2 instance normally receives an IAM Role's temporary credentials through the instance profile, and if the profile isn't attached or lacks permission, you get this error. A would be `NoSuchBucket`, C would be something like `endpoint not found`, and D is auto-reissued by the SDK on IMDSv2 token expiry (botocore 1.13+).
 
 ---
 
-**문제 7.** A company wants to encrypt a production EC2's EBS volume (unencrypted gp2). To minimize downtime, what should it do?
+**Question 7.** A company wants to encrypt a production EC2's EBS volume (unencrypted gp2). To minimize downtime, what should it do?
 
 A) Encrypt the running volume in-place with no downtime via `modify-volume --encrypted` — modify-volume only changes size/type/IOPS and has no encryption-toggle option
 B) Create a snapshot → make an encrypted copy with `copy-snapshot --encrypted` → create a new volume from the encrypted snapshot → swap detach/attach during a short downtime
 C) Open a case with AWS Support to convert the volume's encryption on the backend — Support doesn't encrypt your volume on your behalf
 D) Create a new encrypted instance, move all data with rsync, then cut over — possible, but on large volumes the sync time and consistency risk are high, so it's not the standard procedure
 
-**정답: B**
-해설: The standard 5-step procedure. You can't encrypt a running volume directly. The exact commands:
+**Answer: B**
+Explanation: The standard 5-step procedure. You can't encrypt a running volume directly. The exact commands:
 ```bash
 aws ec2 create-snapshot --volume-id vol-original
 aws ec2 copy-snapshot --source-snapshot-id snap-orig --encrypted --kms-key-id alias/aws/ebs
@@ -305,63 +305,63 @@ Alternative: for RDS, create an encrypted read replica and promote it (nearly ze
 
 ---
 
-**문제 8.** A company finds that a new instance starts receiving traffic the moment it registers with the ALB target group and returns 5xx before the application warms up. What is the most appropriate response?
+**Question 8.** A company finds that a new instance starts receiving traffic the moment it registers with the ALB target group and returns 5xx before the application warms up. What is the most appropriate response?
 
 A) Raise the ASG's `HealthCheckGracePeriod` to 300 seconds to defer the unhealthy verdict right after registration — the grace period only prevents premature termination, not the traffic reception itself
 B) Register an `EC2_INSTANCE_LAUNCHING` lifecycle hook on the ASG and call `complete-lifecycle-action` from inside the instance once warmup is complete
 C) Change the ALB health check path to `/` for a lighter endpoint check — if `/` returns 200 even before warmup, it's a false positive and registers too early
 D) Increase the target group's deregistration delay to preserve in-flight requests longer — that's a termination-time setting, unrelated to a new instance's warm-up problem
 
-**정답: B**
-해설: The lifecycle hook is the right tool. It holds the instance in Pending:Wait, delaying the transition to InService. After warmup (JVM warm, cache preload) completes, an explicit signal lets it proceed. A's grace period defers the health check but only adjusts termination timing. C is unsuitable (if `/` always returns 200, false positive). D is unrelated to termination timing. A common alternative pattern is to put the application's `/healthz` under control of a ready flag.
+**Answer: B**
+Explanation: The lifecycle hook is the right tool. It holds the instance in Pending:Wait, delaying the transition to InService. After warmup (JVM warm, cache preload) completes, an explicit signal lets it proceed. A's grace period defers the health check but only adjusts termination timing. C is unsuitable (if `/` always returns 200, false positive). D is unrelated to termination timing. A common alternative pattern is to put the application's `/healthz` under control of a ready flag.
 
 ---
 
-**문제 9.** A company distributes game-server traffic with an NLB. Users are spread evenly across 5 AZs, but the instance count per AZ differs (AZ-a 10, AZ-b 5, AZ-c 2). A report comes in that traffic is uneven. What is the most appropriate action?
+**Question 9.** A company distributes game-server traffic with an NLB. Users are spread evenly across 5 AZs, but the instance count per AZ differs (AZ-a 10, AZ-b 5, AZ-c 2). A report comes in that traffic is uneven. What is the most appropriate action?
 
 A) Enable NLB cross-zone load balancing (note: it incurs cross-AZ data transfer cost)
 B) Replace the NLB with an ALB to use L7 routing and weighted distribution — ALB is HTTP-only, so it's unsuitable for L4 game traffic (UDP/TCP)
 C) Fix every AZ's instance count to 10 — a partial fix, but the ASG doesn't always guarantee even placement per AZ, so the imbalance can recur
 D) Distribute traffic with Route 53 weighted routing by giving each AZ a weight — DNS cache/TTL means it doesn't take effect immediately and it isn't per-connection distribution
 
-**정답: A**
-해설: NLB has cross-zone OFF by default, so each NLB node distributes traffic only to targets in the same AZ. With AZ-a 10 / AZ-b 5 / AZ-c 2, traffic goes 1/3 each but AZ-c's 2 instances take a concentrated load. Turning on cross-zone makes all targets take equal load but incurs cross-AZ data transfer cost ($0.01 per GB, both directions). C is also a fix but the ASG doesn't always guarantee even placement per AZ. B's ALB is HTTP-only and unsuitable for game traffic. D is at the DNS layer, so it doesn't take effect immediately.
+**Answer: A**
+Explanation: NLB has cross-zone OFF by default, so each NLB node distributes traffic only to targets in the same AZ. With AZ-a 10 / AZ-b 5 / AZ-c 2, traffic goes 1/3 each but AZ-c's 2 instances take a concentrated load. Turning on cross-zone makes all targets take equal load but incurs cross-AZ data transfer cost ($0.01 per GB, both directions). C is also a fix but the ASG doesn't always guarantee even placement per AZ. B's ALB is HTTP-only and unsuitable for game traffic. D is at the DNS layer, so it doesn't take effect immediately.
 
 ---
 
-**문제 10.** An ML team needs to load a 2GB ML model in a Lambda function. It exceeds the Lambda layer limit (250MB). What is the most appropriate solution?
+**Question 10.** An ML team needs to load a 2GB ML model in a Lambda function. It exceeds the Lambda layer limit (250MB). What is the most appropriate solution?
 
 A) Abandon Lambda and serve inference from an EC2/ASG with the model preloaded — possible, but it throws away all the benefits of serverless auto-scaling and billing
 B) Mount an EFS access point on Lambda and store the model file on EFS
 C) Keep the model in S3 and download the 2GB to `/tmp` on every cold start — a multi-GB transfer per cold start makes latency explode and strains the `/tmp` limit (10GB)
 D) 8-bit quantize the model down under 250MB and package it in the Layer — it fits the limit, but at an accuracy cost and it's a model change unrelated to the requirement
 
-**정답: B**
-해설: Lambda has supported EFS mounts since 2020. Mount via an EFS access point from the same VPC + subnet and access the model with ordinary file I/O inside the function. This bypasses the ZIP/Layer limit. Cold start latency adds the EFS mount time, but that's far faster than a 2GB download. C downloads 2GB on every cold start → latency explodes. A forfeits the serverless advantages. D loses accuracy. Note it requires an EFS access point + VPC config.
+**Answer: B**
+Explanation: Lambda has supported EFS mounts since 2020. Mount via an EFS access point from the same VPC + subnet and access the model with ordinary file I/O inside the function. This bypasses the ZIP/Layer limit. Cold start latency adds the EFS mount time, but that's far faster than a 2GB download. C downloads 2GB on every cold start → latency explodes. A forfeits the serverless advantages. D loses accuracy. Note it requires an EFS access point + VPC config.
 
 ---
 
-**문제 11.** An instance sporadically returns `Connection refused`. CPU and memory have headroom and the SG is wide open. CloudWatch shows the `conntrack_allowance_exceeded` metric. What is the most appropriate response?
+**Question 11.** An instance sporadically returns `Connection refused`. CPU and memory have headroom and the SG is wide open. CloudWatch shows the `conntrack_allowance_exceeded` metric. What is the most appropriate response?
 
 A) Conntrack limit exceeded. Move to a larger instance type (enhanced networking like c5n), or make the application's connection pool more efficient and use keep-alive
 B) Ask AWS Support for a quota increase to raise the conntrack table limit — the conntrack limit is a hard limit fixed per instance type and can't be raised
 C) Increase the ASG max size to add more instances — total throughput rises but each individual instance's conntrack saturation remains
 D) Add more explicit allow rules to the Security Group to secure connection throughput — the number of rules is unrelated to conntrack capacity, so it has no effect
 
-**정답: A**
-해설: The SG stores 5-tuples in the conntrack table for stateful filtering. There's a per-instance-type limit (m5.large ~350K, c5n.large ~1M) and new connections drop when it's exceeded. Fixes are: ① a larger instance (especially the c5n/m5n enhanced-networking families), ② keep-alive to reuse connections, ③ improving connection-pool efficiency. B's conntrack is a hard limit, so no quota increase. C adds instances but leaves a single instance's conntrack unchanged. D is unrelated.
+**Answer: A**
+Explanation: The SG stores 5-tuples in the conntrack table for stateful filtering. There's a per-instance-type limit (m5.large ~350K, c5n.large ~1M) and new connections drop when it's exceeded. Fixes are: ① a larger instance (especially the c5n/m5n enhanced-networking families), ② keep-alive to reuse connections, ③ improving connection-pool efficiency. B's conntrack is a hard limit, so no quota increase. C adds instances but leaves a single instance's conntrack unchanged. D is unrelated.
 
 ---
 
-**문제 12.** A company runs EC2 production behind an ALB + ASG. It wants to set up Blue/Green deployment with CodeDeploy — which ALB feature does it use?
+**Question 12.** A company runs EC2 production behind an ALB + ASG. It wants to set up Blue/Green deployment with CodeDeploy — which ALB feature does it use?
 
 A) Weighted forward on the listener rule distributes traffic across the two target groups (Blue/Green), and CodeDeploy shifts the weight over time from 0/100 → 100/0
 B) Create two ALBs, one each for Blue/Green, and switch with a Route 53 weighted record — DNS TTL caching makes instant/gradual switchover and fast rollback difficult
 C) Replace with an NLB and use source IP affinity to steer existing sessions to Blue and new ones to Green — affinity isn't a deployment tool and offers no weighted switchover or automatic rollback
 D) Pin users to Blue/Green with ALB sticky sessions (cookies) — that's session pinning, not a mechanism for shifting traffic between versions
 
-**정답: A**
-해설: CodeDeploy's Blue/Green deployment (ALB integration) leverages the listener's weighted forward. It creates a new Green target group and CodeDeploy adjusts the weights of the two target groups in the listener rule's forward action. E.g., start Blue 100/Green 0 → Linear10PercentEvery1Minute → Blue 0/Green 100 → terminate Blue after verification. It works on a single ALB. CodeDeploy additionally spins up new instances in the ASG to fill Green. B can't switch instantly because of DNS TTL. C/D are unrelated.
+**Answer: A**
+Explanation: CodeDeploy's Blue/Green deployment (ALB integration) leverages the listener's weighted forward. It creates a new Green target group and CodeDeploy adjusts the weights of the two target groups in the listener rule's forward action. E.g., start Blue 100/Green 0 → Linear10PercentEvery1Minute → Blue 0/Green 100 → terminate Blue after verification. It works on a single ALB. CodeDeploy additionally spins up new instances in the ASG to fill Green. B can't switch instantly because of DNS TTL. C/D are unrelated.
 
 ---
 

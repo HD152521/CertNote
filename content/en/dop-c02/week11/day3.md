@@ -129,7 +129,7 @@ The next article examines these telemetry's destination **backends — OpenSearc
 
 ## 📝 Practice Questions
 
-**문제 1.** ADOT(OpenTelemetry)의 가장 근본적인 가치는?
+**Question 1.** ADOT(OpenTelemetry)의 가장 근본적인 가치는?
 
 A) X-Ray보다 빠르다
 
@@ -139,13 +139,13 @@ C) IAM을 자동 관리한다
 
 D) Lambda 전용 도구다
 
-**정답: B**
+**Answer: B**
 
-해설: OpenTelemetry의 핵심 가치는 계측(OTel API)과 백엔드(exporter)의 분리다. 애플리케이션은 벤더 SDK가 아니라 표준 API에 의존하고, X-Ray로 보낼지 Datadog으로 보낼지는 설정으로 정한다(의존성 역전 원칙). 따라서 도구를 바꿔도 비즈니스 코드가 그대로여서 벤더 락인이 사라진다. SLF4J·JDBC가 로깅·DB 접근을 표준화하고 구현을 갈아끼우는 것과 같은 패턴이다. 속도(A)·IAM(C)·Lambda 전용(D)은 본질이 아니다.
+Explanation: OpenTelemetry의 핵심 가치는 계측(OTel API)과 백엔드(exporter)의 분리다. 애플리케이션은 벤더 SDK가 아니라 표준 API에 의존하고, X-Ray로 보낼지 Datadog으로 보낼지는 설정으로 정한다(의존성 역전 원칙). 따라서 도구를 바꿔도 비즈니스 코드가 그대로여서 벤더 락인이 사라진다. SLF4J·JDBC가 로깅·DB 접근을 표준화하고 구현을 갈아끼우는 것과 같은 패턴이다. 속도(A)·IAM(C)·Lambda 전용(D)은 본질이 아니다.
 
 ---
 
-**문제 2.** ADOT Collector의 receiver-processor-exporter 파이프라인에서, PII를 마스킹하고 헬스체크 trace를 버리는 가공은 어디서 하나?
+**Question 2.** ADOT Collector의 receiver-processor-exporter 파이프라인에서, PII를 마스킹하고 헬스체크 trace를 버리는 가공은 어디서 하나?
 
 A) receiver
 
@@ -155,13 +155,13 @@ C) exporter
 
 D) Collector로는 불가능하다
 
-**정답: B**
+**Answer: B**
 
-해설: Collector 파이프라인의 가공은 processor 단계에서 한다 — `attributes` processor로 PII 속성을 마스킹·삭제하고, `filter` processor로 불필요한(헬스체크) 데이터를 버리며, `tail_sampling`으로 결과 기반 샘플링을 한다. receiver(A)는 데이터를 받기만, exporter(C)는 백엔드로 내보내기만 한다. 이 가공을 백엔드와 무관하게 한곳(Collector)에서 하는 것이 파이프-필터 아키텍처의 조합성 이점이다.
+Explanation: Collector 파이프라인의 가공은 processor 단계에서 한다 — `attributes` processor로 PII 속성을 마스킹·삭제하고, `filter` processor로 불필요한(헬스체크) 데이터를 버리며, `tail_sampling`으로 결과 기반 샘플링을 한다. receiver(A)는 데이터를 받기만, exporter(C)는 백엔드로 내보내기만 한다. 이 가공을 백엔드와 무관하게 한곳(Collector)에서 하는 것이 파이프-필터 아키텍처의 조합성 이점이다.
 
 ---
 
-**문제 3.** 온프레미스 Jaeger에서 AWS X-Ray로 추적을 마이그레이션하되, 기간 중 두 도구를 병행 검증하고 싶다. ADOT로 어떻게 하나?
+**Question 3.** 온프레미스 Jaeger에서 AWS X-Ray로 추적을 마이그레이션하되, 기간 중 두 도구를 병행 검증하고 싶다. ADOT로 어떻게 하나?
 
 A) 모든 서비스를 한 번에 X-Ray SDK로 재작성한다
 
@@ -171,13 +171,13 @@ C) X-Ray와 Jaeger를 둘 다 끄고 새로 만든다
 
 D) Lambda Layer만 추가한다
 
-**정답: B**
+**Answer: B**
 
-해설: Collector는 같은 데이터를 여러 exporter로 fan-out할 수 있다. trace 파이프라인에 `awsxray`와 `otlp/jaeger`를 함께 두면 동일한 trace가 양쪽에 동시 전송되어, 마이그레이션 기간 동안 두 도구를 병행하며 X-Ray를 검증할 수 있다. 검증 후 Jaeger exporter만 제거하면 무중단 전환이 된다. 한 번에 재작성(A)은 위험이 크고, exporter fan-out이 관찰성 도구 마이그레이션의 위험을 극적으로 낮춘다.
+Explanation: Collector는 같은 데이터를 여러 exporter로 fan-out할 수 있다. trace 파이프라인에 `awsxray`와 `otlp/jaeger`를 함께 두면 동일한 trace가 양쪽에 동시 전송되어, 마이그레이션 기간 동안 두 도구를 병행하며 X-Ray를 검증할 수 있다. 검증 후 Jaeger exporter만 제거하면 무중단 전환이 된다. 한 번에 재작성(A)은 위험이 크고, exporter fan-out이 관찰성 도구 마이그레이션의 위험을 극적으로 낮춘다.
 
 ---
 
-**문제 4.** Lambda에서 핸들러 코드를 전혀 바꾸지 않고 ADOT 자동 계측을 적용하는 핵심 설정은?
+**Question 4.** Lambda에서 핸들러 코드를 전혀 바꾸지 않고 ADOT 자동 계측을 적용하는 핵심 설정은?
 
 A) 코드에 `patch_all()` 추가
 
@@ -187,13 +187,13 @@ C) X-Ray Daemon 사이드카 추가
 
 D) ECS로 이전
 
-**정답: B**
+**Answer: B**
 
-해설: ADOT Lambda Layer를 붙이고 `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument`를 설정하면, Lambda가 런타임 시작 전에 이 wrapper 스크립트를 실행해 OTel auto-instrumentation을 주입한다. 핸들러 코드는 한 줄도 안 바뀐다. 이는 `-javaagent`·`LD_PRELOAD`처럼 본체를 수정하지 않고 경계에서 횡단 관심사를 주입하는 인터셉션 패턴(AOP의 인프라 구현)이다. `patch_all()`(A)은 코드 변경이 필요한 X-Ray SDK 방식이다.
+Explanation: ADOT Lambda Layer를 붙이고 `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument`를 설정하면, Lambda가 런타임 시작 전에 이 wrapper 스크립트를 실행해 OTel auto-instrumentation을 주입한다. 핸들러 코드는 한 줄도 안 바뀐다. 이는 `-javaagent`·`LD_PRELOAD`처럼 본체를 수정하지 않고 경계에서 횡단 관심사를 주입하는 인터셉션 패턴(AOP의 인프라 구현)이다. `patch_all()`(A)은 코드 변경이 필요한 X-Ray SDK 방식이다.
 
 ---
 
-**문제 5.** ADOT Collector를 tail-based 샘플링(에러 trace 100% 유지)에 쓰려면 agent 모드와 gateway 모드 중 무엇이 필요하며 그 이유는?
+**Question 5.** ADOT Collector를 tail-based 샘플링(에러 trace 100% 유지)에 쓰려면 agent 모드와 gateway 모드 중 무엇이 필요하며 그 이유는?
 
 A) agent 모드 — 각 Pod 옆에 두면 된다
 
@@ -203,13 +203,13 @@ C) 둘 다 동일하다
 
 D) Lambda Layer로만 가능하다
 
-**정답: B**
+**Answer: B**
 
-해설: tail-based 샘플링은 trace가 완성된 뒤 결과(에러 여부·지연)를 보고 유지/폐기를 정하므로, 그 trace의 모든 span이 한 Collector에 모여 있어야 한다. agent 모드(노드별 사이드카/DaemonSet)는 한 trace의 span들이 여러 agent에 흩어져 결과 기반 판단이 불가능하다. 따라서 모든 텔레메트리를 모으는 gateway(중앙 집중) Collector가 필요하다. 실무 권장은 agent(1차 수집·가공) + gateway(tail 샘플링·라우팅)의 2계층이다.
+Explanation: tail-based 샘플링은 trace가 완성된 뒤 결과(에러 여부·지연)를 보고 유지/폐기를 정하므로, 그 trace의 모든 span이 한 Collector에 모여 있어야 한다. agent 모드(노드별 사이드카/DaemonSet)는 한 trace의 span들이 여러 agent에 흩어져 결과 기반 판단이 불가능하다. 따라서 모든 텔레메트리를 모으는 gateway(중앙 집중) Collector가 필요하다. 실무 권장은 agent(1차 수집·가공) + gateway(tail 샘플링·라우팅)의 2계층이다.
 
 ---
 
-**문제 6.** OpenTelemetry는 어떤 두 프로젝트의 합병으로 탄생했고, 각각 무엇에 집중했나?
+**Question 6.** OpenTelemetry는 어떤 두 프로젝트의 합병으로 탄생했고, 각각 무엇에 집중했나?
 
 A) Prometheus + Grafana
 
@@ -219,13 +219,13 @@ C) Zipkin + Jaeger
 
 D) X-Ray + CloudWatch
 
-**정답: B**
+**Answer: B**
 
-해설: OpenTelemetry는 추적 계측 API를 표준화하던 OpenTracing(CNCF)과 구글 주도로 자동 계측·에이전트를 제공하던 OpenCensus가 2019년 CNCF 주도로 합병해 탄생했다. OpenTracing의 API 추상화와 OpenCensus의 구현·auto-instrumentation을 합쳐, "API는 표준화, 자동 계측과 Collector는 구현으로 제공"하는 지금의 OTel이 됐다. 두 경쟁 표준의 분열을 합병으로 끝낸 사례다.
+Explanation: OpenTelemetry는 추적 계측 API를 표준화하던 OpenTracing(CNCF)과 구글 주도로 자동 계측·에이전트를 제공하던 OpenCensus가 2019년 CNCF 주도로 합병해 탄생했다. OpenTracing의 API 추상화와 OpenCensus의 구현·auto-instrumentation을 합쳐, "API는 표준화, 자동 계측과 Collector는 구현으로 제공"하는 지금의 OTel이 됐다. 두 경쟁 표준의 분열을 합병으로 끝낸 사례다.
 
 ---
 
-**문제 7.** "지금 AWS만 쓰고 단순한 추적이면 X-Ray SDK, 멀티 백엔드·벤더 중립이 필요하면 ADOT"라는 결정 기준의 근본 차이는?
+**Question 7.** "지금 AWS만 쓰고 단순한 추적이면 X-Ray SDK, 멀티 백엔드·벤더 중립이 필요하면 ADOT"라는 결정 기준의 근본 차이는?
 
 A) 비용
 
@@ -235,9 +235,9 @@ C) 보안 수준
 
 D) 지원 리전 수
 
-**정답: B**
+**Answer: B**
 
-해설: 둘의 근본 차이는 결합도다. X-Ray SDK는 코드가 X-Ray에 묶여 단순하지만 백엔드를 바꾸기 어렵고, ADOT는 코드가 OTel 표준에 묶여 백엔드를 exporter 설정으로 자유롭게 바꿀 수 있다. 대신 ADOT는 Collector 운영·propagator 설정 등 다룰 구성요소가 더 많다. 따라서 "AWS만·단순 → X-Ray SDK, 멀티 백엔드·멀티 클라우드·벤더 중립 → ADOT"가 결정 기준이다. 비용·보안·리전은 핵심 판단 축이 아니다.
+Explanation: 둘의 근본 차이는 결합도다. X-Ray SDK는 코드가 X-Ray에 묶여 단순하지만 백엔드를 바꾸기 어렵고, ADOT는 코드가 OTel 표준에 묶여 백엔드를 exporter 설정으로 자유롭게 바꿀 수 있다. 대신 ADOT는 Collector 운영·propagator 설정 등 다룰 구성요소가 더 많다. 따라서 "AWS만·단순 → X-Ray SDK, 멀티 백엔드·멀티 클라우드·벤더 중립 → ADOT"가 결정 기준이다. 비용·보안·리전은 핵심 판단 축이 아니다.
 
 ---
 

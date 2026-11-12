@@ -374,72 +374,72 @@ In practice, most people use Target Tracking as the baseline and add Predictive 
 
 ## 📝 Practice Questions
 
-**문제 1.** An e-commerce platform has a pattern where traffic triples every day at 9 AM and returns to normal at 9 PM. It also experiences sudden additional traffic spikes. What is the most suitable scaling strategy?
+**Question 1.** An e-commerce platform has a pattern where traffic triples every day at 9 AM and returns to normal at 9 PM. It also experiences sudden additional traffic spikes. What is the most suitable scaling strategy?
 
 A) Use Target Tracking only
 B) Use Scheduled Scaling only
 C) Combine Scheduled Scaling + Target Tracking
 D) Simple Scaling + 300s Cooldown
 
-**정답: C**
-해설: Scheduled Scaling raises Min/Desired ahead of time at 9 AM to handle the predictable traffic, and Target Tracking handles the unexpected spikes in real time. Using Target Tracking alone means scale-out only starts after traffic has risen and CPU has climbed, causing performance degradation for the first several minutes. Using Scheduled alone can't respond flexibly to spikes. Simple Scaling reacts slowly because of the Cooldown.
+**Answer: C**
+Explanation: Scheduled Scaling raises Min/Desired ahead of time at 9 AM to handle the predictable traffic, and Target Tracking handles the unexpected spikes in real time. Using Target Tracking alone means scale-out only starts after traffic has risen and CPU has climbed, causing performance degradation for the first several minutes. Using Scheduled alone can't respond flexibly to spikes. Simple Scaling reacts slowly because of the Cooldown.
 
 ---
 
-**문제 2.** An ASG runs behind an ALB. On an instance, the application stops responding (app crash), but the EC2 instance itself is running normally. What configuration is needed for the ASG to detect this instance as Unhealthy and replace it?
+**Question 2.** An ASG runs behind an ALB. On an instance, the application stops responding (app crash), but the EC2 instance itself is running normally. What configuration is needed for the ASG to detect this instance as Unhealthy and replace it?
 
 A) Strengthen the EC2 Health Check (shorten the StatusCheck interval)
 B) Enable the ELB Health Check type on the ASG
 C) Collect app metrics with the CloudWatch Agent
 D) Enable Auto Recovery (aws:autorecover)
 
-**정답: B**
-해설: The EC2 Health Check only verifies the instance's physical/OS status. Even if the app crashes, the EC2 instance itself stays in the Running state and is judged Healthy. The ELB Health Check has the ALB call an endpoint like `/health` to judge health at the app level, and passes that result to the ASG. Setting `health-check-type ELB` on the ASG lets it receive the ALB's Unhealthy verdict, terminate the instance, and launch a new one.
+**Answer: B**
+Explanation: The EC2 Health Check only verifies the instance's physical/OS status. Even if the app crashes, the EC2 instance itself stays in the Running state and is judged Healthy. The ELB Health Check has the ALB call an endpoint like `/health` to judge health at the app level, and passes that result to the ASG. Setting `health-check-type ELB` on the ASG lets it receive the ALB's Unhealthy verdict, terminate the instance, and launch a new one.
 
 ---
 
-**문제 3.** You run a JVM-based application server on an ASG. When a new instance starts, performance is low for 5 minutes until JIT compilation finishes. How do you keep the ALB from sending a lot of traffic to that instance during this period?
+**Question 3.** You run a JVM-based application server on an ASG. When a new instance starts, performance is low for 5 minutes until JIT compilation finishes. How do you keep the ALB from sending a lot of traffic to that instance during this period?
 
 A) Set the Health Check Grace Period to 300 seconds
 B) Set the ASG Health Check to the EC2 type
 C) Set Slow Start to 300 seconds on the ALB Target Group
 D) Wait 300 seconds with a Lifecycle Hook Pending:Wait
 
-**정답: C**
-해설: Slow Start is an ALB Target Group-level feature that gradually ramps up traffic sent to a newly registered target. During the configured window, the new instance receives less traffic than existing instances. The Health Check Grace Period is the period during which the ASG ignores ELB health check results — it doesn't reduce traffic. Waiting 300 seconds with a Lifecycle Hook Pending:Wait means the instance receives no traffic at all during that time, defeating the purpose of scaling.
+**Answer: C**
+Explanation: Slow Start is an ALB Target Group-level feature that gradually ramps up traffic sent to a newly registered target. During the configured window, the new instance receives less traffic than existing instances. The Health Check Grace Period is the period during which the ASG ignores ELB health check results — it doesn't reduce traffic. Waiting 300 seconds with a Lifecycle Hook Pending:Wait means the instance receives no traffic at all during that time, defeating the purpose of scaling.
 
 ---
 
-**문제 4.** You use large-scale GPU instances in an ASG for an ML training batch job. To optimize cost, you want to run at an 80% Spot / 20% On-Demand ratio. How do you maximize availability during Spot interruptions?
+**Question 4.** You use large-scale GPU instances in an ASG for an ML training batch job. To optimize cost, you want to run at an 80% Spot / 20% On-Demand ratio. How do you maximize availability during Spot interruptions?
 
 A) Mixed Instances Policy + `lowest-price` Spot strategy + Capacity Rebalancing
 B) Mixed Instances Policy + `capacity-optimized` Spot strategy + Capacity Rebalancing
 C) Two separate ASGs (Spot-only + On-Demand-only)
 D) Use EC2 Fleet for Spot only and manage On-Demand separately
 
-**정답: B**
-해설: A Mixed Instances Policy manages the On-Demand baseline (20%) and Spot (80%) in a single ASG. The `capacity-optimized` strategy picks the Spot pool with the most spare capacity in AWS right now, minimizing interruption frequency (not the lowest cost, but availability first). `lowest-price` concentrates on the cheapest pool, raising interruption risk. Capacity Rebalancing preserves continuity by launching a replacement Spot instance ahead of time when an interruption warning is received.
+**Answer: B**
+Explanation: A Mixed Instances Policy manages the On-Demand baseline (20%) and Spot (80%) in a single ASG. The `capacity-optimized` strategy picks the Spot pool with the most spare capacity in AWS right now, minimizing interruption frequency (not the lowest cost, but availability first). `lowest-price` concentrates on the cheapest pool, raising interruption risk. Capacity Rebalancing preserves continuity by launching a replacement Spot instance ahead of time when an interruption warning is received.
 
 ---
 
-**문제 5.** When an ASG instance terminates, you want to put the in-memory in-progress order data back onto SQS to prevent loss. How do you implement this?
+**Question 5.** When an ASG instance terminates, you want to put the in-memory in-progress order data back onto SQS to prevent loss. How do you implement this?
 
 A) Write a shutdown script in User Data
 B) Set the ASG Termination Policy to OldestInstance
 C) ASG Lifecycle Hook (Terminating:Wait) + EventBridge + Lambda
 D) Detect instance termination with CloudWatch Events, then invoke Lambda
 
-**정답: C**
-해설: The Lifecycle Hook's `EC2_INSTANCE_TERMINATING` event pauses the instance in the `Terminating:Wait` state before it terminates. You receive this event through EventBridge to trigger a Lambda, or send a notification to an SQS queue for an in-instance Agent to handle. The in-instance Agent puts the in-progress orders onto SQS and calls `complete-lifecycle-action SUCCESS`. The instance then terminates. A shutdown script in User Data runs at OS shutdown, but it can run later than ASG scale-in and has a time limit.
+**Answer: C**
+Explanation: The Lifecycle Hook's `EC2_INSTANCE_TERMINATING` event pauses the instance in the `Terminating:Wait` state before it terminates. You receive this event through EventBridge to trigger a Lambda, or send a notification to an SQS queue for an in-instance Agent to handle. The in-instance Agent puts the in-progress orders onto SQS and calls `complete-lifecycle-action SUCCESS`. The instance then terminates. A shutdown script in User Data runs at OS shutdown, but it can run later than ASG scale-in and has a time limit.
 
 ---
 
-**문제 6.** During scale-out, it takes 7 minutes for a new instance to become fully Ready. What is the most effective AWS feature for reducing this 7-minute gap during a traffic surge?
+**Question 6.** During scale-out, it takes 7 minutes for a new instance to become fully Ready. What is the most effective AWS feature for reducing this 7-minute gap during a traffic surge?
 
 A) Reduce the Health Check Grace Period to 0
 B) Upgrade to a faster instance type
 C) Configure an ASG Warm Pool to keep pre-initialized instances waiting
 D) Disable ALB Slow Start
 
-**정답: C**
-해설: A Warm Pool keeps fully initialized instances waiting in advance in the Stopped (or Running) state. On a scale-out signal, you only need to Start them, so the 7 minutes shrinks to 30-60 seconds. Reducing the Health Check Grace Period to 0 sends traffic straight to an instance that's still initializing, causing errors instead. Upgrading the instance helps somewhat but doesn't address the root cause of the 7 minutes (application initialization).
+**Answer: C**
+Explanation: A Warm Pool keeps fully initialized instances waiting in advance in the Stopped (or Running) state. On a scale-out signal, you only need to Start them, so the 7 minutes shrinks to 30-60 seconds. Reducing the Health Check Grace Period to 0 sends traffic straight to an instance that's still initializing, causing errors instead. Upgrading the instance helps somewhat but doesn't address the root cause of the 7 minutes (application initialization).

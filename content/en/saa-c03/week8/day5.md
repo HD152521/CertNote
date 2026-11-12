@@ -87,159 +87,159 @@ Before working the scenario questions, let's flag the five security anti-pattern
 
 ## 📝 시나리오 연습 문제 12
 
-**문제 1.** A mobile game went global and then got hit by a DDoS attack. CloudFront traffic spiked to 200x normal, and the AWS bill came in $80,000 higher than expected. The company wants a refund for the extra cost in future incidents like this. What is the most suitable solution?
+**Question 1.** A mobile game went global and then got hit by a DDoS attack. CloudFront traffic spiked to 200x normal, and the AWS bill came in $80,000 higher than expected. The company wants a refund for the extra cost in future incidents like this. What is the most suitable solution?
 
 A) Leave the already-free Shield Standard as is and just watch for cost spikes with a CloudWatch billing alarm
 B) Subscribe to Shield Advanced ($3,000/month + Cost Protection)
 C) Disable the CloudFront distribution during the attack to block traffic and reduce origin costs
 D) Use Route 53 health checks + failover to divert traffic to a standby region and spread the load
 
-**정답: B**
+**Answer: B**
 
-해설: One of Shield Advanced's biggest values is **Cost Protection**. AWS refunds the ELB/CloudFront/Route 53/EC2 scale-out costs caused by a DDoS attack, so it prevents bill shock. Standard (A) has no cost protection, and C and D aren't protection solutions at all. Shield Advanced is subscribed at the account level (not per workload) and comes with a 24/7 DDoS Response Team and automatic L7 mitigation.
+Explanation: One of Shield Advanced's biggest values is **Cost Protection**. AWS refunds the ELB/CloudFront/Route 53/EC2 scale-out costs caused by a DDoS attack, so it prevents bill shock. Standard (A) has no cost protection, and C and D aren't protection solutions at all. Shield Advanced is subscribed at the account level (not per workload) and comes with a 24/7 DDoS Response Team and automatic L7 mitigation.
 
 ---
 
-**문제 2.** A fintech company, pursuing PCI DSS compliance, was required to have "key material that not even AWS employees can access, with FIPS 140-2 Level 3 certification under the company's own name." What is the most suitable key store?
+**Question 2.** A fintech company, pursuing PCI DSS compliance, was required to have "key material that not even AWS employees can access, with FIPS 140-2 Level 3 certification under the company's own name." What is the most suitable key store?
 
 A) KMS Customer Managed Key — uses a FIPS 140-2 Level 3 module on top of a multi-tenant HSM, but AWS-attested, with access control via key policy
 B) Store the key material in Secrets Manager and protect it with auto rotation + KMS envelope encryption
 C) CloudHSM (single-tenant FIPS 140-2 Level 3, customer-attested)
 D) Encrypt with Parameter Store SecureString + a KMS CMK to block AWS employee access
 
-**정답: C**
+**Answer: C**
 
-해설: CloudHSM is single-tenant, key material is inaccessible even to AWS employees, and its FIPS 140-2 Level 3 certification is issued under the customer's own name. KMS CMK (A) also runs on a FIPS L3 HSM, but it's multi-tenant and AWS-attested, so it doesn't meet this requirement. When the compliance requirement explicitly says "no AWS employee access + under the customer's name," CloudHSM is the only answer. In general a KMS CMK is enough, but in some heavily regulated environments CloudHSM is mandatory.
+Explanation: CloudHSM is single-tenant, key material is inaccessible even to AWS employees, and its FIPS 140-2 Level 3 certification is issued under the customer's own name. KMS CMK (A) also runs on a FIPS L3 HSM, but it's multi-tenant and AWS-attested, so it doesn't meet this requirement. When the compliance requirement explicitly says "no AWS employee access + under the customer's name," CloudHSM is the only answer. In general a KMS CMK is enough, but in some heavily regulated environments CloudHSM is mandatory.
 
 ---
 
-**문제 3.** A company wants to auto-rotate the admin password of an RDS Aurora PostgreSQL database every 90 days, with zero downtime during rotation. What is the most suitable solution?
+**Question 3.** A company wants to auto-rotate the admin password of an RDS Aurora PostgreSQL database every 90 days, with zero downtime during rotation. What is the most suitable solution?
 
 A) Store the password in Parameter Store SecureString + a Lambda triggered by a 90-day cron that changes the RDS password directly
 B) Secrets Manager + the AWS-provided RDS rotation Lambda + a 90-day schedule
 C) Store the password as an object in CloudHSM + KMS envelope encryption + a documented manual rotation procedure every 90 days
 D) Inject the password into an EC2 instance's env vars + run an Ansible playbook via cron to refresh it every 90 days
 
-**정답: B**
+**Answer: B**
 
-해설: For RDS / Aurora / Redshift / DocumentDB, Secrets Manager lets you use the AWS-provided rotation Lambda template as-is. Across the 4-step lifecycle (createSecret → setSecret → testSecret → finishSecret), AWSCURRENT is only promoted after testSecret succeeds, guaranteeing zero-downtime rotation. AWSPREVIOUS also stays alive for a period, so active connections aren't dropped. A and D require you to implement the dual-credential pattern yourself, which is risky. C isn't rotation-automated.
+Explanation: For RDS / Aurora / Redshift / DocumentDB, Secrets Manager lets you use the AWS-provided rotation Lambda template as-is. Across the 4-step lifecycle (createSecret → setSecret → testSecret → finishSecret), AWSCURRENT is only promoted after testSecret succeeds, guaranteeing zero-downtime rotation. AWSPREVIOUS also stays alive for a period, so active connections aren't dropped. A and D require you to implement the dual-credential pattern yourself, which is risky. C isn't rotation-automated.
 
 ---
 
-**문제 4.** A company's SPA web app needs to temporarily grant authenticated users permission to upload images directly to S3. What is the most suitable authentication/authorization flow?
+**Question 4.** A company's SPA web app needs to temporarily grant authenticated users permission to upload images directly to S3. What is the most suitable authentication/authorization flow?
 
 A) User Pool alone + call S3 with the JWT
 B) Log in via Cognito User Pool → JWT → Identity Pool → STS AssumeRoleWithWebIdentity → S3 PUT with temporary credentials
 C) Bake an IAM user key into the SPA
 D) Public Write via an S3 bucket policy
 
-**정답: B**
+**Answer: B**
 
-해설: For a mobile app or SPA to call the S3 API directly, it needs IAM credentials capable of SigV4 signing, and Cognito Identity Pool issues these via STS AssumeRoleWithWebIdentity. Handling user authentication with the User Pool and passing the JWT to the Identity Pool is the standard flow. A can't call AWS APIs with a JWT alone. C is the worst for security. D leads straight to a data breach.
+Explanation: For a mobile app or SPA to call the S3 API directly, it needs IAM credentials capable of SigV4 signing, and Cognito Identity Pool issues these via STS AssumeRoleWithWebIdentity. Handling user authentication with the User Pool and passing the JWT to the Identity Pool is the standard flow. A can't call AWS APIs with a JWT alone. C is the worst for security. D leads straight to a data breach.
 
 ---
 
-**문제 5.** A company wants to allow sign-up only with a corporate-domain email (`@mycompany.com`), and after sign-up, automatically sync user info to its own DynamoDB. What is the most suitable solution?
+**Question 5.** A company wants to allow sign-up only with a corporate-domain email (`@mycompany.com`), and after sign-up, automatically sync user info to its own DynamoDB. What is the most suitable solution?
 
 A) PreSignUp Lambda Trigger (domain validation) + PostConfirmation Lambda Trigger (DDB replication)
 B) Validate the email domain with a regex in the API backend's sign-up handler, and write to DynamoDB directly after a successful sign-up
 C) Attach an IAM policy to a User Pool group to allow only the `@mycompany.com` domain and grant DDB access
 D) Check the domain in the Identity Pool's authentication rules and invoke a DDB-sync Lambda via an STS Role
 
-**정답: A**
+**Answer: A**
 
-해설: Cognito User Pool Lambda Triggers are the standard mechanism for inserting custom code at each stage of the login flow. PreSignUp is called right before sign-up, so it can validate the domain and block it by throwing an exception; PostConfirmation is called after email/SMS verification completes, used for DDB replication or sending a welcome email. B is possible but hard to integrate into the sign-up flow. C and D are unrelated to the scenario.
+Explanation: Cognito User Pool Lambda Triggers are the standard mechanism for inserting custom code at each stage of the login flow. PreSignUp is called right before sign-up, so it can validate the domain and block it by throwing an exception; PostConfirmation is called after email/SMS verification completes, used for DDB replication or sending a welcome email. B is possible but hard to integrate into the sign-up flow. C and D are unrelated to the scenario.
 
 ---
 
-**문제 6.** A company wants to automatically detect which objects in an S3 bucket contain PII such as credit card numbers or national ID numbers, and when found, immediately quarantine them and alert SecOps. What is the most suitable solution?
+**Question 6.** A company wants to automatically detect which objects in an S3 bucket contain PII such as credit card numbers or national ID numbers, and when found, immediately quarantine them and alert SecOps. What is the most suitable solution?
 
 A) Turn on GuardDuty's S3 Protection, receive findings via EventBridge, quarantine the object with Lambda, and alert via SNS
 B) Macie + EventBridge → Lambda (move the object to a quarantine bucket) + SNS (SecOps)
 C) Scan bucket objects with Inspector v2 to find PII, receive findings via Lambda, and quarantine
 D) Evaluate whether objects contain PII with a Config Rule, and alert SecOps via SNS on non-compliance
 
-**정답: B**
+**Answer: B**
 
-해설: Macie is the only service that analyzes S3 object content with ML and automatically classifies over 100 PII patterns. Findings are published to EventBridge, so automated quarantine via Lambda + SNS alerting is possible. GuardDuty (A) is behavior-based threat detection, not content classification. Inspector (C) is vulnerability scanning, and Config (D) is configuration evaluation.
+Explanation: Macie is the only service that analyzes S3 object content with ML and automatically classifies over 100 PII patterns. Findings are published to EventBridge, so automated quarantine via Lambda + SNS alerting is possible. GuardDuty (A) is behavior-based threat detection, not content classification. Inspector (C) is vulnerability scanning, and Config (D) is configuration evaluation.
 
 ---
 
-**문제 7.** A company wants to automatically assess whether a newly disclosed Log4Shell-class CVE affects the OS/packages on 500 EC2 instances, and integrate the results into a compliance dashboard. What is the most suitable combination?
+**Question 7.** A company wants to automatically assess whether a newly disclosed Log4Shell-class CVE affects the OS/packages on 500 EC2 instances, and integrate the results into a compliance dashboard. What is the most suitable combination?
 
 A) Inspector v2 (automatic/continuous scan) + Security Hub (integrated dashboard + score)
 B) Detect abnormal instance behavior with GuardDuty and scan disks for sensitive data with Macie to assess CVE exposure
 C) Evaluate patch-level compliance with a Config Rule and audit patch API-call history with CloudTrail to identify vulnerable instances
 D) Build a custom scanner where Lambda collects the package list from each instance, loads it into S3, and cross-references a CVE DB
 
-**정답: A**
+**Answer: A**
 
-해설: Inspector v2 collects a package inventory via the SSM Agent and automatically cross-references a CVE DB, and when a new CVE is disclosed it immediately re-evaluates all affected instances. Findings are automatically integrated into Security Hub and reflected in standard scores like CIS, AFSBP, and PCI DSS. GuardDuty is behavior-based, so it's not a static CVE-scanning tool.
+Explanation: Inspector v2 collects a package inventory via the SSM Agent and automatically cross-references a CVE DB, and when a new CVE is disclosed it immediately re-evaluates all affected instances. Findings are automatically integrated into Security Hub and reflected in standard scores like CIS, AFSBP, and PCI DSS. GuardDuty is behavior-based, so it's not a static CVE-scanning tool.
 
 ---
 
-**문제 8.** A SaaS company wants employees to log into its SaaS with the company's internal Okta SSO. It wants to keep the user directory in Cognito itself, but password management should be handled by Okta. What is the most suitable configuration?
+**Question 8.** A SaaS company wants employees to log into its SaaS with the company's internal Okta SSO. It wants to keep the user directory in Cognito itself, but password management should be handled by Okta. What is the most suitable configuration?
 
 A) Integrate with IAM Identity Center
 B) Cognito User Pool + register Okta as an external SAML IdP + attribute mapping
 C) Cognito Identity Pool alone
 D) AD Connector
 
-**정답: B**
+**Answer: B**
 
-해설: The enterprise SSO scenario for B2B SaaS almost always answers to "User Pool + external SAML IdP." You delegate authentication with an Okta SAML AuthnRequest, and map the attributes in the SAML Assertion that Okta returns to Cognito user attributes. IAM Identity Center (A) is for employees SSO-ing into the AWS console/CLI, not for authenticating external app users. C can't stand alone because it has no user directory.
+Explanation: The enterprise SSO scenario for B2B SaaS almost always answers to "User Pool + external SAML IdP." You delegate authentication with an Okta SAML AuthnRequest, and map the attributes in the SAML Assertion that Okta returns to Cognito user attributes. IAM Identity Center (A) is for employees SSO-ing into the AWS console/CLI, not for authenticating external app users. C can't stand alone because it has no user directory.
 
 ---
 
-**문제 9.** A company runs active-active across us-east-1 and ap-northeast-2. An S3 object encrypted with SSE-KMS in one region must be immediately decryptable after being replicated (CRR) to the other region, and the RDS password must stay identical across both regions. What is the most suitable combination?
+**Question 9.** A company runs active-active across us-east-1 and ap-northeast-2. An S3 object encrypted with SSE-KMS in one region must be immediately decryptable after being replicated (CRR) to the other region, and the RDS password must stay identical across both regions. What is the most suitable combination?
 
 A) A separate CMK + separate secret in each region + manual sync
 B) KMS Multi-Region Keys + Secrets Manager Replication
 C) CloudHSM multi-region
 D) Parameter Store + Lambda sync
 
-**정답: B**
+**Answer: B**
 
-해설: KMS Multi-Region Keys (launched June 2021) synchronously replicate the same key material across multiple regions while exposing it under the same keyId (prefix `mrk-`). A CRR replica is immediately decryptable. Secrets Manager Replication also automatically propagates source rotations to replicas, so the secret stays in sync across both regions at all times. A and D carry the burden and failure risk of manual sync, and C — multi-region CloudHSM — is very complex and expensive.
+Explanation: KMS Multi-Region Keys (launched June 2021) synchronously replicate the same key material across multiple regions while exposing it under the same keyId (prefix `mrk-`). A CRR replica is immediately decryptable. Secrets Manager Replication also automatically propagates source rotations to replicas, so the secret stays in sync across both regions at all times. A and D carry the burden and failure risk of manual sync, and C — multi-region CloudHSM — is very complex and expensive.
 
 ---
 
-**문제 10.** A company wants to, in front of a global web service, automatically block OWASP Top 10 attacks, classify bot traffic, block anything over 2,000 requests per IP in 5 minutes, and block all countries except South Korea, the US, and Japan. What is the most suitable configuration?
+**Question 10.** A company wants to, in front of a global web service, automatically block OWASP Top 10 attacks, classify bot traffic, block anything over 2,000 requests per IP in 5 minutes, and block all countries except South Korea, the US, and Japan. What is the most suitable configuration?
 
 A) Shield Standard only
 B) CloudFront + WAF Web ACL (AWS Managed Rules CommonRuleSet + Bot Control + Rate-based Rule + Geo Match Rule)
 C) Network Firewall
 D) Security Group + NACL
 
-**정답: B**
+**Answer: B**
 
-해설: A WAFv2 Web ACL evaluates multiple rules in priority order — you can bundle AWS Managed Rules (OWASP), Bot Control (bot classification), a Rate-based Rule (per-IP rate limiting), and a Geo Match Statement (country blocking) all into one Web ACL. Attach it to CloudFront and inspection happens at the edge, greatly reducing origin load. Shield (A) is L3/L4 DDoS, and Network Firewall (C) and SG/NACL (D) aren't tools for blocking L7 application attacks.
+Explanation: A WAFv2 Web ACL evaluates multiple rules in priority order — you can bundle AWS Managed Rules (OWASP), Bot Control (bot classification), a Rate-based Rule (per-IP rate limiting), and a Geo Match Statement (country blocking) all into one Web ACL. Attach it to CloudFront and inspection happens at the edge, greatly reducing origin load. Shield (A) is L3/L4 DDoS, and Network Firewall (C) and SG/NACL (D) aren't tools for blocking L7 application attacks.
 
 ---
 
-**문제 11.** A company wants that when GuardDuty raises an "EC2 communicating with a known crypto-mining pool" finding, it automatically moves the instance to a quarantine SG within 5 minutes, traces the IAM Role's activity in a graph for post-incident analysis, and integrates the results into a SecOps dashboard. What is the most suitable combination?
+**Question 11.** A company wants that when GuardDuty raises an "EC2 communicating with a known crypto-mining pool" finding, it automatically moves the instance to a quarantine SG within 5 minutes, traces the IAM Role's activity in a graph for post-incident analysis, and integrates the results into a SecOps dashboard. What is the most suitable combination?
 
 A) GuardDuty → EventBridge (severity≥7) → Lambda (swap in quarantine SG) + SNS (SecOps) + Detective (graph analysis) + Security Hub (integrated dashboard)
 B) Detect abnormal API calls with CloudTrail Insights and use those events to trigger a Lambda that quarantines the instance and traces IAM Role activity
 C) Detect an instance's outbound SG rule violation with a Config Rule, apply a quarantine SG via SSM Automation, then aggregate the results into a dashboard
 D) Block the mining-pool communication with a WAF Rate-based Rule and analyze logs to trace IAM Role activity
 
-**정답: A**
+**Answer: A**
 
-해설: GuardDuty findings are published to EventBridge immediately, which can trigger an automated-response Lambda. Swapping the ENI to a quarantine SG cuts the instance off from the outside. For post-incident analysis, Detective integrates GuardDuty + VPC Flow + CloudTrail into a graph DB and visualizes it. Security Hub shows all findings in an integrated dashboard and assigns a compliance score. This 4-service combination is the standard security operations pipeline.
+Explanation: GuardDuty findings are published to EventBridge immediately, which can trigger an automated-response Lambda. Swapping the ENI to a quarantine SG cuts the instance off from the outside. For post-incident analysis, Detective integrates GuardDuty + VPC Flow + CloudTrail into a graph DB and visualizes it. Security Hub shows all findings in an integrated dashboard and assigns a compliance score. This 4-service combination is the standard security operations pipeline.
 
 ---
 
-**문제 12.** An enterprise runs 80 accounts with AWS Organizations and needs ① the same WAF Managed Rule enforced on every ALB/CloudFront across all accounts, ② Shield Advanced auto-applied to all accounts, ③ auto-applied to new accounts too, and ④ integrated monitoring of CIS/AFSBP standard scores. What is the most suitable combination?
+**Question 12.** An enterprise runs 80 accounts with AWS Organizations and needs ① the same WAF Managed Rule enforced on every ALB/CloudFront across all accounts, ② Shield Advanced auto-applied to all accounts, ③ auto-applied to new accounts too, and ④ integrated monitoring of CIS/AFSBP standard scores. What is the most suitable combination?
 
 A) Firewall Manager (org-wide WAF/Shield bulk application + auto for new) + Security Hub (integrated CIS/AFSBP score)
 B) Each account's admin manually configures the same WAF Managed Rule and Shield Advanced in the console, repeating for every new account
 C) A Lambda in the management account iterates over all accounts daily to check whether WAF/Shield is applied, and applies it via SDK where missing
 D) Deploy a Config Rule to each account to evaluate whether WAF/Shield is applied, and check the CIS/AFSBP standards with a Config Conformance Pack
 
-**정답: A**
+**Answer: A**
 
-해설: Firewall Manager is a dedicated service that applies WAF Web ACLs, Shield Advanced, Security Groups, Network Firewall, and Route 53 Resolver DNS Firewall policies in bulk across an entire AWS Organization, and it auto-applies to new accounts and resources too. Security Hub integrates security findings from all accounts and automatically evaluates scores for the CIS AWS Foundations Benchmark, PCI DSS, and AWS Foundational Security Best Practices. These two services are the standard combination for multi-account security.
+Explanation: Firewall Manager is a dedicated service that applies WAF Web ACLs, Shield Advanced, Security Groups, Network Firewall, and Route 53 Resolver DNS Firewall policies in bulk across an entire AWS Organization, and it auto-applies to new accounts and resources too. Security Hub integrates security findings from all accounts and automatically evaluates scores for the CIS AWS Foundations Benchmark, PCI DSS, and AWS Foundational Security Best Practices. These two services are the standard combination for multi-account security.
 
 ---
 

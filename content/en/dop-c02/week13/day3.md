@@ -153,7 +153,7 @@ Next, we verify these DR strategies actually work: **Resilience Hub measures RTO
 
 ## 📝 Practice Questions
 
-**문제 1.** A workload requires "RTO 5 minutes, RPO seconds to minutes, medium cost acceptable." The environment must be running in normal times so the failover path is always validated. Which DR strategy fits best?
+**Question 1.** A workload requires "RTO 5 minutes, RPO seconds to minutes, medium cost acceptable." The environment must be running in normal times so the failover path is always validated. Which DR strategy fits best?
 
 A) Backup & Restore
 
@@ -163,13 +163,13 @@ C) Pilot Light
 
 D) Multi-Site Active-Active
 
-**정답: B**
+**Answer: B**
 
-해설: Warm Standby keeps a scaled-down copy of production always running in the DR region, giving an RTO in minutes and an RPO of seconds to minutes (real-time DB replication). The key point is that the environment is alive and handling traffic (health checks, some reads) in normal times, so the failover path is always "warm" and validated — the static stability idea that guards against the risk that "unused paths rot." Backup & Restore (A) has an RTO measured in hours, far too slow; Pilot Light (C) leaves the app tier off so the path is unvalidated and RTO is longer; Active-Active (D) gives RTO 0 but costs the most, which conflicts with "medium cost."
+Explanation: Warm Standby keeps a scaled-down copy of production always running in the DR region, giving an RTO in minutes and an RPO of seconds to minutes (real-time DB replication). The key point is that the environment is alive and handling traffic (health checks, some reads) in normal times, so the failover path is always "warm" and validated — the static stability idea that guards against the risk that "unused paths rot." Backup & Restore (A) has an RTO measured in hours, far too slow; Pilot Light (C) leaves the app tier off so the path is unvalidated and RTO is longer; Active-Active (D) gives RTO 0 but costs the most, which conflicts with "medium cost."
 
 ---
 
-**문제 2.** What is the most common operational risk of the Pilot Light DR strategy, and how do you mitigate it?
+**Question 2.** What is the most common operational risk of the Pilot Light DR strategy, and how do you mitigate it?
 
 A) The cost is too high — reduce the instance types
 
@@ -179,13 +179,13 @@ C) Data is not replicated — add a Read Replica
 
 D) Route 53 does not support failover
 
-**정답: B**
+**Answer: B**
 
-해설: Pilot Light keeps only the data layer (Read Replica + AMI) alive at all times and shuts down the app tier (ASG desired=0). As a result, whether that app environment can actually come up — whether the AMI boots, whether IAM and security groups are correct — goes unverified in normal times, and failing on the first launch attempt during a real disaster is the most common risk. The mitigation is repeatedly verifying "does the pilot light ignite?" through regular DR drills (quarterly/monthly), and coding the activation procedure as a Step Functions/SSM Runbook makes that verification easy. Cost (A) is Pilot Light's advantage, not a risk; data is being replicated by the Read Replica (C); and Route 53 does support failover (D).
+Explanation: Pilot Light keeps only the data layer (Read Replica + AMI) alive at all times and shuts down the app tier (ASG desired=0). As a result, whether that app environment can actually come up — whether the AMI boots, whether IAM and security groups are correct — goes unverified in normal times, and failing on the first launch attempt during a real disaster is the most common risk. The mitigation is repeatedly verifying "does the pilot light ignite?" through regular DR drills (quarterly/monthly), and coding the activation procedure as a Step Functions/SSM Runbook makes that verification easy. Cost (A) is Pilot Light's advantage, not a risk; data is being replicated by the Read Replica (C); and Route 53 does support failover (D).
 
 ---
 
-**문제 3.** When designing Multi-Site Active-Active, two regions each handle 50% of normal traffic. What must you verify in capacity planning?
+**Question 3.** When designing Multi-Site Active-Active, two regions each handle 50% of normal traffic. What must you verify in capacity planning?
 
 A) Sizing each region at only the 50% normal load is enough
 
@@ -195,13 +195,13 @@ C) Capacity planning is unnecessary — Auto Scaling handles it
 
 D) 100% capacity across the two regions combined is sufficient
 
-**정답: B**
+**Answer: B**
 
-해설: In Active-Active, if one region dies the remaining region must take 100% of the traffic. Sizing each region at only the 50% normal load (A and D) means that right after failover the survivor is overloaded with double the traffic and collapses too — a cascading failure. Each region must therefore be designed with "the capacity to carry the entire traffic on its own," which is also why Active-Active costs more than a simple 2x. Auto Scaling (C) helps, but it may not absorb a sudden 2x spike instantly, so provisioning enough base capacity is the safe choice (static stability).
+Explanation: In Active-Active, if one region dies the remaining region must take 100% of the traffic. Sizing each region at only the 50% normal load (A and D) means that right after failover the survivor is overloaded with double the traffic and collapses too — a cascading failure. Each region must therefore be designed with "the capacity to carry the entire traffic on its own," which is also why Active-Active costs more than a simple 2x. Auto Scaling (C) helps, but it may not absorb a sudden 2x spike instantly, so provisioning enough base capacity is the safe choice (static stability).
 
 ---
 
-**문제 4.** A ransomware attacker has seized operational privileges and is trying to delete the backups too. For regulatory compliance, you need to make it impossible for even root to delete backups within the retention period. What do you do?
+**Question 4.** A ransomware attacker has seized operational privileges and is trying to delete the backups too. For regulatory compliance, you need to make it impossible for even root to delete backups within the retention period. What do you do?
 
 A) Configure AWS Backup Vault Lock in Governance Mode
 
@@ -211,13 +211,13 @@ C) Deny deletion on the backup vault with an IAM policy
 
 D) Take backups more frequently
 
-**정답: B**
+**Answer: B**
 
-해설: Backup Vault Lock's Compliance Mode implements the WORM (Write Once Read Many) principle, creating true immutability where no one — root included — can delete or modify backups within the retention period; it is the last line of defense against ransomware's "delete the backups first" tactic (the same philosophy as S3 Object Lock Compliance Mode and SEC 17a-4 compliance storage). Governance Mode (A) lets certain IAM-privileged users bypass and delete, which is a "mistake prevention" level and insufficient for regulatory or ransomware defense. An IAM deny (C) can be changed once privileges are stolen, and frequent backups (D) are useless if they get deleted.
+Explanation: Backup Vault Lock's Compliance Mode implements the WORM (Write Once Read Many) principle, creating true immutability where no one — root included — can delete or modify backups within the retention period; it is the last line of defense against ransomware's "delete the backups first" tactic (the same philosophy as S3 Object Lock Compliance Mode and SEC 17a-4 compliance storage). Governance Mode (A) lets certain IAM-privileged users bypass and delete, which is a "mistake prevention" level and insufficient for regulatory or ransomware defense. An IAM deny (C) can be changed once privileges are stolen, and frequent backups (D) are useless if they get deleted.
 
 ---
 
-**문제 5.** You have a Tier 3 workload where cost must be minimized, and the entire infrastructure is codified in CloudFormation. Which DR strategy fits best, and what are its RTO characteristics?
+**Question 5.** You have a Tier 3 workload where cost must be minimized, and the entire infrastructure is codified in CloudFormation. Which DR strategy fits best, and what are its RTO characteristics?
 
 A) Active-Active — always fast
 
@@ -227,13 +227,13 @@ C) Warm Standby — scaled-down environment always on
 
 D) Pilot Light — only the DB always on
 
-**정답: B**
+**Answer: B**
 
-해설: For a Tier 3 non-critical workload where cost minimization comes first, Backup & Restore is the answer — nothing at all runs in the DR region, making it the cheapest. RTO used to be measured in days, but when the whole infrastructure is codified as IaC (CloudFormation/Terraform), automating "stack deploy → backup restore" can shrink RTO to an hour or two (the immutable infrastructure idea — data plus code is enough to reproduce the environment). Active-Active (A), Warm Standby (C), and Pilot Light (D) all keep infrastructure running in normal times and cost more, conflicting with "minimize cost."
+Explanation: For a Tier 3 non-critical workload where cost minimization comes first, Backup & Restore is the answer — nothing at all runs in the DR region, making it the cheapest. RTO used to be measured in days, but when the whole infrastructure is codified as IaC (CloudFormation/Terraform), automating "stack deploy → backup restore" can shrink RTO to an hour or two (the immutable infrastructure idea — data plus code is enough to reproduce the environment). Active-Active (A), Warm Standby (C), and Pilot Light (D) all keep infrastructure running in normal times and cost more, conflicting with "minimize cost."
 
 ---
 
-**문제 6.** You want to automatically prevent newly created resources from being left out of the backup policy, without relying on people to remember. What is the standard method?
+**Question 6.** You want to automatically prevent newly created resources from being left out of the backup policy, without relying on people to remember. What is the standard method?
 
 A) Registering resources one by one in the backup selection manually
 
@@ -243,13 +243,13 @@ C) Having a person review the resource list every day
 
 D) Disabling Backup
 
-**정답: B**
+**Answer: B**
 
-해설: AWS Backup supports tag-based selection, so a declarative policy of "back up every resource carrying the Backup=prod tag" makes a new resource a backup target the moment it gets that tag. This is policy-based management rather than an imperative one-by-one registration (A and C), the same philosophy as Kubernetes label selectors and IAM ABAC — even if a developer forgets to register a backup, the tag policy is a safety net. The key is automating governance in the direction of "people cannot accidentally miss things."
+Explanation: AWS Backup supports tag-based selection, so a declarative policy of "back up every resource carrying the Backup=prod tag" makes a new resource a backup target the moment it gets that tag. This is policy-based management rather than an imperative one-by-one registration (A and C), the same philosophy as Kubernetes label selectors and IAM ABAC — even if a developer forgets to register a backup, the tag policy is a safety net. The key is automating governance in the direction of "people cannot accidentally miss things."
 
 ---
 
-**문제 7.** You want the DR activation procedure (promote Read Replica → expand ASG → Route 53 failover) to be repeatedly verifiable rather than a manual console operation. Which is most appropriate?
+**Question 7.** You want the DR activation procedure (promote Read Replica → expand ASG → Route 53 failover) to be repeatedly verifiable rather than a manual console operation. Which is most appropriate?
 
 A) Writing the steps down in an operations manual (wiki)
 
@@ -259,9 +259,9 @@ C) Having an engineer execute it manually from memory during a failure
 
 D) Hardcoding all logic into a single Lambda and never testing it
 
-**정답: B**
+**Answer: B**
 
-해설: Codifying DR activation as a Step Functions workflow or SSM Automation Runbook makes the procedure deterministic and reproducible and lets you verify it repeatedly through regular DR drills — this is the core defense against the Pilot Light/Warm Standby risk that "an unused failover path rots." A wiki document (A) or reliance on memory (C) invites mistakes and omissions during a failure, and an untested Lambda (D) can fail exactly when it is triggered. DR is trustworthy only when it is "regularly verified as code," not merely "written down in a document."
+Explanation: Codifying DR activation as a Step Functions workflow or SSM Automation Runbook makes the procedure deterministic and reproducible and lets you verify it repeatedly through regular DR drills — this is the core defense against the Pilot Light/Warm Standby risk that "an unused failover path rots." A wiki document (A) or reliance on memory (C) invites mistakes and omissions during a failure, and an untested Lambda (D) can fail exactly when it is triggered. DR is trustworthy only when it is "regularly verified as code," not merely "written down in a document."
 
 ---
 

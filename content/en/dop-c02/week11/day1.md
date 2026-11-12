@@ -168,7 +168,7 @@ In the next article, we'll examine **X-Ray's sampling and cost tuning at operati
 
 ## 📝 Practice Questions
 
-**문제 1.** 주문 서비스(X-Ray SDK)와 결제 서비스(OpenTelemetry)를 함께 운영하는데, 주문→결제 구간에서 Service Map의 trace가 두 동강 난다. 가장 가능성 높은 원인과 해결은?
+**Question 1.** 주문 서비스(X-Ray SDK)와 결제 서비스(OpenTelemetry)를 함께 운영하는데, 주문→결제 구간에서 Service Map의 trace가 두 동강 난다. 가장 가능성 높은 원인과 해결은?
 
 A) X-Ray retention이 만료됐다 — 보존 기간을 늘린다
 
@@ -178,13 +178,13 @@ C) 샘플링 비율이 낮다 — FixedRate를 100%로 올린다
 
 D) IAM 권한 부족 — X-Ray 쓰기 정책을 추가한다
 
-**정답: B**
+**Answer: B**
 
-해설: 멀티 SDK 환경에서 trace가 끊기는 첫 번째 실패 지점은 거의 항상 context propagation 포맷 불일치다. X-Ray SDK는 `X-Amzn-Trace-Id` 헤더를, OpenTelemetry는 W3C Trace Context의 `traceparent` 헤더를 기대한다. 받는 쪽이 보낸 쪽의 헤더 포맷을 이해하지 못하면 부모 컨텍스트를 복원하지 못해 새 trace로 시작하고, Service Map에서 두 동장 난다. ADOT Collector에 X-Ray propagator와 W3C propagator를 모두 설정해 헤더를 양방향 변환하면 trace가 끝까지 이어진다. retention(A)·샘플링(C)·IAM(D)은 trace 단절이 아니라 각각 보존·수집량·전송 실패와 관련된 별개 문제다.
+Explanation: 멀티 SDK 환경에서 trace가 끊기는 첫 번째 실패 지점은 거의 항상 context propagation 포맷 불일치다. X-Ray SDK는 `X-Amzn-Trace-Id` 헤더를, OpenTelemetry는 W3C Trace Context의 `traceparent` 헤더를 기대한다. 받는 쪽이 보낸 쪽의 헤더 포맷을 이해하지 못하면 부모 컨텍스트를 복원하지 못해 새 trace로 시작하고, Service Map에서 두 동장 난다. ADOT Collector에 X-Ray propagator와 W3C propagator를 모두 설정해 헤더를 양방향 변환하면 trace가 끝까지 이어진다. retention(A)·샘플링(C)·IAM(D)은 trace 단절이 아니라 각각 보존·수집량·전송 실패와 관련된 별개 문제다.
 
 ---
 
-**문제 2.** Lambda에 Active Tracing을 켰는데 Service Map에 함수 호출 segment는 보이지만, 함수 내부의 DynamoDB·HTTP 호출 subsegment가 전혀 안 보인다. 원인은?
+**Question 2.** Lambda에 Active Tracing을 켰는데 Service Map에 함수 호출 segment는 보이지만, 함수 내부의 DynamoDB·HTTP 호출 subsegment가 전혀 안 보인다. 원인은?
 
 A) Active Tracing은 켰지만 SDK instrumentation(`patch_all`/Powertools `capture`)을 안 해서 내부 호출이 계측되지 않았다
 
@@ -194,13 +194,13 @@ C) DynamoDB는 X-Ray와 통합되지 않는다
 
 D) Daemon이 없어서다
 
-**정답: A**
+**Answer: A**
 
-해설: Active Tracing(누가 trace를 시작하고 다운스트림에 ID를 전파하나)과 SDK instrumentation(함수 내부를 얼마나 쪼개 보나)은 별개의 스위치다. Active Tracing만 켜면 Lambda 호출 자체의 segment는 생기지만, 함수 안의 boto3·HTTP 호출을 subsegment로 잡으려면 `patch_all()`이나 Powertools Tracer로 라이브러리를 계측해야 한다. 계측이 없으면 내부가 빈 채로 segment 하나만 보여 병목 구간을 못 본다. Lambda는 subsegment를 지원하고(B 틀림), DynamoDB도 X-Ray와 통합되며(C 틀림), Lambda는 Daemon이 불필요하다(D 틀림).
+Explanation: Active Tracing(누가 trace를 시작하고 다운스트림에 ID를 전파하나)과 SDK instrumentation(함수 내부를 얼마나 쪼개 보나)은 별개의 스위치다. Active Tracing만 켜면 Lambda 호출 자체의 segment는 생기지만, 함수 안의 boto3·HTTP 호출을 subsegment로 잡으려면 `patch_all()`이나 Powertools Tracer로 라이브러리를 계측해야 한다. 계측이 없으면 내부가 빈 채로 segment 하나만 보여 병목 구간을 못 본다. Lambda는 subsegment를 지원하고(B 틀림), DynamoDB도 X-Ray와 통합되며(C 틀림), Lambda는 Daemon이 불필요하다(D 틀림).
 
 ---
 
-**문제 3.** Trace당 50개 제한이 있고 인덱싱되어 `annotation.OrderId = "..."`로 검색 가능한 X-Ray 추가 데이터는?
+**Question 3.** Trace당 50개 제한이 있고 인덱싱되어 `annotation.OrderId = "..."`로 검색 가능한 X-Ray 추가 데이터는?
 
 A) Metadata
 
@@ -210,13 +210,13 @@ C) Subsegment
 
 D) Segment Document 전체
 
-**정답: B**
+**Answer: B**
 
-해설: Annotation은 키-값 쌍으로 인덱싱되어 trace 검색·필터의 대상이 되며, 인덱싱 비용 때문에 trace당 최대 50개, 값은 문자열·숫자·불리언으로 제한된다. Metadata(A)는 인덱싱되지 않아 검색은 불가하지만 임의의 큰 JSON을 디버그용으로 담을 수 있다. 역인덱스 유지 비용이 카디널리티에 비례하므로, 검색 키로 꼭 필요한 저카디널리티 값만 annotation에 두고 상세 페이로드는 metadata로 내리는 것이 정석이다.
+Explanation: Annotation은 키-값 쌍으로 인덱싱되어 trace 검색·필터의 대상이 되며, 인덱싱 비용 때문에 trace당 최대 50개, 값은 문자열·숫자·불리언으로 제한된다. Metadata(A)는 인덱싱되지 않아 검색은 불가하지만 임의의 큰 JSON을 디버그용으로 담을 수 있다. 역인덱스 유지 비용이 카디널리티에 비례하므로, 검색 키로 꼭 필요한 저카디널리티 값만 annotation에 두고 상세 페이로드는 metadata로 내리는 것이 정석이다.
 
 ---
 
-**문제 4.** EC2에서 실행되는 애플리케이션이 X-Ray에 trace를 보내는 표준 경로는?
+**Question 4.** EC2에서 실행되는 애플리케이션이 X-Ray에 trace를 보내는 표준 경로는?
 
 A) 애플리케이션이 X-Ray API를 매 호출마다 동기로 직접 호출
 
@@ -226,13 +226,13 @@ C) S3에 segment를 저장하면 X-Ray가 폴링
 
 D) CloudTrail을 통해 전달
 
-**정답: B**
+**Answer: B**
 
-해설: EC2·ECS·EKS에서는 애플리케이션이 로컬 X-Ray Daemon에 UDP(fire-and-forget)로 segment를 던지고, Daemon이 버퍼링·배치·재시도를 맡아 X-Ray 서비스에 전송한다. 이는 Dapper의 "low overhead" 목표를 구현하는 사이드카 패턴이다 — 애플리케이션은 응답을 기다리지 않고, 추적 데이터의 손실 허용성 덕에 신뢰성(TCP)보다 낮은 오버헤드(UDP)를 택한다. 직접 동기 호출(A)은 본 요청에 네트워크 왕복을 더해 느려진다. Lambda만 Daemon 없이 자동 통합된다.
+Explanation: EC2·ECS·EKS에서는 애플리케이션이 로컬 X-Ray Daemon에 UDP(fire-and-forget)로 segment를 던지고, Daemon이 버퍼링·배치·재시도를 맡아 X-Ray 서비스에 전송한다. 이는 Dapper의 "low overhead" 목표를 구현하는 사이드카 패턴이다 — 애플리케이션은 응답을 기다리지 않고, 추적 데이터의 손실 허용성 덕에 신뢰성(TCP)보다 낮은 오버헤드(UDP)를 택한다. 직접 동기 호출(A)은 본 요청에 네트워크 왕복을 더해 느려진다. Lambda만 Daemon 없이 자동 통합된다.
 
 ---
 
-**문제 5.** Service Map에서 한 노드가 빨갛게 표시된다. throttle, fault(5xx), error(4xx)를 구분하는 것이 왜 중요한가?
+**Question 5.** Service Map에서 한 노드가 빨갛게 표시된다. throttle, fault(5xx), error(4xx)를 구분하는 것이 왜 중요한가?
 
 A) 색만 다를 뿐 대응은 동일하다
 
@@ -242,13 +242,13 @@ C) error가 가장 심각하므로 항상 먼저 본다
 
 D) 세 분류는 비용 청구에만 쓰인다
 
-**정답: B**
+**Answer: B**
 
-해설: X-Ray는 에러를 세 분류로 나눈다 — `throttle`(429, 속도 제한 → 용량 증설/스로틀 완화), `fault`(5xx, 서버 잘못 → 코드 버그/다운스트림 의존성 장애), `error`(4xx, 클라이언트 잘못 → 잘못된 요청이 들어옴). "빨간 노드"라는 사실만으로는 무엇을 고칠지 알 수 없고, 분류를 봐야 올바른 곳을 고친다. 예컨대 throttle이 원인인데 코드를 디버깅하면 시간을 낭비한다. 대응이 동일하다(A)거나 단순 청구용(D)이라는 설명은 틀리며, 심각도 순위(C)는 상황에 따라 다르다.
+Explanation: X-Ray는 에러를 세 분류로 나눈다 — `throttle`(429, 속도 제한 → 용량 증설/스로틀 완화), `fault`(5xx, 서버 잘못 → 코드 버그/다운스트림 의존성 장애), `error`(4xx, 클라이언트 잘못 → 잘못된 요청이 들어옴). "빨간 노드"라는 사실만으로는 무엇을 고칠지 알 수 없고, 분류를 봐야 올바른 곳을 고친다. 예컨대 throttle이 원인인데 코드를 디버깅하면 시간을 낭비한다. 대응이 동일하다(A)거나 단순 청구용(D)이라는 설명은 틀리며, 심각도 순위(C)는 상황에 따라 다르다.
 
 ---
 
-**문제 6.** X-Ray Trace ID `1-65500000-1234abcd...`의 `65500000` 부분이 의미하는 것과 그 설계 이점은?
+**Question 6.** X-Ray Trace ID `1-65500000-1234abcd...`의 `65500000` 부분이 의미하는 것과 그 설계 이점은?
 
 A) 랜덤 시드일 뿐 의미 없음
 
@@ -258,13 +258,13 @@ C) 리전 코드
 
 D) 샘플링 비율
 
-**정답: B**
+**Answer: B**
 
-해설: X-Ray Trace ID는 `버전-타임스탬프-랜덤` 구조로, 가운데가 요청 시각의 Unix epoch를 16진수로 인코딩한 것이다. ID 안에 시각이 박혀 있어 별도 인덱스 조회 없이 ID만 보고 어느 시간 버킷에 속하는지 알 수 있고, 이는 30일 만료·시각 기반 파티셔닝을 효율화한다. KSUID·ULID가 UUIDv4를 대체하며 시간 정렬 가능성을 제공하는 것과 같은 발상이다. 리전(C)·샘플링(D)·무의미(A)는 모두 틀리다.
+Explanation: X-Ray Trace ID는 `버전-타임스탬프-랜덤` 구조로, 가운데가 요청 시각의 Unix epoch를 16진수로 인코딩한 것이다. ID 안에 시각이 박혀 있어 별도 인덱스 조회 없이 ID만 보고 어느 시간 버킷에 속하는지 알 수 있고, 이는 30일 만료·시각 기반 파티셔닝을 효율화한다. KSUID·ULID가 UUIDv4를 대체하며 시간 정렬 가능성을 제공하는 것과 같은 발상이다. 리전(C)·샘플링(D)·무의미(A)는 모두 틀리다.
 
 ---
 
-**문제 7.** 분산 추적(Dapper)이 정의한 세 가지 설계 목표가 아닌 것은?
+**Question 7.** 분산 추적(Dapper)이 정의한 세 가지 설계 목표가 아닌 것은?
 
 A) low overhead (본 서비스를 느리게 하지 않음)
 
@@ -274,9 +274,9 @@ C) scalability (대규모에서 동작)
 
 D) exactly-once delivery (모든 trace를 정확히 한 번 전송 보장)
 
-**정답: D**
+**Answer: D**
 
-해설: Dapper 논문이 정의한 세 목표는 low overhead, application-level transparency, scalability다. trace는 통계적 표본이라 일부 손실을 허용하며(그래서 Daemon이 UDP를 쓴다), exactly-once delivery는 추적 시스템의 목표가 아니다. 오히려 샘플링으로 의도적으로 일부만 수집해 overhead를 제어한다. A·B·C는 모두 Dapper의 핵심 목표이며 X-Ray의 SDK auto-patching, 샘플링, Daemon 배치 전송으로 각각 구현된다.
+Explanation: Dapper 논문이 정의한 세 목표는 low overhead, application-level transparency, scalability다. trace는 통계적 표본이라 일부 손실을 허용하며(그래서 Daemon이 UDP를 쓴다), exactly-once delivery는 추적 시스템의 목표가 아니다. 오히려 샘플링으로 의도적으로 일부만 수집해 overhead를 제어한다. A·B·C는 모두 Dapper의 핵심 목표이며 X-Ray의 SDK auto-patching, 샘플링, Daemon 배치 전송으로 각각 구현된다.
 
 ---
 

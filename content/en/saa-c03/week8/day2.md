@@ -236,94 +236,94 @@ In the next article we'll look at the tools that manage the users themselves —
 
 ## 📝 Practice Questions
 
-**문제 1.** A company needs to automatically rotate its RDS PostgreSQL admin password every 30 days, with no application downtime during rotation. What is the most suitable solution?
+**Question 1.** A company needs to automatically rotate its RDS PostgreSQL admin password every 30 days, with no application downtime during rotation. What is the most suitable solution?
 
 A) Parameter Store SecureString + a cron Lambda for rotation
 B) Secrets Manager + the AWS-provided RDS rotation Lambda + a 30-day schedule
 C) Store the password in CloudHSM and change it manually every 30 days
 D) Bake the password into an EC2 environment variable and rotate it with cron
 
-**정답: B**
+**Answer: B**
 
-해설: Secrets Manager lets you use the AWS-provided rotation Lambda template as-is for RDS / Aurora / Redshift / DocumentDB, and it guarantees zero-downtime rotation through the 4-step lifecycle of AWSPENDING → testSecret → promote to AWSCURRENT. Since it auto-rolls back on testSecret failure, operational safety is high too. A is risky because you'd have to implement the dual-credential pattern yourself. C doesn't automate rotation. D is a security anti-pattern.
+Explanation: Secrets Manager lets you use the AWS-provided rotation Lambda template as-is for RDS / Aurora / Redshift / DocumentDB, and it guarantees zero-downtime rotation through the 4-step lifecycle of AWSPENDING → testSecret → promote to AWSCURRENT. Since it auto-rolls back on testSecret failure, operational safety is high too. A is risky because you'd have to implement the dual-credential pattern yourself. C doesn't automate rotation. D is a security anti-pattern.
 
 ---
 
-**문제 2.** A SaaS company operating 200 microservices wants to centrally manage per-environment configuration (DB host, queue name, feature flags, etc.). Most of it is ordinary configuration, not secrets, and they want to minimize cost. What is the most suitable service?
+**Question 2.** A SaaS company operating 200 microservices wants to centrally manage per-environment configuration (DB host, queue name, feature flags, etc.). Most of it is ordinary configuration, not secrets, and they want to minimize cost. What is the most suitable service?
 
 A) Store everything in Secrets Manager
 B) Parameter Store Standard (free + SecureString support)
 C) CloudHSM
 D) Build your own table in DynamoDB
 
-**정답: B**
+**Answer: B**
 
-해설: The Parameter Store Standard tier is free and supports a hierarchical namespace (`/prod/app/...`) and `GetParametersByPath` bulk lookups. Even if 200 services each hold dozens of configs, the cost is $0. Storing everything in Secrets Manager runs $0.40/secret/month, accumulating into hundreds-to-thousands of dollars. The standard pattern is to split off only real secrets like passwords into Secrets Manager and keep the rest in Parameter Store.
+Explanation: The Parameter Store Standard tier is free and supports a hierarchical namespace (`/prod/app/...`) and `GetParametersByPath` bulk lookups. Even if 200 services each hold dozens of configs, the cost is $0. Storing everything in Secrets Manager runs $0.40/secret/month, accumulating into hundreds-to-thousands of dollars. The standard pattern is to split off only real secrets like passwords into Secrets Manager and keep the rest in Parameter Store.
 
 ---
 
-**문제 3.** A company is running in us-east-1 and is preparing DR to ap-northeast-2. It needs to keep the RDS password identical in both regions, and when it rotates in us-east-1 the change must be reflected in ap-northeast-2 immediately. What is the most suitable approach?
+**Question 3.** A company is running in us-east-1 and is preparing DR to ap-northeast-2. It needs to keep the RDS password identical in both regions, and when it rotates in us-east-1 the change must be reflected in ap-northeast-2 immediately. What is the most suitable approach?
 
 A) Add ap-northeast-2 replication with Secrets Manager Replication
 B) Store it in Parameter Store and sync with cron
 C) Store the secret as a JSON file in S3 and replicate with CRR
 D) Query the us-east-1 secret directly every time
 
-**정답: A**
+**Answer: A**
 
-해설: Secrets Manager multi-region replication (launched 2021) was designed for exactly this scenario. When the source rotates, the replica is automatically updated, and you can call GetSecretValue directly in the replica region, so latency is low too. B requires implementing a sync script yourself. C is an anti-pattern for both security and operations. D has cross-region latency and availability problems.
+Explanation: Secrets Manager multi-region replication (launched 2021) was designed for exactly this scenario. When the source rotates, the replica is automatically updated, and you can call GetSecretValue directly in the replica region, so latency is low too. B requires implementing a sync script yourself. C is an anti-pattern for both security and operations. D has cross-region latency and availability problems.
 
 ---
 
-**문제 4.** A financial company has a regulatory requirement: "no AWS employee may access the key material, and FIPS 140-2 Level 3 certification must be obtained under the company's own name." What is the most suitable service?
+**Question 4.** A financial company has a regulatory requirement: "no AWS employee may access the key material, and FIPS 140-2 Level 3 certification must be obtained under the company's own name." What is the most suitable service?
 
 A) KMS Customer Managed Key
 B) Secrets Manager
 C) CloudHSM
 D) Parameter Store SecureString
 
-**정답: C**
+**Answer: C**
 
-해설: CloudHSM is a single-tenant HSM and its FIPS 140-2 Level 3 certification is obtained under the customer's name. The decisive difference from KMS is that not even AWS employees can access the key material. KMS also runs on HSMs internally, but it's multi-tenant and the certification is under AWS's name. Generally, without regulation this strict, a KMS CMK is more favorable on both cost and operations — but when the requirement is explicit, CloudHSM is the answer.
+Explanation: CloudHSM is a single-tenant HSM and its FIPS 140-2 Level 3 certification is obtained under the customer's name. The decisive difference from KMS is that not even AWS employees can access the key material. KMS also runs on HSMs internally, but it's multi-tenant and the certification is under AWS's name. Generally, without regulation this strict, a KMS CMK is more favorable on both cost and operations — but when the requirement is explicit, CloudHSM is the answer.
 
 ---
 
-**문제 5.** A Lambda function fetches the DB password from Secrets Manager. The secret rotates every 30 days, but the Lambda occasionally calls with the old password and authentication fails. What is the best solution?
+**Question 5.** A Lambda function fetches the DB password from Secrets Manager. The secret rotates every 30 days, but the Lambda occasionally calls with the old password and authentication fails. What is the best solution?
 
 A) Force the Lambda to cold-start every time
 B) Use the AWS Parameters and Secrets Lambda Extension (TTL caching + auto-refresh)
 C) Bake the password directly into a Lambda environment variable
 D) Turn off rotation and manage manually
 
-**정답: B**
+**Answer: B**
 
-해설: The AWS Parameters and Secrets Lambda Extension is the standard tool launched in 2022. It provides a local HTTP cache (localhost:2773) and automatically fetches a new value once the TTL (5 minutes by default) passes. With one line of code you get caching and rotation-handling at the same time. A blows up cost and latency. C is an anti-pattern that contradicts rotation. D gives up rotation's security benefit.
+Explanation: The AWS Parameters and Secrets Lambda Extension is the standard tool launched in 2022. It provides a local HTTP cache (localhost:2773) and automatically fetches a new value once the TTL (5 minutes by default) passes. With one line of code you get caching and rotation-handling at the same time. A blows up cost and latency. C is an anti-pattern that contradicts rotation. D gives up rotation's security benefit.
 
 ---
 
-**문제 6.** A system stored an API key in a Parameter Store SecureString. It needs automatic rotation every 90 days, but you've learned that SecureString has no rotation feature. What is the most appropriate action?
+**Question 6.** A system stored an API key in a Parameter Store SecureString. It needs automatic rotation every 90 days, but you've learned that SecureString has no rotation feature. What is the most appropriate action?
 
 A) Migrate to Secrets Manager + AWS Lambda rotation
 B) Change the SecureString to a plaintext String
 C) Have a Lambda generate a new key daily and directly modify the SecureString (no dual-credential support)
 D) Switch to KMS Multi-Region Keys
 
-**정답: A**
+**Answer: A**
 
-해설: SecureString provides only KMS encryption and has no rotation feature. When automatic rotation is needed, moving to Secrets Manager is the standard, and you can write a custom rotation Lambda yourself or register a rotation function for an external system (e.g., a Stripe API key). C, replacing only the key directly without dual-credential support, causes active calls to fail at rotation time. B and D are unrelated to the problem.
+Explanation: SecureString provides only KMS encryption and has no rotation feature. When automatic rotation is needed, moving to Secrets Manager is the standard, and you can write a custom rotation Lambda yourself or register a rotation function for an external system (e.g., a Stripe API key). C, replacing only the key directly without dual-credential support, causes active calls to fail at rotation time. B and D are unrelated to the problem.
 
 ---
 
-**문제 7.** A company wants to fetch a Secrets Manager secret from an EKS Pod. What is the most recommended approach?
+**Question 7.** A company wants to fetch a Secrets Manager secret from an EKS Pod. What is the most recommended approach?
 
 A) Bake the secret in plaintext into Pod environment variables
 B) IRSA (IAM Roles for Service Accounts) + direct GetSecretValue via the AWS SDK, or mount it with the Secrets Store CSI Driver
 C) Store it in plaintext in a ConfigMap
 D) Grant permissions to all Pods via the Node IAM Role
 
-**정답: B**
+**Answer: B**
 
-해설: IRSA is the standard pattern for scoping IAM permissions per Pod, and the Secrets Store CSI Driver mounts Secrets Manager secrets into the file system so they can be used with no code changes. A and C are security anti-patterns, and D can't separate permissions (every Pod gets the same permissions). The standard recommendation in an EKS environment is the IRSA + CSI Driver combination.
+Explanation: IRSA is the standard pattern for scoping IAM permissions per Pod, and the Secrets Store CSI Driver mounts Secrets Manager secrets into the file system so they can be used with no code changes. A and C are security anti-patterns, and D can't separate permissions (every Pod gets the same permissions). The standard recommendation in an EKS environment is the IRSA + CSI Driver combination.
 
 ---
 

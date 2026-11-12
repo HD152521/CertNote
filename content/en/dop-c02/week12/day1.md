@@ -185,7 +185,7 @@ The next article explores **SSM Automation Runbook** — turning operational pro
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 이벤트를 그 내용(state, pipeline 이름)에 따라 서로 다른 15개 AWS 서비스로 정밀하게 분기해야 한다. 단순 팬아웃이 아니라 콘텐츠 기반 라우팅이 필요하다. 가장 적합한 서비스는?
+**Question 1.** 한 이벤트를 그 내용(state, pipeline 이름)에 따라 서로 다른 15개 AWS 서비스로 정밀하게 분기해야 한다. 단순 팬아웃이 아니라 콘텐츠 기반 라우팅이 필요하다. 가장 적합한 서비스는?
 
 A) SNS 토픽 하나에 모두 구독시킨다
 
@@ -195,13 +195,13 @@ C) SQS 큐를 15개 만들어 직접 분배한다
 
 D) Lambda가 모든 분기 로직을 if-else로 처리
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge Rule은 EIP의 Content-Based Router 패턴 구현으로, 이벤트 JSON의 내용(`source`·`detail-type`·`detail`)을 검사해 서로 다른 Target으로 정밀 분기한다. SNS(A)는 토픽 단위의 거친 팬아웃이라 내용 기반 정밀 라우팅에 약하고(필터 정책으로 일부만 보완), SQS 15개(C)는 발신자가 분배 로직을 떠안아 결합도가 생기며, Lambda if-else(D)는 새 분기를 추가할 때마다 코드를 고쳐야 해 결합도를 끊지 못한다. EventBridge의 핵심 가치는 발신자가 수신자를 모르고, 새 구독자 추가 시 발신자 코드가 0줄 바뀐다는 것이다.
+Explanation: EventBridge Rule은 EIP의 Content-Based Router 패턴 구현으로, 이벤트 JSON의 내용(`source`·`detail-type`·`detail`)을 검사해 서로 다른 Target으로 정밀 분기한다. SNS(A)는 토픽 단위의 거친 팬아웃이라 내용 기반 정밀 라우팅에 약하고(필터 정책으로 일부만 보완), SQS 15개(C)는 발신자가 분배 로직을 떠안아 결합도가 생기며, Lambda if-else(D)는 새 분기를 추가할 때마다 코드를 고쳐야 해 결합도를 끊지 못한다. EventBridge의 핵심 가치는 발신자가 수신자를 모르고, 새 구독자 추가 시 발신자 코드가 0줄 바뀐다는 것이다.
 
 ---
 
-**문제 2.** 매일 새벽 3시 정각에 5만 개의 사용자별 백업 작업이 한꺼번에 실행되면서 다운스트림 시스템이 부하로 무너진다. 표준 해법은?
+**Question 2.** 매일 새벽 3시 정각에 5만 개의 사용자별 백업 작업이 한꺼번에 실행되면서 다운스트림 시스템이 부하로 무너진다. 표준 해법은?
 
 A) cron을 02:59로 당긴다
 
@@ -211,13 +211,13 @@ C) Lambda 동시성 한도를 늘린다
 
 D) 작업을 5개 그룹으로 수동 분할해 각각 다른 cron을 건다
 
-**정답: B**
+**Answer: B**
 
-해설: 모든 작업이 같은 시각에 터지는 thundering herd(쇄도)는 분산 시스템의 고전 문제이며, 해법은 지터(jitter) 주입이다. EventBridge Scheduler의 Flexible Time Window는 "정확히 그 시각"이 아니라 "이 윈도우 안 어디든"으로 실행을 시간축에 퍼뜨려 부하를 분산한다. 같은 원리가 재시도의 exponential backoff with jitter, 캐시 만료 분산에 쓰인다. 시각을 당기거나(A) 동시성을 늘리는 것(C)은 근본 원인인 동시 쇄도를 해결하지 못하고, 수동 분할(D)은 운영 부담만 늘린다.
+Explanation: 모든 작업이 같은 시각에 터지는 thundering herd(쇄도)는 분산 시스템의 고전 문제이며, 해법은 지터(jitter) 주입이다. EventBridge Scheduler의 Flexible Time Window는 "정확히 그 시각"이 아니라 "이 윈도우 안 어디든"으로 실행을 시간축에 퍼뜨려 부하를 분산한다. 같은 원리가 재시도의 exponential backoff with jitter, 캐시 만료 분산에 쓰인다. 시각을 당기거나(A) 동시성을 늘리는 것(C)은 근본 원인인 동시 쇄도를 해결하지 못하고, 수동 분할(D)은 운영 부담만 늘린다.
 
 ---
 
-**문제 3.** SQS 큐의 메시지를 폴링해 이벤트 패턴으로 거르고, 부족한 정보를 외부 API로 보강한 뒤 DynamoDB에 저장하는 흐름을 글루 코드 없이 구성하려 한다. 가장 적합한 것은?
+**Question 3.** SQS 큐의 메시지를 폴링해 이벤트 패턴으로 거르고, 부족한 정보를 외부 API로 보강한 뒤 DynamoDB에 저장하는 흐름을 글루 코드 없이 구성하려 한다. 가장 적합한 것은?
 
 A) Lambda를 직접 작성해 폴링·필터·보강·저장을 모두 처리
 
@@ -227,13 +227,13 @@ C) SNS 팬아웃
 
 D) Kinesis Data Analytics
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge Pipes는 파이프-필터 아키텍처의 구현으로, 폴링이 필요한 소스(SQS/Kinesis/DynamoDB Streams/MSK)를 받아 Filter(이벤트 패턴) → Enrichment(Lambda/Step Functions/API Destination) → Target으로 관리형으로 연결한다. 폴링·배치·에러 처리 같은 배관 코드를 AWS가 흡수하므로, 직접 Lambda를 짜는 것(A) 대비 글루 코드가 사라진다. 또한 Filter 단계가 Enrichment 앞에 있어, 불필요한 이벤트를 비싼 보강 전에 버리는 early filtering(predicate pushdown) 경제학을 제공한다. SNS(C)는 폴링 소스 통합·보강 단계가 없다.
+Explanation: EventBridge Pipes는 파이프-필터 아키텍처의 구현으로, 폴링이 필요한 소스(SQS/Kinesis/DynamoDB Streams/MSK)를 받아 Filter(이벤트 패턴) → Enrichment(Lambda/Step Functions/API Destination) → Target으로 관리형으로 연결한다. 폴링·배치·에러 처리 같은 배관 코드를 AWS가 흡수하므로, 직접 Lambda를 짜는 것(A) 대비 글루 코드가 사라진다. 또한 Filter 단계가 Enrichment 앞에 있어, 불필요한 이벤트를 비싼 보강 전에 버리는 early filtering(predicate pushdown) 경제학을 제공한다. SNS(C)는 폴링 소스 통합·보강 단계가 없다.
 
 ---
 
-**문제 4.** 결제 처리 Lambda의 버그로 6월 1일 새벽 시간대 이벤트가 잘못 처리됐다. 버그를 고친 뒤 그 시간대 이벤트만 재처리하려 한다. 전제로 미리 해뒀어야 할 것과 해법은?
+**Question 4.** 결제 처리 Lambda의 버그로 6월 1일 새벽 시간대 이벤트가 잘못 처리됐다. 버그를 고친 뒤 그 시간대 이벤트만 재처리하려 한다. 전제로 미리 해뒀어야 할 것과 해법은?
 
 A) CloudTrail 로그를 파싱해 이벤트를 수동 재구성
 
@@ -243,13 +243,13 @@ C) DynamoDB 백업에서 복원
 
 D) S3 버전 관리로 롤백
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge Archive는 버스를 지나는 이벤트를 보관하고, Replay로 특정 기간의 이벤트를 다시 버스로 흘려보낸다. 이는 이벤트 소싱의 "이벤트 스트림 리플레이로 재처리"라는 통찰을 빌린 것으로, 버그 수정 후 해당 시간대 이벤트를 재처리하는 전형적 사고 복구 패턴이다. 단, Archive는 사전에 설정돼 있어야 하며 보존 기간 내여야 한다. CloudTrail(A)은 API 호출 감사용이지 이벤트 페이로드 재생용이 아니고, DynamoDB 백업(C)·S3 버전(D)은 이벤트 재처리가 아니라 데이터 상태 복원이다.
+Explanation: EventBridge Archive는 버스를 지나는 이벤트를 보관하고, Replay로 특정 기간의 이벤트를 다시 버스로 흘려보낸다. 이는 이벤트 소싱의 "이벤트 스트림 리플레이로 재처리"라는 통찰을 빌린 것으로, 버그 수정 후 해당 시간대 이벤트를 재처리하는 전형적 사고 복구 패턴이다. 단, Archive는 사전에 설정돼 있어야 하며 보존 기간 내여야 한다. CloudTrail(A)은 API 호출 감사용이지 이벤트 페이로드 재생용이 아니고, DynamoDB 백업(C)·S3 버전(D)은 이벤트 재처리가 아니라 데이터 상태 복원이다.
 
 ---
 
-**문제 5.** EventBridge로 결제 이벤트를 처리하는데, 같은 이벤트가 가끔 두 번 처리돼 이중 청구가 발생한다. 근본 원인과 해법은?
+**Question 5.** EventBridge로 결제 이벤트를 처리하는데, 같은 이벤트가 가끔 두 번 처리돼 이중 청구가 발생한다. 근본 원인과 해법은?
 
 A) EventBridge가 고장났다 — 지원팀에 문의
 
@@ -259,13 +259,13 @@ C) RetryPolicy를 0으로 설정
 
 D) DLQ를 제거
 
-**정답: B**
+**Answer: B**
 
-해설: EventBridge 전달 보장은 at-least-once(최소 1회)로, 분산 시스템 특성상 같은 이벤트가 두 번 전달될 수 있다. 멱등성(f(f(x))=f(x))은 중복 처리를 막는 컨슈머의 책임이다 — 이벤트 ID를 키로 한 멱등성 로직(DynamoDB conditional write, Lambda Powertools Idempotency 등)이 필요하다. RetryPolicy를 0으로(C) 하면 일시 실패 시 이벤트가 유실되고, DLQ 제거(D)는 영구 실패 이벤트를 잃는다. 중복은 버그(A)가 아니라 설계된 동작이다.
+Explanation: EventBridge 전달 보장은 at-least-once(최소 1회)로, 분산 시스템 특성상 같은 이벤트가 두 번 전달될 수 있다. 멱등성(f(f(x))=f(x))은 중복 처리를 막는 컨슈머의 책임이다 — 이벤트 ID를 키로 한 멱등성 로직(DynamoDB conditional write, Lambda Powertools Idempotency 등)이 필요하다. RetryPolicy를 0으로(C) 하면 일시 실패 시 이벤트가 유실되고, DLQ 제거(D)는 영구 실패 이벤트를 잃는다. 중복은 버그(A)가 아니라 설계된 동작이다.
 
 ---
 
-**문제 6.** 여러 워크로드 계정의 이벤트를 보안 계정의 중앙 버스로 모아 조직 전체를 한 곳에서 감지·대응하려 한다. 올바른 구성은?
+**Question 6.** 여러 워크로드 계정의 이벤트를 보안 계정의 중앙 버스로 모아 조직 전체를 한 곳에서 감지·대응하려 한다. 올바른 구성은?
 
 A) 각 계정에서 Lambda로 보안 계정 API를 직접 호출
 
@@ -275,13 +275,13 @@ C) VPC Peering으로 이벤트 전달
 
 D) S3 크로스 계정 복제
 
-**정답: B**
+**Answer: B**
 
-해설: 크로스 계정 이벤트 라우팅은 두 단계다 — 수신 측 버스에 리소스 정책(put-permission)으로 송신 계정의 events:PutEvents를 허용하고, 송신 측은 Rule의 Target을 상대 계정 버스 ARN으로 지정한다. 이렇게 워크로드 계정(spoke)이 중앙 보안 계정 버스(hub)로 이벤트를 보내면 hub-and-spoke 이벤트 메시가 된다. 이는 AWS Organizations의 위임 관리자처럼 관측·권한을 중앙으로 모으되 워크로드는 격리하는 거버넌스 사상이다. VPC Peering(C)은 네트워크 계층이지 이벤트 라우팅이 아니고, S3 복제(D)는 객체 복제다.
+Explanation: 크로스 계정 이벤트 라우팅은 두 단계다 — 수신 측 버스에 리소스 정책(put-permission)으로 송신 계정의 events:PutEvents를 허용하고, 송신 측은 Rule의 Target을 상대 계정 버스 ARN으로 지정한다. 이렇게 워크로드 계정(spoke)이 중앙 보안 계정 버스(hub)로 이벤트를 보내면 hub-and-spoke 이벤트 메시가 된다. 이는 AWS Organizations의 위임 관리자처럼 관측·권한을 중앙으로 모으되 워크로드는 격리하는 거버넌스 사상이다. VPC Peering(C)은 네트워크 계층이지 이벤트 라우팅이 아니고, S3 복제(D)는 객체 복제다.
 
 ---
 
-**문제 7.** Event Pattern `{"detail": {"state": ["FAILED"]}}`에 대한 설명으로 옳은 것은?
+**Question 7.** Event Pattern `{"detail": {"state": ["FAILED"]}}`에 대한 설명으로 옳은 것은?
 
 A) 이벤트 JSON이 이 패턴과 정확히 같아야(완전 일치) 매칭된다
 
@@ -291,9 +291,9 @@ C) state 값을 배열이 아닌 `"FAILED"` 문자열로 써도 동일하게 동
 
 D) 여러 키는 OR, 한 키 안의 배열은 AND로 묶인다
 
-**정답: B**
+**Answer: B**
 
-해설: Event Pattern은 부분 일치(subset match)다 — 패턴에 명시한 필드만 검사하고 이벤트의 나머지 필드는 무시하므로, state가 FAILED이기만 하면 다른 필드가 무엇이든 매칭된다. 값은 항상 배열이어야 하며 `"FAILED"` 문자열(C)은 틀리고 `["FAILED"]` 배열이 맞다. 의미론은 서로 다른 키가 AND(모두 만족), 한 키 안의 배열이 OR(하나만 만족)으로, D의 설명은 정반대다. 완전 일치(A)가 아니라 부분 일치라는 점이 EventBridge 패턴의 핵심이다.
+Explanation: Event Pattern은 부분 일치(subset match)다 — 패턴에 명시한 필드만 검사하고 이벤트의 나머지 필드는 무시하므로, state가 FAILED이기만 하면 다른 필드가 무엇이든 매칭된다. 값은 항상 배열이어야 하며 `"FAILED"` 문자열(C)은 틀리고 `["FAILED"]` 배열이 맞다. 의미론은 서로 다른 키가 AND(모두 만족), 한 키 안의 배열이 OR(하나만 만족)으로, D의 설명은 정반대다. 완전 일치(A)가 아니라 부분 일치라는 점이 EventBridge 패턴의 핵심이다.
 
 ---
 

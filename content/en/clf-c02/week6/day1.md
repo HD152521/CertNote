@@ -90,62 +90,62 @@ Today we compressed the two highest-weighted domains into a single review. Check
 
 ## 📝 Practice Questions
 
-**문제 1.** Which cloud computing model is most appropriate when the user wants to be directly responsible for OS patching and middleware installation?
+**Question 1.** Which cloud computing model is most appropriate when the user wants to be directly responsible for OS patching and middleware installation?
 
 A) SaaS  
 B) IaaS  
 C) PaaS  
 D) FaaS  
 
-**정답: B**  
-해설: IaaS provides only the basic infrastructure such as virtual servers, and the user manages the OS and middleware, giving the greatest control. SaaS provides only finished software to use, and with PaaS you manage only the code while the provider is responsible for the OS, so there's no need to patch it yourself. FaaS is function-level serverless with infrastructure management abstracted away even further.
+**Answer: B**  
+Explanation: IaaS provides only the basic infrastructure such as virtual servers, and the user manages the OS and middleware, giving the greatest control. SaaS provides only finished software to use, and with PaaS you manage only the code while the provider is responsible for the OS, so there's no need to patch it yourself. FaaS is function-level serverless with infrastructure management abstracted away even further.
 
 ---
 
-**문제 2.** What is the most basic unit for building a highly available architecture within a single Region?
+**Question 2.** What is the most basic unit for building a highly available architecture within a single Region?
 
 A) Edge locations  
 B) Distributing across multiple Availability Zones (AZs)  
 C) Distributing across multiple Regions  
 D) A single large instance  
 
-**정답: B**  
-해설: An Availability Zone is a cluster of physically separated data centers within a Region, and distributing across multiple AZs keeps the service running even if one fails. Edge locations are for content caching. Distributing across multiple Regions is a broader scope for disaster recovery and is not the within-a-single-Region configuration the question asks for. A single large instance becomes a single point of failure.
+**Answer: B**  
+Explanation: An Availability Zone is a cluster of physically separated data centers within a Region, and distributing across multiple AZs keeps the service running even if one fails. Edge locations are for content caching. Distributing across multiple Regions is a broader scope for disaster recovery and is not the within-a-single-Region configuration the question asks for. A single large instance becomes a single point of failure.
 
 ---
 
-**문제 3.** Multiple EC2 instances need to mount storage simultaneously and share files. Which storage service is most appropriate?
+**Question 3.** Multiple EC2 instances need to mount storage simultaneously and share files. Which storage service is most appropriate?
 
 A) Amazon EBS  
 B) Amazon S3 Glacier  
 C) Amazon EFS  
 D) Instance store  
 
-**정답: C**  
-해설: EFS is shared file storage that multiple EC2 instances can mount simultaneously. EBS is block storage typically attached to a single instance. S3 Glacier is for long-term archiving, not immediate shared mounting. An instance store is temporary storage whose data disappears when the instance stops.
+**Answer: C**  
+Explanation: EFS is shared file storage that multiple EC2 instances can mount simultaneously. EBS is block storage typically attached to a single instance. S3 Glacier is for long-term archiving, not immediate shared mounting. An instance store is temporary storage whose data disappears when the instance stops.
 
 ---
 
-**문제 4.** Which of the following correctly describes what "trade capital expense for variable expense" means among the advantages of cloud computing?
+**Question 4.** Which of the following correctly describes what "trade capital expense for variable expense" means among the advantages of cloud computing?
 
 A) You pay a fixed monthly fee regardless of usage  
 B) Instead of building a data center up front, you pay only for what you use  
 C) All services are provided free of charge  
 D) You must prepay a full year's cost up front  
 
-**정답: B**  
-해설: The variable expense model means paying only for the resources you actually use, without a large up-front investment. A fixed fee or mandatory prepayment is the opposite of this concept, and the cloud is not free either.
+**Answer: B**  
+Explanation: The variable expense model means paying only for the resources you actually use, without a large up-front investment. A fixed fee or mandatory prepayment is the opposite of this concept, and the cloud is not free either.
 
 ---
 
-**문제 5.** Which service is most appropriate as unlimited-scaling object storage for storing static website files and large backups?
+**Question 5.** Which service is most appropriate as unlimited-scaling object storage for storing static website files and large backups?
 
 A) Amazon RDS  
 B) Amazon EBS  
 C) Amazon S3  
 D) Amazon Redshift  
 
-**정답: C**  
-해설: S3 is object storage suited to storing static files and backups, and it scales virtually without limit. RDS is a relational database, EBS is block storage for EC2, and Redshift is a data warehouse for analytics — none of which are meant for object storage.
+**Answer: C**  
+Explanation: S3 is object storage suited to storing static files and backups, and it scales virtually without limit. RDS is a relational database, EBS is block storage for EC2, and Redshift is a data warehouse for analytics — none of which are meant for object storage.
 
 ---

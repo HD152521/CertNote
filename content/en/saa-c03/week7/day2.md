@@ -181,94 +181,94 @@ In the next article we'll look at a problem that's similar to SNS but on a diffe
 
 ## 📝 Practice Questions
 
-**문제 1.** A company wants an order event to be processed independently by four systems — payment, inventory, shipping, and notification. Even if one system goes down, the processing of the others must be unaffected. What is the most appropriate architecture?
+**Question 1.** A company wants an order event to be processed independently by four systems — payment, inventory, shipping, and notification. Even if one system goes down, the processing of the others must be unaffected. What is the most appropriate architecture?
 
 A) One SQS queue with all four consumers calling ReceiveMessage
 B) One SNS topic + four SQS queue subscriptions (fanout)
 C) Subscribe Lambda to SNS directly four times
 D) DynamoDB Stream → four Lambda triggers
 
-**정답: B**
+**Answer: B**
 
-해설: A single SQS queue delivers one message to only one consumer, so 1:N broadcast is impossible (A eliminated). SNS → multiple SQS fanout is the standard decoupling pattern, where each SQS has its own DLQ, its own visibility timeout, and its own consumers, so one system going down doesn't affect the others. C (direct Lambda subscription) can fan out too, but without a buffer like SQS there's a Lambda throttle risk under traffic spikes, and DLQ is only possible via the SNS subscription DLQ, so partial-failure handling is weak. D requires the separate assumption that order data lives in DynamoDB, and has constraints on the number of stream consumers (KCL shard count = consumer count), making it unsuitable for general fanout.
+Explanation: A single SQS queue delivers one message to only one consumer, so 1:N broadcast is impossible (A eliminated). SNS → multiple SQS fanout is the standard decoupling pattern, where each SQS has its own DLQ, its own visibility timeout, and its own consumers, so one system going down doesn't affect the others. C (direct Lambda subscription) can fan out too, but without a buffer like SQS there's a Lambda throttle risk under traffic spikes, and DLQ is only possible via the SNS subscription DLQ, so partial-failure handling is weak. D requires the separate assumption that order data lives in DynamoDB, and has constraints on the number of stream consumers (KCL shard count = consumer count), making it unsuitable for general fanout.
 
 ---
 
-**문제 2.** The requirement is that "the same customer's payment events must be seen by all subscribers in the same order, exactly once." What is the most appropriate combination?
+**Question 2.** The requirement is that "the same customer's payment events must be seen by all subscribers in the same order, exactly once." What is the most appropriate combination?
 
 A) SNS Standard → multiple SQS Standard
 B) SNS FIFO + ContentBasedDeduplication=true + MessageGroupId=customerId → multiple SQS FIFO
 C) One SQS FIFO with all consumers calling ReceiveMessage
 D) Kinesis Data Streams + Multi-shard
 
-**정답: B**
+**Answer: B**
 
-해설: "All subscribers in the same order" is guaranteed only by the SNS FIFO + SQS FIFO combination. SNS FIFO fixes the publish order at the topic level, and that order propagates identically to all subscribing SQS FIFO queues. With MessageGroupId=customerId, per-customer ordering is guaranteed while parallel processing is still possible across customers. ContentBasedDeduplication is automatic body-hash-based dedup. A has best-effort ordering, so each subscriber can see a different order. C is a work-distribution model where multiple consumers calling ReceiveMessage on one queue each get different messages — it's not fanout. D guarantees ordering only per shard, shard-key design is tricky, and here SNS FIFO is the simpler answer.
+Explanation: "All subscribers in the same order" is guaranteed only by the SNS FIFO + SQS FIFO combination. SNS FIFO fixes the publish order at the topic level, and that order propagates identically to all subscribing SQS FIFO queues. With MessageGroupId=customerId, per-customer ordering is guaranteed while parallel processing is still possible across customers. ContentBasedDeduplication is automatic body-hash-based dedup. A has best-effort ordering, so each subscriber can see a different order. C is a work-distribution model where multiple consumers calling ReceiveMessage on one queue each get different messages — it's not fanout. D guarantees ordering only per shard, shard-key design is tricky, and here SNS FIFO is the simpler answer.
 
 ---
 
-**문제 3.** A single SNS topic is publishing various kinds of events (order/refund/shipping/review). One subscribing Lambda wants to process only "orders + payment amount ≥ 50,000 KRW." How do you implement this while minimizing Lambda invocation cost?
+**Question 3.** A single SNS topic is publishing various kinds of events (order/refund/shipping/review). One subscribing Lambda wants to process only "orders + payment amount ≥ 50,000 KRW." How do you implement this while minimizing Lambda invocation cost?
 
 A) Send all messages to Lambda and filter with if-else inside Lambda
 B) Create a separate topic per event type to split them
 C) Attach a Filter Policy to the subscription for server-side filtering
 D) Store events in DynamoDB first and have Lambda poll
 
-**정답: C**
+**Answer: C**
 
-해설: An SNS Subscription Filter Policy performs matching on the SNS side at publish time, so a message that doesn't match the filter never invokes Lambda at all — invocation cost 0. A policy like `{"event_type":["order_placed"],"amount":[{"numeric":[">=",50000]}]}` can filter on a type + numeric combination. A causes every message to invoke Lambda, exploding cost and accumulating cold starts. B explodes the topic count, increasing management cost as subscriptions, IAM, and alarms all grow. D breaks SNS's push model and regresses to polling — an anti-pattern.
+Explanation: An SNS Subscription Filter Policy performs matching on the SNS side at publish time, so a message that doesn't match the filter never invokes Lambda at all — invocation cost 0. A policy like `{"event_type":["order_placed"],"amount":[{"numeric":[">=",50000]}]}` can filter on a type + numeric combination. A causes every message to invoke Lambda, exploding cost and accumulating cold starts. B explodes the topic count, increasing management cost as subscriptions, IAM, and alarms all grow. D breaks SNS's push model and regresses to polling — an anti-pattern.
 
 ---
 
-**문제 4.** A company sends notifications to an HTTPS endpoint via an SNS topic, and suspects that some messages are being lost due to transient endpoint failures. What is the most appropriate response?
+**Question 4.** A company sends notifications to an HTTPS endpoint via an SNS topic, and suspects that some messages are being lost due to transient endpoint failures. What is the most appropriate response?
 
 A) Change SNS Standard to FIFO
 B) Configure a Subscription DLQ (SQS) on the HTTP subscription to isolate failed messages
 C) Replicate the topic across multiple regions
 D) No additional action needed since SNS retries automatically
 
-**정답: B**
+**Answer: B**
 
-해설: SNS retries HTTPS 5xx with exponential backoff up to 100,015 times (about 23 days), but after that the message is discarded. Configuring a Subscription DLQ routes retry-exhausted messages into an SQS DLQ for post-mortem analysis and reprocessing. A is wrong because FIFO can't have HTTPS subscriptions. C is a way to increase availability but doesn't solve the loss itself. D is partly correct but doesn't prevent the loss of finally-failed messages, making it operationally insufficient.
+Explanation: SNS retries HTTPS 5xx with exponential backoff up to 100,015 times (about 23 days), but after that the message is discarded. Configuring a Subscription DLQ routes retry-exhausted messages into an SQS DLQ for post-mortem analysis and reprocessing. A is wrong because FIFO can't have HTTPS subscriptions. C is a way to increase availability but doesn't solve the loss itself. D is partly correct but doesn't prevent the loss of finally-failed messages, making it operationally insufficient.
 
 ---
 
-**문제 5.** A SaaS company needs to deliver internal company events to 50 external partners via webhook. New partners are added frequently, and each partner receives different kinds of events. What is the most operationally efficient architecture?
+**Question 5.** A SaaS company needs to deliver internal company events to 50 external partners via webhook. New partners are added frequently, and each partner receives different kinds of events. What is the most operationally efficient architecture?
 
 A) Call an HTTP POST directly to each partner from company code
 B) SNS topic + an HTTPS subscription per partner + a Filter Policy on each subscription to branch by event type
 C) Kinesis Data Streams + a KCL consumer per partner
 D) SQS queue + partners calling ReceiveMessage
 
-**정답: B**
+**Answer: B**
 
-해설: When partners are frequently added/removed, the SNS model — where you just manipulate subscriptions with no code change — is most efficient. Different event types per partner is handled by server-side branching with Filter Policy. The company's publish code publishes just once and it auto-fans out to 50. A requires code changes when adding partners + couples them so that a slow response from one partner delays calls to others. C is not a webhook model and has a high barrier since external partners must use the KCL library. D is wrong because a queue is a 1:1 model, so 50 partners = 50 queues + the company has to send 50 times.
+Explanation: When partners are frequently added/removed, the SNS model — where you just manipulate subscriptions with no code change — is most efficient. Different event types per partner is handled by server-side branching with Filter Policy. The company's publish code publishes just once and it auto-fans out to 50. A requires code changes when adding partners + couples them so that a slow response from one partner delays calls to others. C is not a webhook model and has a high barrier since external partners must use the KCL library. D is wrong because a queue is a 1:1 model, so 50 partners = 50 queues + the company has to send 50 times.
 
 ---
 
-**문제 6.** You're publishing events to an SNS FIFO topic, and want some subscribers to receive via SQS FIFO and some via email notification. Is this feasible?
+**Question 6.** You're publishing events to an SNS FIFO topic, and want some subscribers to receive via SQS FIFO and some via email notification. Is this feasible?
 
 A) Yes. SNS FIFO supports subscriptions on all protocols
 B) Partially. SQS FIFO subscription works, but email is not possible on SNS FIFO, so create a separate SNS Standard topic and dual-publish
 C) Yes. Deduplication is automatically applied to the email subscription
 D) No. A FIFO topic can only publish to SQS FIFO, so you have to give up email notifications
 
-**정답: B**
+**Answer: B**
 
-해설: SNS FIFO can only have SQS FIFO and Lambda (2023+) subscriptions. Email/HTTP/Mobile Push are channels where ordering/duplication guarantees inherently break, so SNS FIFO semantics vanish and they aren't supported. If you need email notifications, either create a separate SNS Standard topic and have the publisher dual-publish to both topics, or have a Lambda receive from the SQS FIFO subscription and send email via SES. A is misinformation, C is wrong because SNS FIFO's dedup doesn't even apply to email, and D is an over-conclusion since a workaround pattern exists.
+Explanation: SNS FIFO can only have SQS FIFO and Lambda (2023+) subscriptions. Email/HTTP/Mobile Push are channels where ordering/duplication guarantees inherently break, so SNS FIFO semantics vanish and they aren't supported. If you need email notifications, either create a separate SNS Standard topic and have the publisher dual-publish to both topics, or have a Lambda receive from the SQS FIFO subscription and send email via SES. A is misinformation, C is wrong because SNS FIFO's dedup doesn't even apply to email, and D is an over-conclusion since a workaround pattern exists.
 
 ---
 
-**문제 7.** In a multi-account organization, you want to subscribe to a payment account's SNS topic from a data analytics account's SQS queue. What permission configuration is needed?
+**Question 7.** In a multi-account organization, you want to subscribe to a payment account's SNS topic from a data analytics account's SQS queue. What permission configuration is needed?
 
 A) Allow the analytics account's SQS ARN in the payment account's SNS topic policy + allow the payment account's SNS principal in the analytics account's SQS policy
 B) Just granting a cross-account role to the IAM user
 C) Only setting up an AWS Organizations SCP
 D) Setting up VPC Peering
 
-**정답: A**
+**Answer: A**
 
-해설: Both SNS and SQS have resource-based policies, and cross-account communication requires explicit allows on both sides. Allow the analytics account's SQS as a subscriber in the SNS topic policy, and grant SendMessage permission to the payment account's SNS principal (`sns.amazonaws.com`) in the SQS queue policy. Miss either one and messages won't be delivered — the most common cross-account SNS incident in practice. B is unrelated to user permissions (this is a service-to-service call), C is wrong because an SCP is only a permission boundary and explicit allows are still separately needed, and D is wrong because SNS/SQS are public endpoints so VPC Peering is unnecessary.
+Explanation: Both SNS and SQS have resource-based policies, and cross-account communication requires explicit allows on both sides. Allow the analytics account's SQS as a subscriber in the SNS topic policy, and grant SendMessage permission to the payment account's SNS principal (`sns.amazonaws.com`) in the SQS queue policy. Miss either one and messages won't be delivered — the most common cross-account SNS incident in practice. B is unrelated to user permissions (this is a service-to-service call), C is wrong because an SCP is only a permission boundary and explicit allows are still separately needed, and D is wrong because SNS/SQS are public endpoints so VPC Peering is unnecessary.
 
 ---
 

@@ -299,7 +299,7 @@ The next article explores **ChatOps and Incident Manager** — when humans do ne
 
 ## 📝 Practice Questions
 
-**문제 1.** MAPE-K 루프의 순서와 AWS 서비스 매핑으로 옳은 것은?
+**Question 1.** MAPE-K 루프의 순서와 AWS 서비스 매핑으로 옳은 것은?
 
 A) Monitor(X-Ray) → Analyze(Lambda) → Plan(Automation) → Execute(EventBridge) → Knowledge(Insights)
 
@@ -309,13 +309,13 @@ C) Execute 후 바로 Monitor로 다시 (순환) — Knowledge는 선택 사항
 
 D) Knowledge는 사람 인터뷰이고 Automation화 불가
 
-**정답: B**
+**Answer: B**
 
-해설: MAPE-K는 Monitor(관찰) → Analyze(편차 검사) → Plan(회복 액션 결정) → Execute(수행) → Knowledge(피드백·학습) 순환이다. 각 단계가 AWS 서비스로 구현되며, Knowledge는 CloudWatch Insights(데이터 분석)와 post-mortems(조직 학습)로 반영되어 정책을 개선한다. Knowledge가 없으면 같은 문제로 반복 치유하는 악순환에 빠진다.
+Explanation: MAPE-K는 Monitor(관찰) → Analyze(편차 검사) → Plan(회복 액션 결정) → Execute(수행) → Knowledge(피드백·학습) 순환이다. 각 단계가 AWS 서비스로 구현되며, Knowledge는 CloudWatch Insights(데이터 분석)와 post-mortems(조직 학습)로 반영되어 정책을 개선한다. Knowledge가 없으면 같은 문제로 반복 치유하는 악순환에 빠진다.
 
 ---
 
-**문제 2.** 자동 치유 액션의 안전성 티어 중 "CPU 높음 시 인스턴스 2개 추가 스케일 아웃"은 어느 티어인가?
+**Question 2.** 자동 치유 액션의 안전성 티어 중 "CPU 높음 시 인스턴스 2개 추가 스케일 아웃"은 어느 티어인가?
 
 A) Tier 1 — 상태 없는 서비스 재시작(가장 안전)
 
@@ -325,13 +325,13 @@ C) Tier 3 — Circuit Breaker(의존성 호출 중단)
 
 D) Tier 4 — Failover(상태 보존 서비스)
 
-**정답: B**
+**Answer: B**
 
-해설: 스케일 아웃은 인스턴스 추가로 건강한 인스턴스에 부하를 몰아주는 것으로, 근본 원인(메모리 누수, 비효율 쿼리 등)을 고치지는 않지만 즉시 고객 영향을 줄인다. Blue-green 패턴처럼 시간을 버는 행동이므로 Tier 2다.
+Explanation: 스케일 아웃은 인스턴스 추가로 건강한 인스턴스에 부하를 몰아주는 것으로, 근본 원인(메모리 누수, 비효율 쿼리 등)을 고치지는 않지만 즉시 고객 영향을 줄인다. Blue-green 패턴처럼 시간을 버는 행동이므로 Tier 2다.
 
 ---
 
-**문제 3.** "데이터베이스 Failover를 트리거했는데, 같은 문제로 계속 해서 5번 이상 자동 치유 Automation이 실행되고 있다"는 신고가 들어왔다. 이를 막는 안전망은?
+**Question 3.** "데이터베이스 Failover를 트리거했는데, 같은 문제로 계속 해서 5번 이상 자동 치유 Automation이 실행되고 있다"는 신고가 들어왔다. 이를 막는 안전망은?
 
 A) Automation 코드에 `MaxRetries: 1` 설정
 
@@ -341,13 +341,13 @@ C) Automation을 비활성화
 
 D) Circuit Breaker for Automation 패턴 — Failover 후 헬스 체크 통과 시까지 기다렸다가 통과하면 중단, 통과 못하면 인간에게 에스컬레이션
 
-**정답: B, D**
+**Answer: B, D**
 
-해설: 둘 다 정답이다. B는 동일 이슈에 대한 반복 실행 횟수 상한선(bounded execution count)으로 무한 루프를 막는 것이고, D는 특정 조건(헬스 체크)을 모니터링하다 "이미 회복됐다"고 판단되면 자동 치유 루프를 빠져나오는 Circuit Breaker for Automation 패턴이다. 실제 운영은 둘 다 적용 — 조건 기반 탈출(D) + 타임아웃 안전망(B).
+Explanation: 둘 다 정답이다. B는 동일 이슈에 대한 반복 실행 횟수 상한선(bounded execution count)으로 무한 루프를 막는 것이고, D는 특정 조건(헬스 체크)을 모니터링하다 "이미 회복됐다"고 판단되면 자동 치유 루프를 빠져나오는 Circuit Breaker for Automation 패턴이다. 실제 운영은 둘 다 적용 — 조건 기반 탈출(D) + 타임아웃 안전망(B).
 
 ---
 
-**문제 4.** "월요일 오전 배포 중에 Automation이 서비스를 재시작해서 배포가 롤백됐다"는 인시던트가 발생했다. 이를 방지하려면?
+**Question 4.** "월요일 오전 배포 중에 Automation이 서비스를 재시작해서 배포가 롤백됐다"는 인시던트가 발생했다. 이를 방지하려면?
 
 A) Automation을 이번 주부터 비활성화
 
@@ -357,13 +357,13 @@ C) 배포 후 30분 지나서 모니터링 시작하도록 연체
 
 D) 알람을 비활성화
 
-**정답: B**
+**Answer: B**
 
-해설: Change Calendar는 유지보수/배포 윈도우 같은 "이 기간에는 자동 변경 금지" 정책을 코드로 표현하는 메커니즘이다. Automation이 트리거되기 전에 "지금이 프리즈 기간인가?" 체크하도록 EventBridge rule에 조건을 추가하면 자동화가 배포 중에 간섭하지 않는다.
+Explanation: Change Calendar는 유지보수/배포 윈도우 같은 "이 기간에는 자동 변경 금지" 정책을 코드로 표현하는 메커니즘이다. Automation이 트리거되기 전에 "지금이 프리즈 기간인가?" 체크하도록 EventBridge rule에 조건을 추가하면 자동화가 배포 중에 간섭하지 않는다.
 
 ---
 
-**문제 5.** 자동 치유 Automation이 계속 실패하고 있다. 기하급수적 재시도(exponential backoff)를 적용했을 때 최대 대기 시간 600초(10분)에 도달할 때까지의 대기 스케줄은?
+**Question 5.** 자동 치유 Automation이 계속 실패하고 있다. 기하급수적 재시도(exponential backoff)를 적용했을 때 최대 대기 시간 600초(10분)에 도달할 때까지의 대기 스케줄은?
 
 A) 30s → 60s → 120s → 240s → 480s → 600s (cap 600s)
 
@@ -373,13 +373,13 @@ C) 30s → 90s → 270s → 810s (3배씩)
 
 D) 고정 30s 반복
 
-**정답: A**
+**Answer: A**
 
-해설: Exponential backoff는 보통 2배씩 증가한다. 초기 30s 시작 시 30 → 60 → 120 → 240 → 480 → 960(상한 600으로 cap) 경로다. 이는 transient 에러(일시 네트워크 끊김)에는 빠른 재시도를 주고, persistent 에러(설정 오류)에는 점차 여유를 두면서도 무한 밀려남(thundering herd)을 막는다.
+Explanation: Exponential backoff는 보통 2배씩 증가한다. 초기 30s 시작 시 30 → 60 → 120 → 240 → 480 → 960(상한 600으로 cap) 경로다. 이는 transient 에러(일시 네트워크 끊김)에는 빠른 재시도를 주고, persistent 에러(설정 오류)에는 점차 여유를 두면서도 무한 밀려남(thundering herd)을 막는다.
 
 ---
 
-**문제 6.** AWS Fault Injection Simulator(FIS)에서 "prod 클러스터의 30% Fargate 태스크를 죽이는" 실험을 하는데, 에러율이 갑자기 50%로 치솟으면?
+**Question 6.** AWS Fault Injection Simulator(FIS)에서 "prod 클러스터의 30% Fargate 태스크를 죽이는" 실험을 하는데, 에러율이 갑자기 50%로 치솟으면?
 
 A) 즉시 실험 중단, 원인 파악
 
@@ -389,9 +389,9 @@ C) StopCondition에 "CloudWatch 에러율 > 40% 알람" 등록해 놓으면 자�
 
 D) FIS는 프로덕션에 쓸 수 없다
 
-**정답: C**
+**Answer: C**
 
-해설: FIS는 **통제된 카오스**다. StopCondition(stop-condition)을 미리 지정해 실험이 위험 수준에 도달하면 자동 중단되도록 해야 한다. 50% 에러율이 예상과 다르면 StopCondition이 발동해 태스크 킬링을 멈추고 재해를 방지한다. 이것이 카오스 엔지니어링의 안전 장치이며, 프로덕션에서 자신 있게 할 수 있게 한다.
+Explanation: FIS는 **통제된 카오스**다. StopCondition(stop-condition)을 미리 지정해 실험이 위험 수준에 도달하면 자동 중단되도록 해야 한다. 50% 에러율이 예상과 다르면 StopCondition이 발동해 태스크 킬링을 멈추고 재해를 방지한다. 이것이 카오스 엔지니어링의 안전 장치이며, 프로덕션에서 자신 있게 할 수 있게 한다.
 
 ---
 

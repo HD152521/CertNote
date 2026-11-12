@@ -237,91 +237,91 @@ Next article covers Aurora — RDS compatibility but storage/replication layer r
 
 ## 📝 Practice Questions
 
-**문제 1.** Game company needs global real-time leaderboard: 100M scores instantly sorted, specific user rank queried < 10ms. Most fitting tool?
+**Question 1.** Game company needs global real-time leaderboard: 100M scores instantly sorted, specific user rank queried < 10ms. Most fitting tool?
 
 A) ElastiCache Memcached + client-side sort
 B) ElastiCache Redis Sorted Set (ZADD/ZREVRANK)
 C) DynamoDB GSI
 D) Aurora MySQL + ORDER BY
 
-**정답: B**
+**Answer: B**
 
-해설: Redis Sorted Set designed exactly for this. ZADD O(log N), ZREVRANK/ZRANGE O(log N) — 100M data handled in ~27 comparisons. Internally maintains skip list + hash table, fast both for sort and key lookup. A: Memcached no structures, client loading/sorting impractical. C: DynamoDB GSI N+1 queries, throughput cost. D: Aurora ORDER BY on 100M rows takes minutes.
+Explanation: Redis Sorted Set designed exactly for this. ZADD O(log N), ZREVRANK/ZRANGE O(log N) — 100M data handled in ~27 comparisons. Internally maintains skip list + hash table, fast both for sort and key lookup. A: Memcached no structures, client loading/sorting impractical. C: DynamoDB GSI N+1 queries, throughput cost. D: Aurora ORDER BY on 100M rows takes minutes.
 
 ---
 
-**문제 2.** Biggest Lazy Loading caching strategy downside?
+**Question 2.** Biggest Lazy Loading caching strategy downside?
 
 A) All data cached, memory shortage
 B) Cold miss slow first request, stale data after DB update
 C) Complex implementation
 D) Non-functional on Multi-AZ
 
-**정답: B**
+**Answer: B**
 
-해설: Lazy Loading: ① cold miss slow first request ② cache outside DB updates unknown, returns stale. A reversed — Lazy only caches queried data, memory efficient. C reversed — simplest implementation. D irrelevant. Solution: short TTL + event-based invalidation + write-through combination.
+Explanation: Lazy Loading: ① cold miss slow first request ② cache outside DB updates unknown, returns stale. A reversed — Lazy only caches queried data, memory efficient. C reversed — simplest implementation. D irrelevant. Solution: short TTL + event-based invalidation + write-through combination.
 
 ---
 
-**문제 3.** ALB-backed multi-EC2 app with session sharing issue. Best fix?
+**Question 3.** ALB-backed multi-EC2 app with session sharing issue. Best fix?
 
 A) Enable ALB sticky session
 B) Store sessions in ElastiCache Redis
 C) Local file system session per EC2
 D) S3 session JSON file
 
-**정답: B**
+**Answer: B**
 
-해설: B solves sticky session problems (instance down loses session, load unbalanced). ElastiCache Redis: ms response + Multi-AZ failover + TTL auto-expire. A: short-term only, single instance fail loses all bound sessions. C: other instances can't see (original problem). D: S3 latency 100s ms, cost per call, unsuitable.
+Explanation: B solves sticky session problems (instance down loses session, load unbalanced). ElastiCache Redis: ms response + Multi-AZ failover + TTL auto-expire. A: short-term only, single instance fail loses all bound sessions. C: other instances can't see (original problem). D: S3 latency 100s ms, cost per call, unsuitable.
 
 ---
 
-**문제 4.** ElastiCache Redis Cluster Mode Enabled: `MGET user:1 user:2 user:3` errors "CROSSSLOT Keys in request don't hash to the same slot." Best fix?
+**Question 4.** ElastiCache Redis Cluster Mode Enabled: `MGET user:1 user:2 user:3` errors "CROSSSLOT Keys in request don't hash to the same slot." Best fix?
 
 A) Disable Cluster Mode
 B) Hash tag — rekey to `user:{1}`, `user:{2}` style, same tag per group
 C) MGET → N GET calls
 D) Switch Memcached
 
-**정답: B (A is real alternative)**
+**Answer: B (A is real alternative)**
 
-해설: Multi-key commands need same slot. Hash tag: only `{...}` section hashed, forcing same slot. Example: `cart:{user123}:item1`, `cart:{user123}:item2` both hash on `user123` → same slot. A: Cluster disable sacrifices scale. C: works but round-trip cost, performance drop — pipelining mitigates. D: overkill.
+Explanation: Multi-key commands need same slot. Hash tag: only `{...}` section hashed, forcing same slot. Example: `cart:{user123}:item1`, `cart:{user123}:item2` both hash on `user123` → same slot. A: Cluster disable sacrifices scale. C: works but round-trip cost, performance drop — pipelining mitigates. D: overkill.
 
 ---
 
-**문제 5.** ElastiCache Redis node restart leaves cache empty, DB overwhelmed (thundering herd). Least helpful?
+**Question 5.** ElastiCache Redis node restart leaves cache empty, DB overwhelmed (thundering herd). Least helpful?
 
 A) Multi-AZ enable (replica failover, cache stays)
 B) AOF persistence enable (restore on restart)
 C) Application single-flight pattern (one DB call per key max)
 D) Switch Memcached
 
-**정답: D**
+**Answer: D**
 
-해설: D worsens — Memcached no persistence, no Multi-AZ. Restart fully wipes cache, herd worse. A: Multi-AZ + primary down → replica immediate failover, cache preserved. B: AOF restore capable (ElastiCache limits — Multi-AZ replica preferred). C: app-level defense effective. Exam: "AWS service pick" questions reward knowing what each solves/doesn't.
+Explanation: D worsens — Memcached no persistence, no Multi-AZ. Restart fully wipes cache, herd worse. A: Multi-AZ + primary down → replica immediate failover, cache preserved. B: AOF restore capable (ElastiCache limits — Multi-AZ replica preferred). C: app-level defense effective. Exam: "AWS service pick" questions reward knowing what each solves/doesn't.
 
 ---
 
-**문제 6.** Redis vs Memcached difference, untrue statement?
+**Question 6.** Redis vs Memcached difference, untrue statement?
 
 A) Redis has persistence, Memcached none
 B) Redis offers data structures (List, Hash, Set, Sorted Set), Memcached none
 C) Memcached multithreaded, Redis single-threaded event loop
 D) Memcached supports Multi-AZ auto-failover
 
-**정답: D**
+**Answer: D**
 
-해설: Memcached no Multi-AZ failover. Cluster possible but no auto-failover — client rehashes on node fail. A/B/C all true. ElastiCache exams almost always: "Multi-AZ/persistence/complex structures needed → Redis."
+Explanation: Memcached no Multi-AZ failover. Cluster possible but no auto-failover — client rehashes on node fail. A/B/C all true. ElastiCache exams almost always: "Multi-AZ/persistence/complex structures needed → Redis."
 
 ---
 
-**문제 7.** 1 hour TTL Lazy Loading cache: product price changed but 1 hour shows old price. Best fix?
+**Question 7.** 1 hour TTL Lazy Loading cache: product price changed but 1 hour shows old price. Best fix?
 
 A) Drop TTL from 1h to 5min, hot products shorter
 B) Add Write-Through (update cache on product change)
 C) Abandon cache, Aurora Read Replica direct
 D) Switch Memcached for faster invalidation
 
-**정답: B (A partial)**
+**Answer: B (A partial)**
 
-해설: Core problem: DB updates cache unknown. Write-Through at update API → simultaneously DB + cache, eliminating stale window. A: shortens stale window but incomplete + hit ratio drops. C: cache benefit lost. D: same pattern, unresolved. Production standard: Write-Through + TTL (insurance) together. Robust: CDC/DynamoDB Streams event-based invalidation.
+Explanation: Core problem: DB updates cache unknown. Write-Through at update API → simultaneously DB + cache, eliminating stale window. A: shortens stale window but incomplete + hit ratio drops. C: cache benefit lost. D: same pattern, unresolved. Production standard: Write-Through + TTL (insurance) together. Robust: CDC/DynamoDB Streams event-based invalidation.

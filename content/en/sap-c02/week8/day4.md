@@ -320,87 +320,87 @@ Next day (week recap) consolidates week 8 with 10 comprehensive scenarios.
 
 ## 📝 Practice Questions
 
-**문제 1.** 모바일 앱이 "사용자 + 주문 + 배송지 + 결제" 4개 리소스를 한 화면에 보여준다. 클라이언트가 필요한 필드만 받고, 실시간 주문 상태 push도 받아야 한다. Cognito 인증 필수. 가장 적합한 백엔드는?
+**Question 1.** 모바일 앱이 "사용자 + 주문 + 배송지 + 결제" 4개 리소스를 한 화면에 보여준다. 클라이언트가 필요한 필드만 받고, 실시간 주문 상태 push도 받아야 한다. Cognito 인증 필수. 가장 적합한 백엔드는?
 
 A) REST API Gateway + Lambda + WebSocket API
 B) AppSync GraphQL + Subscription + Cognito User Pool
 C) ALB + ECS Service
 D) GraphQL on Lambda + DynamoDB
 
-**정답: B**
-해설: GraphQL은 클라이언트가 필요 필드만 선언적으로 요청 → overfetch/underfetch 해소. AppSync는 매니지드 GraphQL + WebSocket subscription + Cognito 통합을 한 서비스로 제공. A는 GraphQL이 아니고 클라이언트가 4개 호출을 직접 합쳐야 함. C는 어떤 API 스타일도 결정 안 됨. D는 GraphQL 서버를 직접 운영해야 하고 subscription 구현 부담. 함정: "GraphQL + 실시간 + 모바일 + Cognito" 키워드 조합은 거의 AppSync. 추가: AppSync direct resolver로 DynamoDB 직접 호출하면 Lambda 콜드 스타트 제거.
+**Answer: B**
+Explanation: GraphQL은 클라이언트가 필요 필드만 선언적으로 요청 → overfetch/underfetch 해소. AppSync는 매니지드 GraphQL + WebSocket subscription + Cognito 통합을 한 서비스로 제공. A는 GraphQL이 아니고 클라이언트가 4개 호출을 직접 합쳐야 함. C는 어떤 API 스타일도 결정 안 됨. D는 GraphQL 서버를 직접 운영해야 하고 subscription 구현 부담. 함정: "GraphQL + 실시간 + 모바일 + Cognito" 키워드 조합은 거의 AppSync. 추가: AppSync direct resolver로 DynamoDB 직접 호출하면 Lambda 콜드 스타트 제거.
 
 ---
 
-**문제 2.** 결제 처리 큐 — 순서 보장 + 중복 제거(같은 결제 두 번 처리 방지) + 최대 1,000 TPS. 가장 적합한 구성은?
+**Question 2.** 결제 처리 큐 — 순서 보장 + 중복 제거(같은 결제 두 번 처리 방지) + 최대 1,000 TPS. 가장 적합한 구성은?
 
 A) SQS Standard + idempotency in code
 B) SQS FIFO with content-based deduplication (High Throughput 모드)
 C) Kinesis Data Streams (단일 shard)
 D) SNS Topic + Lambda
 
-**정답: B**
-해설: SQS FIFO는 MessageGroupId 단위 순서 보장 + 5분 중복 제거. 기본 300 TPS이지만 High Throughput 모드로 partition 확장해 3,000+ TPS 가능. Content-based deduplication은 메시지 body 해시로 자동 중복 제거. A는 순서 보장 없음(Standard는 best-effort). C(Kinesis 단일 shard)는 1MB/s = 1,000 records/s 한도이지만 ack·visibility 모델이 결제 워크플로우에 어색하고, 재처리 필요 없는 결제에 과한 도구. D(SNS)는 큐가 아니라 fan-out이라 부적합. 함정: "exactly-once" 표현은 SQS FIFO도 strict하게는 보장 안 됨(5분 dedup window). application 레벨 idempotency 권장.
+**Answer: B**
+Explanation: SQS FIFO는 MessageGroupId 단위 순서 보장 + 5분 중복 제거. 기본 300 TPS이지만 High Throughput 모드로 partition 확장해 3,000+ TPS 가능. Content-based deduplication은 메시지 body 해시로 자동 중복 제거. A는 순서 보장 없음(Standard는 best-effort). C(Kinesis 단일 shard)는 1MB/s = 1,000 records/s 한도이지만 ack·visibility 모델이 결제 워크플로우에 어색하고, 재처리 필요 없는 결제에 과한 도구. D(SNS)는 큐가 아니라 fan-out이라 부적합. 함정: "exactly-once" 표현은 SQS FIFO도 strict하게는 보장 안 됨(5분 dedup window). application 레벨 idempotency 권장.
 
 ---
 
-**문제 3.** 한 이벤트를 5개 다운스트림(분석·CRM·배송·알림·audit)에 각자 처리 속도로 fan-out. 각 다운스트림은 실패 시 재시도 + 격리가 필요. 가장 적합한 구성은?
+**Question 3.** 한 이벤트를 5개 다운스트림(분석·CRM·배송·알림·audit)에 각자 처리 속도로 fan-out. 각 다운스트림은 실패 시 재시도 + 격리가 필요. 가장 적합한 구성은?
 
 A) SNS Topic + 5개 SQS subscription + 각 SQS의 DLQ
 B) Kinesis Data Streams + 5개 Consumer
 C) EventBridge Rule 5개
 D) Lambda chain
 
-**정답: A**
-해설: SNS는 매우 높은 throughput의 fan-out에 최적, SQS subscription으로 각 다운스트림이 자체 폴 속도로 처리 + visibility timeout으로 처리 중복 방지 + DLQ로 영구 실패 격리. B(Kinesis)는 재처리·시계열 분석용이고 fan-out 5개는 SNS가 더 적합·저렴. C(EventBridge)도 가능하지만 단순 fan-out + 높은 처리량에는 SNS가 단가가 낮음. D는 결합도 높음. 함정: "다양한 필터 + 외부 SaaS target"이면 EventBridge, "단순 fan-out + 매우 높은 처리량"이면 SNS. 추가: SNS subscription에 FilterPolicy 적용으로 다운스트림별 필터링 가능.
+**Answer: A**
+Explanation: SNS는 매우 높은 throughput의 fan-out에 최적, SQS subscription으로 각 다운스트림이 자체 폴 속도로 처리 + visibility timeout으로 처리 중복 방지 + DLQ로 영구 실패 격리. B(Kinesis)는 재처리·시계열 분석용이고 fan-out 5개는 SNS가 더 적합·저렴. C(EventBridge)도 가능하지만 단순 fan-out + 높은 처리량에는 SNS가 단가가 낮음. D는 결합도 높음. 함정: "다양한 필터 + 외부 SaaS target"이면 EventBridge, "단순 fan-out + 매우 높은 처리량"이면 SNS. 추가: SNS subscription에 FilterPolicy 적용으로 다운스트림별 필터링 가능.
 
 ---
 
-**문제 4.** 처리 실패 메시지를 5회 시도 후 영구 격리해 운영자가 분석한다. 어떤 구성?
+**Question 4.** 처리 실패 메시지를 5회 시도 후 영구 격리해 운영자가 분석한다. 어떤 구성?
 
 A) Visibility Timeout 길게
 B) SQS DLQ + RedrivePolicy maxReceiveCount=5
 C) Long Polling
 D) Delay Queue 사용
 
-**정답: B**
-해설: DLQ + maxReceiveCount=5는 5회 receive 시도 후 메시지를 DLQ로 자동 이전. DLQ는 별도 SQS이고 운영자가 분석·재처리·삭제. A는 처리 시간 잠금일 뿐 영구 격리 아님. C는 polling 효율화이지 실패 처리 아님. D(Delay Queue)는 새 메시지 지연(0~15분). 함정: maxReceiveCount는 receive 횟수이지 처리 실패 횟수가 아님. 메시지가 폴되었다가 visibility timeout 초과 시 count +1. 추가: DLQ 분석 후 fix 배포되면 redrive로 main 큐에 다시 흘려보냄(2021 콘솔 기능).
+**Answer: B**
+Explanation: DLQ + maxReceiveCount=5는 5회 receive 시도 후 메시지를 DLQ로 자동 이전. DLQ는 별도 SQS이고 운영자가 분석·재처리·삭제. A는 처리 시간 잠금일 뿐 영구 격리 아님. C는 polling 효율화이지 실패 처리 아님. D(Delay Queue)는 새 메시지 지연(0~15분). 함정: maxReceiveCount는 receive 횟수이지 처리 실패 횟수가 아님. 메시지가 폴되었다가 visibility timeout 초과 시 count +1. 추가: DLQ 분석 후 fix 배포되면 redrive로 main 큐에 다시 흘려보냄(2021 콘솔 기능).
 
 ---
 
-**문제 5.** 한 광고 플랫폼이 클릭 스트림을 실시간 집계와 동시에 7일치 raw 데이터를 ML 학습용으로 보존, 재처리 가능. 두 consumer가 서로 latency 영향 없이 동시 처리.
+**Question 5.** 한 광고 플랫폼이 클릭 스트림을 실시간 집계와 동시에 7일치 raw 데이터를 ML 학습용으로 보존, 재처리 가능. 두 consumer가 서로 latency 영향 없이 동시 처리.
 
 A) SQS
 B) Kinesis Data Streams + Enhanced Fan-Out (EFO)
 C) SNS Topic
 D) EventBridge Pipes
 
-**정답: B**
-해설: Kinesis는 재처리 + 다중 소비자 + 7일 보존 모두 지원. EFO는 consumer마다 shard당 2MB/s 전용 + push 모델로 latency 70% 감소. 두 consumer(실시간 집계 Lambda, S3 보존 Firehose)가 서로 throughput 영향 없이 동시. A(SQS)는 1회 소비 + 다중 consumer 불가. C(SNS)는 보존·재처리 없음. D는 단일 source→target 파이프. 함정: "다중 소비자 + 재처리"는 거의 Kinesis. EFO와 standard consumer의 차이는 시험에 자주 출제. 추가: shard 보존 기간은 24h(default)~365d로 설정.
+**Answer: B**
+Explanation: Kinesis는 재처리 + 다중 소비자 + 7일 보존 모두 지원. EFO는 consumer마다 shard당 2MB/s 전용 + push 모델로 latency 70% 감소. 두 consumer(실시간 집계 Lambda, S3 보존 Firehose)가 서로 throughput 영향 없이 동시. A(SQS)는 1회 소비 + 다중 consumer 불가. C(SNS)는 보존·재처리 없음. D는 단일 source→target 파이프. 함정: "다중 소비자 + 재처리"는 거의 Kinesis. EFO와 standard consumer의 차이는 시험에 자주 출제. 추가: shard 보존 기간은 24h(default)~365d로 설정.
 
 ---
 
-**문제 6.** SNS Topic 한 개에 모든 메시지가 publish되고, subscriber마다 특정 속성(type=high)만 받게 한다. 코드 작성 없이.
+**Question 6.** SNS Topic 한 개에 모든 메시지가 publish되고, subscriber마다 특정 속성(type=high)만 받게 한다. 코드 작성 없이.
 
 A) SNS Message Filtering (FilterPolicy)
 B) SQS Visibility Timeout
 C) EventBridge Archive
 D) Kinesis Sharding
 
-**정답: A**
-해설: SNS Message Filtering은 subscription에 FilterPolicy를 지정해 매칭되는 메시지만 받게 함. exact/prefix/anything-but/numeric/IP 등 패턴 지원. 코드 작성 없이 매니지드. B는 처리 잠금이지 필터링 아님. C는 EventBridge 기능이고 SNS와 무관. D는 Kinesis 영역. 함정: SNS의 filtering은 message attribute 기반(혹은 message body 기반, 2020~)이고 EventBridge의 풍부한 JSON 필드 매칭과는 차이. 단순 필터는 SNS, 복잡 매칭은 EventBridge가 답.
+**Answer: A**
+Explanation: SNS Message Filtering은 subscription에 FilterPolicy를 지정해 매칭되는 메시지만 받게 함. exact/prefix/anything-but/numeric/IP 등 패턴 지원. 코드 작성 없이 매니지드. B는 처리 잠금이지 필터링 아님. C는 EventBridge 기능이고 SNS와 무관. D는 Kinesis 영역. 함정: SNS의 filtering은 message attribute 기반(혹은 message body 기반, 2020~)이고 EventBridge의 풍부한 JSON 필드 매칭과는 차이. 단순 필터는 SNS, 복잡 매칭은 EventBridge가 답.
 
 ---
 
-**문제 7.** Lambda Event Source Mapping(SQS source)에서 배치 size=10. 한 메시지가 실패하면 기본 동작은 배치 전체 재시도이지만, 실패한 메시지만 재시도하려면?
+**Question 7.** Lambda Event Source Mapping(SQS source)에서 배치 size=10. 한 메시지가 실패하면 기본 동작은 배치 전체 재시도이지만, 실패한 메시지만 재시도하려면?
 
 A) Visibility Timeout 짧게
 B) ReportBatchItemFailures 활성화 + 함수가 실패 message ID 반환
 C) DLQ에 즉시 보내기
 D) BatchSize=1로 설정
 
-**정답: B**
-해설: ReportBatchItemFailures는 Lambda ESM의 partial batch response 기능. 함수가 `batchItemFailures: [{itemIdentifier: "msg-id-1"}, ...]` 형태로 응답하면, Lambda는 실패한 메시지만 재시도하고 나머지는 ack(큐에서 삭제). 기본 동작(전체 배치 재시도)은 idempotent 안 되면 중복 처리 문제. A는 무관. C는 DLQ는 maxReceiveCount 초과 후. D(BatchSize=1)는 효율 매우 낮음. 함정: "배치 처리 + 부분 실패"는 ReportBatchItemFailures가 답. 추가: Kinesis/DDB Streams ESM도 동일 기능 지원.
+**Answer: B**
+Explanation: ReportBatchItemFailures는 Lambda ESM의 partial batch response 기능. 함수가 `batchItemFailures: [{itemIdentifier: "msg-id-1"}, ...]` 형태로 응답하면, Lambda는 실패한 메시지만 재시도하고 나머지는 ack(큐에서 삭제). 기본 동작(전체 배치 재시도)은 idempotent 안 되면 중복 처리 문제. A는 무관. C는 DLQ는 maxReceiveCount 초과 후. D(BatchSize=1)는 효율 매우 낮음. 함정: "배치 처리 + 부분 실패"는 ReportBatchItemFailures가 답. 추가: Kinesis/DDB Streams ESM도 동일 기능 지원.
 
 ---
 

@@ -138,38 +138,38 @@ aws sns subscribe \
 
 ## 📝 Practice Questions
 
-**문제 1.** API Gateway에서 throttling을 설정하는 목적은?
+**Question 1.** API Gateway에서 throttling을 설정하는 목적은?
 
 A) Lambda 함수 실행 시간 제한  
 B) API 요청 속도 제한으로 DDoS 방어, 비용 제어  
 C) API 응답 캐싱  
 D) CORS 정책 관리  
 
-**정답: B**
-해설: Throttling은 계정당 또는 메서드당 요청률을 제한한다. 악의적 요청 방어 및 Lambda 동시 실행 제한으로 비용 폭발 방지.
+**Answer: B**
+Explanation: Throttling은 계정당 또는 메서드당 요청률을 제한한다. 악의적 요청 방어 및 Lambda 동시 실행 제한으로 비용 폭발 방지.
 
 ---
 
-**문제 2.** 다수의 서로 다른 시스템이 동일한 메시지를 처리해야 한다면?
+**Question 2.** 다수의 서로 다른 시스템이 동일한 메시지를 처리해야 한다면?
 
 A) SQS 큐에 메시지 저장  
 B) SNS 토픽에 발행 후 각 시스템이 구독  
 C) Lambda에서 매번 외부 API 호출  
 D) S3에 메시지 저장  
 
-**정답: B**
-해설: SNS pub/sub 패턴이 한 메시지를 여러 구독자가 독립적으로 수신하는 경우에 적합하다. SQS는 하나의 컨슈머만 메시지를 처리한다.
+**Answer: B**
+Explanation: SNS pub/sub 패턴이 한 메시지를 여러 구독자가 독립적으로 수신하는 경우에 적합하다. SQS는 하나의 컨슈머만 메시지를 처리한다.
 
 ---
 
-**문제 3.** Lambda가 비동기 작업을 처리하고 싶을 때?
+**Question 3.** Lambda가 비동기 작업을 처리하고 싶을 때?
 
 A) API Gateway에서 동기 호출  
 B) SQS 큐 → EventBridge 패턴  
 C) SQS 큐를 Event Source로 Lambda 매핑, 또는 SNS 토픽 구독  
 D) S3 폴링  
 
-**정답: C**
-해설: Lambda Event Source Mapping이 SQS를 폴링하거나 SNS 토픽 구독으로 Lambda를 자동 트리거한다. 비동기 처리의 표준.
+**Answer: C**
+Explanation: Lambda Event Source Mapping이 SQS를 폴링하거나 SNS 토픽 구독으로 Lambda를 자동 트리거한다. 비동기 처리의 표준.
 
 ---

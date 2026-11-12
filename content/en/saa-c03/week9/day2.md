@@ -125,94 +125,94 @@ In the next article, we look at the tool that answers the counterpart to CloudTr
 
 ## 📝 Practice Questions
 
-**문제 1.** A security team wants to track who did GetObject on which objects in a specific sensitive bucket. With CloudTrail's default settings this information isn't visible. What is the correct action?
+**Question 1.** A security team wants to track who did GetObject on which objects in a specific sensitive bucket. With CloudTrail's default settings this information isn't visible. What is the correct action?
 
 A) Enabling only management events makes it visible automatically
 B) Enable CloudTrail Data Events for that bucket
 C) Turn on VPC Flow Logs
 D) Add a Config Rule
 
-**정답: B**
+**Answer: B**
 
-해설: Object-level access like S3 GetObject/PutObject is a data-plane operation, so you must turn on Data Events, which are disabled by default. To prevent cost explosion, the standard is to selectively enable only specific sensitive buckets/prefixes rather than everything. A: management events don't reveal object access. C is only packet metadata, not the object-access action, and D is a configuration-state evaluation, not an access-action record.
+Explanation: Object-level access like S3 GetObject/PutObject is a data-plane operation, so you must turn on Data Events, which are disabled by default. To prevent cost explosion, the standard is to selectively enable only specific sensitive buckets/prefixes rather than everything. A: management events don't reveal object access. C is only packet metadata, not the object-access action, and D is a configuration-state evaluation, not an access-action record.
 
 ---
 
-**문제 2.** An organization received a compliance-audit requirement to "prove that no audit log was tampered with over the past year." Which CloudTrail feature directly satisfies this?
+**Question 2.** An organization received a compliance-audit requirement to "prove that no audit log was tampered with over the past year." Which CloudTrail feature directly satisfies this?
 
 A) KMS encryption alone is sufficient
 B) Log file integrity validation (SHA-256 hash chain + RSA signature)
 C) Enabling Data Events
 D) Delivery to CloudWatch Logs
 
-**정답: B**
+**Answer: B**
 
-해설: Log file integrity validation gathers each log file's SHA-256 hash into an hourly digest, RSA-signs it with AWS's private key, and links the digests into a hash chain. Change even one character of a past log and the hash mismatch detects it instantly, and forging a digest is blocked by the signature. KMS encryption (A) is confidentiality, not proof of integrity. C and D are unrelated to proving integrity.
+Explanation: Log file integrity validation gathers each log file's SHA-256 hash into an hourly digest, RSA-signs it with AWS's private key, and links the digests into a hash chain. Change even one character of a past log and the hash mismatch detects it instantly, and forging a digest is blocked by the signature. KMS encryption (A) is confidentiality, not proof of integrity. C and D are unrelated to proving integrity.
 
 ---
 
-**문제 3.** An organization with dozens of accounts wants "new accounts to be audited automatically, and no team able to turn off their own account's Trail." Which is the most suitable solution?
+**Question 3.** An organization with dozens of accounts wants "new accounts to be audited automatically, and no team able to turn off their own account's Trail." Which is the most suitable solution?
 
 A) Create an individual Trail per account and protect it with an SCP
 B) Create an Organization Trail from the Organizations management account
 C) Config Aggregator
 D) CloudTrail Lake per account
 
-**정답: B**
+**Answer: B**
 
-해설: Create an Organization Trail once from the management account and every member account is automatically included, new accounts automatically join, and because it's owned by the management account, member-account permissions can't turn it off or delete it. This is the standard for multi-account automatic auditing. A carries a heavy operational burden and risk of gaps; C is configuration aggregation, not API auditing; D is an analysis store, not a multi-account automatic-collection mechanism.
+Explanation: Create an Organization Trail once from the management account and every member account is automatically included, new accounts automatically join, and because it's owned by the management account, member-account permissions can't turn it off or delete it. This is the standard for multi-account automatic auditing. A carries a heavy operational burden and risk of gaps; C is configuration aggregation, not API auditing; D is an analysis store, not a multi-account automatic-collection mechanism.
 
 ---
 
-**문제 4.** During an incident analysis you want to check the current state and rule compliance of "which security groups currently have 0.0.0.0/0 inbound." Which is the most suitable tool?
+**Question 4.** During an incident analysis you want to check the current state and rule compliance of "which security groups currently have 0.0.0.0/0 inbound." Which is the most suitable tool?
 
 A) CloudTrail
 B) AWS Config
 C) VPC Flow Logs
 D) CloudTrail Lake
 
-**정답: B**
+**Answer: B**
 
-해설: "What state is it in now and does it comply with the rules" is Config's domain. Config records a resource's current configuration snapshot and evaluates it with Rules. CloudTrail (A) answers the action "who added that rule," Flow Logs (C) is traffic flow, and CloudTrail Lake (D) is SQL analysis of API events. The question's verb is "is (state)," so it's Config.
+Explanation: "What state is it in now and does it comply with the rules" is Config's domain. Config records a resource's current configuration snapshot and evaluates it with Rules. CloudTrail (A) answers the action "who added that rule," Flow Logs (C) is traffic flow, and CloudTrail Lake (D) is SQL analysis of API events. The question's verb is "is (state)," so it's Config.
 
 ---
 
-**문제 5.** A team wants to retain 7 years of CloudTrail events and instantly run, in SQL, a forensic query to "aggregate by region every Decrypt API a specific IAM Role called over the past 3 years." Which is the most suitable solution?
+**Question 5.** A team wants to retain 7 years of CloudTrail events and instantly run, in SQL, a forensic query to "aggregate by region every Decrypt API a specific IAM Role called over the past 3 years." Which is the most suitable solution?
 
 A) Pile logs in S3 and manually define an Athena table each time
 B) A CloudTrail Lake event data store
 C) CloudWatch Logs Insights
 D) Store in a Glacier Vault
 
-**정답: B**
+**Answer: B**
 
-해설: CloudTrail Lake loads events into a dedicated data store, retains them up to 7+ years, and lets you query directly in SQL. It fits the requirement "long-term retention + instant SQL query" exactly. A works but carries heavy setup burden (schema definition, partition management); C is unsuitable for long-term forensics in terms of retention and integration; D is store-only and can't be queried.
+Explanation: CloudTrail Lake loads events into a dedicated data store, retains them up to 7+ years, and lets you query directly in SQL. It fits the requirement "long-term retention + instant SQL query" exactly. A works but carries heavy setup burden (schema definition, partition management); C is unsuitable for long-term forensics in terms of retention and integration; D is store-only and can't be queried.
 
 ---
 
-**문제 6.** A security team wants to detect "an attacker attempting to erase their traces." When an API call that neutralizes CloudTrail itself occurs, they want an alert sent immediately. How?
+**Question 6.** A security team wants to detect "an attacker attempting to erase their traces." When an API call that neutralizes CloudTrail itself occurs, they want an alert sent immediately. How?
 
 A) Check only with a Config Rule
 B) CloudTrail → EventBridge rule (StopLogging/DeleteTrail/PutEventSelectors, etc.) → SNS/Lambda
 C) Analyze S3 Access Logs
 D) Manually check the Trail state daily
 
-**정답: B**
+**Answer: B**
 
-해설: "Audit-neutralizing APIs" like StopLogging, DeleteTrail, UpdateTrail, and PutEventSelectors are also recorded in CloudTrail and delivered to EventBridge in near real time. Match this event pattern with an EventBridge rule and send an instant alert to SNS/Lambda, and the very attempt to turn off logging becomes a detection signal. A and C aren't action-based instant alerting, and D is manual rather than automated, so it's late.
+Explanation: "Audit-neutralizing APIs" like StopLogging, DeleteTrail, UpdateTrail, and PutEventSelectors are also recorded in CloudTrail and delivered to EventBridge in near real time. Match this event pattern with an EventBridge rule and send an instant alert to SNS/Lambda, and the very attempt to turn off logging becomes a detection signal. A and C aren't action-based instant alerting, and D is manual rather than automated, so it's late.
 
 ---
 
-**문제 7.** In one incident, an intruder exfiltrated S3 data with stolen credentials. Which log answers each of the following three questions? (a) Who downloaded the objects (b) The exposed bucket's current public setting (c) The exfiltration traffic's source/destination IPs
+**Question 7.** In one incident, an intruder exfiltrated S3 data with stolen credentials. Which log answers each of the following three questions? (a) Who downloaded the objects (b) The exposed bucket's current public setting (c) The exfiltration traffic's source/destination IPs
 
 A) (a) Config (b) CloudTrail (c) Flow Logs
 B) (a) CloudTrail Data Events (b) Config (c) VPC Flow Logs
 C) All CloudTrail
 D) (a) Flow Logs (b) Config (c) CloudTrail
 
-**정답: B**
+**Answer: B**
 
-해설: (a) The API action of downloading objects is answered by CloudTrail Data Events, (b) the bucket's current public setting and rule compliance by Config, and (c) the actual packet's source/destination/port by VPC Flow Logs. The three logs answer different questions and are used complementarily together in incident analysis. Split the tool by the question's verb ("downloaded / is set / flowed").
+Explanation: (a) The API action of downloading objects is answered by CloudTrail Data Events, (b) the bucket's current public setting and rule compliance by Config, and (c) the actual packet's source/destination/port by VPC Flow Logs. The three logs answer different questions and are used complementarily together in incident analysis. Split the tool by the question's verb ("downloaded / is set / flowed").
 
 ---
 

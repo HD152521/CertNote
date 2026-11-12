@@ -95,62 +95,62 @@ This week's core lesson is simple: **Transformation isn't just changing data—i
 
 ## 📝 Practice Questions
 
-**문제 1.** 다음 중 Glue 크롤러와 Glue ETL Job의 역할을 가장 정확히 구분한 것은?
+**Question 1.** 다음 중 Glue 크롤러와 Glue ETL Job의 역할을 가장 정확히 구분한 것은?
 
 A) 크롤러는 메타데이터(스키마·파티션)를 등록하고, ETL Job은 실제 데이터를 읽어 변환·기록한다  
 B) 크롤러가 데이터를 변환하고, ETL Job은 메타데이터만 등록한다  
 C) 둘 다 동일하며 이름만 다르다  
 D) 크롤러는 데이터를 삭제하고, ETL Job은 백업한다  
 
-**정답: A**  
-해설: 크롤러는 데이터를 변환하지 않고 스키마·파티션 메타데이터만 Catalog에 등록한다. 반면 ETL Job이 소스를 읽어 실제로 변환하고 새 위치에 기록한다. "스키마 알아내기 = 크롤러, 데이터 바꾸기 = ETL Job"이 핵심 구분이다.
+**Answer: A**  
+Explanation: 크롤러는 데이터를 변환하지 않고 스키마·파티션 메타데이터만 Catalog에 등록한다. 반면 ETL Job이 소스를 읽어 실제로 변환하고 새 위치에 기록한다. "스키마 알아내기 = 크롤러, 데이터 바꾸기 = ETL Job"이 핵심 구분이다.
 
 ---
 
-**문제 2.** 다음 요구사항에 가장 비용 효율적인 선택은? "들어오는 JSON을 단순히 형식만 바꿔 S3에 적재하면 되고, 윈도우 집계나 복잡한 분산 변환은 필요 없다."
+**Question 2.** 다음 요구사항에 가장 비용 효율적인 선택은? "들어오는 JSON을 단순히 형식만 바꿔 S3에 적재하면 되고, 윈도우 집계나 복잡한 분산 변환은 필요 없다."
 
 A) Glue ETL Spark Job에 DPU 최대 설정  
 B) EMR 상시 클러스터  
 C) Kinesis Data Firehose + Lambda 변환  
 D) Glue DataBrew 대화식 세션 상시 유지  
 
-**정답: C**  
-해설: 단순 형식 변환 후 S3 적재라면 Firehose + Lambda가 가장 단순하고 저렴하다. Glue Spark Job이나 EMR은 복잡한 분산 변환에 적합하며 이 경우 과한 설계다. DataBrew 세션 상시 유지는 비용만 늘린다. "Glue가 정답이 아닌 경우"의 대표 사례다.
+**Answer: C**  
+Explanation: 단순 형식 변환 후 S3 적재라면 Firehose + Lambda가 가장 단순하고 저렴하다. Glue Spark Job이나 EMR은 복잡한 분산 변환에 적합하며 이 경우 과한 설계다. DataBrew 세션 상시 유지는 비용만 늘린다. "Glue가 정답이 아닌 경우"의 대표 사례다.
 
 ---
 
-**문제 3.** Glue Job 북마크가 동작하지 않아 매번 전체 데이터를 재처리한다. 점검할 항목으로 옳지 않은 것은?
+**Question 3.** Glue Job 북마크가 동작하지 않아 매번 전체 데이터를 재처리한다. 점검할 항목으로 옳지 않은 것은?
 
 A) Job 속성에서 북마크가 Enable되어 있는지  
 B) 소스/싱크에 transformation_ctx가 지정되어 있는지  
 C) 스크립트 끝에 job.commit()이 호출되는지  
 D) Schema Registry 호환성 모드가 FULL인지  
 
-**정답: D**  
-해설: Job 북마크 동작에는 북마크 Enable, transformation_ctx 지정, job.commit() 호출이 필요하다. Schema Registry 호환성 모드는 스트리밍 스키마 검증과 관련될 뿐 배치 Job 북마크와 무관하므로 점검 대상이 아니다.
+**Answer: D**  
+Explanation: Job 북마크 동작에는 북마크 Enable, transformation_ctx 지정, job.commit() 호출이 필요하다. Schema Registry 호환성 모드는 스트리밍 스키마 검증과 관련될 뿐 배치 Job 북마크와 무관하므로 점검 대상이 아니다.
 
 ---
 
-**문제 4.** 데이터의 스키마(형태)와 값(내용) 검증을 담당하는 서비스를 올바르게 짝지은 것은?
+**Question 4.** 데이터의 스키마(형태)와 값(내용) 검증을 담당하는 서비스를 올바르게 짝지은 것은?
 
 A) 스키마 호환성 = Glue Data Quality / 값 유효성 = Schema Registry  
 B) 스키마 호환성 = Schema Registry / 값 유효성(음수·중복·null) = Glue Data Quality  
 C) 둘 다 Glue 크롤러가 담당  
 D) 둘 다 Athena가 담당  
 
-**정답: B**  
-해설: Schema Registry는 스트리밍 데이터의 스키마 호환성(형태)을 강제하고, Glue Data Quality는 DQDL로 값의 유효성(음수 금지, 중복 금지, null 비율 등 내용)을 검증한다. 크롤러는 메타데이터 등록, Athena는 쿼리 엔진으로 둘 다 이 역할을 하지 않는다.
+**Answer: B**  
+Explanation: Schema Registry는 스트리밍 데이터의 스키마 호환성(형태)을 강제하고, Glue Data Quality는 DQDL로 값의 유효성(음수 금지, 중복 금지, null 비율 등 내용)을 검증한다. 크롤러는 메타데이터 등록, Athena는 쿼리 엔진으로 둘 다 이 역할을 하지 않는다.
 
 ---
 
-**문제 5.** 코드를 모르는 분석가가 데이터를 빠르게 프로파일링하고 정제하려 한다. 반면 데이터 엔지니어는 복잡한 조인을 포함한 프로덕션 ETL을 비주얼로 설계하되 일부는 코드로 제어하려 한다. 각각에 맞는 도구는?
+**Question 5.** 코드를 모르는 분석가가 데이터를 빠르게 프로파일링하고 정제하려 한다. 반면 데이터 엔지니어는 복잡한 조인을 포함한 프로덕션 ETL을 비주얼로 설계하되 일부는 코드로 제어하려 한다. 각각에 맞는 도구는?
 
 A) 분석가 = Glue Studio / 엔지니어 = DataBrew  
 B) 분석가 = 크롤러 / 엔지니어 = Schema Registry  
 C) 분석가 = Glue DataBrew / 엔지니어 = Glue Studio  
 D) 분석가 = Athena / 엔지니어 = QuickSight  
 
-**정답: C**  
-해설: 노코드 정제·프로파일링은 분석가용 DataBrew, 비주얼로 프로덕션 ETL을 짜면서 코드 전환이 가능한 것은 엔지니어용 Studio다. A는 둘을 뒤바꿨고, 크롤러·Schema Registry·Athena·QuickSight는 정제/ETL 설계 도구가 아니다.
+**Answer: C**  
+Explanation: 노코드 정제·프로파일링은 분석가용 DataBrew, 비주얼로 프로덕션 ETL을 짜면서 코드 전환이 가능한 것은 엔지니어용 Studio다. A는 둘을 뒤바꿨고, 크롤러·Schema Registry·Athena·QuickSight는 정제/ETL 설계 도구가 아니다.
 
 ---

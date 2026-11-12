@@ -114,112 +114,112 @@ Next week (Week 15): **Comprehensive Scenarios**. Industry-specific cases: enter
 
 ## 📝 Practice Questions
 
-**문제 1.** RTO 5분·RPO 1초·글로벌 SQL DB
+**Question 1.** RTO 5분·RPO 1초·글로벌 SQL DB
 
 A) RDS Multi-AZ
 B) Aurora Global Database
 C) DMS Continuous Replication
 D) Read Replica
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 2.** "운영 중 의도적 장애 주입 + 알람 시 자동 중단"
+**Question 2.** "운영 중 의도적 장애 주입 + 알람 시 자동 중단"
 
 A) Lambda로 수동 EC2 종료
 B) FIS + Stop Condition
 C) Trusted Advisor 모니터링
 D) Resilience Hub 자동 테스트
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 3.** 규제: 백업 7년 + 즉시 변경·삭제 불가 (AWS root도)
+**Question 3.** 규제: 백업 7년 + 즉시 변경·삭제 불가 (AWS root도)
 
 A) S3 Glacier Deep Archive
 B) Backup Vault Compliance Lock
 C) Backup Vault Governance Lock
 D) S3 Object Lock Governance Mode
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 4.** 양 리전 모두 쓰기 가능
+**Question 4.** 양 리전 모두 쓰기 가능
 
 A) Aurora Global (Read-Only Secondary)
 B) DynamoDB Global Tables
 C) RDS Cross-Region Read Replica
 D) DocumentDB Global Cluster
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 5.** 문제 AZ만 즉시 트래픽 제외
+**Question 5.** 문제 AZ만 즉시 트래픽 제외
 
 A) NACL로 차단
 B) Route 53 ARC Zonal Shift
 C) ASG Detach Instance
 D) ALB Connection Draining
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 6.** 온프레미스 VM 200대, AWS 24시간 DR 환경 유지
+**Question 6.** 온프레미스 VM 200대, AWS 24시간 DR 환경 유지
 
 A) Application Migration Service (MGN)
 B) Elastic Disaster Recovery (DRS)
 C) DataSync
 D) Snowball
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 7.** RDS Failover 30초 이내 + standby read 분산
+**Question 7.** RDS Failover 30초 이내 + standby read 분산
 
 A) Multi-AZ Instance
 B) Multi-AZ Cluster
 C) Read Replica
 D) Snapshot 복원
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 8.** DR 격차 자동 식별 + 권고 + CI/CD 통합
+**Question 8.** DR 격차 자동 식별 + 권고 + CI/CD 통합
 
 A) Trusted Advisor
 B) Resilience Hub
 C) WA Tool
 D) Config
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 9.** S3 다중 리전 단일 글로벌 엔드포인트
+**Question 9.** S3 다중 리전 단일 글로벌 엔드포인트
 
 A) CloudFront
 B) S3 Multi-Region Access Point (MRAP)
 C) Route 53 Latency Routing
 D) Global Accelerator
 
-**정답: B**
+**Answer: B**
 
 ---
 
-**문제 10.** "사람이 false positive를 우려해 명시적으로 failover를 결정"
+**Question 10.** "사람이 false positive를 우려해 명시적으로 failover를 결정"
 
 A) Route 53 자동 Health Check Failover
 B) Route 53 ARC Routing Control
 C) Global Accelerator 자동 failover
 D) Lambda 자동 DNS 전환
 
-**정답: B**
+**Answer: B**
 
 ---

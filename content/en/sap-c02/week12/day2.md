@@ -107,7 +107,7 @@ Common SAP exam mappings: (1) "precise type·IOPS·memory recommendations" → *
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 팀이 Compute Optimizer를 활성화했는데 EC2 인스턴스에 대해 CPU 기반 권고만 나오고 메모리 기반 권고가 전혀 없다. 가장 가능성 높은 원인은?
+**Question 1.** 한 팀이 Compute Optimizer를 활성화했는데 EC2 인스턴스에 대해 CPU 기반 권고만 나오고 메모리 기반 권고가 전혀 없다. 가장 가능성 높은 원인은?
 
 A) Compute Optimizer는 메모리를 지원하지 않는다
 
@@ -117,12 +117,12 @@ C) 14일이 지나지 않았다
 
 D) IAM 권한이 부족하다
 
-**정답: B**
-해설: 하이퍼바이저는 게스트 OS 내부의 메모리 사용량을 볼 수 없다(가상화의 시맨틱 갭). 따라서 메모리 메트릭은 CloudWatch Agent를 인스턴스에 설치해야만 수집되며, Agent가 없으면 Nitro가 자동 계측하는 CPU·네트워크·디스크 권고는 나오지만 메모리 권고는 생성되지 않는다. A는 틀림(CO는 메모리 권고 제공). C는 가능성이 있으나 "메모리만 없고 CPU는 나온다"는 단서가 메트릭 종류 문제(특정 메트릭 부재)임을 가리킨다 — 14일 미달이면 CPU 권고도 안 나온다. D도 권고 자체가 아예 안 나올 것이다. 함정: "메모리 권고만 부재"의 정답은 거의 항상 CW Agent 미설치다.
+**Answer: B**
+Explanation: 하이퍼바이저는 게스트 OS 내부의 메모리 사용량을 볼 수 없다(가상화의 시맨틱 갭). 따라서 메모리 메트릭은 CloudWatch Agent를 인스턴스에 설치해야만 수집되며, Agent가 없으면 Nitro가 자동 계측하는 CPU·네트워크·디스크 권고는 나오지만 메모리 권고는 생성되지 않는다. A는 틀림(CO는 메모리 권고 제공). C는 가능성이 있으나 "메모리만 없고 CPU는 나온다"는 단서가 메트릭 종류 문제(특정 메트릭 부재)임을 가리킨다 — 14일 미달이면 CPU 권고도 안 나온다. D도 권고 자체가 아예 안 나올 것이다. 함정: "메모리 권고만 부재"의 정답은 거의 항상 CW Agent 미설치다.
 
 ---
 
-**문제 2.** 운영팀이 수천 대 EC2의 rightsizing을 일회성이 아니라 지속적으로 자동화하려 한다. 권고를 안전하게 적용하는 파이프라인으로 가장 적합한 것은?
+**Question 2.** 운영팀이 수천 대 EC2의 rightsizing을 일회성이 아니라 지속적으로 자동화하려 한다. 권고를 안전하게 적용하는 파이프라인으로 가장 적합한 것은?
 
 A) Trusted Advisor 콘솔에서 매주 수동 검토
 
@@ -132,12 +132,12 @@ C) 모든 권고를 즉시 자동 적용하는 Lambda
 
 D) CloudWatch Alarm으로 CPU 낮으면 자동 종료
 
-**정답: B**
-해설: 지속적·안전한 rightsizing은 CO 권고를 S3로 Export하고 Lambda가 performance risk 낮은 Over-provisioned 권고만 필터링한 뒤, 위험이 낮은 비프로덕션은 자동 적용하고 프로덕션에는 승인 게이트를 둬 적용하는 파이프라인이다. A는 규모에서 검토 속도가 인프라 증가를 못 따라간다. C는 ML 권고를 무비판적으로 적용해 spike 워크로드를 잘못 줄일 위험이 있다. D는 평균 CPU만 보는 단순 룰이라 배치 spike를 죽일 수 있다. 함정: 운영 워크로드에는 반드시 승인 게이트를 두고, 위험도에 따라 자동/수동을 이원화한다.
+**Answer: B**
+Explanation: 지속적·안전한 rightsizing은 CO 권고를 S3로 Export하고 Lambda가 performance risk 낮은 Over-provisioned 권고만 필터링한 뒤, 위험이 낮은 비프로덕션은 자동 적용하고 프로덕션에는 승인 게이트를 둬 적용하는 파이프라인이다. A는 규모에서 검토 속도가 인프라 증가를 못 따라간다. C는 ML 권고를 무비판적으로 적용해 spike 워크로드를 잘못 줄일 위험이 있다. D는 평균 CPU만 보는 단순 룰이라 배치 spike를 죽일 수 있다. 함정: 운영 워크로드에는 반드시 승인 게이트를 두고, 위험도에 따라 자동/수동을 이원화한다.
 
 ---
 
-**문제 3.** ASG로 관리되는 인스턴스들을 Compute Optimizer 권고에 따라 더 작은 타입으로 교체하려 한다. 올바른 방법은?
+**Question 3.** ASG로 관리되는 인스턴스들을 Compute Optimizer 권고에 따라 더 작은 타입으로 교체하려 한다. 올바른 방법은?
 
 A) 각 인스턴스를 stop → ModifyInstanceAttribute → start
 
@@ -147,12 +147,12 @@ C) ASG를 삭제하고 새로 생성
 
 D) 인스턴스를 직접 종료하면 ASG가 알아서 새 타입으로 띄운다
 
-**정답: B**
-해설: ASG 환경에서 인스턴스를 직접 stop/modify하면 ASG가 헬스 체크에서 비정상으로 판단해 종료·재생성하며, 이때 옛 Launch Template의 기존 타입으로 다시 뜬다. 올바른 방법은 Launch Template의 새 버전에 권장 타입을 넣고 Instance Refresh로 MinHealthyPercentage를 지키며 점진적으로 무중단 교체하는 것이다. A는 ASG가 간섭해 실패한다. C는 불필요하게 파괴적이다. D는 기존 Launch Template의 옛 타입으로 다시 띄워져 교체가 안 된다. 함정: "ASG 인스턴스 직접 modify"는 오답이며 Launch Template + Instance Refresh가 정답이다.
+**Answer: B**
+Explanation: ASG 환경에서 인스턴스를 직접 stop/modify하면 ASG가 헬스 체크에서 비정상으로 판단해 종료·재생성하며, 이때 옛 Launch Template의 기존 타입으로 다시 뜬다. 올바른 방법은 Launch Template의 새 버전에 권장 타입을 넣고 Instance Refresh로 MinHealthyPercentage를 지키며 점진적으로 무중단 교체하는 것이다. A는 ASG가 간섭해 실패한다. C는 불필요하게 파괴적이다. D는 기존 Launch Template의 옛 타입으로 다시 띄워져 교체가 안 된다. 함정: "ASG 인스턴스 직접 modify"는 오답이며 Launch Template + Instance Refresh가 정답이다.
 
 ---
 
-**문제 4.** 보안·성능·내결함성·비용·서비스 한도를 아우르는 넓은 점검을 룰 기반으로 빠르게 받고 싶다. 어떤 도구인가?
+**Question 4.** 보안·성능·내결함성·비용·서비스 한도를 아우르는 넓은 점검을 룰 기반으로 빠르게 받고 싶다. 어떤 도구인가?
 
 A) Compute Optimizer
 
@@ -162,12 +162,12 @@ C) CUR
 
 D) X-Ray
 
-**정답: B**
-해설: Trusted Advisor는 Cost·Performance·Security·Fault Tolerance·Service Limits 5개 카테고리를 룰 기반으로 넓게 점검하며, 전체 체크는 Business 이상 Support에서 활성화된다. A(Compute Optimizer)는 컴퓨팅·스토리지를 ML로 좁고 깊게 분석하지 정책·내결함성 전반을 보지 않는다. C(CUR)는 청구 데이터이지 점검 도구가 아니다. D(X-Ray)는 분산 추적이다. 함정: "넓고 얕게 5개 카테고리"는 Trusted Advisor, "좁고 깊게 정밀 권고"는 Compute Optimizer. (참고: Azure는 Azure Advisor, GCP는 Recommender가 대응.)
+**Answer: B**
+Explanation: Trusted Advisor는 Cost·Performance·Security·Fault Tolerance·Service Limits 5개 카테고리를 룰 기반으로 넓게 점검하며, 전체 체크는 Business 이상 Support에서 활성화된다. A(Compute Optimizer)는 컴퓨팅·스토리지를 ML로 좁고 깊게 분석하지 정책·내결함성 전반을 보지 않는다. C(CUR)는 청구 데이터이지 점검 도구가 아니다. D(X-Ray)는 분산 추적이다. 함정: "넓고 얕게 5개 카테고리"는 Trusted Advisor, "좁고 깊게 정밀 권고"는 Compute Optimizer. (참고: Azure는 Azure Advisor, GCP는 Recommender가 대응.)
 
 ---
 
-**문제 5.** 50개 멤버 계정으로 구성된 Organization에서 모든 계정의 rightsizing 권고를 한 화면에서 통합해 보려 한다. 가장 적합한 방법은?
+**Question 5.** 50개 멤버 계정으로 구성된 Organization에서 모든 계정의 rightsizing 권고를 한 화면에서 통합해 보려 한다. 가장 적합한 방법은?
 
 A) 각 계정 콘솔을 순회하며 확인
 
@@ -177,12 +177,12 @@ C) Config Aggregator로 권고 수집
 
 D) Cost Explorer에서 계정별 필터
 
-**정답: B**
-해설: Compute Optimizer를 위임 관리자로 지정하면 Org 전체 멤버 계정의 권고를 중앙에서 집계해 보고 일괄 export·분석할 수 있다. A는 규모에서 비현실적이다. C(Config Aggregator)는 리소스 구성 규정 준수를 모으는 것이지 rightsizing 권고가 아니다. D(Cost Explorer)는 비용 가시화이지 정밀 rightsizing 권고 통합이 아니다. 함정: "여러 계정 rightsizing 권고 통합"은 CO 위임 관리자이며, compliance 통합(Config Aggregator)·비용 통합(Cost Explorer)과 구분해야 한다.
+**Answer: B**
+Explanation: Compute Optimizer를 위임 관리자로 지정하면 Org 전체 멤버 계정의 권고를 중앙에서 집계해 보고 일괄 export·분석할 수 있다. A는 규모에서 비현실적이다. C(Config Aggregator)는 리소스 구성 규정 준수를 모으는 것이지 rightsizing 권고가 아니다. D(Cost Explorer)는 비용 가시화이지 정밀 rightsizing 권고 통합이 아니다. 함정: "여러 계정 rightsizing 권고 통합"은 CO 위임 관리자이며, compliance 통합(Config Aggregator)·비용 통합(Cost Explorer)과 구분해야 한다.
 
 ---
 
-**문제 6.** EBS 볼륨을 gp2에서 gp3로 전환하라는 Compute Optimizer 권고를 받았다. 이 전환의 특징으로 옳은 것은?
+**Question 6.** EBS 볼륨을 gp2에서 gp3로 전환하라는 Compute Optimizer 권고를 받았다. 이 전환의 특징으로 옳은 것은?
 
 A) 볼륨을 분리·재생성해야 하므로 긴 다운타임이 필요하다
 
@@ -192,12 +192,12 @@ C) 인스턴스를 stop해야만 변경된다
 
 D) 데이터가 손실되므로 스냅샷에서 복원해야 한다
 
-**정답: B**
-해설: gp2→gp3 전환은 ModifyVolume API로 볼륨을 떼지 않고 무중단(online)으로 수행되며, gp3는 동일 성능 기준 보통 약 20% 더 저렴하고 IOPS·Throughput을 용량과 독립적으로 설정할 수 있다(gp2는 용량에 IOPS가 연동). A·C는 EC2 타입 변경(stop→modify→start)과 혼동한 것으로, EBS 타입 변경은 인스턴스 중단이 불필요하다. D는 틀림(데이터 보존). 함정: EC2 타입 변경은 중단을 동반하지만 EBS gp2→gp3는 무중단이다.
+**Answer: B**
+Explanation: gp2→gp3 전환은 ModifyVolume API로 볼륨을 떼지 않고 무중단(online)으로 수행되며, gp3는 동일 성능 기준 보통 약 20% 더 저렴하고 IOPS·Throughput을 용량과 독립적으로 설정할 수 있다(gp2는 용량에 IOPS가 연동). A·C는 EC2 타입 변경(stop→modify→start)과 혼동한 것으로, EBS 타입 변경은 인스턴스 중단이 불필요하다. D는 틀림(데이터 보존). 함정: EC2 타입 변경은 중단을 동반하지만 EBS gp2→gp3는 무중단이다.
 
 ---
 
-**문제 7.** 한 워크로드를 더 긴 lookback과 메모리·디스크 I/O를 반영한 정밀 권고로 분석하고 싶다. 계절성(월말 spike)이 있어 14일로는 부족하다. 어떻게 해야 하나?
+**Question 7.** 한 워크로드를 더 긴 lookback과 메모리·디스크 I/O를 반영한 정밀 권고로 분석하고 싶다. 계절성(월말 spike)이 있어 14일로는 부족하다. 어떻게 해야 하나?
 
 A) Trusted Advisor로 전환한다
 
@@ -207,5 +207,5 @@ C) Cost Explorer Forecast를 본다
 
 D) 인스턴스를 더 크게 키운다
 
-**정답: B**
-해설: Compute Optimizer의 enhanced infrastructure metrics를 켜면 추가 메트릭(메모리·디스크 I/O 등)을 반영하고 lookback을 기본 14일에서 최대 93일(3개월)로 확장해 월말 spike 같은 계절성을 반영한 정밀 권고를 얻는다. 활성 리소스 시간당 과금되는 유료 옵션이다. A는 룰 기반이라 계절성 패턴을 못 본다. C는 비용 예측이지 rightsizing 권고가 아니다. D는 문제 해결이 아니다. 함정: "더 긴 기간·계절성 반영 정밀 권고"는 enhanced infrastructure metrics가 단서다.
+**Answer: B**
+Explanation: Compute Optimizer의 enhanced infrastructure metrics를 켜면 추가 메트릭(메모리·디스크 I/O 등)을 반영하고 lookback을 기본 14일에서 최대 93일(3개월)로 확장해 월말 spike 같은 계절성을 반영한 정밀 권고를 얻는다. 활성 리소스 시간당 과금되는 유료 옵션이다. A는 룰 기반이라 계절성 패턴을 못 본다. C는 비용 예측이지 rightsizing 권고가 아니다. D는 문제 해결이 아니다. 함정: "더 긴 기간·계절성 반영 정밀 권고"는 enhanced infrastructure metrics가 단서다.

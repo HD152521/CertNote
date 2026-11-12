@@ -104,94 +104,94 @@ In the next article, we'll look at the **migration tools that actually move data
 
 ## 📝 Practice Questions
 
-**문제 1.** A global SaaS wants to send traffic to the region with the **lowest network latency** for users worldwide. What is the most appropriate Route 53 routing policy?
+**Question 1.** A global SaaS wants to send traffic to the region with the **lowest network latency** for users worldwide. What is the most appropriate Route 53 routing policy?
 
 A) Geolocation
 B) Latency
 C) Weighted
 D) Simple
 
-**정답: B**
+**Answer: B**
 
-해설: Latency routing measures the actual network latency from the user to each region and sends to the fastest region. Geolocation (A) sends by the user's geographic location, but near a border a geographically closer region may be slower on the network, so it doesn't guarantee "lowest latency." Weighted (C) is for weighted distribution (canary/testing), and Simple (D) is a fixed answer that can't optimize latency. The key distinction is "fastest/lowest latency" = Latency, "which country/continent" = Geolocation.
+Explanation: Latency routing measures the actual network latency from the user to each region and sends to the fastest region. Geolocation (A) sends by the user's geographic location, but near a border a geographically closer region may be slower on the network, so it doesn't guarantee "lowest latency." Weighted (C) is for weighted distribution (canary/testing), and Simple (D) is a fixed answer that can't optimize latency. The key distinction is "fastest/lowest latency" = Latency, "which country/continent" = Geolocation.
 
 ---
 
-**문제 2.** A company wants to connect the root domain `example.com` to an Application Load Balancer, but the CNAME setting is rejected. What is the correct solution?
+**Question 2.** A company wants to connect the root domain `example.com` to an Application Load Balancer, but the CNAME setting is rejected. What is the correct solution?
 
 A) Enter the ALB's fixed IP in an A record
 B) Use a Route 53 Alias record
 C) Force-add a CNAME at the zone apex
 D) Change the NS records
 
-**정답: B**
+**Answer: B**
 
-해설: Per the DNS standard, a CNAME can't sit at the zone apex (root domain) — it conflicts with the required SOA and NS records. A Route 53 Alias record behaves like an A record while pointing at an AWS resource like an ALB, bypassing this constraint, and it's free and does health evaluation too. A is impossible because an ALB isn't a fixed IP but dynamic, C is rejected as a standard violation, and D is a delegation record and irrelevant. "Root domain + AWS resource" = Alias.
+Explanation: Per the DNS standard, a CNAME can't sit at the zone apex (root domain) — it conflicts with the required SOA and NS records. A Route 53 Alias record behaves like an A record while pointing at an AWS resource like an ALB, bypassing this constraint, and it's free and does health evaluation too. A is impossible because an ALB isn't a fixed IP but dynamic, C is rejected as a standard violation, and D is a delegation record and irrelevant. "Root domain + AWS resource" = Alias.
 
 ---
 
-**문제 3.** You want to do a canary deployment at the DNS layer, exposing a new application version to only about 10% of all users to detect problems early. What is the appropriate policy?
+**Question 3.** You want to do a canary deployment at the DNS layer, exposing a new application version to only about 10% of all users to detect problems early. What is the appropriate policy?
 
 A) Failover
 B) Weighted (new version 10, existing 90)
 C) Geolocation
 D) Multi-value Answer
 
-**정답: B**
+**Answer: B**
 
-해설: Weighted routing distributes queries by weight ratio, so setting the new version to 10 and the existing to 90 gives a canary where about 10% go to the new version. Failover (A) is Active-Passive switching for DR, Geolocation (C) is location-based, and Multi-value (D) is health-check-based round-robin, not ratio control. But it's worth remembering together that DNS Weighted is per-query + TTL caching so it isn't precise; for per-request fine-grained canaries, an ALB weighted target group is more suitable.
+Explanation: Weighted routing distributes queries by weight ratio, so setting the new version to 10 and the existing to 90 gives a canary where about 10% go to the new version. Failover (A) is Active-Passive switching for DR, Geolocation (C) is location-based, and Multi-value (D) is health-check-based round-robin, not ratio control. But it's worth remembering together that DNS Weighted is per-query + TTL caching so it isn't precise; for per-request fine-grained canaries, an ALB weighted target group is more suitable.
 
 ---
 
-**문제 4.** After setting up Geolocation routing, reports come in that users in some regions can't reach the site at all. What is the most likely cause?
+**Question 4.** After setting up Geolocation routing, reports come in that users in some regions can't reach the site at all. What is the most likely cause?
 
 A) Health Check is disabled
 B) There's no default record for users matching no location rule
 C) The TTL is too long
 D) DNSSEC isn't configured
 
-**정답: B**
+**Answer: B**
 
-해설: Geolocation sends users matching no defined location rule (unregistered region, unknown location) to the default record, and without this default they get no answer at all and connection fails. A disabled Health Check (A) only fails to exclude the unhealthy — different from a total inability to connect; TTL (C) is just caching time and doesn't block reachability; and DNSSEC (D) is integrity verification and irrelevant. Geolocation must always have a default record.
+Explanation: Geolocation sends users matching no defined location rule (unregistered region, unknown location) to the default record, and without this default they get no answer at all and connection fails. A disabled Health Check (A) only fails to exclude the unhealthy — different from a total inability to connect; TTL (C) is just caching time and doesn't block reachability; and DNSSEC (D) is integrity verification and irrelevant. Geolocation must always have a default record.
 
 ---
 
-**문제 5.** Servers in an on-premises data center must be able to resolve a private DNS name inside an AWS VPC (`db.internal.example.com`). What is the appropriate configuration?
+**Question 5.** Servers in an on-premises data center must be able to resolve a private DNS name inside an AWS VPC (`db.internal.example.com`). What is the appropriate configuration?
 
 A) Add records to a Public Hosted Zone
 B) Route 53 Resolver Inbound Endpoint + Private Hosted Zone
 C) Only a Route 53 Resolver Outbound Endpoint
 D) A CloudFront distribution
 
-**정답: B**
+**Answer: B**
 
-해설: AWS-internal private names are defined in a Private Hosted Zone, and for on-premises to resolve those names (on-prem→AWS-direction queries) you need a Route 53 Resolver **Inbound** Endpoint — the on-prem DNS sends queries to this endpoint. An Outbound Endpoint (C) is the reverse, used when AWS resolves on-prem names, so the direction is wrong. A Public Hosted Zone (A) exposes private names to the internet, so it's inappropriate, and CloudFront (D) is a CDN and irrelevant. Direction (Inbound = on-prem→AWS) is the key.
+Explanation: AWS-internal private names are defined in a Private Hosted Zone, and for on-premises to resolve those names (on-prem→AWS-direction queries) you need a Route 53 Resolver **Inbound** Endpoint — the on-prem DNS sends queries to this endpoint. An Outbound Endpoint (C) is the reverse, used when AWS resolves on-prem names, so the direction is wrong. A Public Hosted Zone (A) exposes private names to the internet, so it's inappropriate, and CloudFront (D) is a CDN and irrelevant. Direction (Inbound = on-prem→AWS) is the key.
 
 ---
 
-**문제 6.** A security team wants to prevent **cache poisoning** where DNS answers are tampered with to lure users to a malicious site. What is the appropriate control and its nature?
+**Question 6.** A security team wants to prevent **cache poisoning** where DNS answers are tampered with to lure users to a malicious site. What is the appropriate control and its nature?
 
 A) Enable DNSSEC — attach signatures to answers to verify integrity
 B) Enable DNSSEC — encrypt DNS queries to ensure confidentiality
 C) Switch to a Private Hosted Zone
 D) Set the TTL to 0
 
-**정답: A**
+**Answer: A**
 
-해설: DNSSEC attaches a public-key signature to each DNS answer so the resolver can verify the answer's integrity (untampered and genuinely from the authoritative server), blocking cache poisoning — it solves Integrity in CIA. B is a common misconception: DNSSEC does **not** encrypt queries/answers (confidentiality is the realm of DoH/DoT); it only signs. A Private Hosted Zone (C) is just an internal-only namespace, not tamper-prevention, and TTL 0 (D) only removes caching and can't block a forged answer itself. In Route 53 you must do both Hosted Zone signing and registrar DS registration to complete the chain of trust.
+Explanation: DNSSEC attaches a public-key signature to each DNS answer so the resolver can verify the answer's integrity (untampered and genuinely from the authoritative server), blocking cache poisoning — it solves Integrity in CIA. B is a common misconception: DNSSEC does **not** encrypt queries/answers (confidentiality is the realm of DoH/DoT); it only signs. A Private Hosted Zone (C) is just an internal-only namespace, not tamper-prevention, and TTL 0 (D) only removes caching and can't block a forged answer itself. In Route 53 you must do both Hosted Zone signing and registrar DS registration to complete the chain of trust.
 
 ---
 
-**문제 7.** An architect configured multi-region failover with a Route 53 Failover policy, but even when failover triggers, users keep connecting to the dead region for a while. What is the most appropriate action to make switching faster?
+**Question 7.** An architect configured multi-region failover with a Route 53 Failover policy, but even when failover triggers, users keep connecting to the dead region for a while. What is the most appropriate action to make switching faster?
 
 A) Disable the Health Check
 B) Set the record's TTL short (e.g., 60 seconds), and if faster switching is needed, consider Global Accelerator (anycast)
 C) Change the policy to Geolocation
 D) Switch the Hosted Zone to Private
 
-**정답: B**
+**Answer: B**
 
-해설: The switching speed of DNS-based failover is governed by the record TTL and client caching, so a short TTL lets resolvers pick up the new answer faster. If you need instant switching independent of DNS caching, consider Global Accelerator, which uses a single anycast IP for network-layer routing. Disabling the Health Check (A) removes unhealthy detection and actually blocks failover, Geolocation (C) is location-based and irrelevant to failover speed, and switching to Private (D) is internal DNS unrelated to public failover. TTL is the key variable of DNS failover speed.
+Explanation: The switching speed of DNS-based failover is governed by the record TTL and client caching, so a short TTL lets resolvers pick up the new answer faster. If you need instant switching independent of DNS caching, consider Global Accelerator, which uses a single anycast IP for network-layer routing. Disabling the Health Check (A) removes unhealthy detection and actually blocks failover, Geolocation (C) is location-based and irrelevant to failover speed, and switching to Private (D) is internal DNS unrelated to public failover. TTL is the key variable of DNS failover speed.
 
 ---
 

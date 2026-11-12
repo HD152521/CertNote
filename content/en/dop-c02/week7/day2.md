@@ -148,38 +148,38 @@ aws lambda put-provisioned-concurrency-config \
 
 ## 📝 Practice Questions
 
-**문제 1.** Lambda 함수가 특정 S3 버킷에만 접근해야 한다면?
+**Question 1.** Lambda 함수가 특정 S3 버킷에만 접근해야 한다면?
 
 A) Lambda Execution Role의 IAM Policy에서 S3 버킷 ARN만 명시  
 B) S3 버킷 정책에서 Lambda 함수 허용  
 C) Lambda 콘솔에서 S3 설정  
 D) 환경 변수로 S3 접근 권한 지정  
 
-**정답: A**
-해설: Lambda Execution Role의 IAM Policy에서 특정 S3 버킷 ARN에만 접근 권한을 부여한다. 최소 권한 원칙에 따라 필요한 버킷만 지정해야 한다.
+**Answer: A**
+Explanation: Lambda Execution Role의 IAM Policy에서 특정 S3 버킷 ARN에만 접근 권한을 부여한다. 최소 권한 원칙에 따라 필요한 버킷만 지정해야 한다.
 
 ---
 
-**문제 2.** Lambda 함수 크기가 50MB를 초과한다면 가장 적절한 해결책은?
+**Question 2.** Lambda 함수 크기가 50MB를 초과한다면 가장 적절한 해결책은?
 
 A) Lambda를 여러 함수로 분리  
 B) Container Image 패키지 타입 사용 (10GB까지 지원)  
 C) 의존성을 Lambda Layer로 분리  
 D) EC2로 마이그레이션  
 
-**정답: B**
-해설: Container Image 타입은 10GB 제한으로 대규모 의존성을 지원한다. ZIP 패키지는 50MB 제한이 있으므로 큰 모델이나 복잡한 라이브러리가 필요한 경우 컨테이너 이미지를 선택한다.
+**Answer: B**
+Explanation: Container Image 타입은 10GB 제한으로 대규모 의존성을 지원한다. ZIP 패키지는 50MB 제한이 있으므로 큰 모델이나 복잡한 라이브러리가 필요한 경우 컨테이너 이미지를 선택한다.
 
 ---
 
-**문제 3.** Lambda 함수에 Provisioned Concurrency를 설정하는 목적은?
+**Question 3.** Lambda 함수에 Provisioned Concurrency를 설정하는 목적은?
 
 A) 함수 실행 비용 절감  
 B) Cold start 제거, 일정 수의 인스턴스를 항상 준비 상태로 유지  
 C) 동시 실행 함수 제한  
 D) 함수 메모리 증가  
 
-**정답: B**
-해설: Provisioned Concurrency는 지정된 수의 concurrent execution을 항상 준비 상태 (warm)로 유지한다. Cold start 지연 제거로 일정하고 빠른 응답 보장. 비용 증가 ($0.015/시간)하지만 레이턴시 중요한 서비스에서 사용.
+**Answer: B**
+Explanation: Provisioned Concurrency는 지정된 수의 concurrent execution을 항상 준비 상태 (warm)로 유지한다. Cold start 지연 제거로 일정하고 빠른 응답 보장. 비용 증가 ($0.015/시간)하지만 레이턴시 중요한 서비스에서 사용.
 
 ---

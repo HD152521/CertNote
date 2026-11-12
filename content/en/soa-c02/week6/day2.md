@@ -558,74 +558,74 @@ Post-Deployment Check (daily auto):
 
 ## 📝 Practice Questions
 
-**문제 1.** 운영자가 CloudFormation Stack에서 RDS 인스턴스 클래스를 `db.t3.medium`에서 `db.r5.large`로 업데이트하려 한다. 데이터 손실 없이 안전한지 확인하는 가장 좋은 방법은?
+**Question 1.** 운영자가 CloudFormation Stack에서 RDS 인스턴스 클래스를 `db.t3.medium`에서 `db.r5.large`로 업데이트하려 한다. 데이터 손실 없이 안전한지 확인하는 가장 좋은 방법은?
 
 A) `update-stack`을 실행하고 이벤트를 모니터링한다
 B) RDS 콘솔에서 직접 인스턴스 클래스를 변경한다
 C) Change Set을 생성하고 `describe-change-set`에서 `Replacement` 필드를 확인한다. `False`이면 안전, `True`면 재생성으로 데이터 손실 가능
 D) 먼저 스냅샷을 만들고 `update-stack`을 실행한다
 
-**정답: C**
-해설: Change Set의 핵심 용도가 바로 이것이다. `create-change-set` 후 `describe-change-set`으로 각 리소스의 `Replacement` 필드를 확인한다. RDS 인스턴스 클래스 변경은 일반적으로 `Replacement: False`(인플레이스 업데이트)이지만, Multi-AZ, 엔진 버전, DB Subnet Group 같은 속성과 함께 변경 시 `True`가 될 수 있다. 사전 확인 없이 update-stack을 실행하면(A) 예상치 못한 데이터 손실이 발생할 수 있다.
+**Answer: C**
+Explanation: Change Set의 핵심 용도가 바로 이것이다. `create-change-set` 후 `describe-change-set`으로 각 리소스의 `Replacement` 필드를 확인한다. RDS 인스턴스 클래스 변경은 일반적으로 `Replacement: False`(인플레이스 업데이트)이지만, Multi-AZ, 엔진 버전, DB Subnet Group 같은 속성과 함께 변경 시 `True`가 될 수 있다. 사전 확인 없이 update-stack을 실행하면(A) 예상치 못한 데이터 손실이 발생할 수 있다.
 
 ---
 
-**문제 2.** 운영팀이 CFn으로 관리 중인 보안 그룹에 누군가 콘솔에서 `0.0.0.0/0:22` 규칙을 추가했다. 어떤 도구로 이 변경을 자동으로 감지할 수 있는가?
+**Question 2.** 운영팀이 CFn으로 관리 중인 보안 그룹에 누군가 콘솔에서 `0.0.0.0/0:22` 규칙을 추가했다. 어떤 도구로 이 변경을 자동으로 감지할 수 있는가?
 
 A) CloudWatch Logs Insights로 로그를 검색한다
 B) CloudTrail에서 `AuthorizeSecurityGroupIngress` 이벤트를 찾는다
 C) Drift Detection을 실행하고 보안 그룹 리소스가 `MODIFIED`로 표시되는지 확인한다
 D) AWS Config의 `restricted-ssh` Config Rule을 활성화한다
 
-**정답: C**
-해설: Drift Detection은 CFn Template에 정의된 리소스 상태와 실제 상태를 비교한다. Template에 없는 SG 규칙이 추가됐다면 `MODIFIED` 상태로 감지된다. CloudTrail(B)은 "누가 언제 추가했는가"는 알 수 있지만 현재 상태의 drift를 표시하지 않는다. D의 AWS Config `restricted-ssh` Rule도 SSH 개방을 감지하지만, CFn 관리 리소스와의 drift를 감지하는 것은 Drift Detection이다. 실제 운영에서는 두 가지를 함께 사용한다.
+**Answer: C**
+Explanation: Drift Detection은 CFn Template에 정의된 리소스 상태와 실제 상태를 비교한다. Template에 없는 SG 규칙이 추가됐다면 `MODIFIED` 상태로 감지된다. CloudTrail(B)은 "누가 언제 추가했는가"는 알 수 있지만 현재 상태의 drift를 표시하지 않는다. D의 AWS Config `restricted-ssh` Rule도 SSH 개방을 감지하지만, CFn 관리 리소스와의 drift를 감지하는 것은 Drift Detection이다. 실제 운영에서는 두 가지를 함께 사용한다.
 
 ---
 
-**문제 3.** Stack 업데이트 후 HTTP 5xx 에러율이 급증하면 자동으로 이전 상태로 되돌아가도록 설정하려 한다. 어떤 구성이 필요한가?
+**Question 3.** Stack 업데이트 후 HTTP 5xx 에러율이 급증하면 자동으로 이전 상태로 되돌아가도록 설정하려 한다. 어떤 구성이 필요한가?
 
 A) Lambda 함수로 CloudWatch Alarm을 모니터링하고 `update-stack` API를 역방향으로 호출한다
 B) CodeDeploy와 CloudFormation을 연동한다
 C) `update-stack` 또는 `execute-change-set` 실행 시 `--rollback-configuration`에 CloudWatch Alarm ARN과 `MonitoringTimeInMinutes`를 설정한다
 D) CloudFormation 콘솔에서 "Auto Rollback" 체크박스를 활성화한다
 
-**정답: C**
-해설: Rollback Configuration이 정확한 기능이다. `RollbackTriggers` 배열에 CloudWatch Alarm ARN을 지정하고 `MonitoringTimeInMinutes`(1~180분)를 설정한다. 업데이트 완료 후 모니터링 기간 동안 지정된 알람 중 하나라도 ALARM 상태가 되면 자동으로 `UPDATE_ROLLBACK_IN_PROGRESS`가 시작된다. 최대 5개 알람을 트리거로 지정할 수 있다.
+**Answer: C**
+Explanation: Rollback Configuration이 정확한 기능이다. `RollbackTriggers` 배열에 CloudWatch Alarm ARN을 지정하고 `MonitoringTimeInMinutes`(1~180분)를 설정한다. 업데이트 완료 후 모니터링 기간 동안 지정된 알람 중 하나라도 ALARM 상태가 되면 자동으로 `UPDATE_ROLLBACK_IN_PROGRESS`가 시작된다. 최대 5개 알람을 트리거로 지정할 수 있다.
 
 ---
 
-**문제 4.** 콘솔에서 수동으로 만든 S3 버킷 3개를 삭제하지 않고 기존 CloudFormation Stack의 관리하에 두고 싶다. 어떻게 해야 하는가?
+**Question 4.** 콘솔에서 수동으로 만든 S3 버킷 3개를 삭제하지 않고 기존 CloudFormation Stack의 관리하에 두고 싶다. 어떻게 해야 하는가?
 
 A) Stack Policy로 버킷을 추가한다
 B) Template에 버킷 리소스를 추가하고 `update-stack`을 실행한다
 C) `change-set-type: IMPORT`와 함께 Change Set을 생성하고, 각 버킷의 실제 이름으로 `ResourceIdentifier`를 지정한다. Template의 해당 리소스에는 `DeletionPolicy: Retain`이 필요하다
 D) 직접 리소스를 만든 것이므로 불가능하다
 
-**정답: C**
-해설: Resource Import 기능이 정확히 이 용도다. `ChangeSetType=IMPORT`로 Change Set을 만들고, 각 기존 리소스를 Template의 Logical ID에 매핑한다. 중요: Template에서 해당 리소스에 `DeletionPolicy: Retain`이 설정되어야 한다(없으면 import 거부). B는 기존 버킷이 아니라 새 버킷을 만드는 것이다.
+**Answer: C**
+Explanation: Resource Import 기능이 정확히 이 용도다. `ChangeSetType=IMPORT`로 Change Set을 만들고, 각 기존 리소스를 Template의 Logical ID에 매핑한다. 중요: Template에서 해당 리소스에 `DeletionPolicy: Retain`이 설정되어야 한다(없으면 import 거부). B는 기존 버킷이 아니라 새 버킷을 만드는 것이다.
 
 ---
 
-**문제 5.** Stack `UPDATE_ROLLBACK_FAILED` 상태다. 롤백 실패의 원인이 특정 리소스(LogicalId: `LegacyDatabase`)의 의존성 문제임을 파악했다. 어떻게 복구하는가?
+**Question 5.** Stack `UPDATE_ROLLBACK_FAILED` 상태다. 롤백 실패의 원인이 특정 리소스(LogicalId: `LegacyDatabase`)의 의존성 문제임을 파악했다. 어떻게 복구하는가?
 
 A) `delete-stack`을 실행한다
 B) `create-change-set`으로 새 변경을 시도한다
 C) `continue-update-rollback`을 실행하고 `LegacyDatabase`를 `--resources-to-skip`에 추가한다
 D) AWS Support에 문의한다
 
-**정답: C**
-해설: `UPDATE_ROLLBACK_FAILED` 상태는 `continue-update-rollback` 명령으로 복구 가능하다. `--resources-to-skip` 옵션으로 문제가 있는 리소스를 건너뛰고 나머지 롤백을 완료할 수 있다. Skip된 리소스는 완료 후 수동으로 정리해야 한다. `delete-stack`(A)은 실패 가능성이 높고, 새 Change Set(B)은 이 상태에서 불가능하다.
+**Answer: C**
+Explanation: `UPDATE_ROLLBACK_FAILED` 상태는 `continue-update-rollback` 명령으로 복구 가능하다. `--resources-to-skip` 옵션으로 문제가 있는 리소스를 건너뛰고 나머지 롤백을 완료할 수 있다. Skip된 리소스는 완료 후 수동으로 정리해야 한다. `delete-stack`(A)은 실패 가능성이 높고, 새 Change Set(B)은 이 상태에서 불가능하다.
 
 ---
 
-**문제 6.** Rollback Trigger에서 CloudWatch Alarm의 `treat-missing-data`를 어떤 값으로 설정해야 하는가? 배포 직후 메트릭 데이터가 없을 때 불필요한 롤백을 방지하려면?
+**Question 6.** Rollback Trigger에서 CloudWatch Alarm의 `treat-missing-data`를 어떤 값으로 설정해야 하는가? 배포 직후 메트릭 데이터가 없을 때 불필요한 롤백을 방지하려면?
 
 A) `breaching` - 데이터 없으면 ALARM으로 처리
 B) `notBreaching` - 데이터 없으면 OK로 처리
 C) `ignore` - 데이터 없으면 이전 상태 유지
 D) `missing` - 데이터 없으면 INSUFFICIENT_DATA로 처리
 
-**정답: B**
-해설: Rollback Trigger용 알람은 `treat-missing-data: notBreaching`으로 설정해야 한다. 배포 직후에는 메트릭 데이터가 아직 수집되지 않을 수 있어 INSUFFICIENT_DATA 상태가 될 수 있다. `breaching`으로 설정하면 데이터 없음 = ALARM으로 처리되어 정상 배포인데도 불필요한 롤백이 발생한다. `notBreaching`으로 설정하면 데이터 없음 = OK로 처리되어 실제 이상이 있을 때만 롤백된다.
+**Answer: B**
+Explanation: Rollback Trigger용 알람은 `treat-missing-data: notBreaching`으로 설정해야 한다. 배포 직후에는 메트릭 데이터가 아직 수집되지 않을 수 있어 INSUFFICIENT_DATA 상태가 될 수 있다. `breaching`으로 설정하면 데이터 없음 = ALARM으로 처리되어 정상 배포인데도 불필요한 롤백이 발생한다. `notBreaching`으로 설정하면 데이터 없음 = OK로 처리되어 실제 이상이 있을 때만 롤백된다.
 
 ---

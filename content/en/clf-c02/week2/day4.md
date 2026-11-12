@@ -102,62 +102,62 @@ Tomorrow we'll tie the Core Services 1 we learned this week (compute, storage, n
 
 ## 📝 Practice Questions
 
-**문제 1.** To deliver images and videos to users worldwide with low latency, you want to cache content at outposts close to users. Which service is the best fit?
+**Question 1.** To deliver images and videos to users worldwide with low latency, you want to cache content at outposts close to users. Which service is the best fit?
 
 A) Amazon Route 53  
 B) Amazon CloudFront  
 C) Amazon EBS  
 D) AWS Lambda  
 
-**정답: B**  
-해설: CloudFront is AWS's CDN, caching content at edge locations worldwide to deliver it quickly from a location near the user. Route 53 is a DNS (name → address) service, EBS is block storage, and Lambda is serverless compute — all with roles different from content caching and delivery.
+**Answer: B**  
+Explanation: CloudFront is AWS's CDN, caching content at edge locations worldwide to deliver it quickly from a location near the user. Route 53 is a DNS (name → address) service, EBS is block storage, and Lambda is serverless compute — all with roles different from content caching and delivery.
 
 ---
 
-**문제 2.** Which AWS service connects a domain name a user entered (`example.com`) to an actual IP address or AWS resource?
+**Question 2.** Which AWS service connects a domain name a user entered (`example.com`) to an actual IP address or AWS resource?
 
 A) Amazon CloudFront  
 B) Amazon S3  
 C) Amazon Route 53  
 D) Amazon VPC  
 
-**정답: C**  
-해설: Route 53 is AWS's DNS service, which translates (routes) a domain name into an IP address or AWS resource and also provides domain registration and health checks. CloudFront is content delivery (CDN), S3 is object storage, and VPC is a virtual network — none of which is the agent of name-to-address translation.
+**Answer: C**  
+Explanation: Route 53 is AWS's DNS service, which translates (routes) a domain name into an IP address or AWS resource and also provides domain registration and health checks. CloudFront is content delivery (CDN), S3 is object storage, and VPC is a virtual network — none of which is the agent of name-to-address translation.
 
 ---
 
-**문제 3.** You have servers in the U.S. and Europe, and you want to automatically connect each user to the region with the fastest response. Which Route 53 routing policy is the best fit?
+**Question 3.** You have servers in the U.S. and Europe, and you want to automatically connect each user to the region with the fastest response. Which Route 53 routing policy is the best fit?
 
 A) Simple routing  
 B) Latency-based routing  
 C) Weighted routing  
 D) Failover routing  
 
-**정답: B**  
-해설: Latency-based routing is a policy that sends traffic to the region with the fastest response for the user, well-suited to reducing latency in multi-region deployments. Simple routing sends to only one target, weighted distributes by ratio, and failover is for primary/standby switching — none of which meets the "fastest region" condition.
+**Answer: B**  
+Explanation: Latency-based routing is a policy that sends traffic to the region with the fastest response for the user, well-suited to reducing latency in multi-region deployments. Simple routing sends to only one target, weighted distributes by ratio, and failover is for primary/standby switching — none of which meets the "fastest region" condition.
 
 ---
 
-**문제 4.** Which is the most accurate description of an Edge Location?
+**Question 4.** Which is the most accurate description of an Edge Location?
 
 A) A large data center identical to a Region or Availability Zone  
 B) An outpost, widely distributed worldwide, that caches content to deliver it close to users  
 C) Dedicated storage for permanently storing databases  
 D) The basic unit for running EC2 instances  
 
-**정답: B**  
-해설: An edge location is an outpost, far smaller and far more widely distributed than a Region or AZ, for caching content and delivering it close to users. It is not a large data center identical to a Region or AZ (A is wrong), nor a permanent data store (C) or an EC2 execution unit (D).
+**Answer: B**  
+Explanation: An edge location is an outpost, far smaller and far more widely distributed than a Region or AZ, for caching content and delivering it close to users. It is not a large data center identical to a Region or AZ (A is wrong), nor a permanent data store (C) or an EC2 execution unit (D).
 
 ---
 
-**문제 5.** Which most accurately distinguishes the roles of CloudFront and Route 53?
+**Question 5.** Which most accurately distinguishes the roles of CloudFront and Route 53?
 
 A) Both translate a domain name into an IP  
 B) CloudFront caches and delivers content, and Route 53 translates a domain name into an address  
 C) CloudFront is DNS and Route 53 is a CDN  
 D) Both provide block storage  
 
-**정답: B**  
-해설: CloudFront is a CDN that caches content at the edge to deliver it fast, and Route 53 is a DNS that translates a domain name into an address. C, which describes the roles reversed, is wrong, and neither A ("both translate a name into an IP") nor D ("both provide block storage") is true.
+**Answer: B**  
+Explanation: CloudFront is a CDN that caches content at the edge to deliver it fast, and Route 53 is a DNS that translates a domain name into an address. C, which describes the roles reversed, is wrong, and neither A ("both translate a name into an IP") nor D ("both provide block storage") is true.
 
 ---

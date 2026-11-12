@@ -88,7 +88,7 @@ SAP exam frequent mappings: (1) "EC2+Fargate+Lambda unified discount" → **Comp
 
 [Exercise questions 1-7 preserved exactly as in Korean source - not translated per requirement]
 
-**문제 1.** 한 회사가 EC2, Fargate, Lambda를 모두 사용하며 인스턴스 family를 워크로드에 따라 자주 바꾼다. 1년 약정으로 최대한 넓게 할인을 적용하고 싶다. 가장 적합한 것은?
+**Question 1.** 한 회사가 EC2, Fargate, Lambda를 모두 사용하며 인스턴스 family를 워크로드에 따라 자주 바꾼다. 1년 약정으로 최대한 넓게 할인을 적용하고 싶다. 가장 적합한 것은?
 
 A) Standard RI (m5 family)
 
@@ -98,7 +98,7 @@ C) Compute Savings Plans
 
 D) Zonal RI
 
-**정답: C**
+**Answer: C**
 
 **해설:** Compute SP는 EC2·Fargate·Lambda를 모두 포괄하고 리전·OS·family·tenancy 무관하게 시간당 약정 금액 내 사용에 자동으로 할인을 적용한다. family를 자주 바꾸는 워크로드에 정확히 맞는다. A는 family에 묶여 변경 시 약정이 놀고 Fargate·Lambda를 못 덮는다. B는 특정 리전·family 고정이라 "family를 자주 바꾼다"는 요건과 충돌한다. D는 특정 AZ 용량 예약 목적이지 다양한 컴퓨팅 통합 할인이 아니다. 함정: "Fargate·Lambda 포함"은 오직 Compute SP만 가능하다.
 

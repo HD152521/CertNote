@@ -109,62 +109,62 @@ Next week (Week 10) shifts to Domain 4 — actually **deploying, operating, moni
 
 ## 📝 Practice Questions
 
-**문제 1.** 클래스가 95:5로 불균형한 이탈 예측 문제에서 모델을 평가하려 한다. 다음 중 가장 부적절한 평가 방식은?
+**Question 1.** 클래스가 95:5로 불균형한 이탈 예측 문제에서 모델을 평가하려 한다. 다음 중 가장 부적절한 평가 방식은?
 
 A) F1 점수를 본다  
 B) PR 곡선의 AUC를 본다  
 C) 단순 정확도(Accuracy)만으로 판단한다  
 D) 재현율과 정밀도를 함께 본다  
 
-**정답: C**  
-해설: 불균형 데이터에서 정확도는 다수 클래스만 맞혀도 높게 나와 모델 성능을 과대평가하므로 단독 판단은 부적절하다. F1(A)·PR-AUC(B)·정밀도/재현율(D)은 불균형에 적합한 지표다.
+**Answer: C**  
+Explanation: 불균형 데이터에서 정확도는 다수 클래스만 맞혀도 높게 나와 모델 성능을 과대평가하므로 단독 판단은 부적절하다. F1(A)·PR-AUC(B)·정밀도/재현율(D)은 불균형에 적합한 지표다.
 
 ---
 
-**문제 2.** 여러 후보 분류 모델을 임계값과 무관하게 변별력으로 비교한 뒤, 운영 임계값은 FP/FN 비용에 맞춰 따로 정하려 한다. 올바른 접근은?
+**Question 2.** 여러 후보 분류 모델을 임계값과 무관하게 변별력으로 비교한 뒤, 운영 임계값은 FP/FN 비용에 맞춰 따로 정하려 한다. 올바른 접근은?
 
 A) 모든 모델을 임계값 0.5의 정확도로만 비교한다  
 B) AUC로 모델을 고르고, 임계값은 곡선 위에서 기대비용이 최소인 지점으로 사후 결정한다  
 C) 임계값을 먼저 0.9로 고정하고 모델을 고른다  
 D) RMSE로 분류 모델을 비교한다  
 
-**정답: B**  
-해설: AUC는 임계값-무관 변별력 비교에 적합하고, 운영 임계값은 비용 구조에 맞춰 곡선 위에서 사후에 정하는 2단계 분리가 정석이다. 0.5 정확도(A)·임계값 선고정(C)은 비용을 무시하고, RMSE(D)는 회귀 지표다.
+**Answer: B**  
+Explanation: AUC는 임계값-무관 변별력 비교에 적합하고, 운영 임계값은 비용 구조에 맞춰 곡선 위에서 사후에 정하는 2단계 분리가 정석이다. 0.5 정확도(A)·임계값 선고정(C)은 비용을 무시하고, RMSE(D)는 회귀 지표다.
 
 ---
 
-**문제 3.** 회귀 모델 두 개를 비교하니 모델 A는 RMSE와 MAE가 비슷하고, 모델 B는 RMSE가 MAE보다 훨씬 크다. 이로부터 추론할 수 있는 것은?
+**Question 3.** 회귀 모델 두 개를 비교하니 모델 A는 RMSE와 MAE가 비슷하고, 모델 B는 RMSE가 MAE보다 훨씬 크다. 이로부터 추론할 수 있는 것은?
 
 A) 모델 B에는 소수의 큰 오차(이상치성 잔차)가 있을 가능성이 높다  
 B) 모델 A는 분류 모델이다  
 C) 모델 B의 R²는 반드시 음수다  
 D) 두 모델은 완전히 동일하다  
 
-**정답: A**  
-해설: RMSE는 큰 오차를 제곱으로 증폭하므로 RMSE-MAE 격차가 크면 소수의 큰 오차가 존재할 가능성이 높다. 지표 유형이 모델 종류를 정하지 않고(B), R² 부호는 별개이며(C), 지표가 다르므로 동일(D)하지 않다.
+**Answer: A**  
+Explanation: RMSE는 큰 오차를 제곱으로 증폭하므로 RMSE-MAE 격차가 크면 소수의 큰 오차가 존재할 가능성이 높다. 지표 유형이 모델 종류를 정하지 않고(B), R² 부호는 별개이며(C), 지표가 다르므로 동일(D)하지 않다.
 
 ---
 
-**문제 4.** 다음 중 SageMaker 서비스와 역할의 짝이 틀린 것은?
+**Question 4.** 다음 중 SageMaker 서비스와 역할의 짝이 틀린 것은?
 
 A) Debugger — 학습 중 기울기 소실/과적합을 실시간 탐지  
 B) Clarify — 집단 간 편향(Disparate Impact) 측정  
 C) Clarify — SHAP으로 개별 예측의 피처 기여도 설명  
 D) Debugger — 모델 예측의 성별 집단 간 공정성 측정  
 
-**정답: D**  
-해설: 집단 간 예측 공정성 측정은 Clarify의 역할이며 Debugger는 학습 과정의 텐서/손실을 다룬다. A·B·C는 모두 올바른 짝이다.
+**Answer: D**  
+Explanation: 집단 간 예측 공정성 측정은 Clarify의 역할이며 Debugger는 학습 과정의 텐서/손실을 다룬다. A·B·C는 모두 올바른 짝이다.
 
 ---
 
-**문제 5.** SageMaker Automatic Model Tuning에서 목적 지표 방향(objective_type) 설정으로 올바른 것은?
+**Question 5.** SageMaker Automatic Model Tuning에서 목적 지표 방향(objective_type) 설정으로 올바른 것은?
 
 A) 회귀의 validation:rmse → Maximize  
 B) 분류의 validation:f1 → Minimize  
 C) 회귀의 validation:rmse → Minimize, 분류의 validation:auc → Maximize  
 D) 모든 지표는 항상 Maximize  
 
-**정답: C**  
-해설: 오차 지표(RMSE)는 작을수록 좋으므로 Minimize, 성능 지표(F1·AUC)는 클수록 좋으므로 Maximize가 맞다. RMSE Maximize(A)·F1 Minimize(B)는 방향이 반대이고, 모든 지표 Maximize(D)는 오차 지표에 틀리다.
+**Answer: C**  
+Explanation: 오차 지표(RMSE)는 작을수록 좋으므로 Minimize, 성능 지표(F1·AUC)는 클수록 좋으므로 Maximize가 맞다. RMSE Maximize(A)·F1 Minimize(B)는 방향이 반대이고, 모든 지표 Maximize(D)는 오차 지표에 틀리다.
 
 ---

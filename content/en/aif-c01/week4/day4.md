@@ -84,62 +84,62 @@ Next, we'll comprehensively review all of Week 4. We'll organize all AI/ML servi
 
 ## 📝 連習 問題
 
-**문제 1.** You want to build a conversational chatbot/voice bot handling customer inquiries using Intent and Slot concepts. Which is the most appropriate service?
+**Question 1.** You want to build a conversational chatbot/voice bot handling customer inquiries using Intent and Slot concepts. Which is the most appropriate service?
 
 A) Amazon Kendra  
 B) Amazon Lex  
 C) Amazon Forecast  
 D) Amazon Polly  
 
-**정답: B**  
-해설: Lex builds chatbots and voice bots using intent-based and slot-based concepts. A is document search, C is time series forecasting, D is speech synthesis—all different from conversation bot building.
+**Answer: B**  
+Explanation: Lex builds chatbots and voice bots using intent-based and slot-based concepts. A is document search, C is time series forecasting, D is speech synthesis—all different from conversation bot building.
 
 ---
 
-**문제 2.** You want employees to search documents scattered across internal wikis, PDFs, and SharePoint with natural language questions and find exact answer locations. Which is the most appropriate service?
+**Question 2.** You want employees to search documents scattered across internal wikis, PDFs, and SharePoint with natural language questions and find exact answer locations. Which is the most appropriate service?
 
 A) Amazon Comprehend  
 B) Amazon Translate  
 C) Amazon Kendra  
 D) Amazon Personalize  
 
-**정답: C**  
-해설: Kendra is ML-based enterprise search indexing documents from multiple sources, providing exact answer locations to natural language questions. A is text meaning analysis, B is translation, D is recommendations—searching isn't their primary business.
+**Answer: C**  
+Explanation: Kendra is ML-based enterprise search indexing documents from multiple sources, providing exact answer locations to natural language questions. A is text meaning analysis, B is translation, D is recommendations—searching isn't their primary business.
 
 ---
 
-**문제 3.** You want to recommend "products users would like" in real time based on their past behavior. Which is appropriate?
+**Question 3.** You want to recommend "products users would like" in real time based on their past behavior. Which is appropriate?
 
 A) Amazon Forecast  
 B) Amazon Personalize  
 C) Amazon Lex  
 D) Amazon Textract  
 
-**정답: B**  
-해설: Personalize is a real-time personalized recommendation system servicizing Amazon.com's recommendation technology. A (Forecast) is time series numeric prediction, C is chatbots, D is document extraction—all unrelated to recommendations.
+**Answer: B**  
+Explanation: Personalize is a real-time personalized recommendation system servicizing Amazon.com's recommendation technology. A (Forecast) is time series numeric prediction, C is chatbots, D is document extraction—all unrelated to recommendations.
 
 ---
 
-**문제 4.** Developers want immediate help with code generation, explanation, debugging, and AWS-related questions inside their IDE. Which is the most appropriate?
+**Question 4.** Developers want immediate help with code generation, explanation, debugging, and AWS-related questions inside their IDE. Which is the most appropriate?
 
 A) Amazon Q Developer  
 B) Amazon Q Business  
 C) Amazon Forecast  
 D) Amazon Comprehend  
 
-**정답: A**  
-해설: Q Developer is a developer generative assistant supporting code writing, explanation, debugging, and AWS tasks. B (Q Business) is a business assistant for internal data—different target. C is forecasting, D is NLP—both unrelated to coding support.
+**Answer: A**  
+Explanation: Q Developer is a developer generative assistant supporting code writing, explanation, debugging, and AWS tasks. B (Q Business) is a business assistant for internal data—different target. C is forecasting, D is NLP—both unrelated to coding support.
 
 ---
 
-**문제 5.** You want to immediately adopt a "complete, ready-made business generative assistant" without designing and developing a chatbot yourself, connecting to internal data to answer employee questions with evidence. Which is the most appropriate?
+**Question 5.** You want to immediately adopt a "complete, ready-made business generative assistant" without designing and developing a chatbot yourself, connecting to internal data to answer employee questions with evidence. Which is the most appropriate?
 
 A) Amazon Bedrock  
 B) Amazon Q Business  
 C) Amazon SageMaker  
 D) Amazon Lex  
 
-**정답: B**  
-해설: Q Business is a ready-made generative business assistant connecting to internal data, usable immediately without development. A (Bedrock) is building blocks for creating apps directly, C is a model training platform, D is a chatbot service you build yourself—all distant from "immediate adoption."
+**Answer: B**  
+Explanation: Q Business is a ready-made generative business assistant connecting to internal data, usable immediately without development. A (Bedrock) is building blocks for creating apps directly, C is a model training platform, D is a chatbot service you build yourself—all distant from "immediate adoption."
 
 ---

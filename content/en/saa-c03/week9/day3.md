@@ -148,94 +148,94 @@ In the next article, we go beyond metrics, logs, and audit to look at distribute
 
 ## 📝 Practice Questions
 
-**문제 1.** An organization wants to "continuously check that every S3 bucket always keeps BPA (Block Public Access) enabled." Which is the most suitable service?
+**Question 1.** An organization wants to "continuously check that every S3 bucket always keeps BPA (Block Public Access) enabled." Which is the most suitable service?
 
 A) CloudTrail
 B) AWS Config Rule
 C) Amazon Inspector
 D) Amazon Macie
 
-**정답: B**
+**Answer: B**
 
-해설: "Continuously check that a configuration keeps the desired state (BPA enabled)" is the desired-state evaluation domain of Config Rule. A Managed Rule (s3-account-level-public-access-blocks, etc.) detects violations. CloudTrail (A) answers the action of who turned BPA off, Inspector (C) is vulnerability scanning, and Macie (D) is sensitive-data detection — all different from configuration-state evaluation.
+Explanation: "Continuously check that a configuration keeps the desired state (BPA enabled)" is the desired-state evaluation domain of Config Rule. A Managed Rule (s3-account-level-public-access-blocks, etc.) detects violations. CloudTrail (A) answers the action of who turned BPA off, Inspector (C) is vulnerability scanning, and Macie (D) is sensitive-data detection — all different from configuration-state evaluation.
 
 ---
 
-**문제 2.** You want to do shell access and command execution on 100 private-subnet EC2 instances without SSH keys, without opening port 22, and without a bastion host. There's no internet gateway either. Which is the most suitable solution?
+**Question 2.** You want to do shell access and command execution on 100 private-subnet EC2 instances without SSH keys, without opening port 22, and without a bastion host. There's no internet gateway either. Which is the most suitable solution?
 
 A) Bastion host + SSH key distribution
 B) Session Manager + SSM/EC2 Messages VPC Interface Endpoint
 C) Direct SSH over a VPN
 D) Assign a Public IP then open port 22 in the SG
 
-**정답: B**
+**Answer: B**
 
-해설: Session Manager provides a shell with zero inbound ports because the instance's SSM Agent makes an outbound connection. In an internet-less private subnet, placing VPC Interface Endpoints for SSM, SSMMessages, and EC2Messages makes it work without NAT/IGW, over AWS's internal network only. Every connection is recorded in CloudTrail. A, C, and D all leave the attack surface of key management or open ports.
+Explanation: Session Manager provides a shell with zero inbound ports because the instance's SSM Agent makes an outbound connection. In an internet-less private subnet, placing VPC Interface Endpoints for SSM, SSMMessages, and EC2Messages makes it work without NAT/IGW, over AWS's internal network only. Every connection is recorded in CloudTrail. A, C, and D all leave the attack surface of key management or open ports.
 
 ---
 
-**문제 3.** You want to apply OS security patches to 100 EC2 instances only during a weekend early-morning maintenance window, gradually 25% at a time, stopping if the error rate is high. Which is the most suitable combination?
+**Question 3.** You want to apply OS security patches to 100 EC2 instances only during a weekend early-morning maintenance window, gradually 25% at a time, stopping if the error rate is high. Which is the most suitable combination?
 
 A) A UserData script
 B) Patch Manager + Maintenance Windows (with concurrency and error-threshold settings)
 C) Run Command alone with full simultaneous execution
 D) ASG Instance Refresh
 
-**정답: B**
+**Answer: B**
 
-해설: Define the patch policy (Baseline) with Patch Manager and set the maintenance window plus concurrency (25%) and error threshold with Maintenance Windows, and you get a safe gradual rollout. C runs everything simultaneously so failures affect all; A is a one-time boot script; D is for AMI replacement, not an OS-patch automation tool.
+Explanation: Define the patch policy (Baseline) with Patch Manager and set the maintenance window plus concurrency (25%) and error threshold with Maintenance Windows, and you get a safe gradual rollout. C runs everything simultaneously so failures affect all; A is a one-time boot script; D is for AMI replacement, not an OS-patch automation tool.
 
 ---
 
-**문제 4.** What is required for EC2 to be managed by Systems Manager (Session Manager, Run Command, etc.)?
+**Question 4.** What is required for EC2 to be managed by Systems Manager (Session Manager, Run Command, etc.)?
 
 A) A Public IP and port 22 open in the SG
 B) The AmazonSSMManagedInstanceCore IAM Role + SSM Agent
 C) Allowing port 22 in the NACL
 D) An internet gateway connection
 
-**정답: B**
+**Answer: B**
 
-해설: The foundation of SSM management is the SSM Agent (pre-installed on major OSes) and the AmazonSSMManagedInstanceCore IAM Role that grants the instance permission to communicate with SSM. Session Manager uses an outbound connection, so it needs no Public IP, port 22, or IGW. A, C, and D are all remnants of the inbound-access model SSM is trying to eliminate.
+Explanation: The foundation of SSM management is the SSM Agent (pre-installed on major OSes) and the AmazonSSMManagedInstanceCore IAM Role that grants the instance permission to communicate with SSM. Session Manager uses an outbound connection, so it needs no Public IP, port 22, or IGW. A, C, and D are all remnants of the inbound-access model SSM is trying to eliminate.
 
 ---
 
-**문제 5.** When a Config Rule detects "an unencrypted EBS volume" as a violation, you want to automatically execute remediation (snapshot, isolate, alert) without human intervention. Which is the most suitable pattern?
+**Question 5.** When a Config Rule detects "an unencrypted EBS volume" as a violation, you want to automatically execute remediation (snapshot, isolate, alert) without human intervention. Which is the most suitable pattern?
 
 A) Run a Lambda in polling mode to inspect directly
 B) Config Remediation (or EventBridge) → SSM Automation Runbook
 C) Handle it with Step Functions alone
 D) Scan with Inspector
 
-**정답: B**
+**Answer: B**
 
-해설: A Config Rule violation is connected to an SSM Automation Runbook via Config Remediation or an EventBridge rule and auto-remediated. This creates the detect → evaluate → remediate feedback control loop. A is inefficient polling, C is an orchestration tool rather than the standard Config integration, and D is vulnerability scanning, different from remediation execution.
+Explanation: A Config Rule violation is connected to an SSM Automation Runbook via Config Remediation or an EventBridge rule and auto-remediated. This creates the detect → evaluate → remediate feedback control loop. A is inefficient polling, C is an orchestration tool rather than the standard Config integration, and D is vulnerability scanning, different from remediation execution.
 
 ---
 
-**문제 6.** A team wants to view, from one account, "the whole organization's compliance state (which resources in which accounts violate rules)" in a multi-account, multi-region environment. Which is the most suitable feature?
+**Question 6.** A team wants to view, from one account, "the whole organization's compliance state (which resources in which accounts violate rules)" in a multi-account, multi-region environment. Which is the most suitable feature?
 
 A) Check each account's Config console separately
 B) Config Aggregator
 C) CloudTrail Organization Trail
 D) Trusted Advisor
 
-**정답: B**
+**Answer: B**
 
-해설: Config Aggregator gathers multi-account, multi-region Config data into one account for a unified compliance view (requires cross-account authorization). CloudTrail Organization Trail (C) is API-audit aggregation, not configuration-compliance aggregation, and Trusted Advisor (D) is best-practice recommendations, different from Config-rule aggregation.
+Explanation: Config Aggregator gathers multi-account, multi-region Config data into one account for a unified compliance view (requires cross-account authorization). CloudTrail Organization Trail (C) is API-audit aggregation, not configuration-compliance aggregation, and Trusted Advisor (D) is best-practice recommendations, different from Config-rule aggregation.
 
 ---
 
-**문제 7.** An application stores a DB password and needs regular automatic rotation. Operational automation takes priority over cost. Between Parameter Store and Secrets Manager, which fits?
+**Question 7.** An application stores a DB password and needs regular automatic rotation. Operational automation takes priority over cost. Between Parameter Store and Secrets Manager, which fits?
 
 A) Parameter Store SecureString (built-in automatic rotation)
 B) Secrets Manager (RDS-integrated automatic rotation)
 C) They're identical
 D) KMS-encrypted storage in S3
 
-**정답: B**
+**Answer: B**
 
-해설: Secrets Manager was specialized for secret lifecycle from the start and builds in automatic rotation for RDS/Redshift/DocumentDB credentials. Parameter Store has a free tier and supports SecureString but has no automatic-rotation feature. Since "automatic rotation needed" is the key requirement, Secrets Manager is the answer. A falsely presumes automatic rotation, and D has no rotation or integration.
+Explanation: Secrets Manager was specialized for secret lifecycle from the start and builds in automatic rotation for RDS/Redshift/DocumentDB credentials. Parameter Store has a free tier and supports SecureString but has no automatic-rotation feature. Since "automatic rotation needed" is the key requirement, Secrets Manager is the answer. A falsely presumes automatic rotation, and D has no rotation or integration.
 
 ---
 

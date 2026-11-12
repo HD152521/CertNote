@@ -230,87 +230,87 @@ Next day covers AppSync (GraphQL) and SQS/SNS messaging patterns. If EventBridge
 
 ## 📝 Practice Questions
 
-**문제 1.** 한 SaaS가 SQS 큐에 들어오는 메시지를 필터링해 특정 패턴만 Step Functions로 보내고, 나머지는 무시한다. Lambda 코드 작성 없이 가장 간단한 구성은?
+**Question 1.** 한 SaaS가 SQS 큐에 들어오는 메시지를 필터링해 특정 패턴만 Step Functions로 보내고, 나머지는 무시한다. Lambda 코드 작성 없이 가장 간단한 구성은?
 
 A) Lambda(필터) → Step Functions
 B) EventBridge Pipes (Source=SQS, Filter, Target=Step Functions)
 C) SQS Redrive Policy
 D) EventBridge Rule (Source=SQS)
 
-**정답: B**
-해설: Pipes는 정확히 이 패턴(SQS/Kinesis/DDB Stream → 필터 → target)을 코드 없이 구성하기 위한 도구. A는 Lambda 운영 부담 추가. C(Redrive)는 실패 메시지 격리 용도이지 필터링이 아님. D(EventBridge Rule)는 EventBridge Bus에 들어온 이벤트를 매칭하지 SQS를 직접 source로 못 받음. 함정: "코드 없이"가 키워드면 Pipes. 추가: Pipes의 enrichment 단계로 Lambda나 Step Functions를 끼워 가벼운 변환 가능. 입출력 모두 EventBridge 패턴 매칭 가능.
+**Answer: B**
+Explanation: Pipes는 정확히 이 패턴(SQS/Kinesis/DDB Stream → 필터 → target)을 코드 없이 구성하기 위한 도구. A는 Lambda 운영 부담 추가. C(Redrive)는 실패 메시지 격리 용도이지 필터링이 아님. D(EventBridge Rule)는 EventBridge Bus에 들어온 이벤트를 매칭하지 SQS를 직접 source로 못 받음. 함정: "코드 없이"가 키워드면 Pipes. 추가: Pipes의 enrichment 단계로 Lambda나 Step Functions를 끼워 가벼운 변환 가능. 입출력 모두 EventBridge 패턴 매칭 가능.
 
 ---
 
-**문제 2.** 한 글로벌 SaaS가 100만 사용자에게 각자 선호 시간(타임존 + 시각)에 일일 요약 이메일을 발송한다. 각 사용자의 스케줄을 개별 관리해야 한다. 가장 적합한 구성은?
+**Question 2.** 한 글로벌 SaaS가 100만 사용자에게 각자 선호 시간(타임존 + 시각)에 일일 요약 이메일을 발송한다. 각 사용자의 스케줄을 개별 관리해야 한다. 가장 적합한 구성은?
 
 A) EventBridge Rule 100만 개
 B) EventBridge Scheduler 100만 스케줄
 C) Lambda + cron Worker
 D) Step Functions Wait State
 
-**정답: B**
-해설: Scheduler는 계정당 100만+ 스케줄을 지원하고 타임존, cron, flexible time window를 제공. EventBridge Rule(A)은 계정당 한도(수천)에 막힌다. C(Lambda cron)는 자체 스케줄 저장·관리 인프라가 필요. D(Step Functions Wait)는 한 워크플로우 안 대기이지 100만 사용자 스케줄 관리가 아님. 함정: "사용자별 다른 시간"이면 Scheduler가 정답. 추가: Flexible time window(±15분)로 동시 부하 분산. Target은 200+ AWS API 직접 호출(Lambda 거치지 않고 SNS Publish 등).
+**Answer: B**
+Explanation: Scheduler는 계정당 100만+ 스케줄을 지원하고 타임존, cron, flexible time window를 제공. EventBridge Rule(A)은 계정당 한도(수천)에 막힌다. C(Lambda cron)는 자체 스케줄 저장·관리 인프라가 필요. D(Step Functions Wait)는 한 워크플로우 안 대기이지 100만 사용자 스케줄 관리가 아님. 함정: "사용자별 다른 시간"이면 Scheduler가 정답. 추가: Flexible time window(±15분)로 동시 부하 분산. Target은 200+ AWS API 직접 호출(Lambda 거치지 않고 SNS Publish 등).
 
 ---
 
-**문제 3.** Shopify에서 발생하는 주문 이벤트를 AWS 워크플로우에 통합한다. Webhook 인프라 운영 없이 직접 받으려면?
+**Question 3.** Shopify에서 발생하는 주문 이벤트를 AWS 워크플로우에 통합한다. Webhook 인프라 운영 없이 직접 받으려면?
 
 A) API Gateway + Lambda webhook receiver
 B) EventBridge Default Bus
 C) EventBridge Partner Event Bus
 D) SNS HTTPS subscription
 
-**정답: C**
-해설: Partner Bus는 AWS가 SaaS 파트너(Shopify, Stripe, Datadog, Auth0, MongoDB 등)와 직접 통합해 이벤트를 받는 매니지드 채널. 사용자는 partner 이벤트 source를 활성화하고 룰을 만들면 끝. A는 webhook receiver를 직접 운영해야 함(보안, 인증, 재시도, 스케일링). B(Default Bus)는 AWS 서비스용. D(SNS HTTPS)는 outbound 알림 용도. 함정: "SaaS partner 이벤트"는 거의 Partner Bus가 답. 추가: Stripe, Shopify, Datadog 등 메이저 SaaS가 모두 등록되어 있고 콘솔에서 한 번에 활성화.
+**Answer: C**
+Explanation: Partner Bus는 AWS가 SaaS 파트너(Shopify, Stripe, Datadog, Auth0, MongoDB 등)와 직접 통합해 이벤트를 받는 매니지드 채널. 사용자는 partner 이벤트 source를 활성화하고 룰을 만들면 끝. A는 webhook receiver를 직접 운영해야 함(보안, 인증, 재시도, 스케일링). B(Default Bus)는 AWS 서비스용. D(SNS HTTPS)는 outbound 알림 용도. 함정: "SaaS partner 이벤트"는 거의 Partner Bus가 답. 추가: Stripe, Shopify, Datadog 등 메이저 SaaS가 모두 등록되어 있고 콘솔에서 한 번에 활성화.
 
 ---
 
-**문제 4.** EventBridge Bus의 1년치 이벤트를 보존하다가 특정 시간 범위(예: 2024-03-01~03)의 이벤트만 다시 흘려보내 새 다운스트림을 초기화한다. 가장 적합한 기능은?
+**Question 4.** EventBridge Bus의 1년치 이벤트를 보존하다가 특정 시간 범위(예: 2024-03-01~03)의 이벤트만 다시 흘려보내 새 다운스트림을 초기화한다. 가장 적합한 기능은?
 
 A) S3 + Athena 쿼리
 B) EventBridge Archive + Replay
 C) CloudTrail Lake
 D) Kinesis Firehose 백업
 
-**정답: B**
-해설: EventBridge Archive는 Bus 이벤트를 보존(최대 무기한), Replay는 시간 범위 + 필터로 다시 흘려보냄. A는 분석은 가능하지만 다운스트림에 재투입하려면 별도 로직 필요. C(CloudTrail Lake)는 API 활동 감사용이지 application 이벤트가 아님. D는 데이터 저장이지 재생 메커니즘이 아님. 함정: "이벤트 재처리·재생"이면 거의 Archive + Replay. 추가: Event Sourcing 패턴의 새 구독자 도입, bug fix 후 누락 이벤트 복구에 표준 패턴.
+**Answer: B**
+Explanation: EventBridge Archive는 Bus 이벤트를 보존(최대 무기한), Replay는 시간 범위 + 필터로 다시 흘려보냄. A는 분석은 가능하지만 다운스트림에 재투입하려면 별도 로직 필요. C(CloudTrail Lake)는 API 활동 감사용이지 application 이벤트가 아님. D는 데이터 저장이지 재생 메커니즘이 아님. 함정: "이벤트 재처리·재생"이면 거의 Archive + Replay. 추가: Event Sourcing 패턴의 새 구독자 도입, bug fix 후 누락 이벤트 복구에 표준 패턴.
 
 ---
 
-**문제 5.** 한 e-commerce가 OrderPlaced 이벤트를 분석·배송·CRM·알림·audit 5개 다운스트림에 동일 메시지로 fan-out한다. 처리량은 초당 5,000건. 가장 적합한 구성은?
+**Question 5.** 한 e-commerce가 OrderPlaced 이벤트를 분석·배송·CRM·알림·audit 5개 다운스트림에 동일 메시지로 fan-out한다. 처리량은 초당 5,000건. 가장 적합한 구성은?
 
 A) EventBridge + 5개 Rule
 B) SNS Topic + 5개 SQS 구독
 C) Kinesis Data Streams + 5개 Consumer
 D) Step Functions Parallel state
 
-**정답: B**
-해설: 단순 fan-out + 매우 높은 처리량은 SNS의 정확한 sweet spot. Topic당 100,000 TPS+를 지원하고 SQS subscription으로 다운스트림이 자체 폴 속도로 처리. A(EventBridge)도 가능하지만 5개 룰이 같은 패턴을 매칭해야 하고, EventBridge 단가가 더 비싸며 throughput 한도가 더 낮음. C(Kinesis)는 순서·재처리가 필요한 스트리밍 분석용이지 fan-out 최적이 아님. D는 한 워크플로우 안 병렬이지 다운스트림 fan-out이 아님. 함정: "단순 fan-out + 높은 처리량"이면 SNS, "풍부한 필터·다양한 target"이면 EventBridge.
+**Answer: B**
+Explanation: 단순 fan-out + 매우 높은 처리량은 SNS의 정확한 sweet spot. Topic당 100,000 TPS+를 지원하고 SQS subscription으로 다운스트림이 자체 폴 속도로 처리. A(EventBridge)도 가능하지만 5개 룰이 같은 패턴을 매칭해야 하고, EventBridge 단가가 더 비싸며 throughput 한도가 더 낮음. C(Kinesis)는 순서·재처리가 필요한 스트리밍 분석용이지 fan-out 최적이 아님. D는 한 워크플로우 안 병렬이지 다운스트림 fan-out이 아님. 함정: "단순 fan-out + 높은 처리량"이면 SNS, "풍부한 필터·다양한 target"이면 EventBridge.
 
 ---
 
-**문제 6.** 이벤트 발행 팀이 자주 새 필드를 추가한다. 구독 팀이 strongly-typed 코드(Java/Python)로 안전하게 이벤트를 처리하면서 스키마 진화를 추적하려면?
+**Question 6.** 이벤트 발행 팀이 자주 새 필드를 추가한다. 구독 팀이 strongly-typed 코드(Java/Python)로 안전하게 이벤트를 처리하면서 스키마 진화를 추적하려면?
 
 A) Glue Schema Registry
 B) EventBridge Schema Registry + Code Binding
 C) OpenAPI Swagger
 D) Avro 직접 관리
 
-**정답: B**
-해설: EventBridge Schema Registry는 Bus 이벤트 스키마를 auto-discovery로 추출·버전 관리하고, Java/Python/TypeScript code binding을 자동 생성. 구독 팀은 generated SDK로 strongly-typed로 처리. A(Glue Schema Registry)는 Kinesis·Kafka용으로 별도 서비스. C(OpenAPI)는 REST API용이지 이벤트 스키마 표준이 아님(다만 EventBridge가 OpenAPI 3로 export 가능). D는 자체 운영 부담이 큼. 함정: EventBridge 이벤트의 스키마는 EventBridge Schema Registry, Kafka/Kinesis는 Glue Schema Registry. 두 가지를 혼동 주의.
+**Answer: B**
+Explanation: EventBridge Schema Registry는 Bus 이벤트 스키마를 auto-discovery로 추출·버전 관리하고, Java/Python/TypeScript code binding을 자동 생성. 구독 팀은 generated SDK로 strongly-typed로 처리. A(Glue Schema Registry)는 Kinesis·Kafka용으로 별도 서비스. C(OpenAPI)는 REST API용이지 이벤트 스키마 표준이 아님(다만 EventBridge가 OpenAPI 3로 export 가능). D는 자체 운영 부담이 큼. 함정: EventBridge 이벤트의 스키마는 EventBridge Schema Registry, Kafka/Kinesis는 Glue Schema Registry. 두 가지를 혼동 주의.
 
 ---
 
-**문제 7.** Lambda가 EventBridge Rule의 target이고 Lambda 함수 실행 중 비즈니스 로직 오류로 예외가 발생한다. 실패한 이벤트를 격리해 분석하려면?
+**Question 7.** Lambda가 EventBridge Rule의 target이고 Lambda 함수 실행 중 비즈니스 로직 오류로 예외가 발생한다. 실패한 이벤트를 격리해 분석하려면?
 
 A) EventBridge Rule의 DLQ
 B) Lambda 함수의 비동기 Destinations (OnFailure)
 C) CloudTrail
 D) EventBridge Archive
 
-**정답: B**
-해설: EventBridge → Lambda 호출은 비동기 invoke이고, Lambda 함수 안의 실행 실패는 **Lambda 자체의 비동기 재시도 모델 + Destinations**가 처리. EventBridge Rule의 DLQ(A)는 **EventBridge가 Lambda Invoke 자체에 실패**(throttle, IAM 거부 등)할 때만 트리거되고, 함수 안의 비즈니스 오류는 잡지 못함. C는 API 활동 감사. D(Archive)는 이벤트 보존이지 실패 격리가 아님. 함정: 두 레이어(EventBridge의 target dispatch vs Lambda 함수 실행)를 혼동하면 시나리오를 잘못 푼다.
+**Answer: B**
+Explanation: EventBridge → Lambda 호출은 비동기 invoke이고, Lambda 함수 안의 실행 실패는 **Lambda 자체의 비동기 재시도 모델 + Destinations**가 처리. EventBridge Rule의 DLQ(A)는 **EventBridge가 Lambda Invoke 자체에 실패**(throttle, IAM 거부 등)할 때만 트리거되고, 함수 안의 비즈니스 오류는 잡지 못함. C는 API 활동 감사. D(Archive)는 이벤트 보존이지 실패 격리가 아님. 함정: 두 레이어(EventBridge의 target dispatch vs Lambda 함수 실행)를 혼동하면 시나리오를 잘못 푼다.
 
 ---
 

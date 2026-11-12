@@ -382,86 +382,86 @@ Wrapping up: beyond making the build procedure into code, buildspec.yml is also 
 
 ## 📝 Practice Questions
 
-**문제 1.** Which of the following correctly describes the behavior of `post_build` when the `build` phase fails?
+**Question 1.** Which of the following correctly describes the behavior of `post_build` when the `build` phase fails?
 
 A) `post_build` does not run
 B) `post_build` runs, but the build result is marked FAILED
 C) `post_build` also inherits the `on-failure: ABORT` setting and is aborted
 D) A notification is sent to AWS Support
 
-**정답: B**
-해설: `post_build` still runs after a `build` phase failure. This is why cleanup code (Docker logout, temporary file deletion, sending notifications) belongs in `post_build`. However, the build result remains FAILED. This differs from a failure in `install` or `pre_build`, after which no later phases run at all.
+**Answer: B**
+Explanation: `post_build` still runs after a `build` phase failure. This is why cleanup code (Docker logout, temporary file deletion, sending notifications) belongs in `post_build`. However, the build result remains FAILED. This differs from a failure in `install` or `pre_build`, after which no later phases run at all.
 
 ---
 
-**문제 2.** You referenced a secret in buildspec via `env.secrets-manager` and the build fails with "AccessDenied: decryption." What is the most likely cause?
+**Question 2.** You referenced a secret in buildspec via `env.secrets-manager` and the build fails with "AccessDenied: decryption." What is the most likely cause?
 
 A) Exceeding a Secrets Manager service quota
 B) The CodeBuild Service Role is missing the `kms:Decrypt` permission (secret encrypted with a CMK)
 C) The buildspec version is 0.1
 D) The secret name contains a slash
 
-**정답: B**
-해설: When a Secrets Manager secret is encrypted with a Customer Managed Key (CMK), `secretsmanager:GetSecretValue` alone is not enough. For decryption, the Service Role must also have `kms:Decrypt`. The AWS managed key (`aws/secretsmanager`) is implicitly allowed, but a CMK requires an explicit permission. This is the most common mistake and a perennial exam favorite.
+**Answer: B**
+Explanation: When a Secrets Manager secret is encrypted with a Customer Managed Key (CMK), `secretsmanager:GetSecretValue` alone is not enough. For decryption, the Service Role must also have `kms:Decrypt`. The AWS managed key (`aws/secretsmanager`) is implicitly allowed, but a CMK requires an explicit permission. This is the most common mistake and a perennial exam favorite.
 
 ---
 
-**문제 3.** Which most accurately describes the difference between Build Batch's `build-graph` and `build-list`?
+**Question 3.** Which most accurately describes the difference between Build Batch's `build-graph` and `build-list`?
 
 A) `build-graph` is parallel, `build-list` is sequential
 B) `build-list` is simple parallelism (no dependencies); `build-graph` defines a dependency DAG with `depend-on`
 C) They are identical, just aliases
 D) `build-graph` is Lambda-only
 
-**정답: B**
-해설: `build-list` is simple parallelism in which all builds start at the same time. `build-graph` uses the `depend-on` field to define dependencies where a build starts only after its predecessors complete. For example, the pattern where a `package` build waits for `lint` and `unit_test` to complete is `build-graph`. Execution order is determined with a topological sort algorithm.
+**Answer: B**
+Explanation: `build-list` is simple parallelism in which all builds start at the same time. `build-graph` uses the `depend-on` field to define dependencies where a build starts only after its predecessors complete. For example, the pattern where a `package` build waits for `lint` and `unit_test` to complete is `build-graph`. Execution order is determined with a topological sort algorithm.
 
 ---
 
-**문제 4.** How do you build ARM (Graviton) and x86 images simultaneously from a single buildspec?
+**Question 4.** How do you build ARM (Graviton) and x86 images simultaneously from a single buildspec?
 
 A) Define two `build` phases in the buildspec
 B) Define two entries in `batch.build-list`, ARM_CONTAINER and LINUX_CONTAINER, build each, then combine them with `docker manifest`
 C) Build both in a single container with QEMU emulation
 D) Trigger a Lambda to run twice in a row
 
-**정답: B**
-해설: The standard pattern is to build both architectures in parallel with Build Batch's `build-list`, push each to ECR, and then create a multi-arch manifest with `docker manifest create`. QEMU is emulation and therefore slow, and two build phases within a single buildspec are not supported. Handling it in one command with `docker buildx build --platform linux/amd64,linux/arm64` is also possible, but Build Batch is faster.
+**Answer: B**
+Explanation: The standard pattern is to build both architectures in parallel with Build Batch's `build-list`, push each to ECR, and then create a multi-arch manifest with `docker manifest create`. QEMU is emulation and therefore slow, and two build phases within a single buildspec are not supported. Handling it in one command with `docker buildx build --platform linux/amd64,linux/arm64` is also possible, but Build Batch is faster.
 
 ---
 
-**문제 5.** In CodePipeline V2, how do you use the build stage's `IMAGE_TAG` variable in the deploy stage?
+**Question 5.** In CodePipeline V2, how do you use the build stage's `IMAGE_TAG` variable in the deploy stage?
 
 A) Save it as a file in the S3 artifact and read the file in the deploy stage
 B) Declare `IMAGE_TAG` in `env.exported-variables` and reference it in the deploy Stage as `#{BuildAction.IMAGE_TAG}`
 C) Send it to CloudWatch as a metric
 D) Have a Lambda function store it in DynamoDB
 
-**정답: B**
-해설: CodePipeline V2's variable system lets environment variables declared through `exported-variables` be referenced in a later Stage/Action in the form `#{ActionName.VariableName}`. This lets an image tag determined in the build flow all the way to the ECS deploy Action. It is not supported in V1 pipelines.
+**Answer: B**
+Explanation: CodePipeline V2's variable system lets environment variables declared through `exported-variables` be referenced in a later Stage/Action in the form `#{ActionName.VariableName}`. This lets an image tag determined in the build flow all the way to the ECS deploy Action. It is not supported in V1 pipelines.
 
 ---
 
-**문제 6.** From an SLSA (Supply chain Levels for Software Artifacts) perspective, what security benefit does keeping buildspec.yml in a Git repository provide?
+**Question 6.** From an SLSA (Supply chain Levels for Software Artifacts) perspective, what security benefit does keeping buildspec.yml in a Git repository provide?
 
 A) Builds become faster
 B) The build procedure is version-controlled and auditable, and malicious modifications can be blocked through PR review
 C) Docker images are automatically signed
 D) IAM permissions are automatically minimized
 
-**정답: B**
-해설: One of the core requirements of SLSA Level 2 is that "the build definition must live in a version control system." When buildspec.yml is in Git, change history is preserved and unauthorized modification of the build specification can be prevented through the PR review process. Since the "SolarWinds supply chain attack" (2020), the integrity of the build procedure itself has become an important axis of security.
+**Answer: B**
+Explanation: One of the core requirements of SLSA Level 2 is that "the build definition must live in a version control system." When buildspec.yml is in Git, change history is preserved and unauthorized modification of the build specification can be prevented through the PR review process. Since the "SolarWinds supply chain attack" (2020), the integrity of the build procedure itself has become an important axis of security.
 
 ---
 
-**문제 7.** What is the most direct way to debug an error that reproduces "only inside the CodeBuild container"?
+**Question 7.** What is the most direct way to debug an error that reproduces "only inside the CodeBuild container"?
 
 A) Search for the error message in CloudWatch Logs
 B) Start the build with the `--debug-session-enabled` option and connect to the container with SSM Session Manager
 C) Delete and recreate the build project
 D) Change the IAM Role to AdministratorAccess
 
-**정답: B**
-해설: A Debug Session pauses the build container at a specific phase and lets you connect via SSM Session Manager for up to 7 hours. You can run commands directly inside the container and inspect environment variables, filesystem state, and network connectivity. Local Build is the approach of running the same buildspec on a developer machine; both are standard debugging tools.
+**Answer: B**
+Explanation: A Debug Session pauses the build container at a specific phase and lets you connect via SSM Session Manager for up to 7 hours. You can run commands directly inside the container and inspect environment variables, filesystem state, and network connectivity. Local Build is the approach of running the same buildspec on a developer machine; both are standard debugging tools.
 
 ---
