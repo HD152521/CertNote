@@ -95,7 +95,7 @@ Next, we'll look at monitoring from an **operations perspective** rather than mo
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영 중인 신용 평가 모델에 대해 정답 레이블이 확정되기까지 수 주가 걸린다. 성능 저하를 가능한 한 빨리 감지하고 싶다. 가장 적절한 방법은?
 

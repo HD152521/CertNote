@@ -93,7 +93,7 @@ Lake Formation can share LF-Tags or named resources with other AWS accounts and 
 - Blueprints auto-generate ingestion workflows (crawlers + jobs + triggers).
 - Both IAM and Lake Formation permissions are required (evaluated together).
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 분석가가 S3 버킷에 직접 IAM 권한이 없어도 Lake Formation을 통해 등록된 위치의 데이터를 읽을 수 있게 하는 메커니즘은?
 

@@ -105,7 +105,7 @@ SAP exam frequent mappings: (1) "Exclude PII columns / specific rows only" → L
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** S3 데이터 레이크의 한 테이블에서, 분석가 그룹에게는 PII 컬럼(주민번호·이메일)을 제외한 나머지 컬럼만 보여주고 싶다. S3 버킷 정책과 IAM만으로는 컬럼 단위 통제가 안 된다. 가장 적합한 것은?
 

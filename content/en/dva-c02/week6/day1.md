@@ -208,7 +208,7 @@ Warning: DynamoDB Local is not identical to actual DynamoDB. Performance charact
 
 The DynamoDB philosophy we examined today — partition hashing, consistency models, expression system — forms the foundation for all remaining DynamoDB topics. In the next day, we explore how to design LSI/GSI on this foundation and why Single-Table Design became the standard pattern for DynamoDB.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** When a boto3 client is created with `s3 = boto3.client('s3')`, how is the region determined?
 

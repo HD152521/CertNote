@@ -6,7 +6,7 @@ import { hreflangPair } from '@/lib/i18n';
 import { ArrowRight } from 'lucide-react';
 import { getAllDays, getCertMeta, listCerts, certLevelLabel, certHref } from '@/lib/content';
 import { isHighlightLevel } from '@/lib/levels';
-import { getExamInfo, isUpcomingActive, kstToday } from '@/lib/examInfo';
+import { getExamInfo, isUpcomingActive, kstToday, localizeExamInfo } from '@/lib/examInfo';
 import { getMockExamQuestionCount } from '@/lib/exam/examBankCount';
 import { buildTrackContents } from '@/lib/certTrack';
 import BulletList from '@/components/ui/BulletList';
@@ -107,7 +107,8 @@ export default async function CertIndexPage({ params }: PageProps) {
   }
   const firstDay = days[0];
   const mockExamCount = getMockExamQuestionCount(slug);
-  const examInfo = getExamInfo(slug);
+  const examInfoKo = getExamInfo(slug);
+  const examInfo = examInfoKo ? localizeExamInfo(examInfoKo, slug, lang) : null;
   // 다음 시험 버전 안내는 첫 응시일 전까지만 보인다. 이 페이지는 정적 생성이라 "오늘"은 빌드(배포) 시점의
   // 한국 날짜다 — 첫 응시일이 지나도 재배포 전까지는 남으므로, 그 전에 데이터에서 지우는 것이 정석이다.
   const upcoming = lang === 'ko' && examInfo?.upcoming && isUpcomingActive(examInfo.upcoming, kstToday()) ? examInfo.upcoming : null;

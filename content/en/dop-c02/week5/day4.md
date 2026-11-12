@@ -498,7 +498,7 @@ Stage conditions (beforeEntry) implement Circuit Breaker pattern for automated d
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** V2 Pipeline에서 Build Action(CodeBuild)이 출력한 IMAGE_TAG 값을 같은 실행의 Deploy Action에서 사용하려면?
 

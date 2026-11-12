@@ -104,7 +104,7 @@ X_embedded = tsne.fit_transform(X_scaled)   # 2D coordinates for visualization
 - **PCA**: Linear, preserves variance, requires standardization, suitable for model preprocessing, built-in SageMaker algorithm available
 - **t-SNE**: Nonlinear, preserves local structure, visualization-only, unsuitable for model input
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 784차원 이미지 데이터를 SageMaker로 차원 축소해 후속 분류 모델의 입력으로 쓰려 한다. 특성 수가 많아 확장성이 중요하다. 가장 적절한 선택은?
 

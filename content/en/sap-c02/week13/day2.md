@@ -106,7 +106,7 @@ SAP exam frequent mappings: (1) "Access via IAM without SSH/RDP + session loggin
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 회사가 관리자들이 production EC2에 디버깅을 위해 접속해야 하지만, SSH 포트(22)를 인터넷에 열거나 Bastion 호스트를 운영하고 싶지 않다. 또한 모든 접속 세션을 감사 로그로 남겨야 한다. 가장 적합한 솔루션은?
 

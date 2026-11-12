@@ -136,7 +136,7 @@ In the next article, we'll transcend backup/restore units, exploring how databas
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 회사가 RDS·EBS·DynamoDB·EFS를 하나의 정책으로 통합 백업하고 컴플라이언스 보고서까지 자동 생성하려 한다. 가장 적합한 도구는?
 

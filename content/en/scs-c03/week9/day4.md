@@ -127,7 +127,7 @@ Security Hub publishes all integrated service findings to a single EventBridge s
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 보안팀이 GuardDuty, Inspector, Macie의 결과를 서로 다른 형식 때문에 따로따로 보고 있어 상관 분석과 자동화가 어렵다. 이들을 표준 형식으로 한곳에 모으고 단일 자동화로 대응하려면?
 

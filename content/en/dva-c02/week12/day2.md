@@ -153,7 +153,7 @@ Next we move to SAM, CloudFormation compressed for serverless.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 프로덕션 스택의 템플릿을 수정해 적용하려 한다. RDS가 의도치 않게 교체되어 데이터가 사라지는 것을 사전에 발견하려면?
 

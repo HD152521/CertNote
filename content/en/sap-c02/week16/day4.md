@@ -19,7 +19,7 @@ Key mappings: (1) "100TB ERP, 6 month deadline" → **Rehost + Refactor post-go-
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 100TB Oracle 6개월 이전 → **Rehost(MGN) + Refactor 사후**
 

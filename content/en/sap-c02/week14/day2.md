@@ -95,7 +95,7 @@ SAP exam frequent mappings: (1) "Unified backup policy across services, accounts
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 금융사가 규제(SEC Rule 17a-4)에 따라 거래 백업을 7년간 **누구도 — AWS root 사용자조차 — 삭제·변경할 수 없게** 보관해야 한다. 가장 적합한 구성은?
 

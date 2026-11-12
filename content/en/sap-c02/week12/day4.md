@@ -85,7 +85,7 @@ Common SAP exam mappings: (1) "unknown pattern + auto-optimize + large objects" 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 액세스 패턴을 전혀 예측할 수 없는 대용량 미디어 객체들을 저장하면서 비용을 자동으로 최적화하려 한다. 가장 적합한 스토리지 클래스는?
 

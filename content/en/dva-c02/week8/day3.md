@@ -330,7 +330,7 @@ Next article covers the final safety net of automated pipeline — **CloudFormat
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** In one CodePipeline stage, two actions (build and security scan) should run in parallel. To achieve this, what's needed?
 

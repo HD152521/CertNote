@@ -274,7 +274,7 @@ If you're hunting for keywords in an exam scenario: when HTTP path/host/header r
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** In a microservice architecture, `api.example.com/users` must route to the Users service and `api.example.com/orders` to the Orders service. Both services use the same port (443). What is the most suitable load balancer and configuration?
 

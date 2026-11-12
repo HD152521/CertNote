@@ -97,7 +97,7 @@ SAP exam frequent mappings: (1) "Multi-account CIS/PCI automatic checks + unifie
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 30개 계정으로 구성된 Organization에서 CIS와 PCI DSS 표준 준수 현황을 자동 점검하고, GuardDuty·Inspector·Macie의 Finding을 단일 대시보드로 통합 관리하고 싶다. 가장 적합한 것은?
 

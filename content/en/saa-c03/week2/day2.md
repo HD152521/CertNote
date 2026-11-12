@@ -159,7 +159,7 @@ The IGW is the bidirectional door to the outside, the NAT GW is the outbound-onl
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An EC2 in a Private subnet needs to call an external API. What is the most appropriate solution?
 

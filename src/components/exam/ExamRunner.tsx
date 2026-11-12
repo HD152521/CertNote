@@ -14,7 +14,7 @@ import { ExamDomainScores, type DomainScore } from './ExamDomainScores';
 import { PracticeFeedback, type CheckResult } from './PracticeFeedback';
 import { QuizShellLink } from '@/components/shell-lab/QuizShellLink';
 
-interface CertOption { slug: string; code: string; name: string; domains: string[] }
+interface CertOption { slug: string; code: string; name: string; domains: string[]; domainLabelsEn?: Record<string, string> }
 
 interface ExamQuestion {
   questionId: string;
@@ -23,6 +23,7 @@ interface ExamQuestion {
   choices: { label: string; text: string }[];
   slug: string;
   domain: string;
+  domainLabel?: string;
   multi: boolean;
 }
 
@@ -96,7 +97,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
       const res = await fetch('/api/exam/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionIds: questions.map((q) => q.questionId), answers }),
+        body: JSON.stringify({ questionIds: questions.map((q) => q.questionId), answers, lang }),
       });
       if (!res.ok) throw new Error();
       const data = (await res.json()) as ExamResult;
@@ -135,7 +136,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
       const res = await fetch('/api/exam/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ certSlug: opts.certSlug || undefined, count, domains: opts.domains }),
+        body: JSON.stringify({ certSlug: opts.certSlug || undefined, count, domains: opts.domains, lang }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -169,7 +170,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
       const res = await fetch('/api/exam/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionId: q.questionId, selected }),
+        body: JSON.stringify({ questionId: q.questionId, selected, lang }),
       });
       if (!res.ok) throw new Error();
       const data = (await res.json()) as CheckResult;
@@ -229,7 +230,9 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
     submit();
   }
 
-  const domainOptions = certs.find((c) => c.slug === certSlug)?.domains ?? [];
+  const certOption = certs.find((c) => c.slug === certSlug);
+  const domainOptions = certOption?.domains ?? [];
+  const domainText = (d: string): string => (lang === 'en' ? certOption?.domainLabelsEn?.[d] ?? d : d);
 
   if (phase === 'setup') {
     return (
@@ -251,7 +254,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
                 <button key={d} type="button" onClick={() => toggleDomain(d)} aria-pressed={selDomains.includes(d)}
                   className={cn('rounded-md border px-3 py-1.5 text-sm transition',
                     selDomains.includes(d) ? 'border-accent bg-accent/10 text-fg' : 'border-border text-fg-muted hover:text-fg')}>
-                  {d}
+                  {domainText(d)}
                 </button>
               ))}
             </div>
@@ -360,7 +363,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
 
         <div className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
-            <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">{q.slug} · {q.domain}</p>
+            <p className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">{q.slug} · {q.domainLabel ?? q.domain}</p>
             <button type="button" onClick={() => toggleMark(q.questionId)}
               className={cn('flex items-center gap-1 rounded px-2 py-0.5 text-[11px] transition',
                 marked.has(q.questionId) ? 'text-amber-500' : 'text-fg-faint hover:text-fg')}>
@@ -492,7 +495,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
           return (
             <li key={`${it.questionId}-${i}`} className="rounded-lg border border-border bg-bg-elevated p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <Link href={`/${DEFAULT_CATEGORY}/${it.slug}`} className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">{it.slug} · {it.domain}</Link>
+                <Link href={`/${DEFAULT_CATEGORY}/${it.slug}`} className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">{it.slug} · {it.domainLabel ?? it.domain}</Link>
                 <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-xs', it.correct ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger')}>{it.correct ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}</span>
               </div>
               <p className="mb-3 font-medium leading-relaxed text-fg whitespace-pre-wrap"><InlineMd text={it.prompt} /></p>

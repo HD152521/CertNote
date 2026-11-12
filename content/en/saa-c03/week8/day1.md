@@ -217,7 +217,7 @@ In the next article we look at the secret-management services that sit one layer
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company encrypts objects with S3 SSE-KMS, but KMS call costs got too high and exceeded $50,000/month. What is the best way to cut costs the most while maintaining security?
 

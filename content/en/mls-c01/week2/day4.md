@@ -110,7 +110,7 @@ Tomorrow we will review all of Week 2 (transformation, pipelines, augmentation, 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 수백 GB의 학습 데이터를 사용하는데, 학습 시작 전 전체 다운로드 대기 시간과 EBS 디스크 비용을 줄이고 싶다. 임의 접근은 크게 필요 없다. 가장 적합한 입력 모드는?
 

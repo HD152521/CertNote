@@ -81,7 +81,7 @@ SAP exam frequent mappings: (1) "RDS failover 30s + standby read" → **Multi-AZ
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 [Full exercise section matching Korean original - 6 questions with detailed explanations covering all topics above]
 

@@ -94,7 +94,7 @@ SAP exam frequent mappings: (1) "RTO 24hrs, minimize cost" → **Backup & Restor
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 개발팀이 스테이징 환경의 DR을 설계한다. 비즈니스 SLA는 RTO 24시간·RPO 12시간으로 매우 관대하고, 비용을 최소화하라는 지시를 받았다. 가장 적합한 전략은?
 

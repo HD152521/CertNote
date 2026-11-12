@@ -139,7 +139,7 @@ Auto Remediation = Config NON_COMPLIANT trigger → SSM Automation Runbook auto-
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 보안팀이 "누가 프로덕션 S3 버킷에서 고객 PII 데이터를 다운로드했는지" 추적해야 한다. 필요한 CloudTrail 설정은?
 

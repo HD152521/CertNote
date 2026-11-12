@@ -102,7 +102,7 @@ On this foundation, starting next week we'll zoom into AWS's specific generative
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** When synthesizing Week 3's essence, which correctly orders methods of adjusting model behavior from lowest to highest cost/difficulty?
 

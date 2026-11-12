@@ -89,7 +89,7 @@ In the next session, we'll review Week 3 completely—concepts of generative AI,
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which most accurately explains "hallucination" in generative AI?
 

@@ -308,7 +308,7 @@ AppSync GraphQL Architecture
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What is the best way to execute multiple Lambda functions sequentially and handle errors?
 

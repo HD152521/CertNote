@@ -215,7 +215,7 @@ Next: Week 7 synthesis, RDS + ElastiCache + Aurora scenario comprehensives.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Aurora storage config is?
 

@@ -645,7 +645,7 @@ aws cloudformation describe-stack-events --stack-name xxx
   → Real-time resource state changes
 ```
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** CloudFormation Template에서 반드시 있어야 하는 섹션은?
 

@@ -380,7 +380,7 @@ Wrapping up: beyond making the build procedure into code, buildspec.yml is also 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which of the following correctly describes the behavior of `post_build` when the `build` phase fails?
 

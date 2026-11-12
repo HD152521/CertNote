@@ -90,7 +90,7 @@ Most-confused comparisons nailed down:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** MLOps의 3대 원칙(자동화·재현성·거버넌스)과 이를 구현하는 도구의 연결로 가장 적절하지 않은 것은?
 

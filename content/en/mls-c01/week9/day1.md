@@ -120,6 +120,6 @@ Next: ROC/PR curves, thresholds, AUC — understanding tradeoffs visually.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 [Questions 1-5 in Korean as per original...]

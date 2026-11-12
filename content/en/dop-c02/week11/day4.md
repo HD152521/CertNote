@@ -133,7 +133,7 @@ The next article wraps Week 11 entirely in scenario problems — X-Ray tracing, 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "수억 줄 로그에서 특정 에러 메시지가 포함된 문서를 밀리초 안에 찾기"와 "지난 5분 API 에러율 p99 그리기"는 각각 어떤 엔진이 적합한가?
 
@@ -247,6 +247,6 @@ D) Provisioned는 VPC를 못 쓴다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 옵저버빌리티 저장소 선택은 데이터 본질의 문제로, 임의 텍스트 검색은 역인덱스(OpenSearch), 수치 시계열 집계는 TSDB(Prometheus/AMP)라는 근본적으로 다른 엔진이 푼다. 둘째, 역인덱스는 "단어→문서" 구조와 BM25(TF-IDF) 관련도로 텍스트 검색을, TSDB는 delta-of-delta·XOR 압축(Gorilla)으로 고빈도 시계열을 처리해 합칠 수 없다. 셋째, OpenSearch는 날짜별 인덱스 + ISM으로 오래된 데이터를 통째로 drop해 생명주기를 관리하며 Provisioned(계층 스토리지)/Serverless(OCU)로 나뉜다. 넷째, AMP는 관리형 Prometheus(remote_write·PromQL·SigV4·보존 확장)이고 pull 모델의 단명 작업은 Pushgateway로, 카디널리티 폭발이 최대 운영 사고다. 다섯째, AMG는 백엔드 중립 시각화 계층으로 이질적 데이터 소스(AMP·OpenSearch·X-Ray·CloudWatch)를 단일 대시보드로 통합하고 PromQL 표준 공유로 멀티 클라우드도 묶으며, EKS 관찰성 표준 스택은 ADOT + AMP + AMG다.

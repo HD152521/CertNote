@@ -85,7 +85,7 @@ Tomorrow we move to the neighborhood where these servers and storage live togeth
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You have a Linux-based workload where multiple EC2 instances must simultaneously access, read, and write the same files. Which storage is the best fit?
 

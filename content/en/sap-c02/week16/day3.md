@@ -18,7 +18,7 @@ Key mappings: (1) "Multi-year commitment, predictable load" → **Savings Plans 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 3년 예측 안정적 부하 → **Savings Plans (Compute/DDB)**
 

@@ -123,6 +123,6 @@ Tomorrow: Real-time operations — endpoint structure, scaling, multi-model host
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 [Questions in Korean, matching pattern...]

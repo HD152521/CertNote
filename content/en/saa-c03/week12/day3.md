@@ -86,7 +86,7 @@ In the next article, we'll re-weave Domain 4, cost optimization, by the principl
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You train an ML model on a large dataset; the data is in S3 and hundreds of nodes must read it in ultra-fast parallel. What is the most suitable storage?
 

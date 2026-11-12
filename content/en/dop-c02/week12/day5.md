@@ -272,7 +272,7 @@ In two weeks (Week 13-14), we'll cover **cost optimization and governance** — 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "API 지연 시간이 급증했다"는 알람이 났을 때 5단계 파이프라인을 구성하면?
 
@@ -378,6 +378,6 @@ D) Learning이 불필요 (Tier 1은 자명한 fix)
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 세 가지다. 첫째, **5단계 파이프라인**(Detect → Route → Respond → Notify → Learn)은 모든 인시던트의 구조를 제공하고, 각 단계에서 도구 선택이 성패를 결정한다. 둘째, **의사결정 트리**는 severity·detectability·scope에 따라 어떤 tier의 자동화와 어떤 level의 인간 개입이 필요한지 가이드한다. 셋째, **안전망**(bounded count, circuit breaker, approval gate, change window)은 자동화 폭주와 과도한 에스컬레이션 모두를 방지해 안정성 있는 자동화를 가능하게 한다. 이 구조가 확립되면, 운영팀은 반복되는 문제를 고치는 대신 시스템을 개선하는 데 집중할 수 있다.

@@ -69,7 +69,7 @@ All four domains form one pipeline. Domain 1 moves data, Domain 2 preps it, Doma
 
 MLS-C01 is over. Weeks 1-4 (data, stats), 5-6 (alg select), 7-12 (modeling + ops).
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 핀테크가 모바일 앱 클릭스트림을 밀리초 단위로 수집해, 사기 탐지 팀과 추천 팀이 같은 스트림을 각자 독립적으로 소비하고, 장애 시 과거 1일치를 재처리해야 한다. 가장 적합한 수집 서비스는?
 

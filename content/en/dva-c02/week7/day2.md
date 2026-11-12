@@ -230,7 +230,7 @@ Next article goes deeper into RDS cost optimization and troubleshooting — Rese
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A financial company needs to switch a non-encrypted RDS MySQL to KMS encryption with minimal downtime. What's the correct procedure?
 

@@ -18,7 +18,7 @@ Key mappings: (1) "All 6 pillars, no context" → **Invalid question, need busin
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 금융(Security) vs 게임(Performance) 우선순위 충돌 → **Business context first, then optimize**
 

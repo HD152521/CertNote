@@ -136,7 +136,7 @@ aws sns subscribe \
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** API Gateway에서 throttling을 설정하는 목적은?
 

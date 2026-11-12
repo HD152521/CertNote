@@ -7,7 +7,7 @@ import { buildExam, checkAnswer, gradeExam, summarizeByDomain, type ExamResultIt
 import { getExamQuestionsByCert } from './examBank';
 
 const item = (slug: string, domain: string, correct: boolean, selected: string | null = 'A'): ExamResultItem => ({
-  questionId: `${slug}-${domain}-${Math.random()}`, number: 1, prompt: '', choices: [], slug, domain, multi: false,
+  questionId: `${slug}-${domain}-${Math.random()}`, number: 1, prompt: '', choices: [], slug, domain, domainLabel: domain, multi: false,
   selected, correct, answer: 'A', explanation: '',
 });
 

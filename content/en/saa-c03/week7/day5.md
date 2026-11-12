@@ -122,7 +122,7 @@ Week 8 goes into the depth of databases. It looks at which workloads RDS, Aurora
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** When an e-commerce company's order system emits an "order completed" event, it must do the following four things simultaneously: (1) send a message to the payment-processing queue, (2) record it in the analytics system, (3) email the user, (4) notify the warehouse system. New subscribers may also be added in the future. What is the most appropriate architecture?
 

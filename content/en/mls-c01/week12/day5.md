@@ -107,7 +107,7 @@ Over 12 weeks you have worked through all four domains: data engineering, EDA, m
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** MLS-C01 시험 구성에 대한 설명으로 옳은 것은?
 

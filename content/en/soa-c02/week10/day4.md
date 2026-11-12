@@ -124,7 +124,7 @@ Next article wraps Week 10 entire—Snapshot·AWS Backup·RDS HA·S3/DRS—as sc
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 회사가 S3 데이터를 다른 리전 DR 사이트에 자동 복제하려 한다. 설정의 필수 전제와 도구는?
 

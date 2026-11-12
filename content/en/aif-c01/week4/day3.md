@@ -79,7 +79,7 @@ Next, we'll see remaining AI services (Lex, Kendra, Personalize, Forecast) and *
 
 ---
 
-## 📝 연習 問題
+## 📝 Practice Questions
 
 **문제 1.** You want to detect objects and faces in user-uploaded photos and automatically filter inappropriate content. Which is the most appropriate service?
 

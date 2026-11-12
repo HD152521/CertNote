@@ -95,7 +95,7 @@ In the next article, we'll synthesize this week's resilience, DR, and migration 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company wants to move an on-premises Oracle database to Aurora PostgreSQL while minimizing downtime during migration to within a few minutes. What is the most appropriate approach?
 

@@ -132,7 +132,7 @@ Today we covered training's runtime infrastructure — Estimator configuration, 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 학습 데이터가 8TB로 학습 인스턴스의 EBS 볼륨보다 훨씬 크다. 다운로드 대기 없이 바로 학습을 시작하고 스토리지 비용을 줄이려 한다. 가장 적절한 입력 모드는?
 

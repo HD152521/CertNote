@@ -130,7 +130,7 @@ Tomorrow we explore automating these transformation tasks not by hand but via **
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영 인력이 적은 팀이 하루 몇 차례 산발적으로 발생하는 표준 Spark 변환 작업을 처리하려 한다. 클러스터를 직접 띄우고 관리하는 부담을 최소화하려면?
 

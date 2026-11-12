@@ -391,7 +391,7 @@ Tomorrow we head into the world of containers. We'll cover how ECS, EKS, Fargate
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You're implementing a loan-review workflow. Application received → credit check (automatic) → reviewer examination (human, up to 3 days) → approval/rejection notification. What is the most suitable Step Functions configuration for this workflow?
 

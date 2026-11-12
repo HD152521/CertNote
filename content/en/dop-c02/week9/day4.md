@@ -117,7 +117,7 @@ Cross-account rotation: Secrets Manager in account A, RDS in account B. Rotation
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** MySQL root 비밀번호를 30일마다 자동 교체해야 한다. 교체 중 기존 애플리케이션은 연결이 유지되어야 한다. Secrets Manager 회전 메커니즘의 핵심은?
 
@@ -210,6 +210,6 @@ D) 수동 관리
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 Secrets Manager는 회전(rotation) 능력과 라벨 기반 버전 관리로 설계되었다. AWSCURRENT/AWSPENDING 이원성이 **무중단 교체**를 가능하게 한다. Parameter Store는 싸고 간단하지만 회전이 없고 암호 관리 기능이 약하다. 1000+ 시크릿 규모에서 Secrets Manager의 자동 회전이 감사 준수(SOC 2, PCI) 비용 대비 효과를 발휘한다.

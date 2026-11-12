@@ -107,6 +107,6 @@ Next: Week 9 recap — classification/regression/debugging.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 [Questions in Korean, matching original pattern...]

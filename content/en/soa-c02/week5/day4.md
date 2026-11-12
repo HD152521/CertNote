@@ -545,7 +545,7 @@ SSM Advanced Automation Integrated Architecture
            (auto-rollback on failure)
 ```
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda 함수가 RDS 데이터베이스에 연결하기 위한 비밀번호를 안전하게 관리해야 한다. 90일마다 자동으로 비밀번호가 교체되어야 하고, Lambda 코드 재배포 없이 새 비밀번호를 사용해야 한다. 가장 적합한 도구는?
 

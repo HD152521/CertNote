@@ -94,7 +94,7 @@ Today's two tools are the dual pillars of data reliability. Schema Registry enfo
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Kafka/Kinesis 스트리밍에서 생산자가 보낸 메시지 형식을 소비자가 안전하게 역직렬화하도록, 스키마를 중앙 등록하고 호환성 규칙을 강제하는 서비스는?
 

@@ -220,7 +220,7 @@ Real-world calculation example:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한국 의료법으로 환자 영상 데이터(CT, MRI)가 병원 건물 밖으로 반출되면 안 된다. AWS AI 진단 모델을 실시간으로 영상에 적용해야 하며, 의료 장비(PACS 서버)와 서브밀리초 수준의 낮은 지연으로 통신해야 한다. 가장 적합한 서비스는?
 

@@ -84,7 +84,7 @@ model = xgb.XGBClassifier(scale_pos_weight=49)  # negative:positive = 49:1
 - **Algorithm-level**: Class weights (`class_weight`, `scale_pos_weight`), threshold tuning
 - **Evaluation**: For sparse minorities, PR-AUC > ROC-AUC
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 양성이 전체의 1%인 사기 탐지 데이터에서 모델 성능을 평가하려 한다. 가장 부적절한 단일 지표는?
 

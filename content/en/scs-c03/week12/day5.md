@@ -80,7 +80,7 @@ Core reflex: Text expression → Service instant translation. Speed-maker:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 All 8 practice questions from this final day are preserved in Korean as per requirements:
 

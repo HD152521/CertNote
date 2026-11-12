@@ -86,7 +86,7 @@ Remember that the exam always asks in the form of "situation → the best-fit se
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to run a light processing job that runs briefly only when a file is uploaded, a few times a day. To avoid incurring cost during idle time, which compute service is the best fit?
 

@@ -137,7 +137,7 @@ Next week (Week 12) is **Cost Optimization Deep-Dive** — Savings Plans math, C
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 멀티 리전 RDS 스냅샷을 두 리전에서 모두 복호화하며 DR 환경을 구성해야 한다. 추가 KMS 호출이나 re-encrypt 없이 즉시 복원하고, 리전별 키 접근 권한은 따로 통제하고 싶다.
 

@@ -256,7 +256,7 @@ VPC Peering remains a valid choice when directly connecting two VPCs without ove
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 글로벌 제조업체가 AWS Organizations로 80개 계정을 운영한다. 모든 계정의 VPC가 중앙 보안 VPC(IDS/IPS, 로그 수집)와 공유 서비스 VPC(DNS, AD)에는 접근해야 하지만, 개발 계정과 프로덕션 계정 간의 직접 통신은 차단해야 한다. 운영 부담을 최소화하면서 이 요구사항을 충족하는 방법은?
 

@@ -88,7 +88,7 @@ SQS **DLQ redrive** lets messages from DLQ return to original queue for reproces
 - Retry transient errors with exponential backoff+jitter; catch permanent with isolation. Safe only on idempotent work.
 - DLQ isolates repeat-fail messages; redrive after fix to reprocess.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "지난 밤 누가 Glue Data Catalog의 테이블을 삭제했는가"를 자격증명과 시각까지 추적하려면 어떤 서비스를 봐야 하는가?
 

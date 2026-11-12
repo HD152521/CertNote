@@ -84,7 +84,7 @@ In the next article, we'll lay out the security services beyond IAM — WAF, Shi
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** In the shared responsibility model, which of the following is always the **customer's responsibility**?
 

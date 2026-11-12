@@ -96,7 +96,7 @@ Next, we'll review the entire Week 2 on data collection and storage as we wrap u
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Event data arrives daily and is stored in S3. Most analysis queries filter by date range. What is the most effective storage method to reduce scan costs?
 

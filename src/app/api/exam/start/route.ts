@@ -22,7 +22,8 @@ export async function POST(req: Request) {
     const domains = Array.isArray(body.domains)
       ? (body.domains as unknown[]).filter((d): d is string => typeof d === 'string' && d.length > 0 && d.length <= 120).slice(0, 40)
       : [];
-    const questions = buildExam(certSlug, count, domains);
+    const lang = body.lang === 'en' ? 'en' : 'ko';
+    const questions = buildExam(certSlug, count, domains, lang);
     if (questions.length === 0) {
       throw new AppError(404, 'no_questions', '해당 범위에 문제가 없습니다.');
     }

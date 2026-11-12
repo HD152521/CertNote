@@ -120,7 +120,7 @@ Next, we'll explore how AWS Glue catalogs collected data and transforms it via E
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A team wants to collect website clickstream data and load it to S3. They want to minimize infrastructure management burden while storing in S3 near-real-time. What is the most suitable service?
 

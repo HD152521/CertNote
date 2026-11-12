@@ -1,0 +1,1598 @@
+[
+  {
+    "number": 1,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "The operations team (4 people) of an online payment processing company collects application logs from its payment API servers in a single Amazon CloudWatch Logs log group, and three weeks of logs have accumulated so far. After an incident yesterday in which errors spiked, management asked for the number of ERROR entries over the past 7 days right now, and going forward the team must be notified through an existing Amazon SNS topic when there are more than 20 ERROR entries within 5 minutes. The historical count is a one-time request, and the company does not want to build a separate pipeline to move the logs to another system. The operations team has no dedicated developers. The log group's retention period is already 30 days, so all three weeks of logs are still available, and the report to management is needed this afternoon. Which combination of steps meets both requirements with the LEAST development effort? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Increase the log group's retention period so that a metric filter re-evaluates the historical logs, and generate the metric for the past 7 days."
+      },
+      {
+        "label": "B",
+        "text": "Because a metric filter is applied retroactively to existing logs, query the same filter metric to check the number of ERROR entries over the past 7 days."
+      },
+      {
+        "label": "C",
+        "text": "Create a new metric filter for the ERROR pattern, and create an alarm that goes to the ALARM state when the 5-minute sum of that metric exceeds 20, with an SNS notification attached."
+      },
+      {
+        "label": "D",
+        "text": "Use a CloudWatch Logs Insights query to filter the ERROR events from the past 7 days and count them."
+      },
+      {
+        "label": "E",
+        "text": "Create a subscription filter to resend the existing logs to Amazon Data Firehose, and count the entries from the past 7 days by using Amazon S3 and Amazon Athena."
+      }
+    ],
+    "explanation": "The correct answer is the combination that handles the historical count with a Logs Insights query and handles future notifications with a metric filter and an alarm. Logs Insights queries logs that are already stored on demand, so it fits the past-7-days count. According to the documentation, a metric filter publishes metrics only for events that occur after the filter is created, so it takes care of the forward-looking threshold alarm. The claim that a filter is applied retroactively to existing logs is not true. Increasing the retention period does not cause a filter to re-evaluate past logs. A subscription filter delivers log events in real time as they are ingested, so it is not a means of retroactively sending logs that have already accumulated, and setting up Athena as well increases the development effort."
+  },
+  {
+    "number": 2,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "An internal order-processing web server (one EC2 instance with the SSM Agent and the CloudWatch agent installed) at a logistics company went down twice in the early morning last month because temporary files piled up and filled the disk. The company now wants an AWS Systems Manager Automation runbook to run without human intervention to clean up old temporary files when the disk usage alarm goes to the ALARM state. The alarm has already been created from CloudWatch agent metrics, and a standard runbook that runs without a reboot is ready for the cleanup. No one is on call overnight, and the burden of writing new code must be kept to a minimum. The cleanup path is already set as a runbook parameter, and this server's IAM instance profile has Systems Manager permissions attached. Which configuration is MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Specify running the SSM Automation runbook directly as an EC2 action in the existing alarm's alarm actions, connecting it in one step without a separate rule."
+      },
+      {
+        "label": "B",
+        "text": "Wrap the alarm in a composite alarm, and specify running the cleanup runbook as the composite alarm's Systems Manager action."
+      },
+      {
+        "label": "C",
+        "text": "Receive the alarm notification by SNS email, have an engineer review it and run the SSM Automation runbook manually from the console, and record the execution result in a ticket. Document the details in a wiki for post-incident review."
+      },
+      {
+        "label": "D",
+        "text": "Receive the alarm state change event with an Amazon EventBridge rule that matches when the state is ALARM, and specify the SSM Automation runbook as the target."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that receives the alarm state change event with an EventBridge rule and specifies SSM Automation as the target. CloudWatch sends an event to EventBridge every time an alarm changes state, and a rule that matches only the ALARM state can run the runbook without any code. The direct actions of a standard metric alarm are SNS notifications, EC2 actions, and Auto Scaling actions, and none of them lets you specify running a runbook directly. The Systems Manager action of a composite alarm is for creating OpsItems or incidents and does not run runbooks. Receiving an email and then running the runbook manually violates the requirement for no human intervention."
+  },
+  {
+    "number": 3,
+    "domain": "Security and Compliance",
+    "prompt": "The security team at a fintech startup was cited in an external audit last quarter for leaving one Amazon S3 bucket accidentally open to public read access for three weeks. The team now wants any bucket policy change that would allow public read access to be blocked automatically, without human intervention. The scope is several hundred buckets in a single account, and auditors must be able to query the configuration change history and compliance status later. Checks and remediation must run continuously, including outside business hours, and the security team does not have enough staff to maintain code themselves. No bucket needs an exception to be public, and the on-duty security engineer works under the condition of not being called at night. Which method meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Receive AWS CloudTrail events with Amazon EventBridge, and implement a custom-written AWS Lambda function that parses the bucket policy, determines whether it is public, and blocks it. Record the compliance history in a separate Amazon DynamoDB table that you build yourself for querying."
+      },
+      {
+        "label": "B",
+        "text": "Enable the AWS Config managed rule (s3-bucket-public-read-prohibited) and attach automatic remediation that uses an SSM Automation document."
+      },
+      {
+        "label": "C",
+        "text": "Enable Amazon GuardDuty to send an alert email when a public bucket is found, and have an engineer block public access on that bucket from the console."
+      },
+      {
+        "label": "D",
+        "text": "Check the AWS Trusted Advisor results every day, and have an engineer manually find the buckets flagged as public and block public access."
+      }
+    ],
+    "explanation": "AWS Config evaluates bucket configurations with a managed rule and retains the compliance status and change history, and attaching an SSM Automation document as a remediation action lets it fix noncompliant resources automatically. A custom Lambda function requires you to implement and maintain the policy-parsing logic and exception handling, and you would also have to build the compliance history yourself. Having an engineer block the bucket after a GuardDuty alert, and checking Trusted Advisor every day, both require human intervention, so they fail the requirement to block automatically and the requirement to query compliance history."
+  },
+  {
+    "number": 4,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "At 10:12 AM, a developer accidentally dropped the orders table in a production Amazon RDS for MySQL database (Multi-AZ deployment) at an online shopping company. Automated backups are turned on with a 7-day retention period, and the data as of 10:10 AM, just before the deletion, must be recovered. The shopping site is otherwise operating normally, and new data keeps accumulating in the payments and inventory tables even after the deletion, so that data must not be lost. The recovery must be performed with minimal service interruption. Only one table needs to be recovered, its size is a few GB, and the developer reported the deletion immediately. What is the MOST appropriate recovery method?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run a point-in-time restore on the production instance to roll the same instance back in place to its 10:10 AM state."
+      },
+      {
+        "label": "B",
+        "text": "Run a point-in-time restore to 10:10 AM to create a new DB instance, export the orders table from the restored copy, and load it back into the production database."
+      },
+      {
+        "label": "C",
+        "text": "Run a failover to the Multi-AZ standby and promote the standby, which still holds the data from before the deletion, to be the new primary instance."
+      },
+      {
+        "label": "D",
+        "text": "Restore the latest daily snapshot to create a new instance, switch the service to that instance's endpoint, and then change all application connection strings. Have an engineer review the changes before the switchover."
+      }
+    ],
+    "explanation": "The correct answer is to create a new instance with a point-in-time restore and reload only the needed table. According to the documentation, a point-in-time restore does not modify the source and always creates a new DB instance, and because transaction logs are uploaded every 5 minutes, you can restore to a point in time such as 10:10 AM. Rolling the same instance back in place is not offered and would also lose the latest data in the other tables. The standby is replicated synchronously, so the drop command has already been applied to it. A daily snapshot would lose all table changes made after the snapshot, which violates the requirements."
+  },
+  {
+    "number": 5,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A logistics software company wants to enable communication among 12 VPCs used by different accounts and teams in the same Region, and 2 to 3 VPCs will be added each quarter. The CIDR blocks of all the VPCs do not overlap. There are only two network administrators, so the company wants to reduce the number of connections and the routing configuration to manage, and the effort required to attach a new VPC must also be small. Most inter-VPC communication consists of small API calls, and there is no requirement for internet-bound traffic or on-premises connectivity. Each VPC is owned by a different team, so every routing change request requires an approval process, and the total traffic volume is modest at a few hundred GB per month. Which configuration has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a VPC peering connection for every pair of VPCs to configure 66 peering connections, and add a route to the peer CIDR in each VPC's route table."
+      },
+      {
+        "label": "B",
+        "text": "Peer one hub VPC with each of the other VPCs, and configure an EC2 proxy in the hub to forward traffic, working around the transitive routing limitation of peering."
+      },
+      {
+        "label": "C",
+        "text": "Create a transit gateway and attach each VPC to it, and centrally manage the routes between VPCs by using the transit gateway route table."
+      },
+      {
+        "label": "D",
+        "text": "Attach a virtual private gateway to each VPC and connect the VPCs to one another with site-to-site VPN tunnels to create encrypted paths between VPCs, managing BGP routing for each tunnel yourself."
+      }
+    ],
+    "explanation": "The correct answer is a transit gateway hub configuration. A transit gateway is a hub that connects VPCs and on-premises networks, each VPC needs to create only one attachment, and routes are managed centrally in the route tables, so the workload grows only linearly as VPCs are added. Peering all 12 VPCs would require 12×11÷2 = 66 connections plus route table changes on both sides, and this would grow sharply as VPCs are added. VPC peering does not support transitive routing, so a configuration that goes through a hub VPC requires you to operate EC2 proxies yourself, which become a bottleneck and a point of failure. VPN between VPCs is the most complex because you must manage both the tunnels and the devices."
+  },
+  {
+    "number": 6,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "The platform team at a SaaS company deploys the network layer by using a nested stack template that is shared by multiple product teams. During a routine check, the team ran drift detection on the parent stack and the result was IN_SYNC. However, it was later discovered that someone had directly changed the inbound rules of a security group created by a child stack from the console. There are too many stacks for people to inspect the console one by one, and the team must find such changes without exception going forward. The security group change in question has already occurred once, and the audit team has requested a per-stack report if the same type of change occurs in the future. What is the MOST appropriate method for this?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Because drift detection on the parent stack does not cover the nested stacks, run drift detection directly on each nested stack as well."
+      },
+      {
+        "label": "B",
+        "text": "If you run drift detection on the parent stack repeatedly, the results of the child stacks are merged into the parent result over time, so run detection frequently."
+      },
+      {
+        "label": "C",
+        "text": "Because drift detection supports only EC2 instance resources, security group changes can be monitored only with AWS Config rules."
+      },
+      {
+        "label": "D",
+        "text": "If you use a stack policy to deny updates to security group resources, console changes are also blocked, so drift cannot occur."
+      }
+    ],
+    "explanation": "When you detect drift on a parent stack, CloudFormation does not detect drift on the nested stacks that belong to it, and you must initiate the detection operation directly on each nested stack. Therefore, running detection on each child stack is the correct answer. Running it repeatedly does not merge the child results into the parent result. Drift detection works across supported resource types, including security groups, not just EC2, so the claim that the support is limited to EC2 is not true. A stack policy controls only stack update operations and cannot prevent directly changing resources through the console or the API."
+  },
+  {
+    "number": 7,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "The site of an e-commerce company has a core revenue path that runs from logging in to adding an item to the cart. Last month, because of a misconfiguration on the login server, users could not add items to their carts for 3 hours in the early morning, but the health checks on the target servers were all normal, so no one noticed. The company must verify every minute, even in the early morning when there is almost no traffic, that this flow works from a real user's perspective, and an alarm must fire if it fails. The check results must be kept as CloudWatch metrics, and the company must not operate servers for the checks itself. It would be good for the canary results to leave evidence such as screenshots, but this is not required, and the incident response owner receives notifications by SNS email, not SMS. Which method has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use an Amazon Route 53 health check to check the HTTP response code of the login page URL, and send an alarm when the health check fails."
+      },
+      {
+        "label": "B",
+        "text": "Create an alarm on the HealthyHostCount metric of the ALB target group, and treat a decrease in the number of healthy targets as an outage."
+      },
+      {
+        "label": "C",
+        "text": "Create a CloudWatch Synthetics canary as a multistep script with a 1-minute schedule, and set an alarm on the canary's success rate metric."
+      },
+      {
+        "label": "D",
+        "text": "Place a cron-based curl script on a separate EC2 instance, upload the results as a CloudWatch custom metric, and set an alarm on it."
+      }
+    ],
+    "explanation": "The correct answer is a CloudWatch Synthetics canary. A canary is a script that runs on a schedule and follows the same paths and actions as a customer, it can run as often as every minute, it works even when there is no traffic, and you can set an alarm on its success rate metric. A Route 53 health check looks at the result of a single URL request, so it cannot verify a multistep flow from login to the cart. The number of healthy targets on an ALB only shows whether servers respond and does not tell you whether the user flow succeeds. The EC2 with cron approach violates the requirement because you would have to operate a server for the checks yourself."
+  },
+  {
+    "number": 8,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "A media company processes image conversion jobs that accumulate in an Amazon SQS queue by using 40 worker instances in an Amazon EC2 Auto Scaling group. The jobs are idempotent, a job that is interrupted during processing is processed again from the queue, and it is acceptable for results to be several hours late. The workers do not store state locally, and the units of work are split into short pieces. Compute costs exceeded the budget last quarter and the finance team demanded savings, and the team wants to solve this with purchasing options and configuration alone, without changing the workload code. A single job finishes in 2 minutes on average, and the workers currently all use one single instance type and run On-Demand. Which method reduces cost the MOST while securing capacity reliably?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Purchase 3-year All Upfront Standard Reserved Instances for 40 instances' worth of capacity and run all workers as Reserved Instances."
+      },
+      {
+        "label": "B",
+        "text": "Lease a Dedicated Host, consolidate the 40 workers onto it, and reduce instance costs with host-level pricing."
+      },
+      {
+        "label": "C",
+        "text": "Consolidate the workers into 10 larger On-Demand instances to reduce the number of instances and the number of servers to manage."
+      },
+      {
+        "label": "D",
+        "text": "Use a Spot Instance configuration with multiple instance types and Availability Zones specified in the Auto Scaling group, and let interrupted jobs be processed again after the SQS visibility timeout."
+      }
+    ],
+    "explanation": "Spot Instances let you use spare EC2 capacity at a large discount, but the capacity can be reclaimed when it is needed again. This workload is idempotent, stateless, and delay-tolerant, and it is reprocessed through SQS, so it can tolerate interruptions. Mixing multiple instance types and Availability Zones makes the workload less sensitive to a capacity shortage in any single pool, which makes it easier to secure capacity. A 3-year All Upfront Reserved Instance commits to a long term for a batch workload that varies greatly and tolerates delay, and its discount is smaller than Spot. Dedicated Hosts are used when licensing or regulatory requirements demand them and are not a way to reduce cost. Consolidating into larger On-Demand instances gives no unit-price discount, so the cost savings are limited."
+  },
+  {
+    "number": 9,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "The on-call team at an online gaming company wants to receive an SNS paging notification only when the web server CPU utilization alarm and the ALB 5xx error count alarm are both in the ALARM state at the same time. Both alarms have already been created, but a page goes out when only one of them fires, and over the past month there have been more than 20 unnecessary early-morning pages, which has greatly increased team fatigue. Pages for cases where only one alarm fires must be reduced. The team must not write new code or operate separate servers, and it must keep using the existing SNS topic for notifications. The evaluation periods of the two alarms are the same at 5 minutes each, and the PagerDuty integration for paging is already subscribed to the SNS topic. What is the MOST appropriate method?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a composite alarm that references the two alarms, set the rule expression to an AND of the ALARM conditions of the two alarms, and attach the SNS action only to the composite alarm."
+      },
+      {
+        "label": "B",
+        "text": "Attach the same SNS topic to each of the two alarms, and have the engineer who receives the notification check whether the other alarm has also fired and then manually page the on-call engineer only when necessary."
+      },
+      {
+        "label": "C",
+        "text": "Create an EventBridge rule for each of the two alarms that matches events whose state is ALARM among the alarm state change events, and specify the same SNS topic as the target."
+      },
+      {
+        "label": "D",
+        "text": "Lower the threshold of the CPU alarm and lengthen the evaluation period of the 5xx alarm so that the times at which the two alarms change state overlap and the SNS notifications go out together."
+      }
+    ],
+    "explanation": "The correct answer is a composite alarm. A composite alarm does not evaluate metrics directly but evaluates a rule expression that references the states of other alarms, and the expression can use the AND, OR, and NOT operators and state functions such as ALARM, so the composite alarm goes to ALARM only when both alarms are in ALARM, and the SNS action can run at that time. Attaching SNS to each alarm sends a notification even when only one fires and leaves a manual checking step for a person. An EventBridge rule matches one event at a time, so the target runs as soon as either alarm goes to ALARM, and the rule cannot express a simultaneous condition. Adjusting thresholds and evaluation periods only changes alarm sensitivity and does not logically combine the notification conditions."
+  },
+  {
+    "number": 10,
+    "domain": "Security and Compliance",
+    "prompt": "An Amazon S3 bucket at a healthcare data company contains about 40 million objects that were stored without encryption. A new regulation requires that all objects be encrypted with SSE-KMS and that key usage be auditable through AWS CloudTrail, and the audit is next month. New objects continue to be uploaded to this bucket, and the upload application is difficult to modify. Because of the large number of objects, processing them manually one by one is not realistic, and the operations team has 3 people. Versioning is turned off on the bucket, and the external partners who upload do not include an encryption option in the request headers. Which method meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set the bucket default encryption to SSE-KMS, since existing objects are automatically re-encrypted, and wait without any additional work after changing the setting. Periodically check that newly uploaded objects are handled the same way."
+      },
+      {
+        "label": "B",
+        "text": "Set the bucket default encryption to SSE-KMS to handle new objects, and use an S3 Batch Operations copy job to create encrypted copies of the existing objects."
+      },
+      {
+        "label": "C",
+        "text": "Use a lifecycle rule to transition the existing objects to the S3 Standard-IA storage class, because they are encrypted with KMS during the transition."
+      },
+      {
+        "label": "D",
+        "text": "Add a bucket policy that denies unencrypted upload requests, so that existing objects are automatically encrypted the next time they are accessed."
+      }
+    ],
+    "explanation": "The default encryption setting applies only to new objects uploaded afterward, and objects that are already stored are not encrypted, so existing objects must be processed by creating encrypted copies with S3 Batch Operations. Simply changing the default encryption to SSE-KMS does not re-encrypt the 40 million existing objects. A storage class transition does not change an object's encryption method. A bucket policy only inspects upload requests and does not apply encryption when stored objects are read. When you create copies with a batch job, they are encrypted with the key that you specify."
+  },
+  {
+    "number": 11,
+    "domain": "Networking and Content Delivery",
+    "prompt": "The infrastructure team at a company received a report that connections on port 443 to an EC2 web server in a newly created subnet are failing. This subnet has a custom network ACL applied to meet security requirements. The security group allows inbound 443 and allows all outbound traffic. The network ACL has only an inbound allow rule for 443 and an outbound allow rule for 443. The VPC flow logs record the 443 traffic from the client to the server as ACCEPT and the response from the server to the client's ephemeral port as REJECT. The team has checked the server's OS firewall and the application settings and found no problems, and other servers in the same subnet show the same symptom. What is the MOST appropriate action?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add a rule to the security group outbound rules that explicitly allows TCP traffic to the ephemeral port range."
+      },
+      {
+        "label": "B",
+        "text": "Add a rule to the network ACL outbound rules that allows TCP traffic to the ephemeral port range (1024-65535)."
+      },
+      {
+        "label": "C",
+        "text": "Change the number of the network ACL inbound 443 rule to a lower number to raise its rule evaluation priority."
+      },
+      {
+        "label": "D",
+        "text": "Add an explicit route for the client CIDR range to the subnet route table so that the response traffic can return."
+      }
+    ],
+    "explanation": "The correct answer is to allow the ephemeral port range in the network ACL outbound rules. Network ACLs are stateless, so the response to an allowed inbound request must be allowed separately by an outbound rule, and the combination of request ACCEPT and response REJECT in the flow logs points to exactly this situation. Security groups are stateful, so responses are allowed automatically, and because all outbound traffic is already open, adding a rule would have no effect. The request is already ACCEPT, so the inbound rule number is not the problem. For responses within the same VPC the local route already exists, so adding a route is not the solution."
+  },
+  {
+    "number": 12,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "A manufacturing company wants to automatically install security patches every Sunday on EC2 instances spread across 25 accounts and 4 Regions in AWS Organizations, and on several hundred on-premises servers registered through Systems Manager hybrid activation, and to view compliance status in one place. The company wants to avoid repeating the same configuration in every account and Region. The patch schedule is managed by the central security team, not by the owners of each account, and it would be good if the same policy applied when a new account is added to the organization. Patching starts at 2:00 AM on Sunday and requires one reboot per server, and the on-premises servers are already registered as Systems Manager managed nodes. Which method meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "In Systems Manager Quick Setup, configure a patch policy targeting the organization, and specify the installation schedule and the patch baseline."
+      },
+      {
+        "label": "B",
+        "text": "Create maintenance windows in each account and Region, and run the AWS-RunPatchBaseline document as a Run Command task on the schedule."
+      },
+      {
+        "label": "C",
+        "text": "Configure the Quick Setup Host Management option for the entire organization, and set the weekly patch installation schedule with this configuration."
+      },
+      {
+        "label": "D",
+        "text": "Have the owner of each account and Region manually run a Patch now operation with Scan and install every Sunday."
+      }
+    ],
+    "explanation": "A Quick Setup patch policy integrates with Organizations, so a single policy can define the schedule and patch baseline and target multiple accounts and Regions across the organization, or even only some OUs, and it can run scanning and installation on different schedules. A task in Maintenance Windows targets only a single account and Region combination, so the configuration has to be repeated for each account and Region. The Host Management option is limited to scanning for missing patches and creating reports and cannot install patches. Patch now also targets only one account and Region at a time and is run manually without a schedule, so it does not meet the requirements."
+  },
+  {
+    "number": 13,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "A company runs its web service in the Seoul Region with an Application Load Balancer and an Amazon EC2 Auto Scaling group. Currently the subnets are in only one Availability Zone, so during a recent AZ failure the service was down for about 2 hours. Going forward, the service must stay available even if one AZ fails completely, and the capacity of the failed AZ must be restored automatically in the remaining AZs. The company wants to solve this mainly by changing settings of the existing configuration without redesigning the architecture, and no one is on call overnight. The service does not store state on local disks, sessions are stored in Amazon ElastiCache, and the database is already configured as Multi-AZ. Which TWO actions meet these requirements with the LEAST change? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Upgrade the instance type to one twice as large as the current type and place more instances within a single AZ to reduce the chance of a single-instance failure."
+      },
+      {
+        "label": "B",
+        "text": "Configure the ALB across subnets in the same three AZs and associate the Auto Scaling group with the target group so that requests go to targets in the healthy AZs."
+      },
+      {
+        "label": "C",
+        "text": "Reduce the minimum capacity of the Auto Scaling group to 0, and when an AZ failure is detected, have an operator add a subnet in a new AZ from the console to restore capacity."
+      },
+      {
+        "label": "D",
+        "text": "Associate an Elastic IP address with the EC2 instances, and prepare a procedure and checklist in which an engineer manually moves the address to a standby instance in another AZ during a failure. Also run switchover drills regularly."
+      },
+      {
+        "label": "E",
+        "text": "Specify subnets in three different AZs for the Auto Scaling group to distribute instances across the AZs, so that capacity is replenished in the remaining AZs when an AZ fails."
+      }
+    ],
+    "explanation": "The correct answer is the combination that configures both the Auto Scaling group and the ALB across multiple AZs. When the group uses subnets in multiple AZs, it launches new instances in the unaffected AZs when an AZ becomes unhealthy and rebalances evenly after recovery, and the load balancer must also enable the same AZs so that traffic goes to targets in the healthy AZs. According to the documentation, an ALB must enable at least two AZs. Scaling up or adding instances within the same AZ does not protect against an AZ failure. A minimum capacity of 0 with manually adding subnets, and manually moving an Elastic IP address, depend on human response rather than automatic recovery."
+  },
+  {
+    "number": 14,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "The platform team at a SaaS company is looking for a way to prevent a recurrence after an incident in which a production CloudFormation stack was accidentally deleted. The stack contains about 40 resources, including an Amazon RDS database, an ALB, and an Auto Scaling group, and a CI/CD pipeline updates the stack several times a day. Going forward, attempts to delete the stack must fail, but stack updates resulting from template changes must remain allowed through the pipeline without being blocked, as they are now. The template is shared across several parts of the team, so the team wants to avoid any method that significantly changes the template structure. The stack deletions were mostly caused by developers clicking by mistake in the console, and the pipeline uses its IAM permissions only for stack updates. What is the MOST appropriate method that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set DeletionPolicy: Retain on all resources in the stack so that the resources remain even if the stack is deleted."
+      },
+      {
+        "label": "B",
+        "text": "Use a stack policy to deny Update actions on all resources."
+      },
+      {
+        "label": "C",
+        "text": "Enable termination protection on the stack."
+      },
+      {
+        "label": "D",
+        "text": "Turn on the disable rollback option when creating the stack so that the stack cannot be deleted."
+      }
+    ],
+    "explanation": "When termination protection is enabled, deletion attempts fail and the stack and its state are kept as they are, and it does not affect updates, so it meets both requirements together. DeletionPolicy: Retain only leaves the resources behind when the stack is deleted and does not prevent deletion of the stack itself. Denying all updates with a stack policy would block the CI/CD updates that happen several times a day, which violates the requirement. Disable rollback is an option about automatic rollback when creation fails, which is a different feature from termination protection, and it does not prevent deletion."
+  },
+  {
+    "number": 15,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A total of 200 EC2 instances in private subnets at a video analytics company download about 5 TB per day from an Amazon S3 bucket in the same Region. They currently connect through a NAT gateway, so data processing charges account for a large share of the monthly cost, and the finance team asked to reduce this item. All the clients are inside the VPC, and access from on premises is not needed. S3 access permissions are already granted through IAM roles, and all the objects are in a bucket in the same Region. The application code must not be changed. All S3 access is based on IAM roles, and the bucket policy does not yet have a condition that allows only a specific VPC. Which method is the MOST cost-effective and the simplest to configure?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an S3 interface endpoint in each subnet and turn on private DNS so that S3 requests go to the endpoint ENIs."
+      },
+      {
+        "label": "B",
+        "text": "Add one NAT gateway per AZ to distribute data processing throughput and reduce inter-AZ data transfer charges."
+      },
+      {
+        "label": "C",
+        "text": "Change the application settings to use the S3 Transfer Acceleration endpoint to optimize the transfer path."
+      },
+      {
+        "label": "D",
+        "text": "Create an S3 gateway endpoint and associate it with the route tables used by the private subnets."
+      }
+    ],
+    "explanation": "The correct answer is to associate an S3 gateway endpoint with the route tables. According to the documentation, a gateway endpoint lets you reach S3 without an internet gateway or NAT device and has no additional charge, so it eliminates the NAT data processing charges while satisfying the requirement that access come from within the VPC. An interface endpoint carries hourly charges and data processing charges, which is an unnecessary cost in this situation. Adding NAT gateways increases hourly charges and leaves the data processing charges unchanged. Transfer Acceleration is for improving upload speed over long distances and does not reduce NAT costs."
+  },
+  {
+    "number": 16,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "The operations team at a financial services company wants to keep the CloudWatch agent installed and running on EC2 instances tagged Env=prod (about 150 instances that grow and shrink frequently with Auto Scaling). Even if someone stops the agent or a new instance with the same tag is added, the instances must return to the desired state within a set interval, and compliance must also be verifiable. The agent configuration uses a standard document defined by the security team, and all instances are managed by Systems Manager. The installation document is already registered as a Systems Manager document, and the agent configuration is set up to read values from Parameter Store. Which method has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run the install command once with Run Command, and then have an engineer periodically check for later changes and rerun it if needed."
+      },
+      {
+        "label": "B",
+        "text": "Create a State Manager association on a set schedule that runs the agent installation and configuration documents against the target tag."
+      },
+      {
+        "label": "C",
+        "text": "Register a task that runs once a month in a maintenance window so that the agent is reinstalled on a set day."
+      },
+      {
+        "label": "D",
+        "text": "Put a script that checks the agent status via cron on each instance, collect the results directly through Lambda, and build a report."
+      }
+    ],
+    "explanation": "A State Manager association keeps applying a document to target nodes on a set schedule to maintain the desired state, and when you target by tag, instances added later are included as well and compliance status is reported. State Manager is the right tool for automating system compliance, and Maintenance Windows is the right tool for time-sensitive tasks in a set time window. Running Run Command once does not restore later changes or cover new instances, and it requires people to check. A once-a-month task could leave a stopped agent unattended for up to a month, which does not meet the requirement to recover within a set interval. Self-built cron and Lambda increase the operational burden even though a managed feature exists."
+  },
+  {
+    "number": 17,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "The web service of an online education company runs on multiple instances in an Auto Scaling group behind an ALB. Last night the web process died on one instance and it returned only HTTP 503. The EC2 status checks all passed, so the group marked the instance as healthy, and the ALB reported the target as unhealthy, but the group did not replace the instance. The company does not want to repeat this situation, in which the on-call engineer had to terminate the instance manually in the early morning. The target group health check is already configured to expect a 200 response on the /health path, and the instance warmup time after launch is appropriately set to 300 seconds. What is the MOST appropriate action to have failed instances replaced automatically without changing application code?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Reduce the health check interval of the ALB target group to 5 seconds and lower the unhealthy threshold count so that an instance is judged unhealthy more quickly."
+      },
+      {
+        "label": "B",
+        "text": "Increase the health check grace period so that the group waits longer after an instance launches before it starts health checks."
+      },
+      {
+        "label": "C",
+        "text": "Run a Lambda function on an EventBridge schedule that analyzes the ALB access logs and terminates the instance when 5xx errors increase, and let the group refill the terminated instance."
+      },
+      {
+        "label": "D",
+        "text": "Additionally turn on the Elastic Load Balancing health check type for the Auto Scaling group so that instances the ALB considers unhealthy are replaced."
+      }
+    ],
+    "explanation": "The correct answer is to turn on the Elastic Load Balancing health check type for the group. By default, Auto Scaling uses only EC2 status checks and ignores the load balancer health check results, so if the EC2 checks pass it does not replace an instance even when the process has died. When the ELB checks are turned on, an instance that the load balancer reports as unhealthy is marked unhealthy at the next check and replaced. Shortening the target group health check interval is useless if the group does not use that result. The grace period only delays when checks begin right after launch and has no effect on a failed instance that is already running. The access log and Lambda approach must be built and operated yourself."
+  },
+  {
+    "number": 18,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "The operations team at a retail company applies patches to 12 EC2 web servers behind an ALB only between 02:00 and 04:00 every Saturday. Before patching, each instance must be deregistered from the load balancer, and the order of re-registering it after patching must be guaranteed, and no work may start outside that time window. This is a time-sensitive task that runs in a set time window, and the team does not want to build an orchestration server that it operates itself. All the instances are managed by Systems Manager, and the team has 3 members. The load balancer deregistration step proceeds in batches of 3 instances at a time, and even if a patch fails, the remaining batches must continue. What is the MOST appropriate method that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a maintenance window with a Saturday 02:00 schedule and a 2-hour duration, and register as a task an AWS Step Functions Standard state machine that defines the order of deregistration, patching, and re-registration."
+      },
+      {
+        "label": "B",
+        "text": "Run the AWS-RunPatchBaseline document periodically with a State Manager association to patch all 12 instances at the same time all at once. Check the execution results per instance in the State Manager compliance report."
+      },
+      {
+        "label": "C",
+        "text": "Use Patch now to run Scan and install on all 12 instances at once, and after it completes, have a person check the load balancer registration status."
+      },
+      {
+        "label": "D",
+        "text": "Configure the patch installation schedule for the entire organization with the Quick Setup Host Management option, and have the installation run on early Saturday morning."
+      }
+    ],
+    "explanation": "Maintenance Windows is a tool that runs potentially risky tasks at set times by specifying a schedule and a maximum duration, and a Step Functions task can orchestrate the sequence of removing a node from the load balancer, patching it, and adding it back (only Standard state machines are supported). A State Manager association is intended for maintaining state and compliance, so it does not fit this task that requires control of the time window and ordering, and patching the instances at the same time could interrupt the service. Patch now is a manual immediate run that ignores schedules and does not guarantee the deregistration and re-registration order. The Host Management option is limited to scanning for and reporting missing patches and cannot install patches."
+  },
+  {
+    "number": 19,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "Forty CloudWatch Logs log groups used by multiple Lambda functions and Amazon ECS services at a media streaming company have never had their settings changed since creation, and they are driving up monthly costs. Under the audit policy, logs only need to be retained for 90 days and can be deleted after that. All the log group names start with /app/, and it would be good if the same policy also applied to log groups created with this prefix in the future. The operations team has no capacity to write code. Some of the log group names keep increasing as new services are added, and the company has confirmed that deleting logs older than 90 days causes no regulatory problem. What is the MOST efficient way to reduce cost without writing code?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Configure an EventBridge scheduled rule and a Lambda function to delete the 40 log groups every month and recreate them with the same names."
+      },
+      {
+        "label": "B",
+        "text": "Run an export task to Amazon S3 every day for each log group, and leave the logs on the CloudWatch Logs side as they are with no further action after exporting."
+      },
+      {
+        "label": "C",
+        "text": "Create an account-level retention policy that specifies a 90-day retention period for the /app/ prefix, and set it to a mode that also applies retroactively to existing log groups."
+      },
+      {
+        "label": "D",
+        "text": "Because the default retention period of log groups is already 90 days, leave the log group settings as they are and add only an S3 lifecycle rule."
+      }
+    ],
+    "explanation": "The correct answer is to create an account-level retention policy for the /app/ prefix with 90-day retention in retroactive mode. CloudWatch Logs stores logs indefinitely by default, so you must specify a retention period to reduce costs, and a prefix-based account-level policy applies to all 40 groups at once without code, and retroactive mode (RETROACTIVE) also applies to existing groups (the policy takes effect about 24 hours after it is created, and expired events are not deleted immediately but can take up to about 72 hours). Deleting and recreating log groups every month would also erase logs within the 90 days needed for the audit. An S3 export only copies the logs and does not reduce the cost of retaining the originals. The premise that the default retention period is 90 days is wrong, because the default is never expire, so an S3 lifecycle rule has nothing to do with CloudWatch Logs costs."
+  },
+  {
+    "number": 20,
+    "domain": "Security and Compliance",
+    "prompt": "A global retail company has 70 accounts in AWS Organizations, and the audit team wants to collect management events from all enabled Regions in all accounts into a single Amazon S3 bucket. Newly created accounts must be included automatically, and administrators of member accounts must not be able to turn off or change the trail. Under company policy, logs are kept centrally in only one place, and the audit team has no staff to check the settings in each account. The organization's management account is operated separately by the security team, and CloudTrail trusted access is already enabled. Which method meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Deploy a trail with the same settings to each account by using StackSets, and have all the trails deliver logs to the central S3 bucket."
+      },
+      {
+        "label": "B",
+        "text": "Have the audit team export each account's CloudTrail Event history by hand every 90 days and collect it in the central bucket."
+      },
+      {
+        "label": "C",
+        "text": "Create a single-Region trail in the management account, and bring in and retain events from other Regions by using S3 Cross-Region Replication."
+      },
+      {
+        "label": "D",
+        "text": "Create a multi-Region organization trail in the management account or a delegated administrator account, and deliver the logs to the central S3 bucket."
+      }
+    ],
+    "explanation": "An organization trail is created in the management account or a delegated administrator account and logs events from all member accounts of the organization to a single bucket, and it is applied automatically when a new account is added to the organization. Users in member accounts can only view the organization trail and cannot delete it, turn off logging, or change it. An organization trail created in the console is a multi-Region trail that covers all enabled Regions. Trails deployed to each account with StackSets can be modified or turned off by member account administrators. Exporting Event history is manual and limited to a 90-day range. A single-Region trail does not record activity in other Regions, so it cannot be supplemented with replication."
+  },
+  {
+    "number": 21,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "A mobile gaming company runs 60 Linux EC2 instances in an Auto Scaling group. The operations team must be notified when memory utilization exceeds 85%, but it cannot find a memory item in the default EC2 metrics in the console. Instances are replaced frequently as traffic changes, so configuring each instance by hand must be avoided, and security policy does not allow SSH access to the instances to be left open. An SNS topic for notifications already exists. All the instances run Amazon Linux, and the instance profile already has CloudWatch agent permissions attached. Which configuration has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on EC2 detailed monitoring so that the 1-minute default metrics include memory utilization, and set an alarm on that metric to notify through SNS."
+      },
+      {
+        "label": "B",
+        "text": "Create a metric filter on the application log group to calculate system memory utilization, and set an alarm on the metric that the filter creates."
+      },
+      {
+        "label": "C",
+        "text": "Include the installation and configuration of the CloudWatch agent in the launch template so that it publishes a memory utilization metric, and set an alarm on that metric to notify through SNS."
+      },
+      {
+        "label": "D",
+        "text": "Run a Lambda function every 5 minutes that connects to each instance over SSH, reads the output of the free command, and sends an SNS notification when the threshold is exceeded."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that deploys the CloudWatch agent through the launch template to publish a memory metric and sets an alarm on that metric. The default AWS/EC2 metrics include CPU, network, and disk throughput, but not memory utilization inside the guest OS, so an agent is required, and putting it in the launch template applies it automatically to replacement instances with no manual work. Detailed monitoring only shortens the collection interval from 5 minutes to 1 minute and does not add a memory metric. A metric filter extracts values from log strings and does not calculate OS memory utilization. The Lambda and SSH approach has the largest burden because you must also operate key management and handling of connection failures yourself."
+  },
+  {
+    "number": 22,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "A company that operates an internal HR system wants to use an internal Application Load Balancer in the Seoul Region as the primary endpoint and an internal Application Load Balancer in the Tokyo Region as the secondary, and to switch the access of corporate VPN users with failover routing in an Amazon Route 53 private hosted zone. The ALBs have no public IP addresses and the security groups allow only the VPC-internal CIDR range, and the security team does not allow exposing the ALBs to the internet for health checks. Switchover during a failure must happen automatically without human intervention. The ALBs in both Regions serve an application with the same configuration, and user traffic must normally go only to Seoul. What is the MOST appropriate way to have Route 53 determine the state of the primary endpoint?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an endpoint health check that targets the private IP address of the primary ALB and associate it with the failover record."
+      },
+      {
+        "label": "B",
+        "text": "Create a CloudWatch alarm on a metric such as the ALB's HealthyHostCount, and associate a Route 53 health check that monitors that alarm with the failover record."
+      },
+      {
+        "label": "C",
+        "text": "Specify the ALB DNS name as the target of an endpoint health check, shorten the check interval to a fast 10 seconds, lower the failure threshold count, and associate it with the record. Also publish the check results to a separate dashboard."
+      },
+      {
+        "label": "D",
+        "text": "Switch to weighted routing instead of failover, and prepare a runbook for manually changing the weight of the primary record to 0."
+      }
+    ],
+    "explanation": "The correct answer is to create a Route 53 health check that monitors a CloudWatch alarm. According to the documentation, endpoint health checks send requests from Route 53 over the internet, so they cannot reach an internal ALB that has no public IP address, and such private resources are evaluated with a health check based on a CloudWatch alarm. An endpoint check that targets a private IP address or the ALB DNS name will always fail for the same reason, even if you shorten the check interval. Weighted routing and a manual runbook are not automatic failover, so the switchover is tied to the speed of human response."
+  },
+  {
+    "number": 23,
+    "domain": "Security and Compliance",
+    "prompt": "A healthcare information company must encrypt all of its EBS volumes to meet a compliance requirement. The Seoul Region currently has 20 production instances with unencrypted volumes attached, and volumes that team members create in the future must be created encrypted without mistakes. Developers create new volumes themselves with the console and the CLI. Existing volumes can be replaced during a monthly maintenance window, but service interruption at any other time is not allowed. For the AWS CloudTrail audit evidence to pass, the Encrypted attribute of every EBS volume must be true, and using AWS managed keys is allowed. Which TWO actions meet these requirements? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the KMS key attached to the existing volumes to a customer managed key so that the unencrypted volumes become encrypted."
+      },
+      {
+        "label": "B",
+        "text": "Enable EBS encryption by default in the Seoul Region."
+      },
+      {
+        "label": "C",
+        "text": "Because enabling encryption by default automatically encrypts existing volumes that are already attached, wait without any additional work."
+      },
+      {
+        "label": "D",
+        "text": "Create a snapshot of each existing volume, create a new encrypted volume from that snapshot, and replace the existing volume with it during the maintenance window."
+      },
+      {
+        "label": "E",
+        "text": "Turn on the encryption attribute for the existing volumes with ModifyVolume to encrypt the volumes in place without stopping the instances."
+      }
+    ],
+    "explanation": "The correct answers are turning on encryption by default and creating new encrypted volumes from snapshots and swapping them in. Encryption by default makes newly created volumes, and volumes created from unencrypted snapshots, encrypted, but it does not change volumes that already exist. An existing unencrypted volume cannot be encrypted directly, and you must create a snapshot and create a new encrypted volume from it. ModifyVolume changes the type, size, and performance, so it cannot turn on the encryption attribute. An unencrypted volume has no KMS key to change, and the key of an existing volume cannot be changed. The claim that encryption by default applies retroactively to existing volumes is not true."
+  },
+  {
+    "number": 24,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "An accounting software company has a group of EC2 instances whose CPU utilization is high only in the last week of each month because of quarter-end close processing. When the company turned on AWS Compute Optimizer in the middle of this month, it produced an over-provisioned finding and a recommendation for an instance type one size smaller, but the team is concerned that the month-end load may not have been reflected. If month-end processing slows down, it directly affects customers' closing schedules, so performance risk must be reduced, and simply keeping the instances large is not consistent with the cost goal. All of these instances are of recent-generation types, memory metrics are not yet being collected, and changes can be made only after month-end processing. What is the MOST appropriate action?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Opt out of Compute Optimizer and opt in again at month-end so that it newly collects only the metrics from the month-end load period."
+      },
+      {
+        "label": "B",
+        "text": "If you add memory metrics with the CloudWatch agent, the analysis period of Compute Optimizer is automatically extended to more than one month."
+      },
+      {
+        "label": "C",
+        "text": "Activate enhanced infrastructure metrics so that it looks at 93 days, which is longer than the default recommendation analysis period of 14 days."
+      },
+      {
+        "label": "D",
+        "text": "Ignore the recommendation and move all instances up to a type one size larger to match the month-end load, preventing performance problems."
+      }
+    ],
+    "explanation": "After you opt in, Compute Optimizer analyzes CloudWatch metrics over a default period of 14 days, and turning on enhanced infrastructure metrics (a paid feature) extends the analysis period for the selected resources to 93 days so that it can reflect the monthly cycle. Opting out and opting in again does not make use of analysis history and would actually hinder the accumulation of metrics. Memory metrics can improve the accuracy of recommendations but do not change the analysis period. Ignoring the recommendation and running larger instances goes in the opposite direction of the goal of reducing costs."
+  },
+  {
+    "number": 25,
+    "domain": "Security and Compliance",
+    "prompt": "Account A at an insurance company has an Amazon EBS snapshot encrypted with a customer managed AWS KMS key, and for a disaster recovery drill the snapshot must be restored to a volume in account B. The snapshot has already been shared with account B, but when an administrator in account B tried to restore it, a KMS permissions error occurred. The security team does not allow making the snapshot public or removing its encryption, and both accounts belong to the same AWS Organizations organization. The restore is performed by a specific IAM role in account B. The snapshot in account A is already shared with account B, and the account B role already has the EC2 and EBS related permissions. Which TWO actions are required to meet these requirements? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Reapply the snapshot sharing setting, because granting the snapshot sharing permission again also delegates access to the KMS key."
+      },
+      {
+        "label": "B",
+        "text": "Attach an IAM policy that delegates kms permissions on the account A key ARN to the IAM role in account B that performs the restore."
+      },
+      {
+        "label": "C",
+        "text": "Change the snapshot sharing setting to public, because it can then be restored from any account, and do not deal with KMS permissions separately."
+      },
+      {
+        "label": "D",
+        "text": "Add a statement to the key policy of the account A KMS key that allows account B (or a specific role in account B) to use the key."
+      },
+      {
+        "label": "E",
+        "text": "Change the KMS key associated with the snapshot in place to a key owned by account B to remove the dependency on the existing key."
+      }
+    ],
+    "explanation": "The correct answers are allowing account B in the key policy and delegating that permission with an IAM policy in account B. Cross-account KMS use requires both the key policy in the account that owns the key and an IAM policy in the external account, and one of the two alone is not enough. An encrypted snapshot cannot be made public and can be shared only with specific accounts, and the security team also prohibits making it public. The KMS key of an existing snapshot or volume cannot be changed, and it can be switched to a different key only during a copy. Sharing a snapshot is only a permission on the snapshot and does not automatically grant KMS key permissions."
+  },
+  {
+    "number": 26,
+    "domain": "Security and Compliance",
+    "prompt": "The security team at an e-commerce company newly enabled AWS Security Hub CSPM and turned on the AWS Foundational Security Best Practices standard. The findings from Amazon GuardDuty and Amazon Inspector appeared immediately, but even after several days almost no security control check results have been generated for Amazon S3 and IAM. The account uses only a single Region, Seoul, and the team uses only AWS services without any separate third-party security tools. The status of the account's AWS Config recorder has not been checked yet, and there is talk that the company ran without turning on AWS Config because of cost. What is the MOST likely cause of this problem and its solution?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "CloudTrail data events are turned off, so enable S3 data event logging and connect the logs to Security Hub CSPM."
+      },
+      {
+        "label": "B",
+        "text": "The 30-day free trial of Security Hub CSPM must end before control checks begin, so wait for the trial period to pass."
+      },
+      {
+        "label": "C",
+        "text": "Cross-Region aggregation is turned off, so specify an aggregation Region and configure it to receive control results from all Regions in one place."
+      },
+      {
+        "label": "D",
+        "text": "AWS Config is not turned on or is not recording resources, so enable Config recording in that account and Region."
+      }
+    ],
+    "explanation": "For most controls, Security Hub CSPM runs its checks by using AWS Config service-linked rules, so control results are generated only when Config is turned on and recording resources. The findings from GuardDuty and Inspector are sent by other services, so they appear regardless of Config. CloudTrail data events are not a prerequisite for control checks. The free trial period concerns billing, and checks run even during the trial. Cross-Region aggregation is a feature that shows results from multiple Regions in one place and does not itself produce control checks."
+  },
+  {
+    "number": 27,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "During a disaster recovery drill at a financial company, a database was brought up on a gp3 volume created from a 4 TB encrypted EBS snapshot, and during the first few days the latency was high each time a block was read for the first time, so the recovery time objective (RTO) was not met. A single snapshot is used for recovery, and recovery is set to be performed in only one AZ in the Seoul Region. A new snapshot is created once a day, and the database instance type cannot be changed. The snapshot lifecycle is managed with Amazon Data Lifecycle Manager (DLM), and the recovery drill runs once per quarter. Which method provides full volume performance right after restore while minimizing additional cost?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Restore with the volume type changed to io2 and specify the maximum provisioned IOPS so that the latency of first-time block reads disappears."
+      },
+      {
+        "label": "B",
+        "text": "Enable fast snapshot restore in all AZs in the Seoul Region and apply the same setting to all the snapshots you hold."
+      },
+      {
+        "label": "C",
+        "text": "Move up to an instance type with greater EBS-optimized bandwidth so that the first-read speed of the restored volume increases."
+      },
+      {
+        "label": "D",
+        "text": "Enable fast snapshot restore for that snapshot only in the one AZ where recovery will be performed."
+      }
+    ],
+    "explanation": "The correct answer is to turn on fast snapshot restore only for the needed snapshot and a single AZ. This feature fully initializes volumes created from the snapshot at creation time, which eliminates the latency on first reads of blocks and matches the symptom exactly, and because an hourly charge applies for each snapshot and AZ combination, limiting it to the one snapshot and one AZ used for recovery gives the lowest cost. The volume type and provisioned IOPS are performance factors separate from the latency of fetching snapshot blocks for the first time. Enabling it for all AZs and all snapshots only adds cost and goes beyond the requirement. Increasing instance bandwidth still leaves the first-access latency."
+  },
+  {
+    "number": 28,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "The operations team at a SaaS company wants to know in advance about hardware retirement and maintenance events that AWS has scheduled for the EC2 instances in its account, and wants to send automatic notifications to an Amazon SNS topic connected to the company's internal messenger. Last quarter instances restarted without warning and customer inquiries increased. The company must avoid installing an agent on every instance for the notifications, and the scope is a single account. The notification channel is already consolidated into an SNS topic, and the target instances include standalone instances outside Auto Scaling groups. Retirement notices usually arrive several weeks in advance, and when the team receives one, it responds by stopping and starting the instance itself during a maintenance window. Which configuration has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an alarm on each instance's StatusCheckFailed metric to notify the SNS topic when a status check fails."
+      },
+      {
+        "label": "B",
+        "text": "Use an EventBridge rule to match AWS Health scheduled change events for EC2, and specify the SNS topic as the target."
+      },
+      {
+        "label": "C",
+        "text": "Query the CloudTrail event history every day to see whether there were retirement-related API calls, and have an engineer share them manually in the messenger."
+      },
+      {
+        "label": "D",
+        "text": "Check the Trusted Advisor results screen once a week, download the list of instances scheduled for retirement, and forward it to the messenger by hand."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that receives AWS Health events with an EventBridge rule and delivers them to SNS. Health emits scheduled changes to account resources as events, and the documentation also describes using SNS and other targets from an EventBridge rule, so this gives advance notification without an agent. A status check failure alarm fires after a problem has already occurred, so it cannot give advance notice of the schedule. CloudTrail is a record of API calls by users and services, not a maintenance notice that AWS has scheduled. Periodically checking the Trusted Advisor screen requires continuing manual work."
+  },
+  {
+    "number": 29,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "A log analysis pipeline at a telecommunications company performs large sequential reads from a dedicated data volume (12 TiB) on EC2 and must continuously sustain a throughput of about 400 MiB/s. There is almost no random I/O, and this volume is not a boot volume. Most read operations happen in large blocks of 1 MiB or more. The company currently uses an SSD volume, so storage cost has become a burden, and latency is not important. The volume is attached to only a single instance, the instance type is a large type with sufficient EBS throughput, and the read block size is consistently 1 MiB or more. Which EBS volume type meets the required throughput at the LOWEST cost?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "An st1 Throughput Optimized HDD volume"
+      },
+      {
+        "label": "B",
+        "text": "An sc1 Cold HDD volume, to get the lowest cost per GiB"
+      },
+      {
+        "label": "C",
+        "text": "A gp3 volume with throughput provisioned at 400 MiB/s or higher"
+      },
+      {
+        "label": "D",
+        "text": "An io2 Block Express volume with IOPS provisioned to match the required throughput"
+      }
+    ],
+    "explanation": "st1 is an HDD designed for large sequential workloads such as big data and log processing. Its baseline throughput is 40 MiB/s per TiB, so a 12 TiB volume sustains 480 MiB/s even without burst credits, and the per-volume maximum is 500 MiB/s, so it meets the requirement to sustain 400 MiB/s while costing less than SSD. The condition that it is not a boot volume allows HDD to be used. sc1 has a baseline throughput of 12 MiB/s per TiB and a maximum of 250 MiB/s per volume even with burst, so even at 12 TiB it reaches only 144 MiB/s and falls short. gp3 can reach up to 2,000 MiB/s, but as an SSD its unit price is higher, so it does not fit the condition of lowest cost. io2 Block Express is for workloads that need sub-millisecond latency and high IOPS, so it is excessive for sequential processing."
+  },
+  {
+    "number": 30,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "The ALB RequestCount metric at an online ticket sales company runs to tens of thousands per minute during weekday daytime and drops to a few hundred in the early morning and on weekends. If a fixed threshold is set based on daytime, anomalies in the early morning are missed, and if it is set based on early morning, false positives are frequent during the day. This daily and weekly pattern has repeated in the same shape for several weeks. The operations team does not want to adjust thresholds by time of day by hand. The metric has already accumulated more than 5 weeks in CloudWatch, notifications can go to the existing SNS topic, and the team is interested in deviations in both directions from the normal range. Which method, among those that learn the day-of-week and time-of-day pattern and notify only when the metric leaves the normal range, has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Fix a high threshold to match the daytime peak, and handle early-morning false positives by changing the alarm action to only log records instead of SNS."
+      },
+      {
+        "label": "B",
+        "text": "Run a Lambda function every hour that calculates the average for the same day of week and time of day last month and publishes it as a custom metric, and set a fixed-threshold alarm on that metric."
+      },
+      {
+        "label": "C",
+        "text": "Create a composite alarm that combines the request count alarm and the CPU alarm with OR so that it notifies when either one fires, reducing missed detections."
+      },
+      {
+        "label": "D",
+        "text": "Enable an anomaly detection model on the RequestCount metric, and create an anomaly detection alarm that goes to ALARM when the metric leaves the expected range band."
+      }
+    ],
+    "explanation": "The correct answer is an anomaly detection alarm. CloudWatch anomaly detection learns the time-of-day and day-of-week seasonality and trends from the metric's historical data to build a band of expected values, and the alarm fires when the metric goes above or below the band, so it meets the requirement without a fixed threshold. A fixed threshold based on daytime will never catch early-morning anomalies. Calculating and publishing averages with Lambda can work, but you must maintain the code, schedule, and seasonality adjustments yourself, so the operational burden is large. A composite alarm only combines existing alarm states and does not learn patterns, so it keeps the fixed-threshold problem."
+  },
+  {
+    "number": 31,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "An operations team at a company failed while updating a CloudFormation stack (with EC2, RDS, and S3 resources), and during the rollback, the attempt to restore the previous version of the RDS instance failed again, leaving the stack in the UPDATE_ROLLBACK_FAILED state. Investigation showed that the cause was that, before the update, an operator had directly deleted that RDS instance from the console. This instance cannot be recovered, and the remaining EC2 and S3 resources are in production, so the stack cannot be deleted. The operations team has not manually touched any resources since the rollback failure, and the latest snapshot of the deleted instance is kept separately. What is the MOST appropriate action to return the stack to a state in which it can be updated again?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run UpdateStack again with the same template to create the deleted RDS instance anew, thereby bypassing the UPDATE_ROLLBACK_FAILED state. Review the impact in advance with a change set before running it."
+      },
+      {
+        "label": "B",
+        "text": "Call ContinueUpdateRollback and specify the logical ID of the RDS resource that failed to roll back in ResourcesToSkip, and then bring the template and the actual resources into agreement afterward."
+      },
+      {
+        "label": "C",
+        "text": "Delete the entire stack, create a new stack with the same template, and manually migrate the running EC2 and S3 resources to the new stack."
+      },
+      {
+        "label": "D",
+        "text": "Run drift detection on the stack so that the deleted RDS instance is automatically recovered based on the template and the rollback continues."
+      }
+    ],
+    "explanation": "The correct answer is to specify the failed resource in ResourcesToSkip with ContinueUpdateRollback. When the cause of the rollback failure (the RDS instance deleted outside CloudFormation) cannot be fixed, you can skip that resource and return the stack to UPDATE_ROLLBACK_COMPLETE, and because the skipped resource will be out of sync with the template, you must reconcile it before the next update. A stack in the UPDATE_ROLLBACK_FAILED state cannot be updated, so running UpdateStack again with the same template is rejected. Deleting and recreating the stack requires moving running resources, which affects the service, and violates the constraint that the problem states the stack cannot be deleted. Drift detection only reports differences and does not recover resources or advance a rollback."
+  },
+  {
+    "number": 32,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "A StackSet at a company that has multiple business units deploys a logging bucket stack to 30 accounts in AWS Organizations. One business unit is being spun off, so the stacks in its 3 accounts must be removed from StackSet management, but the resources in those accounts, including the buckets that contain the logs accumulated so far, must continue to run as they are. After the transition, the business unit's own staff will operate those accounts directly, and the remaining 27 accounts will continue to be managed with the StackSet as they are now. The logging buckets contain logs under a retention policy, and if the buckets disappear because the stacks are deleted, it would be a compliance violation. What is the MOST appropriate method that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Delete the stack instances without any options, and then manually create the same stack anew in those accounts from the same template."
+      },
+      {
+        "label": "B",
+        "text": "Deploy an update that removes the logging bucket resource from the StackSet template to all accounts to exclude it from management. Make sure it is reflected identically in all 30 accounts."
+      },
+      {
+        "label": "C",
+        "text": "Run an operation to delete the stack instances in those 3 accounts while selecting the Retain stacks option."
+      },
+      {
+        "label": "D",
+        "text": "Delete the entire StackSet, then create a new StackSet for the remaining 27 accounts and redeploy."
+      }
+    ],
+    "explanation": "When you delete stack instances and select the Retain stacks option, the stacks in those accounts and Regions are detached from the StackSet but the stacks and resources are left in place, so they can then be managed independently in the target accounts. Deleting without the option deletes resources such as the buckets along with the stacks and could lose the accumulated logs, and a newly created stack would not take over the existing resources. An update that removes the resource from the template applies to all stack instances, so the buckets in all 30 accounts would become targets for deletion. Deleting the entire StackSet and redeploying creates unnecessary change risk for the remaining accounts too."
+  },
+  {
+    "number": 33,
+    "domain": "Networking and Content Delivery",
+    "prompt": "An application server (10.0.5.20) in a newly created subnet times out when connecting to port 3306 on a database server in another subnet of the same VPC. The company wants to determine with evidence, not guesswork, whether the cause is a security group, a network ACL, or routing. Changing server settings requires a change approval process that takes several days, and work that touches traffic on the production database server must be avoided. The two subnets have network ACLs associated with them that were created by different teams, and flow logs are not yet turned on. Which TWO actions narrow down the cause the fastest without touching server settings or traffic? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on VPC flow logs on the database server's ENI to check whether 3306 traffic from the app server's address is ACCEPT or REJECT, along with the records by direction."
+      },
+      {
+        "label": "B",
+        "text": "Reboot the app server and the database server so that open connection states are reset, and then try the connection again."
+      },
+      {
+        "label": "C",
+        "text": "Analyze the path between the two ENIs with Reachability Analyzer to identify the security group, network ACL, or routing component that blocks the path."
+      },
+      {
+        "label": "D",
+        "text": "Turn on Route 53 Resolver query logs to first check whether the app server resolves the database hostname to the correct IP address."
+      },
+      {
+        "label": "E",
+        "text": "Use Traffic Mirroring to replicate all packets from the database server to a security appliance and analyze the packet captures in detail with a separate analysis tool. Review the results together with the security team."
+      }
+    ],
+    "explanation": "The correct answers are Reachability Analyzer and VPC flow logs. Reachability Analyzer is a configuration analysis tool that does not send packets; if the destination is reachable it shows the hop-by-hop path, and if not it identifies the blocking component such as a security group, network ACL, or route table. However, it analyzes only the network configuration, so it cannot show whether the server OS firewall or the application is listening on the port, and if the configuration all comes back as allowed, that layer must be checked separately. This problem is about determining which of the security group, network ACL, or routing is the cause, so configuration analysis is sufficient. Flow logs record allowed and denied traffic as ACCEPT and REJECT, so they provide evidence of where the actual request is being denied. Traffic Mirroring is for packet-level analysis, is excessive here, and requires configuration changes. Resolver query logs are a tool for name resolution problems and differ from diagnosing a timeout when connecting by IP. A reboot provides no evidence."
+  },
+  {
+    "number": 34,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A global gaming company has identical ALB-based stacks in the Seoul and N. Virginia Regions. Regardless of a user's country, each user must be connected to the Region with the faster network response, and if the ALB in one Region is unhealthy, that Region must be excluded from DNS responses. The Seoul and N. Virginia stacks already have synchronized data so that either side can handle requests, and there are no country-specific data residency regulations. The domain is already in a Route 53 hosted zone. The ALB in each Region has a /ping path for health checks, and latency-based routing must be applied at the DNS response stage. What is the MOST appropriate Route 53 configuration?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use geolocation records to map Asian users to Seoul and North American users to N. Virginia, with the default location set to Seoul."
+      },
+      {
+        "label": "B",
+        "text": "Create a latency-based record for each Region and associate that ALB's health check with each record."
+      },
+      {
+        "label": "C",
+        "text": "Create weighted records at 50 to 50 so that both Regions receive traffic at the same ratio, and associate health checks."
+      },
+      {
+        "label": "D",
+        "text": "Create failover records with Seoul as primary and N. Virginia as secondary, so that traffic goes to N. Virginia only when Seoul is unhealthy."
+      }
+    ],
+    "explanation": "The correct answer is latency-based records per Region with health checks associated. Latency routing responds with the Region that has the lowest latency to the user when resources are in multiple Regions, and a record with an associated health check is excluded from responses when it is unhealthy, so both requirements are met. Geolocation routing sends users to a predefined place based on user location and does not guarantee the Region with the faster response. Weighted routing only splits by ratio and does not consider per-user latency. Failover routing is an active-passive configuration that uses only the primary Region, so even users in N. Virginia would go to Seoul."
+  },
+  {
+    "number": 35,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "An order management company runs MySQL that it installed directly on EC2 with a 500 GiB data volume, and it consistently requires an average of 12,000 IOPS. Single-digit millisecond latency is sufficient, and sub-millisecond latency or more than 60,000 IOPS is not needed. The database runs on a single instance and does not use read replicas. The company currently uses a gp2 volume, but costs are rising because it has inflated the capacity to get the IOPS. Snapshots are taken once a day, and the instance type's EBS bandwidth fully supports the required IOPS and throughput. Which EBS volume configuration meets the performance requirements at the LOWEST cost?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "A 500 GiB io2 Block Express volume with 12,000 IOPS provisioned to secure consistent sub-millisecond latency"
+      },
+      {
+        "label": "B",
+        "text": "A 500 GiB gp2 volume, covering 12,000 IOPS with burst performance"
+      },
+      {
+        "label": "C",
+        "text": "A 500 GiB gp3 volume with 12,000 IOPS provisioned"
+      },
+      {
+        "label": "D",
+        "text": "A 500 GiB st1 Throughput Optimized HDD volume, using steady throughput as a substitute for the IOPS requirement"
+      }
+    ],
+    "explanation": "gp3 provides 3,000 IOPS as a baseline and lets you provision additional IOPS at a ratio of 500 IOPS per GiB up to 80,000 IOPS, so you can set 12,000 IOPS on a 500 GiB volume. Single-digit millisecond latency is sufficient, and its price per GiB is 20% lower than gp2, so it meets the requirements at the lowest cost. io2 Block Express is for workloads that need sub-millisecond latency or performance beyond 80,000 IOPS, so it incurs unnecessary cost in this problem. gp2 has IOPS proportional to capacity, a baseline of 1,500 IOPS at 500 GiB and bursting only to 3,000 IOPS, so it cannot sustain 12,000 IOPS. st1 is an HDD with a maximum of about 500 IOPS, so it does not suit an IOPS-driven database."
+  },
+  {
+    "number": 36,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "A software company creates a golden AMI with OS patches and the company's security agent applied every month and deploys it to 8 accounts in the Seoul and Tokyo Regions. Currently, an engineer connects to an EC2 instance and creates and copies the AMI manually, and last month an image with missing patches was deployed. Only images that pass testing must be deployed, and the company wants to minimize the servers and scripts it must manage itself. The infrastructure team has 2 members. The test stage is already defined as running a CIS benchmark check script, and all 8 target accounts belong to the same organization. What is the MOST appropriate method that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Place a cron script on a build EC2 instance to create the AMI and use the AWS CLI to copy and share it to each Region and account."
+      },
+      {
+        "label": "B",
+        "text": "Back up a reference instance every month with AWS Backup and copy the recovery points to other Regions and accounts to use as AMIs."
+      },
+      {
+        "label": "C",
+        "text": "Define an EC2 Image Builder pipeline with a monthly schedule, build and test components, and a distribution configuration that specifies the target Regions and accounts."
+      },
+      {
+        "label": "D",
+        "text": "Have an engineer manually enter the latest AMI ID into the ImageId parameter of the CloudFormation template every month to update the stack."
+      }
+    ],
+    "explanation": "In an EC2 Image Builder pipeline that creates images on a schedule, the build components of the recipe apply the patches and the agent, the image is distributed only when all test components succeed, and the distribution configuration specifies the Regions and account sharing. A self-built cron script requires you to operate the server and script yourself and to implement guarantees such as distributing only after tests pass. An AWS Backup recovery point is a feature for copying backups and has no patch application or testing stages. Entering the ImageId manually does not solve the problem of creating the AMI and leaves only manual work."
+  },
+  {
+    "number": 37,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "Under security policy, the operations team of a public agency system must let administrators connect with a shell to 50 EC2 instances in private subnets that have no public IP addresses and no internet route. Inbound port 22 must not be opened, and bastion hosts and SSH keys must not be operated. Access permissions must be controlled with IAM, and connection records must be kept. The latest SSM Agent is installed on the instances. Administrators sign in with AWS IAM Identity Center, and the team wants to keep session logs in Amazon S3 or Amazon CloudWatch Logs. Which TWO actions are required to meet these requirements by using Session Manager? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a new key pair for each instance, distribute it to the administrators, and operate a procedure to rotate the keys every 90 days."
+      },
+      {
+        "label": "B",
+        "text": "Create interface VPC endpoints for Systems Manager (ssm, ssmmessages, ec2messages) so that the instances can connect to the service without the internet."
+      },
+      {
+        "label": "C",
+        "text": "Attach to the instance profile an IAM role that includes the AmazonSSMManagedInstanceCore policy so that the instances become Systems Manager managed nodes."
+      },
+      {
+        "label": "D",
+        "text": "Place a bastion host in a public subnet, allow only port 22 connections from the administrators' IP range in the security group, and connect again from the bastion to each instance by using SSH keys."
+      },
+      {
+        "label": "E",
+        "text": "Assign public IP addresses to the instances, open port 22 for the administrators' IP addresses in the security group, and connect by using EC2 Instance Connect."
+      }
+    ],
+    "explanation": "The correct answers are attaching a role that includes AmazonSSMManagedInstanceCore to the instance profile and creating interface VPC endpoints for Systems Manager. The former is needed so that the instances register as managed nodes and access can be controlled with IAM, and the latter lets the SSM Agent connect privately to the service from private subnets that have no internet route. Depending on the agent version, ec2messages is also used, so create all three endpoints together. A bastion host requires port 22 and host operations, which violates the constraints. Distributing and rotating key pairs works against the goal of eliminating SSH key management. Assigning public IP addresses and opening port 22 violates both the condition that there be no internet route and the condition that inbound ports not be opened."
+  },
+  {
+    "number": 38,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "A legacy application running on a single EC2 instance at an internal business systems company occasionally stops responding because of an OS kernel problem. When this happens, only the instance status check fails and the system status check passes. The instance must be rebooted without human intervention while keeping its public IP address, instance ID, and disk data, and a configuration that replaces the instance with a new one is not allowed. The application is already configured to start automatically after a reboot. An Elastic IP address is attached to the instance, a reboot finishes in about 1 minute, and the company wants the alarm to act only after 3 consecutive failed evaluations. What is the MOST suitable method?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an alarm on the StatusCheckFailed_Instance metric and specify rebooting the EC2 instance as the alarm action."
+      },
+      {
+        "label": "B",
+        "text": "Create an alarm on the StatusCheckFailed_System metric and specify recovering the EC2 instance as the alarm action."
+      },
+      {
+        "label": "C",
+        "text": "Put the instance in an Auto Scaling group with minimum and maximum capacity of 1, and have the group replace it with a new instance when a health check fails."
+      },
+      {
+        "label": "D",
+        "text": "Create an EventBridge rule that runs an SSM Automation to stop and start the instance when CPUUtilization stays below 1% for 5 minutes."
+      }
+    ],
+    "explanation": "The correct answer is attaching a reboot alarm action to the instance status check failure metric. The problem scenario is an OS-level problem in which only the instance status check fails, the metric that watches for that signal is StatusCheckFailed_Instance, and the reboot action keeps the instance ID and EBS data as they are. The system status check metric and the recover action are for host hardware problems, and the documentation also explains that automatic recovery does not work when only the instance status check fails. Auto Scaling replacement creates a new instance, which violates the condition to keep the instance. A low CPU signal often produces false positives unrelated to a kernel problem, and stop and start can change the host so that the public IP address may change."
+  },
+  {
+    "number": 39,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "The development account of a startup repeatedly exceeds its monthly budget of $5,000. The team wants to notify the owner when forecasted cost reaches 80% of the budget, and to automatically restrict the creation of new resources when it reaches 100%. There are 15 developers and no dedicated FinOps staff, so custom-built automation must be minimized. Notifications must be delivered both to the owner's email and to an SNS topic. The development account is a separate AWS Organizations member, the budget owner is comfortable with the Budgets console, and the restriction on creating resources must not block read operations. What is the MOST appropriate method that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Save a daily cost report in Cost Explorer, and have the owner check it every day and manually revoke IAM permissions if the budget is exceeded. When costs exceed the threshold, the owner directly checks and adjusts the resource creation permissions in the account."
+      },
+      {
+        "label": "B",
+        "text": "Receive Trusted Advisor cost optimization check results with EventBridge and have a custom-written Lambda function stop resources in the development account."
+      },
+      {
+        "label": "C",
+        "text": "Create a CloudWatch billing alarm to send a notification through SNS when the threshold is reached, and have the owner restrict permissions manually afterward."
+      },
+      {
+        "label": "D",
+        "text": "Set up an 80% forecasted cost alert through SNS on an AWS Budgets cost budget, and configure a budget action that applies an IAM policy denying resource creation at the 100% threshold."
+      }
+    ],
+    "explanation": "AWS Budgets can send alerts on actual and forecasted cost through SNS or email, and a budget action can automatically apply an IAM policy that blocks resource creation when a threshold is reached, so it meets both requirements without custom development. Cost Explorer is a tool for analyzing and viewing costs and has no alert thresholds or automatic actions. Connecting Trusted Advisor to Lambda does not match a budget-versus-cost criterion and requires custom development. A CloudWatch billing alarm provides only notifications and does not automatically restrict permissions, so it does not meet the automatic restriction requirement."
+  },
+  {
+    "number": 40,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "The operations team at a food delivery app company receives the web tier CPUUtilization alarm and the ALB 5xx error alarm separately through SNS, so a brief alarm on just one of them often causes a night-time page. Over the past month, most of the early-morning pages were cases in which only one metric briefly crossed its threshold. The team wants to page the on-call engineer only when both alarms are in ALARM at the same time, while keeping the existing individual alarms themselves for dashboard display. The team cannot build new code or separate servers. The evaluation periods of both alarms are 5 minutes, and the individual alarm widgets on the dashboard must remain after switching to a composite alarm. Which method is MOST suitable while minimizing changes?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Double the thresholds of both metrics so that exceeding only one of them does not trigger a notification, and keep using the existing SNS topic."
+      },
+      {
+        "label": "B",
+        "text": "Create a composite alarm and connect actions such as rebooting an instance or running an Auto Scaling policy directly as the composite alarm's alarm actions."
+      },
+      {
+        "label": "C",
+        "text": "Receive each alarm's state change event with two EventBridge rules, and have Step Functions determine whether they occurred at the same time before paging."
+      },
+      {
+        "label": "D",
+        "text": "Create a composite alarm that references the two alarms with an AND condition, attach the on-call SNS notification only to the composite alarm, and remove the notification targets from the individual alarms."
+      }
+    ],
+    "explanation": "The correct answer is to attach the on-call notification only to a composite alarm that combines the two alarms with AND. A composite alarm evaluates only the states of other alarms, so it can reduce alert noise while leaving the existing individual alarms as they are, and the documentation also describes composite alarms as a way to reduce alarm noise. Doubling the thresholds lowers the sensitivity for detecting a single-metric failure, which differs from the requirement. A composite alarm can perform SNS notifications and create OpsItems, but it cannot perform EC2 actions or Auto Scaling actions, so connecting those actions does not work. The EventBridge and Step Functions combination has many new components to build and operate, which does not fit the goal of minimizing changes."
+  },
+  {
+    "number": 41,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "An online bookstore company runs its web service on m5 instances in the Seoul Region, but next year it plans to move some of it to AWS Fargate and relocate some workloads to m6i and c6i in the Tokyo Region. The company wants to lower costs with a 1-year commitment, and the discount must continue to apply even with these changes. Current average monthly usage is relatively steady, and the finance team requires the freedom to change configurations even after committing. Usage fluctuates within 10% per month, and the company prefers to pay a fixed monthly amount with no upfront payment. Which purchasing option meets these requirements MOST cost-effectively?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Purchase a 1-year EC2 Instance Savings Plan for the m5 family in the Seoul Region to secure the highest discount rate on current usage."
+      },
+      {
+        "label": "B",
+        "text": "Create On-Demand Capacity Reservations for the current m5 usage so that the needed capacity is always secured."
+      },
+      {
+        "label": "C",
+        "text": "Purchase a 1-year Compute Savings Plan so that the discount applies to EC2 even when the instance family and Region change, and also to Fargate usage."
+      },
+      {
+        "label": "D",
+        "text": "Convert all workloads to Spot Instances to use the lowest unit price with no commitment, and have them restart to prepare for interruptions."
+      }
+    ],
+    "explanation": "Compute Savings Plans apply automatically to EC2 usage regardless of instance family, size, Region, or operating system, and also apply to Fargate and Lambda usage, so the discount is retained when you move from c5 to m5, change Regions, or migrate from EC2 to Fargate. EC2 Instance Savings Plans are tied to a specific instance family in a specific Region, so they do not apply when the Region or family changes or when you move to Fargate. A capacity reservation secures capacity but does not provide a price discount. Spot Instances can be interrupted, so they are not suitable for an entire web service, and they differ in nature from a commitment discount."
+  },
+  {
+    "number": 42,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "The operations team at a travel booking company runs Amazon RDS for PostgreSQL as a Multi-AZ DB instance deployment. Month-end report queries slow down the primary DB, so the team tried to send the report queries to the standby instance, but there is no way to connect to the standby. The service requires 24-hour write availability, and the failover configuration must be kept. It is acceptable for the reports to use data that is a few minutes old. The report queries are read-only SELECT statements, and write throughput must not decrease just because the read load increases. What is the MOST appropriate way to separate the report read load from the primary instance while keeping the write availability configuration?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Disable the Multi-AZ configuration and separate the endpoint so that the existing standby instance is used as a standalone read instance."
+      },
+      {
+        "label": "B",
+        "text": "Find the secondary endpoint address of the standby instance in the console and specify it as-is as the connection address of the reporting tool."
+      },
+      {
+        "label": "C",
+        "text": "Create a read replica and have the reporting tool connect to the replica endpoint, leaving the Multi-AZ configuration as it is."
+      },
+      {
+        "label": "D",
+        "text": "Raise the DB instance class of the primary instance by two sizes so that report queries and service queries are processed together on the same instance."
+      }
+    ],
+    "explanation": "The correct answer is to add a read replica and send the report queries to the replica endpoint. The standby of a Multi-AZ DB instance deployment is a synchronous replica for failover, and the documentation explicitly states that it cannot serve read traffic, so separating reads requires a read replica or a Multi-AZ DB cluster. Disabling Multi-AZ would violate the availability requirement, and the standby would not become a read instance. The standby has no separate secondary endpoint that you can connect to. Increasing the instance class does not separate the load, and contention on the same instance continues."
+  },
+  {
+    "number": 43,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "A retail company purchased a 3-year Compute Savings Plan. Because it is reducing some workloads, it is worried that the committed amount may not be fully used, and it wants to be notified right away if the commitment goes underused and is wasted. The alert criterion is when daily utilization falls below 80%. A trend of declining usage is already visible a few months after the purchase. Notifications should go to the finance team's SNS topic, and the company does not want to build a separate analysis tool. The Savings Plan was purchased in the organization's management account, and the budget can be created in the same management account. What is the MOST appropriate configuration that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a daily Savings Plans coverage budget and configure it to send a notification when coverage is below 80%."
+      },
+      {
+        "label": "B",
+        "text": "Create a monthly cost budget with the same value as the committed amount and configure it to send a notification when forecasted cost exceeds 100%."
+      },
+      {
+        "label": "C",
+        "text": "Create a daily Savings Plans utilization budget and configure it to send a notification when utilization is below 80%."
+      },
+      {
+        "label": "D",
+        "text": "Create an hourly EC2 usage budget and configure it to send a notification when usage falls below the committed hours."
+      }
+    ],
+    "explanation": "A utilization budget tracks how much of the purchased Savings Plans commitment is being used and notifies you when it falls below a threshold, so it fits detecting wasted commitment on a daily basis. A coverage budget tracks the percentage of eligible usage that is covered by Savings Plans, so it drops when usage grows and more of it is uncovered, and it cannot tell you about a situation in which commitment is left over. The forecast alert of a cost budget looks at cases where spending grows, which is the opposite direction from an underused commitment. A usage budget tracks service usage itself rather than whether the commitment is used, so it cannot directly reflect wasted commitment."
+  },
+  {
+    "number": 44,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "An application at a payment services company publishes the value 1 to a PaymentErrors custom metric only when a payment error occurs. The company created an alarm on this metric with a 5-minute period, 1 data point, and a threshold of greater than or equal to 1, but during normal times with no errors the alarm remains in the INSUFFICIENT_DATA state and appears gray on the operations dashboard. This has led to complaints that it is hard to tell whether the alarm is working correctly. It is hard to add code that makes the application publish the metric when there are no errors, and the only alarm action needed is an SNS email notification. What is the MOST appropriate setting so that the alarm shows OK during normal times and goes to ALARM only when errors come in?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set the alarm's missing data treatment to notBreaching so that periods in which the error metric is not published are treated as normal values within the threshold."
+      },
+      {
+        "label": "B",
+        "text": "Set the alarm's missing data treatment to breaching so that periods in which the metric does not arrive are also treated as threshold violations, so the alarm always shows a checked state."
+      },
+      {
+        "label": "C",
+        "text": "Set the alarm's missing data treatment to ignore so that the previous alarm state is maintained during periods with no data."
+      },
+      {
+        "label": "D",
+        "text": "Lengthen the alarm evaluation period to as much as one day so that the alarm keeps showing OK if data arrives even once during the day."
+      }
+    ],
+    "explanation": "The correct answer is to treat missing data as notBreaching. For a metric that is published only when an error occurs, the absence of data means everything is normal, and the documentation also recommends notBreaching for such metrics. Setting breaching would put the alarm in ALARM during normal times with no errors, which is the opposite of the requirement. ignore maintains the current state, so the initial INSUFFICIENT_DATA state would remain, and once the alarm goes to ALARM there would be no new data to move it out of ALARM. Lengthening the evaluation period still treats periods with no data at all as missing, so the state does not change and only the detection of errors is delayed."
+  },
+  {
+    "number": 45,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A backup server in the on-premises data center of a manufacturing company connects to a VPC through an AWS Direct Connect connection and must upload backups to an Amazon S3 bucket in the same Region without going over the internet. The VPC already has an S3 gateway endpoint, but access from on premises does not work. Under security policy, backup traffic is not allowed to use a public internet path, and the network team does not want to change the Direct Connect connection itself. The backup data is about 2 TB per day, and on premises already uses a Direct Connect private virtual interface. What is the MOST appropriate change that satisfies the requirement of not using a public internet path?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an S3 interface endpoint in the VPC and configure DNS so that S3 requests from on premises are sent to the endpoint's private IP addresses."
+      },
+      {
+        "label": "B",
+        "text": "Add the Direct Connect virtual interface to the route table associations of the gateway endpoint so that the on-premises path uses the endpoint."
+      },
+      {
+        "label": "C",
+        "text": "Create a NAT gateway in the VPC and route on-premises traffic through the NAT to the S3 public endpoint."
+      },
+      {
+        "label": "D",
+        "text": "Add a condition that allows the on-premises CIDR to the gateway endpoint policy so that the endpoint accepts requests from that range."
+      }
+    ],
+    "explanation": "The correct answer is to create an S3 interface endpoint and have on premises access it through its private IP addresses. According to the documentation, gateway endpoints cannot be used by resources over VPN, VPC peering, a transit gateway, or Direct Connect, and in such scenarios you must use an interface endpoint, which has additional cost. A gateway endpoint is only a route table target, and there is no concept of attaching it to a virtual interface. Going through a NAT gateway would use the S3 public endpoint and the internet gateway path, which violates the requirement. An endpoint policy only defines the scope of permitted access and does not add reachable paths."
+  },
+  {
+    "number": 46,
+    "domain": "Monitoring, Logging, and Remediation",
+    "prompt": "The operations team at a manufacturer wants to view application log files and memory and disk utilization from 40 on-premises Linux servers and 110 EC2 instances together in a single CloudWatch. The definition of what to collect must be changeable in bulk in one place, without being managed separately for each server. With as many as 150 servers, per-server manual configuration is unacceptable, and the operations team has 4 members. Assume that the on-premises servers are not covered by Systems Manager hybrid activation. The log files are under /var/log/app, memory and disk metrics are collected at 1-minute intervals, and configuration changes must be applied without redeploying servers. Which TWO actions meet these requirements with the LEAST operational overhead? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Attach an IAM role with the CloudWatchAgentServerPolicy to the EC2 instances as an instance profile, and configure credentials with the same permissions on the on-premises servers."
+      },
+      {
+        "label": "B",
+        "text": "Turn on detailed monitoring for the EC2 instances to collect memory and disk utilization, and install and operate the agent only on the on-premises servers."
+      },
+      {
+        "label": "C",
+        "text": "Enable VPC flow logs and send them to a log group, which also collects the application log files and memory utilization inside the instances."
+      },
+      {
+        "label": "D",
+        "text": "Install the unified CloudWatch agent on all servers, and place a configuration file that defines the log files and metrics to collect in SSM Parameter Store so that each server retrieves it."
+      },
+      {
+        "label": "E",
+        "text": "Upload logs to Amazon S3 from each server with cron, run a Lambda function from S3 events to convert them into memory and disk metrics and publish them, and have an engineer check failures weekly. Also operate a separate reprocessing queue for conversion failures."
+      }
+    ],
+    "explanation": "The correct answer is the combination of deploying the unified agent to all servers with the same configuration file and granting the agent permission to write to CloudWatch according to the server type. The unified agent collects logs and system-level metrics on both EC2 and on-premises servers, placing the configuration file in a single location in Parameter Store lets you change what is collected in bulk, and permissions come from an instance profile on EC2 and from credentials on premises. Detailed monitoring only shortens the collection interval and does not add memory or disk metrics. The S3 and Lambda conversion requires custom development and operation. Flow logs are network traffic metadata and have nothing to do with in-instance logs or memory."
+  },
+  {
+    "number": 47,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A news media company serves the JS and CSS files of its static website through Amazon CloudFront with a default TTL of 24 hours. The company deploys 20 times a week, but even after deployments some users still see old files. The company must maintain the cache hit ratio and must also avoid the cost of invalidation requests and the problem of old files remaining in browser and corporate proxy caches. The origin is Amazon S3, and the team can modify the build pipeline itself. The HTML files have a short cache time configured, and the team uses a build tool that can rename only the JS and CSS files with hashed names. What is the MOST appropriate deployment approach?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an invalidation request for the /* path immediately after every deployment to clear the cache at all edge locations."
+      },
+      {
+        "label": "B",
+        "text": "Lower the default TTL to 0 so that CloudFront checks the origin for changes to the file on every request."
+      },
+      {
+        "label": "C",
+        "text": "Create a new CloudFront distribution for each deployment and switch the Route 53 record to the new distribution to separate the caches."
+      },
+      {
+        "label": "D",
+        "text": "Include a hash or version in the file name at build time and upload under the new name, and have the HTML reference the new file names."
+      }
+    ],
+    "explanation": "The correct answer is to deploy with the version in the file name. The documentation recommends versioned file names over invalidation when you update files frequently, because versioned names give you control over which file users receive even when old files are cached in user browsers or corporate proxies, and they incur no invalidation charges. Invalidation only clears the CloudFront edge cache, so old files that remain in browser and proxy caches can continue to appear until they expire, and it incurs costs depending on the number of requests. Setting the TTL to 0 eliminates the cache hit ratio. Creating a new distribution for each deployment adds the burden of managing DNS switchover and warming a new cache."
+  },
+  {
+    "number": 48,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "A SaaS company has a recovery time objective (RTO) of around 5 minutes and a recovery point objective (RPO) of a few seconds for the case where its three-tier application in the Seoul Region suffers a Region failure. The company wants a structure in which scaled-down web and app servers are always running in the Tokyo Region so that they can handle requests immediately during a failure, and only capacity needs to be increased. The cost of always running full capacity is a burden, and management has limited the DR budget to a fraction of normal infrastructure costs. The database can already use cross-Region replication. The data replication lag between Seoul and Tokyo is normally within a few seconds, and the Auto Scaling group in Tokyo is already running with a minimum capacity of 2 instances. Which cost-effective strategy meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Configure a warm standby in which a scaled-down version of the whole environment is always running in Tokyo, data is replicated across Regions, and the Auto Scaling target capacity is increased during a failure."
+      },
+      {
+        "label": "B",
+        "text": "Configure a pilot light in which only the data replica and AMIs are kept in Tokyo and the app servers are kept off, and the infrastructure is started and scaled out during a failure."
+      },
+      {
+        "label": "C",
+        "text": "Configure a multi-site active/active in which a full environment with the same capacity as Seoul is always running in Tokyo, both Regions handle traffic, and data is replicated in both directions. Also place health check based routing between the two Regions."
+      },
+      {
+        "label": "D",
+        "text": "Configure backup and restore in which Seoul backups are periodically copied to the Tokyo Region and, during a failure, the environment is created anew with CloudFormation and restored."
+      }
+    ],
+    "explanation": "The correct answer is warm standby. According to the AWS whitepaper, in warm standby a scaled-down but fully functional environment is always running, so it can handle requests immediately at reduced capacity and then only needs to scale up, which provides a short RTO while reducing normal costs. In pilot light, the app servers are off, so startup and additional infrastructure deployment are required and requests cannot be handled immediately. Multi-site active/active always runs full capacity, which violates the cost constraint. Backup and restore creates and restores the environment from scratch, so it is hard to meet an RTO of 5 minutes and an RPO of a few seconds."
+  },
+  {
+    "number": 49,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "Under the financial regulations that apply to an insurance company, database backups must be retained for at least 7 years, and during that period no one, including the root user and security administrators, may delete a recovery point or shorten the retention period. Backups are already managed with AWS Backup, and the auditors require a control that can prove immutability. The company wants to use its existing AWS Backup vault without introducing a new backup tool. The vault is already encrypted, the recovery points exist only in the Seoul Region, and the security team keeps vault change history in AWS CloudTrail. What is the MOST appropriate configuration that meets the requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Apply a governance mode vault lock to the backup vault with a minimum retention period of 7 years, so that only authorized IAM users can remove the lock."
+      },
+      {
+        "label": "B",
+        "text": "Apply a compliance mode vault lock to the backup vault with a minimum retention period of 7 years (about 2,557 days), so that the lock becomes immutable after the grace period ends."
+      },
+      {
+        "label": "C",
+        "text": "Deny the delete recovery point action for all principals with a vault access policy, grant the permission to change the policy only to a small number of security team administrators, and audit the change history with CloudTrail."
+      },
+      {
+        "label": "D",
+        "text": "Copy the recovery points to an S3 Glacier vault and apply an S3 Glacier Vault Lock policy to prevent deletion for 7 years."
+      }
+    ],
+    "explanation": "The correct answer is a compliance mode vault lock with a 7-year minimum retention period. In compliance mode, after the grace period (at least 3 days) passes, the lock becomes immutable, so no user, including root, and not even AWS can delete the lock or the recovery points, and the minimum retention period enforces the retention lifetime. In governance mode, a user with sufficient IAM permissions can remove the lock, which violates the requirement that no one, root included, can do so. A vault access policy can be changed by a principal that has permission to change policies, so it cannot prove immutability. S3 Glacier Vault Lock is a different feature from AWS Backup Vault Lock and applies only to Glacier vaults."
+  },
+  {
+    "number": 50,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "A company with group affiliates must deploy the same security baseline IAM role to 60 accounts in a single organizational unit (OU) in AWS Organizations, and the same role must also be created automatically in any account added to this OU in the future, without any additional work. The security team does not want to create execution roles for StackSets in every target account by hand, and trusted access for CloudFormation StackSets is enabled in the organization. The role to be deployed is a simple configuration with a few security baseline IAM policies attached, and it is enough for the role to be created within a few minutes after a new account is created. Which method meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a StackSet with self-managed permissions, and each time a new account is created, create an administration role and an execution role and then add stack instances. The same work must be repeated every time accounts are added."
+      },
+      {
+        "label": "B",
+        "text": "Create a separate CloudFormation stack in each account, and when a new account is added, have an engineer manually create a stack from the same template."
+      },
+      {
+        "label": "C",
+        "text": "Create a StackSet with service-managed permissions, specify the target OU, and turn on automatic deployment."
+      },
+      {
+        "label": "D",
+        "text": "Declare cross-account resources in a single stack template in the management account so that it creates the IAM roles in all 60 accounts at once."
+      }
+    ],
+    "explanation": "Service-managed permissions create the required IAM roles on StackSets' behalf and integrate with Organizations, and they support automatic deployment, which automatically deploys stack instances to accounts newly added to an OU. This meets both the constraint of not creating execution roles by hand and the requirement that new accounts be covered automatically. Self-managed permissions require you to create roles in each target account yourself, and the work is repeated for every new account, so the operational burden is high. Creating a separate stack per account makes consistent deployment and updating difficult and increases manual work. A single stack can create resources only in the account and Region it belongs to, so declaring resources across multiple accounts is not possible."
+  },
+  {
+    "number": 51,
+    "domain": "Security and Compliance",
+    "prompt": "A company attached an SCP to a workloads OU that denies ec2:RunInstances in Regions other than ap-northeast-2. Users with AdministratorAccess in member accounts cannot create instances in us-east-1. However, during an audit it was discovered that administrators working in the management account can still create instances in us-east-1. Some workloads are currently run directly in the management account, and the company wants to apply its Region restriction governance consistently across the entire organization. The schedule allows moving the workloads that run in the management account to member accounts, and the organization already has a trusted SCP structure in place. What should the company do to meet this requirement most appropriately?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Because the management account is not affected by SCPs, move the workloads to member accounts where SCPs apply, and use the management account only for managing the organization."
+      },
+      {
+        "label": "B",
+        "text": "Attach the same SCP once more to the organization root that contains the management account so that the deny statement also applies to users and roles in the management account."
+      },
+      {
+        "label": "C",
+        "text": "Grant the management account administrators a service-linked role so that those users are subject to the SCP restrictions."
+      },
+      {
+        "label": "D",
+        "text": "Specify the management account ID in the Principal element of the SCP's Deny statement so that the deny also applies to users in the management account."
+      }
+    ],
+    "explanation": "SCPs affect only member accounts in the organization and do not affect users and roles in the management account, so workloads that need the restriction should run in member accounts where SCPs apply, and the management account should be used only for managing the organization. Attaching an SCP to the root still leaves the management account excluded. Service-linked roles are among the things that are not affected by SCPs, and granting one to a user does not make that user subject to SCP restrictions. SCP syntax has no way to target the management account by using a Principal element that specifies a particular principal."
+  },
+  {
+    "number": 52,
+    "domain": "Security and Compliance",
+    "prompt": "A financial services company wants to detect when any of the 40 accounts managed with AWS Organizations communicates with malicious IP addresses or makes anomalous API calls. The security team does not want to enable VPC flow logs and DNS query logs by itself or to build a collection pipeline. The security team is small, so it is also hard to operate separate collection servers, and new accounts must automatically become targets. No account has ever enabled threat detection, and the team wants to view the findings in one place. Which method meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on flow logs in all VPCs and collect them in a central S3 bucket, and then periodically compare them against a list of known malicious IP addresses with Amazon Athena queries."
+      },
+      {
+        "label": "B",
+        "text": "Enable Amazon GuardDuty for the whole organization from a delegated administrator account, and configure it to be turned on automatically for newly created accounts."
+      },
+      {
+        "label": "C",
+        "text": "Enable Amazon Inspector for the whole organization to detect malicious IP communication and anomalous API calls that occur on EC2 instances."
+      },
+      {
+        "label": "D",
+        "text": "Collect security group and network setting changes with an AWS Config organization aggregator and evaluate them with custom rules."
+      }
+    ],
+    "explanation": "When enabled, GuardDuty automatically analyzes CloudTrail management events, VPC flow logs, and Route 53 Resolver DNS query logs as independent streams, so users do not need to configure flow logs or DNS logs separately. A delegated administrator account can manage the organization's accounts all at once. Collecting flow logs and comparing them with Athena requires you to build and operate the collection and analysis yourself. Inspector is a service that finds software vulnerabilities and network reachability, so its purpose differs from detecting malicious communication and anomalous API calls. Config only evaluates configuration changes and does not detect threat activity."
+  },
+  {
+    "number": 53,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "The web tier of an online shopping mall runs in an Auto Scaling group behind an ALB. During a large sale event, when the request count triples, response latency grows even though CPU utilization stays around 40%. This is because each request waits a long time for an external payment API, so CPU is not the bottleneck. The company wants to automatically add and remove instances in proportion to the number of requests processed per instance. The warmup time after instance launch is already defined, and the minimum and maximum capacity are also set. Load testing has already confirmed that a single instance can handle about 800 requests. Which method is the simplest to configure and tune?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "In a target tracking scaling policy, choose the ALBRequestCountPerTarget metric and specify the target number of requests per instance."
+      },
+      {
+        "label": "B",
+        "text": "Specify the total ALB RequestCount metric as the metric of a target tracking policy so that instances are added as requests increase."
+      },
+      {
+        "label": "C",
+        "text": "Create a target tracking policy with an average CPUUtilization target of 50% so that instances are added when CPU rises."
+      },
+      {
+        "label": "D",
+        "text": "Estimate the event time windows and create scheduled scaling actions that raise the desired capacity at the same time every day, one for each expected request volume."
+      }
+    ],
+    "explanation": "The correct answer is a target tracking policy that uses ALBRequestCountPerTarget as the metric. This metric is the average number of requests received per target, so the number of instances is determined in proportion to the load, and you only need to specify the target value because AWS manages the alarms. According to the documentation, the RequestCount of the entire load balancer does not change in value when the number of instances in the group changes, so it is not a metric that can be used for target tracking. If CPU is 40% while latency is long, as it is now, a CPU-based policy does not trigger scaling. Scheduled scaling requires guessing the time pattern, and wrong predictions lead to shortages or waste, so tuning continues."
+  },
+  {
+    "number": 54,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "A healthcare SaaS company wants to back up the EC2 instances, EBS volumes, and RDS instances tagged Backup=daily every day and retain the backups for 35 days, and also copy the same backups to another Region for disaster recovery. Newly tagged resources must be included automatically without extra work, and the company does not want to operate separate backup scripts for each service. The operations team wants to view the backup status on a single screen. Some RDS instances use encrypted snapshots, and a KMS key must be available for restores in the other Region. Which configuration has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Put a 35-day retention rule and a copy action to the destination Region in an AWS Backup plan, and specify the resource assignment with the tag condition Backup=daily."
+      },
+      {
+        "label": "B",
+        "text": "Run a Lambda function for each service daily on an EventBridge schedule that creates EBS snapshots and RDS snapshots and copies them to another Region with the copy API."
+      },
+      {
+        "label": "C",
+        "text": "Automate only EBS snapshots with an Amazon Data Lifecycle Manager policy, and set the RDS automated backup retention period to 35 days."
+      },
+      {
+        "label": "D",
+        "text": "Create the backup plan in only the Seoul Region, and set up S3 Cross-Region Replication to replicate the backup data to the other Region."
+      }
+    ],
+    "explanation": "The correct answer is an AWS Backup plan with tag-based resource assignment and a cross-Region copy rule. AWS Backup manages EC2, EBS, and RDS in a single plan with a schedule and retention period and provides the ability to copy backups to another Region, and when you assign resources by a tag condition, newly tagged resources are included automatically. Lambda scripts violate the condition of not operating per-service code yourself. Data Lifecycle Manager focuses on EBS, and setting the RDS automated backup retention alone does not meet the requirements for cross-Region copy and unified management. S3 Cross-Region Replication replicates S3 objects, not AWS Backup recovery points."
+  },
+  {
+    "number": 55,
+    "domain": "Networking and Content Delivery",
+    "prompt": "An infrastructure engineer at a startup received a report that an EC2 instance in a newly created private subnet cannot reach the OS patch repository (on the internet). The public subnet in the same VPC already has a NAT gateway, and an internet gateway is attached. The route table of the private subnet has only the VPC local route, and the security group outbound rules allow all traffic. Under security policy, the instance must not be directly exposed to the internet. There is only one NAT gateway, in a single public subnet rather than one per Availability Zone, and the company is keeping this configuration for now for cost reasons. What is the MOST appropriate action to solve the problem without directly exposing the instance to the internet?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add a route to the private subnet's route table that sends 0.0.0.0/0 to the NAT gateway."
+      },
+      {
+        "label": "B",
+        "text": "Add a route to the private subnet's route table that sends 0.0.0.0/0 to the internet gateway and assign a public IP address to the instance."
+      },
+      {
+        "label": "C",
+        "text": "Move the NAT gateway into the private subnet so that address translation happens in the same subnet as the instance."
+      },
+      {
+        "label": "D",
+        "text": "Add a rule allowing all traffic to 0.0.0.0/0 to the outbound rules of the instance's security group to open external connectivity."
+      }
+    ],
+    "explanation": "The correct answer is to add a route to the private subnet's route table that sends 0.0.0.0/0 to the NAT gateway. A NAT gateway goes out through the internet gateway from the public subnet, and a private subnet has no way to reach external addresses without a default route, so the missing route is the cause. Adding an internet gateway route and assigning a public IP address directly exposes the instance to the internet, which violates the condition. If you move the NAT gateway into the private subnet, there is no route to the internet gateway, so it does not work. Security group outbound rules do not solve the problem of a missing route."
+  },
+  {
+    "number": 56,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A manufacturing company must resolve a private hosted zone in a VPC (app.internal.example) from on premises, which is connected through AWS Direct Connect, and must also resolve corp.example.local, which is managed by on-premises DNS servers, from EC2 instances in the VPC. The company does not want to operate its own DNS server instances on either side. The network team has 2 members, and redundancy is needed because a DNS failure affects the entire business. The connection between on premises and the VPC already works reliably over Direct Connect, and endpoint ENIs can be placed across two AZs. Which TWO actions have the LEAST operational overhead? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a Route 53 Resolver inbound endpoint in the VPC, and have the on-premises DNS forward queries for app.internal.example to the endpoint IP addresses."
+      },
+      {
+        "label": "B",
+        "text": "Install BIND on EC2 instances in the VPC to configure conditional forwarding in both directions, point the on-premises DNS to these instances, and place one instance in each AZ for redundancy. Also manage the synchronization settings between the two servers."
+      },
+      {
+        "label": "C",
+        "text": "Create a Route 53 Resolver outbound endpoint in the VPC, and associate with the VPC a rule that forwards corp.example.local to the on-premises DNS."
+      },
+      {
+        "label": "D",
+        "text": "Specify only the on-premises DNS server addresses in the VPC's DHCP option set so that the DNS queries from all EC2 instances go to the on-premises servers."
+      },
+      {
+        "label": "E",
+        "text": "Copy the records of the private hosted zone into a public hosted zone and publish them, and have on premises resolve them through internet DNS."
+      }
+    ],
+    "explanation": "The correct answer is the configuration that uses an inbound endpoint together with an outbound endpoint and a forwarding rule. Route 53 Resolver cannot be used directly from outside the VPC, so an inbound endpoint is needed to resolve VPC names from on premises, and an outbound endpoint and a per-domain forwarding rule are needed to resolve on-premises domains from the VPC, and the IP addresses of both endpoints must be reachable over Direct Connect or VPN. If you specify only the on-premises DNS in the DHCP options, Route 53 Resolver is bypassed and the private hosted zone cannot be resolved. Publishing private records in a public zone exposes internal names. BIND instances are servers that you must operate yourself."
+  },
+  {
+    "number": 57,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "A global retail company deploys template updates with StackSets to 120 accounts and 3 Regions (ap-northeast-2, us-east-1, eu-west-1). The company wants to detect problems quickly and have the operation stop automatically before a faulty template spreads to all Regions and accounts. If failures in the first Region exceed the limit, the operation must not proceed to the remaining Regions. The responsible team cannot watch continuously during the deployment. Each stack instance contains only one or two resources per account, so the deployment itself finishes in a few minutes, and safety takes priority over deployment time. What is the MOST appropriate configuration that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set Region concurrency to Parallel and raise the maximum concurrent accounts to the full count to reduce deployment time, and investigate failures after the operation finishes. If needed, select only the failed accounts and redeploy."
+      },
+      {
+        "label": "B",
+        "text": "Set Region concurrency to Sequential and specify the Region deployment order, and set the failure tolerance low, such as 2 stacks."
+      },
+      {
+        "label": "C",
+        "text": "Set the failure tolerance to 100% to deploy to all accounts for now, and collect only the failed stack instances to retry later."
+      },
+      {
+        "label": "D",
+        "text": "Create a separate StackSet for each Region, and have an engineer check each Region's results and then manually start the operation for the next Region."
+      }
+    ],
+    "explanation": "The correct answer is to deploy Regions sequentially with a low failure tolerance. When the number of failed stacks in a Region exceeds the tolerance, that Region's operation becomes FAILED, the overall operation also becomes FAILED, and the operations for the remaining Regions are canceled. Parallel deployment spreads to all Regions at once, which does not match the requirement to stop quickly, and raising concurrent accounts only enlarges the blast radius. With a tolerance of 100%, the operation never stops no matter how many failures occur. Chaining separate per-Region StackSets manually replaces the requirement to stop automatically with human work and only adds operational overhead."
+  },
+  {
+    "number": 58,
+    "domain": "Security and Compliance",
+    "prompt": "A logistics company wants to continuously scan 200 EC2 instances for software package vulnerabilities. Most are SSM managed nodes, but 15 legacy instances on which regulations prohibit installing an agent (EBS-backed, xfs file system, 3 volumes totaling 600 GB) must also be included in the scan, and the company does not want to make any changes to those instances. The security team wants to see the scan results in one place and cannot operate a separate scanner server. It would be good if the results could be sent to Security Hub CSPM, and all the instances to be scanned are in the same Region. What is the MOST appropriate setting that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Fix the Amazon Inspector EC2 scan mode to agent-based and exclude the legacy instances on which an agent cannot be installed from scanning. Compile the scan results into a separate report by hand and share it with the security team."
+      },
+      {
+        "label": "B",
+        "text": "Set the Amazon Inspector EC2 scan mode to hybrid so that SSM managed nodes are scanned agent-based and the other instances are scanned agentless based on EBS snapshots."
+      },
+      {
+        "label": "C",
+        "text": "Install the SSM Agent as an exception only on the legacy instances to register them as managed nodes, and then scan them agent-based."
+      },
+      {
+        "label": "D",
+        "text": "Enable Amazon GuardDuty EC2 Runtime Monitoring so that package vulnerabilities on the legacy instances are also detected."
+      }
+    ],
+    "explanation": "The hybrid scan mode uses both agent-based and agentless scanning: SSM managed nodes are scanned with the agent, and unmanaged EBS-backed instances are scanned by collecting the software inventory from snapshots. The legacy instances are EBS-backed, use ext4 or xfs, and meet the agentless conditions of fewer than 8 volumes and a total of 1,200 GB or less. The agent-based-only mode scans only SSM managed nodes, so it would miss the 15 legacy instances. Installing an agent violates the regulation that an agent cannot be installed. GuardDuty is a threat detection service and is not intended for package vulnerability scanning."
+  },
+  {
+    "number": 59,
+    "domain": "Reliability and Business Continuity",
+    "prompt": "In an Auto Scaling group behind an ALB at a video education company, every time a scale-in event occurs, some users are disconnected during report downloads that take up to 90 seconds and receive 5xx responses. The deregistration delay of the target group is currently 30 seconds. Downloads are synchronous requests handled inside the instance, scale-in is performed by a CPU target tracking policy, and scale-in itself cannot be prevented because of cost. Instances must not receive new requests before they are terminated, and the company wants to remove instances as quickly as possible during scale-in to save cost. What is the MOST appropriate adjustment to protect in-flight requests?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Reduce the deregistration delay to 0 seconds so that new requests go to other instances as soon as a target is removed, reducing request disconnections."
+      },
+      {
+        "label": "B",
+        "text": "Turn off cross-zone load balancing so that only the instances in each AZ handle requests for that AZ, limiting the scope of impact during scale-in."
+      },
+      {
+        "label": "C",
+        "text": "Increase the target group health check interval to delay the point at which an instance that is scaling in is judged unhealthy."
+      },
+      {
+        "label": "D",
+        "text": "Increase the deregistration delay to 120 seconds, which is longer than the maximum request processing time, so that in-flight requests finish before the instance is terminated."
+      }
+    ],
+    "explanation": "The correct answer is to increase the deregistration delay beyond the longest request time. When a target is deregistered, the load balancer stops sending it new requests and, in the draining state, waits for in-flight requests to finish for the length of the delay, and according to the documentation, Auto Scaling also waits for that time or for requests to complete before it terminates the instance. The current 30 seconds is shorter than the 90-second download, which causes the disconnections. Setting the delay to 0 seconds does not protect in-flight requests. The cross-zone setting changes only the scope of request distribution and has nothing to do with protection at termination time. The health check interval does not increase the draining wait time."
+  },
+  {
+    "number": 60,
+    "domain": "Security and Compliance",
+    "prompt": "An application at an online insurance company stores the credentials of an application account for Amazon RDS for MySQL in AWS Secrets Manager. Under security policy, the database password must be changed every 30 days, and the application code must not need to be redeployed when the password changes. The application retrieves the secret at startup and when a connection fails. The development team has 5 members and has no capacity to build and maintain a rotation script. The secret contains the user name and password as JSON, and the database is in a private subnet in the same VPC. Which method meets these requirements with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Store the password in a Parameter Store SecureString and run a custom-written rotation script every 30 days on an EventBridge schedule."
+      },
+      {
+        "label": "B",
+        "text": "Configure automatic rotation on the secret with a 30-day schedule, and have the application read the latest value with GetSecretValue when needed."
+      },
+      {
+        "label": "C",
+        "text": "Turn on automatic key rotation for a KMS customer managed key so that the database password also changes every 30 days."
+      },
+      {
+        "label": "D",
+        "text": "Store the password in a Lambda environment variable and redeploy with a new value through the CI/CD pipeline every 30 days."
+      }
+    ],
+    "explanation": "Secrets Manager provides automatic rotation on a schedule you specify and updates the credentials in both the secret and the database, and if the application retrieves the secret at run time, it uses the new value without redeploying code. Parameter Store with a custom script requires you to implement and operate the rotation procedure and the database update yourself, so the burden is large. KMS key rotation changes the encryption key material and does not change the database password. Storing the password in an environment variable and redeploying violates the constraint that code must not be redeployed and exposes the password in configuration."
+  },
+  {
+    "number": 61,
+    "domain": "Deployment, Provisioning, and Automation",
+    "prompt": "The operations team at a telecommunications company patches 300 Amazon Linux servers. The policy is to auto-approve, 7 days after release, only patches whose classification is Security and whose severity is Critical. One specific patch that caused an outage in the past must not be installed on any server. The predefined baselines provided by AWS cannot be modified and have approval conditions that differ from this policy. All the servers are managed by Systems Manager, and patching must run automatically on a schedule. Baselines can be created separately for each operating system, and new patches must not be installed right after release but only after 7 days have passed. What is the MOST appropriate method that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Set classification and severity conditions and a 7-day auto-approval delay in a custom patch baseline, and add the problem patch to the rejected patches list."
+      },
+      {
+        "label": "B",
+        "text": "Use the predefined patch baseline as is, and exclude the problem patch manually in the package manager by connecting to the servers. After installation, compare the package list of each server to check that the exclusion was honored."
+      },
+      {
+        "label": "C",
+        "text": "Create an Install Override list that enumerates every patch ID to approve by hand, and install based on this list instead of conditional rules."
+      },
+      {
+        "label": "D",
+        "text": "Run only Scan operations periodically to get a missing-patch report, and have an engineer manually install patches on each server after looking at the report."
+      }
+    ],
+    "explanation": "A custom patch baseline lets you define the approval targets by classification and severity, supports auto-approval rules that wait a number of days after release, and lets you exclude a specific patch with the rejected list, so it meets all three requirements. The predefined baselines cannot be modified and also approve Important severity and Bugfix patches, so they do not fit this policy, and excluding manually on each server creates consistency and operational overhead problems at 300 servers. An Install Override list uses a fixed list in place of rules, so it cannot express the auto-approval rules and requires you to maintain the list every time a patch is released. Running Scan only reports and installs no patches."
+  },
+  {
+    "number": 62,
+    "domain": "Security and Compliance",
+    "prompt": "A financial holding company wants to prevent anyone from stopping or deleting CloudTrail trails in the 40 accounts in a workloads OU in AWS Organizations. The restriction must also apply to each account's administrator roles and root user, and account administrators must not be able to lift the policy themselves. Account administrators already have broad IAM permissions, and the security team has no staff to check settings in each account. The actions to block are StopLogging, DeleteTrail, and UpdateTrail, and the security team's account does not need an exception to this restriction. What is the MOST appropriate method that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add the same deny statement as an inline policy to all IAM roles and users in each account to block CloudTrail changes."
+      },
+      {
+        "label": "B",
+        "text": "Set a permissions boundary on all IAM users and roles that excludes the permissions to change CloudTrail."
+      },
+      {
+        "label": "C",
+        "text": "Detect that a trail has been turned off with an AWS Config rule and send a notification, and operate so that an engineer turns the trail back on immediately."
+      },
+      {
+        "label": "D",
+        "text": "Attach to the workloads OU an SCP that denies cloudtrail:StopLogging, cloudtrail:DeleteTrail, and similar actions."
+      }
+    ],
+    "explanation": "An SCP sets the maximum permissions available to IAM users and roles in member accounts, including the root user, and it can be changed only from the organization management side, so account administrators cannot lift it. Inline policies added to each account can be modified or deleted by account administrators and do not apply to the root user. A permissions boundary applies only to IAM users and roles, so it cannot block the root user, and administrators can also change the boundary. A Config rule only detects after the fact and cannot prevent the stop itself, so it does not meet the requirement to prevent it."
+  },
+  {
+    "number": 63,
+    "domain": "Cost and Performance Optimization",
+    "prompt": "A database on a 200 GiB gp2 volume at a data analytics company uses little I/O during normal times, but when the daily batch starts, it requires about 3,000 IOPS for more than an hour. When the batch runs long, response times become sharply slower and recover only after a long while. The company wants to confirm the cause and fix it with the least operational burden, without detaching the volume or interrupting the service. The database is OLTP in nature with a lot of random I/O. The current instance is an EBS-optimized type, and increasing the volume size is not preferred from a cost perspective. Which TWO actions are required? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Check the CloudWatch BurstBalance metric to see whether the gp2 I/O credits are being exhausted."
+      },
+      {
+        "label": "B",
+        "text": "Stop the instance, create a new io2 volume from a snapshot and replace the volume, and then start the instance again. Switch the service to maintenance mode while it is being replaced."
+      },
+      {
+        "label": "C",
+        "text": "Reduce the volume size so that I/O credits accumulate faster and the burst time during the batch period increases."
+      },
+      {
+        "label": "D",
+        "text": "Change the volume type to gp3 with Elastic Volumes and provision the IOPS needed for the batch."
+      },
+      {
+        "label": "E",
+        "text": "Change the volume to st1 to increase sequential throughput and have it handle the database's random I/O as well."
+      }
+    ],
+    "explanation": "The correct answers are checking the BurstBalance metric to confirm credit exhaustion and changing to gp3 with Elastic Volumes. The baseline performance of a 200 GiB gp2 volume is 600 IOPS, and when it bursts to 3,000 IOPS the credits run out within a few tens of minutes, so performance drops in a batch that lasts more than an hour, and BurstBalance shows the remaining credit balance. gp3 consistently provides a 3,000 IOPS baseline without bursting and lets you provision more if needed, and Elastic Volumes makes the change without interrupting the instance. st1 does not suit a database with a lot of random I/O. Stopping the instance and replacing the volume with io2 interrupts the service and violates the constraint. Reducing the size would actually reduce credit accrual and baseline IOPS."
+  },
+  {
+    "number": 64,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A retail company has a Site-to-Site VPN connecting its headquarters to a VPC, but only one tunnel is configured on the on-premises firewall. Each time AWS performs maintenance on a tunnel endpoint, the connection drops for several minutes and affects the business. The customer gateway device is a model that supports configuring a second tunnel, and BGP is already in use. Introducing Direct Connect is not possible under the current budget. The customer gateway device supports dual-tunnel failover, and the company's network team is comfortable with routing changes. How can the company reduce such interruptions with the LEAST change, without creating a new VPN connection?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "In the tunnel options, extend the Phase 1 lifetime to the maximum so that tunnel renegotiation does not occur and the session stays up during maintenance."
+      },
+      {
+        "label": "B",
+        "text": "Replace the on-premises firewall with a model that has greater processing capacity to improve throughput so that the connection does not drop during maintenance."
+      },
+      {
+        "label": "C",
+        "text": "Also configure the second tunnel provided by the VPN connection on the customer gateway device so that both tunnels can be used."
+      },
+      {
+        "label": "D",
+        "text": "Switch to an accelerated Site-to-Site VPN so that the tunnel termination point moves to the AWS edge and the effect of VPC-side maintenance disappears."
+      }
+    ],
+    "explanation": "The correct answer is to configure the second tunnel on the customer gateway device. According to the documentation, a Site-to-Site VPN connection provides two tunnels, each with its own public IP address, and when one tunnel goes down for maintenance, traffic automatically switches to the other configured tunnel; AWS recommends configuring both tunnels for redundancy. Changing the Phase 1 lifetime only changes the renegotiation interval and does not prevent a tunnel from going down because of AWS-side maintenance. Increasing firewall capacity does not change the interruption as long as there is only one tunnel. Accelerated VPN is a performance improvement feature and does not address the lack of redundancy of a single tunnel."
+  },
+  {
+    "number": 65,
+    "domain": "Networking and Content Delivery",
+    "prompt": "A fintech service must accept connections from a partner using a small number of fixed IP addresses that can be registered in the partner's firewall allow list. The service uses a TCP-based protocol rather than HTTP and runs behind Network Load Balancers in the Seoul and Frankfurt Regions. If one Region fails, traffic must fail over to the other Region immediately, without waiting for the clients' DNS caches to expire. Most clients are mobile apps that often cache DNS responses for a long time, and the partner takes several days to change its allow list. The mobile apps use a DNS cache of up to a few minutes, the service port is a single TCP port, and preserving the client IP address is not required. What is the MOST suitable configuration?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Register the NLBs in both Regions as endpoints of an AWS Global Accelerator standard accelerator, and give the partner the accelerator's static anycast IP addresses."
+      },
+      {
+        "label": "B",
+        "text": "Lower the TTL of the Route 53 failover records to 5 seconds, and instruct the partner to register the NLBs' current IP addresses in the allow list."
+      },
+      {
+        "label": "C",
+        "text": "Register the NLBs in both Regions as an origin group behind a CloudFront distribution, have the partner register the CloudFront edge IP ranges in the allow list, and fail over to the other origin when an origin fails."
+      },
+      {
+        "label": "D",
+        "text": "Assign Elastic IP addresses to the NLB in each Region and respond with the two addresses by using Route 53 latency records, and have the partner allow both addresses."
+      }
+    ],
+    "explanation": "The correct answer is a Global Accelerator standard accelerator. This service provides static anycast IP addresses associated with the accelerator and reacts immediately to health changes by sending traffic to healthy endpoints, and the whitepaper also explains that it avoids DNS caching issues, so it meets both the fixed IP and immediate failover requirements. With DNS methods, even a low TTL cannot prevent some resolvers from caching responses, and the allow list is tied to changes in the NLB addresses. CloudFront is for HTTP and HTTPS content delivery, so it does not fit a TCP-based service, allowing the edge IP ranges is a broad scope, and origin failover works on a per-request basis. Responding with Elastic IP addresses through DNS has the same limitation of waiting for cache expiry."
+  }
+]

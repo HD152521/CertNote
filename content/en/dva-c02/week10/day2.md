@@ -93,7 +93,7 @@ Next we move beyond following *what happened* via tracing, to *who did what* aud
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** To search "all traces for a specific userId in X-Ray console," where should userId be placed?
 

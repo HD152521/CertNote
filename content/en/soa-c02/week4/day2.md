@@ -405,7 +405,7 @@ SOA operator's situation-based tool choice:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 회사가 CloudTrail Lake를 도입하려 한다. 기존 Trail(S3 저장)과 Lake를 모두 운영할 경우 발생하는 문제와 선택 기준은?
 

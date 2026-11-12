@@ -314,7 +314,7 @@ Tomorrow we cover API Gateway, which stands in front of Lambda. We'll understand
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A Lambda function handles a user-authentication API behind API Gateway. There's an SLA that must guarantee P99 response latency within 100ms. It uses the Java runtime, so the cold start reaches 2-3 seconds. What is the most suitable solution?
 

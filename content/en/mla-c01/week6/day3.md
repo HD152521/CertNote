@@ -87,7 +87,7 @@ Next we dive deeper into batch transform and serverless inference, covering batc
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 전국 1,500개 매장에 매장별 수요 예측 XGBoost 모델이 있다. 각 매장 모델은 가끔 호출되며, 1,500개 엔드포인트를 띄우는 비용이 부담이다. 가장 적절한 배포 방식은?
 

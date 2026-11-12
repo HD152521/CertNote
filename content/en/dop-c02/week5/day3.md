@@ -484,7 +484,7 @@ Custom Action Provider integrates internal-network systems via Poll-based method
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda Invoke Action에서 Lambda 함수가 정상 완료됐는데 파이프라인이 "In Progress" 상태로 멈춰 있다. 가장 가능성 높은 원인은?
 

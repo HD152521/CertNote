@@ -109,7 +109,7 @@ Tomorrow: the other half of operations — cost optimization, CloudWatch/CloudTr
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 규제 요건상 학습 작업이 인터넷에 절대 접근하지 못하게 하고, 학습 데이터가 든 S3에는 인터넷을 거치지 않고 접근해야 한다. 가장 적절한 구성은?
 

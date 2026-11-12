@@ -89,7 +89,7 @@ Central to the **pretraining-finetuning paradigm** (large-scale pretraining + do
 - Transformer uses self-attention for parallel and long-range processing → modern NLP standard (BERT/GPT/T5).
 - AWS: time series=DeepAR/Forecast, text=BlazingText/Comprehend, generation=JumpStart/Bedrock.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 단순 RNN이 긴 문장의 앞부분 정보를 뒷부분에서 잘 활용하지 못하는 근본 원인은?
 

@@ -343,7 +343,7 @@ For encryption, "who controls the key" is the crux. If you need an audit trail a
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A security audit team must audit all data access on an S3 bucket (who read which object and when). For compliance, automatic annual rotation of the encryption key is also required. What is the most suitable encryption method?
 

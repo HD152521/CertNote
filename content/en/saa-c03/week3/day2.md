@@ -267,7 +267,7 @@ EBS fits most single-EC2 workloads, and gp3 is the default choice. Instance Stor
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You have a database server currently using a gp2 EBS volume (500GB). You want to raise IOPS performance while also cutting cost. What is the most suitable action?
 

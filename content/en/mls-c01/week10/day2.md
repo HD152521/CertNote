@@ -119,7 +119,7 @@ If latency is high in ModelLatency, optimize model/upgrade instance. If high in 
 
 Real-time endpoint operations follow three axes: "Configuration (zero-downtime swap) → Auto Scaling (cost and stability) → Multi-Model/Pipeline (scale and consistency)." The distinction between multi-model, multi-container, and inference pipeline is critical for exams. Next, we optimize endpoints to run faster and cheaper with Neo, Inferentia, and inference pipelines.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 회사가 고객 1만 명 각각에 대해 동일한 XGBoost 프레임워크로 학습된 개인화 모델을 운영해야 한다. 모든 모델을 개별 엔드포인트로 띄우는 비용은 감당할 수 없다. 가장 적합한 방식은?
 

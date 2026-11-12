@@ -106,7 +106,7 @@ Next we see JumpStart for using pre-trained models without training from scratch
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 제한된 컴퓨팅 예산으로 가능한 적은 학습 횟수로 좋은 하이퍼파라미터 조합을 찾고 싶다. 이전 시도 결과를 활용해 다음 시도를 똑똑하게 선택하는 전략은?
 

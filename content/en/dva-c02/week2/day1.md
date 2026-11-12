@@ -178,7 +178,7 @@ In the next article, we look at EC2's network controls — security groups, key 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company is evaluating a switch from c5.xlarge (Intel) to c6g.xlarge (Graviton). What's required to keep the same performance?
 

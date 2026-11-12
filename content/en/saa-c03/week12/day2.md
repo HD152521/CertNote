@@ -92,7 +92,7 @@ In the next article, we'll re-weave Domain 3, high-performance architecture, by 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company requires both RPO 0 and RTO ~0, and cost is no object. It must have zero downtime even during a region failure. What is the most appropriate DR pattern?
 

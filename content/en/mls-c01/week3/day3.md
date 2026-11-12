@@ -100,7 +100,7 @@ Next, we'll see SageMaker tools that automate all these transformations at scale
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 시(hour) 특성에서 23시와 0시를 모델이 인접하게 인식하도록 만드는 가장 적절한 변환은?
 

@@ -249,7 +249,7 @@ In the next article, we dig into what events trigger this Lambda function, and i
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What is the most accurate description of Lambda SnapStart?
 

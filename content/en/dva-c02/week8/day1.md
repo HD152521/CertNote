@@ -288,7 +288,7 @@ Next article, we look at the two squares behind these — **CodeDeploy** and **C
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which of the following is NOT a supported authentication method for CodeCommit?
 

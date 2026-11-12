@@ -104,7 +104,7 @@ This week we covered the second axis of data protection — secrets (Secrets Man
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 감사 로그를 7년간 보관해야 하며, 침해로 루트 자격증명이 탈취되더라도 보존 기간 내 삭제가 절대 불가능해야 한다. 또한 규제가 이중 암호화 계층을 요구한다. 올바른 조합은?
 

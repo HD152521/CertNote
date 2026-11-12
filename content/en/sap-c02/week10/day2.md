@@ -89,7 +89,7 @@ SAP exam common mappings: (1) "internal docs + minimal ops" → Knowledge Bases 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 사내 정책 문서 수천 건 기반 챗봇을 구축한다. 문서는 자주 갱신되고, 운영 부담을 최소화하며, 답변이 어느 문서에 근거했는지 출처를 제시해야 한다. 가장 적합한 구성은?
 

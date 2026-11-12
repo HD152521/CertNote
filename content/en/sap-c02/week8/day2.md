@@ -268,7 +268,7 @@ Next day covers EventBridge for event routing. If Step Functions is the tool for
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An IoT platform receives 5,000 events per second from vending machines (sales·inventory·temperature). Each event's workflow takes an average of 30 seconds and ends in 4 steps. What's the most cost-efficient Step Functions configuration?
 
@@ -354,7 +354,7 @@ D) Polling Lambda
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **Step Functions = distributed persistent state machine**, Saga compensation via Catch + separate branch
 2. **Standard** (1yr·per-transition) vs **Express** (5min·per-invocation+time) — split by frequency·duration

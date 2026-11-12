@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { listCerts } from '@/lib/content';
-import { getExamCertSlugs, getExamQuestionsByCert } from '@/lib/exam/examBank';
+import { getDomainLabelsEn, getExamCertSlugs, getExamQuestionsByCert } from '@/lib/exam/examBank';
 import { ExamRunner } from '@/components/exam/ExamRunner';
 import type { Language } from '@/lib/i18n-client';
 
@@ -25,7 +25,7 @@ export default async function ExamPage({ searchParams }: ExamPageProps) {
 
   const certs = (await listCerts(DEFAULT_CATEGORY))
     .filter((c) => examSlugs.has(c.slug))
-    .map((c) => ({ slug: c.slug, code: c.code, name: c.name, domains: [...new Set(getExamQuestionsByCert(c.slug).map((q) => q.domain))] }));
+    .map((c) => ({ slug: c.slug, code: c.code, name: c.name, domains: [...new Set(getExamQuestionsByCert(c.slug).map((q) => q.domain))], domainLabelsEn: getDomainLabelsEn(c.slug) }));
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-10">

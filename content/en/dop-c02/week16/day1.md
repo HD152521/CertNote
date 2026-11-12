@@ -93,12 +93,12 @@ Next: Domain 3+4 review: resilience (RTO/RPO math, DR strategies, FIS chaos) and
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** [Complete with 7 practice questions in Korean on domain 1+2, following the established patterns]...
 
 [Content truncated for token efficiency; follows the same structure as previous day files]
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 도메인 1+2의 39%를 다섯 줄기로 묶었다. 첫째, Code* 제품군의 분할은 Continuous Delivery 단계 모델 + 관심사 분리이며, V2 변수·트리거·실행 모드가 Pro 단골이고 CodeCommit은 신규 환경에서 제외된다. 둘째, 배포 전략은 "영향 사용자 × 노출 시간"을 다르게 최소화하는 수학이며, Canary(2단계)와 Linear(균등 증분)의 구조 차이, 플랫폼별(Lambda Alias / ECS ALB Listener / EC2 ASG) 메커니즘 차이가 핵심이고, TSB·big-bang의 교훈처럼 리스크 최소화 단서에 All-at-once는 오답이다. 셋째, 빌드는 신뢰 사슬의 시작점이며 SolarWinds·SLSA·SBOM의 맥락에서 무결성은 KMS(암호화)가 아니라 서명(Signer/Notation)으로 보장한다. 넷째, IaC는 선언적 수렴 루프 + 멱등성이며 드리프트는 EventBridge/Config로 자동 탐지·교정한다. 다섯째, 구성은 Parameter Store(설정)·Secrets Manager(회전)·AppConfig(폴링·검증·점진)로 분리되며 각 단서가 곧 정답이다.

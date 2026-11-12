@@ -194,7 +194,7 @@ Here we organize how the Week 5 services play their roles in disaster recovery (
 
 ---
 
-## 📝 시나리오 연습 문제
+## 📝 Scenario Practice Questions
 
 **문제 1.** A startup launches a new social media app. Traffic was 100 RPS a day, then suddenly surged to 50,000 RPS after going viral. The DB is PostgreSQL. To handle this traffic without service interruption:
 

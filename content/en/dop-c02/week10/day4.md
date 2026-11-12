@@ -135,7 +135,7 @@ Next: Week 10 synthesis. How these tools weave—detecting (Synthetics, alarms) 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "외부에서 API의 5분 단위 가용성을 트래픽 유무와 무관하게 측정"하려는 도구는?
 
@@ -228,6 +228,6 @@ D) 주기는 비용과 무관
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 네 가지다. 첫째, 능동(Synthetics)과 수동(RUM) 모니터링은 보완 관계로 — Synthetics는 트래픽 없이 선제적으로 가용성을 보는 블랙박스 프로브, RUM은 실사용자의 현실 경험을 보는 진짜 블랙박스다. 둘째, Synthetics Canary 5종(Heartbeat/API/Broken Link/Visual/GUI Workflow)은 사용자를 흉내 내며, 주기는 MTTD와 비용의 트레이드오프라 critical path만 촘촘히 본다. 셋째, RUM은 Cognito Identity Pool 익명 자격으로 신뢰 없는 브라우저에 단기·최소권한을 위임해 Web Vitals를 수집하고 샘플링으로 비용을 통제한다. 넷째, Evidently는 A/B 실험(베이지안 통계)으로 가설을 검증하지만 deprecation 예고로 AppConfig Feature Flag로 통합되는 방향이며, Internet Monitor/Network Monitor가 2023-24 추가 진단 도구다.

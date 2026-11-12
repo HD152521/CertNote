@@ -455,7 +455,7 @@ In the next article, we cover API Gateway's security layer — the inner working
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** In a Lambda Proxy (AWS_PROXY) integration, what is the minimum set of required fields the Lambda function must return?
 

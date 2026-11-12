@@ -106,7 +106,7 @@ In the next session, we'll see "how to talk to this model to get the answers we 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which of the following is the most accurate explanation of "token" in LLMs?
 

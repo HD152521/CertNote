@@ -122,7 +122,7 @@ From Week 3 onward, we move to detection and logging (CloudTrail, GuardDuty, Sec
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** prod 계정의 사용자에게 `AdministratorAccess`가 할당되어 있는데, `eu-west-1`에서 EC2 시작이 거부되고 CloudTrail에 `explicitDeny`가 기록된다. 가장 유력한 원인과 해결책은?
 

@@ -127,7 +127,7 @@ Today: AMT auto-searches for optimal hyperparameters. Key flow: **define search 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 데이터 과학자가 딥러닝 모델을 튜닝하는데, 각 trial이 여러 에폭을 학습한다. 가망 없는 후보에 자원을 낭비하지 않고 빠르게 좋은 조합으로 수렴하려 한다. 가장 적합한 AMT 전략은?
 

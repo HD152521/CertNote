@@ -164,7 +164,7 @@ Next we'll move into CloudFormation's world where we declare all this infrastruc
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ECS task definition에 Secrets Manager 비밀을 환경 변수로 주입하도록 설정했는데, 태스크가 시작조차 되지 않고 비밀을 가져오지 못한다. 원인은?
 

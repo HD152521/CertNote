@@ -397,7 +397,7 @@ Private VPC requires VPC Endpoints:
   • com.amazonaws.ap-northeast-2.s3           (Gateway - free)
 ```
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EC2 인스턴스가 SSM Managed Instances 목록에 나타나지 않는다. 인스턴스는 실행 중이며, Amazon Linux 2 최신 AMI를 사용한다. 가장 먼저 확인해야 할 항목은?
 

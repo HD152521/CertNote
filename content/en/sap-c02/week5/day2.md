@@ -230,7 +230,7 @@ Route 53 Traffic Flow is a visual editor combining multiple routing policies in 
 
 Cost: $50/month per Traffic Flow policy record. Use only for complex configurations.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A global media company deploying a new API version initially sends only 5% of total traffic to new version. Old version 95%, new version 5%. Which routing policy is most suitable?
 

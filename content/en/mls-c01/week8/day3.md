@@ -108,7 +108,7 @@ Today covered generalization failure diagnosis and fixes. Key: **learning curves
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 모델이 학습 정확도 98%, 검증 정확도 71%로 큰 격차를 보인다. 이 상황의 진단과 1차 대응으로 가장 적절한 것은?
 

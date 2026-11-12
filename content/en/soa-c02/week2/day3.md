@@ -291,7 +291,7 @@ Tomorrow: Metric Filter, EMF deep-dive + Anomaly Detection operational patterns.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** To view Lambda p99 response time trend at 5-minute intervals, which query is correct?
 

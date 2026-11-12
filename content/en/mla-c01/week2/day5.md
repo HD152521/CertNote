@@ -120,7 +120,7 @@ Next week (Week 3) covers feature engineering to make data readable by models, a
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Real-time clickstream needs buffering and auto-loading to S3 without separate processing code. What is most suitable?
 

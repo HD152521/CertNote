@@ -117,7 +117,7 @@ Next deep-dives real-time endpoints—the most critical—covering setup, auto-s
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 모바일 게임이 사용자가 아이템 구매 버튼을 누르는 순간 사기 여부를 50ms 이내에 판정해야 한다. 트래픽은 하루 종일 꾸준히 높다. 가장 적절한 추론 옵션은?
 

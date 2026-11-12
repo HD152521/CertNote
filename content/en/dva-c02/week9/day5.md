@@ -87,7 +87,7 @@ Week 9 services are not independent cards but layers of one defense stack. Each 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Mobile app user logs in via Cognito, then uploads to S3 folder directly. Correct flow?
 

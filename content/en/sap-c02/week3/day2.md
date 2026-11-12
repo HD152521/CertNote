@@ -261,7 +261,7 @@ Direct Connect is the most powerful and stable method for connecting AWS and on-
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A global bank connected its on-premises core banking system to AWS with a single DX circuit. It operates a total of 150 VPCs spanning 3 regions (us-east-1, eu-west-1, ap-northeast-1). To access all these VPCs from on-premises using private IPs:
 

@@ -88,7 +88,7 @@ The final week begins. Rather than piling on new knowledge, this week focuses on
 
 Today we compressed the two highest-weighted domains into a single review. Check whether you can say out loud the **one-line definition and representative keyword** for each service in the tables. Tomorrow we'll organize the Security and Billing domains.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which cloud computing model is most appropriate when the user wants to be directly responsible for OS patching and middleware installation?
 

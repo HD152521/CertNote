@@ -200,7 +200,7 @@ EventBridge (schedule / events)
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A Lambda function normally handles a small volume of requests, but every day at 9 AM hundreds of users connect simultaneously and the cold-start-induced response latency violates the SLA. What is the most suitable solution?
 

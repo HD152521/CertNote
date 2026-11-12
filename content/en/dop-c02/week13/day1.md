@@ -105,7 +105,7 @@ Next article extends HA **beyond single region to multi-region** — Route 53 ro
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 전통적 RDS Multi-AZ에서 Standby 인스턴스로 직접 읽기 쿼리를 보낼 수 없는 근본 이유는?
 
@@ -219,6 +219,6 @@ D) RDS Multi-AZ로 전환한다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 네 가지다. 첫째, 복제는 동기/비동기 사이의 RPO-지연 트레이드오프이며 CAP/PACELC 좌표 위에 놓인다 — RDS Multi-AZ 동기는 PC/EC, 비동기 복제는 지연·가용성 우선이다. 둘째, RDS Multi-AZ는 블록 레벨 물리 복제(Standby read 불가)이고 Read Replica는 논리적 비동기 복제(read 가능)라 동작 차이가 물리/논리 복제에서 비롯되며, Multi-AZ DB Cluster는 준동기 3-copy로 <35초 페일오버를 낸다. 셋째, Aurora는 복제를 스토리지로 내려 6-copy/3-AZ 쿼럼(4/6 write·3/6 read, AZ+1 장애 모델)과 "로그가 곧 DB" 설계로 전통 DB를 앞서고, Backtrack·자동 확장·Serverless v2 같은 부가 기능을 가진다. 넷째, RTO는 승격 후보의 존재와 데이터 복사 여부가 결정하며(Aurora 30초·공유 스토리지), RDS Proxy의 커넥션 풀링이 페일오버를 클라이언트로부터 숨기고 서버리스의 커넥션 폭증을 막는다.

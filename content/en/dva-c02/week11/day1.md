@@ -268,7 +268,7 @@ Consumer ← msg2 → Processing complete
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What is the throughput limit of an SQS FIFO queue?
 

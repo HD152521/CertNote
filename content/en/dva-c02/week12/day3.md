@@ -133,7 +133,7 @@ Next: CDK and serverless arch patterns, where you escape YAML entirely and progr
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 작성한 SAM 템플릿을 배포하니 CloudFormation이 `AWS::Serverless::Function`을 알 수 없는 리소스 타입이라며 실패한다. 원인은?
 

@@ -228,7 +228,7 @@ Next day covers AppSync (GraphQL) and SQS/SNS messaging patterns. If EventBridge
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 SaaS가 SQS 큐에 들어오는 메시지를 필터링해 특정 패턴만 Step Functions로 보내고, 나머지는 무시한다. Lambda 코드 작성 없이 가장 간단한 구성은?
 
@@ -314,7 +314,7 @@ D) EventBridge Archive
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **EDA 3대 디커플링**(시간/공간/동기화), Conway 법칙으로 조직 결합 영향
 2. **Bus 3종**: Default(AWS) / Custom(도메인) / Partner(SaaS) + Cross-account 정책

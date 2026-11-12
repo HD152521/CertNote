@@ -30,7 +30,7 @@ Faced with a long problem, follow this order:
 - Pick "most suitable / minimal ops / lowest cost"—not just "possible."
 - Domain mix doesn't matter if requirement → service mapping is sharp.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 모바일 앱의 클릭스트림을 실시간으로 받아 추가 서버 관리 없이 S3에 Parquet로 적재하고, 분석가가 즉석 SQL로 조회해야 한다. 가장 적합한 조합은?
 

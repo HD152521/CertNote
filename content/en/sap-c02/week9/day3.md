@@ -110,7 +110,7 @@ SAP exam recurring mappings: (1) "EMR Task cost optimal + Spot resilient" → In
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 매일 페타바이트급 로그를 Spark로 배치 처리한다. 데이터는 S3에 영구 보관돼 있고, 처리는 하루 2~3시간만 한다. 비용을 최소화하면서 Spot 중단에도 잡이 죽지 않게 하려면?
 

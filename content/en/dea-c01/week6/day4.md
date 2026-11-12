@@ -106,7 +106,7 @@ aws s3api put-bucket-intelligent-tiering-configuration \
 - For irregular patterns, Intelligent-Tiering; for predictable patterns, lifecycle transitions may be cheaper.
 - Use Storage Lens/Inventory for visibility; compression and compaction are foundational savings.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 접근 패턴을 예측하기 어렵고 검색 요금 없이 객체별로 자동으로 계층을 이동시키고 싶을 때 가장 적합한 S3 스토리지 클래스는?
 

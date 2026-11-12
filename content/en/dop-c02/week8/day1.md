@@ -226,7 +226,7 @@ Next we'll see StackSets extending these patterns to thousands of accounts and m
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 회사가 200개 마이크로서비스 인프라를 단일 CloudFormation Stack에 담아 운영 중이다. 한 서비스의 IAM 변경 때문에 전체 Stack이 UPDATE_IN_PROGRESS로 30분간 묶이는 문제를 가장 적절히 해결하려면?
 
@@ -319,6 +319,6 @@ D) 비용 문제
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, Nested(강결합, 한 트랜잭션)와 Cross-Stack(약결합, 독립 라이프사이클)은 1968년 결합도 원칙의 IaC 적용. 둘째, Export는 사용 중이면 잠기므로 Parameter Store 전환이 권장. 셋째, 동적 참조는 fetch이지 동기화가 아니며 Drift Detection이 못 잡는다. 넷째, Stack Policy / Termination Protection / DeletionPolicy / UpdateReplacePolicy는 모두 다른 시점의 보호 계층이고 defense in depth로 함께 써야 한다. 다섯째, Drift Detection은 의도적으로 감지만 하며 자동 수정은 Config Rules + SSM Automation으로 분리.

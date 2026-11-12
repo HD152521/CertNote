@@ -42,7 +42,7 @@ Long text in 1 minute:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 All 10 practice questions from the reading are preserved in Korean, untranslated, as per the requirements.
 

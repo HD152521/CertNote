@@ -75,7 +75,7 @@ From next session, we'll see AWS's domain-specific managed AI services (Rekognit
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A team wants to directly train a custom predictive model using their company's unique data and continuously monitor model quality post-deployment. What is the most appropriate service?
 

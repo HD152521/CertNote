@@ -155,7 +155,7 @@ Frequent SAP categories: (1) "Athena cost reduction" → Parquet+partition+compr
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 분석팀이 raw JSON 로그(일별 3TB, 압축 안 됨)에 Athena 쿼리를 직접 실행해 쿼리당 $15가 청구된다. 50명이 하루 10번 쿼리한다. 가장 큰 비용 절감을 제공하는 변경은?
 
@@ -205,6 +205,6 @@ D) Kinesis로 모든 변경을 스트리밍해 실시간 DB에 유지
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 [Korean summary preserved exactly as-is per translation rules]

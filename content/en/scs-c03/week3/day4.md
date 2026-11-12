@@ -105,7 +105,7 @@ Network isolation''s final goal is "leave only paths to data that were explicitl
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** VPC 내부의 Lambda 함수가 S3 버킷에 인터넷을 거치지 않고 사설로 접근해야 한다. 가장 비용 효율적인 방법은?
 

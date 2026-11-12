@@ -98,7 +98,7 @@ Tomorrow we look at where the data that compute produces gets stored — the wor
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to run intermittent, event-driven work with irregular traffic without managing servers yourself, paying only for what you use. Which compute service is the best fit?
 

@@ -1,0 +1,47 @@
+{
+  "difficulty": "Specialty · Hands-on experience in the domain recommended",
+  "prerequisites": "None (recommended: 2+ years of experience developing and running ML/deep learning workloads)",
+  "format": "Multiple choice and multiple response",
+  "languages": [
+    "English",
+    "Korean",
+    "Japanese",
+    "Simplified Chinese"
+  ],
+  "domains": [
+    {
+      "name": "Data Engineering"
+    },
+    {
+      "name": "Exploratory Data Analysis"
+    },
+    {
+      "name": "Modeling"
+    },
+    {
+      "name": "Machine Learning Implementation and Operations"
+    }
+  ],
+  "faq": [
+    {
+      "q": "How many questions are on the MLS-C01 exam, and how long is it?",
+      "a": "MLS-C01 has 65 questions and a time limit of 180 minutes. Questions are multiple choice and multiple response."
+    },
+    {
+      "q": "What is the passing score?",
+      "a": "You need 750 or higher out of 1000 to pass. The score is a scaled score adjusted for question difficulty, so it is not the same as a simple percentage of correct answers."
+    },
+    {
+      "q": "How much does the exam cost and how do I register?",
+      "a": "The exam fee is $300 USD, and you can take it through Pearson VUE at a test center or as an online proctored exam. There is no free retake, so you pay the full fee each time you sit the exam."
+    },
+    {
+      "q": "How long is the certification valid? How do I recertify?",
+      "a": "The certification is valid for 3 years after you pass, and you must recertify before it expires. When you pass, you receive a 50% discount voucher for your next exam, which you can use for recertification or for another AWS certification exam."
+    },
+    {
+      "q": "Can I take the exam in Korean?",
+      "a": "Yes, it is offered in 4 languages in total, including Korean. You can choose your language when you register for the exam."
+    }
+  ]
+}

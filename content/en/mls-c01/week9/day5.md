@@ -107,7 +107,7 @@ Next week (Week 10) shifts to Domain 4 — actually **deploying, operating, moni
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 클래스가 95:5로 불균형한 이탈 예측 문제에서 모델을 평가하려 한다. 다음 중 가장 부적절한 평가 방식은?
 

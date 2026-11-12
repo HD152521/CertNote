@@ -118,7 +118,7 @@ In the next article, we integrate the week's observability and governance servic
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An application processes a request in the order API Gateway → Lambda → DynamoDB → external payment API, and the response the user perceives is a slow 3 seconds. In CloudWatch Metrics you only see that Lambda Duration is long, and it isn't decomposed into which downstream call is the bottleneck. Which is the most appropriate tool?
 

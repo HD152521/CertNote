@@ -80,12 +80,12 @@ Final two days: Full exam scenarios (Day 4) and D-Day exam prep strategy (Day 5)
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (Practice questions 1-6 in Korean on incident response, security, compliance, GuardDuty, Config, CloudTrail)
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 도메인 5+6의 22%를 엮었다. 첫째, 사건 대응은 MTTR 최소화: 탐지·진단·치유·검증 각 단계를 자동화한다. 둘째, Incident Manager + Step Functions 워크플로우가 에스컬레이션을 자동화한다. 셋째, CloudTrail·Config 감사 로그는 MFA Delete·Object Lock으로 보호한다. 넷째, GuardDuty·Security Hub·Config Rules는 컴플라이언스를 다중 계정으로 강제한다. 다섯째, EventBridge→Lambda 파이프라인은 분 단위로 대응한다. 여섯째, SAST/DAST/컨테이너/IAM 스캔은 취약성 탐지를 왼쪽(빌드)으로 이동한다. 일곱째, 사후 분석 + FIS 혼돈 테스트가 재발을 방지한다.

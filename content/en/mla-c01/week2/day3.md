@@ -110,7 +110,7 @@ Next, we'll explore **storage strategies optimized for ML training — partition
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A data scientist wants to intermittently explore Parquet data in S3 via SQL without infrastructure management. Costs should be proportional only to data scanned. Which service is most suitable?
 

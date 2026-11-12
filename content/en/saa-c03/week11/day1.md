@@ -94,7 +94,7 @@ In the next article, we'll see how AWS's **4-tier DR strategy (from Backup-Resto
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company must have zero downtime for database writes even during a single-AZ failure, with zero data loss (RPO 0). What is the most appropriate configuration?
 

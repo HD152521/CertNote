@@ -64,7 +64,7 @@ Audit: CloudTrail(KMS API) + Config(history)      Firewall Manager ──┘
 
 Drift is the real exam point: correctly encrypted/locked once doesn't persist if someone disables or new account comes bare. Mature: Control Tower auto-applies guardrails, Config constantly evaluates drift, SCP makes violation impossible.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 규제 요건상 키 자료를 조직이 단독 소유·통제하고(전용 FIPS 140-2 L3 HSM), 그 키로 S3를 암호화하며, 키 사용 내역을 감사해야 한다. 가장 적절한 조합은?
 

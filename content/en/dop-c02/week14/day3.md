@@ -159,7 +159,7 @@ Next we'll extend compliance into **automated audit evidence collection, data cl
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** AWS Config가 구현하는 "목표 상태(Rule)와 실제 상태(Recorder)를 비교해 오차(NON_COMPLIANT)를 검출하고 자동으로 되돌린다(Remediation)"는 구조의 제어 이론적 이름은?
 

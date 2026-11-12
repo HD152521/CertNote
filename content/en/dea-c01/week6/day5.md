@@ -69,7 +69,7 @@ ON TABLE lake_clean.orders TO 'arn:aws:iam::111122223333:role/RegionAnalyst';
 - Open table format problems solved (ACID/time-travel/row DML) and Iceberg/Hudi/Delta strengths.
 - Retrieval costs, minimum retention periods, Intelligent-Tiering vs. lifecycle selection criteria.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** RDS 주문 데이터를 증분으로 데이터레이크에 적재하고, 이후 행 수준 삭제(GDPR)와 MERGE 업서트가 가능하도록 clean 존을 구성하려 한다. 가장 적합한 조합은?
 

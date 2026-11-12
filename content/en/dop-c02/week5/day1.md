@@ -300,7 +300,7 @@ Next article explores how Tooling and Spoke accounts connect via IAM/S3/KMS comb
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** CodePipeline의 한 Stage 내에서 두 Action을 병렬로 실행하려면 어떻게 해야 하는가?
 

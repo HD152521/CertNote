@@ -127,7 +127,7 @@ Flow Logs are visibility, not control — can''t block but can see. When GuardDu
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** NAT Gateway 뒤에 있는 여러 인스턴스 중 어느 것이 의심스러운 외부 IP로 통신했는지 특정하려고 한다. Flow Logs에서 반드시 필요한 필드는?
 

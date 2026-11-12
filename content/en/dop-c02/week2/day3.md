@@ -266,7 +266,7 @@ CodeArtifact stores packages; determining "are these packages really safe?" is s
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Dependency Confusion 공격을 방어하기 위한 가장 적절한 CodeArtifact 구성은?
 
@@ -388,6 +388,6 @@ D) DynamoDB에 chart 메타데이터와 base64 인코딩한 tarball을 저장
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 CodeArtifact의 진짜 가치는 "AWS-native npm/Maven 미러"가 아니라 **소프트웨어 공급망의 단일 진입점을 만들어 통제 가능한 신뢰 경계를 그리는 것**이다. Domain은 자산 중복 제거와 KMS 단일성을 담당하고, Repository는 권한·Upstream·외부 연결의 단위다. 표준 구조는 production → shared → external 3단으로, 모든 외부 패키지가 shared를 거치도록 강제해 차단/감사/스캐닝의 단일 지점을 만든다. Dependency Confusion 방어는 scoped namespace + 단일 registry + lock 파일 3종이 정답이고, SLSA/SBOM/Sigstore는 신흥 공급망 무결성 표준이다. Docker/OCI는 CodeArtifact 아닌 ECR임을 잊지 말 것. 내일은 CodeBuild에서 이 패키지들을 실제 어떻게 빌드 환경에 주입하는지로 넘어간다.

@@ -118,7 +118,7 @@ Connectors run on Lambda; deploy and register per source. Useful for analyzing h
 - Federated queries join RDS/DynamoDB, etc. without ETL.
 - Workgroup manages scan limit, cost, and isolation.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Athena 비용을 줄이는 방법으로 가장 효과가 큰 조합은?
 

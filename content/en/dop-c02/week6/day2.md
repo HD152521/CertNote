@@ -456,7 +456,7 @@ ECS deployment automation's core is the file format difference between deploymen
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** ECS Blue/Green 배포에서 CodeBuild가 출력해야 하는 파일 조합은?
 

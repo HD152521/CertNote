@@ -115,7 +115,7 @@ Combining three controls, the standard design:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "감사 로그를 보존 기간 동안 *어떤 사용자도, 루트 계정조차* 삭제·변경할 수 없게 하라"는 규제 요구를 만족하는 것은?
 

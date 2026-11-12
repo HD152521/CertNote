@@ -65,7 +65,7 @@ In the next article, we'll look at how AWS helps us when problems arise — Supp
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to analyze in a graph which services cost the most over the past few months and forecast future costs. Which tool is the best fit?
 

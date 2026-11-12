@@ -114,7 +114,7 @@ AppConfig isn't just about rolling out features; it's **infrastructure automatio
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 신규 결제 로직이 준비됐고 기존 사용자 중 5%에게만 먼저 보여주고 싶다. 코드 배포 없이 이 기능을 구현하려면?
 
@@ -207,6 +207,6 @@ D) 배포 후 CloudWatch 확인 후 필요시 이전 버전으로 롤백
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 AppConfig의 핵심은 세 가지다. 첫째, 설정과 코드를 분리해 배포 없이 기능을 제어한다. 둘째, Deployment Strategy(Linear/Exponential)와 Validator Lambda가 함께 **점진 배포 + 사전 검증**을 코드화한다. 셋째, ClientId 기반 해시 결정으로 **결정적이고 공정한 무작위 할당**을 보장한다. replicate-to SSM_DOCUMENT로 CloudFormation 동적 참조와도 연결되어, IaC와 configuration management가 한 시스템에서 순환한다.

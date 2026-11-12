@@ -124,7 +124,7 @@ Next: multi-model/multi-container to cut cost, inference pipelines, Inferentia/E
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 운영 중인 실시간 엔드포인트에 새 모델 버전을 배포하되 호출자가 다운타임을 겪지 않게 하려 한다. 올바른 방법은?
 

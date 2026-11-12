@@ -95,7 +95,7 @@ Next week (Week 4) covers the second half of EDA: data visualization, distributi
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Random Forest 모델을 사용하기로 했다. 다음 전처리 중 이 모델에서 **효과가 가장 작은** 것은?
 

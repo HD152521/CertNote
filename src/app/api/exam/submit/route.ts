@@ -18,7 +18,8 @@ export async function POST(req: Request) {
     }
     const questionIds = (body.questionIds as unknown[]).filter((x): x is string => typeof x === 'string');
     const answers = body.answers as Record<string, string>;
-    const result = await gradeExam(session.sub, questionIds, answers);
+    const lang = body.lang === 'en' ? 'en' : 'ko';
+    const result = await gradeExam(session.sub, questionIds, answers, lang);
     return Response.json(result);
   } catch (err) {
     return errorResponse(err);

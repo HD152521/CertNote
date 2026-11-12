@@ -100,7 +100,7 @@ Tomorrow we will cover **how to efficiently store and read large-scale data duri
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 양성 0.2%로 극도로 불균형한 사기 탐지 데이터에서, 모델 성능을 평가하는 지표로 가장 부적절한 것은?
 

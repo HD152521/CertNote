@@ -127,7 +127,7 @@ Example: `UnauthorizedAccess:EC2/SSHBruteForce` finding → EventBridge → Lamb
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 보안팀이 50개 계정 조직에서 GuardDuty를 운영하려 한다. 신규로 생성되는 계정이 자동으로 탐지에 포함되고, 워크로드 계정 관리자가 GuardDuty를 끄지 못하게 하려면?
 

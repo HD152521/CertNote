@@ -8,7 +8,7 @@ State Manager solves with **"desired state"** abstraction. Not "run this command
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (All practice problems in Korean as required by rules)
 
@@ -103,6 +103,6 @@ D) CloudWatch Dashboard 위젯
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, State Manager Association은 desired state(선언형·멱등성) 추상화로 Kubernetes·Puppet과 같은 뿌리이며, 새 인스턴스 자동 적용과 drift 자동 복구가 cron 대비 결정적 차이다. 둘째, Inventory는 인스턴스 내부의 소프트웨어·서비스·네트워크를 수집하고 Custom Inventory로 기업 고유 항목까지 담되, IAM 같은 계정 자원은 포함하지 않는다(그건 Config의 영역). 셋째, Resource Data Sync → S3 → Athena는 schema-on-read 데이터 레이크 패턴으로, 인시던트 때 SQL 한 줄로 영향 인스턴스를 추린다. 넷째, Distributor는 자체 패키지를 State Manager로 배포해 버전을 fleet의 single source of truth로 삼는다. 다섯째, Compliance → Security Hub → EventBridge → Lambda는 detect-assess-respond를 책임 분리한 거버넌스 폐루프이고, Change Calendar가 시간 축의 freeze를 코드화한다.

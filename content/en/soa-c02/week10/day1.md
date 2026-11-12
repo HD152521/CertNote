@@ -127,7 +127,7 @@ In the next article, we'll move beyond EBS alone, bundling RDS, DynamoDB, EFS, a
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 1TB EBS 볼륨의 매시간 스냅샷을 한 달간 찍었는데 청구액이 예상보다 훨씬 적다. 그 이유로 가장 정확한 것은?
 

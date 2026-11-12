@@ -286,7 +286,7 @@ In the next article we'll look at the **Kinesis** family (Data Streams, Firehose
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** When a Datadog alarm fires, you need to trigger AWS Lambda and also send a notification to Slack. What is the most appropriate configuration?
 

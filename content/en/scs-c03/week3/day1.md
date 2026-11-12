@@ -100,7 +100,7 @@ The ability to answer "does the Internet reach this resource?" by examining rout
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 보안 감사에서 RDS 인스턴스가 인터넷에서 접근 가능한지 의심된다. RDS가 실제로 인터넷에서 도달 가능하려면 반드시 충족돼야 하는 조건의 조합은?
 

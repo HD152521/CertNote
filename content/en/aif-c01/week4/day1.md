@@ -79,7 +79,7 @@ Next, we'll see **Amazon SageMaker**—the service where you "train and deploy M
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A startup wants to call foundation models from multiple companies (Claude, Llama, Titan, etc.) through a single API without buying GPUs or hosting directly. What is the most appropriate service?
 

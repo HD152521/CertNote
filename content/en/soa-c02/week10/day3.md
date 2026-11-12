@@ -99,7 +99,7 @@ In the next article, we'll transcend databases, exploring S3 Replication, Storag
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "단일 AZ 장애에서 데이터 손실 없이 자동 복구"가 목표다. 어떤 RDS 기능이 정확한가?
 

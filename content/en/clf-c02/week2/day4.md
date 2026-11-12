@@ -100,7 +100,7 @@ Tomorrow we'll tie the Core Services 1 we learned this week (compute, storage, n
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** To deliver images and videos to users worldwide with low latency, you want to cache content at outposts close to users. Which service is the best fit?
 

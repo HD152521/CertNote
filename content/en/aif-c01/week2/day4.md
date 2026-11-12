@@ -74,7 +74,7 @@ Tomorrow we recap all this week's content—the ML lifecycle and data—together
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 지도 학습(Supervised Learning)에서 사람이 데이터에 "이것은 고양이/강아지"라는 정답을 붙이는 작업을 무엇이라 하는가?
 

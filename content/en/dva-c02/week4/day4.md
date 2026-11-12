@@ -471,7 +471,7 @@ Lambda Function URL was launched in 2022. It's a feature that gives a Lambda an 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.**  
 In a WebSocket API, the route that runs when a client establishes a connection is `$connect`. What happens if the Lambda function returns `statusCode: 403`?

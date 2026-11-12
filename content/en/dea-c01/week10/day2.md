@@ -94,7 +94,7 @@ Rules = [
 - Permissions: IAM role least-privilege; data lake access granularity → Lake Formation.
 - Encryption: KMS for control/audit (SSE-KMS); Macie for PII auto-discovery.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 팀이 기존에 사용하던 Apache Airflow DAG을 거의 수정 없이 AWS에서 관리형으로 운영하고자 한다. 가장 적합한 서비스는?
 

@@ -128,7 +128,7 @@ S3's "change the storage class" is actually a copy operation onto the same key. 
 
 The S3 philosophy we looked at today — flat namespace, distributed replication, the cost trade-offs of storage classes — is the foundational knowledge underlying all S3-related questions on the DVA-C02. In the next day, we look at how, on top of this foundation, versioning and lifecycle policies automate data management.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which of the following is a valid S3 bucket name?
 

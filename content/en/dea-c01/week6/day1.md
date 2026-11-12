@@ -96,7 +96,7 @@ aws s3 cp ./orders.parquet \
 - Avoid small files (128MB–1GB recommended), and optimize costs and performance with Parquet + compression.
 - For many partitions, use partition projection to bypass catalog bottlenecks.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 데이터레이크에서 수집한 원본 데이터를 절대 변경하지 않고 보관하며, 재처리의 단일 진실 공급원 역할을 하는 존은 무엇인가?
 

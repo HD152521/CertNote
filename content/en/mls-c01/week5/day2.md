@@ -115,7 +115,7 @@ Today's essentials: (1) Use **Pearson for linear, Spearman for monotonic and rob
 
 Next, we tackle EDA and validation's deadliest enemy: **data leakage**.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 두 변수 사이에 강한 U자형(비선형) 관계가 있는데 Pearson 상관계수가 거의 0으로 나왔다. 관계의 강도를 더 잘 포착할 방법은?
 

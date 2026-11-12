@@ -120,7 +120,7 @@ Next we'll synthesize Week 14 overall with scenario questions verifying end-to-e
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Config/Security Hub와 Audit Manager의 역할 차이로 가장 정확한 것은?
 

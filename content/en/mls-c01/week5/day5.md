@@ -115,7 +115,7 @@ This week in one sentence: **"Honest validation scores rest only on good statist
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 오른쪽으로 치우친 변수를 표준화(StandardScaler)했더니 평균이 0, 표준편차가 1이 됐다. 분포의 치우침은 어떻게 됐는가?
 

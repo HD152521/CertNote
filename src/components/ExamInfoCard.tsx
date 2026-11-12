@@ -38,7 +38,7 @@ function MetaRow({ label, value }: MetaRowProps) {
 }
 
 export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps) {
-  const tips = getExamTips(section);
+  const tips = getExamTips(section, lang);
   // 도메인 배점 비중은 전부 있거나 전부 없다고 본다(일부만 있으면 막대가 뒤섞여 오해를 부른다).
   const hasWeights = info.domains.every((d) => typeof d.weight === 'number');
 

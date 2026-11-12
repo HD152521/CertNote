@@ -10,7 +10,7 @@ Key mappings: (1) "Zero transaction loss + multi-region" → **DDB Global Tables
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 양 리전 동시 거래 기록 → **DDB Global Tables Last-Writer-Wins**
 

@@ -21,7 +21,7 @@ Now eight scenarios.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 핀테크 회사가 신용카드 사기를 실시간으로 탐지하려 한다. 거래의 99.7%가 정상이며, 사기를 놓치는 비용이 매우 크다. 어떤 평가 지표를 우선해야 하는가?
 
@@ -120,7 +120,7 @@ D) Model Monitor가 재학습을 직접 수행
 ---
 
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1-5** [Practice questions in Korean follow after marker]
 

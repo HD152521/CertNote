@@ -279,7 +279,7 @@ Synthetics validates "the service is alive" 24 hours a day. RUM measures "what r
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 새벽 3시에 API가 다운됐는데 트래픽이 없어서 알람이 안 울렸다. 24시간 가용성을 보장하려면?
 

@@ -205,7 +205,7 @@ Exam scenario: "A CORS error occurs when uploading directly to S3 from client-si
 
 The S3 security layers we looked at today — Block Public Access, bucket policies, ACLs, encryption methods, Access Points — are all independent yet cooperating defense layers. In the next day, we look at the performance optimization techniques for uploading and downloading large volumes of data to and from S3 quickly.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which of the following is the correct way to configure a bucket policy to allow only HTTPS in S3?
 

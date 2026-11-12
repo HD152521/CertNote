@@ -95,7 +95,7 @@ invalid.write.json("s3://lake-quarantine/orders/dt=2026-06-26/")
 - Static threshold + dynamic anomaly detection together robust against traffic variation.
 - Quality gate (Step Functions Choice) blocks downstream on misses, quarantine then idempotent reprocess.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** AWS Glue Data Quality에서 데이터셋의 품질 규칙을 선언형으로 정의하는 데 사용하는 언어는?
 

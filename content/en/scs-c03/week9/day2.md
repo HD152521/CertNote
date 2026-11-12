@@ -109,7 +109,7 @@ Modern Detective offers **Automated Investigations** for IAM users/roles. Specif
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** GuardDuty가 IAM 역할에 대한 비정상 API 호출 결과를 생성했다. 보안 분석가는 "이 자격증명이 언제부터 새 지역에서 활동했고, 어떤 리소스까지 접근했는지" 근본 원인과 영향 범위를 빠르게 파악하려 한다. 가장 적절한 도구는?
 

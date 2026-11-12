@@ -123,7 +123,7 @@ In the next article, we look at the tool that answers the counterpart to CloudTr
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A security team wants to track who did GetObject on which objects in a specific sensitive bucket. With CloudTrail's default settings this information isn't visible. What is the correct action?
 

@@ -66,7 +66,7 @@ At last, the final day. Rather than cramming in new knowledge, today we firm up 
 
 You've worked hard over these six weeks. You've made a full loop through cloud concepts, security, core services, and pricing. Now manage your condition calmly and trust yourself. We're cheering for your success!
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Which of the following is correct for the passing score and score range of the CLF-C02 exam?
 

@@ -262,7 +262,7 @@ Tomorrow we examine Fargate's billing structure and cost optimization. Across EC
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EKS Pod이 S3에 접근해야 한다. 운영팀은 Pod별 최소 권한을 표준으로 유지하면서 클러스터를 30개 이상 운영한다. 같은 IAM Role을 여러 클러스터에서 재사용하기 쉬운 방법은?
 
@@ -362,7 +362,7 @@ Image pulls route through the node's kubelet calling ECR using Node Instance Pro
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. **Node group 3 types**: Managed (standard, auto) / Self-Managed (custom AMI, drivers) / Fargate Profile (no nodes)
 2. **IRSA = OIDC + AssumeRoleWithWebIdentity**, **Pod Identity = EKS Auth simplified**, Pod Identity superior for multi-cluster role reuse

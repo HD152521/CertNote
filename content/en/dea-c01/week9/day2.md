@@ -100,7 +100,7 @@ Server-side (SSE) encrypts after S3 receives; client-side before sending — cho
 - Key policy is central to KMS access (cross-account/service role allowance here).
 - S3 Bucket Key reduces SSE-KMS KMS call costs.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 대량의 S3 객체를 SSE-KMS로 암호화하는데 KMS API 호출 비용과 스로틀링이 문제가 된다. 비용·호출을 줄이는 가장 적절한 방법은?
 

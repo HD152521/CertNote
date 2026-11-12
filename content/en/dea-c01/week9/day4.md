@@ -96,7 +96,7 @@ Single-pillar gaps (good sharing, no audit) risk compliance, trust loss.
 - Lake Formation cross-account (RAM), Redshift datashare (live, no copy).
 - CloudTrail: management events (default) vs data events (S3 objects, optional/billable). Enable for sensitive buckets.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 두 회사가 광고 효과를 공동 측정하려 하지만, 서로의 고객 원본 데이터는 절대 노출할 수 없다. 합의된 집계 쿼리 결과만 공유하려면?
 

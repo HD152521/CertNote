@@ -244,7 +244,7 @@ Execution flow: ValidateOrder Lambda → on success ProcessPayment → ShipOrder
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Lambda 함수를 무중단 배포하고 새 버전으로 트래픽을 점진적으로 전환하려면?
 

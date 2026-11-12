@@ -104,7 +104,7 @@ Exams relentlessly test this distinction. "Automate evidence collection and repo
 - Organization-wide audits operate from *delegated administrator* account to centralize and isolate evidence.
 - "Evaluation/detection" is Config, "evidence/reports" is Audit Manager — role confusion is a common wrong answer.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 감사팀이 PCI-DSS 감사를 위해 분기마다 수작업으로 스크린샷과 설정을 모아 왔다. 이를 자동화하려 한다. 가장 적절한 서비스는?
 

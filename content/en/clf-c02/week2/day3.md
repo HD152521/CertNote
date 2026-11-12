@@ -86,7 +86,7 @@ Tomorrow we move to the edge services that deliver content to users faster from 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What refers to the logically isolated, dedicated virtual network a user owns inside the AWS cloud?
 

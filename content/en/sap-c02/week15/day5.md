@@ -12,7 +12,7 @@ Key mappings: (1) "Patient data HIPAA compliance" → **KMS encryption + Secrets
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** HIPAA 환자 데이터 암호화 → **KMS encryption**
 

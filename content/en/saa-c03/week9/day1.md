@@ -124,7 +124,7 @@ In the next article, we look at the audit tool that answers not "what is happeni
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An operations team wants to set an alarm on an EC2 instance's memory utilization but can't find a memory metric in the `AWS/EC2` namespace in the CloudWatch console. Which is the correct cause and solution?
 

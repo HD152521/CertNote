@@ -144,7 +144,7 @@ Next time we comprehensively review all of Week 13 — Multi-AZ, Multi-Region, D
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to inject CPU stress for 5 minutes into a random 30% of EC2 production instances, but have it immediately stop and roll back if P99 latency exceeds a threshold during the experiment. Which FIS configuration is correct?
 

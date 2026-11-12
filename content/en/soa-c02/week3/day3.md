@@ -324,7 +324,7 @@ CloudWatch Agent is not a tool to install and forget. It's the core of a complet
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EC2 인스턴스에서 메모리 사용률을 CloudWatch 알람으로 모니터링하려 한다. 가장 먼저 해야 할 작업은?
 

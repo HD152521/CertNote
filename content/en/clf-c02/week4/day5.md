@@ -86,7 +86,7 @@ Next week we move on to the domain of cost management and support (pricing, bill
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** According to the shared responsibility model, who is responsible for security patching of the operating system running on an EC2 instance?
 

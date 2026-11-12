@@ -102,7 +102,7 @@ In the next article, we synthesize the four axes we saw over the week — comput
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A finance team wants to freely analyze granular billing data — down to the hour and the individual resource — in SQL to build complex custom reports. What is the most suitable approach?
 

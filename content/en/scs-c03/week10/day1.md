@@ -178,7 +178,7 @@ Core insight: *Combine notification (people) and remediation (auto)*. Auto-conta
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** GuardDuty가 심각도 8의 EC2 C2 통신 결과를 생성할 때만 자동으로 인스턴스를 격리하고, 동시에 보안팀에 알리고 싶다. 가장 적절한 구성은?
 

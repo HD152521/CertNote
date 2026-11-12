@@ -483,7 +483,7 @@ Q5: Want to provide standard infrastructure to developers via self-service
         ★ Catalog-based self-service (covered in Week 6 Day 4)
 ```
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 회사가 AWS Organizations로 50개 계정을 관리한다. 모든 계정에 CloudTrail과 GuardDuty를 자동으로 활성화하고, 앞으로 새로 추가되는 계정도 자동으로 포함되길 원한다. 가장 적합한 솔루션은?
 

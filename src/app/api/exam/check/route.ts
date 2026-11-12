@@ -21,7 +21,8 @@ export async function POST(req: Request) {
     if (!body || typeof body.questionId !== 'string' || typeof body.selected !== 'string') {
       throw new AppError(400, 'invalid_body', '요청 형식이 올바르지 않습니다.');
     }
-    const result = checkAnswer(body.questionId, body.selected);
+    const lang = body.lang === 'en' ? 'en' : 'ko';
+    const result = checkAnswer(body.questionId, body.selected, lang);
     if (!result) {
       throw new AppError(404, 'not_found', '문제를 찾을 수 없습니다.');
     }

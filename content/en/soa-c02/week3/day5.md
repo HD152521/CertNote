@@ -169,7 +169,7 @@ When actual incidents occur, the order in which to use CloudWatch tools is organ
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** EC2 인스턴스가 OOM으로 강제 종료됐다. 메모리 알람은 Treat Missing Data = missing이고 EvaluationPeriods=5다. 현재 데이터 포인트 2개가 누락됐다. 알람 상태는?
 

@@ -62,7 +62,7 @@ Domain 4: infer choice (online/offline), deploy safe (shadow/canary), monitor (d
 
 Tomorrow: All four domains, synthesis.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 매일 밤 수백만 건의 거래 기록을 한 번에 점수화해 S3에 저장하면 되고, 실시간 응답은 필요 없다. 가장 비용 효율적인 추론 방식은?
 

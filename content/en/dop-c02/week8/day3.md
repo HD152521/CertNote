@@ -271,7 +271,7 @@ Next we explore **CDK** itself. SAM applied Transform Macro abstraction over YAM
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (All practice problems in Korean - preserved from original)
 
@@ -366,6 +366,6 @@ D) Hook 비활성화
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, Custom Resource는 CFN을 선언적 라이프사이클 엔진으로 확장하는 메커니즘이고 K8s CRD + Operator와 같은 추상화. 둘째, ResponseURL/PhysicalResourceId 프로토콜의 비동기성과 동일성 의미를 정확히 알아야 사고 없이 운영. 셋째, CDK Provider framework의 isComplete가 Step Functions를 자동 생성해 Lambda 15분 한계 우회. 넷째, Hooks는 변경 사전 검증(K8s ValidatingAdmissionWebhook과 같은 패턴)으로 Config Rules의 사후 대응과 보완. 다섯째, Change Set + Manual Approval은 SOC 2/PCI 거버넌스 요건의 자동화 표준이며 prod에 필수.

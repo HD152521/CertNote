@@ -277,7 +277,7 @@ A build cache is not "set it and forget it." Track the cache hit rate with Cloud
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** What is the most important difference between the S3 cache and the Local Custom Cache?
 

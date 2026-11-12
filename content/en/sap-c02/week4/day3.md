@@ -206,7 +206,7 @@ Snow Family and DataSync are complementary, not competitive services. The most c
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 헬스케어 기업이 15년치 의료 영상 데이터 800TB를 온프레미스에서 AWS S3로 이전해야 한다. 데이터센터의 AWS DX 회선은 1Gbps다. 이전 완료 후에는 신규 영상만 매주 S3로 동기화할 계획이다. 가장 효율적인 구성은?
 

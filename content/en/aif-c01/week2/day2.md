@@ -69,7 +69,7 @@ Tomorrow, we'll cover how to measure whether models built with this prepared dat
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 다음 중 비정형 데이터(Unstructured Data)에 해당하는 것은?
 

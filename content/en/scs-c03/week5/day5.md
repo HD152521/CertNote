@@ -76,7 +76,7 @@ Data protection must also be *proven*. **CloudTrail** logs all KMS operations (E
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 멀티테넌트 SaaS가 S3에 테넌트별 대용량 파일을 저장한다. 테넌트별 복호화 격리, KMS 비용 관리, 전체 감사, 정기 회전을 모두 만족하는 설계는?
 

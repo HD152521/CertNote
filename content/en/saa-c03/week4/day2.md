@@ -293,7 +293,7 @@ Lifecycle policies automate this optimization. The most important settings are c
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You store medical imaging (MRI, CT) data. Images are accessed frequently for 3 months after a visit, but after that they need to be provided immediately, only once or twice a year, on a doctor's request. Retention of 5+ years is a legal obligation. What is the most cost-effective lifecycle design?
 

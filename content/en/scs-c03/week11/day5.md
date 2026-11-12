@@ -95,7 +95,7 @@ Cost, detection, and permission boundary cross-fire one threat — *defense in d
 
 Governance is not one service but four planes (permission boundary, baseline, proof, operations) stacked over a central security account, operated via delegated admins, running detection→auto-remediate closed loops. Exams relentlessly ask "which plane, which tool?"
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 신규 핀테크가 PCI 대상 다계정 환경을 빠르게 세우고 안전한 베이스라인(로그 계정, 조직 CloudTrail/Config, 표준 OU)을 자동으로 갖추려 한다. 출발점으로 가장 적절한 것은?
 

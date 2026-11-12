@@ -271,7 +271,7 @@ PrivateLink is core pattern across AWS service access, internal service sharing,
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Financial company uses Snowflake data warehouse. Regulations require data not traverse internet; both organizations use identical VPC CIDR 10.0.0.0/8. Appropriate connection method:
 

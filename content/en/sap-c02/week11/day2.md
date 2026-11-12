@@ -85,7 +85,7 @@ SAP exam frequent mappings: (1) "Whether credit card number·SSN stored in S3" �
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** S3 버킷에 신용카드 번호나 SSN 같은 민감 데이터가 저장된 적이 있는지 자동으로 탐지·분류하고, 버킷별 민감도 점수로 우선순위를 매기고 싶다. 가장 적합한 것은?
 

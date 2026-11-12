@@ -88,7 +88,7 @@ Next: Week 15 recap all four domains (multi-account, hybrid, containers, serverl
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 자동 인시던트 대응이 단축하려는 핵심 지표와, 잘 설계된 자동 대응이 반드시 닫아야 하는 단계는?
 
@@ -202,6 +202,6 @@ D) Root 계정을 자동화에 쓴다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, 자동 대응은 MTTR의 탐지→진단→복구→검증 사슬에서 사람의 인지 지연을 제거하는 SRE toil 제거이며 검증으로 닫힌 폐루프여야 한다. 둘째, EventBridge가 모든 신호의 진입점으로 내용 기반 필터링·아카이브/replay·Pipes로 느슨한 결합(EDA)을 만든다. 셋째, Step Functions로 Runbook을 감싸 재시도·감사·승인 게이트·에러 분기를 얻으며 Standard(긴 Runbook·감사)와 Express(짧고 빠른)를 구분한다. 넷째, 멱등성(절대값 설정·dedup·retry count 가드)이 at-least-once 중복으로 인한 사고 증폭을 막는다(effectively-once). 다섯째, Incident Manager + Chatbot이 자동화 실패 20%에서 사람을 끌어들이고, 자동화 Role과 Break-glass Role을 분리하며 automation runaway에 circuit breaker·승인 게이트로 대비한다.

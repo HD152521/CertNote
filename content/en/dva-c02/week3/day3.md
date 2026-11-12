@@ -324,7 +324,7 @@ In the next article, we cover Lambda's concurrency control — the layered relat
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** When doing a canary deployment with a Lambda alias, across how many versions at most can you split traffic simultaneously?
 

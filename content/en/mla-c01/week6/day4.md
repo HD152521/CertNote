@@ -85,7 +85,7 @@ Next we synthesize all Week 6 (inference options, real-time endpoints, advanced 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 배치 변환 작업이 너무 느리다. 입력은 줄 단위 CSV로 여러 파일에 나뉘어 있다. 처리량을 높이는 가장 직접적인 방법은?
 

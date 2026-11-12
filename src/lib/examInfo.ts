@@ -104,9 +104,17 @@ export const AWS_EXAM_TIPS: string[] = [
   '합격하면 Credly 디지털 배지가 발급돼 링크드인·이메일 서명에 붙일 수 있습니다.',
 ];
 
+export const AWS_EXAM_TIPS_EN: string[] = [
+  'Passing earns you a 50% discount voucher for your next exam. Find it under "Benefits" in your AWS Certification account and use it for recertification or another certification (it has an expiry date, so use it before then).',
+  'The certification is valid for 3 years and must be renewed before it expires. You can use the 50% voucher for recertification too.',
+  'There is no free retake (every attempt is paid in full). Passing on the first try is the cheapest route, so take the real exam once your mock exam scores clear the passing mark.',
+  'Passing also earns you a Credly digital badge that you can add to LinkedIn and your email signature.',
+];
+
 // 섹션별 시험 꿀팁. AWS는 공통 혜택 팁, 그 외 섹션은 콘텐츠 투입 시 추가(현재 빈 배열).
-export function getExamTips(section?: string): string[] {
-  return section === undefined || section === 'aws' ? AWS_EXAM_TIPS : [];
+export function getExamTips(section?: string, lang: 'ko' | 'en' = 'ko'): string[] {
+  if (section !== undefined && section !== 'aws') return [];
+  return lang === 'en' ? AWS_EXAM_TIPS_EN : AWS_EXAM_TIPS;
 }
 
 // 응시료 표기. 천단위 구분은 직접 넣는다 — toLocaleString 은 실행 환경의 ICU 데이터에 따라
@@ -117,6 +125,7 @@ export function formatCost(cost: ExamCost): string {
 }
 
 const EXAM_INFO_ROOT = path.join(process.cwd(), 'content', 'exam-info');
+const EXAM_INFO_EN_ROOT = path.join(process.cwd(), 'content', 'exam-info-en');
 
 // 시험 정보는 빌드 후 불변이라 프로세스 단위로 메모이즈한다(디스크 재독 제거).
 // content.ts 의 CONTENT_CACHE 패턴과 동일하게 프로덕션에서만 캐시한다.
@@ -251,4 +260,65 @@ export function getExamInfo(slug: string): ExamInfo | null {
 
   if (EXAM_INFO_CACHE) cache.set(slug, parsed);
   return parsed;
+}
+
+// 영어판 시험 정보. 숫자·URL 은 한국어 정본을 그대로 쓰고, 글로 된 항목만 content/exam-info-en/<slug>.json 으로 덮어쓴다.
+// 도메인은 이름만 바꾸고 배점 비중은 정본의 것을 유지한다(개수가 다르면 도메인은 덮어쓰지 않는다).
+export interface ExamInfoEn {
+  difficulty?: string;
+  prerequisites?: string;
+  format?: string;
+  languages?: string[];
+  domains?: { name: string }[];
+  faq?: ExamFaq[];
+}
+
+function isExamInfoEn(value: unknown): value is ExamInfoEn {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  const strOrUndef = (x: unknown): boolean => x === undefined || typeof x === 'string';
+  return (
+    strOrUndef(v.difficulty) &&
+    strOrUndef(v.prerequisites) &&
+    strOrUndef(v.format) &&
+    (v.languages === undefined || (Array.isArray(v.languages) && v.languages.every((x) => typeof x === 'string'))) &&
+    (v.domains === undefined || (Array.isArray(v.domains) && v.domains.every((d) => typeof d === 'object' && d !== null && typeof (d as ExamDomain).name === 'string'))) &&
+    (v.faq === undefined || (Array.isArray(v.faq) && v.faq.every((x) => typeof x === 'object' && x !== null && typeof (x as ExamFaq).q === 'string' && typeof (x as ExamFaq).a === 'string')))
+  );
+}
+
+const enCache = new Map<string, ExamInfoEn | null>();
+
+function readExamInfoEn(slug: string): ExamInfoEn | null {
+  if (!/^[a-z0-9-]+$/.test(slug)) return null;
+  if (EXAM_INFO_CACHE && enCache.has(slug)) return enCache.get(slug) ?? null;
+  let parsed: ExamInfoEn | null = null;
+  try {
+    const json: unknown = JSON.parse(readFileSync(path.join(EXAM_INFO_EN_ROOT, `${slug}.json`), 'utf8'));
+    parsed = isExamInfoEn(json) ? json : null;
+  } catch {
+    parsed = null;
+  }
+  if (EXAM_INFO_CACHE) enCache.set(slug, parsed);
+  return parsed;
+}
+
+/** 영어 화면용 시험 정보. 영어 파일이 없으면 한국어 정본을 그대로 돌려준다. */
+export function localizeExamInfo(info: ExamInfo, slug: string, lang: 'ko' | 'en'): ExamInfo {
+  if (lang !== 'en') return info;
+  const en = readExamInfoEn(slug);
+  if (!en) return info;
+  const domains =
+    en.domains && en.domains.length === info.domains.length
+      ? info.domains.map((d, i) => ({ ...d, name: en.domains![i].name }))
+      : info.domains;
+  return {
+    ...info,
+    ...(en.difficulty !== undefined ? { difficulty: en.difficulty } : {}),
+    ...(en.prerequisites !== undefined ? { prerequisites: en.prerequisites } : {}),
+    ...(en.format !== undefined ? { format: en.format } : {}),
+    ...(en.languages ? { languages: en.languages } : {}),
+    ...(en.faq && en.faq.length > 0 ? { faq: en.faq } : {}),
+    domains,
+  };
 }

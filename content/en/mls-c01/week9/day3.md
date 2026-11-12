@@ -133,6 +133,6 @@ Next: Tools diving in — Debugger, Clarify (bias detection, SHAP explanations),
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 [Questions 1-5 in Korean, matching original...]

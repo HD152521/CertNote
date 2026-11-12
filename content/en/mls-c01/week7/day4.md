@@ -101,7 +101,7 @@ SageMaker usage:
 - Transfer learning: limited data → freeze (feature extraction), ample data → low LR fine-tune
 - SageMaker integrates TF/PyTorch via Script Mode, DLC, distributed, JumpStart
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 학습을 시작하자마자 손실이 NaN으로 폭증한다. 가장 먼저 시도할 처방은?
 

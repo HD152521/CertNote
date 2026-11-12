@@ -1,0 +1,1590 @@
+[
+  {
+    "number": 1,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A startup with five employees operates a photo-sharing app. The startup must create a thumbnail each time a user uploads an image to an Amazon S3 bucket. There are several hundred uploads per day at irregular times, and sometimes there are no uploads for several hours overnight. The team has no infrastructure staff and must currently keep its bill as low as possible. Which processing method is the MOST cost-effective with the LEAST server management?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Generate thumbnails with an AWS Lambda function that runs only when an image upload event occurs."
+      },
+      {
+        "label": "B",
+        "text": "Use a single Amazon EC2 instance that runs all the time to periodically check for new images and process them."
+      },
+      {
+        "label": "C",
+        "text": "Continuously deploy dedicated thumbnail-generation pods on an Amazon EKS cluster and manage the nodes directly."
+      },
+      {
+        "label": "D",
+        "text": "Run a web server continuously in an AWS Elastic Beanstalk environment to convert the uploaded images."
+      }
+    ],
+    "explanation": "The correct answer is to run a Lambda function triggered by the upload event. The code runs only when there is a request, you are billed only for the time it runs, and there are no servers to manage, which best fits several hundred irregular tasks per day. An EC2 instance that is always on incurs cost even when there is no work and also requires OS management. Always-on pods on Amazon EKS require you to manage the cluster and nodes directly, which creates the greatest operational burden. An Elastic Beanstalk environment also keeps instances running continuously, so it wastes money on small, irregular workloads. Looking at the added conditions in the question, a configuration that is billed only when events occur is advantageous because there are only several hundred uploads per day and long idle periods."
+  },
+  {
+    "number": 2,
+    "domain": "Cloud Concepts",
+    "prompt": "A manufacturing company wants to eliminate the burden of maintaining servers and renewing annual licenses for the internal sales management software that it built and operates itself. Currently 200 employees use it, and it has almost no custom features, so only the data needs to be moved. The company decides to replace it with a vendor's SaaS product that is accessed over the internet and charged by subscription. Which migration strategy does this approach represent?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Rehost, which moves the servers as they are without changes"
+      },
+      {
+        "label": "B",
+        "text": "Repurchase, which replaces the existing product with a different product or SaaS"
+      },
+      {
+        "label": "C",
+        "text": "Replatform, which optimizes only part of the application and runs it on a managed service"
+      },
+      {
+        "label": "D",
+        "text": "Refactor, which redesigns the application into a cloud-native architecture"
+      }
+    ],
+    "explanation": "The correct answer is repurchase, which replaces the existing product with a different product such as SaaS. Replacing the software with a subscription-based SaaS to eliminate server maintenance and license burden is a typical repurchase case. Rehost moves the application without changes, so it does not replace the product. Replatform moves the application while partially optimizing it, for example by using managed services, which is different from replacing the vendor product. Refactor redesigns the architecture and is the most complex and costly approach, so it does not match the requirements. Looking at the added conditions in the question, the product itself is replaced without moving servers or changing code, so this is repurchase."
+  },
+  {
+    "number": 3,
+    "domain": "Security and Compliance",
+    "prompt": "A company that operates an online payment service decides that the DDoS protection provided by default on AWS is not enough. A recent traffic surge attack delayed payments for several minutes, so the company wants to adopt additional paid DDoS detection, mitigation, and response capabilities for its core application. The company has a small security staff and also wants response support from AWS experts. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Apply AWS WAF alone"
+      },
+      {
+        "label": "B",
+        "text": "AWS Shield Advanced"
+      },
+      {
+        "label": "C",
+        "text": "AWS Artifact"
+      },
+      {
+        "label": "D",
+        "text": "Strengthen the inbound rules of security groups"
+      }
+    ],
+    "explanation": "The correct answer is AWS Shield Advanced. Basic DDoS protection is provided to all customers at no additional cost, and Shield Advanced is a paid service that adds higher levels of DDoS detection, mitigation, and response on top of it. WAF is a rule-based filtering tool for HTTP requests and is not a DDoS-specific response service that you subscribe to separately. Artifact only provides compliance documents and does not stop attacks. Security groups restrict traffic with allow rules and cannot detect or respond to large-scale DDoS attacks. Looking at the added conditions in the question, only Shield Advanced satisfies the requirements for paid extended protection and expert response support."
+  },
+  {
+    "number": 4,
+    "domain": "Billing, Pricing, and Support",
+    "prompt": "A manufacturer currently uses Amazon EC2 m5 instances in the Seoul Region. Next year, the manufacturer may move some workloads to AWS Fargate containers and AWS Lambda and may migrate some workloads to the Tokyo Region. The finance team wants a discount in exchange for a 1-year commitment, wants the discount to continue to apply after these changes, and prefers to set the commitment amount as an hourly amount that matches usage. Which option is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Purchase EC2 Instance Savings Plans for the m5 family and the Seoul Region."
+      },
+      {
+        "label": "B",
+        "text": "Purchase Standard Reserved Instances for m5 in the Seoul Region and apply them to the same configuration."
+      },
+      {
+        "label": "C",
+        "text": "Use Spot Instances for all workloads and get a discount with no commitment."
+      },
+      {
+        "label": "D",
+        "text": "Purchase Compute Savings Plans so that the discount applies even after changes in family, Region, and service."
+      }
+    ],
+    "explanation": "Compute Savings Plans is the correct answer. It automatically applies to EC2 usage regardless of instance family, size, Region, or operating system, and it also applies to Fargate and Lambda usage, so the discount is retained even when the service and Region change. EC2 Instance Savings Plans are tied to a specific instance family in a specific Region, so they do not apply if you move to Tokyo or switch to Fargate. Standard Reserved Instances are also commitments tied to a specific instance configuration, so they are not flexible for service changes. Spot Instances are used without a commitment, so they do not match the condition of getting a discount through a 1-year commitment. Looking at the added conditions in the question, the discount must apply even when the family, Region, and service change, so Compute Savings Plans, which has the broadest scope, is the answer."
+  },
+  {
+    "number": 5,
+    "domain": "Security and Compliance",
+    "prompt": "A security officer in a headquarters account wants to let an auditor from an external auditing firm read the configuration of a subsidiary account for only a few days. The auditor is not an employee of the company and belongs to a separate organization. The officer does not want to create and hand over long-term credentials and wants the permissions to disappear automatically when the access period ends. The audit begins next week. Which method is the MOST secure?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an IAM user for the auditor and email the access keys."
+      },
+      {
+        "label": "B",
+        "text": "Create an IAM role with read-only permissions and have the auditor assume it with temporary credentials."
+      },
+      {
+        "label": "C",
+        "text": "Share the root user's email address and password only during the audit period."
+      },
+      {
+        "label": "D",
+        "text": "Create an IAM user with administrator permissions for the auditor and delete it later."
+      }
+    ],
+    "explanation": "The correct answer is to create an IAM role with read-only permissions and have the auditor assume it with temporary credentials. A role issues temporary credentials with a defined validity period and no long-term keys, so they expire automatically when the period ends, and because the role is read-only, the permissions are also minimal. Access keys for an IAM user are long-term credentials that can leak in transit, and revoking them is manual. Sharing root credentials is the riskiest choice. A user with administrator permissions is far more than needed for a requirement that only involves reading. Looking at the added conditions in the question, temporary credentials expire automatically after the period, so there is no problem of revoking long-term keys."
+  },
+  {
+    "number": 6,
+    "domain": "Cloud Technology and Services",
+    "prompt": "The marketing team at a large retail company has accumulated several years of sales data at petabyte scale and wants to run complex aggregate analyses by using standard SQL. The analytic queries run mainly at night and at the end of the month for several hours at a time, and the team lacks staff to tune databases. The team wants to use a managed service designed specifically for analytics. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Redshift, which sets up a data warehouse that performs SQL analytics on large-scale data"
+      },
+      {
+        "label": "B",
+        "text": "Amazon ElastiCache, which caches frequently read data in memory and runs SQL"
+      },
+      {
+        "label": "C",
+        "text": "Amazon DynamoDB, which looks up large numbers of items by key and performs aggregations"
+      },
+      {
+        "label": "D",
+        "text": "A small Amazon RDS instance, which loads all the data into a transactional database for analysis"
+      }
+    ],
+    "explanation": "Amazon Redshift is the correct answer. It is a managed data warehouse service that analyzes petabyte-scale data by using standard SQL. ElastiCache is for caching and is not a large-scale aggregate analytics store. DynamoDB is a NoSQL database that excels at key-based lookups, so it is not suited to complex SQL aggregations. A small RDS instance is for transaction processing, so it has difficulty handling petabyte-scale analytics. Looking at the added conditions in the question, SQL analytics at petabyte scale is the use case of the data warehouse Redshift."
+  },
+  {
+    "number": 7,
+    "domain": "Billing, Pricing, and Support",
+    "prompt": "A startup's finance team wants the responsible person to receive an advance email notification when this month's AWS cost is forecasted to reach 80% of the $5,000 budget. Development environments keep increasing, and twice the team found out about an overrun only at the end of the month. Which tool is the MOST suitable to meet this requirement without having a person check the console every day?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Check the current cumulative cost graph by signing in to AWS Cost Explorer every day."
+      },
+      {
+        "label": "B",
+        "text": "Create a cost budget in AWS Budgets and configure an alert at 80% of forecasted cost."
+      },
+      {
+        "label": "C",
+        "text": "Calculate the estimated monthly amount with AWS Pricing Calculator and record it in a budget document."
+      },
+      {
+        "label": "D",
+        "text": "Receive the AWS Cost and Usage Report in Amazon S3 and have the responsible person analyze it manually on a regular basis."
+      }
+    ],
+    "explanation": "AWS Budgets is the correct answer. You can set a cost budget and send an alert by email or an Amazon SNS topic when actual or forecasted cost exceeds a threshold, so no one needs to check every day. Cost Explorer is a tool for analyzing and visualizing costs that a person must sign in to view, and threshold alerts are not its core function. Pricing Calculator is a tool for estimating cost before use and does not monitor actual spending. The Cost and Usage Report provides detailed data but still leaves the effort of analyzing it manually. Looking at the added conditions in the question, alerts based on forecasted cost are a feature of Budgets, and the other options cannot send proactive alerts."
+  },
+  {
+    "number": 8,
+    "domain": "Cloud Technology and Services",
+    "prompt": "The operations team at an e-commerce company wants to view and set alarms on the memory utilization of 20 Amazon EC2 instances in Amazon CloudWatch, but the default metrics do not include memory. The instances are already running, and the team cannot modify or redeploy the application code. Which solution meets this requirement with the LEAST change?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on an AWS CloudTrail trail to record memory usage events for the instances."
+      },
+      {
+        "label": "B",
+        "text": "Install the CloudWatch agent on the instances to collect memory metrics."
+      },
+      {
+        "label": "C",
+        "text": "Create an AWS Config rule to evaluate the memory utilization of the instances."
+      },
+      {
+        "label": "D",
+        "text": "Check the memory utilization item in the AWS Trusted Advisor check results."
+      }
+    ],
+    "explanation": "Installing the CloudWatch agent is the correct answer. The agent collects system-level metrics such as CPU, memory, and disk usage, along with logs, from EC2 instances and on-premises servers and sends them to CloudWatch, so you can configure a memory alarm. CloudTrail records API activity and does not collect memory metrics from inside an instance. Config is a service that evaluates resource configuration and compliance. Trusted Advisor is a best-practice check service and has no real-time memory utilization item. Looking at the added conditions in the question, metrics from inside the operating system are collected by the CloudWatch agent, and no code change is required."
+  },
+  {
+    "number": 9,
+    "domain": "Cloud Concepts",
+    "prompt": "A video learning site delivers static course materials to students around the world, and students in South America and Europe complain of long download delays. The origin is in an Amazon S3 bucket in the Seoul Region, and the materials are updated only once or twice a day. The team has three members and cannot manage separate servers in each Region. Which method reduces latency with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create and manually replicate separate web servers in a Region on every continent."
+      },
+      {
+        "label": "B",
+        "text": "Increase the number of Availability Zones in the Region that holds the origin to increase processing capacity."
+      },
+      {
+        "label": "C",
+        "text": "Change the S3 bucket's storage class to a cheaper one."
+      },
+      {
+        "label": "D",
+        "text": "Use Amazon CloudFront to cache and serve the content at edge locations."
+      }
+    ],
+    "explanation": "The correct answer is to use CloudFront to cache and serve the content at edge locations. Edge locations deliver content from places close to users, which reduces latency, and the origin stays as it is, so the operational burden is small. Creating and replicating web servers on every continent reduces latency but greatly increases the servers to manage and the synchronization work. Adding Availability Zones is about resilience to failures and does not help with latency to distant regions. A cheaper storage class is a cost choice and does not increase delivery speed. Looking at the added conditions in the question, static materials that are rarely updated fit edge caching well, and there is no need to manage servers in each Region."
+  },
+  {
+    "number": 10,
+    "domain": "Security and Compliance",
+    "prompt": "A security team initially gave a service account broad permissions for development convenience and now wants to reduce them to a least-privilege policy that keeps only the services and actions actually used. The account has several months of access records in AWS CloudTrail, and the team has no time to analyze the permission list manually one item at a time. Which tool automatically generates a policy based on the access activity recorded in CloudTrail?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "The cost optimization check in AWS Trusted Advisor"
+      },
+      {
+        "label": "B",
+        "text": "The vulnerability scan results of Amazon Inspector"
+      },
+      {
+        "label": "C",
+        "text": "The sensitive data discovery job of Amazon Macie"
+      },
+      {
+        "label": "D",
+        "text": "The policy generation feature of IAM Access Analyzer"
+      }
+    ],
+    "explanation": "The correct answer is the policy generation feature of IAM Access Analyzer. It analyzes the access activity recorded in CloudTrail and creates a fine-grained policy that contains only the services and actions the role actually used, which makes it suitable for reducing permissions to least privilege. Trusted Advisor checks and gives recommendations on cost, performance, security, and more, but it does not generate policies from activity. Inspector scans workloads for software vulnerabilities and network exposure. Macie is a service that finds sensitive data in Amazon S3 and is unrelated to generating IAM policies. Looking at the added conditions in the question, the feature that creates a policy based on CloudTrail activity is in IAM Access Analyzer."
+  },
+  {
+    "number": 11,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A small company has a database server that runs on a single Amazon EC2 instance. The data must remain even if the instance is stopped or replaced with a new instance, and point-in-time backups must be possible. The server must recognize the disk as an operating-system-level block device, and the company does not want to set up a separate file server. Which storage is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Store the data on an instance store volume and periodically copy it to another location."
+      },
+      {
+        "label": "B",
+        "text": "Store the data on an Amazon EBS volume and back it up with EBS snapshots."
+      },
+      {
+        "label": "C",
+        "text": "Mount an Amazon S3 Standard-IA bucket like a disk and store the data files in it."
+      },
+      {
+        "label": "D",
+        "text": "Store the data files in an Amazon Glacier vault and restore them when needed."
+      }
+    ],
+    "explanation": "An Amazon EBS volume is the correct answer. EBS is block storage that attaches to EC2 and is used like a local disk, it persists independently of the instance, and snapshots create point-in-time backups that you can restore to a new volume. An instance store is tied to the lifetime of the instance, so data retention is not guaranteed when the instance is replaced. S3 is object storage, so it does not fit the use of treating DB data files like a disk. Glacier is for long-term archiving and cannot be used as storage for a running database. Looking at the added conditions in the question, block storage that is separate from the instance lifetime and has snapshots is a characteristic of EBS."
+  },
+  {
+    "number": 12,
+    "domain": "Cloud Concepts",
+    "prompt": "An online education service must comply with a regulation that requires personal information of domestic customers to be stored only within the country. Most users are in Korea, response latency is also important, and transferring data abroad is not possible without approval from the legal team. Which Region choice satisfies all of these constraints MOST appropriately?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Choose the Region with the lowest prices and encrypt all stored data."
+      },
+      {
+        "label": "B",
+        "text": "Choose the Region where new services launch first and use the new features first."
+      },
+      {
+        "label": "C",
+        "text": "Do not choose a Region and store the original data at edge locations."
+      },
+      {
+        "label": "D",
+        "text": "Choose the Seoul Region and configure the data to stay within that Region."
+      }
+    ],
+    "explanation": "The correct answer is to choose the Seoul Region and configure the data to stay within that Region. To satisfy both the data residency regulation and proximity to users, a domestic Region is required. AWS states that it does not move or replicate content outside the Region that the customer selects without the customer's consent (with exceptions for what is necessary to provide the services and for legal requirements). The cheapest Region may be located abroad, which risks violating the regulation, and encryption does not resolve a data location requirement. The Region where new services launch first is a criterion that ignores the regulation and latency. Edge locations are for caching content and are not a store for original data. Looking at the added conditions in the question, the Region that satisfies both the data location regulation and proximity to users is Seoul."
+  },
+  {
+    "number": 13,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A manufacturing company exchanges large amounts of data between its headquarters data center and AWS every day. The problem is that the speed fluctuates depending on the condition of the internet connection, and the network team says it needs consistent bandwidth and low latency. It is acceptable if setting up the connection takes several weeks. Which service is the MOST suitable for a dedicated connection that does not traverse the internet?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Connect the data center to AWS with a dedicated line by using AWS Direct Connect."
+      },
+      {
+        "label": "B",
+        "text": "Connect by creating an encrypted tunnel over the public internet with AWS Site-to-Site VPN."
+      },
+      {
+        "label": "C",
+        "text": "Create an Amazon CloudFront distribution to accelerate transfers with the data center."
+      },
+      {
+        "label": "D",
+        "text": "Create a data center hosted zone in Amazon Route 53 to optimize the route."
+      }
+    ],
+    "explanation": "AWS Direct Connect is the correct answer. It connects your network to a Direct Connect location over fiber-optic cable and reaches AWS without going through an internet service provider, which matches the need for a dedicated path that is not affected by internet conditions. Site-to-Site VPN is encrypted but passes over the public internet, so the problem of fluctuating speed remains. CloudFront is a CDN that delivers content close to users and is not a site-to-site connection. Route 53 is a DNS service and cannot create a transfer path itself. Looking at the added conditions in the question, only Direct Connect satisfies the requirement for a dedicated line that does not traverse the internet."
+  },
+  {
+    "number": 14,
+    "domain": "Security and Compliance",
+    "prompt": "A security incident is under investigation. Yesterday afternoon someone deleted an important Amazon S3 bucket, and the team must determine which IAM principal called which API, at what time, and from where. The account has never had a separate trail or log collection configured, and there is no time to create new settings right now. Where can the team first look at management events from the last 90 days?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "An Amazon CloudWatch metrics dashboard"
+      },
+      {
+        "label": "B",
+        "text": "VPC Flow Logs"
+      },
+      {
+        "label": "C",
+        "text": "AWS CloudTrail event history"
+      },
+      {
+        "label": "D",
+        "text": "The Amazon Inspector findings screen"
+      }
+    ],
+    "explanation": "The correct answer is CloudTrail event history. CloudTrail records actions taken by users, roles, and services as events and tells you who did what, when, and to which resource, and once an account is created, you can view the last 90 days of management events without any additional configuration. CloudWatch metrics show performance figures and do not tell you which principal made an API call. VPC Flow Logs contain network traffic information and do not record API calls such as bucket deletion. Inspector shows vulnerability scan results. Looking at the added conditions in the question, the place that shows 90 days of management events without any setup is CloudTrail event history."
+  },
+  {
+    "number": 15,
+    "domain": "Security and Compliance",
+    "prompt": "A security team that operates multiple accounts wants to detect compromised credentials and communication with malicious IP addresses by analyzing AWS CloudTrail management events, VPC Flow Logs, and DNS logs from its accounts, without installing agents or configuring log collection. The security team has few analysts and wants to receive continuous threat detection automatically. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "B",
+        "text": "AWS Config"
+      },
+      {
+        "label": "C",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "D",
+        "text": "AWS Trusted Advisor"
+      }
+    ],
+    "explanation": "The correct answer is Amazon GuardDuty. When you turn on GuardDuty, it automatically collects CloudTrail management events, VPC Flow Logs, and DNS logs and uses threat intelligence and machine learning to detect compromised credentials and malicious activity, so no additional configuration is needed. Inspector is a service that scans for software vulnerabilities and unintended network exposure. Config records resource configuration changes and rule compliance. Trusted Advisor provides best-practice checks and recommendations but does not detect threats. Looking at the added conditions in the question, the service that automatically analyzes logs to detect threats is GuardDuty."
+  },
+  {
+    "number": 16,
+    "domain": "Security and Compliance",
+    "prompt": "An online bookstore runs a web application behind an Application Load Balancer and receives requests that include SQL injection patterns. Security groups control only ports and IP addresses, so they cannot filter the contents of the query string. Because there is only one security staff member, the company wants to apply request-level filtering without the burden of writing all the rules by hand. What is the MOST appropriate method?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Add a rule to the network ACL that denies SQL keywords."
+      },
+      {
+        "label": "B",
+        "text": "Associate AWS WAF and apply managed rule groups."
+      },
+      {
+        "label": "C",
+        "text": "Turn on Amazon Macie to inspect request bodies."
+      },
+      {
+        "label": "D",
+        "text": "Automatically block suspicious requests with an AWS Config rule."
+      }
+    ],
+    "explanation": "The correct answer is to associate AWS WAF and apply managed rule groups. WAF allows or blocks HTTP requests that reach resources such as an ALB based on criteria such as IP addresses and query strings, and using managed rule groups reduces the burden of writing rules yourself. Network ACLs operate at the IP and port level and cannot inspect SQL keywords in a query string. Macie is for classifying data in Amazon S3 and does not inspect web requests. Config only evaluates whether resource configuration is compliant and does not block requests. Looking at the added conditions in the question, inspecting request contents and reducing the burden of writing rules with managed rules is what WAF does."
+  },
+  {
+    "number": 17,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A log analytics team stores several TB of data in Amazon S3, and it cannot predict which objects will be accessed and when. The team wants rarely accessed objects to move automatically to cheaper tiers, wants no separate retrieval charges when objects are read again, and does not want to manage lifecycle rules itself. Which storage class is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Store the data in S3 Standard-IA and pay retrieval charges based on object size when needed."
+      },
+      {
+        "label": "B",
+        "text": "Store the data in S3 One Zone-IA to keep the data in a single Availability Zone and reduce cost."
+      },
+      {
+        "label": "C",
+        "text": "Store the data in S3 Intelligent-Tiering to automatically move objects between tiers based on access patterns."
+      },
+      {
+        "label": "D",
+        "text": "Store the data in S3 Glacier Deep Archive and request a restore and wait a long time each time the data must be read."
+      }
+    ],
+    "explanation": "S3 Intelligent-Tiering is the correct answer. It monitors access patterns and automatically moves objects that are not being used to cheaper tiers, and it has only a small monitoring and automation charge with no retrieval charges, which suits data with unknown patterns. Standard-IA charges a per-GB retrieval fee when you read data and does not move objects automatically. One Zone-IA also has retrieval charges and stores data in only a single Availability Zone, so it does not match the requirements. Glacier Deep Archive requires a restore before reading and is for long-term archiving, not for data that is accessed occasionally. Looking at the added conditions in the question, Intelligent-Tiering satisfies the conditions of unpredictable access patterns and no retrieval charges."
+  },
+  {
+    "number": 18,
+    "domain": "Security and Compliance",
+    "prompt": "A compliance team must encrypt contract documents stored in Amazon S3 on the server side, keep an audit record of which key was used, when, and by whom, and control access to the key through policies. Auditors want to check the key usage history in AWS CloudTrail, and the team wants to perform the encryption without changing application code. What is the MOST appropriate method?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use only S3 managed keys (SSE-S3) and do not configure anything else."
+      },
+      {
+        "label": "B",
+        "text": "Upload over HTTP and configure only bucket-level access control lists."
+      },
+      {
+        "label": "C",
+        "text": "Apply server-side encryption with AWS KMS keys (SSE-KMS)."
+      },
+      {
+        "label": "D",
+        "text": "Do not encrypt the objects and just keep the bucket private."
+      }
+    ],
+    "explanation": "The correct answer is server-side encryption with AWS KMS keys (SSE-KMS). Access to a KMS key can be controlled through key policies, and key usage is recorded in CloudTrail, so you can audit which key was used, when, and by whom. Using only S3 managed keys encrypts the data, but it is difficult to satisfy the requirement for the customer to set access policies per key and audit the usage records. HTTP uploads are not encrypted in transit, and access control lists cannot control keys. Choosing not to encrypt ignores the requirement itself. Looking at the added conditions in the question, key usage auditing and key policy control are required, so SSE-KMS is the answer."
+  },
+  {
+    "number": 19,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A single run of a transformation job at a data analytics company takes about 2 hours, and the job is already packaged as a container image. The team does not want to manage Amazon EC2 instances or clusters directly and wants to pay only for what it uses when the job finishes. Which method has the LEAST operational overhead for running this job as a container?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run the job by setting the timeout of an AWS Lambda function to 2 hours."
+      },
+      {
+        "label": "B",
+        "text": "Run an Amazon ECS task with the Fargate launch type to run the container without managing servers."
+      },
+      {
+        "label": "C",
+        "text": "Configure an EC2 instance directly and run the job while the team operates OS patching and Docker installation."
+      },
+      {
+        "label": "D",
+        "text": "Increase the memory of a Lambda function to the maximum to speed up processing so that it finishes within the timeout."
+      }
+    ],
+    "explanation": "Running an Amazon ECS task on Fargate is the correct answer. Fargate lets you run containers without provisioning or scaling EC2 instances or clusters, and because it runs container tasks, it is not bound by the Lambda execution time limit, which suits a 2-hour job. A single Lambda invocation is limited to 15 minutes, and asynchronous invocations in Lambda Managed Instances are limited to 90 minutes, so neither can be set to 2 hours. Building a Docker environment on EC2 yourself leaves the burden of operating servers. Increasing memory to speed up processing does not change the time limit itself, and there is no guarantee that the job would finish within it. Looking at the added conditions in the question, serverless container execution that can handle a 2-hour job is Fargate."
+  },
+  {
+    "number": 20,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A company deployed the same web application in two Regions, Seoul and Oregon. Both Regions operate normally under usual conditions, and users are spread across Asia and North America. The company wants to configure Amazon Route 53 records so that when users connect, they are automatically routed to whichever of the two Regions has the lower network latency. Which routing policy meets the requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "A weighted routing policy that splits traffic between the two Regions at ratios that you set directly"
+      },
+      {
+        "label": "B",
+        "text": "A geolocation routing policy that fixes the Region based on the user's country"
+      },
+      {
+        "label": "C",
+        "text": "A latency-based routing policy that responds with the Region that has the lowest latency"
+      },
+      {
+        "label": "D",
+        "text": "A failover routing policy that uses Seoul as the primary and Oregon as the standby"
+      }
+    ],
+    "explanation": "A latency-based routing policy is the correct answer. When you have resources in multiple Regions, this policy routes users to the Region that provides the lowest latency. A weighted policy only splits traffic at set ratios and does not consider latency. A geolocation policy routes based on the user's location, so being geographically close does not guarantee the lowest latency, and this differs from a latency criterion. A failover policy is an active-passive configuration with a primary Region and a standby Region, so it does not match the requirement to use both Regions together. Looking at the added conditions in the question, the policy that automatically connects users to the lower-latency side is latency-based routing."
+  },
+  {
+    "number": 21,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A security team is creating an internal data retention standard and is reviewing Amazon S3 storage classes. Which TWO classes are the LEAST appropriate for storing the only copy of important data that has no other copy to recover from, that is, classes where the data could be lost if one Availability Zone is lost? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Standard, the default class that stores data redundantly across multiple Availability Zones"
+      },
+      {
+        "label": "B",
+        "text": "S3 Express One Zone, an ultra-low-latency class that stores data in one Availability Zone that you select"
+      },
+      {
+        "label": "C",
+        "text": "S3 Standard-IA, a class that stores infrequently accessed data across multiple Availability Zones"
+      },
+      {
+        "label": "D",
+        "text": "S3 One Zone-IA, a low-cost class that stores data in only one Availability Zone"
+      },
+      {
+        "label": "E",
+        "text": "S3 Glacier Flexible Retrieval, an archive class that takes minutes to hours to restore"
+      }
+    ],
+    "explanation": "S3 One Zone-IA and S3 Express One Zone are the correct answers. These two classes store data in only one Availability Zone, so data can be lost if the Availability Zone is physically lost. S3 Standard and Standard-IA store data in three or more Availability Zones and withstand the loss of an Availability Zone. Glacier Flexible Retrieval also stores data in three or more Availability Zones, so restores are only slow, and there is no single-copy risk. The official documentation also states that all classes other than these two withstand the loss of an Availability Zone. Looking at the added conditions in the question, One Zone-IA and Express One Zone, which store data in only a single Availability Zone, are the ones that apply."
+  },
+  {
+    "number": 22,
+    "domain": "Billing, Pricing, and Support",
+    "prompt": "A financial analyst wants to document in the internal wiki two things that can be done with AWS Cost Explorer. The analyst wants to analyze cost trends by service over more than one past year and also forecast future spending. Which TWO actions can be performed in Cost Explorer? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "View costs and usage for the last 14 months including the current month (the default range, and up to 38 months at monthly granularity if the multi-year option is turned on), filtered and grouped by service."
+      },
+      {
+        "label": "B",
+        "text": "Record the API calls made by IAM users to investigate who deleted which resource."
+      },
+      {
+        "label": "C",
+        "text": "Record the history of resource configuration changes in chronological order to evaluate compliance."
+      },
+      {
+        "label": "D",
+        "text": "Forecast the costs that are expected to be incurred going forward based on current usage trends."
+      },
+      {
+        "label": "E",
+        "text": "Create a budget that automatically sends an alert to an Amazon SNS topic when cost exceeds a set amount."
+      }
+    ],
+    "explanation": "Viewing past costs and forecasting costs are the correct answers. By default, Cost Explorer shows costs and usage for the current month and the previous 13 months, which is about 14 months, and you can filter and group them by service. If you turn on multi-year data, you can extend this to up to 38 months at monthly granularity, which satisfies the requirement to analyze trends over more than one past year. It can also forecast spending for up to 18 months ahead. Recording the history of configuration changes and evaluating compliance is the role of AWS Config. A budget that sends alerts when a threshold is exceeded is an AWS Budgets feature. Investigating who called which API is the role of CloudTrail, so it is not a Cost Explorer action. Looking at the added conditions in the question, cost analysis and forecasting are Cost Explorer features, and budgets for alerts are a Budgets feature."
+  },
+  {
+    "number": 23,
+    "domain": "Cloud Concepts",
+    "prompt": "Most of the infrastructure team's time is spent on installing server racks, managing power and cooling, and replacing hardware, so development of customer-facing features keeps being delayed. The company serves only domestic customers, has no plans to expand overseas, and has a stable number of servers. Which of the following is the MOST appropriate benefit of migrating to AWS to resolve this problem?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Deploy applications to multiple Regions in minutes to provide low latency to overseas users."
+      },
+      {
+        "label": "B",
+        "text": "As the number of users grows, the cost per server drops because of AWS economies of scale."
+      },
+      {
+        "label": "C",
+        "text": "Redirect the cost and effort spent on running and maintaining data centers to work that is directly tied to customers."
+      },
+      {
+        "label": "D",
+        "text": "Accurately predict the number of servers needed in the future and make a plan to buy them all at once."
+      }
+    ],
+    "explanation": "The correct answer is to redirect the cost and effort spent on running and maintaining data centers to work that is directly tied to customers. The constraint in the question is that development is delayed because of heavy infrastructure work such as installing racks, power, and cooling, and AWS takes on that work. Deploying to multiple Regions is a benefit of reduced latency, which does not match this situation. Economies of scale are about unit price and are unrelated to the team's lack of time. Accurately predicting the number of servers and buying them is the capacity-guessing approach that the cloud is meant to eliminate. Looking at the added conditions in the question, there are no overseas expansion plans and the server count is stable, so the key effect is shifting the operational burden to AWS."
+  },
+  {
+    "number": 24,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A web service serves image and video files stored in Amazon S3 to users in multiple countries. The origin is in a bucket in one Region, and loading is slow for users who are far away. The content does not change often, and the operations team has only two members. Which method has the LEAST operational overhead for delivering the content close to users and reducing latency?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Install AWS Direct Connect connections in every user country."
+      },
+      {
+        "label": "B",
+        "text": "Build Amazon EC2 web servers directly in each user country and copy the files manually."
+      },
+      {
+        "label": "C",
+        "text": "Create an Amazon CloudFront distribution and specify the S3 bucket as the origin."
+      },
+      {
+        "label": "D",
+        "text": "Place Elastic Load Balancing in front of Amazon S3 to distribute requests across multiple servers."
+      }
+    ],
+    "explanation": "A CloudFront distribution is the correct answer. It caches content at edge locations around the world and routes user requests to the edge location with the lowest latency, and because an S3 bucket can be used as the origin, the problem is solved with configuration alone. Direct Connect is a service that connects a corporate network to AWS and cannot be applied to general users. Building EC2 servers in each country and copying manually creates a very large operational burden. A load balancer only distributes traffic among servers and does not place content close to users. Looking at the added conditions in the question, CloudFront with S3 as the origin delivers from the edge without separate servers."
+  },
+  {
+    "number": 25,
+    "domain": "Security and Compliance",
+    "prompt": "A security audit must determine, in chronological order, which ports a particular Amazon EC2 security group had open last month and how its configuration has changed over time. The account under audit turned on configuration recording one month ago, and the auditor is more interested in the change history of the resource settings themselves than in the API callers. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "B",
+        "text": "AWS Artifact"
+      },
+      {
+        "label": "C",
+        "text": "AWS Config"
+      },
+      {
+        "label": "D",
+        "text": "AWS Shield"
+      }
+    ],
+    "explanation": "The correct answer is AWS Config. Config records the configuration, relationships, and past configurations of resources such as security groups and shows changes over time, so you can also see which ports were open at a specific point in time. However, you can see only the history from after you turned on recording. GuardDuty only detects threat activity and does not store configuration history. Artifact provides AWS compliance documents. Shield is a DDoS protection service and is unrelated to configuration history. Looking at the added conditions in the question, the time-based history of resource configuration is recorded by AWS Config."
+  },
+  {
+    "number": 26,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A software company must repeatedly create development, staging, and production environments with identical configurations in two Regions, Seoul and Tokyo. Currently each person creates them manually, so the environments often differ from one another. The company also wants to version-control the history of configuration changes like source code. Which method MOST suitably meets the requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create the resources for each environment directly in the console and follow documented procedures."
+      },
+      {
+        "label": "B",
+        "text": "Record the configuration history of the existing environment with AWS Config and recreate it manually while referring to the history."
+      },
+      {
+        "label": "C",
+        "text": "Define the resources in an AWS CloudFormation template and create a stack for each environment and Region."
+      },
+      {
+        "label": "D",
+        "text": "Assign a person to each environment and have each person enter CLI commands to create the resources."
+      }
+    ],
+    "explanation": "CloudFormation templates and stacks are the correct answer. A template describes resources and their properties as text, so you can create the same configuration consistently and repeatedly in multiple Regions, and if you version-control the template, you can track the change history like source code and roll back to a previous state. Manual console work and documentation lead to human error and take time to repeat. Config records history but cannot create environments. Entering CLI commands by individual owners does not guarantee consistency. Looking at the added conditions in the question, defining infrastructure as code, deploying it repeatedly, and version-controlling it is what CloudFormation does."
+  },
+  {
+    "number": 27,
+    "domain": "Cloud Technology and Services",
+    "prompt": "An online reservation service uses a managed Amazon RDS database and needs to fail over automatically to a standby instance without human intervention if a single Availability Zone fails. There is no on-call staff at night, so the service cannot depend on people for the failure response procedure. Which method meets the requirement with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create a read replica in another Availability Zone and have a person manually promote it when a failure occurs."
+      },
+      {
+        "label": "B",
+        "text": "Install the database directly on two EC2 instances and write and operate your own replication and failover scripts."
+      },
+      {
+        "label": "C",
+        "text": "Configure RDS as a Multi-AZ deployment and keep a standby instance in another Availability Zone."
+      },
+      {
+        "label": "D",
+        "text": "Create a snapshot once a day and restore it to a new instance when a failure occurs."
+      }
+    ],
+    "explanation": "An RDS Multi-AZ deployment is the correct answer. It is a high availability feature that keeps a standby instance in another Availability Zone and fails over automatically when a failure occurs, and because it is managed, the operational burden is small. Note that the standby instance in a Multi-AZ DB instance deployment does not serve read traffic and exists for failure protection. Manually promoting a read replica requires human intervention, so it violates the requirement for automatic failover. Installing the database yourself on EC2 means you must operate replication and failover yourself. Restoring a once-a-day snapshot is slow to recover and also loses a lot of data. Looking at the added conditions in the question, automatic failover is required, so a read replica that needs manual promotion does not fit."
+  },
+  {
+    "number": 28,
+    "domain": "Security and Compliance",
+    "prompt": "A healthcare startup has been told that to run workloads that handle patient information on AWS, it must enter into a business associate agreement (BAA) with AWS. The legal team wants to check the agreement status directly without asking an AWS sales representative for documents. Which service lets the team review and accept this agreement and track its status in the console?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Config"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "AWS Organizations"
+      },
+      {
+        "label": "D",
+        "text": "AWS Artifact"
+      }
+    ],
+    "explanation": "The correct answer is AWS Artifact. Artifact lets you review, accept, and track the status of agreements with AWS at the account level, and it also lets you download compliance reports at no cost. Config is a service that evaluates resource configuration history and rule compliance and has no agreement management feature. CloudTrail records API activity in the account. Organizations is a service that groups and manages multiple accounts and does not provide a feature to accept agreements. Looking at the added conditions in the question, reviewing and accepting agreements is the Agreements feature of AWS Artifact."
+  },
+  {
+    "number": 29,
+    "domain": "Cloud Concepts",
+    "prompt": "A midsize company confirmed that its AWS usage charges are lower than the unit cost it paid when it bought servers directly for its own data center, and that AWS has reduced its prices several times as it has grown. The company's server demand has been almost constant for several years. Which cloud benefit BEST explains this phenomenon?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Economies of scale, in which the usage of many customers is aggregated so that AWS obtains lower unit costs"
+      },
+      {
+        "label": "B",
+        "text": "Agility, in which obtaining resources within minutes when needed reduces the time spent on experimentation and development"
+      },
+      {
+        "label": "C",
+        "text": "Stop guessing capacity, in which you adjust to your needs instead of predicting the required capacity before use"
+      },
+      {
+        "label": "D",
+        "text": "Trading fixed expense for variable expense, in which you pay only for what you use instead of making up-front capital expenditures"
+      }
+    ],
+    "explanation": "The correct answer is economies of scale, in which the usage of many customers is aggregated so that AWS obtains lower unit costs. The key point of the situation is that AWS lowers prices as it grows, which is explained by economies of scale from aggregating customer usage. Agility in obtaining resources within minutes is a benefit of speed and is unrelated to a drop in unit price. The benefit of eliminating capacity guesses is avoiding idle resources and shortages, not the reason prices fall. Converting fixed costs to variable costs is a benefit of the payment model and is not the cause of price reductions. Looking at the added conditions in the question, the lower unit cost and price reductions are explained by economies of scale. Because demand is constant, elasticity is not the key point."
+  },
+  {
+    "number": 30,
+    "domain": "Security and Compliance",
+    "prompt": "A security officer wants to monitor whether Amazon S3 buckets have been changed to public access and also automatically find whether the documents in the buckets contain personal information and credit card numbers. There are hundreds of buckets, and the officer cannot open the objects directly to check. Which service meets both requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS WAF"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "C",
+        "text": "AWS Key Management Service"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Macie"
+      }
+    ],
+    "explanation": "The correct answer is Amazon Macie. Macie creates an inventory of S3 buckets and monitors security and access control issues such as public access and encryption status, and it uses machine learning and pattern matching to find sensitive data such as personal information inside objects. WAF is a firewall that filters web requests and does not classify S3 data. Inspector is a service that scans Amazon EC2, Amazon ECR, and AWS Lambda for vulnerabilities. KMS creates and manages encryption keys and does not analyze the contents of data. Looking at the added conditions in the question, the service that provides both S3 exposure monitoring and sensitive data discovery is Macie."
+  },
+  {
+    "number": 31,
+    "domain": "Cloud Concepts",
+    "prompt": "A manufacturer starting its cloud transition wants to identify gaps in the required technical skills and manage the training plan and organizational culture change. The biggest concern is the readiness of people and the organization, rather than the technical configuration or cost control. Which perspective of the AWS Cloud Adoption Framework (AWS CAF) MOST directly addresses this activity?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "The People perspective, which covers culture, organizational structure, and the skills of the workforce"
+      },
+      {
+        "label": "B",
+        "text": "The Governance perspective, which coordinates cloud initiatives and manages benefits, risk, and cost"
+      },
+      {
+        "label": "C",
+        "text": "The Platform perspective, which covers technology such as architecture and workloads"
+      },
+      {
+        "label": "D",
+        "text": "The Operations perspective, which covers how workloads are monitored and supported"
+      }
+    ],
+    "explanation": "The correct answer is the People perspective. This perspective covers culture, organizational structure, leadership, workforce skills, and change management, so it exactly fits skill gap analysis and training planning. The Governance perspective coordinates cloud initiatives and manages benefits, transition risk, and cloud spending, so training and culture change are not its focus. The Platform perspective covers technology itself such as architecture, workloads, and data. The Operations perspective covers how cloud workloads are monitored and supported, which is far from workforce training or organizational change. Looking at the added conditions in the question, skill gaps and culture change are covered by the People perspective."
+  },
+  {
+    "number": 32,
+    "domain": "Cloud Technology and Services",
+    "prompt": "Twelve Linux Amazon EC2 instances at a media company must read and write content files in the same directory at the same time. The company wants storage capacity to adjust automatically as files grow and shrink without adjusting it manually, and the instances are distributed across multiple Availability Zones. Which storage is the MOST suitable to meet this requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create an Amazon EBS volume for each instance and periodically synchronize the files with one another by using rsync."
+      },
+      {
+        "label": "B",
+        "text": "Copy the files to the instance store of each instance and keep them up to date with a script."
+      },
+      {
+        "label": "C",
+        "text": "Place the files in Amazon S3 Glacier Deep Archive and restore them each time they need to be read."
+      },
+      {
+        "label": "D",
+        "text": "Create an Amazon EFS file system and mount it on all the instances over NFS."
+      }
+    ],
+    "explanation": "Amazon EFS is the correct answer. Multiple EC2 instances can mount it at the same time over the NFS protocol, and capacity grows and shrinks automatically as you add or delete files, so there is nothing to manage. Giving each instance its own EBS volume and synchronizing means managing 12 separate copies, and consistency of concurrent writes is not guaranteed. An instance store is temporary storage tied to the instance, so it does not fit the sharing and retention requirements. Glacier Deep Archive is for archiving and cannot be used as a shared directory for reading and writing. Looking at the added conditions in the question, concurrent access from multiple instances and automatic capacity adjustment are characteristics of EFS."
+  },
+  {
+    "number": 33,
+    "domain": "Security and Compliance",
+    "prompt": "A new development team wants to open the AWS Trusted Advisor console in an account that uses the Basic Support plan. The team lead wants to know first which checks can be viewed without spending extra money. Which of the following is the MOST accurate description of the scope of checks available at no additional cost?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "All checks in all categories and automatic refresh"
+      },
+      {
+        "label": "B",
+        "text": "Only all checks in the Cost Optimization category"
+      },
+      {
+        "label": "C",
+        "text": "No checks are provided, and only recommendation emails are received"
+      },
+      {
+        "label": "D",
+        "text": "All checks in the Service Limits category and some checks in the Security and Fault Tolerance categories"
+      }
+    ],
+    "explanation": "The correct answer is all checks in the Service Limits category and some checks in the Security and Fault Tolerance categories. According to the Trusted Advisor check reference, with the Basic or Developer Support plan you can view in the console all checks in the Service Limits category and only a few selected checks in Security (public EBS snapshots, public RDS snapshots, S3 bucket permissions, MFA on the root account, and unrestricted specific ports in security groups) and Fault Tolerance (use of the STS global endpoint). All checks in all categories fall within the scope of the Business Support+ plan or higher. All Cost Optimization checks are also within the scope of a higher plan. Because some checks can be viewed in the console, the statement that no checks are provided is also incorrect. Looking at the added conditions in the question, Basic provides only all Service Limits checks and some Security and Fault Tolerance checks."
+  },
+  {
+    "number": 34,
+    "domain": "Cloud Concepts",
+    "prompt": "Executives have asked to reduce the energy consumed by workloads running on AWS and to increase resource utilization in order to lower the environmental impact. Cost reduction itself is not the goal, and the security and performance requirements are already sufficiently met. Which pillar of the Well-Architected Framework is MOST directly aligned with this requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "The Sustainability pillar, which addresses reducing environmental impact"
+      },
+      {
+        "label": "B",
+        "text": "The Cost Optimization pillar, which reduces unnecessary monetary spending"
+      },
+      {
+        "label": "C",
+        "text": "The Security pillar, which protects data and systems"
+      },
+      {
+        "label": "D",
+        "text": "The Performance Efficiency pillar, which selects resources to match requirements"
+      }
+    ],
+    "explanation": "The correct answer is the Sustainability pillar. Reducing energy use and environmental impact is the purpose of this pillar, and the situation also explicitly mentions environmental impact. Cost Optimization is the pillar that reduces unnecessary monetary spending, so environmental impact is not its direct subject. Security covers protecting the confidentiality and integrity of data and systems. Performance Efficiency is the area of using resources efficiently to match requirements, but it does not directly address the goal of environmental impact. The framework consists of six pillars, including Sustainability. Looking at the added conditions in the question, the goal is reducing environmental impact, so the answer is the Sustainability pillar."
+  },
+  {
+    "number": 35,
+    "domain": "Billing, Pricing, and Support",
+    "prompt": "A headquarters receives separate invoices from 10 AWS accounts and pays them separately. It wants to combine the invoices into a single payment and also view the costs by account. Each account is used by a different team, so merging the accounts or moving resources risks service interruptions. Which method has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Move the resources of nine accounts into one account and close the remaining accounts."
+      },
+      {
+        "label": "B",
+        "text": "Download each account's invoice as a PDF, compile them in a spreadsheet, and pay with a single card."
+      },
+      {
+        "label": "C",
+        "text": "Create an AWS Organizations organization, invite the 10 accounts to join it, and use consolidated billing."
+      },
+      {
+        "label": "D",
+        "text": "Share the root user credentials of all accounts so that one person can handle payment in each account."
+      }
+    ],
+    "explanation": "Consolidated billing in AWS Organizations is the correct answer. It collects the costs of accounts in the organization into a single invoice with one payment method, while usage and cost by account can still be viewed separately in Cost Explorer. Moving resources into one account violates the condition not to merge accounts and also involves a large amount of work. Compiling invoices manually requires human effort every month and invites mistakes. Sharing root credentials is the riskiest approach from a security standpoint, so it cannot be chosen. Looking at the added conditions in the question, consolidated billing while keeping the accounts is a feature of Organizations."
+  },
+  {
+    "number": 36,
+    "domain": "Cloud Concepts",
+    "prompt": "A development team wants to deploy a web application in an environment where it manages only its code and data, and the provider manages the underlying servers and runtime without any operating system installation or runtime patching. The team has an application that it developed itself, so it cannot use a model that subscribes to finished software. Which cloud service model is the closest to this requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "PaaS, a model in which you are given a platform and manage only code and data"
+      },
+      {
+        "label": "B",
+        "text": "IaaS, a model in which you rent virtual servers and networking"
+      },
+      {
+        "label": "C",
+        "text": "SaaS, a model in which you subscribe to and use finished software"
+      },
+      {
+        "label": "D",
+        "text": "On-premises virtualization, a model in which you operate virtual servers on your own hardware"
+      }
+    ],
+    "explanation": "The correct answer is PaaS. The characteristic of PaaS is that the development team deploys its own code and data while the provider manages the platform, such as servers, operating systems, and runtimes. IaaS rents out virtual servers and networking but requires the customer to manage the operating system and runtime, so it does not match the requirement. SaaS is a model for using finished software, and the situation is not one in which a development team is deploying its own code. On-premises virtualization is not a cloud service model and requires you to operate even the hardware. Looking at the added conditions in the question, a model that deploys your own code while delegating the platform is PaaS."
+  },
+  {
+    "number": 37,
+    "domain": "Security and Compliance",
+    "prompt": "A fintech company must create its own data encryption keys and control access to them through policies as required by regulation, and it wants the keys to be protected in validated hardware security modules. The company must also submit key usage records during audits, and the service must integrate with multiple AWS services such as Amazon S3 and Amazon EBS. Which managed service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Certificate Manager"
+      },
+      {
+        "label": "B",
+        "text": "AWS Key Management Service (AWS KMS)"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Cognito"
+      },
+      {
+        "label": "D",
+        "text": "AWS Artifact"
+      }
+    ],
+    "explanation": "The correct answer is AWS Key Management Service. KMS is a managed service that makes it easy to create and control keys used to encrypt and sign data, and the keys are protected by validated HSMs and never leave KMS unencrypted. You can also use key policies to allow access only to trusted users. Certificate Manager is a service that issues and manages TLS certificates. Cognito handles authentication of application users. Artifact provides compliance documents and does not manage keys. Looking at the added conditions in the question, the managed service that provides key creation, policy control, and service integration is KMS."
+  },
+  {
+    "number": 38,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A security officer discovered yesterday that a security group rule had been changed. The officer needs to find out two things: who called the change API and when, and what the configuration state of the security group was before and after the change. No new tool needs to be built; the team only needs to turn on the necessary recording features. Which TWO services each meet one of these two requirements? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon CloudWatch alarms, which send notifications when a metric exceeds a threshold"
+      },
+      {
+        "label": "B",
+        "text": "AWS Cost Explorer, which visualizes costs and usage by service"
+      },
+      {
+        "label": "C",
+        "text": "AWS CloudTrail, which records API calls made through the console, CLI, and SDKs"
+      },
+      {
+        "label": "D",
+        "text": "AWS Trusted Advisor, which checks cost and security improvement recommendations"
+      },
+      {
+        "label": "E",
+        "text": "AWS Config, which records resource configuration history and compliance status"
+      }
+    ],
+    "explanation": "AWS CloudTrail and AWS Config are the correct answers. CloudTrail records actions taken by users, roles, and services as events and tells you who called which API and when. AWS Config shows the configuration of a resource and its change history over time, so you can check the state before and after the change. CloudWatch alarms are a tool for monitoring metrics and do not tell you the caller or the configuration history. Trusted Advisor provides recommendations based on best practices and does not track individual change history. Cost Explorer is a cost analysis tool and is unrelated to security group changes. Looking at the added conditions in the question, CloudTrail handles who made the call, and Config handles the configuration before and after."
+  },
+  {
+    "number": 39,
+    "domain": "Cloud Technology and Services",
+    "prompt": "An Amazon EC2 instance in a private subnet of a VPC needs to download OS security updates from the internet. Security policy does not allow connections coming into this instance from the internet, and the network team does not want to operate a separate proxy server itself. Which method meets this requirement with the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Change the private subnet route table to point directly to an internet gateway."
+      },
+      {
+        "label": "B",
+        "text": "Assign a public IP address to the instance and open all inbound ports in the security group."
+      },
+      {
+        "label": "C",
+        "text": "Build a new AWS Direct Connect connection to reach the internet update servers."
+      },
+      {
+        "label": "D",
+        "text": "Create a NAT gateway in a public subnet and point the private subnet routing to it."
+      }
+    ],
+    "explanation": "A NAT gateway is the correct answer. It is a managed configuration that lets instances in a private subnet send requests out to the internet while not accepting connections initiated from the internet. If you make the route table point directly to an internet gateway, the subnet effectively becomes public, which weakens the requirement to block inbound traffic. Assigning a public IP address and opening inbound ports allows external connections, which directly violates the condition. Direct Connect is a service that connects a corporate network to AWS, and it is excessive and costly for internet updates. Looking at the added conditions in the question, a managed NAT gateway that allows only outbound traffic meets the requirement."
+  },
+  {
+    "number": 40,
+    "domain": "Cloud Concepts",
+    "prompt": "A team operating an SQL Server database server that it installed itself on premises wants to move to Amazon RDS for SQL Server to reduce the backup and patching burden, with almost no changes to the application code. It has no budget or time to redesign the entire architecture to be cloud native. Which migration strategy is this approach closest to?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Retire, which shuts down systems that are no longer needed"
+      },
+      {
+        "label": "B",
+        "text": "Retain, which leaves the system in the existing environment as it is"
+      },
+      {
+        "label": "C",
+        "text": "Replatform, which optimizes part of the system by using a managed service"
+      },
+      {
+        "label": "D",
+        "text": "Relocate, which moves the platform itself to its cloud version"
+      }
+    ],
+    "explanation": "The correct answer is replatform. Replatform is moving the database to a managed service to reduce the operational burden without making large changes to the application, and its description even gives the example of moving SQL Server to RDS. Retire is a strategy that shuts down applications that are no longer needed, but this database continues to be used. Retain is a strategy of leaving a system in the existing environment, which contradicts the premise of migrating. Relocate is a strategy that moves a platform such as VMware itself to its cloud version, which is different from changing to a managed service. Looking at the added conditions in the question, moving to a managed service while keeping the structure is replatform."
+  },
+  {
+    "number": 41,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A hospital stores backups of medical records, which it is legally required to retain for seven years, in Amazon S3. The records are likely to be accessed less than once a year, and it is acceptable if a restore takes several hours when needed. The records continue to accumulate at a scale of tens of TB, and minimizing total cost over the retention period is the most important consideration. Which storage class has the lowest storage cost?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "S3 Glacier Deep Archive, a long-term archive class for data accessed less than once a year that can tolerate restore time"
+      },
+      {
+        "label": "B",
+        "text": "S3 Glacier Instant Retrieval, a class used for archive data accessed once a quarter with millisecond access"
+      },
+      {
+        "label": "C",
+        "text": "S3 Standard-IA, a class that serves data read about once a month in milliseconds"
+      },
+      {
+        "label": "D",
+        "text": "S3 Intelligent-Tiering, a class that automatically moves data with uncertain access patterns between tiers"
+      }
+    ],
+    "explanation": "S3 Glacier Deep Archive is the correct answer. It is designed for long-term archive data accessed less than once a year, and the condition that restore time is acceptable matches the characteristics of this class, so it is the cheapest. Glacier Instant Retrieval is for data that needs millisecond access once a quarter, so it is a more expensive choice for this requirement. Standard-IA is a class suited to data read about once a month, so the cost is high for a seven-year retention. Intelligent-Tiering is used when the access pattern is unknown, and for long-term archives with a clear pattern, it only adds monitoring charges. Looking at the added conditions in the question, the data is rarely accessed and restore delays are acceptable, so the cheapest option, Deep Archive, is the answer."
+  },
+  {
+    "number": 42,
+    "domain": "Cloud Concepts",
+    "prompt": "An IT asset review found that a legacy reporting server has received no connections at all in the last 90 days and its CPU and memory utilization are near zero. Even after checking with the responsible department, no one uses this server. Which migration strategy is the MOST suitable for this server in order to reduce both migration cost and security risk?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Retire it by decommissioning it and shutting down the server."
+      },
+      {
+        "label": "B",
+        "text": "Rehost it as is and optimize it afterward."
+      },
+      {
+        "label": "C",
+        "text": "Replatform it by moving it to a managed service."
+      },
+      {
+        "label": "D",
+        "text": "Refactor it by rebuilding it with a serverless architecture."
+      }
+    ],
+    "explanation": "The correct answer is the retire strategy, which decommissions the server. If there have been no connections for the last 90 days and utilization is near zero, the application is considered unused, and shutting down the server eliminates both maintenance cost and the security risk of end-of-support software. Rehosting moves an unused server and only adds migration cost. Replatforming amounts to spending on managed services for a server that is useless. Refactoring is the most complex and costly strategy, so there is no reason to invest in a system that is not used. Looking at the added conditions in the question, an unused server is decommissioned rather than moved, which is retire."
+  },
+  {
+    "number": 43,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A company wants to move an on-premises MySQL application to AWS without changing the code. The company wants AWS to handle backups, patching, and failure detection, and storage must grow automatically based on usage. There is only one database administrator, who wants to keep using MySQL client tools. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use the MySQL-compatible edition of Amazon Aurora."
+      },
+      {
+        "label": "B",
+        "text": "Amazon DynamoDB, with the application redesigned to a key-value model before migration"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Redshift, with the existing queries moved to data warehouse tables to run"
+      },
+      {
+        "label": "D",
+        "text": "Install MySQL directly on an EC2 instance and operate backups and patching yourself."
+      }
+    ],
+    "explanation": "The MySQL-compatible edition of Amazon Aurora is the correct answer. You can keep using existing MySQL code and tools, it provides managed provisioning, patching, backup, recovery, and failure detection, and the cluster volume grows automatically as needed. DynamoDB is NoSQL, so the application would need to be redesigned, which violates the no-code-change condition. Redshift is an analytics warehouse and does not suit a transaction-processing application. Installing it directly on EC2 requires you to do backups and patching yourself and does not meet the managed requirement. Looking at the added conditions in the question, MySQL compatibility and automatically growing storage are characteristics of the MySQL-compatible edition of Aurora."
+  },
+  {
+    "number": 44,
+    "domain": "Cloud Concepts",
+    "prompt": "An online shopping mall wants to prevent its service from being interrupted by the failure of a single data center. Most users are in one country, and data cannot be moved to another country. The mall wants both low latency and resilience within the same Region while minimizing the increase in cost. Which configuration is the MOST appropriate?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Run the web servers on a single larger instance consolidated in one Availability Zone."
+      },
+      {
+        "label": "B",
+        "text": "Place all the web servers at edge locations to distribute failures."
+      },
+      {
+        "label": "C",
+        "text": "Place the web servers in equal proportions in Regions on two different continents."
+      },
+      {
+        "label": "D",
+        "text": "Distribute the web servers across multiple Availability Zones in the same Region."
+      }
+    ],
+    "explanation": "The correct answer is to distribute the servers across multiple Availability Zones in the same Region. Availability Zones are isolated groups of data centers, so if one fails, the others continue to serve traffic, and because they are in the same Region, latency is low and the cost increase is small. Putting a large instance in one Availability Zone leaves it exposed to a failure in that zone. Edge locations are places that cache content and are not where web servers run. Distributing across Regions on different continents increases latency and data transfer costs, which conflicts with the requirements. Looking at the added conditions in the question, users are in one country and there is a data location constraint, so multiple Availability Zones in the same Region is the right choice."
+  },
+  {
+    "number": 45,
+    "domain": "Security and Compliance",
+    "prompt": "At a company that operates multiple accounts, the findings of Amazon GuardDuty, Amazon Inspector, and Amazon Macie appear separately, which makes it difficult to prioritize them. The security team wants to view these findings in one place and also automatically check the configuration state of its accounts against security standards such as CIS. The team does not intend to add a new detection tool. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Security Hub"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudTrail"
+      },
+      {
+        "label": "C",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "label": "D",
+        "text": "Amazon GuardDuty"
+      }
+    ],
+    "explanation": "The correct answer is AWS Security Hub. Security Hub aggregates security findings from multiple accounts, AWS services, and partner products, organizes them by priority, and automatically checks against security standards such as CIS and PCI DSS. CloudTrail is a service that records API activity, so it neither consolidates findings nor performs standards checks. Trusted Advisor provides best-practice recommendations but does not aggregate the findings of other security services. GuardDuty is just one of the threat detection services and does not have the role of consolidating the findings of other services. Looking at the added conditions in the question, aggregating findings and checking against standards is the role of Security Hub."
+  },
+  {
+    "number": 46,
+    "domain": "Security and Compliance",
+    "prompt": "A company must grant the same development environment permissions to 30 developers, and team members change frequently each quarter. The permission policy is modified occasionally, and the security team wants to distinguish users so that accountability can be traced to individuals. Which method reduces operational overhead the MOST by avoiding editing each user every time the permissions change?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Paste the same inline policy into each developer's individual IAM user."
+      },
+      {
+        "label": "B",
+        "text": "Create one IAM user and have all 30 people sign in with the same credentials."
+      },
+      {
+        "label": "C",
+        "text": "Give all developers the account's root user credentials."
+      },
+      {
+        "label": "D",
+        "text": "Attach the required permission policy to an IAM group and add the developers to the group."
+      }
+    ],
+    "explanation": "The correct answer is to attach the policy to an IAM group and add the developers to the group. A permission change needs only an update to the group's policy to take effect for all members, and when people join or leave you only change group membership, so the operational burden is small. If you paste an inline policy into each user, you must edit it 30 times whenever permissions change. Sharing one user makes it impossible to tell who did what and also makes it hard to cut off access for people who leave. Sharing root credentials is the worst choice because it puts the entire account at risk. Looking at the added conditions in the question, attaching permissions to a group lets you change permissions all at once while preserving individual identification."
+  },
+  {
+    "number": 47,
+    "domain": "Cloud Concepts",
+    "prompt": "Executives are comparing the total cost of ownership (TCO) of maintaining their own data center with the TCO of migrating to AWS. The company will keep the same applications and development staff after the migration. Which TWO costs must be included in the on-premises side of the calculation and are eliminated or reduced as direct burdens when the company migrates to AWS? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Costs of purchasing, replacing, and maintaining server hardware"
+      },
+      {
+        "label": "B",
+        "text": "Data transfer and training costs incurred during the migration"
+      },
+      {
+        "label": "C",
+        "text": "Costs of power, cooling, and facility leasing for the data center"
+      },
+      {
+        "label": "D",
+        "text": "Application development labor costs that are still required in the same way after the migration"
+      },
+      {
+        "label": "E",
+        "text": "Service usage charges that AWS bills after the migration"
+      }
+    ],
+    "explanation": "The correct answers are the cost of purchasing and maintaining server hardware and the cost of power, cooling, and facilities. These two are infrastructure costs that are borne directly only on premises, and once AWS takes over the facilities and hardware, they disappear from the customer's burden. AWS service usage charges are new costs incurred after the migration, so they are not an on-premises item. Application development labor costs are required both before and after the migration, so they do not decrease. Data transfer and training costs are incurred as part of migrating, so they are not costs that disappear. Looking at the added conditions in the question, hardware and facility costs decrease after migration, but development labor costs and AWS charges do not apply."
+  },
+  {
+    "number": 48,
+    "domain": "Cloud Concepts",
+    "prompt": "The traffic to an online shopping mall increases several times above normal at lunchtime and decreases again in the afternoon. The mall already has a configuration in which the number of servers increases and decreases without human intervention and costs are incurred only for the time used. What is the MOST accurate term for this characteristic?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "High availability, the characteristic of keeping a service running even when some components fail"
+      },
+      {
+        "label": "B",
+        "text": "Elasticity, the characteristic of resources growing and shrinking to match demand"
+      },
+      {
+        "label": "C",
+        "text": "Fault tolerance, the characteristic of operating without interruption even during a failure"
+      },
+      {
+        "label": "D",
+        "text": "Global reach, the characteristic of serving users around the world"
+      }
+    ],
+    "explanation": "The correct answer is elasticity. The definition of elasticity is that resources automatically grow and shrink to match demand and you pay only for what you use. High availability is the property of keeping a service running even if some components fail, so it is not directly related to demand fluctuation. Fault tolerance means operating without interruption even during a component failure, which is also different from adjusting the number of servers. Global reach is the ability to serve users around the world and has nothing to do with demand fluctuation over time of day. Looking at the added conditions in the question, the characteristic of growing and shrinking automatically with demand is elasticity."
+  },
+  {
+    "number": 49,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A company that already runs containers with Kubernetes on premises wants to move to AWS. The development team wants to use its existing Kubernetes manifests and tools as much as possible and wants AWS to operate the control plane. The team has no time to learn a different orchestration tool. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon ECS, which orchestrates containers by using the AWS-specific task definition format"
+      },
+      {
+        "label": "B",
+        "text": "Amazon EKS, a managed Kubernetes service to which the existing manifests can be ported"
+      },
+      {
+        "label": "C",
+        "text": "AWS Lambda, which converts containers into functions and runs them in an event-driven manner"
+      },
+      {
+        "label": "D",
+        "text": "Amazon EC2, where you install Kubernetes yourself and operate the control plane"
+      }
+    ],
+    "explanation": "Amazon EKS is the correct answer. It is a managed service for running Kubernetes on AWS, so it is easy to port existing manifests and Kubernetes tools, and it reduces the burden of operating the control plane. ECS uses AWS-specific task definitions, so you would have to rewrite the existing manifests. Lambda is an event-driven function execution service and is not meant for moving Kubernetes workloads as they are. Installing Kubernetes yourself on EC2 makes the team responsible for operating the control plane, which violates the requirement. Looking at the added conditions in the question, EKS keeps the existing Kubernetes assets while delegating the control plane."
+  },
+  {
+    "number": 50,
+    "domain": "Cloud Concepts",
+    "prompt": "A large shopping mall is preparing an architecture review meeting to check whether its workloads recover on their own when a failure occurs and whether it regularly tests its recovery procedures. This meeting is not about cost or security but about the ability to recover when the service is interrupted. Which pillar of the AWS Well-Architected Framework does this MOST directly correspond to?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Performance Efficiency, the area of selecting the compute resource types that suit the workload requirements"
+      },
+      {
+        "label": "B",
+        "text": "Reliability, the area of recovering from failures and validating recovery procedures"
+      },
+      {
+        "label": "C",
+        "text": "Operational Excellence, the area of managing operational procedures as code and continuing to improve"
+      },
+      {
+        "label": "D",
+        "text": "Cost Optimization, the area of avoiding unnecessary spending and understanding spending"
+      }
+    ],
+    "explanation": "The correct answer is the Reliability pillar, which recovers from failures and validates recovery procedures. The question asks about automatic recovery when a failure occurs and testing of recovery, which matches the core topics of Reliability. Performance Efficiency is about choosing resource types that suit requirements, so it differs from failure recovery. Operational Excellence covers operational procedures and a culture of improvement and does not evaluate recovery capability itself. Cost Optimization is about controlling unnecessary spending and has nothing to do with failure response. Looking at the added conditions in the question, failure recovery and recovery testing fall under the Reliability pillar."
+  },
+  {
+    "number": 51,
+    "domain": "Security and Compliance",
+    "prompt": "A company stores customer documents in Amazon S3. In a recent audit, the company was asked to clearly distinguish the scope of responsibility between AWS and the customer. According to the shared responsibility model, which of the following must the customer decide and be responsible for, rather than AWS?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Physical access control to the data center where the storage servers are located"
+      },
+      {
+        "label": "B",
+        "text": "Physical data disposal procedures for storage devices at the end of their lives"
+      },
+      {
+        "label": "C",
+        "text": "Security of the underlying software and hypervisor that run the S3 service"
+      },
+      {
+        "label": "D",
+        "text": "Policies that determine who can access buckets and objects, and public access settings"
+      }
+    ],
+    "explanation": "The correct answer is the access policies and public access settings of buckets and objects. Security in the cloud is the customer's responsibility, and the customer decides who is allowed to access data. Physical access control to data centers is security of the cloud itself and is AWS's responsibility. Disposal of storage devices at the end of their lives is also an infrastructure area that AWS handles. The security of the underlying software and the hypervisor that run S3 is likewise a software layer managed by AWS, so it is not an item the customer is responsible for. Looking at the added conditions in the question, access policies and public access settings are security in the cloud, so they are the customer's responsibility."
+  },
+  {
+    "number": 52,
+    "domain": "Billing, Pricing, and Support",
+    "prompt": "A video encoding batch job runs on Amazon EC2 for 6 hours every night. The job saves its progress periodically, so it can resume even if an instance is reclaimed in the middle of a run. The start time is flexible, and the instances are not needed after the job finishes. Which EC2 purchasing option is the MOST cost-effective?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use On-Demand Instances, turning them on only for the hours needed."
+      },
+      {
+        "label": "B",
+        "text": "Use Spot Instances to take advantage of spare capacity at a low price."
+      },
+      {
+        "label": "C",
+        "text": "Purchase a 3-year Compute Savings Plans commitment and apply it to total usage."
+      },
+      {
+        "label": "D",
+        "text": "Reserve a Dedicated Host and use the entire physical server exclusively."
+      }
+    ],
+    "explanation": "Spot Instances is the correct answer. Spot Instances is an option that uses spare EC2 capacity at a price much lower than On-Demand, and it suits flexible, interruption-tolerant workloads such as batch jobs that can resume after an interruption. On-Demand is flexible but charged at the standard price, so it is not the cheapest. A 3-year Savings Plans commitment applies a long-term commitment to a job that runs only 6 hours a day and does not take advantage of the interruption-tolerant condition. A Dedicated Host is an option needed for licensing or regulatory reasons and has the highest cost. Looking at the added conditions in the question, the job is flexible and interruption-tolerant, so Spot is the cheapest."
+  },
+  {
+    "number": 53,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A mobile game sees traffic grow sharply and then fall with each event. It must read and write player session information quickly by key, and it does not want to plan capacity in advance or manage servers. The marketing team changes the event schedule often and does not announce it in advance. Which database is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Reserve a large Amazon RDS instance in advance to match peak event traffic."
+      },
+      {
+        "label": "B",
+        "text": "Store the session information in an Amazon Redshift cluster and query it when needed."
+      },
+      {
+        "label": "C",
+        "text": "Install a self-managed database on Amazon EC2 and add nodes manually."
+      },
+      {
+        "label": "D",
+        "text": "Use Amazon DynamoDB in on-demand capacity mode."
+      }
+    ],
+    "explanation": "DynamoDB on-demand mode is the correct answer. It is a serverless NoSQL database that delivers single-digit millisecond performance, and on-demand mode automatically adjusts throughput to the request volume, so no capacity planning or server management is needed and you are billed for the requests you make. If you size RDS in advance for peak event traffic, money is wasted during normal times and you still have to manage the instance yourself. Redshift is an analytics warehouse and does not suit low-latency session lookups. A self-managed database on EC2 requires you to scale and operate nodes yourself, so it has the greatest operational burden. Looking at the added conditions in the question, unpredictable traffic and key-based access fit DynamoDB on-demand."
+  },
+  {
+    "number": 54,
+    "domain": "Security and Compliance",
+    "prompt": "A compliance officer is building a control responsibility table for the AWS shared responsibility model. The officer wants to choose two examples of shared controls, in which both AWS and the customer are responsible in their own areas. Items that are solely AWS's responsibility or solely the customer's responsibility will be listed separately in other columns of the table. (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Patch management, in which AWS is responsible for the infrastructure and the customer is responsible for the guest operating system and applications"
+      },
+      {
+        "label": "B",
+        "text": "Configuration management, in which AWS is responsible for infrastructure devices and the customer is responsible for its own operating system and database settings"
+      },
+      {
+        "label": "C",
+        "text": "Security configuration of the AWS hypervisor and hardware firmware"
+      },
+      {
+        "label": "D",
+        "text": "Physical and environmental controls of the data center facilities"
+      },
+      {
+        "label": "E",
+        "text": "Classification of customer data and design of service access permissions"
+      }
+    ],
+    "explanation": "The correct answers are patch management and configuration management. Both are shared controls in which AWS is responsible for the infrastructure side and the customer is responsible for its own guest operating system, applications, and settings. Physical controls of data center facilities are inherited controls, in which the customer inherits AWS's controls as they are, so they are not shared. Data classification and access permission design are customer specific controls for which the customer alone is responsible. The configuration of the hypervisor and hardware firmware is an area for which AWS alone is responsible, so it is not a shared item. Looking at the added conditions in the question, the shared controls in which both sides are responsible for their own areas are patch management and configuration management."
+  },
+  {
+    "number": 55,
+    "domain": "Cloud Concepts",
+    "prompt": "Some applications at a financial company cannot move customer data out of the company's own data center because of regulations. In the migration plan, the company decided to exclude these applications from the scope of this migration and to review them again later. The services continue to operate, and there is no plan to decommission them. Which strategy does this correspond to?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Relocate, which moves to a different account or Region"
+      },
+      {
+        "label": "B",
+        "text": "Repurchase, which replaces the application with a cloud product"
+      },
+      {
+        "label": "C",
+        "text": "Retain, which leaves the application in its original environment as it is"
+      },
+      {
+        "label": "D",
+        "text": "Rehost, which moves servers without changes"
+      }
+    ],
+    "explanation": "The correct answer is retain, which leaves the application in its original environment as it is. A situation in which regulations prevent data from being moved out and the application will be reviewed again later is a typical retain case caused by data residency requirements. Relocate moves workloads between VPCs, Regions, or accounts, or to a cloud version of a platform, so the data would leave the environment and violate the regulation. Repurchase is a strategy that replaces a product and does not resolve the restriction on moving data. Rehost moves servers to AWS as they are, so the data would also leave the company's premises. Looking at the added conditions in the question, the applications are left as they are rather than moved and are not decommissioned, so this is retain."
+  },
+  {
+    "number": 56,
+    "domain": "Security and Compliance",
+    "prompt": "A team uploads container images to Amazon ECR and runs its service on Amazon EC2 instances. The team wants to continuously and automatically check whether newly published CVEs affect its images and instances, without creating a manual scan schedule. Several dozen instances are already in operation, so the team cannot check them one by one. Which service is the MOST suitable?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon GuardDuty"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Inspector"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Macie"
+      },
+      {
+        "label": "D",
+        "text": "AWS Shield"
+      }
+    ],
+    "explanation": "The correct answer is Amazon Inspector. Inspector automatically discovers EC2 instances, ECR container images, and Lambda functions, continuously scans them for software vulnerabilities, and reassesses them when a new CVE is published. GuardDuty is a service that analyzes logs to detect threat activity, which is different from software vulnerability scanning. Macie is a service that finds sensitive information in S3 data. Shield is a service that protects against DDoS attacks and has nothing to do with checking CVEs. Looking at the added conditions in the question, the service that automatically and continuously scans for software vulnerabilities is Inspector."
+  },
+  {
+    "number": 57,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A small development team wants AWS to handle EC2 provisioning, load balancing, automatic scaling, and health monitoring just by uploading its Java web application code. All team members have little infrastructure design experience, and this application behaves dynamically. Which service has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "AWS Elastic Beanstalk, a service that automatically configures the environment when you upload code"
+      },
+      {
+        "label": "B",
+        "text": "AWS CloudFormation, a service that creates resources according to templates that you write yourself"
+      },
+      {
+        "label": "C",
+        "text": "Amazon EC2 and Auto Scaling, in which you design and configure the load balancer yourself"
+      },
+      {
+        "label": "D",
+        "text": "Amazon S3 static website hosting, which serves only static files"
+      }
+    ],
+    "explanation": "Elastic Beanstalk is the correct answer. When you upload the application source, it provisions EC2 instances and configures load balancing, health monitoring, and automatic scaling, and it supports several platforms including Java. There is no additional charge for the service itself, and you pay only for the underlying resources. CloudFormation requires you to design templates yourself, which is a heavy burden for a team with little experience. Configuring EC2 and Auto Scaling yourself leaves the entire design to the team. S3 static hosting cannot run server code, so it does not suit a Java web application. Looking at the added conditions in the question, the service that configures the environment from just a code upload is Elastic Beanstalk, and a dynamic application does not fit static hosting."
+  },
+  {
+    "number": 58,
+    "domain": "Security and Compliance",
+    "prompt": "After a startup created its AWS account, the CEO signs in as the root user and deploys the service every day. The company has grown to five employees who need to share the deployments, and a recent external security review flagged this practice. Which action improves the security of the account the MOST?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Turn on MFA for the root user and lock it away, and perform day-to-day tasks as separate users that have only the required permissions."
+      },
+      {
+        "label": "B",
+        "text": "Create access keys for the root user and store them in the deployment tool for automation."
+      },
+      {
+        "label": "C",
+        "text": "Share the root user password with the whole team but change it every month."
+      },
+      {
+        "label": "D",
+        "text": "Copy the root user permissions to an administrators group and let all developers use it."
+      }
+    ],
+    "explanation": "The correct answer is to turn on MFA for the root user and lock it away, and perform day-to-day tasks as separate users that have only the required permissions. The root user has full permissions for the whole account, so the best practice is to strengthen its protection and not use it for daily work. Creating root access keys and storing them in a tool puts the entire account at risk if they leak. If the team shares the password, you cannot trace who did what, and the risk of exposure increases. Copying root permissions to a group and giving them to everyone directly contradicts the principle of least privilege. Looking at the added conditions in the question, the best practice is to lock the root user with MFA and do daily work with least-privilege users."
+  },
+  {
+    "number": 59,
+    "domain": "Security and Compliance",
+    "prompt": "A company that has created a new AWS environment wants to choose measures that conform to IAM best practices at a security review meeting. The application runs on Amazon EC2, and the team has 10 members. Someone suggested loosening security controls for the sake of development speed. Which TWO measures should be applied? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Grant the administrator policy to all developers and find problems afterward through the AWS CloudTrail records."
+      },
+      {
+        "label": "B",
+        "text": "Require MFA for the root user and IAM users."
+      },
+      {
+        "label": "C",
+        "text": "Use temporary credentials from an IAM role, instead of long-term access keys, for applications that run on Amazon EC2."
+      },
+      {
+        "label": "D",
+        "text": "Commit access keys to the source repository so that team members can easily pick them up and use them."
+      },
+      {
+        "label": "E",
+        "text": "Have all team members share one IAM user's credentials for convenience."
+      }
+    ],
+    "explanation": "The correct answers are using temporary credentials from an IAM role and requiring MFA. A role means that you do not need to distribute long-term keys, and MFA requires additional authentication even if a password leaks, which protects the root user and IAM users. Granting administrator permissions to everyone and finding problems afterward from records is not prevention and goes against the principle of least privilege. Committing access keys to a repository greatly increases the risk of leaks. Sharing one user makes it impossible to tell who performed an action and makes it hard to revoke individual permissions. Looking at the added conditions in the question, MFA and temporary credentials from roles are best practices, while sharing keys and excessive permissions are not."
+  },
+  {
+    "number": 60,
+    "domain": "Cloud Concepts",
+    "prompt": "A game company builds a new environment in the Japan Region to reduce latency for users in Japan, and the development team wants to bring up test environments in minutes instead of waiting for days. Which TWO cloud benefits correspond directly to these two actions, respectively? (Select TWO.)",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Deploying to multiple Regions around the world in minutes to serve users from places close to them"
+      },
+      {
+        "label": "B",
+        "text": "Scaling resources up and down to match demand without guessing the required capacity in advance"
+      },
+      {
+        "label": "C",
+        "text": "Trading fixed expense for variable expense by paying only for what you use without up-front investment"
+      },
+      {
+        "label": "D",
+        "text": "Gaining broader physical control over the data centers that you operate yourself"
+      },
+      {
+        "label": "E",
+        "text": "Agility, which provisions resources in minutes and reduces the time needed for experimentation and development"
+      }
+    ],
+    "explanation": "The correct answers are the benefit of deploying to multiple Regions in minutes and the agility of provisioning resources in minutes. Building a new environment in the Japan Region to reduce latency corresponds to the benefit of deploying quickly anywhere in the world, and bringing up test environments in minutes instead of days corresponds to agility. Trading fixed expense for variable expense is a real advantage, but it is not what the two actions address. Stopping guessing capacity is also a real benefit, but the two actions in the passage have nothing to do with scaling up and down to match demand. Broader physical control is not a benefit of the cloud and is the opposite of AWS operating the facilities. Looking at the added conditions in the question, adding a Region is global deployment, and creating environments in minutes is agility."
+  },
+  {
+    "number": 61,
+    "domain": "Cloud Technology and Services",
+    "prompt": "When an order is placed, the inventory service, the shipping service, and the notification service must all receive the same event. The publisher wants to send the message only once, and each service should process it independently. More subscribing services may be added in the future, and the company does not want to modify the publishing code each time. Which configuration has the LEAST operational overhead?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Create one Amazon SQS queue and have the three services each pull messages from the same queue."
+      },
+      {
+        "label": "B",
+        "text": "Write code so that the publishing service sends a request directly to the address of each of the three services."
+      },
+      {
+        "label": "C",
+        "text": "Publish the message once to an Amazon SNS topic and connect each service as a subscriber."
+      },
+      {
+        "label": "D",
+        "text": "Configure the three services to periodically read an Amazon S3 bucket to check for new objects."
+      }
+    ],
+    "explanation": "Creating an SNS topic and subscribing each service to it is the correct answer. When the publisher sends to the topic once, SNS replicates and delivers the message to multiple subscribers such as SQS queues, Lambda functions, and HTTP endpoints in a fanout structure. If the services share the same SQS queue, each message is taken by only one consumer, which violates the condition that all three services receive the same event. If the publisher calls the services directly, the code must be changed every time a service is added. Polling S3 introduces delay and is inappropriate for delivering events. Looking at the added conditions in the question, fanout, in which a message is published once and delivered to multiple subscribers, is what an SNS topic provides."
+  },
+  {
+    "number": 62,
+    "domain": "Billing, Pricing, and Support",
+    "prompt": "A financial company's core system requires that, when a failure occurs, a designated technical account manager (TAM) is assigned to help the operations staff, and that urgent cases in which a business-critical system is down receive a response within 15 minutes. The budget is limited, so the company wants the lowest tier that satisfies these conditions. Which is the lowest-tier AWS Support plan that meets these requirements?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Enterprise Support, which provides a designated TAM and a 15-minute response"
+      },
+      {
+        "label": "B",
+        "text": "Basic Support, which supports account and billing inquiries and service limit increases"
+      },
+      {
+        "label": "C",
+        "text": "Business Support+, which provides 24/7 access to AWS experts and targets a response within 30 minutes for business-critical cases"
+      },
+      {
+        "label": "D",
+        "text": "AWS Unified Operations, which provides a designated TAM and domain-specific engineers"
+      }
+    ],
+    "explanation": "Enterprise Support is the correct answer. It provides a designated TAM and a response within 15 minutes for business-critical system down cases, and it is the lowest-tier plan that meets the requirements. Basic Support supports only account and billing inquiries and service limit increases and has no technical support cases. Business Support+ provides 24/7 access to AWS experts, but its response target for business-critical cases is 30 minutes and it has no designated TAM, so it does not satisfy the 15-minute criterion or the TAM requirement. Unified Operations also provides a TAM but is a higher-tier plan, so it does not match the condition of the lowest tier. Looking at the added conditions in the question, the lowest tier that satisfies both a TAM and a 15-minute response is Enterprise Support."
+  },
+  {
+    "number": 63,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A call center wants to convert thousands of call recording files per day into text for analysis. The team has no staff to train machine learning models itself, and the converted text will be used later for separate analysis. Which service is the MOST suitable for converting speech to text with an already trained managed AI service?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Amazon Polly, a service that synthesizes text into human-sounding speech"
+      },
+      {
+        "label": "B",
+        "text": "Amazon Transcribe, a service that converts audio files to text"
+      },
+      {
+        "label": "C",
+        "text": "Amazon Rekognition, a service that analyzes objects and faces in images and videos"
+      },
+      {
+        "label": "D",
+        "text": "Amazon Comprehend, a service that extracts sentiment and key phrases from text"
+      }
+    ],
+    "explanation": "Amazon Transcribe is the correct answer. It is a managed service that converts speech to text, so you do not need to build machine learning models yourself. Polly does the opposite and turns text into speech. Rekognition is a service that analyzes images and videos, so it does not suit audio input. Comprehend analyzes data that is already text, so it cannot replace the first step of converting speech to text. Analyzing the converted text with Comprehend can be used as the next step. Looking at the added conditions in the question, the pretrained service that converts speech to text is Transcribe."
+  },
+  {
+    "number": 64,
+    "domain": "Billing, Pricing, and Support",
+    "prompt": "A startup has decided to move its on-premises servers to AWS. Because it has not yet created any AWS resources, it has no usage history, and it wants to estimate the monthly cost in advance for each Amazon EC2 and Amazon RDS configuration proposal and report it to executives. The report is due this week. Which tool is the MOST suitable to meet the requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Use AWS Cost Explorer to view past usage costs and check future costs."
+      },
+      {
+        "label": "B",
+        "text": "Set a budget in AWS Budgets and receive an alert when spending is exceeded."
+      },
+      {
+        "label": "C",
+        "text": "Enable the AWS Cost and Usage Report and review detailed billing information."
+      },
+      {
+        "label": "D",
+        "text": "Use AWS Pricing Calculator to enter the configuration for each service and calculate the estimated cost."
+      }
+    ],
+    "explanation": "AWS Pricing Calculator is the correct answer. It is a tool for estimating cost by entering services and configurations before creating resources, so it suits a report made before the migration. Cost Explorer analyzes costs and usage that have already been incurred, so it has no underlying data when there are no resources yet. Budgets sends alerts when spending exceeds a threshold and does not estimate configuration proposals. The Cost and Usage Report is also detailed billing data that appears after actual use, so it cannot be used for advance estimates. Looking at the added conditions in the question, Pricing Calculator fits estimates before resource creation, and the others require existing usage history."
+  },
+  {
+    "number": 65,
+    "domain": "Cloud Technology and Services",
+    "prompt": "A product detail page repeats the same database query thousands of times per second, so the load on the database is high. The query results change only once every few minutes. The company wants to keep frequently read results in memory to speed up responses while leaving the existing database as it is and minimizing changes to the application structure. Which service is the MOST suitable to meet the requirement?",
+    "choices": [
+      {
+        "label": "A",
+        "text": "Store frequently queried results in an in-memory cache by using Amazon ElastiCache."
+      },
+      {
+        "label": "B",
+        "text": "Add an Amazon Redshift cluster and configure it to process all query requests in a distributed manner."
+      },
+      {
+        "label": "C",
+        "text": "Store the query results in Amazon S3 Glacier and restore them for every request."
+      },
+      {
+        "label": "D",
+        "text": "Migrate the entire database to Amazon DynamoDB and redesign the table structure."
+      }
+    ],
+    "explanation": "Amazon ElastiCache is the correct answer. It is a distributed in-memory cache service that stores frequently read results in memory to speed up responses and reduce the load on the source database, and the existing database can be left as it is. Redshift is an analytics warehouse and does not act as a cache for real-time lookups. Glacier is for long-term archiving, so restoring results for every request would make responses extremely slow. Migrating everything to DynamoDB violates the condition of keeping the database and also requires major application changes. Looking at the added conditions in the question, ElastiCache reduces database load for repeated queries whose results do not change often."
+  }
+]

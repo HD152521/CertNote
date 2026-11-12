@@ -193,7 +193,7 @@ The essence of Storage Gateway is "same protocol on-premises, cloud backend only
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 글로벌 컨설팅 회사가 15개 지사에서 Windows 파일 서버를 운영한다. 직원이 본사와 지사에서 동일한 파일을 편집하며 Windows AD 그룹 정책으로 파일 접근을 제어한다. 지사 직원의 파일 접근 지연을 줄이고 중앙 백업을 AWS에서 관리하고 싶다. 적합한 AWS 솔루션은?
 

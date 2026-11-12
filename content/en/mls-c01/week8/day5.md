@@ -97,7 +97,7 @@ Week 8 was about "after choosing a good algorithm (Week 6), actually training, t
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 모델의 학습 손실은 매우 낮은데 검증 손실이 크게 높다. 이 상황을 가장 정확히 규정한 것은?
 

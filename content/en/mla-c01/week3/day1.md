@@ -120,7 +120,7 @@ Next, we'll see SageMaker Data Wrangler, applying these transformations visually
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 연봉(평균 5000만) 과 나이(평균 40)를 가진 데이터셋에서 KNN 모델을 학습한다. 연봉의 단위가 커서 모델이 나이 정보를 무시할 가능성이 크다. 해결책은?
 

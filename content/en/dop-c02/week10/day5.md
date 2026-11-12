@@ -91,7 +91,7 @@ Solution: **push streaming**. CloudWatch Metric Streams pushes metrics via Kines
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 (12 comprehensive practice problems integrated across Week 10 concepts, synthesizing incident scenarios, cost/signal trade-offs, tool matching, and timeline understanding. All Korean practice section preservation per requirements.)
 

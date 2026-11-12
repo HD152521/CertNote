@@ -118,7 +118,7 @@ In the next article we look at the cost of the data itself leaving storage — w
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company stores the output of a new data pipeline in S3, but it cannot predict at all how often this data will be accessed, and the pattern may change over time. To automatically optimize cost with no operational burden, what should it use?
 

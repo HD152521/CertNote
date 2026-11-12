@@ -250,7 +250,7 @@ Here are the numbers that appear often on the exam, gathered in one place.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A global media company streams 4K master videos stored in S3 to users worldwide. Which of the following is the correct design combination?
 

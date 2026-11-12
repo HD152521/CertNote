@@ -95,7 +95,7 @@ Visualization's goal is not the picture but **actionable insight**.
 - Pearson is linear-only; nonlinearity needs Spearman or mutual information
 - QuickSight: serverless BI, SPICE, ML Insights, Q (natural language)
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 코드를 작성하지 않는 비즈니스 사용자가 매출 데이터의 대시보드에서 자동 이상 탐지와 예측을 보고 싶어 한다. 가장 적절한 AWS 서비스는?
 

@@ -267,7 +267,7 @@ Internalizing this decision tree lets you correctly answer 4 out of 5 SAP-C02 hy
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 방위산업체가 군용 네트워크에서 컨테이너 기반 물류 시스템을 운영한다. 군 보안 규정으로 인터넷 접근이 완전히 차단된 에어갭 환경이다. 자체 Kubernetes 운영팀이 있으며, AWS EKS와 호환되는 Kubernetes를 사용해야 한다. 가장 적합한 솔루션은?
 

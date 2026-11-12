@@ -106,7 +106,7 @@ Today: Learning stability — batch size, LR schedule, gradient issues, observab
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 딥러닝 모델을 학습하는데 몇 스텝 만에 손실이 NaN으로 발산한다. 가장 가능성 높은 원인과 대응은?
 

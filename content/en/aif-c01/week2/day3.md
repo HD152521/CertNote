@@ -81,7 +81,7 @@ Tomorrow we cover the role humans play in all this—data labeling, feedback, an
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 정상 메일을 스팸으로 잘못 분류하는 실수를 줄이는 것이 가장 중요한 스팸 필터에서, 우선적으로 높여야 할 지표는?
 

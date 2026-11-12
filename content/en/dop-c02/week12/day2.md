@@ -258,7 +258,7 @@ The next article explores **auto-healing and control theory** — how to feedbac
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Automation Document의 단계(step)들 간에 데이터를 전달하는 메커니즘은?
 
@@ -372,6 +372,6 @@ D) Execution ID는 중요하지 않음
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, Automation Document는 운영 절차를 코드로 선언하는 스키마로, 절차 로직을 인프라 배관에서 분리한다. 둘째, step action(executeAwsApi, executeScript, approve, branch 등)은 절차의 어휘로, API부터 인간 게이트까지 스펙트럼을 제공한다. 셋째, aws:approve는 쿼럼 기반 인사 승인으로 분리된 의무(SOD) 원칙을 구현한다. 넷째, EventBridge 트리거된 Automation은 절차를 반응 루프에 연결해 인간의 손가락 움직임 없이 자동 대응을 이룬다. 다섯째, 멱등성과 선택적 롤백 step은 절차 재실행과 복구를 안전하게 만든다.

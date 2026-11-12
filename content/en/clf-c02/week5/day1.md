@@ -80,7 +80,7 @@ In the next article, we'll look at the tools that let you actually inspect and c
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You want to run a new project whose traffic pattern is still uncertain, flexibly and without commitment. Which pricing model is the best fit?
 

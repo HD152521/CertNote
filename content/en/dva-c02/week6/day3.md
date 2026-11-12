@@ -244,7 +244,7 @@ Exam scenario: "Accidentally deleted large data, want yesterday's state" → PIT
 
 Today's core — RCU/WCU mathematics appears almost every exam as calculation problems. Don't memorize formulas but understand the principle: "reads are 4KB-based, writes are 1KB-based, ceil for rounding up". DAX is a transparent cache reducing DynamoDB reads to μs, Streams is a change log preserving 24 hours of all changes.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** DynamoDB에서 7KB 항목을 강력한 일관성으로 초당 30번 읽는다. 필요한 프로비저닝 RCU는?
 

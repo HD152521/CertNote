@@ -86,7 +86,7 @@ These signals feed into GuardDuty and Security Hub for correlation analysis, and
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 글로벌 웹앱이 SQLi 시도, 대규모 SYN flood, 로그인 무차별 대입을 동시에 받는다. 오리진은 ALB+EC2다. 가장 적절한 통합 설계는?
 

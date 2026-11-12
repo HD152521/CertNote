@@ -111,7 +111,7 @@ Envelope encryption is a two-stage structure: *data encrypted locally with data 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 애플리케이션이 수 GB의 파일을 KMS로 암호화하려 한다. 가장 적절한 방식은?
 

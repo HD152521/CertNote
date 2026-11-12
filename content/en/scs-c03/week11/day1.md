@@ -186,7 +186,7 @@ Organization CloudTrail activated from the Management Account automatically appl
 - Preventing security service disabling SCP requires *maintenance role exception* or automation breaks.
 - Move security operations to *delegated administrator* and use Management Account only for billing and organization.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 OU에 `FullAWSAccess`가 그대로 붙어 있고, IAM 사용자에게 `s3:GetObject` Allow가 부여돼 있다. 그런데 상위 Root에 붙은 SCP가 `s3:*`를 Deny한다. 이 사용자는 S3 객체를 읽을 수 있는가?
 

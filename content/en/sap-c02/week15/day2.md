@@ -24,7 +24,7 @@ SAP mappings: (1) "Cost $0 ramp→scale 100x" → **Serverless(Lambda+DDB)**, (2
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 스타트업이 초기 $0 예산으로 시작해 바이럴 성장 시 자동 스케일하는 아키텍처.
 

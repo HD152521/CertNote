@@ -279,7 +279,7 @@ On the exam, most S3 questions are trade-off choices. Temporary file sharing →
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** You need to share sensitive data stored in an S3 bucket with an external partner. Without granting the partner permanent access to the bucket, you want to let them download a specific file for only 24 hours. What should you do?
 

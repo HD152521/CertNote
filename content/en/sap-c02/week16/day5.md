@@ -26,7 +26,7 @@ Confidence heuristics:
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 100TB ERP 6개월 global + security-first → **Rehost(MGN) + 3개월 병렬 refactor + FIS drill**
 

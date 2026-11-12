@@ -71,7 +71,7 @@ Operations three pillars: (1) Cost = training (Spot, early-stop), inference (Ser
 
 Tomorrow: Week 11 wrap — monitoring, operations, governance integrated.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 추론 엔드포인트가 하루 중 짧은 시간에만 간헐적으로 호출되고 나머지 시간은 트래픽이 없다. 유휴 비용을 없애려는 가장 적합한 옵션은?
 

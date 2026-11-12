@@ -263,7 +263,7 @@ In the next article we look at the layer that distributes traffic on top of this
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company stored ML model training results on an EC2 instance's instance store, stopped the instance, and all the data vanished. What is the most appropriate response?
 
@@ -363,7 +363,7 @@ D) FSx for Lustre
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 1. EBS is AZ-bound distributed block storage. gp3 is the default for new workloads; io2/io2 Block Express is for mission-critical DBs. HDD (st1·sc1) can't boot.
 2. Snapshots are block-level incremental backups on top of S3. The lazy-load trap → Fast Snapshot Restore. Long-term retention → Snapshot Archive (75% savings).

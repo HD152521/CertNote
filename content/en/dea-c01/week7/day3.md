@@ -83,7 +83,7 @@ Operations (OLTP): DynamoDB  →  change capture (Streams/Export)  →  Analytic
 - Bulk analytics don't happen on DynamoDB directly; move via Streams/Kinesis/S3 export to analytics store.
 - Separate OLTP to DynamoDB, OLAP to S3+Athena/Redshift (CQRS pattern).
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** DynamoDB에서 시계열 데이터의 PK를 날짜(예: `2026-06-26`)로만 지정했을 때 발생하는 문제는?
 

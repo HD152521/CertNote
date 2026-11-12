@@ -183,7 +183,7 @@ The next article explores **SSM Automation Runbook** — turning operational pro
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 이벤트를 그 내용(state, pipeline 이름)에 따라 서로 다른 15개 AWS 서비스로 정밀하게 분기해야 한다. 단순 팬아웃이 아니라 콘텐츠 기반 라우팅이 필요하다. 가장 적합한 서비스는?
 
@@ -297,6 +297,6 @@ D) 여러 키는 OR, 한 키 안의 배열은 AND로 묶인다
 
 ---
 
-## 📌 오늘의 요약
+## 📌 Today's Summary
 
 오늘 본 핵심은 다섯 가지다. 첫째, EventBridge는 EIP의 메시지 버스·콘텐츠 기반 라우터 패턴을 AWS에 구현한 것으로, 발신자가 수신자를 모르게 해 결합도를 끊는다. 둘째, Event Pattern 매칭은 순차 비교가 아니라 결정 트리/상태 기계로 컴파일되어 규칙 수에 무관하게 빠르며, 부분 일치 의미론과 배열=OR 규칙을 가진다. 셋째, Scheduler는 수백만 스케줄과 Flexible Time Window(지터)로 thundering herd를 막는 CloudWatch cron의 후계자다. 넷째, Pipes는 파이프-필터 아키텍처로 폴링 소스의 글루 코드를 관리형으로 흡수하고, early filtering으로 비용을 아낀다. 다섯째, Archive/Replay는 이벤트 소싱의 재처리 통찰을 빌렸고, at-least-once 전달이므로 컨슈머는 멱등해야 한다.

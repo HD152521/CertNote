@@ -299,7 +299,7 @@ Selection: "HTTP API + minimal operations" → App Runner. "ECS + simple config"
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "단순 웹 API, 3인 팀, 인프라 전문가 없음, 자동 스케일링 필요"라는 시나리오의 가장 적절한 서비스는?
 

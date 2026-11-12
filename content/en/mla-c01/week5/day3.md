@@ -124,7 +124,7 @@ Next we see model evaluation—judging whether a trained model is good, metric s
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 학습 중 그래디언트가 0에 수렴(소실)하거나 발산(폭발)하는지를 자동으로 감지하려 한다. 가장 적합한 SageMaker 기능은?
 

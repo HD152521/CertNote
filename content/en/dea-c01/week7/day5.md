@@ -85,7 +85,7 @@ Heterogeneous DB migration, CDC .............. DMS
 - DynamoDB analytics via exporting changes to analytics store (CQRS pattern).
 - Operations↔Analytics connection via Zero-ETL (managed CDC) or DMS.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** "S3에 쌓인 데이터를 인프라 프로비저닝 없이 간헐적으로 표준 SQL로 분석"하려는 요구에 가장 적합한 서비스는?
 

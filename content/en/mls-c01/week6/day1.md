@@ -105,7 +105,7 @@ Today we covered the first gate of modeling — problem type identification and 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 통신사가 "다음 달 해지할 가능성이 높은 고객을 미리 식별"하려 한다. 과거 고객의 해지 여부 레이블이 충분히 있다. 이 문제의 ML 유형으로 가장 적절한 것은?
 

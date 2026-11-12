@@ -106,7 +106,7 @@ Safe gradual deploy + auto rollback       → Canary/Linear deployment guardrail
 
 Week 10 moved beyond "making models work" to "operating them efficiently and safely." If you've internalized the flow (inference option → endpoint operations → optimization → deployment strategy) and how keywords split answers at each stage, you've achieved this week's goal. Next week (Week 11) continues ML implementation and operations' second axis — monitoring, model drift detection, security, and cost governance.
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** 한 회사가 온라인 추천 API를 운영한다. 트래픽은 지속적이고 저지연이 필수이며, 추론 지연을 더 줄이기 위해 학습된 PyTorch 모델을 대상 인스턴스에 맞게 컴파일하려 한다. 추론 방식과 최적화 도구의 올바른 조합은?
 

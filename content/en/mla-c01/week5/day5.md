@@ -96,7 +96,7 @@ Next week covers deploying trained models to production—inference.
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** PyTorch 학습 코드를 SageMaker에서 최소 노력으로 돌리려는데 추가로 transformers 파이썬 패키지만 필요하다. 시스템 패키지는 없다. 가장 적합한 방식은?
 

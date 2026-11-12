@@ -151,7 +151,7 @@ Next, we verify these DR strategies actually work: **Resilience Hub measures RTO
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A workload requires "RTO 5 minutes, RPO seconds to minutes, medium cost acceptable." The environment must be running in normal times so the failover path is always validated. Which DR strategy fits best?
 

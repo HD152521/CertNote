@@ -146,7 +146,7 @@ In the next article, we go beyond metrics, logs, and audit to look at distribute
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** An organization wants to "continuously check that every S3 bucket always keeps BPA (Block Public Access) enabled." Which is the most suitable service?
 

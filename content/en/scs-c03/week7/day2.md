@@ -143,7 +143,7 @@ With `Automatic: true`, remediation runs immediately upon violation detection (m
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** AWS Config와 CloudTrail의 역할 구분으로 가장 정확한 것은?
 

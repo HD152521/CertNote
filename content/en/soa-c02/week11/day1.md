@@ -107,7 +107,7 @@ Next: Trusted Advisor—five auto-checks across account (security, performance, 
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** Compute Optimizer가 메모리 집약적 워크로드(Redis 캐시)를 운영 중인 인스턴스에 대해 "Over-provisioned, 더 작은 타입으로 줄이라"고 권장했다. 이 권장을 의심해야 하는 가장 큰 이유는?
 

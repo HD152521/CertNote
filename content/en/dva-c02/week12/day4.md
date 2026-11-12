@@ -138,7 +138,7 @@ Next: Week 12 review synthesizing containers/IaC, then observability/troubleshoo
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** CDK 프로젝트를 새 계정·리전에 처음 배포하려는데 "bootstrap" 관련 오류가 난다. `cdk bootstrap`이 하는 일과 실행 빈도로 옳은 것은?
 

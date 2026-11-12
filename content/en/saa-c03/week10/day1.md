@@ -107,7 +107,7 @@ In the next article we move from compute to storage, looking at how S3 storage c
 
 ---
 
-## 📝 연습 문제
+## 📝 Practice Questions
 
 **문제 1.** A company runs a 24/7 web application and may in the future want to freely move to newer-generation instances and change OS or region as well. To get the maximum cost discount while keeping this flexibility, what should it use?
 
