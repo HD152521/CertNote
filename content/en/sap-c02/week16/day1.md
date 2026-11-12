@@ -1,20 +1,120 @@
-# Day 1 - Well-Architected Framework Synthesis — 6 Pillars Integrated, Trade-offs Across Domains
+# Day 1 - Domain 1 Wrap-Up: Designing for Organizational Complexity (26%) — The History of Multi-Account Governance, Routing Theory, Hybrid Encryption, and the CS Principles of Isolation Boundaries
 
-Week 16 comprehensive integration: All 13 weeks + 15 weeks of separate pillars must now act as **one coherent design.**
+SAP-C02 Domain 1, "Design Solutions for Organizational Complexity," is the first domain at 26% of the exam (the largest weight is Domain 2, Design for New Solutions, at 29%). The essence of the Pro exam is the ability to move beyond the SAA level of "1 account + 1 VPC + 1 Region" and solve scenarios that assume a real enterprise environment of **dozens to hundreds of accounts + dozens of VPCs + multiple Regions + on-premises integration**.
 
-**The fundamental truth**: No pillar lives alone. Choosing Aurora Global (Reliability RPO<1s) costs 2x vs RDS Multi-AZ (Reliability RPO 0). Adding Multi-Region (Reliability + Disaster Recovery) increases latency (Performance -) and cost (Cost -). Encryption (Security +) reduces throughput (Performance -). Logging everything (Security + Compliance +) explodes storage costs (Cost -).
+Today we organize all of Domain 1 into four areas (governance, networking, integrated security, and hybrid), and break down each tool's **historical background, internal behavior, CS theory, and real incident cases** in depth. If you understand "why this structure came to be" rather than stopping at simple keyword mapping, variant scenarios become solvable too.
 
-Pro architect sees the **trade-off matrix** and makes prioritized choices based on **business context, not equal pillar weight.**
+## Area 1: Governance — The Account Is the Strongest Isolation Boundary
 
-Weight by industry:
-- Financial: Security > Reliability > Cost
-- Healthcare: Security = Compliance > Availability > Cost
-- Gaming: Performance = Reliability > Cost > Security
-- Startup: Cost > Reliability > Performance > Security (early stage)
+### The History and Principles of Multi-Account
 
-Key mappings: (1) "All 6 pillars, no context" → **Invalid question, need business constraints**, (2) "Maximize everything" → **Impossible; optimize trade-off frontier**, (3) "Use WA Tool quarterly" → **Document pillar gaps + improvements + ownership**, (4) "Chaos engineers validate** → **FIS + Stop Condition production drills**.
+Early AWS users put everything in a single account. As organizations grow, this structure collapses — you cannot isolate the blast radius, it is hard to separate costs by team, IAM permissions bloat into the hundreds, and a single compromise exposes everything. AWS answered with **Organizations** in 2017 and **Control Tower** and SCPs in 2018.
 
-[6 EXERCISES: Pillar priority by industry, trade-off justification, WA Tool workflow, SCP vs Permission Boundary vs resource policy, multi-region failure modes, cost vs reliability ROI]
+```
+Org Root
+  ├── Security OU (Log Archive · Audit accounts)
+  ├── Production OU (Account A · B)
+  ├── Development OU (Account C)
+  └── Sandbox OU (Account D)
+```
+
+Multi-account is the physical realization, at the infrastructure layer, of the classic information security principles of **Least Privilege** and **Separation of Duties**. It implements what the **NIST SP 800-53** controls AC-5 (separation of duties) and AC-6 (least privilege) require, as "account = trust boundary." The account boundary is the **strongest isolation boundary** AWS provides — even if IAM permissions are misconfigured, they cannot reach resources in another account. This is why the Security and Logging accounts are separated from workloads — audit integrity holds only when operators cannot erase the audit logs of their own actions (a direct implementation of SOX's "records cannot be changed by their creator").
+
+An SCP **does not grant permissions — it only sets a permission ceiling.** Writing `Allow` in an SCP does not give a user any permission. Final effective permission = (what IAM allows) ∩ (what the SCP allows). The recommended pattern is to add `Deny` policies on top of the default `FullAWSAccess` policy (Allow all actions) to block specific actions, Regions, or services. The key point: SCPs **also apply to the root user** (only the management account itself is exempt) — apply a DenyRegions with an `aws:RequestedRegion` condition and even that account's root cannot create resources in a non-EU Region. When the exam shows "must block even root," it is an SCP, not IAM.
+
+> ⚠️ **Trap**: SCPs **do not apply to the management account** — which is why the best practice is never to run workloads in the management account and to use it only for managing Organizations. Also, an SCP only restricts the actions of IAM principals; it cannot fully block cross-account access arriving through resource-based policies, and service-linked roles have exceptions. Memorizing "an SCP can block everything" is a trap.
+
+### Control Tower · IAM Identity Center
+
+- **Control Tower**: Builds a standard Landing Zone with one button, combining Organizations + IAM Identity Center + Config + CloudTrail + Backup. **Account Factory** stamps out accounts with a standard baseline (VPC, IAM, CloudTrail), and **Guardrails** (Preventive = SCP, Detective = Config) are enforced. AFT (Account Factory for Terraform) automates this with IaC.
+- **IAM Identity Center** (formerly SSO): Integrates an external IdP (Okta, Azure AD, Ping) via SAML and grants permissions per account and OU with Permission Sets. No IAM Users are created; SSO users access with temporary credentials. It also supports **ABAC** (tag-based permissions).
+
+The 2019 **Capital One data breach** (about 106 million people) came from a misconfigured WAF combined with an overly privileged IAM role — the intruder used SSRF to steal credentials from the EC2 instance metadata (IMDSv1) and read S3. The lesson is **account and permission isolation, and the importance of IMDSv2**. Afterward, AWS made IMDSv2 (token-based) the default, and blocking IMDSv1 with SCPs and limiting lateral movement with Permission Boundaries became best practice. For "block lateral movement of stolen credentials," think of account isolation + Permission Boundary + SCP.
+
+> 🎯 **Scenario**: "A company uses SSO with Okta, wants to give AWS permissions that differ by department, and wants to prohibit IAM Users." → **IAM Identity Center + Okta SAML + Permission Set per OU/Account**. IAM Users are prohibited because of the burden of managing long-term credentials, and Cognito is for application end users, so it is a different context. "Workforce SSO + per-department AWS permissions" is answered directly by IAM Identity Center.
+
+## Area 2: Networking — Routing Theory and Multi-VPC
+
+### The VPC Connectivity Matrix
+
+| Method | Suitable scale | Transitive | Use |
+|------|-----------|------|--------|
+| VPC Peering | 1:1, a few | ✗ (non-transitive) | Simple connections, ~10 VPCs |
+| Transit Gateway | Dozens to thousands | ✓ | Hub-Spoke |
+| PrivateLink | Service sharing | N/A | SaaS → customer VPC |
+| VPN (Site-to-Site) | On-prem → AWS | ✓ (with TGW) | DX backup or standalone |
+| Direct Connect | On-prem → AWS dedicated line | ✓ (DX Gateway) | Bandwidth, stability |
+
+The reason TGW replaced the Peering mesh is **graph complexity**. A full-mesh Peering of N VPCs needs N×(N−1)/2 connections — 200 VPCs would be 19,900, unmanageable, and Peering is **non-transitive**, so even with A-B and B-C, A-C does not work (transitive routing is prohibited). TGW simplifies this to O(N) complexity as a central hub and provides transitive routing (up to 5,000 VPCs). The key point: TGW supports **multiple route tables**, so you can isolate the communication scope per attachment — with a single route table, all attachments see each other and isolation is impossible.
+
+The routing for DX redundancy is decided by **BGP (Border Gateway Protocol, RFC 4271)**. Normally the DX path has a shorter AS-PATH and is preferred, and when DX dies, BGP converges onto the VPN path. For faster failure detection, enabling **BFD (Bidirectional Forwarding Detection, RFC 5880)** detects a link break within 1 second instead of the default BGP hold time (tens of seconds), accelerating failover. AWS DX recommends BFD. For multi-Region, **DX Gateway** connects VPCs/TGWs in multiple Regions to a single DX, and **TGW Peering** links TGWs across Regions. "Switch to VPN within 1 second when DX fails" is BGP + BFD.
+
+The essential difference between **PrivateLink and VPC Peering** is the permission model. Peering merges the full routing of both VPCs (L3), is bidirectional, and is impossible when IPs conflict. PrivateLink exposes **only a specific service, in one direction (consumer → provider)**, through provider NLB → Endpoint Service → consumer Endpoint (an L7 single entry point), and is **independent of IP conflicts** (it works even when ranges overlap). So "a SaaS provider exposes its service to many customer VPCs + IP conflicts don't matter" is always PrivateLink.
+
+> 🎯 **Scenario**: "A global manufacturer connects many VPCs across three Regions (Americas, EU, APAC) with TGW but must block direct communication between EU VPCs and Americas VPCs." → **Per-Region TGW + TGW Peering + separate route tables**. Connect each Region's TGW to on-premises with a DX Gateway, and finely control per-attachment paths with the TGW's **multiple route tables** (remove the Americas attachment route from the EU route table to isolate). A single route table cannot isolate. "TGW connectivity + isolate some VPCs" means multiple route tables.
+
+### Direct Connect Details
+
+- **Dedicated**: 1G, 10G, 100G dedicated to a single customer. **Hosted**: 50Mbps to 10G, split from a partner line.
+- **MACsec**: L2 encryption (Dedicated only). **SiteLink**: connects DX locations to each other over the AWS backbone (like a global WAN).
+
+DX is **plaintext** by default — it is a dedicated line, but it is not encrypted. So AWS recommends **DX + IPsec VPN over DX** (encryption + stability), or L2 encryption with **MACsec (IEEE 802.1AE)**, added in 2021 (supported only on Dedicated connections). When the exam shows "DX but encryption required," IPsec VPN over DX or MACsec is the signal for the correct answer. Assuming that DX, being private, provides encryption by default is a trap.
+
+## Area 3: Multi-Account Integrated Security
+
+| Service | Org integration model | Use |
+|--------|--------------|------|
+| Security Hub | Delegated administrator | Finding aggregation + CIS/PCI standard checks |
+| GuardDuty | Delegated administrator | Threat detection (VPC Flow, DNS, CloudTrail analysis) |
+| Macie | Delegated administrator | S3 PII detection |
+| Inspector | Delegated administrator | Vulnerability scanning (EC2, ECR, Lambda) |
+| Firewall Manager | Delegated administrator | Bulk policies for WAF, SG, Network Firewall, DNS Firewall |
+| Config Aggregator | Aggregation | Single view of configuration across all accounts and Regions + Conformance Pack |
+
+The pattern for multi-account security is to **"designate a dedicated security account as the delegated administrator"** — you do not place security operations in the management account (if the management account is compromised, everything is exposed), and instead give a separate Security account the delegated administrator rights for GuardDuty, Security Hub, and Macie to aggregate findings from all accounts. The **auto-enable for new accounts** option automatically brings new accounts created by Account Factory into the security baseline. "Org-wide consolidated security dashboard + new accounts automatic" is the delegated administrator model + auto-enable.
+
+In the 2021 **US-EAST-1 major outage**, because IAM and some global services depended on us-east-1, even users in other Regions were affected. The lessons for multi-account and multi-Region design are (1) **reduce single dependence on us-east-1** (use STS Regional endpoints), (2) **the logging and security accounts must also have Regional resilience**, and (3) the **CloudTrail Org Trail must cover all Regions**.
+
+## Area 4: Hybrid — On-Premises Integration
+
+| Service | Behavior | Use |
+|--------|------|--------|
+| Outposts | AWS hardware installed in the customer DC, same EC2/EBS/S3/RDS APIs | Data residency, low latency (factories, hospitals) |
+| Local Zones | Small DCs near major cities, connected to the parent Region | Low-latency city workloads |
+| Wavelength | 5G carrier edge | Millisecond mobile latency |
+| Storage Gateway | File (NFS/SMB → S3), Volume (iSCSI → EBS), Tape (VTL → Glacier) | On-prem ↔ cloud storage |
+| DataSync | Online synchronization (NFS/SMB/HDFS → S3/EFS) | Sufficient line capacity |
+| Snow Family | Snowcone 8TB, Snowball Edge 80TB, Snowmobile 100PB | Insufficient line, bulk transport |
+
+> 🎯 **Scenario**: "Data residency regulations forbid moving data out of the data center, but we want to operate EC2 and S3 with the same APIs as AWS." → **AWS Outposts**. Outposts places an AWS hardware rack in the customer DC and provides the same APIs, so the data physically never leaves the facility. Local Zones are AWS-owned facilities, so the data does leave (it is moved out). "Data residency + same AWS APIs + on-premises location" is Outposts.
+
+> ⚠️ **Trap**: Snow vs DataSync is decided by **bandwidth math**. 50TB ÷ 100Mbps ≈ 50 days (infeasible) → Snowball Edge. DataSync is the answer only when the line is sufficient. Answering DataSync for "tens of TB + slow line + short deadline" is a trap — physical transport (Snow) is the answer.
+
+## Scenario Keyword → Answer Mapping
+
+| Keyword | Answer |
+|--------|------|
+| "Block unauthorized Regions, even root" | SCP Deny `aws:RequestedRegion` |
+| "New-account automatic baseline and guardrails" | Control Tower + Account Factory |
+| "100+ VPCs + on-prem, multi-Region" | TGW + DX Gateway |
+| "Simple connection of fewer than 10 VPCs" | VPC Peering |
+| "SaaS → customer VPC, IP conflicts irrelevant" | PrivateLink (NLB Endpoint Service) |
+| "VPN switchover within 1 second on DX failure" | BGP + BFD |
+| "DX but encryption needed" | IPsec VPN over DX or MACsec |
+| "Okta SSO + per-department AWS permissions" | IAM Identity Center + SAML |
+| "Org-level WAF and SG policy" | Firewall Manager |
+| "Org security consolidated dashboard, new accounts automatic" | Security Hub delegated administrator + auto-enable |
+| "TGW connectivity + isolate some VPCs" | TGW multiple route tables |
+| "Data residency + same API on-prem" | Outposts |
+| "5G mobile millisecond latency" | Wavelength |
+| "Automatic on-prem NFS → S3 sync" | DataSync or File Gateway |
+| "50TB in 1 week + slow line" | Snowball Edge |
+
+## Summary
+
+Domain 1 asks about **integrated governance across enterprise multi-account + multi-VPC + hybrid**. The key insights: (1) the account is the strongest isolation boundary (the physical realization of NIST separation of duties), and an SCP does not grant permissions but only puts a ceiling over them, blocking even root; (2) networking is graph complexity — Peering is N² and non-transitive, TGW is O(N) with transitivity + multi-route-table isolation, and DX failover is BGP + BFD; (3) integrated security is a delegated administrator + new-account auto-enable; (4) for hybrid, Outposts when data residency applies, and Snow vs DataSync by bandwidth math. Drilling the scenario keyword → direct answer mapping into your head is the fastest preparation.
+
+Tomorrow (Day 77) we wrap up Domain 2, Design for New Solutions, in depth through CAP/PACELC and the internal workings of event architectures.
 
 ---
 

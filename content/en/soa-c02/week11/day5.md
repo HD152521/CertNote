@@ -1,6 +1,102 @@
-# Day 5 - Week 11 Database Operations Summary
+# Day 5 - Week 11 Review: Cost and Performance Operations as a Single Decision Flow
 
-Week 11 covered database management: RDS operations (backups, failover), performance optimization, scaling strategies, migration/replication, patching windows, availability architecture. Multi-AZ for HA, replicas for scaling, automated backups for recovery, DMS for migration.
+The tools covered in Week 11 — Compute Optimizer, Trusted Advisor, Cost Explorer, Budgets, Savings Plans, Spot — look separate on their own, but in practice they connect into one flow. Cost optimization is not about pulling out tools at random; it is a **pipeline with an order**. First you match the size of the container (Right Sizing), then you cut the stable usage with a commitment, then you handle the variable portion with Spot, and finally you analyze, control, and check all of it. If you reverse this order — for example, committing before Right Sizing — you make the expensive mistake of committing to the wrong size for three years.
+
+This note organizes Week 11 along two axes. The first is compressing each tool's role into one sentence and cementing the "exam keyword → correct service" mapping; the second is seeing how the tools are woven into a single decision flow. After that, 12 practical scenario questions check your intuition. On the exam, cost and performance questions usually take the form "pick the single tool best suited to this situation," and that choice comes down to knowing each tool's **unique domain** precisely.
+
+## Week 11 One-Sentence Summary and Keyword Mapping
+
+| Day | Core tool | One sentence |
+|-----|-----------|--------------|
+| Day 1 | **Compute Optimizer** | Analyzes 14 days of metrics with ML and recommends Right Sizing for EC2/ASG/EBS/Lambda |
+| Day 2 | **Trusted Advisor** | Automatically checks best practices across five categories (cost/performance/security/fault tolerance/limits) |
+| Day 3 | **Cost Explorer / Budgets / Tag** | Multi-dimensional cost analysis, budget control, and tag-based allocation |
+| Day 4 | **SP / RI / Spot** | Commitment discounts for the stable baseline, Spot for the stateless variable portion |
+
+The exam distinguishes tools by situational keywords. This mapping is the core.
+
+| Exam keyword | Answer |
+|--------------|--------|
+| "Recommend instance/volume size", "right sizing", "identify over-provisioned" | Compute Optimizer |
+| "Automatically check cost, performance, security, and fault tolerance at once" | Trusted Advisor |
+| "Warn when a service limit (quota) reaches 80%" | Trusted Advisor Service Limits |
+| "Break down and visualize cost by service, account, or project" | Cost Explorer |
+| "Group cost by team/project" | Cost Allocation Tag + Cost Explorer |
+| "Automatically block when a budget threshold is reached (EC2 stop, IAM/SCP)" | AWS Budgets + Budgets Action |
+| "Cost spikes abnormally versus the usual pattern (ML detection)" | Cost Anomaly Detection |
+| "Raw data per hour/resource + SQL analysis" | CUR + Athena |
+| "Commitment free of family/Region", "workload fluctuates" | Compute Savings Plans |
+| "Fixed to a specific family, maximum discount" | EC2 Instance SP / Standard RI |
+| "RDS, Redshift, ElastiCache commitment" | Reserved Instances (SP not supported) |
+| "Stateless batch, tolerates interruption, maximum discount" | Spot + capacityOptimized |
+| "Handle the 2-minute Spot interruption notice" | EventBridge → Lambda / Lifecycle Hook |
+| "Guarantee capacity in a specific AZ (not a discount)" | EC2 Capacity Reservation |
+| "AWS-side host retirement/maintenance notification" | Personal Health Dashboard |
+| "Check actual usage rate/coverage ratio of commitments" | Cost Explorer Utilization / Coverage |
+
+> 💡 **Related theory**: The foundation of this tool classification is the operational **OODA loop** (Observe-Orient-Decide-Act). Observation (Observe) is handled by CloudWatch, Cost Explorer, and CUR; judgment (Orient) by Compute Optimizer, Trusted Advisor, and Anomaly Detection; decision (Decide) by purchasing commitments and changing families; and action (Act) by Budgets Action, Spot interruption handling, and automatic recovery. Instead of memorizing tools by function, if you classify them as "is this observation, judgment, or action?", the answer for any given situation narrows down naturally. For example, the distinction between "only detects and cannot block" (Anomaly Detection) and "actually blocks" (Budgets Action) is exactly the difference between Orient and Act.
+
+## The Right Order of Cost Optimization — Why Right Sizing Comes First
+
+Knowing the cost optimization tools is different from **applying them in the right order**. If the order is wrong, the savings are halved or you even take a loss.
+
+```
+Step 1 ─ Right Sizing (match the container size)
+        Compute Optimizer recommendations → downsize, change family
+        gp2 → gp3, io1 → gp3 migration
+        ※ Must come first! Committing to a wrong size locks in the wrong cost for 3 years
+
+Step 2 ─ Commitment discounts (cut the stable baseline)
+        24/7 always-on workloads 60~70% → Compute SP 3-year
+        Only for the minimum usage that never drops
+
+Step 3 ─ Variable workloads (On-Demand + Spot)
+        Hard-to-predict variable portion → On-Demand 20~30%
+        Stateless, tolerates interruption → Spot 10~20% (capacityOptimized)
+
+Step 4 ─ Continuous monitoring (observe and control)
+        Cost Explorer analysis / Budgets control / Anomaly detection
+        Check SP/RI Utilization and Coverage
+```
+
+**The reason Step 1 must come first** is that commitments are irreversible. Suppose an m5.4xlarge is actually fine as an m5.large. If you place a 3-year Standard RI on this large instance without Right Sizing, then even if you want to downsize after a year, you are tied to the commitment and cannot reduce it. The proper order is to find the right size first, then place the commitment on the baseline of that right size. A commitment is the last step that discounts the "already optimized size," not the first step.
+
+> ⚠️ **Pitfall**: Besides reversing the order of Right Sizing and commitments, another common mistake is "committing above the baseline." If you commit to match the peak of a workload whose traffic fluctuates, you pay for a large part of the commitment without using it during the troughs (low Utilization). Always place commitments only on the "floor line of the graph (the part that never shrinks)" and support everything above it with On-Demand and Spot. On the exam, for "highly variable workload + cost savings," a full-commitment Standard RI is likely a wrong answer, and the combination of Compute SP (baseline) + Spot (variable) is the right direction.
+
+## Frequently Confused Boundaries — The Distinctions the Exam Targets
+
+Most exam questions in the cost and performance area ask you to pick "one of two similar-looking tools." Here are the key boundaries.
+
+**Detection vs blocking**: Cost Anomaly Detection **detects and notifies** about abnormal cost with ML but cannot stop the cost. The only thing that actually **blocks** is Budgets Action (EC2 stop, IAM/SCP). If the keyword is "block automatically," it is Budgets Action; if it is "notice the abnormality," it is Anomaly Detection.
+
+**Fixed threshold vs pattern anomaly**: Budgets notifies you when a fixed threshold such as "$5,000 per month" is crossed. Cost Anomaly Detection catches outliers versus the usual pattern. A sudden spike within the threshold is something Budgets cannot catch and Anomaly Detection can — they are complementary.
+
+**Right Sizing recommendation vs best-practice check**: Compute Optimizer produces precise per-instance sizing recommendations. Trusted Advisor is a coarse best-practice check across the account. "Reduce which instance to which type" is Compute Optimizer; "overall cost, security, and fault-tolerance check" is Trusted Advisor.
+
+**Discount vs capacity guarantee**: SP/RI are discounts and do not guarantee capacity. Capacity Reservation is a capacity guarantee and is not a discount. If it says "must be able to launch," it is Capacity Reservation; if it says "cheaply," it is SP/RI.
+
+**My configuration vs an AWS-side event**: Trusted Advisor looks at problems in my account's configuration; Personal Health Dashboard looks at events on the AWS side (retirement, maintenance).
+
+**Quick summary vs raw data**: Cost Explorer is a quick pre-aggregated summary (console); CUR is raw data at hour/resource level (S3 + Athena with arbitrary SQL).
+
+The fundamental reason these boundaries exist is that each tool is optimized for **a different data resolution and a different time of operation**. Cost Explorer is pre-aggregated at day/hour level, so it is fast but coarse, while CUR is raw at resource/hour level, so it is precise but heavy. Anomaly Detection is asynchronous ML inference, so it is strong at detection but cannot block in real time, while Budgets Action is based on threshold triggers, so it blocks immediately but cannot see patterns. When memorizing tools, if you ask "what resolution of data does this process, and at what point in time?", you can see why each tool is good at only its job — the reason no single tool does everything is the trade-off between data resolution and latency.
+
+## Commitment Check Metrics — What Utilization and Coverage Mean
+
+Buying a commitment (SP/RI) is not the end. Workloads change, so you must **continuously check** whether the commitment is still appropriate, and the core metrics for that are Cost Explorer's **Utilization** and **Coverage**. Confusing these two leads to wrong decisions.
+
+- **Utilization**: The share of purchased commitment that was actually used and earned a discount. At 90%, you are using 90% of the commitment; at 60%, you are throwing away 40% (over-commitment). **If low, you should reduce the commitment.**
+- **Coverage**: The share of total On-Demand-eligible usage that the commitment covers. At 50%, half of your usage is still being paid at the list price (On-Demand). **If low, there is room to commit more** (an additional savings opportunity).
+
+You must look at both together — if Coverage is low and Utilization is high, "you would use it all even if you bought more," so an additional commitment is safe. If Coverage is high but Utilization is low, you are already over-committed, so you must not buy more.
+
+According to industry surveys by the FinOps Foundation, the major sources of cloud cost waste are (1) idle resources that were not turned off and (2) wrongly purchased commitments. Many organizations, thinking "committing is always cheaper," bought large quantities of RIs to match peak usage, and then suffered failures where, after the workload shrank or the family changed, Utilization fell below 50% — the unused commitments became more expensive than On-Demand. From this lesson, the industry made "conservative commitment + regular Utilization/Coverage checks" the standard, and AWS also released Convertible RIs and the flexible Compute SP to ease the rigidity of commitments. A commitment is not something to be done at the moment of purchase but something to be managed during operation.
+
+## Summary
+
+The Week 11 tools implement the operational loop of "observe → judge → decide → act" in the cost and performance area. Whether on the exam or in practice, the key is each tool's unique domain and the order that ties them together.
+
+Compressed into five points: (1) Compute Optimizer = Right Sizing recommendations (14 days of metrics, memory requires the Agent), Step 1 of cost optimization. (2) Trusted Advisor = best-practice checks in five categories (the full set requires Business+ Support, limits get an advance warning at 80%). (3) Cost Explorer (multi-dimensional analysis) + Budgets (blocking via Action) + Tag (allocation, activation is not retroactive) + Anomaly Detection (ML detection, not blocking). (4) Commitments only on the baseline (Compute SP flexible / EC2 Instance SP and Standard RI locked in / RDS and Redshift use RI), checked with Utilization and Coverage. (5) Spot is only for stateless, interruption-tolerant workloads (capacityOptimized, handle the 2-minute notice), and Capacity Reservation is a capacity guarantee, not a discount. Applying them in this order — Right Sizing → commitments → Spot → monitoring — is the textbook approach to cost optimization.
 
 ---
 

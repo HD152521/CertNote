@@ -1,20 +1,110 @@
-# Day 3 - Cost Optimization Deep Dive — Reserved Capacity, Commitment Discounts, Unit Economics
+# Day 3 - Domain 3 Review: Migration and Modernization (20%) — The History of the 7Rs, the Internals of Block Replication and CDC, Bandwidth Math, and the Strangler Fig Pattern
 
-Cost pillar often **underweighted by SAA**, but Pro recognizes it competes with Reliability/Performance. Optimization requires **unit economics thinking** not just total dollar reduction.
+SAP-C02 Domain 3, "Migration and Modernization," carries a 20% weight, and its essence is the question of "how do you move workloads from on premises or another cloud to AWS (migration) and modernize them into cloud-native form (modernization)." AWS formalized this as the **7R framework**, and each R has a defined toolset and internal operating principles. The Pro exam asks "which R is this scenario, and which tools do you combine and how" — beyond simple tool-name mapping, you need to understand bandwidth math, replication mechanisms, and incremental decomposition strategies to solve variant questions.
 
-Core strategies:
-- **Savings Plans vs RI vs On-Demand**: SP most flexible (3-year Compute/DDB), RI most aggressive discount, On-Demand pay-per-use
-- **Spot**: 90% off, interruption tolerance (batch, CI, rendering), blend with on-demand for durability
-- **Right-sizing**: Compute Optimizer flags over-provisioned instances, CloudWatch metrics reveal utilization
-- **Data transfer**: VPC Endpoint (free S3/DDB from private subnet), CloudFront (cheaper egress), same-AZ communication
-- **Storage tiering**: S3 Intelligent-Tiering (auto), Glacier (archive), cold tiers after 90 days
-- **Database**: On-demand vs provisioned depends on utilization; DDB on-demand pricier/scalable, provisioned cheaper/predictable
+Today we organize Domain 3 in depth through the 7R decision tree, tool internals, modernization patterns, and scenario mapping.
 
-Pitfall: **Optimizing for cost alone kills reliability.** Pro balances.
+## The 7R Framework — History and Decision Tree for Migration Strategy
 
-Key mappings: (1) "Multi-year commitment, predictable load" → **Savings Plans (most flexible)**, (2) "Spike load, fault-tolerant" → **Spot 90% + on-demand blend**, (3) "Minimize data transfer" → **VPC Endpoint + CloudFront**, (4) "Minimize storage" → **S3 Intelligent-Tiering + Glacier**.
+The roots of the 7Rs are the **5Rs** (Rehost, Refactor, Revise, Rebuild, Replace) presented in 2011 by Gartner analyst Richard Watson. AWS refined them into **6Rs** in 2016 (Retire, Retain, Rehost, Replatform, Repurchase, Refactor) and extended them to **7Rs** in 2021 by adding **Relocate**. The key is that each R is a point on a spectrum of "migration cost vs. cloud-native value."
 
-[6 EXERCISES: Savings Plans vs RI decision, Spot blend strategy, Right-sizing ROI, Data transfer path optimization, Reserved capacity trade-offs]
+| R | Meaning | When to use | Representative tools |
+|---|---------|-------------|----------------------|
+| **Retire** | Decommission | Discover systems that are not used | Application Discovery Service |
+| **Retain** | Keep for now | Not suitable, low priority, license-bound | - |
+| **Relocate** | Move the same environment wholesale | VMware → VMware Cloud on AWS | VMware HCX |
+| **Rehost** | Lift & Shift | Fast move with minimal code change | **MGN** |
+| **Replatform** | Some changes (lift-tinker-shift) | Keep the DB engine, only make the hosting managed | DMS, Beanstalk, App2Container |
+| **Repurchase** | Replace with commercial SaaS | In-house ERP → Workday, CRM → Salesforce | AWS Marketplace |
+| **Refactor** | Redesign as cloud-native | Monolith → microservices, serverless | DMS+SCT, Lambda, ECS, Step Functions |
+
+Choosing a 7R is **an optimization problem of "business value ÷ migration effort."** The further left you go (Retire, Rehost), the smaller the effort but also the smaller the cloud value (you operate EC2 like a data center); the further right you go (Refactor), the greater the effort and risk but the more truly cloud-native (serverless, auto scaling, managed) you become. Models differ by cloud vendor — Microsoft Azure uses 5Rs (Rehost, Refactor, Rearchitect, Rebuild, Replace), and Google Cloud uses its own classification. AWS's 7Rs are the most granular. Key exam mappings: "Lift & Shift" = Rehost, "same DB engine + move to RDS" = Replatform, "decompose the monolith" = Refactor, "VMware as is" = Relocate.
+
+> 🔍 **Going deeper**: The most important insight for the Pro exam is **"if there is a time constraint, Rehost first, then optimize incrementally on the cloud."** With a short deadline, attempting Refactor from the start fails because schema conversion, app changes, and testing take months. Instead, quickly Rehost with MGN to close the data center first, then after moving to the cloud, pick only the high-business-value workloads to Replatform or Refactor. This is the "lift-and-shift then modernize" pattern, and it is the standard validated by large migrations such as Capital One and GE.
+
+**GE's cloud retreat vs. Capital One's success** (late 2010s) show the light and dark sides of 7R strategy. GE began with the ambition of moving 9,000 workloads, but migrated indiscriminately without governance or prioritization and ended up moving a substantial number back on premises. Capital One, by contrast, over eight years from 2015 to 2020, **moved most workloads quickly via Rehost at first**, then progressively evolved through Replatform (Oracle → Aurora, its own ELB → ALB) to Refactor (monolith → microservices, Lambda), and eventually closed all of its own data centers. The lesson: don't Refactor everything at once; proceed incrementally in waves.
+
+## Tool Internals — The Mechanisms of MGN, DMS, and DRS
+
+### MGN (Application Migration Service) — Block-Level Continuous Replication
+
+MGN installs an **agent** on the on-premises server and **continuously replicates the disks at the block level**. The characteristic is that while the source stays live and in operation, it keeps syncing in the background to the AWS staging area, then pauses briefly only at the moment of cutover and switches over to EC2. Downtime is compressed to "the final delta sync + boot" (minutes).
+
+MGN's block-level continuous replication is essentially **asynchronous replication + CDP (Continuous Data Protection)**. In principle it uses the same engine (based on the CloudEndure acquisition) as the DR service **Elastic Disaster Recovery (DRS)** — MGN is "move once and finish," DRS is "keep replicating and stand by for DR"; only the purpose differs, and the technology is a sibling. That is why, on the exam, "minimal downtime + moving the whole OS, one-time" is MGN, while "continuous replication, standing by for disaster" is DRS. Both move the entire OS, app, and data (at server level); they are not tools that only move files (DataSync) or DB schemas (DMS).
+
+### DMS + SCT — Zero-Downtime DB Migration with CDC
+
+- **Homogeneous**: Oracle → Oracle on RDS, MySQL → MySQL — DMS alone
+- **Heterogeneous**: Oracle → Aurora PostgreSQL, SQL Server → MySQL — **schema conversion with SCT** + **data migration with DMS**
+- **CDC (Change Data Capture)**: initial full load + ongoing change capture → zero-downtime cutover
+
+The secret of DMS's zero downtime is that **CDC reads the source DB's transaction log** — it parses MySQL's binlog, Oracle's redo log, PostgreSQL's WAL, and SQL Server's transaction log to capture changes (INSERT/UPDATE/DELETE). This is lightweight like a read replica, so the load on the source DB is small. The sequence: (1) Full Load copies the existing data wholesale, (2) changes that occurred during the Full Load are cached and then applied, (3) afterwards CDC keeps applying real-time changes to keep both sides in sync, (4) at cutover, app traffic is switched to the new DB and DMS is terminated. Downtime is compressed to the instant of the traffic switch. Pitfall: **SCT is unnecessary for homogeneous migrations** — SCT is for converting SQL dialects and stored procedures, so there is no use for it between the same engine.
+
+(Hypothetical case) A fintech migrated from Oracle Database Enterprise Edition (license costing hundreds of millions of KRW per year) to Aurora PostgreSQL. **SCT converted PL/SQL → PL/pgSQL** (70% automatic, 30% manual — SCT flags items it cannot convert in an Assessment Report), **DMS CDC kept both sides synced for six months**, and the cutover happened over a weekend. Result: zero license cost plus better performance. This is a typical Refactor case, and "heterogeneous DB + schema conversion" is always the SCT+DMS combination.
+
+### DataSync vs Snow Family — Bandwidth Is Time
+
+| Tool | Capacity | Time | Use case |
+|------|----------|------|----------|
+| DataSync | A few GB to tens of TB | Depends on the line | Sufficient line, online sync |
+| Snowcone | 8 TB | One week of shipping | Small volume + insufficient line, edge |
+| Snowball Edge | 80 TB (storage optimized) | One week of shipping | Large volume + insufficient line |
+| Snowmobile | 100 PB | Several weeks of shipping | Bulk transfer at exabyte/petabyte scale |
+
+> ⚠️ **Pitfall**: The hidden variable in migration is **bandwidth math**. Time to move over the line = data volume ÷ effective bandwidth. For example: 1 PB ÷ 100 Mbps ≈ 1000 days (impossible), 100 TB ÷ 10 Gbps ≈ 22 hours (theoretical; the effective figure is 2 to 3 times longer). So for "tens to hundreds of TB + limited bandwidth," the standard approach is a hybrid: **ship the initial bulk physically with Snow, then sync only the deltas online with DataSync/DMS**. Answering "1 PB + 100 Mbps + 1 month" with DataSync is a trap — it is impossible over the line, so the answer is multiple Snowball Edge devices or Snowmobile (generally Snowball below 10 PB, Snowmobile above). Note: new Snowmobile orders were discontinued in 2024, but conceptually for the exam it remains the symbol of petabyte-scale truck shipping.
+
+### App2Container, AppFlow, Migration Hub
+
+- **App2Container (A2C)**: automatically analyzes Java (Tomcat, JBoss) and .NET apps → generates Docker images → ECS/EKS deployment manifests (Replatform containerization)
+- **AppFlow**: no-code data integration between SaaS (Salesforce, Slack, ServiceNow, Google Analytics) and AWS (S3, Redshift)
+- **Migration Hub**: integrated tracking across Discovery → Planning → Migration → Validation, plus per-asset 7R recommendations (Strategy Recommendations)
+- **Application Discovery Service (ADS)**: automatic on-premises inventory collection (agent = detailed / agentless = VMware vCenter integration) + automatic dependency graph generation
+
+**Migration Wave Planning** is the core of migration governance. Rather than moving all workloads at once, you proceed incrementally in waves 1, 2, and 3 **based on the dependency graph** — tightly coupled systems (apps sharing the same DB) go in the same wave, and systems with no dependencies move first. ADS automatically maps network communication between apps to build the dependency graph, and Migration Hub assigns waves and tracks progress. This is the standard way to reduce the risk of a "big-bang migration."
+
+## Modernization Patterns — Safely Decomposing a Monolith
+
+### The Strangler Fig Pattern — Gradual Strangulation
+
+Rewriting a monolith all at once (big bang) is high-risk (as Knight Capital and several failed ERP rewrites prove). The **Strangler Fig pattern** (Martin Fowler, 2004 — named after the strangler fig tree that wraps its host and slowly strangles it) leaves the monolith in place and builds new functionality first as microservices, using an API Gateway/proxy to route requests either to the old monolith or to the new services. Over time, functions move one by one to new services and the monolith is "strangled."
+
+```
+[Monolith EC2 + Oracle]
+        ↓ Refactor (incremental)
+[API Gateway routing] → old features: monolith / new features: Lambda · Fargate
+[Aurora + DynamoDB] [Step Functions workflow]
+```
+
+> 🎯 **Scenario**: "A company wants to convert a 20-year-old Java EE monolith (sharing a single Oracle DB) into microservices. A one-shot rewrite carries a high risk of business disruption. How do you decompose it incrementally?" — Answer: **Strangler Fig pattern + API Gateway routing + new features first as Lambda/Fargate microservices + DMS to gradually separate the DB as well (database-per-service)**. API Gateway routes requests to the monolith or the new services, new features are carved out first, and the DB is gradually migrated by DMS, domain by domain, into new databases (Aurora/DynamoDB). Because not everything moves at once, each step is rollback-able and risk is spread out. A "big-bang rewrite" is a wrong-answer signal.
+
+The hard part of decomposing a monolith is not the code but **the shared database**. The microservices principle is "each service has its own DB (database-per-service)," but a monolith usually shares one giant DB. When a transaction boundary crosses services during decomposition, a **distributed transaction** problem arises — 2PC (2-phase commit) hurts availability and is avoided in the cloud; instead the **Saga pattern** (eventually achieving consistency through compensating transactions) is implemented with Step Functions. If you see "distributed transactions and compensation logic across microservices," Step Functions Saga is the right direction.
+
+## Scenario Keyword → Answer Mapping
+
+| Keyword | Answer | One-line rationale |
+|---------|--------|--------------------|
+| "Lift & Shift 200 VMs + short downtime" | MGN | Block-level continuous replication |
+| "On premises + continuous DR on AWS" | DRS | Continuous replication, standby |
+| "Oracle → Aurora PostgreSQL" | DMS + SCT | Heterogeneous, schema conversion |
+| "SQL Server → MySQL (heterogeneous)" | SCT + DMS | Dialect conversion + CDC |
+| "MySQL → RDS MySQL (homogeneous)" | DMS only | SCT unnecessary for homogeneous |
+| "Zero-downtime DB migration" | DMS CDC | Transaction log capture |
+| "1 PB + 100 Mbps line + 1 month" | Multiple Snowball Edge / Snowmobile | The line is impossible by bandwidth math |
+| "Tens of TB + sufficient line" | DataSync | Online sync |
+| "Containerize a Java EE monolith" | App2Container | Automatic Dockerization |
+| ".NET → Fargate" | App2Container | Automatic analysis and deployment |
+| "Salesforce → S3 integration" | AppFlow | No-code SaaS connector |
+| "Integrated tracking of migration stages" | Migration Hub | Wave and progress visualization |
+| "Automatic on-premises asset inventory and dependencies" | Application Discovery Service | Dependency graph |
+| "Monolith → incremental microservices" | Strangler Fig + API Gateway | Avoid big bang |
+| "Distributed transactions across microservices" | Step Functions Saga | Compensating transactions |
+| "VMware → VMware on AWS" | VMware Cloud on AWS (Relocate) | Hypervisor unchanged |
+
+## Summary
+
+The core of Domain 3 is **instant 7R recall + understanding tool internals + bandwidth math**. Insights: (1) under a time constraint, Rehost (MGN) first and Refactor incrementally on the cloud — GE's failure vs. Capital One's success proves it, (2) MGN is continuous block replication (a sibling engine of DRS), DMS CDC reads the transaction log for zero downtime, and SCT is added only for heterogeneous migrations, (3) "tens to hundreds of TB + limited bandwidth" calls for a hybrid of Snow plus online deltas — petabytes are impossible over a line, (4) never big-bang rewrite a monolith — strangle it gradually with Strangler Fig, and separate the shared DB with database-per-service + Saga. Exam trap: "Is SCT needed for a homogeneous migration?" → No, DMS alone is enough.
+
+Tomorrow (Day 79) we will review Domain 4, continuous improvement (observability, automation, SRE), together with SRE theory.
 
 ---
 

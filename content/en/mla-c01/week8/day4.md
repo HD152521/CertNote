@@ -1,40 +1,224 @@
-﻿# Day 4 - Continuous Learning & Retraining: Automated Drift Detection and Retraining Triggers
+﻿# Day 4 - Retraining and Model Maintenance: Automated Retraining Pipelines and A/B and Shadow Testing
 
-When monitoring detects drift or performance degradation, models don't self-heal. Someone must retrain. **Continuous learning** automates the "detect degradation → retrain → validate → redeploy" loop. This closes the MLOps circle: yesterday's CI/CD deploys models, today's operations monitor them, and today's continuous learning retrains them. MLA-C01 tests "when and how to trigger automated retraining".
+## 📌 Key Takeaways
 
-Core concept: **Drift trigger** (data/model performance falls below threshold) → **Retrain pipeline auto-starts** → **New model registers** → **Quality gate evaluation** → **If approved, auto-deploy**. Same CI/CD infra (SageMaker Pipelines, Model Registry, CodePipeline) from earlier weeks powers the loop.
+- Mature ML operations connect **drift detection → automated retraining → safe redeployment** into a single closed loop.
+- For retraining triggers, **drift- and performance-based event triggers** are more cost-efficient than schedule-based ones.
+- The automation chain is **Model Monitor violation → CloudWatch Alarm → EventBridge/Lambda → SageMaker Pipelines**.
+- A **ConditionStep** registers a model in the Model Registry only when it passes the evaluation criteria, preventing performance regressions.
+- Redeploy in order of risk - **shadow** (zero user impact) → **A/B and canary** (a small group exposed) → **Blue/Green** (guardrails and automatic rollback).
 
-## When to Trigger Retraining?
+## The Closed Loop of Maintenance
 
-Data changes over time—customer behavior shifts, new patterns appear, old patterns vanish. **Concept drift** (label/target distribution changes), **data drift** (feature distribution changes), or **prediction drift** (model predictions diverge from reality). Monitoring detects these via:
+Once monitoring has detected drift or performance degradation, what comes next? Having a person retrain and deploy the model by hand every time is slow and error-prone. The whole picture makes one full turn, as below.
 
-- **Model performance degradation**: Accuracy/AUC falls below baseline.
-- **Data drift alerts**: Feature distributions deviate from training data.
-- **Prediction drift**: Model outputs systematically wrong on recent data.
+```text
+        ┌────────────────── Endpoint in production ───────────────┐
+        │                                                        │
+        ▼                                                        │
+  Model Monitor violation                                         │
+  (data/model quality, bias, attribution)                         │
+        │                                                        │
+        ▼                                                        │
+  CloudWatch metric → Alarm                                       │
+        │                                                        │
+        ▼                                                        │
+  EventBridge rule (or SNS → Lambda)                              │
+        │                                                        │
+        ▼                                                        │
+  SageMaker Pipelines execution                                   │
+   ├ Preprocessing (Processing)                                   │
+   ├ Training                                                     │
+   ├ Evaluation                                                   │
+   └ ConditionStep ──fail──▶ Do not register (keep existing model) ┤
+              │                                                   │
+            pass                                                  │
+              ▼                                                   │
+   Register in Model Registry (Approved / PendingManualApproval)  │
+              │                                                   │
+              ▼                                                   │
+   Redeploy: shadow → A/B·canary → blue/green ─────────────────────┘
+```
 
-Retraining triggers include:
-- **Scheduled**: Monthly retrain regardless (ensures freshness).
-- **Drift-triggered**: Auto-retrain on detected drift (responds to change).
-- **Performance-triggered**: Auto-retrain on accuracy drop below threshold.
+From an MLOps perspective, MLA-C01 asks "how do you respond automatically when drift is detected?" and "which deployment strategy do you use to validate a new model version without risk?"
 
-## Automated Retraining Pipeline Architecture
+## Signals That Retraining Is Needed
 
-Retraining loops typically:
-1. **Monitoring detects issue** (drift/degradation).
-2. **Event triggers pipeline** (via EventBridge or Step Functions).
-3. **Pipeline fetches fresh data**, retrains, evaluates.
-4. **Quality gate**: if performance meets threshold, register new model.
-5. **Approval**: registry triggers deploy if approved.
+When should a model be retrained? There are three main triggers.
+- **Drift-based**: When Model Monitor reports a data or model quality violation.
+- **Performance-based**: When the accuracy or F1 from the model quality monitor falls below a threshold.
+- **Schedule-based**: Periodically (e.g., weekly) in domains where data changes quickly.
 
-The pipeline is the same SageMaker Pipelines/CodePipeline from Day 7 (week 1), now triggered by drift events instead of code commits.
+| Trigger | Strength | Weakness | Suitable situation |
+|--------|------|------|--------------|
+| Drift-based | Runs only when something changes, so cost-efficient | Threshold tuning needed, false alarms possible | Most domains where change is sporadic |
+| Performance-based | Reacts directly to real harm | Must wait for ground truth, so it is late | Domains where labels are confirmed quickly |
+| Schedule-based | Simple and predictable, easy to operate | Incurs cost even during periods without change | Domains where data changes steadily |
+| Data-volume-based | Trains once enough new data has accumulated | May run regardless of quality degradation | When the inflow of new data is the training bottleneck |
 
-## Feature Store & Data Freshness
+> 💡 **Related Theory**: Retraining as often as possible is not the right answer. Retraining brings compute cost, validation time, and the risk that the new model is actually worse. That is why an **event-driven trigger** such as "retrain when drift is detected" is cost-efficient. Schedule-based is simple, but it can waste resources by retraining even during periods with no change. When the exam says "to reduce unnecessary retraining cost," choose the drift-based trigger over the schedule-based one.
 
-Continuous learning benefits from **SageMaker Feature Store** to version features. Historical feature values (at training time vs. current time) let you detect drift and fetch consistent data for retraining.
+## Composition of an Automated Retraining Pipeline
 
-## Summary
+On AWS, the center of retraining automation is **SageMaker Pipelines**. You define the steps data processing → training → evaluation → (conditional) model registration, and trigger it with an external event.
 
-Continuous learning closes the loop: deploy → monitor → detect drift → auto-retrain → validate → redeploy. **EventBridge** detects drift/performance events; **SageMaker Pipelines** executes retraining; **Model Registry** gates quality; **CodePipeline** deploys. Combining monitoring (week 8 days 1-2), CI/CD (week 7 days 1-3), and automation (this week) creates truly autonomous ML systems.
+A typical event-driven flow:
+1. Model Monitor sends the drift violation as a **CloudWatch metric**.
+2. A **CloudWatch Alarm** goes into the ALARM state and fires an **EventBridge** rule (or SNS → Lambda).
+3. **Lambda** (or the EventBridge target) starts a **SageMaker Pipeline execution**.
+4. The pipeline retrains on the latest data, and if the performance passes the criteria in the evaluation step, it registers the new version in the **Model Registry**.
+
+```python
+from sagemaker.workflow.pipeline import Pipeline
+from sagemaker.workflow.condition_step import ConditionStep
+from sagemaker.workflow.conditions import ConditionGreaterThanOrEqualTo
+
+# Condition step that registers the model only when evaluation accuracy meets the criterion
+cond = ConditionGreaterThanOrEqualTo(
+    left=eval_accuracy, right=0.85,        # Do not register if accuracy is below 0.85
+)
+condition_step = ConditionStep(
+    name="CheckAccuracy",
+    conditions=[cond],
+    if_steps=[register_model_step],         # On pass, register in the Model Registry
+    else_steps=[],                          # On fail, do nothing (keep the existing model)
+)
+pipeline = Pipeline(name="retrain-pipeline", steps=[process_step, train_step,
+                                                    eval_step, condition_step])
+```
+
+Conditional registration is important. If the retrained model falls short of the criteria, it is not deployed automatically and the existing model is kept, preventing a **regression**.
+
+Starting the pipeline from Lambda is this simple.
+
+```python
+import boto3
+sm = boto3.client("sagemaker")
+
+def lambda_handler(event, context):
+    # Receive the event passed by the CloudWatch Alarm → SNS/EventBridge and start retraining
+    sm.start_pipeline_execution(
+        PipelineName="retrain-pipeline",
+        PipelineParameters=[
+            {"Name": "InputDataUrl", "Value": "s3://my-bucket/latest/"},
+            {"Name": "AccuracyThreshold", "Value": "0.85"},
+        ],
+    )
+```
+
+The Model Registry manages model versions as a catalog and gives each version an approval status (Approved/Rejected). If the retraining pipeline registers the new version as "PendingManualApproval," you can make the deployment pipeline (e.g., CodePipeline) trigger only when a person reviews and approves it. You choose between fully automatic (deploy as soon as the condition passes) and human approval (human-in-the-loop) according to the risk.
+
+## Redeployment Strategies at a Glance
+
+Even if a new model did well on the evaluation data, there is no guarantee it will do better on real traffic. So you choose a deployment strategy by "how much risk you are willing to take."
+
+| Strategy | Do users get the response? | What can be compared | Cost | Rollback |
+|------|----------------------|---------------------|------|------|
+| **Shadow** | No (record only) | Technical metrics such as latency, errors, prediction distribution | Two sets of inference cost | Just stop the shadow |
+| **A/B (production variants)** | Yes (by weight) | Technical metrics + business outcomes such as clicks and conversions | Sum of variant instances | Set the weight back to 0 |
+| **Canary / linear** | Yes (small group → increasing) | Anomalies during the transition | Double capacity during the transition | Alarm-based automatic rollback |
+| **Blue/Green** | Yes (everyone after the switch) | Overall metrics after the switch | Double capacity during the transition | Alarm-based automatic rollback |
+
+Shadow and A/B have different purposes. Shadow is a **technical validation** that checks "does the new model **not blow up** on production traffic?", and A/B is an **outcome validation** that checks "does the new model actually **produce better results**?" Since shadow returns no response to users, it cannot measure business metrics like click-through or conversion rates in the first place. That is why the practical order is shadow → A/B.
+
+## Safe Redeployment 1 - A/B Testing
+
+**A/B testing** puts several **production variants** on one endpoint and splits traffic among them for comparison. For example, you start with 90% for the existing model and 10% for the new one, and if the new model performs well, you raise its share gradually.
+
+```python
+from sagemaker.session import production_variant
+
+variant_a = production_variant(model_name="model-v1", instance_type="ml.m5.xlarge",
+                               initial_instance_count=1, variant_name="ModelV1",
+                               initial_weight=9)        # 90% of traffic
+variant_b = production_variant(model_name="model-v2", instance_type="ml.m5.xlarge",
+                               initial_instance_count=1, variant_name="ModelV2",
+                               initial_weight=1)        # 10% of traffic
+# Deploy both variants on one endpoint
+session.endpoint_from_production_variants(name="ab-endpoint",
+                                          production_variants=[variant_a, variant_b])
+```
+
+You adjust the traffic split with the weight (`initial_weight`), and since you can change the shares in real time, it is used for gradual rollouts (canary).
+
+```python
+# Raise the new model's share to 50% by adjusting only the weights, without redeploying
+sm.update_endpoint_weights_and_capacities(
+    EndpointName="ab-endpoint",
+    DesiredWeightsAndCapacities=[
+        {"VariantName": "ModelV1", "DesiredWeight": 5},
+        {"VariantName": "ModelV2", "DesiredWeight": 5},
+    ],
+)
+```
+
+- Latency and error metrics appear in CloudWatch split by the `VariantName` dimension, so you can compare per variant.
+- To compare business metrics too (conversion rate, etc.), you must link the prediction results to the subsequent user behavior.
+
+## Safe Redeployment 2 - Shadow Testing
+
+In an A/B test, the new model **actually responds** to some real users. If that response is bad, those users are affected. **Shadow testing** removes this risk. It sends a copy of production traffic to the new (shadow) model as well, but **the shadow model's response is not returned to the user and is only recorded**. Users always receive the existing model's response.
+
+```text
+             ┌──▶ Production model v1 ──▶ Response ──▶ [User]
+  Request ───┤
+             └──▶ Shadow model v2 ─────▶ Only logs and metrics saved (not sent to the user)
+```
+
+```python
+# SageMaker Shadow Test: deploy a production variant and a shadow variant together
+# The shadow model receives the same input and runs inference, but the result is only logged and never reaches the user
+shadow_config = {
+    "ShadowModelVariants": [
+        {"ShadowModelVariantName": "model-v2-shadow", "SamplingPercentage": 100},
+    ],
+}
+```
+
+Shadow testing is the right answer when you want to "validate how the new model behaves on real production traffic without risk." After comparing latency, errors, and the prediction distribution with no user impact, you move on to A/B or a full replacement if satisfied. Lowering `SamplingPercentage` reduces the shadow inference cost.
+
+> ⚠️ **Trap**: It is easy to confuse A/B testing with shadow testing. **In A/B, the new model's response actually goes out to real users** (some risk exists, and outcomes can be compared with business metrics). **In shadow, the new model's response does not go out to users and is only recorded** (zero user impact, purely technical validation). "Validate the new model with production data without affecting users at all" means shadow, and "split traffic and transition gradually" means A/B.
+
+## Deployment Guardrails
+
+For a full replacement, you transition safely with **deployment guardrails**. You bring up a new environment with **Blue/Green**, switch over either all at once or gradually with **canary** or **linear**, and automatically **roll back** if a CloudWatch alarm fires.
+
+| Traffic shifting method | How it moves | When to choose it |
+|-----------------|--------------|-------------|
+| All at once | The entire traffic immediately to the new environment | When the risk is low and you want to finish quickly |
+| Canary | A small amount first → after observation, the rest all at once | When you want to catch early anomalies with minimal damage |
+| Linear | Moved in several steps of a fixed percentage | When you want to bring in load changes gently |
+
+- Automatic rollback works only when tied to a **CloudWatch alarm**. If you do not set an alarm, you end up in a state of "a guardrail deployment that cannot roll back."
+- During the transition, the old and new environments run at the same time, so **capacity cost temporarily doubles**.
+
+## When Retraining and Redeployment Go Wrong: Symptom → Cause → Fix
+
+| Symptom | Common cause | Fix |
+|------|-----------|------|
+| Drift is detected but retraining does not run | An alarm exists but the EventBridge/Lambda connection is missing | Connect the chain: alarm → EventBridge rule → `start_pipeline_execution` |
+| Retraining cost keeps rising | A schedule-based trigger trains every time even without change | Switch to drift- and performance-event-based triggers |
+| Performance got worse after retraining | Registered and deployed automatically with no condition (no regression guard) | Use `ConditionStep` to register only when the criteria pass |
+| The pipeline fails with a permission error | The execution role lacks S3, ECR, or SageMaker permissions | Fix the pipeline execution role's permissions |
+| A/B results cannot be interpreted | Traffic is so low that the difference is not statistically detectable | Extend the observation period or raise the new model's weight |
+| Shadow test costs more than expected | Shadow sampling at 100% runs two sets of inference | Lower `SamplingPercentage` and end the shadow after validation |
+| A problem occurred after a Blue/Green switch but no rollback happened | The CloudWatch alarm for automatic rollback was not set | Attach the alarm to the transition policy and validate the threshold beforehand |
+| The new model went out directly without approval | The Registry registration status is auto-approve | Register as `PendingManualApproval` to insert a human review step |
+
+In the next article, we review all of Week 8 together - data/model quality drift, bias and explainability drift (Clarify), operational monitoring (CloudWatch/X-Ray), and retraining and redeployment.
+
+## 📖 Glossary
+
+- **Closed loop** : An operating structure that turns on its own: detect → trigger → retrain → redeploy → detect again.
+- **Event-driven trigger** : A method that starts retraining only when an event such as a drift or performance violation occurs, rather than at set times.
+- **SageMaker Pipelines** : An ML workflow service that runs preprocessing, training, evaluation, and registration steps together. The center of retraining automation.
+- **ConditionStep** : A conditional branch step that runs the next step only when the evaluation metric exceeds the criterion. A safeguard against performance regressions.
+- **Model Registry** : A repository that manages model versions as a catalog and assigns approval statuses (Approved/PendingManualApproval, etc.).
+- **Production variant** : A model slot that coexists within one endpoint. Weights split the traffic share.
+- **A/B testing** : A method that splits traffic by variant weights to compare the new model's actual outcomes. The new responses go out to users.
+- **Shadow testing** : A method that sends a copy of production traffic to the new model but only records its responses. User impact is zero.
+- **Canary / linear shifting** : Gradual transition methods that move traffic to the new version in a small amount first / in steps of a fixed percentage.
+- **Deployment guardrails** : A safe deployment mechanism that adds CloudWatch alarm-based automatic rollback to Blue/Green and canary transitions.
 
 ---
 

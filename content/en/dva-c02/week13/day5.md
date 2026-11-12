@@ -2,19 +2,19 @@
 
 📅 Date: August 13, 2026 (Thursday)  
 🎯 Topic: DVA-C02 Final Mock Exam & Exam Preparation  
-⏱️ Study Time: Approximately 130 minutes (same as exam)
+⏱️ Study Time: Approximately 130 minutes (same as the exam)
 
 ---
 
 ## 🎯 Learning Objectives
 
-- Complete full mock exam in exam format
-- Identify weak areas and do final review
-- Establish exam day strategy
+- Take a mock exam in the same format as the DVA-C02 exam
+- Identify weak areas and do a final review
+- Build an exam-day strategy
 
 ---
 
-## 📖 Exam Information Final Confirmation
+## 📖 Final Check of Exam Information
 
 ```
 Exam Name: AWS Certified Developer - Associate (DVA-C02)
@@ -22,9 +22,155 @@ Duration: 130 minutes
 Questions: 65 (50 scored + 15 unscored)
 Passing Score: 720/1000
 Cost: $150 USD
-Languages: Korean and other languages supported
-Question Types: Single choice (4 options), Multiple choice (5-6 with 2-3 correct)
+Languages: Multiple languages supported, including Korean
+Question Types: Single choice (4 options), Multiple choice (2-3 correct out of 5-6)
 ```
+
+### Domain Weighting - Where to Spend Your Time
+
+```
+Domain 1  Development with AWS Services          32%   ≈ 16 questions (out of 50 scored)
+Domain 2  Security                               26%   ≈ 13 questions
+Domain 3  Deployment                             24%   ≈ 12 questions
+Domain 4  Troubleshooting and Optimization       18%   ≈  9 questions
+────────────────────────────────────────────────────────────
+Passing line 720/1000 → converted to question counts, you need roughly 35 correct answers.
+(The exact conversion is a scaled score based on question difficulty, so it is not a
+ simple ratio, but it is enough to give you a feel for the goal: "clear the low 70% range
+ with a comfortable margin.")
+```
+
+What you should read here is not the numbers but the **shape of the weighting**. Domains 1 and 2 together make up well over half, and both converge on "**build something with Lambda, API Gateway, and DynamoDB, and then handle its access permissions and secrets**." If you have little time left, reviewing this axis again has a higher expected score than looking at new services. Domain 4 (Troubleshooting and Optimization) is less a separate body of knowledge than an area that **revisits the first three domains from the error-message side**, so the error and symptom tables you compiled throughout this week serve directly as preparation.
+
+---
+
+## 🎯 How to Read a Question: Eliminating Candidates by Keyword
+
+Solving 65 questions in 130 minutes means an average of 2 minutes per question. If you read every passage carefully from the start, you will run out of time. The order that works in the real exam is **"last sentence → constraint keywords → eliminate options."**
+
+```
+Step 1  Read the final sentence first
+        "What is the MOST cost-effective approach?" / "Which has the LEAST operational overhead?"
+        / "Which is the MOST secure?"  ← what you are asked to optimize changes the answer
+
+Step 2  Mark the constraint keywords in the passage
+        "real-time" · "ordering" · "reprocessing" · "multiple consumers" · "1-year retention"
+        "do not want to manage servers" · "without changing existing code"
+        "audit logs required by regulation" · "another account" · "only within the VPC"
+
+Step 3  Eliminate options that contain anti-patterns first (usually 1-2 disappear here)
+        Hardcoded access keys / synchronous Lambda-to-Lambda calls / using root
+        / allowing public access / hand-built polling loops / plaintext passwords
+
+Step 4  Split the remaining two using the optimization criterion from Step 1
+        Cost → serverless, Spot, HTTP API, Bucket Key
+        Operational overhead → managed services, automation
+        Safety → gradual deployment, automatic rollback, least privilege
+```
+
+Even with the same passage, some questions are designed so that the answer differs depending on whether the last sentence says "cost-effective" or "most secure." In a deployment strategy question, for example, the answer shifts to AllAtOnce for "fastest," to Immutable or Blue/Green for "safest," and to the Rolling family for "zero downtime at no additional cost." **If you do not settle the optimization criterion first, all four options look plausible.**
+
+If all four options feel plausible, the question usually lists **different ways, at different layers, of achieving the same goal**. For example, for "Lambda is experiencing DynamoDB throttling," if (a) increase RCU, (b) switch to on-demand, (c) introduce DAX, and (d) redesign the partition key are listed side by side, all four look like valid actions. What decides the answer is **a single constraint line** planted in the passage - "the traffic pattern is unpredictable" points to on-demand, "reads are concentrated on the same items" points to DAX, "load is concentrated on specific keys only" points to redesign, and "capacity is insufficient overall" points to an increase. So the more the options all seem correct, the more it pays to go back to the passage and **find one more constraint sentence**. Exam questions are built to make you choose "the best fit for this situation" among valid solutions.
+
+### Tips for Multiple-Choice (Choose 2) Questions
+
+"Choose two" often effectively means picking **one from each of two different layers**. For example, for "Lambda cannot access DynamoDB - choose two causes," the correct pair is usually composed of one from the IAM permissions family plus one from the network/configuration family. If you find yourself picking two answers from the same layer, it is worth a second look.
+
+---
+
+## 🧮 Three Types of Calculation Questions - Once More by Hand
+
+Calculation questions are about procedure, not knowledge, so staying steady in the exam room comes down to **the habit of saying the units out loud**.
+
+```
+① Lambda concurrency
+   Concurrency = requests per second × average execution time (seconds)
+   e.g.) 50 requests/sec × 0.4 sec average = 20  → set reserved concurrency with some margin
+   Trap: if the "average execution time" is given in ms, convert it to seconds
+
+② DynamoDB capacity   (reads are 4KB, writes are 1KB, always round up)
+   Strongly consistent read = ceil(KB/4) × 1 × requests per second     Eventually consistent = × 0.5
+   Standard write           = ceil(KB/1) × 1 × requests per second     Transactional         = × 2
+   e.g.) 3KB item, 200 eventually consistent reads/sec
+         ceil(3/4)=1 → 1 × 0.5 × 200 = 100 RCU
+
+③ Kinesis shard count
+   Required shards = max( incoming MB per second ÷ 1MB , records per second ÷ 1,000 )
+   e.g.) 3MB per second · 4,000 records per second
+         max(3, 4) = 4 shards  ← the trap is when the record-count side comes out larger
+```
+
+> ⚠️ **Trap**: Points are often lost on calculation questions not because you do not know the formula, but because you **swap the 4KB read and 1KB write units, or forget the 2x for transactions**. There is only one sanity check: for the same item, the **WCU number should come out 4 times larger than the (strongly consistent) RCU**. If it does not, you flipped a unit somewhere. The same goes for Kinesis - the answer is the **larger** of the "MB condition" and the "record count condition," and the options often include one that tempts you into picking the smaller.
+
+---
+
+## 🧰 Commands and Code to Keep at Your Fingertips
+
+The exam is multiple choice, but its questions describe real working screens. Skimming the few lines below brings back the perspective of "what does a developer actually do in this situation," which makes the passages much faster to read.
+
+```bash
+# Who am I right now - the top priority when debugging permission problems
+aws sts get-caller-identity
+
+# Function configuration at a glance (timeout, memory, role, and VPC in one check)
+aws lambda get-function-configuration --function-name my-func
+
+# Moving the alias to a new version = deployment; moving it back = instant rollback
+aws lambda update-alias --function-name my-func --name prod --function-version 7
+
+# Check throttles, errors, and latency in metrics before logs
+aws cloudwatch get-metric-statistics --namespace AWS/Lambda \
+  --metric-name Throttles --dimensions Name=FunctionName,Value=my-func \
+  --start-time 2026-08-13T00:00:00Z --end-time 2026-08-13T12:00:00Z \
+  --period 300 --statistics Sum
+
+# How much is backed up in the queue (backlog = a sign the consumers cannot keep up)
+aws sqs get-queue-attributes --queue-url "$QUEUE_URL" \
+  --attribute-names ApproximateNumberOfMessages ApproximateNumberOfMessagesNotVisible
+```
+
+```python
+# API Gateway (Lambda Proxy) response contract - deviating from this shape produces a 502
+def handler(event, context):
+    try:
+        item = load(event["pathParameters"]["id"])
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps(item),      # must be a "string"
+        }
+    except NotFound:
+        return {"statusCode": 404, "body": json.dumps({"message": "not found"})}
+    except Exception as e:
+        print(f"unhandled: {e}")           # details go to the logs only
+        return {"statusCode": 500, "body": json.dumps({"message": "internal error"})}
+```
+
+| Symptom you will see in the exam | Cause to recall immediately |
+|----------------------|----------------|
+| 502 Bad Gateway | Lambda response format violation (`body` is not a string) |
+| 504 Gateway Timeout | Integration timeout (default 29 seconds) exceeded |
+| 429 Too Many Requests | API Gateway throttle or usage plan limit |
+| `TooManyRequestsException` | Lambda concurrency limit |
+| `ProvisionedThroughputExceededException` | DynamoDB capacity or a **hot partition** |
+| `AccessDeniedException` | One of: execution role, resource policy, KMS key policy |
+| Task does not even start (ECS) | **executionRole** (image pull, secret injection) |
+| AccessDenied in the app logs (ECS) | **taskRole** |
+| Messages processed twice | Visibility timeout < processing time |
+
+As a hypothetical case, one failure pattern is **"spending time on the questions you are already sure about."** It looks like spending 60 minutes on the first 20 of 65 questions, then rushing at the end and guessing on the calculation questions wholesale. The real-exam allocation is simple - if you cannot reach a judgment within 1 minute, flag the question immediately and move on. It is actually **better to postpone calculation questions.** The concept questions you meet earlier revive your sense of units, so on the second pass they often get solved faster and more accurately. And when you change an answer you picked first, change it only if you have "newly found evidence" - changes made out of anxiety tend to cost you points.
+
+---
+
+## 📌 Key Takeaways
+
+Pulling out what you built over 13 weeks in the exam room is less a matter of knowledge than of **procedure**.
+
+- Settle the optimization criterion from the last sentence first.
+- Mark the constraint keywords, eliminate the anti-pattern options, then split the remaining two by that criterion.
+- For calculations, say the units out loud, and if you get stuck, flag it without regret.
+
+The symptom-cause table you compiled today is useful not only for the exam but in real work as well. That is because what this certification tries to verify is "when something goes wrong on AWS, do you know which layer to suspect first?" The mock exam below is the place to check that procedure once more on real questions.
 
 ---
 
