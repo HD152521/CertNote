@@ -170,7 +170,115 @@ Next we explore **AWS Config** — the compliance evaluation engine beneath Secu
 
 ## 📝 Practice Questions
 
-(Same 7 practice problems from Korean original, preserved in Korean)
+**Question 1.** What mechanism allows ASFF to make the severities of different sources, such as GuardDuty (1-10 scale) and Inspector (CVSS 0-10), comparable in a single priority queue?
+
+A) Force-convert all sources to the GuardDuty scale
+
+B) Represent Severity in two ways — Label (CRITICAL/HIGH/... for humans) and Normalized (an integer 0-100 for machine comparison) — normalizing the different scales to 0-100
+
+C) Ignore severity and sort only chronologically
+
+D) Separate each source into its own dashboard
+
+**Answer: B**
+
+Explanation: ASFF Severity is represented in two ways: Label (CRITICAL/HIGH/MEDIUM/LOW, read by humans) and Normalized (an integer 0-100, compared and sorted by machines). When different scales such as GuardDuty's 1-10 and Inspector's CVSS 0-10 enter ASFF, they are normalized to 0-100 and lined up for comparison (roughly CVSS x 10). Without normalization, a machine cannot decide "which to look at first: a threat scored 8.5 or a vulnerability with CVSS 9.1." Forcing a single scale (A), chronological ordering (C), and separation (D) run counter to the purpose of normalization.
+
+---
+
+**Question 2.** In Security Hub, you want to hide an accepted risk from the dashboard while preserving the record for later audit. What is the correct action?
+
+A) Change the Finding's RecordState to ARCHIVED
+
+B) Change the Finding's Workflow.Status to SUPPRESSED — the data is preserved and hidden only from the dashboard
+
+C) Delete the Finding
+
+D) Turn off the source tool (GuardDuty)
+
+**Answer: B**
+
+Explanation: In ASFF, RecordState (ACTIVE/ARCHIVED) indicates whether the Finding is still valid, and Workflow.Status (NEW/NOTIFIED/RESOLVED/SUPPRESSED) indicates the stage of the handling workflow. "Suppressing" means setting Workflow.Status to SUPPRESSED; the Finding data is preserved for later audit and hidden only from the dashboard and notifications. RecordState ARCHIVED (A) has a different meaning, "validity ended," and deleting (C) or disabling the source (D) contradicts the requirement to preserve records.
+
+---
+
+**Question 3.** You enabled Security Hub security standards (FSBP, CIS, etc.), but many controls show a no-data (NO_DATA) status. What is the most likely cause?
+
+A) Security Hub does not support the Region
+
+B) Many standard controls internally use AWS Config rules, so Config must be on, but the Config recorder is inactive
+
+C) The account has no resources at all
+
+D) The ASFF version is too old
+
+**Answer: B**
+
+Explanation: Many controls in Security Hub Standards internally use AWS Config rules to evaluate resource changes and surface the results as PASS/FAIL. In other words, Security Hub Standards = a curated bundle of Config rules + an ASFF dashboard, so the Config recorder must be on for controls to be evaluated. If Config is inactive, controls remain NO_DATA. Not knowing this dependency leads to the trap. An unsupported Region (A), no resources (C), and ASFF version (D) are not common causes.
+
+---
+
+**Question 4.** An operator wants to select a specific Finding directly in the Security Hub console and trigger a response (a destructive action that requires human judgment). What is the correct configuration, and which EventBridge event type is published at that time?
+
+A) Automation Rule — `Security Hub Findings - Imported`
+
+B) Create a Custom Action → operator-selected trigger → `Security Hub Findings - Custom Action` event → EventBridge → Lambda/SSM
+
+C) Insight — `Security Hub Insight` event
+
+D) Enable a Standard — `Compliance Change` event
+
+**Answer: B**
+
+Explanation: A Custom Action is a human-in-the-loop method in which the operator selects a Finding in the console and triggers it manually; when triggered, a `Security Hub Findings - Custom Action` event is published to EventBridge, which invokes a Lambda function or SSM runbook. It is suited to putting human approval in front of destructive or irreversible actions. Automatic handling of all new Findings without a human is `Security Hub Findings - Imported` (the event type in A is for the automatic flow). An Insight (C) is a saved query and a Standard (D) is a compliance evaluation, neither of which is a trigger mechanism.
+
+---
+
+**Question 5.** What is the correct implementation of "automatically suppress Low Findings in the Dev account without Lambda" and "actually fix a public S3 bucket to make it private"?
+
+A) Both with an Automation Rule
+
+B) Both with EventBridge → Lambda
+
+C) Suppression with an Automation Rule (field update), the actual resource fix with EventBridge (Imported) → Lambda/SSM Automation
+
+D) Suppression with a Custom Action, the fix with an Insight
+
+**Answer: C**
+
+Explanation: Automation Rules (2023+) only update Finding fields (change Severity, suppress Workflow, add notes) without Lambda or EventBridge. So "suppress Dev Low" is correct for an Automation Rule. However, an Automation Rule cannot fix actual resources — "actually making the S3 bucket private" must go through EventBridge (`Findings - Imported`) → Lambda/SSM Automation. This distinction is the key trap. Using the same method for both (A, B) or a wrong mapping (D) is incorrect.
+
+---
+
+**Question 6.** You want to view Findings from three Regions — us-east-1, eu-west-1, and ap-northeast-2 — on a single screen (there is one account). What is the correct setup?
+
+A) Designate a Delegated Administrator
+
+B) Use Cross-Region Aggregation to choose an aggregation Region and link the others as linked regions
+
+C) Create a Custom Action
+
+D) Create an Insight
+
+**Answer: B**
+
+Explanation: Security Hub is a Regional service. To view Findings from multiple Regions in one place, you must choose a single aggregation Region with Cross-Region Aggregation and link the other Regions as linked regions. A Delegated Administrator (A) is account-level consolidation, an orthogonal axis — "multiple accounts" means A, "multiple Regions" means B. If you need both, configure both. A Custom Action (C) and an Insight (D) are unrelated to aggregation.
+
+---
+
+**Question 7.** Why is the ASFF `Types` field expressed in the form `TTPs/Initial Access/...`, and how is it used?
+
+A) Simply for alphabetical sorting
+
+B) To map Findings to the Tactics and Techniques of MITRE ATT&CK, placing individual Findings at a stage of the kill chain so you can read "how far the attack has progressed"
+
+C) To specify where the Finding is stored
+
+D) For billing classification
+
+**Answer: B**
+
+Explanation: The ASFF Types field maps Findings to the tactics (Initial Access, Privilege Escalation, Lateral Movement, Exfiltration, and so on) and techniques of the MITRE ATT&CK framework. Building on the lineage of Lockheed Martin's Cyber Kill Chain, it places individual Findings at an attack stage so that SIEM correlation analysis can read "how far the attack has progressed." Tying individually weak signals together into an attack chain is the core of SIEM correlation analysis. It has nothing to do with sorting (A), storage location (C), or billing (D).
 
 ---
 

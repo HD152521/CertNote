@@ -200,3 +200,29 @@ D) Secrets Manager
 Explanation: KMS's HSM multitenant (multiple customers shared) structure can't satisfy "sole HSM" requirement. CloudHSM customers lease entire HSM device controlling 100%, fully satisfies FIPS 140-2 Level 3, AWS can't access keys. Trade-off: lose admin credentials, AWS can't recover keys, permanent loss — complete control means complete responsibility. For KMS convenience + CloudHSM control, use KMS Custom Key Store.
 
 ---
+
+**Problem 6.** An operator wants to delete a KMS key because it is no longer used. What is the safest procedure?
+
+A) Schedule immediate deletion with `schedule-key-deletion` and be done
+B) First disable the key and run for a few days to a few weeks, confirm there are no decryption attempts, and then schedule deletion
+C) Remove all permissions in the Key Policy
+D) Delete only the alias attached to the key
+
+**Answer: B**
+
+Explanation: Key deletion is irreversible, and all data encrypted with that key (including backups) can never be decrypted again. This risk is why KMS enforces a 7-30 day waiting period. The safe procedure is to first disable the key (which can be undone immediately) and run while monitoring decryption attempts with CloudWatch, and if there is no problem for a set period, then schedule deletion with `schedule-key-deletion`. Disabling serves as a free rehearsal. Even during the waiting period, you can undo it with `cancel-key-deletion`.
+
+---
+
+**Problem 7.** Permissions and key state are both normal, yet decryption of a specific ciphertext keeps failing. Besides permissions, what cause should be suspected?
+
+A) Key rotation is in progress and temporarily blocking it
+B) The Encryption Context used at encryption does not match the context presented at decryption
+C) Because it is not a Multi-Region Key
+D) The DEK has expired
+
+**Answer: B**
+
+Explanation: The Encryption Context is a key-value pair passed along at encryption time and works as additional authenticated data (AAD). Decryption succeeds only if you present **exactly the same context**, and if even one character differs, decryption is rejected even when permissions are perfect. S3 SSE-KMS automatically uses the object ARN as the context, preventing attempts to move ciphertext to another location and decrypt it. Key rotation (A) does not block decryption because the backing key identifier is recorded in the data and the old key is found automatically. When permissions are correct but decryption fails, suspect an Encryption Context mismatch first.
+
+---

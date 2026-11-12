@@ -92,6 +92,62 @@ Tomorrow: Week 9 synthesis — all four security, networking, encryption, cost a
 
 ## 📝 Practice Questions
 
-**Questions 1-5** [Practice questions in Korean follow after marker]
+**Question 1.** You want to cut the cost of a deep learning training job that takes several days as much as possible. The job can be interrupted and resumed. Which configuration is the most appropriate?
+
+A) Run only on On-Demand GPU with no checkpoints  
+B) Turn on Managed Spot Training and save checkpoints to S3 with `CheckpointConfig`  
+C) Train with a real-time endpoint  
+D) Train deep learning on CPU instances  
+
+**Answer: B**  
+Explanation: Resumable training fits well with Spot and can save up to 90%, and the key is saving checkpoints to S3 so that training does not restart from scratch when Spot capacity is reclaimed. A has no means of saving cost, C is wrong because endpoints are not for training, and D runs deep learning on CPU, which makes training inefficiently slow.
+
+---
+
+**Question 2.** An internal ML tool's inference endpoint is called only occasionally during business hours, and traffic is 0 at night and on weekends. What is the most appropriate way to reduce cost?
+
+A) A real-time endpoint that always keeps 8 instances  
+B) Switch to serverless inference that scales to 0  
+C) Buy Reserved Instances on a 1-year commitment  
+D) Replace with GPU instances  
+
+**Answer: B**  
+Explanation: For an intermittent workload whose traffic drops to 0, idle periods are the biggest waste, so serverless inference that scales to 0 eliminates the cost of those periods. A keeps paying for 8 instances even when idle, C is a commitment suited to always-on workloads and loses money on an intermittent pattern, and D actually increases cost.
+
+---
+
+**Question 3.** Monthly ML costs greatly exceeded expectations, and the investigation found that data scientists left notebook instances and some real-time endpoints running after use. What is the most effective measure to prevent recurrence?
+
+A) Stop all training  
+B) Configure notebook idle auto-shutdown, clean up unused endpoints, and set `MaxRuntimeInSeconds` on training jobs  
+C) Change the instance types to larger ones  
+D) Delete the S3 buckets  
+
+**Answer: B**  
+Explanation: Always-on resources left running are the cause of the cost spike, so using automatic shutdown mechanisms such as idle notebook auto-shutdown, unused endpoint cleanup, and a maximum training runtime limit lets the system prevent human error. A is an overreaction that halts work, C increases cost, and D loses data and is unrelated to the cause.
+
+---
+
+**Question 4.** Multiple teams use SageMaker in a shared AWS account, and you want to see separately how much ML cost each team and project is incurring. What is the most appropriate method?
+
+A) Use a separate Region for each team  
+B) Attach `Team` and `Project` cost allocation tags to training jobs and endpoints, and aggregate by tag in Cost Explorer  
+C) Unify all resources under a single name  
+D) Look only at CloudWatch logs  
+
+**Answer: B**  
+Explanation: To attribute cost by team and project, the standard approach is to attach cost allocation tags to resources and filter and aggregate by tag in Cost Explorer. A is wrong because separating Regions is not the right way to attribute cost, C removes the distinction instead, and D is only logs and not a cost aggregation tool.
+
+---
+
+**Question 5.** Which of the following incorrectly pairs an instance choice with cost efficiency?
+
+A) XGBoost training → CPU (m5/c5) instances  
+B) Large-scale deep learning training → GPU (g5/p4d) instances  
+C) Reducing deep learning inference cost → AWS Inferentia (inf1/inf2)  
+D) Reducing XGBoost inference cost → switch to high-performance GPU (p4d)  
+
+**Answer: D**  
+Explanation: XGBoost, a tree-based model, gains almost nothing from GPU parallelization, so switching to a high-performance GPU only increases cost without benefit, and CPU is appropriate. A, B, and C are all correct cost-efficiency pairings: traditional ML = CPU, deep learning training = GPU, and deep learning inference acceleration = Inferentia.
 
 ---

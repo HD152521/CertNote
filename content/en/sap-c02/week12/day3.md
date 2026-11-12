@@ -111,7 +111,75 @@ D) Trusted Advisor
 
 **Explanation:** CUR outputs every billing line item, with about 200 columns, hourly to S3 (usually in Parquet), and Athena enables SQL analysis along arbitrary dimensions and aggregations. You analyze at the unit-price level using the lineItem/UsageType columns. A (Cost Explorer) is a daily-granularity visualization that cannot do column-level deep analysis, and API calls are also charged per request. C (Budgets) is a threshold monitoring tool. D (Trusted Advisor) is a rule-based check. Trap: "hourly + all line items + SQL" is always CUR.
 
-[Remaining 3 questions preserved exactly in Korean]
+**Question 2.** The monthly cost of a development account must be automatically blocked from launching new EC2 instances once it exceeds $5,000. Which is the most appropriate?
+A) Monitor cost with a CloudWatch Alarm and send a notification
+B) Budgets (Cost Budget) + Budgets Action that automatically applies an IAM Deny policy
+C) Run a Lambda function daily to check cost and block
+D) A Cost Explorer Forecast alert
+
+**Answer: B**
+
+**Explanation:** A Budgets Action can automatically apply an IAM Deny policy or an SCP when a cost threshold is exceeded, immediately blocking the creation of new resources. A (CloudWatch Alarm) only notifies and has no mechanism to automatically apply IAM/SCP. C (scheduled Lambda) is an after-the-fact batch, not real-time blocking. D (Forecast) only displays a projection and is not a control. Trap: "automatically block when cost is exceeded" is a Budgets Action, and a CloudWatch Alarm is the wrong answer. (Note: because billing data is updated with a delay, if "must never exceed" is emphasized, additionally suspect a preventive SCP.)
+
+---
+
+**Question 3.** A team attached a `CostCenter` tag to every resource, but the last 3 months of cost do not appear separated by tag. What is the most likely cause?
+A) Tags cannot be used to separate cost
+B) The Cost Allocation Tag was activated only recently, and cost from before activation is not retroactively separated
+C) CUR is disabled
+D) There is no Budget
+
+**Answer: B**
+
+**Explanation:** A Cost Allocation Tag separates cost by tag only from the time it is activated in the Billing console, and past cost is not retroactively classified. Therefore the 3 months of cost before activation are not split by tag. A is wrong (tags are the core means of cost separation). C and D are not directly related to tag-based separation. Trap: "I attached the tag but past cost is not split" is due to the principle that it applies only after activation, and the preventive measure is to enforce tags at creation time with Tag Policy + SCP.
+
+---
+
+**Question 4.** In a situation where it is hard to set a specific threshold in advance, you want to automatically detect and be alerted to abnormal cost spikes that differ from the usual pattern using ML. Which is the most appropriate?
+A) AWS Budgets
+B) Cost Anomaly Detection
+C) CloudWatch Alarm
+D) Trusted Advisor
+
+**Answer: B**
+
+**Explanation:** Cost Anomaly Detection uses ML to learn past spending patterns and automatically detects and alerts on statistically abnormal spending without a predefined threshold (a dynamic baseline, not a static threshold). A (Budgets) requires a person to set the threshold. C (CloudWatch) is not anomaly detection based on learning cost patterns. D (Trusted Advisor) is a rule-based check. Trap: "threshold unknown + automatic learned detection" is Cost Anomaly Detection, while "threshold known + enforced blocking" is Budgets (Action). Anomaly Detection only detects and cannot block.
+
+---
+
+**Question 5.** The cost team wants to check whether the Savings Plans it purchased are being wasted (not utilized). Which report should it look at?
+A) The SP Utilization report in Cost Explorer
+B) The SP Coverage report in Cost Explorer
+C) The lineItem columns in CUR
+D) A Budgets Cost Budget
+
+**Answer: A**
+
+**Explanation:** Utilization is the percentage of the purchased commitment that was actually used, and a low value means the commitment is being wasted. So "is the SP being wasted" is answered by the Utilization report. B (Coverage) is the percentage of total usage covered by commitments and answers "should we buy more commitment." C is possible, but the dedicated report is more direct. D is threshold monitoring. Trap: distinguish commitment waste = Utilization, room for additional purchase = Coverage.
+
+---
+
+**Question 6.** In Cost Explorer, "data transfer" cost is a large 25% of the total, but it is not broken down into exactly which traffic it is, so the cause cannot be found. How can you pinpoint the root cause?
+A) Set a data transfer budget with Budgets
+B) Query CUR with Athena and break it down by UsageType
+C) Run Trusted Advisor
+D) Narrow the Cost Explorer filter further
+
+**Answer: B**
+
+**Explanation:** Cost Explorer shows "data transfer" lumped together and cannot distinguish cross-AZ, internet egress, and cross-Region. Querying the lineItem/UsageType column of CUR with Athena lets you break it down into DataTransfer-Regional-Bytes (cross-AZ), DataTransfer-Out-Bytes (egress), and so on, and pinpoint the exact cause. A is control, not analysis. C is a rule-based check. D cannot split down to the column level because of Cost Explorer's granularity limits. Trap: root cause analysis of cost is possible only at the CUR level.
+
+---
+
+**Question 7.** The organizational structure (Team A, Team B) does not map one-to-one to the AWS account and tag structure. You want to logically group cost with rules such as "Team A = account X + tag Project=alpha" and allocate shared NAT Gateway cost to each team in proportion to usage. Which is the most appropriate?
+A) Cost Allocation Tags alone are sufficient
+B) Define rules combining accounts, tags, and services with Cost Categories, and allocate shared cost with a split charge rule
+C) Re-split the accounts
+D) Manually edit CUR
+
+**Answer: B**
+
+**Explanation:** Cost Categories create logical cost groups with rules that combine accounts, tags, and services, and a split charge rule redistributes shared cost (such as a NAT Gateway) to member groups at defined ratios. When the organizational structure differs from the billing structure and shared cost allocation is needed, this mapping and allocation layer fits exactly. A (tags only) separates along a single dimension and makes composite rules and shared cost allocation difficult. C is excessively destructive. D is unrealistic and an anti-pattern that modifies the source data. Trap: grouping with composite rules is Cost Categories, and shared cost allocation is the split charge rule within it.
 
 ---
 

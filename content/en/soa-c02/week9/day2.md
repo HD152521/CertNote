@@ -153,6 +153,68 @@ Explanation: Four-stage placing testSecret before finishSecret precisely for thi
 
 ---
 
-(Continuing with remaining practice problems through 7...)
+**Problem 3.** There is a strict zero-downtime requirement that not even a single authentication failure is allowed at the moment of password rotation. Which rotation strategy is suitable?
+
+A) Single User: simple, so the safest
+B) Alternating Users: keep two DB accounts and rotate the one not in use, guaranteeing zero downtime with a grace period in which the old and new secrets coexist
+C) Turn off rotation and change it manually only
+D) Cross-Region Replication
+
+**Answer: B**
+
+Explanation: With Single User, brief authentication failures can occur in the gap between setSecret and finishSecret and until the cache is refreshed. Alternating Users keeps two accounts (app_user / app_user_clone) and rotates the account that is not currently in use, so the account being rotated is used by no one during rotation. The old account's password remains valid for a while, so even apps that have not yet refreshed their cache work normally; this coexistence grace period is what creates true zero downtime. The cost is managing two DB accounts and configuring master credentials.
 
 ---
+
+**Problem 4.** An attempt to directly rotate the password on a replica secret created by Cross-Region Replication was rejected. Why?
+
+A) Insufficient IAM permissions
+B) The replica is read-only: writes and rotation are possible only on the Primary, a single-source-of-truth design to prevent multi-write conflicts
+C) Because there is no KMS key
+D) A replica becomes writable only after 30 days
+
+**Answer: B**
+
+Explanation: If each Region rotated independently, a write conflict would arise, with Seoul changing it to A and Tokyo to B, making it ambiguous what the "real password" is. Secrets Manager prevents this with a Single Source of Truth pattern that concentrates writes and rotation in the Primary and propagates changes one way to replicas. It is a Primary-Replica replication model like RDS Read Replicas and DynamoDB, and it is a reasonable trade-off given that secrets are read often and written rarely.
+
+---
+
+**Problem 5.** A role in another account (222233334444) must read a secret encrypted with our account's Customer Managed Key. What settings are all required?
+
+A) The secret's Resource Policy only
+B) The secret's Resource Policy + the Destination account's IAM Policy + a KMS Key Policy that allows Decrypt for the external role
+C) The Destination account's IAM Policy only
+D) VPC Peering
+
+**Answer: B**
+
+Explanation: Reading a secret cross-account requires passing all three gates: the Resource Policy ("does this secret allow the external account"), the Destination IAM Policy ("does this role have permission to read within the external account"), and the KMS Key Policy ("can that role use the decryption key"). Secrets are encrypted with KMS by default, so decrypt permission is essential. The most common mistake is a missing KMS Key Policy. Also, the AWS Managed Key (`aws/secretsmanager`) cannot have its Key Policy modified, so cross-account sharing is impossible with it; you must encrypt with a Customer Managed Key from the start.
+
+---
+
+**Problem 6.** A company manages 200 application configuration values and 5 DB credentials. It wants to automatically rotate only the DB credentials while minimizing cost. What is the optimal configuration?
+
+A) Store everything in Secrets Manager
+B) The 200 configuration values in Parameter Store (mostly free), and only the 5 DB credentials that need rotation in Secrets Manager
+C) Store everything in Parameter Store and give up rotation
+D) Manage everything with environment variables
+
+**Answer: B**
+
+Explanation: Secrets Manager costs $0.40 per secret per month, while Parameter Store Standard is free. It is cost-efficient to use Secrets Manager only when automatic rotation or Cross-Region is needed and Parameter Store otherwise (putting 200 configuration values in Secrets Manager would cost $80 per month). Putting only the 5 DB credentials in Secrets Manager automates rotation at a cost of about $2 per month. Parameter Store can also reference Secrets Manager secrets via the `/aws/reference/secretsmanager/` path, which is good for unifying the interface. In keeping with the YAGNI principle, use the expensive service only where rotation is actually needed.
+
+---
+
+**Problem 7.** A company wants to automatically rotate the master password of RDS MySQL every 30 days. Must it write the rotation Lambda itself?
+
+A) Yes, it must implement all four stages, createSecret through finishSecret, itself
+B) No, for RDS, Aurora, DocumentDB, and Redshift, AWS provides a ready-made rotation Lambda, so you only need to specify that Lambda ARN and the interval in `rotate-secret`
+C) RDS does not support automatic rotation
+D) It is possible only with Parameter Store
+
+**Answer: B**
+
+Explanation: AWS provides ready-made rotation Lambdas for RDS/Aurora/DocumentDB/Redshift (for both the Single User and Alternating Users strategies). The four-stage state machine is already implemented for each DB engine, so the user does not need to write code; just specify the Lambda ARN and `AutomaticallyAfterDays=30` in `rotate-secret`. Writing your own is needed only for your own systems for which AWS provides no ready-made Lambda, such as legacy APIs or third-party SaaS tokens, and even then AWS provides a skeleton template.
+
+---
+

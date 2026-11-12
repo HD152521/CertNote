@@ -335,6 +335,28 @@ D) Email notification
 
 ---
 
+**Question 6.** Order events whose order matters must be fanned out to multiple consumers in order. What is the correct configuration?
+
+A) Standard SNS topic -> standard SQS queues
+B) SNS FIFO topic -> SQS FIFO queues
+C) SNS FIFO topic -> standard SQS queues
+D) Standard SNS topic -> SQS FIFO queues
+
+**Answer: B** - For the ordering guarantee to stay unbroken from publishing to consumption, **both ends must be FIFO**. An SNS FIFO topic can be subscribed to **only by SQS FIFO queues**. C) Even if the FIFO topic pushes in order, a standard SQS queue breaks the order at that point, and such a subscription is not allowed in the first place. In A and D, one side is standard, so ordering is not guaranteed.
+
+---
+
+**Question 7.** When SNS repeatedly fails to deliver to an HTTPS endpoint, how can you preserve the messages for later analysis?
+
+A) Turn on SNS message retention
+B) Configure an SNS DLQ (an SQS queue) on that subscription with a redrive policy
+C) Configure a Lambda DLQ
+D) Only set a CloudWatch alarm
+
+**Answer: B** - SNS itself does not retain messages, but if you configure a **DLQ (redrive policy) per subscription**, messages that fail delivery after retries are exhausted are sent to the specified SQS queue and preserved. A) SNS has no retention feature to turn on. C) A Lambda DLQ is a different layer that catches "failed asynchronous Lambda invocations"; here the failure is HTTPS delivery, so the SNS subscription DLQ is correct. D) An alarm is only a notification and cannot preserve messages.
+
+---
+
 ## 📌 Today's Summary
 
 1. SNS: Fully managed pub/sub, Push model, immediate delivery

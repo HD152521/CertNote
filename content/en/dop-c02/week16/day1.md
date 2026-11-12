@@ -95,9 +95,117 @@ Next: Domain 3+4 review: resilience (RTO/RPO math, DR strategies, FIS chaos) and
 
 ## 📝 Practice Questions
 
-**Question 1.** [Complete with 7 practice questions in Korean on domain 1+2, following the established patterns]...
+**Question 1.** You want to run the payment pipeline only when the `services/payment/**` path changes in a monorepo, while queuing commits that arrive at the same time. What configuration is needed?
 
-[Content truncated for token efficiency; follows the same structure as previous day files]
+A) A simple CodePipeline V1 source trigger
+
+B) A CodePipeline V2 `filePaths` trigger filter + an execution mode (QUEUED) setting
+
+C) Parse the path yourself with a Lambda custom action
+
+D) Receive every commit with EventBridge and run the entire pipeline
+
+**Answer: B**
+
+Explanation: CodePipeline V2 supports fine-grained triggers that V1 lacks (`filePaths`, branches, and tags filters) and execution modes (SUPERSEDED/QUEUED/PARALLEL). To run only when a specific path changes, you need V2's `filePaths` trigger, and queuing concurrent commits is the QUEUED execution mode. V1 (A) has no path filters or variables. Lambda parsing (C) and running everything through EventBridge (D) are anti-patterns that needlessly reimplement by hand what V2 provides natively.
+
+---
+
+**Question 2.** You want to configure a Lambda function with a two-step deployment: "route only 50% for 5 minutes, then switch to the remaining 50% if there are no problems." Another function requires "increase by 10% every 10 minutes." What deployment configuration fits each?
+
+A) AllAtOnce for both
+
+B) Two 50% steps = `Canary50Percent5Minutes`, 10% increments = `Linear10PercentEvery10Minutes`
+
+C) Rolling for both
+
+D) 50% = Linear, 10% increments = Canary
+
+**Answer: B**
+
+Explanation: Canary has a **two-step (a small percentage → all the rest)** structure, and Linear is **equal increments of N% every N minutes**. "Two steps of 50% over 5 minutes" fits the definition of Canary exactly (`Canary50Percent5Minutes`), and "10% every 10 minutes" is Linear (`Linear10PercentEvery10Minutes`). D, which swaps the structural difference between the two, is the typical wrong answer. AllAtOnce and Rolling (A, C) do not meet the gradual/two-step requirement. For Lambda, both strategies are combined with alias weighted routing + CloudWatch alarm automatic rollback.
+
+---
+
+**Question 3.** You want to verify at deployment time that a container image has not been tampered with since it was built and was created by a trusted principal. What is the most appropriate mechanism?
+
+A) Encrypt the image with KMS
+
+B) Sign with AWS Signer + ECR Image Signing and verify the signature with Notation at deployment
+
+C) Restrict access with an S3 bucket ACL
+
+D) Restrict push permission with an IAM policy
+
+**Answer: B**
+
+Explanation: Preventing tampering (proving integrity and provenance) is the domain of **signing**. If you sign artifacts with AWS Signer and verify the signature at deployment time with ECR Image Signing/Notation, it guarantees the image is exactly as built and was created by a trusted signer. KMS (A) provides confidentiality (encryption), not integrity or provenance — the lesson of supply chain attacks like SolarWinds is that "even an encrypted, signed channel is powerless if the build is contaminated," which is why SLSA/SBOM/signature verification became the standard. ACLs (C) and push restrictions (D) are only access control, not proof of integrity.
+
+---
+
+**Question 4.** You want to periodically and automatically detect the possibility that someone manually changed resources managed by CloudFormation in the console, and send a notification when found. What is the most appropriate pattern?
+
+A) Create a change set every time
+
+B) Run Drift Detection periodically with an EventBridge scheduled rule + SNS notification when drift is found (or a Config rule + auto-remediation)
+
+C) Block all changes with a stack policy
+
+D) Configure a rollback configuration
+
+**Answer: B**
+
+Explanation: Drift is "the difference between the declarative code state and the actual state," and automatic detection is a pattern of running Drift Detection periodically with an EventBridge scheduled rule and notifying the result through SNS, or using the AWS Config stack drift rule + auto-remediation to revert to the code state. A change set (A) is only a preview of changes before applying, not after-the-fact drift detection. A stack policy (C) protects specific resources during stack updates and does not detect manual console changes. A rollback configuration (D) is a rollback trigger when a deployment fails.
+
+---
+
+**Question 5.** You want to roll out an application's feature flags gradually, block incorrect configuration values before deployment, and roll back automatically when a problem occurs. What is the most appropriate combination?
+
+A) Store the flags in Parameter Store SecureString
+
+B) AppConfig + Validator (JSON Schema/Lambda) + Deployment Strategy (gradual rollout) + CloudWatch alarm automatic rollback
+
+C) Store the flags in Secrets Manager and rotate them
+
+D) Keep the flags in DynamoDB and have the application poll directly
+
+**Answer: B**
+
+Explanation: AppConfig is the only service that treats configuration changes "like deployments" — it provides pre-validation with a Validator (blocking incorrect values), gradual rollout with a Deployment Strategy, and automatic rollback through CloudWatch alarm integration. Parameter Store (A), Secrets Manager (C), and a homegrown DynamoDB approach (D) have no built-in validation, gradual deployment, or automatic rollback. However, remember that AppConfig is a polling model (not push).
+
+---
+
+**Question 6.** A CodePipeline in the Tooling (CICD) account tries to deploy a CloudFormation stack cross-account to a Spoke account, but fails with an "Access Denied (KMS)" error. What is the most common root cause?
+
+A) The Spoke account lacks CloudFormation permissions
+
+B) The artifacts are encrypted with the Tooling account's KMS CMK, but the KMS key policy does not allow the Spoke account's deployment role to decrypt with that key (both the S3 bucket policy and the KMS key policy must allow the Spoke)
+
+C) The pipeline is V1
+
+D) A change set was not created
+
+**Answer: B**
+
+Explanation: This is the classic trap of cross-account pipelines. If artifacts in the Tooling account's S3 are encrypted with a KMS CMK, then for the Spoke's deployment role to read them, (1) the S3 bucket policy must allow the Spoke and (2) **the KMS key policy must also allow the Spoke to decrypt**. If either is missing, a KMS Access Denied occurs. Beginners fix only S3 and forget KMS. CloudFormation permissions (A), whether it is V1 (C), and change sets (D) are not causes of a KMS error.
+
+---
+
+**Question 7.** In a new AWS environment, you want to configure GitHub Actions to deploy to AWS resources without static access keys. What is the most appropriate method?
+
+A) Create an IAM user and store the access keys in GitHub Secrets
+
+B) Register an IAM OIDC identity provider and configure GitHub Actions to obtain short-lived credentials through `AssumeRoleWithWebIdentity`
+
+C) Use root account credentials
+
+D) Migrate to CodeCommit
+
+**Answer: B**
+
+Explanation: Static keys are the source of leak and rotation burdens. GitHub Actions issues GitHub's OIDC token; if you register an OIDC identity provider in AWS and allow only a specific repo/branch in the trust policy, it can receive short-lived STS credentials through `AssumeRoleWithWebIdentity` and deploy — there are no long-term keys at all. IAM user keys (A) are the static key anti-pattern, root credentials (C) are a serious security violation, and migrating to CodeCommit (D) is inappropriate because new sign-ups are closed. For the same purpose (eliminating static keys) from on-premises machines, use IAM Roles Anywhere.
+
+---
 
 ## 📌 Today's Summary
 

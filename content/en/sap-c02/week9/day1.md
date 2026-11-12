@@ -205,6 +205,42 @@ Explanation: [Korean explanation preserved exactly as-is per translation rules]
 
 ---
 
+**Question 5.** Kinesis Firehose drops a small Parquet file (average 800 KB) into S3 every minute. After 1,440 files per day x 90 days, about 130,000 files have piled up, Athena queries have become slow, and S3 GET request cost has increased. What is the most appropriate solution?
+
+A) Change the file format to ORC
+B) Increase the Firehose buffer size and apply periodic compaction (merging small files)
+C) Partition more finely, down to the minute
+D) Use S3 Select instead of Athena
+
+**Answer: B**
+Explanation: This is the Small File Problem. The ideal Parquet file size is 128 MB to 1 GB, and with hundreds of thousands of 800 KB files, the footer metadata read overhead and the number of S3 GET requests explode. Increase the Firehose buffer size (or buffer interval) to produce larger files, and merge the small files already accumulated (compaction) with Glue ETL repartition/coalesce or Athena CTAS. A (ORC) changes only the format, and the small file problem remains the same. C partitions more finely and makes the problem worse. D (S3 Select) is for partial retrieval from a single object, not for large-scale analytical queries. Trap: "hundreds of thousands of small files + slow queries" calls for compaction, not a format change.
+
+---
+
+**Question 6.** You must join S3 data in the data lake (customer orders) with real-time inventory data in an operational DynamoDB in a single SQL query. How can you query them together without moving or replicating the data?
+
+A) Export DynamoDB to S3 and then query with Athena
+B) Athena Federated Query + DynamoDB connector
+C) Redshift Spectrum
+D) Create a joined table hourly with Glue ETL
+
+**Answer: B**
+Explanation: Athena Federated Query directly queries and joins data sources outside S3 (DynamoDB, RDS, CloudWatch, Redshift, and others) with SQL through Lambda connectors. Without moving or replicating data, the connector fetches the needed data from the source at query time (minimized with predicate pushdown). A involves data movement and loses real-time freshness. C is for S3/Redshift data and does not join DynamoDB directly. D replicates hourly, so it lacks real-time freshness and adds operational burden. Trap: "a unified query across multiple sources without moving data" is Federated Query. However, Federated Query is suited to joining small reference data and is unsuitable for analyzing an entire large operational DB (in that case, replicate to S3 with DMS and then query).
+
+---
+
+**Question 7.** A Glue ETL job must transform only new data in Raw to Curated every day. Reprocessing all the data each time accumulates cost and time. Which feature is most appropriate?
+
+A) Re-run the Glue Crawler
+B) Enable Glue Job Bookmark
+C) Athena Result Reuse
+D) DataBrew profiling
+
+**Answer: B**
+Explanation: Glue Job Bookmark stores the input processed in the previous run as state (file names and timestamps of S3 objects, keys/timestamps for JDBC) and provides incremental ETL that processes only the newly added data in the next run. A (Crawler) is for schema inference and catalog registration, not incremental ETL processing. C (Result Reuse) reuses Athena query results and is unrelated to Glue ETL. D (DataBrew) is no-code profiling. Trap: a Bookmark means "skip inputs already processed," not preventing duplicate output, so if exactly-once is needed, you must additionally design Iceberg/Hudi MERGE or an idempotent output key.
+
+---
+
 ## 📌 Today's Summary
 
 [Korean summary preserved exactly as-is per translation rules]

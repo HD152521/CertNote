@@ -378,6 +378,102 @@ Explanation: A single service restart is a low-risk action, and the standard pat
 
 ---
 
+**Question 7.** An EC2 instance is unresponsive because of a failure in the underlying host hardware. You want to recover it automatically onto healthy hardware while keeping the same IP, ENI, and EBS volumes. What is the correct configuration?
+
+A) Place it in an ASG and set health-check-type to EC2
+
+B) An alarm on the `StatusCheckFailed_System` metric + the `ec2:recover` alarm action
+
+C) A `StatusCheckFailed_Instance` alarm + terminate and recreate with Lambda
+
+D) Fail over with a Route 53 health check
+
+**Answer: B**
+
+Explanation: `StatusCheckFailed_System` indicates a failure in AWS-side infrastructure (host hardware, network), and the `ec2:recover` action brings the instance back up on healthy hardware with the same ID, ENI, IP, and EBS volumes (only instance store is lost). This is a closed loop built into the platform, so it is proven. `StatusCheckFailed_Instance` (C) refers to problems inside the instance such as the OS, application, or network configuration, which recover does not fix; distinguishing system failures from instance failures is the key. The ELB health check (the EC2 type in A) cannot catch zombie instances, and Route 53 (D) performs Region/endpoint failover, not hardware recovery for a single instance.
+
+---
+
+**Question 8.** You want to build a recovery in which branching, waiting, retries, and compensation are intertwined: "RDS failover → wait for completion → invalidate cache → verify health → on failure escalate to a human, on success report to Slack + create a ticket." What is the most suitable approach?
+
+A) Implement failover, invalidation, health verification, and escalation all in a single Lambda function with if-else branching and sleep waits
+
+B) A Step Functions state machine — Retry/Catch on each step, state persistence, Saga compensation
+
+C) Build each step as an EventBridge rule and chain them so that one step's completion event triggers the next rule
+
+D) A Lambda function polling every minute via cron checks the current recovery stage and decides the next action to proceed
+
+**Answer: B**
+
+Explanation: A workflow with intertwined branching, waiting, retries, and compensation is a fit for Step Functions — you declaratively attach Retry (backoff) and Catch (compensating transactions) to each step, the service persists workflow state, and the execution history is visualized, which makes post-incident analysis easy. This is an implementation of the Saga pattern, which breaks a distributed transaction into compensable steps. A single Lambda function (A) has the 15-minute limit, state loss, and sleep cost problems, and an EventBridge chain (C) is poor at expressing branching, waiting, and compensation.
+
+---
+
+**Question 9.** You want to notify a Slack channel of CodePipeline failures in the simplest, most standard way. What is the most suitable approach?
+
+A) Trigger a Lambda function on every pipeline failure event and call a Slack Incoming Webhook directly
+
+B) A CodeStar Notifications rule → AWS Chatbot (Slack channel) target
+
+C) A cron Lambda function polls the CodePipeline CloudWatch Logs, finds failure logs, and posts them to Slack
+
+D) Add a manual approval stage to the pipeline so that the approver receives a Slack notification on failure
+
+**Answer: B**
+
+Explanation: CodeStar Notifications is the standard path for status-change notifications from CodePipeline/CodeBuild/CodeDeploy/CodeCommit; you only declare "which event types go to which channel," and internally it flows EventBridge → SNS → Chatbot. Calling a Lambda webhook directly (A) and polling logs (C) are unnecessary glue code that adds retry, authentication, and maintenance burden. On the exam, "simplest/standard" points to CodeStar Notifications + Chatbot. This reflects DOP's consistent principle that "the most managed option" is the right answer.
+
+---
+
+**Question 10.** An operations team built automated recovery logic, but when a real outage first occurred, it did not work because of a bug (like the restart path in the 2017 S3 incident). What is the standard approach for discovering such "rusty automation" in normal times?
+
+A) Write more automation code to cover every possible failure case in advance without gaps
+
+B) Regularly inject failures with AWS FIS and rehearse the entire automated recovery, notification, and runbook in a Game Day (chaos engineering)
+
+C) Turn off the unreliable automated recovery in production and operate only proven, human-centered manual response
+
+D) Extend the retention period of related logs so that automation failures can be traced afterward
+
+**Answer: B**
+
+Explanation: The big risk of automated recovery is that it rusts because it is not triggered in normal times, and only when a real outage occurs does it run for the first time and expose its bugs. Chaos engineering is the philosophy that "failures will happen, so let's cause them in advance in a controlled environment to discover weaknesses" (originating with Netflix's Chaos Monkey), and AWS FIS safely injects EC2 termination, resource stress, and network/AZ failures (including stop-condition alarms). A Game Day is an event where the team gathers to rehearse the entire response. The Well-Architected Reliability pillar (REL12) also specifies regular failure testing.
+
+---
+
+**Question 11.** Payment events processed through EventBridge are occasionally processed twice, causing double billing. What are the root cause and the fix?
+
+A) EventBridge delivering events more than once is a bug, so contact AWS Support and request a fix
+
+B) EventBridge delivery is at-least-once, so duplicates are normal — add idempotency logic to the consumer (event-ID-based duplicate blocking: DynamoDB conditional write, Lambda Powertools Idempotency)
+
+C) Set the RetryPolicy of the EventBridge target to 0 to eliminate duplicate deliveries caused by retries at the source
+
+D) Remove the payment consumer's DLQ so that failed events are not re-injected and reprocessed, simplifying the path
+
+**Answer: B**
+
+Explanation: EventBridge's delivery guarantee is at-least-once (minimum once), and by the nature of distributed systems the same event can be delivered twice (exactly-once is generally not guaranteed). Idempotency (f(f(x))=f(x), the concept of idempotent HTTP methods in RFC 9110) is the consumer's responsibility for preventing duplicate processing — use optimistic concurrency control keyed on the event ID (DynamoDB ConditionExpression) or Lambda Powertools Idempotency. A RetryPolicy of 0 (C) causes loss on transient failures, and removing the DLQ (D) causes loss of permanently failed events. Duplicates are not a bug (A) but designed behavior, and this is the number-one anti-pattern in integration automation.
+
+---
+
+**Question 12.** You want to send incidents securely, including authentication, from EventBridge to an external SaaS (PagerDuty) without coding authentication renewal, rate limiting, retries, and secret management yourself. What is the most suitable approach?
+
+A) A Lambda function calls the PagerDuty REST API directly and handles authentication by storing the API key in an environment variable
+
+B) EventBridge API Destination + Connection (authentication managed through Secrets Manager, rate limiting, using EventBridge retries and DLQ)
+
+C) Send incident notifications to PagerDuty's email integration address via an SNS Email subscription
+
+D) Write events to S3 and have PagerDuty poll the bucket periodically to create incidents
+
+**Answer: B**
+
+Explanation: EventBridge API Destinations provide managed calls to external HTTPS endpoints — the Connection stores the authentication (API Key/OAuth/Basic) and manages secrets through Secrets Manager, rate limiting protects the external API, and on failure you get the EventBridge retry and DLQ safety nets. A direct Lambda call (A) means you must manually manage authentication renewal, rate limiting, retries, and secret rotation, and keeping the API key in an environment variable creates exposure risk. Email (C) and S3 polling (D) are unsuitable in terms of reliability and latency. This extends EventBridge's philosophy of "absorbing glue code into a managed service."
+
+---
+
 ## 📌 Today's Summary
 
 There are three key takeaways today. First, the **5-stage pipeline** (Detect → Route → Respond → Notify → Learn) provides the structure of every incident, and tool selection at each stage determines success or failure. Second, the **decision tree** guides which tier of automation and which level of human intervention are needed depending on severity, detectability, and scope. Third, **safety nets** (bounded count, circuit breaker, approval gate, change window) prevent both automation runaways and excessive escalation, enabling stable automation. Once this structure is established, the operations team can focus on improving the system instead of fixing recurring problems.

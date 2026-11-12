@@ -395,6 +395,22 @@ Explanation: FIS is **controlled chaos**. You must specify a StopCondition (stop
 
 ---
 
+**Question 7.** GuardDuty detects a compromised EC2 instance. You want isolation (swapping the security group) and a forensic snapshot to run automatically, and instance termination to run only after human approval. What is the key principle behind this design decision?
+
+A) Automate every action to bring MTTR to zero
+
+B) Reversible actions (isolation, snapshot) are automatic, and irreversible actions (termination) go through a human approval gate — limiting the blast radius for irreversible operations
+
+C) Require human approval for every action to maximize safety
+
+D) Run termination automatically first and report afterward
+
+**Answer: B**
+
+Explanation: The key judgment in automation design is to split automatic from manual by the reversibility of the action. Isolation (security group swap) can be undone if it turns out to be wrong, so automate it to block the threat quickly; termination is irreversible (loss of data and evidence), so put a human approval gate (SSM `aws:approve` or a Step Functions callback) in front of it. This is the principle of limiting the blast radius of automation for irreversible operations. Automating everything (A) magnifies irreversible damage on false positives, and making everything manual (C) throws away the benefit of automation. Running termination first (D) is the worst irreversible mistake.
+
+---
+
 ## 📌 Today's Summary
 
 There are five key takeaways today. First, **MAPE-K** (Monitor-Analyze-Plan-Execute-Knowledge) is the framework for a self-healing loop, with AWS services implementing each stage. Second, the **self-healing action tiers** reflect trade-offs from Tier 1 (restart, safe) to Tier 5 (blue-green, risky), and protect safety through staged escalation. Third, **safety nets** (Automation Circuit Breaker, exponential backoff, execution count, change window) prevent runaway self-healing. Fourth, **FIS (Fault Injection Simulator)** is proactive chaos testing that validates recovery procedures before a real failure arrives. Fifth, shifting from human-centered to system-centered operations as scale grows shortens recovery time from minutes to seconds and transforms the customer experience from "outage" to "transparent healing."

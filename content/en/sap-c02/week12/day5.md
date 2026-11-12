@@ -169,7 +169,147 @@ Memory recommendations need **CloudWatch Agent** (semantic gap from hypervisor o
 
 ## 📝 Practice Questions
 
-[All 11 questions preserved exactly in Korean as required]
+**Question 1.** A company uses EC2, Fargate, and Lambda and frequently changes instance families depending on the workload. It wants to apply discounts as broadly as possible with a 1-year commitment. Which is the most appropriate?
+A) Standard RI (m5 family, 3-year All Upfront)
+B) EC2 Instance Savings Plans (fixed Region and family)
+C) Compute Savings Plans
+D) Spot Fleet (capacity-optimized, diversified pools)
+
+**Answer: C**
+
+**Explanation:** Compute SP covers EC2, Fargate, and Lambda, and automatically applies the discount to usage within the hourly commitment amount regardless of Region, OS, family, and tenancy. It fits exactly the requirement to change families frequently and apply a unified discount across all three compute types. A is tied to a family and cannot cover Fargate or Lambda. B fixes the Region and family, which conflicts with "frequently changes families." D carries interruption risk, which differs from a "stable discount based on a commitment." Trap: including Fargate and Lambda is possible only with Compute SP.
+
+---
+
+**Question 2.** After the cost team purchased a large amount of RIs and SPs at the same time, SP utilization is below 100%. What are the most likely cause and the corrective action?
+A) SP can never reach 100% utilization, so leave it as is
+B) The RIs absorbed the usage first, leaving too little for the SP to match; reduce RIs or standardize new commitments on SP
+C) Compute SP cannot cover Fargate; replace it with EC2 Instance SP
+D) SP is not shared in consolidated billing; repurchase per account
+
+**Answer: B**
+
+**Explanation:** The billing engine applies the most specific commitments first (Zonal RI, then Regional RI) and applies the flexible SP afterward. If you buy too many RIs, the RIs claim usage every hour first, which reduces the remaining usage available for the SP to match and lowers SP utilization. The corrective action is to reduce RIs or standardize new commitments on SP. A is wrong (100% is possible with an appropriately sized commitment). C is wrong (Compute SP includes Fargate). D is wrong (SP is shared in consolidated billing). Trap: when SP utilization is low, first suspect "RI over-commitment claiming usage first," not "insufficient usage."
+
+---
+
+**Question 3.** A distributed data processing job runs only at night, can be restarted if interrupted, and must cut cost as much as possible. Multiple instance types can be used. Which is the most appropriate?
+A) On-Demand with a single type, started only at night
+B) Standard RI with a 3-year commitment to minimize the hourly rate
+C) Spot Fleet with the capacity-optimized strategy and diversified instance pools
+D) Compute Savings Plans with a 1-year commitment for a stable discount
+
+**Answer: C**
+
+**Explanation:** Interruption tolerance plus maximum savings is the signal for Spot, and the key to stability is pool diversification. With capacity-optimized you select the pools with the lowest reclaim risk, and by grouping multiple types, even if one pool is reclaimed it is replaced by another pool, which lowers the interruption rate (the principle of diversified investment). A is the list price. B is wasteful, since a 24-hour commitment is a waste for a workload that runs only at night. D gives a smaller discount than Spot and carries a commitment burden. Trap: Spot stability comes from capacity-optimized plus pool diversification, not from "lowest-price."
+
+---
+
+**Question 4.** Lambda functions and ECS tasks in a private subnet access S3 and DynamoDB, and the NAT Gateway data processing cost is very high. How can you bring the cost close to zero?
+A) Deploy Interface Endpoints (PrivateLink) for S3 and DynamoDB in each AZ
+B) S3 and DynamoDB Gateway Endpoints
+C) Scale out NAT Gateways per AZ to distribute the throughput
+D) Route the private subnet directly to an Internet Gateway
+
+**Answer: B**
+
+**Explanation:** Routing S3 and DynamoDB through **Gateway Endpoints** bypasses the NAT and adds no hourly charge, so the cost of that traffic is effectively zero. A (Interface Endpoint) is for other services such as SQS and KMS and has an hourly charge. C actually increases cost. D breaks the isolation of the private subnet and violates security. Trap: distinguish S3 and DynamoDB as Gateway Endpoints (free) and other AWS services as Interface Endpoints (paid).
+
+---
+
+**Question 5.** Data transfer cost is a large 25% of the total, but Cost Explorer cannot break down which traffic it is. How can you pinpoint the root cause?
+A) Set a budget and alerts for the data transfer item with Budgets
+B) Query CUR with Athena and break it down by UsageType
+C) Run Trusted Advisor to check the cost category
+D) Narrow the Cost Explorer filter further by service and UsageType
+
+**Answer: B**
+
+**Explanation:** Cost Explorer shows "data transfer" lumped together and cannot distinguish cross-AZ, internet egress, and cross-Region. Querying the lineItem/UsageType column of CUR with Athena lets you break it down into DataTransfer-Regional-Bytes (cross-AZ), DataTransfer-Out-Bytes (egress), NatGateway-Bytes, and so on, and pinpoint the cause. A is control, C is a rule-based check, and D cannot break down to the column level because of granularity limits. Trap: root cause analysis of cost is possible only at the CUR level.
+
+---
+
+**Question 6.** You want to serve static web content stored in S3 to global users while minimizing egress cost and latency. Which is the most appropriate?
+A) Make the S3 bucket public and egress directly through the Internet Gateway
+B) CloudFront + S3 (+ Origin Shield)
+C) S3 Transfer Acceleration to speed up transfers via the edge
+D) Global Accelerator to provide static IPs and an Anycast path
+
+**Answer: B**
+
+**Explanation:** Placing CloudFront in front of S3 makes S3-to-CloudFront transfer free, which reduces egress, and edge caching reduces origin load and global latency. Origin Shield is an additional caching layer that further reduces origin hits. A has higher egress cost and no caching. C (Transfer Acceleration) is for accelerating uploads. D (Global Accelerator) is for static IPs and non-HTTP acceleration, and its purpose differs from distributing cached static content. Trap: "global static content + lower cost and latency" is CloudFront + S3.
+
+---
+
+**Question 7.** You want to automatically and immediately block creation of new EC2 instances when the monthly cost of a development account exceeds a threshold. However, you also need a guarantee (a hard cap) that the threshold can never be exceeded, regardless of billing delay. Which is the most appropriate combination?
+A) Send only an SNS notification from a CloudWatch Billing Alarm when the threshold is exceeded
+B) Block after the fact with a Budgets Action (IAM/SCP Deny), plus a preventive SCP/Service Quotas to limit the resources themselves in advance
+C) Check cost with a daily Lambda schedule and terminate instances when it is exceeded
+D) Detect and alert on abnormal cost with ML-based Cost Anomaly Detection
+
+**Answer: B**
+
+**Explanation:** A Budgets Action automatically applies an IAM/SCP Deny when the threshold is exceeded, blocking new creation. However, because of the delay in updating billing data (eventual consistency), Budgets alone cannot guarantee a hard cap, so it is supplemented by setting an upper limit in advance with a preventive SCP (forbidding specific instance types, Regions, or services) or Service Quotas. A only notifies, C is an after-the-fact batch and not real-time, and D only detects. Trap: "automatic blocking" is a Budgets Action, but when "must never exceed" is emphasized, add preventive controls alongside it.
+
+---
+
+**Question 8.** You want to replace instances operated by an Auto Scaling Group with smaller, newer-generation types according to Compute Optimizer recommendations. What is the correct method?
+A) Stop each instance, change the type with ModifyInstanceAttribute, then start it
+B) Put the recommended type in a new version of the Launch Template and perform a rolling replacement with Instance Refresh
+C) Delete the ASG, create a new ASG with the recommended type, and switch traffic
+D) Terminate the instances directly, and the ASG automatically relaunches them with the new type
+
+**Answer: B**
+
+**Explanation:** If you directly stop or modify an instance in an ASG, it fails the health check and is terminated and recreated, coming back with the original type from the old Launch Template. The correct method is to put the recommended type in a new version of the Launch Template and perform a rolling replacement with Instance Refresh while honoring MinHealthyPercentage, with nearly no downtime. A fails because the ASG interferes, C is excessively destructive, and D recreates with the old type. Trap: ASG rightsizing is Launch Template + Instance Refresh, not a direct modify.
+
+---
+
+**Question 9.** Compute Optimizer gives CPU and network recommendations for EC2 but no memory recommendation at all. What is the cause?
+A) Compute Optimizer does not support memory recommendations at all
+B) The CloudWatch Agent is not installed on the guest OS, so memory metrics are not collected
+C) Insufficient IAM permissions blocked all Compute Optimizer recommendations
+D) The 14-day lookback period has not yet elapsed, so the recommendation is pending
+
+**Answer: B**
+
+**Explanation:** The hypervisor cannot see memory inside the guest OS (the virtualization semantic gap), so memory metrics are collected only if the CloudWatch Agent is installed. Without the agent, recommendations for the CPU, network, and disk that Nitro instruments automatically appear, but only the memory recommendation is missing. A is wrong (Compute Optimizer provides memory recommendations). With C, no recommendations would appear at all. With D, there would also be no CPU recommendations. Trap: "only the memory recommendation is missing" is almost always the CloudWatch Agent not being installed.
+
+---
+
+**Question 10.** An Organization with 50 member accounts wants to minimize total compute cost while maximizing commitment utilization. Which commitment purchase strategy is most appropriate?
+A) Each member account purchases and manages SPs individually based on its own usage
+B) Purchase SPs centrally in the management account (or a dedicated billing account) sized to the Organization-wide baseline, with sharing enabled
+C) Each member account purchases Standard RIs individually for its own family
+D) Use only On-Demand with no commitment and analyze afterward with Cost Explorer
+
+**Answer: B**
+
+**Explanation:** In consolidated billing, SP and RI discounts apply across the whole Organization when sharing is enabled. Pooling multiple workloads cancels out variability (the law of large numbers), so it is safe to commit tightly to the usage baseline, and when one account is idle, a busy account absorbs the unused commitment, which raises utilization. A and C over-commit per account and leave idle commitments. D gives up the discount. Trap: "purchase individually in each member account" is a classic wrong answer on the Pro exam; central consolidated purchase and sharing is the correct answer.
+
+---
+
+**Question 11.** A media company holding a large number of m4 Standard RIs tried to modernize its workload to m6i and ended up with the old RIs idle and the new instances billed On-Demand. What should the new commitment be to prevent the same problem in the future?
+A) Purchase additional m4/m5 Standard RIs to match the existing commitments
+B) Compute Savings Plans (or Convertible RI)
+C) Zonal RI to reserve capacity in a specific AZ
+D) Cancel all commitments and switch to On-Demand
+
+**Answer: B**
+
+**Explanation:** When a family change (m4 to m6i) is expected, you need a commitment that is not tied to a family. Compute SP automatically matches regardless of family, Region, and OS, so the commitment remains valid after modernization (a Convertible RI can also work through exchange, but the procedure is cumbersome, so Compute SP is operationally superior). A repeats the same trap. C is for AZ-specific capacity and has nothing to do with family flexibility. D gives up the discount. Trap: placing a family-bound commitment (Standard RI) on a workload where modernization or technology change is expected is an anti-pattern.
+
+---
+
+**Question 12.** S3 cost keeps increasing without explanation, and the console object list does not reveal the cause. What hidden cost should you suspect most, and what is the corrective action?
+A) Accumulated Glacier retrieval and restore charges; convert objects to S3 Standard
+B) Accumulated fragments of failed incomplete multipart uploads; confirm with Storage Lens and clean up with a Lifecycle rule (for example, abort after 7 days)
+C) CloudFront edge cache storage cost; disable the cache
+D) A Cost Explorer aggregation bug; request a correction through a support ticket
+
+**Answer: B**
+
+**Explanation:** When a multipart upload fails midway, partial chunks continue to be stored and billed without appearing in the normal listing. In large environments they can accumulate to tens of TB. The standard action is to confirm the accumulated amount of incomplete multipart uploads with S3 Storage Lens and automatically abort and delete them after a set period with a Lifecycle rule (also check old versions). A, C, and D are not the cause. Trap: the top suspects for "invisible S3 storage cost" are incomplete multipart uploads and uncleaned versions.
 
 ---
 

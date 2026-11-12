@@ -325,6 +325,28 @@ D) Delay queue
 
 ---
 
+**Question 6.** An SQS consumer's queue is often empty, yet the API cost is high. Which cause and fix is correct?
+
+A) Messages are too large - reduce their size
+B) Short polling is repeatedly receiving empty responses - set WaitTimeSeconds to 1-20 seconds to apply long polling
+C) The visibility timeout is too short - increase it
+D) The queue is not FIFO - switch to FIFO
+
+**Answer: B** - The default **short polling (WaitTimeSeconds=0)** makes `ReceiveMessage` respond immediately, so calls that return empty responses keep being billed even while the queue is empty. **Long polling** (WaitTimeSeconds 1-20) makes a single call wait until a message arrives (or 20 seconds), greatly reducing empty responses and the number of API calls. Setting `ReceiveMessageWaitTimeSeconds=20` on the queue attribute is the recommended pattern. A, C, and D are unrelated to the cause of the cost leak.
+
+---
+
+**Question 7.** Which statement about SQS's "at-least-once delivery" guarantee is the most accurate?
+
+A) Messages are never duplicated
+B) Messages are not lost, but they can be duplicated, because "exactly once" is practically impossible on an unreliable network
+C) Messages are delivered exactly once
+D) Messages can occasionally be lost
+
+**Answer: B** - If the delete ACK is lost on the network, the queue cannot be sure whether the message was processed. Choosing "if unsure, send it again" means no loss but possible duplicates (at-least-once), while choosing the opposite creates a risk of loss (at-most-once). As the Two Generals Problem shows, perfect agreement over an unreliable channel is impossible, so SQS chooses "do not lose, but allow duplicates" and lets idempotency absorb the duplicates. A and C are not guaranteed on standard queues (FIFO is also limited to the 5-minute window), and D contradicts the definition of at-least-once.
+
+---
+
 ## 📌 Today's Summary
 
 1. SQS: Fully managed message queue, maximum 256KB, default 4-day retention

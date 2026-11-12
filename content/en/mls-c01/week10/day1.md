@@ -125,4 +125,60 @@ Tomorrow: Real-time operations — endpoint structure, scaling, multi-model host
 
 ## 📝 Practice Questions
 
-[Questions in Korean, matching pattern...]
+**Question 1.** A team wants to compute churn scores for all 20 million users in a batch at midnight every day and load them into a data warehouse. Users are not waiting for the results in real time. Which inference method is the most cost-effective?
+
+A) Run 2 Real-time Endpoints at all times  
+B) Serverless Inference  
+C) Batch Transform  
+D) Asynchronous Inference  
+
+**Answer: C**  
+Explanation: The keywords "no real-time response needed + bulk batch processing" point to Batch Transform. You are billed only while the job runs, so there is no always-on endpoint cost. Real-time (A) wastes money on idle billing, Serverless (B) is for small payloads and low-volume calls, and Asynchronous (D) is for online queuing, whereas Batch is suited to processing an entire batch dataset.
+
+---
+
+**Question 2.** A model takes a 500 MB high-resolution satellite image as input and runs inference for about 8 minutes. The result does not need to be immediate, and you want to be notified when processing completes. Which option is appropriate?
+
+A) Real-time Endpoint  
+B) Asynchronous Inference  
+C) Serverless Inference  
+D) Batch Transform  
+
+**Answer: B**  
+Explanation: The payload greatly exceeds the 6 MB / 60 second limit (500 MB, 8 minutes), so Real-time (A) and Serverless (C, 4 MB) are not possible. Asynchronous supports up to 1 GB and 1 hour and notifies completion through SNS. Batch (D) is used for bulk processing of a dataset, not for single online requests.
+
+---
+
+**Question 3.** A tool used by internal analysts is called an average of 30 times a day at irregular times. The payload is small, and a slight delay on the first request is acceptable. You want idle cost to be zero. What should you choose?
+
+A) Serverless Inference  
+B) Real-time Endpoint with auto scaling  
+C) Batch Transform  
+D) Multi-model endpoint  
+
+**Answer: A**  
+Explanation: Intermittent, unpredictable traffic + small payload + tolerable cold start + zero idle cost is the classic Serverless scenario. Real-time (B) keeps a minimum number of instances running even with auto scaling, so a true zero cost is hard. Batch (C) is not for online requests, and multi-model (D) is a technique for hosting many models, not a cost pattern.
+
+---
+
+**Question 4.** An e-commerce site's real-time recommendation API receives thousands of requests per second at a steady rate and must respond within a p99 latency of 50 ms. Which inference method is the most suitable?
+
+A) Asynchronous Inference  
+B) Batch Transform  
+C) Serverless Inference  
+D) Real-time Endpoint  
+
+**Answer: D**  
+Explanation: Sustained high traffic plus a strict low-latency requirement is the very definition of an always-on Real-time Endpoint. Asynchronous (A) is queue-based near-real-time, Batch (B) is offline, and Serverless (C) has cold starts that make it hard to guarantee a strict p99 latency.
+
+---
+
+**Question 5.** Which of the following is correct about the payload/response limits of a Real-time Endpoint?
+
+A) Payload 1 GB, up to 1 hour of processing  
+B) Payload 6 MB, response within 60 seconds  
+C) Payload 100 MB, unlimited time  
+D) Payload 4 MB, GPU required  
+
+**Answer: B**  
+Explanation: Synchronous Real-time invocations have a payload limit of 6 MB and a response limit of 60 seconds. 1 GB and 1 hour (A) are Asynchronous, large unlimited capacity (C) is closer to a Batch Transform characteristic, and 4 MB (D) is the Serverless payload limit, and a GPU is not required either.

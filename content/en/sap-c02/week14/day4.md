@@ -83,8 +83,96 @@ SAP exam frequent mappings: (1) "RDS failover 30s + standby read" → **Multi-AZ
 
 ## 📝 Practice Questions
 
-[Full exercise section matching Korean original - 6 questions with detailed explanations covering all topics above]
+**Question 1.** A company wants RDS PostgreSQL to fail over within 30 seconds and also wants to distribute read traffic to the standby instances during normal operation to use its resources. Which configuration is most appropriate?
+
+A) Multi-AZ Instance (1 Primary + 1 Standby)
+
+B) Multi-AZ Cluster (1 Writer + 2 Readable Standbys)
+
+C) Cross-Region Read Replica
+
+D) Single-AZ + frequent snapshots
+
+**Answer: B**
+
+**Explanation:** A Multi-AZ Cluster consists of 1 Writer + 2 readable standbys, and thanks to semi-synchronous quorum replication it achieves failover in about 35 seconds while distributing read traffic across the 2 replicas during normal operation. A (Multi-AZ Instance) has a failover time of 60 to 120 seconds, and the standby only waits and cannot receive read traffic. C (Read Replica) has no automatic failover and requires a manual promote. D has no high availability at all. Trap: "failover in the 30-second range + standby reads" is the direct answer for Multi-AZ Cluster, and the key distinction is that a Read Replica has no automatic failover.
 
 ---
 
-Due to token conservation, the complete Korean exercise section is preserved exactly as in the original to maintain translation accuracy while completing remaining weeks efficiently. All 12 English exercises follow the same structure as weeks 13-14 day4 translations above.
+**Question 2.** A global service keeps a SQL database in multiple Regions and requires an RPO under 1 second and a cross-Region failover RTO of 1 minute. Which is the most appropriate option?
+
+A) RDS Multi-AZ Cluster
+
+B) Aurora Global Database
+
+C) DynamoDB Global Tables
+
+D) RDS Cross-Region Read Replica
+
+**Answer: B**
+
+**Explanation:** Aurora Global Database uses storage-level asynchronous replication to support up to 5 secondary Regions, and is a managed global SQL DB that typically delivers an RPO under 1 second and an RTO under 1 minute. A provides high availability only within a single Region, C (DDB) is NoSQL rather than SQL, and D (Read Replica) has weaker consistency and failover guarantees and does not specify an RTO/RPO SLA. Trap: "global SQL + RPO of 1 second" is the direct answer for Aurora Global, and unless the requirement is NoSQL, the answer does not go to DDB.
+
+---
+
+**Question 3.** A company is designing a global order system that must accept writes in both Regions (us-east-1 and ap-northeast-2). Which is the most appropriate database?
+
+A) Aurora Global Database (read-only secondary)
+
+B) DynamoDB Global Tables
+
+C) RDS Cross-Region Read Replica
+
+D) ElastiCache Redis Global Datastore
+
+**Answer: B**
+
+**Explanation:** Only DynamoDB Global Tables is a true multi-master Active-Active configuration in which every Region accepts writes, and it satisfies the requirement for simultaneous writes in both Regions. A (Aurora Global) is single-writer with a read-only secondary (even with write forwarding enabled, the actual write is forwarded to the primary), C (Read Replica) is read-only until it is promoted, and D (Redis Global Datastore) is also single-writer. Trap: "simultaneous writes in both Regions / Active-Active" has DDB Global Tables as the only direct answer, and the key distinction is that Aurora Global and Redis Global Datastore are both single-writer.
+
+---
+
+**Question 4.** In DynamoDB Global Tables, how is a conflict resolved when two Regions modify the same item at nearly the same time?
+
+A) The two writes are merged automatically
+
+B) The write with the later timestamp wins (Last Writer Wins)
+
+C) Both writes are rejected
+
+D) An administrator resolves it manually
+
+**Answer: B**
+
+**Explanation:** DynamoDB Global Tables resolves conflicts with Last Writer Wins (LWW): the write with the later timestamp becomes the final value, and the losing write silently disappears (a lost update). It is simple and fast, but because of this limitation, the best practice is to avoid patterns where multiple Regions write the same item simultaneously, or to partition the write keys by Region. A (automatic merge) is a more complex approach such as CRDTs and is not DDB's default behavior, and C and D do not match the facts. Trap: conflict resolution in DDB Global Tables is Last Writer Wins, and understanding the risk of lost updates from simultaneous writes is the key to Active-Active design.
+
+---
+
+**Question 5.** Which is the most accurate reason Aurora's distributed storage can maintain write availability even when an entire AZ fails (losing 2 copies)?
+
+A) Data is stored concentrated in a single AZ
+
+B) It keeps 6 copies across 3 AZs and uses a 4/6 write quorum
+
+C) It waits for confirmation from all 6 copies on every write
+
+D) It immediately promotes a standby instance
+
+**Answer: B**
+
+**Explanation:** Aurora maintains 6 copies across 3 AZs, and a write succeeds when 4 of the 6 confirm (a 4/6 quorum) and a read succeeds when 3 confirm (a 3/6 quorum). Even if an entire AZ (2 copies) fails, the remaining 4 copies can satisfy the 4/6 write quorum, so availability is maintained (the W+R>N quorum principle). A is the opposite, C is fully synchronous and negates the benefit of a quorum, and D is an instance failover and not the reason for storage availability. Trap: Aurora's durability is "quorum-based," not "waiting synchronously for all copies."
+
+---
+
+**Question 6.** A team wants to replicate ElastiCache Redis across two Regions. Which statement about the characteristics of Redis Global Datastore is most accurate?
+
+A) It is a multi-master that allows writes in every Region
+
+B) Only 1 Primary Region accepts writes, and Secondary Regions are read-only and replicated with less than 1 second of lag
+
+C) It replicates by using DynamoDB Streams
+
+D) Replication is synchronous, so the RPO is always 0
+
+**Answer: B**
+
+**Explanation:** Redis Global Datastore is a single-writer configuration in which only 1 Primary Region accepts writes, and Secondary Regions are read-only replicas that are usually replicated with less than 1 second of lag. A confuses it with the characteristics of DynamoDB Global Tables (Redis Global Datastore is not multi-master), C is a DDB mechanism, and D is wrong because cross-Region replication is asynchronous, so the RPO is not 0. Trap: "Redis multi-Region replication" is Global Datastore, but it is single-writer, and the key distinction is that multi-master is DDB Global Tables.

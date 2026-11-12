@@ -365,6 +365,28 @@ D) SQS Long Polling
 
 ---
 
+**Question 6.** Which statement about the difference between Step Functions Standard and Express is correct?
+
+A) Standard can run for 5 minutes, Express for 1 year
+B) Standard runs up to 1 year with exactly-once; Express runs up to 5 minutes with at-least-once and high throughput
+C) Both guarantee exactly-once
+D) Express is better suited for longer workflows
+
+**Answer: B** - **Standard** runs up to 1 year, is exactly-once, and is billed per state transition, so it suits long and critical workflows (human approval, payments). **Express** runs up to 5 minutes, is at-least-once (duplicates possible), is billed by execution time, and supports up to 100,000 starts/s, so it suits short, frequent, idempotent processing. A swaps the two, C is wrong because Express is at-least-once, and D is the opposite because Standard is for long workflows.
+
+---
+
+**Question 7.** What is the key reason GraphQL is more efficient than REST in mobile environments?
+
+A) GraphQL is always faster
+B) The client declares the shape of the data it needs in a single query, reducing both over-fetching and under-fetching (multiple round trips)
+C) GraphQL does not need caching
+D) REST does not work on mobile
+
+**Answer: B** - REST returns a fixed response per endpoint, which causes **over-fetching** (receiving unneeded fields) and **under-fetching (N+1 round trips)** when one screen needs multiple calls. On mobile, round trips and data charges are expensive, so this was a problem; GraphQL lets the client declare the shape of the data it needs in a single query, reducing both at once. A) It is not always faster and can cause server-side N+1. C) Caching is still useful (AppSync provides it too). D) REST works fine on mobile as well.
+
+---
+
 ## 📌 Today's Summary
 
 1. Step Functions: Visual workflow, Lambda orchestration

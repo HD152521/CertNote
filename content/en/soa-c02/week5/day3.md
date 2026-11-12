@@ -290,6 +290,93 @@ aws ssm describe-instance-patches \
 
 ## 📝 Practice Problems
 
-[Korean practice section preserved — 7 questions about Patch Baselines, Patch Groups, Scan vs Install, compliance indicators]
+**Question 1.** A company's security team established a policy that "Critical security patches must be applied to EC2 within 7 days of release." How is this policy implemented in a Patch Baseline?
+
+A) In Approval Rules, set SEVERITY to Critical and ApproveAfterDays to 7
+B) In Approval Rules, set CLASSIFICATION to Security, SEVERITY to Critical, and ApproveAfterDays to 7
+C) Manually add all Critical patches to Approved Patches
+D) The AWS default baseline handles this policy automatically
+
+**Answer: B**
+
+Explanation: CLASSIFICATION and SEVERITY must be specified together. CLASSIFICATION=Security targets only security-related patches, and SEVERITY=Critical selects only the Critical ones among them. ApproveAfterDays=7 automatically approves patches 7 days after release. The AWS default baseline (D) uses a different waiting period for each patch rather than 7 days, and it does not include Important.
+
+---
+
+**Question 2.** An EC2 instance has the tag `Patch Group=prod-web` and the baseline is also linked to this Patch Group, yet patches are not applied. The instance appears normally in the SSM Managed Instances list. What is the most likely cause?
+
+A) Port 443 is blocked in the security group
+B) The tag name is mistakenly set to "PatchGroup" (the exact name is "Patch Group", with a space)
+C) A Maintenance Window has not been configured
+D) Only the AWS default baseline can be used
+
+**Answer: B**
+
+Explanation: SSM Patch Manager recognizes the tag only if the tag key is exactly `Patch Group` (case-sensitive, including the space). `PatchGroup`, `patchgroup`, `patch-group`, and `Patch_Group` are all not recognized. Because the instance appears in the Managed Instances list, the network is not the problem (A). C can be worked around by running a Scan immediately. D is not true.
+
+---
+
+**Question 3.** An operations team wants to find out which patches are missing before applying patches, and to assess the impact without actually applying them. Which method should it use?
+
+A) Run the AWS-RunPatchBaseline Document with Operation=Install and check the results
+B) Run the AWS-RunPatchBaseline Document with Operation=Scan and query the Compliance data
+C) Run Inspector to scan for vulnerabilities
+D) Query the patch history in CloudTrail
+
+**Answer: B**
+
+Explanation: A Scan operation does not install any patches and determines the list of patches missing compared with the baseline. The results are stored as SSM Compliance data and can be queried with `describe-instance-patch-states` or `list-compliance-items`. The operational best practice is then to review the impact and decide whether to Install.
+
+---
+
+**Question 4.** A vulnerability similar to WannaCry has been announced. An emergency patch must be applied immediately to all of the organization's Windows servers. The company cannot wait for the Maintenance Window. What should it do?
+
+A) Change the Maintenance Window schedule to the current time
+B) Run AWS-RunPatchBaseline (Operation=Install) directly with Run Command, setting max-concurrency and max-errors to roll out gradually
+C) Connect to each server over SSH and patch manually
+D) Apply patches automatically through Inspector
+
+**Answer: B**
+
+Explanation: In an emergency, you do not wait for the Maintenance Window and can run immediately with Run Command. Applying gradually with `Operation=Install`, `max-concurrency 10%`, and `max-errors 5%` minimizes the service impact. If the Patch Group tag is present, the baseline is applied automatically. A Maintenance Window runs only at its scheduled time, so Run Command is more suitable in an emergency.
+
+---
+
+**Question 5.** In a Patch Compliance report, a specific instance shows `InstalledPendingRebootCount=3`. What does this mean?
+
+A) 3 patches failed to install
+B) 3 patches were installed but are fully applied only after a reboot is completed
+C) 3 patches have not yet been approved in the baseline
+D) 3 patches are in the Rejected list but were installed
+
+**Answer: B**
+
+Explanation: `InstalledPendingRebootCount` is the number of patches whose files have been installed but that take effect only after a reboot. Linux kernel patches and some Windows system updates fall into this category. It occurs when patching was done with RebootOption=NoReboot or when the reboot was delayed. You must either run an Install that includes a reboot in the next Maintenance Window or separately plan a reboot of the instance.
+
+---
+
+**Question 6.** A company wants the same security patch to be applied progressively and automatically in the order Dev → Stage → Prod. What is the way to implement this with no code or manual work?
+
+A) Use a different Maintenance Window schedule for each environment
+B) Create Patch Baselines with a different ApproveAfterDays for each environment and link them with Patch Groups (Dev=0 days, Stage=3 days, Prod=14 days)
+C) Configure a different IAM Role for each environment
+D) Use a Patch Policy to specify the order
+
+**Answer: B**
+
+Explanation: The difference in ApproveAfterDays is the key to automatic progressive rollout. When a patch is released, it is automatically approved immediately for Dev (0 days), after 3 days for Stage, and after 14 days for Prod. If the Maintenance Window runs periodically for each environment, only the patches approved by the baseline at that point are applied. If there are no problems in Dev and Stage during the 14 days, it is applied to Prod automatically, a fully automated flow.
+
+---
+
+**Question 7.** In an environment managing Amazon Linux 2, Ubuntu 22.04, and Windows Server 2022 together, how do you efficiently operate a Patch Baseline suited to each OS?
+
+A) Manage all OSs with a single Baseline
+B) Create a separate Baseline per OS and include OS information in each instance's `Patch Group` tag (for example, `prod-web-al2`, `prod-web-ubuntu`, `prod-web-win`)
+C) Use a separate AWS account for each OS
+D) Using only the AWS default baseline automatically distinguishes the OS
+
+**Answer: B**
+
+Explanation: Patch Baselines must be created per OS (one Baseline supports only one OS type). Create a Baseline suited to each OS type (AMAZON_LINUX_2, UBUNTU, WINDOWS) and link instances to the right Baseline with the Patch Group tag. The AWS default Baseline distinguishes the OS automatically but cannot reflect custom policies.
 
 ---

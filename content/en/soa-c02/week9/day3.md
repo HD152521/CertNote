@@ -135,6 +135,54 @@ D) Trusted Advisor Security
 
 ---
 
-(Continue through Problem 7 similarly...)
+**Problem 4.** A company wants to enforce, in CI/CD, the guardrail that "no IAM policy change may broaden permissions compared with the existing one." Which feature is suitable?
+
+A) Trusted Advisor
+B) Access Analyzer Custom Policy Checks: formally proves whether a change expands permissions using Zelkova's policy comparison capability (A ⊇ B), and blocks the merge
+C) GuardDuty
+D) Config Rule
+
+**Answer: B**
+
+Explanation: Custom Policy Checks put a company's own guardrails (prohibiting specific Actions, prohibiting permission expansion, and so on) into CI/CD and block the merge when a policy-change PR violates them. "Does this change broaden permissions" is a matter of formally proving the containment relationship between the allowed sets of two policies (A ⊇ B), which the Zelkova engine decides. In line with the shift-left principle, it blocks at merge time instead of taking the expensive path of discovering it as a finding in production.
+
+---
+
+**Problem 5.** What is required to access the full set of 100+ Trusted Advisor checks?
+
+A) The free Basic plan is enough
+B) A Business or Enterprise Support plan (Basic/Developer get only 7 core security checks + service limits)
+C) Sign up for the Free Tier
+D) Enable GuardDuty
+
+**Answer: B**
+
+Explanation: The scope of access to Trusted Advisor differs by Support plan. The Basic/Developer plans can see only 7 core security checks and service limits, and the full set of 100+ checks, including Cost Optimization, Performance, and Fault Tolerance, opens only at Business ($100/month) or higher. On the exam, the answer to "to use the full set of checks?" is always Business or higher Support.
+
+---
+
+**Problem 6.** A company wants to know in advance the risk that Auto Scaling will be blocked during a traffic surge because it has reached 80% of its EC2 instance limit. Which tool and category?
+
+A) Trusted Advisor: the Service Limits category warns when 80% of a limit is reached
+B) GuardDuty
+C) Access Analyzer
+D) Macie
+
+**Answer: A**
+
+Explanation: The Service Limits category of Trusted Advisor warns in advance when 80% of per-account, per-Region limits such as the number of EC2 instances, EIPs, and VPCs is reached. When you hit a limit, creating new resources fails; the classic incident is Auto Scaling trying to launch more instances during a traffic surge and being blocked. With the advance warning, you can submit a limit increase request before an incident occurs. With EventBridge integration, automatic notification when check results change is also possible.
+
+---
+
+**Problem 7.** An external auditor requires evidence that "AWS infrastructure complies with SOC 2." Separately, the company must also gather evidence that its own environment complies with PCI-DSS and produce a report. Which tool is used for each?
+
+A) Both Trusted Advisor
+B) Evidence of AWS infrastructure compliance is AWS Artifact (free download); collecting and reporting evidence of customer environment compliance is Audit Manager
+C) Both Access Analyzer
+D) Both AWS Artifact
+
+**Answer: B**
+
+Explanation: Under the shared responsibility model, AWS Artifact is the window for getting, free of charge, the SOC/PCI/ISO reports that **AWS complies with** (evidence for AWS's area of responsibility), and Audit Manager is the tool that automatically collects evidence that **the customer's own** environment complies with a standard and produces audit reports (evidence for the customer's area of responsibility). Artifact proves "the AWS side" and Audit Manager proves "the customer side." The two cover different responsibility boundaries, so you must distinguish them exactly according to the scenario.
 
 ---

@@ -120,3 +120,65 @@ Today in one sentence: **Protect data at rest (KMS) and in transit (TLS, node en
 Tomorrow: cost optimization—bringing it all together with Spot training, right-sizing, and budget controls.
 
 ---
+
+## 📝 Practice Questions
+
+**Question 1.** You granted the training job's execution role `s3:GetObject` on the training data bucket, but reading KMS-encrypted objects still produces Access Denied. What is the most appropriate fix?
+
+A) Make the bucket public  
+B) Grant the execution role `kms:Decrypt` on that KMS key, and also allow the role in the key policy  
+C) Turn off S3 versioning  
+D) Increase the instance type  
+
+**Answer: B**  
+Explanation: To read objects encrypted with SSE-KMS, besides S3 permissions, KMS key decrypt permission must be allowed in both the IAM policy and the key policy, so you must give the role `kms:Decrypt` and also allow the role in the key policy. A worsens security, and C and D are unrelated to decryption permission and do not solve the problem.
+
+---
+
+**Question 2.** Due to regulatory requirements, both model artifacts and the training instance volume must be encrypted with a key that the customer can control and audit. Which setting is the most appropriate?
+
+A) Encrypt only the artifacts with an AWS managed key  
+B) Specify a customer managed key (CMK) in `OutputDataConfig.KmsKeyId` and `ResourceConfig.VolumeKmsKeyId`  
+C) Only tighten IAM policies without encryption  
+D) Enable only encryption in transit  
+
+**Answer: B**  
+Explanation: For the customer to control access through the key policy and audit usage through CloudTrail, a CMK is required, and specifying it in `OutputDataConfig.KmsKeyId` for artifacts and `ResourceConfig.VolumeKmsKeyId` for the volume encrypts both at rest. A omits the volume and uses a managed key with weaker control, C has no encryption at all, and D does not meet the encryption-at-rest requirement.
+
+---
+
+**Question 3.** In distributed (multi-node) training, there is a requirement to encrypt even the data exchanged between nodes. Which setting is appropriate?
+
+A) Set `EnableInterContainerTrafficEncryption` to true  
+B) Set only `OutputDataConfig.KmsKeyId`  
+C) Handle it with an S3 bucket policy  
+D) Set `EnableNetworkIsolation` to true  
+
+**Answer: A**  
+Explanation: The dedicated setting for encrypting data transmitted between distributed training nodes (between containers) is `EnableInterContainerTrafficEncryption`. B is encryption of output artifacts (at rest), C concerns data stored in S3, and D blocks outbound traffic rather than encrypting node-to-node transmission.
+
+---
+
+**Question 4.** Training code needs to access an external database and therefore needs credentials. The DB password must be rotated automatically on a regular basis. Which is the most appropriate method?
+
+A) Hardcode the DB password in the training code  
+B) Store the credentials in AWS Secrets Manager, configure automatic rotation, and retrieve them at runtime  
+C) Put it in an environment variable in plaintext  
+D) Store it as a plaintext file in S3  
+
+**Answer: B**  
+Explanation: The service that keeps credentials out of code and supports automatic rotation is Secrets Manager, so storing them there and retrieving them through the API at runtime is appropriate. A, C, and D all expose the credentials in plaintext and have no rotation capability, directly violating security principles.
+
+---
+
+**Question 5.** There is a requirement to "prevent unencrypted objects from being uploaded" to the training data S3 bucket. What is the most effective measure?
+
+A) Add a bucket policy condition that `Deny`s `s3:PutObject` when `s3:x-amz-server-side-encryption` is not `aws:kms`  
+B) Enable versioning on the bucket  
+C) Set up a CloudWatch alarm  
+D) Manually encrypt the objects later  
+
+**Answer: A**  
+Explanation: A bucket policy that checks the encryption header on upload and rejects anything that is not KMS is the most effective way to block unencrypted object uploads at the source. B is deletion protection, not encryption enforcement, C is only after-the-fact detection, not blocking, and D is manual work after the data has already been stored in plaintext, so it does not prevent anything.
+
+---

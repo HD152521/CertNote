@@ -146,3 +146,15 @@ D) Create a Redshift snapshot
 Explanation: Receiving the Macie finding through EventBridge, having Lambda restrict bucket access, and notifying with SNS automatically connects detection to response. Lifecycle deletion risks losing evidence, and CloudFront and Redshift snapshots are unrelated to responding to sensitive data.
 
 ---
+
+**Question 5.** Under the GDPR "right to be forgotten," you must permanently delete a specific customer's data from the data lake at the row level. What is the most appropriate method?
+
+A) Reload the entire table  
+B) Only enable S3 bucket versioning  
+C) Rerun the Macie classification job  
+D) Run a row-level DELETE on an Iceberg/Hudi table  
+
+**Answer: D**  
+Explanation: Open table formats such as Iceberg/Hudi support row-level DELETE, so only the specific customer's records can be removed efficiently. A full reload is inefficient, versioning actually leaves copies behind, and Macie is only a detection tool and does not delete anything.
+
+---

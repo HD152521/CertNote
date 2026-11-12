@@ -627,6 +627,81 @@ Why other wrong: A reverses roles. C completely different functions. D confuses 
 
 ---
 
+**Question 3.** Which of the following is NOT a required step when setting up IRSA (IAM Roles for Service Accounts)?
+
+A) Register the EKS cluster's OIDC provider URL in IAM  
+B) Specify the OIDC provider as a Federated principal in the IAM role's trust policy  
+C) Add the `eks.amazonaws.com/role-arn` annotation to the Kubernetes ServiceAccount  
+D) Attach the IAM role to an EC2 instance profile  
+
+**Answer: D**
+
+IRSA does not use an EC2 instance profile. The core of IRSA is OIDC federation — EKS issues the ServiceAccount token as a JWT, and the AWS SDK in the Pod uses this token to call STS `AssumeRoleWithWebIdentity`. An instance profile is a legacy approach that applies to the entire node.
+
+Why the other options are wrong: A, B, and C are all required steps of IRSA. Register the OIDC provider (A) → set the trust policy (B) → add the SA annotation (C) → the Pod automatically performs STS AssumeRole.
+
+---
+
+**Question 4.** What is the most important architectural difference between Karpenter and the Cluster Autoscaler (CA)?
+
+A) Karpenter supports only ECS  
+B) CA calls the EC2 API directly, and Karpenter adds nodes through an ASG  
+C) Karpenter calls the EC2 Fleet API directly and selects, in real time, the instance types that match the needs of Pending Pods, while CA uses only the instance types of pre-configured ASGs  
+D) CA does not support Spot Instances  
+
+**Answer: C**
+
+Karpenter's core innovation is bypassing ASGs. CA must add nodes through an ASG, so it can use only the instance types predefined in the ASG. Karpenter calls the EC2 Fleet API directly, so it selects, in real time, the instance type that best fits the requirements of Pending Pods from dozens of instance types. As a result, provisioning is also much faster with Karpenter (seconds vs. minutes).
+
+Why the other options are wrong: A: Karpenter is EKS-only. B: the description is reversed. D: CA also supports Spot ASGs, but in a different way.
+
+---
+
+**Question 5.** What is the effect of the `--atomic` flag in the Helm command `helm upgrade --install --atomic`?
+
+A) Builds the image atomically  
+B) Automatically rolls back to the previous release if the upgrade does not complete within `--timeout`  
+C) Bundles multiple Helm releases into a transaction and deploys them simultaneously  
+D) Pauses other Deployments in the cluster  
+
+**Answer: B**
+
+`--atomic` implicitly includes `--wait`, and if the upgraded Pods do not become Ready within `--timeout` (default 5 minutes), it automatically rolls back to the previous Helm release. Conceptually it is the same as automatic rollback in ECS Blue/Green, but it is implemented with the native mechanisms of Kubernetes and Helm.
+
+Why the other options are wrong: A is not a Helm concept. C: Helm does not support transactional deployments. D: it does not affect other Deployments.
+
+---
+
+**Question 6.** When multiple Pods are Pending in an EKS cluster, how does Karpenter provision nodes?
+
+A) Adds nodes using a single instance type specified in advance by the administrator  
+B) Analyzes the Pending Pods' resource requests, node selectors, and affinity, selects the optimal instance types, and provisions directly with the EC2 Fleet API  
+C) Increases the number of nodes by one at a time through an ASG  
+D) Uses a Fargate profile to run serverless Pods  
+
+**Answer: B**
+
+Karpenter analyzes the Pending Pods in a batch and finds the combination of instance types that can schedule all the Pods with the fewest nodes. This scheduling-aware property is the core of Karpenter. CA reacts Pod by Pod, but Karpenter optimizes the whole set of Pending Pods.
+
+Why the other options are wrong: A is how CA behaves. C is CA's incremental ASG-based scaling. D: Fargate is a separate serverless option unrelated to Karpenter.
+
+---
+
+**Question 7.** A team is deploying to EKS through ArgoCD. In an emergency, an operator changed the replica count from 5 to 10 with `kubectl edit deployment myapp`. What happens if `selfHeal: true` is set on the ArgoCD Application?
+
+A) ArgoCD detects the change and sends an approval request to Slack  
+B) ArgoCD detects the drift and automatically restores the replica count of 5 defined in Git  
+C) ArgoCD learns the change and automatically updates Git  
+D) The change is kept until the next scheduled deployment  
+
+**Answer: B**
+
+`selfHeal: true` is a core GitOps feature of ArgoCD. The application-controller periodically (every 3 seconds by default) checks the live state and, if it differs from the Git state, reverts it to the Git state. The operator's `kubectl edit` change is restored automatically as soon as it is detected (within a few seconds at most). This is a concrete implementation of the GitOps principle that "Git is the single source of truth."
+
+Why the other options are wrong: A confuses this with Slack notifications under a manual sync setup. C: ArgoCD only reads Git and does not write to it (Image Updater is a separate tool). D is the behavior when selfHeal is not set.
+
+---
+
 ## Week 6 Summary
 
 GitOps is paradigm introduced 2017 to solve Drift. Core: trust boundary shifted to Git. CI only pulls; cluster self-converges to Git. ArgoCD's 4 components (app-controller, repo-server, api-server, Redis) implement control loop philosophy from Kubernetes. ArgoCD selfHeal reverts Drift; prune removes deleted resources.

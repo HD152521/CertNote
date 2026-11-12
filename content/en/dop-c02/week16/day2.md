@@ -99,7 +99,115 @@ Next: Domain 5+6 (incident response and security) closes final 18%.
 
 ## 📝 Practice Questions
 
-(Practice questions 1-8 in Korean on domain 3+4 resilience, observability, RTO/RPO, DR strategies, FIS, OAM)
+**Question 1.** A fintech's relational database DR requirement is "RTO of 1 minute, RPO under 1 second, multi-Region." What is the most suitable solution, and why can it not guarantee an RPO of exactly zero?
+
+A) RDS Multi-AZ — the RPO is 0
+
+B) Aurora Global Database — it optimizes RPO to under 1 second with asynchronous cross-Region replication, but it uses asynchronous replication to avoid the latency cost of synchronous replication, so the RPO is not exactly 0
+
+C) RDS cross-Region read replica — the RPO is 0
+
+D) DynamoDB Streams — it supports SQL
+
+**Answer: B**
+
+Explanation: Aurora Global Database uses dedicated replication infrastructure to keep the cross-Region RPO typically under 1 second and provides failover with an RTO of about 1 minute. The reason the RPO is not exactly 0 is the reality of the CAP theorem — synchronous cross-Region replication imposes round-trip latency on every write, so Aurora Global uses asynchronous replication and optimizes that lag to under 1 second. RDS Multi-AZ (A) is single-Region (not multi-Region DR), a cross-Region read replica (C) has a worse RPO/RTO than Aurora Global, and DynamoDB (D) is key-value and not SQL.
+
+---
+
+**Question 2.** A client (a partner firewall) has whitelisted the destination IPs so the IPs cannot change, and failover within 1 second is needed when a Region fails. Why is Route 53 failover alone insufficient, and what is the correct choice?
+
+A) Route 53 is enough — just set the TTL to 0
+
+B) Route 53 is at the DNS layer, so TTL caching by clients/resolvers delays failover by tens of seconds to minutes, and the IPs also change. Global Accelerator provides two static Anycast IPs and fails over within about 1 second over the AWS backbone, so it fits this requirement
+
+C) Use CloudFront
+
+D) Place NLBs in multiple Regions
+
+**Answer: B**
+
+Explanation: Route 53 failover works by changing the DNS response, so clients and resolvers cache the previous IP for the TTL and some ignore the TTL, making failover slow, and the response IP itself changes — which violates the fixed-IP requirement. Global Accelerator gives Anycast IPs that do not change and switches to a healthy endpoint within about 1 second over the backbone without going through DNS. A TTL of 0 (A) also does not completely solve the DNS caching problem. CloudFront (C) is HTTP caching and does not provide fixed IPs, and a single-Region NLB (D) does not provide multi-Region failover by itself.
+
+---
+
+**Question 3.** You chose DynamoDB Global Tables for the requirement "write key-value data in both Active-Active Regions." If the additional condition "both changes must be preserved even when the same key is modified simultaneously in both Regions" is added, what limitation must be considered?
+
+A) There is no limitation — Global Tables preserves both
+
+B) Global Tables resolves conflicts with Last Writer Wins (LWW), so in a concurrent conflict the later write wins and the earlier write disappears. If "preserve both" is required, application-level conflict resolution (CRDTs/vector clocks) or a single-writer design is needed
+
+C) Global Tables provides strong consistency, so there is no problem
+
+D) Switching to Aurora Global solves it automatically
+
+**Answer: B**
+
+Explanation: DynamoDB Global Tables is Active-Active but resolves conflicts with LWW — the write with the later timestamp wins and the earlier write is silently lost. "Preserving both of the concurrently conflicting data" is impossible with LWW and requires application-level merge logic or a single writer. Global Tables is not strongly consistent (C). The secondary in Aurora Global (D) is read-only, so Active-Active writes are not possible at all.
+
+---
+
+**Question 4.** You want to verify in normal times that the resilience design of a service with millions of users works in a real outage. How can you inject AZ failures, instance terminations, and API throttling in a controlled way without them spreading into a real incident?
+
+A) Scan for vulnerabilities with Amazon Inspector
+
+B) Inject failures with AWS Fault Injection Simulator (FIS), and use a CloudWatch alarm-based stop condition to automatically halt the experiment if it exceeds a threshold
+
+C) Send synthetic requests with CloudWatch Synthetics canaries
+
+D) Detect threats with GuardDuty
+
+**Answer: B**
+
+Explanation: FIS is a chaos engineering tool that verifies resilience by deliberately injecting failures such as AZ outages, instance terminations, and throttling, and with a stop condition integrated with CloudWatch alarms, it halts the experiment immediately if it goes out of control (so that the experiment does not become a real incident). Inspector (A) is vulnerability scanning, Synthetics (C) is monitoring that mimics normal behavior, and GuardDuty (D) is threat detection — all have roles different from FIS, which "deliberately causes failures."
+
+---
+
+**Question 5.** You want to trace which service hop is delaying distributed requests across 50 microservices, but traffic is so large that tracing everything is costly and adds overhead. You also need to be able to send data to multiple backends without vendor lock-in. What is the most appropriate approach?
+
+A) Trace 100% of requests with X-Ray
+
+B) Instrument with ADOT (OpenTelemetry) and apply custom sampling rules (a high rate for critical paths, 0% for health checks) to collect only a representative sample
+
+C) Analyze only logs with CloudWatch Logs Insights
+
+D) Scan with Inspector
+
+**Answer: B**
+
+Explanation: Traces are the pillar that shows the causal path of distributed requests. Because tracing everything has high cost and overhead, use custom sampling to set critical paths high and health checks and the like to 0%, collecting a representative sample (statistical sampling). The vendor-neutral, multiple-backend requirement is met by ADOT, which is based on the OpenTelemetry standard. 100% tracing (A) explodes cost, Logs Insights (C) deals with logs rather than traces and cannot thread together the request path, and Inspector (D) is irrelevant.
+
+---
+
+**Question 6.** You need to retain several TB of application logs long-term while occasionally running large-scale analysis, but CloudWatch Logs Insights cost is a burden. What is the most cost-effective pattern?
+
+A) Retain permanently in CloudWatch Logs and query with Insights each time
+
+B) Archive long-term with a Subscription Filter → Kinesis Data Firehose → S3, and perform analysis with Athena/Glue (keep short-term CloudWatch retention for operational visibility)
+
+C) Continuously load all logs into OpenSearch
+
+D) Manually export logs daily with Lambda
+
+**Answer: B**
+
+Explanation: Logs Insights is billed per amount of data scanned, so repeated large queries are expensive. Tiering is cost-effective: use a Subscription Filter (a nearly free branch) to send logs through Firehose to S3 for low-cost long-term retention, and run analysis with Athena only when needed. Keep short-term operational visibility in CloudWatch with short retention. Permanent Logs retention (A) and continuous OpenSearch loading (C) explode cost, and manual export (D) is an operational-burden anti-pattern.
+
+---
+
+**Question 7.** You need to create high-cardinality custom metrics (for example, combinations of customer ID and Region) in a Lambda function, but the latency and cost of synchronous `PutMetricData` calls are a problem. What is the most appropriate method?
+
+A) Run `PutMetricData` synchronously on every invocation
+
+B) Include the metric definition in a structured log using Embedded Metric Format (EMF) and send it to CloudWatch Logs, and CloudWatch extracts the metrics automatically — eliminating synchronous API calls and making high-dimension metrics efficient
+
+C) Create the metrics with X-Ray
+
+D) Load the metrics into DynamoDB and then aggregate
+
+**Answer: B**
+
+Explanation: EMF is a method in which the metric is included in a single structured log line and CloudWatch extracts the metric from it automatically — it removes the synchronous `PutMetricData` call (latency and API cost), the metric comes along while you write the log, and high cardinality is efficient because it is log-based. Repeated PutMetricData (A) keeps the same cost and latency problems, X-Ray (C) is for traces and not metric extraction, and DynamoDB self-aggregation (D) is an operational burden.
 
 ---
 

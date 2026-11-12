@@ -183,3 +183,85 @@ D) Increasing function memory
 Explanation: Provisioned concurrency keeps a specified number of concurrent executions always ready (warm). Eliminating cold start latency guarantees consistent, fast responses. It increases cost ($0.015/hour) but is used for latency-sensitive services.
 
 ---
+
+**Question 4.** What is the most accurate description of the scope of the IAM policy that CDK `table.grantReadData(getOrder)` synthesizes automatically?
+
+A) All dynamodb:* actions on the table  
+B) The table ARN and its GSI/LSI ARNs, the table's KMS key ARN, and the appropriate read actions (GetItem, Query, Scan, and so on)  
+C) Global read permission on all DynamoDB tables  
+D) Permissions are granted automatically only to the Lambda function and do not apply to other resources  
+
+**Answer: B**
+Explanation: The core of CDK grant methods is **expressing intent + precise resource mapping**. It does not simply give actions; it automatically tracks all index ARNs of the table and even the encryption KMS key ARN to build an accurate Resource block. A is too broad (closer to grantFullAccess than grantReadData), C is inaccurate because it is a wildcard, and D is wrong because CDK supports the grant pattern for all resources. Compared with SAM policy templates, the permissions are narrower and more accurate.
+
+---
+
+**Question 5.** Which statement about the differences between Lambda container images and zip packages is NOT accurate?
+
+A) A container image is up to 10 GB, while a zip is 250 MB  
+B) Container images cannot use Lambda layers  
+C) Container images do not support SnapStart (even for Java, only zip works)  
+D) Container images do not support provisioned concurrency  
+
+**Answer: D**
+Explanation: D is the incorrect statement. Container image Lambda functions support PC (although PC warm-up takes longer than with zip). A/B/C are all true. The zip limit of 250 MB is measured after decompression, while the container's 10 GB is measured compressed, so the actual usable capacity differs by 30 to 40 times. SnapStart has supported only zip Java since its launch in 2022 and remained unsupported for containers through the end of 2024. Layers are not compatible with container images, so all dependencies must be included in the Dockerfile.
+
+---
+
+**Question 6.** "The team is comfortable with TypeScript, wants to manage Lambda, EKS, RDS, OpenSearch, and SQS in a single stack, reduce IAM permission mistakes, and build an in-house standard library to operate 9,000 stacks." Which IaC tool is the MOST suitable?
+
+A) SAM  
+B) Serverless Framework  
+C) CDK with TypeScript  
+D) Writing CloudFormation YAML directly  
+
+**Answer: C**
+Explanation: CDK provides (1) L2 constructs for all AWS resources (SAM covers only 6 serverless types), (2) automatic IAM through `grant*`, (3) reusable abstractions through an **in-house L3 construct library**, and (4) TypeScript type safety. Liberty Mutual's 9,000-stack case is exactly this scenario. SAM is weak at EKS/RDS integration, SLS is Lambda-centric and has the v4 licensing issue, and CFN YAML has no abstraction tools and produces 2,000-line templates.
+
+---
+
+**Question 7.** What does `selfMutation: true` in CDK Pipelines mean?
+
+A) A Lambda function automatically modifies its own code  
+B) The pipeline has itself as the first stage, and CDK code changes (adding stages, changing environments, and so on) are automatically reflected in the next execution  
+C) DynamoDB Auto Scaling  
+D) Automatic IAM role rotation  
+
+**Answer: B**
+Explanation: CDK Pipelines declares the pipeline itself as CDK code, following the GitOps philosophy. When selfMutation is on, after Source → Synth, the **UpdatePipeline** stage updates its own definition with CFN. The risk is that pushing a broken pipeline definition can cause self-mutation to deploy a broken pipeline, which can be hard to recover from (keeping break-glass IAM permissions is essential). A/C/D are unrelated.
+
+---
+
+**Question 8.** What is the core mechanism of SnapStart, and what is its scope of application on the exam?
+
+A) Reduces cold starts for all runtimes  
+B) Stores a snapshot of the JVM memory from the Java function's init phase in S3 → the next invocation restores it and skips init; supports only zip Java 11/17/21  
+C) Automatic Lambda layer caching  
+D) Accelerated lazy loading of container images  
+
+**Answer: B**
+Explanation: SnapStart (2022 re:Invent) is based on the same idea as Self/Smalltalk image-based persistence. The Java init phase is long and the main culprit of cold starts, so it is solved with a pre-taken snapshot. Because of the uniqueness assumption problem (random seeds, DB connections), explicit re-initialization through runtime hooks is required. Only zip Java (as of the end of 2024); Python/Node/container are not supported. A is too broad, C is unrelated to SnapStart, and D is in the container domain.
+
+---
+
+**Question 9.** What is the biggest change in Serverless Framework v4 that affects the adoption decision?
+
+A) AWS Lambda is no longer supported  
+B) Switch from the MIT license to a commercial license — companies with annual revenue of $2 million or more must register and pay  
+C) Python support was dropped  
+D) Docker images are not supported  
+
+**Answer: B**
+Explanation: Announced by Serverless Inc. in February 2023. MIT through v3; from v4, the "Serverless Framework License" (based on Apache 2.0 + commercial use restrictions). It triggered strong backlash on GitHub and a move toward migrating to SAM/CDK. It is the same pattern as Terraform's switch to BSL in August 2023. It is not often tested directly on the exam, but it can appear in scenarios about the decision to adopt SLS. A/C/D are not factual.
+
+---
+
+**Question 10.** What is the most accurate use of CDK Aspects?
+
+A) Automatically inject code into all Lambda functions  
+B) Traverse the construct tree with the visitor pattern and apply cross-cutting policies (tagging, enforcing encryption, naming rules)  
+C) Automatically generate IAM policies (replacing grant methods)  
+D) Manage Lambda layers  
+
+**Answer: B**
+Explanation: Aspects are the IaC version of AOP (Aspect-Oriented Programming, Gregor Kiczales, 1997). They separate cross-cutting concerns (tags, security, naming) from the core logic (stack definitions) and express them as a separate visitor. Apply them to the whole app with `cdk.Aspects.of(app).add(new TagAspect())`. A is in the code domain and unrelated, C is the domain of grant methods (Aspects are for validation and tagging), and D is unrelated. SAM has no equivalent mechanism, so external tools (cfn-nag) are used.
