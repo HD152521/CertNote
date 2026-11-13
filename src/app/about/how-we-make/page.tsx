@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { NonAffiliationNotice } from '@/components/legal/NonAffiliationNotice';
+import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, SITE_NAME } from '@/lib/site';
 
 // 제작 방식 공개(docs/P4-trust-quality-plan.md Step 5a). 사실만 적는다 — 자격증 보유·전문가 경력처럼
@@ -13,7 +14,7 @@ const PATH = '/about/how-we-make';
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: PATH },
+  alternates: infoAlternates(PATH),
   openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
 };
 

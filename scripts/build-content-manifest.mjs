@@ -37,6 +37,16 @@ const SOURCE_FILES = [
   'src/app/terms/page.tsx',
   'src/app/roadmap/page.tsx',
   'content/roadmaps.json',
+  // 영어 정보 페이지(/en/about 등) — 사이트맵 lastModified 근거(src/app/sitemap.ts 의 EN_INFO_SOURCES).
+  'src/app/en/about/page.tsx',
+  'src/app/en/about/how-we-make/page.tsx',
+  'src/app/en/contact/page.tsx',
+  'src/app/en/terms/page.tsx',
+  'src/app/en/changelog/page.tsx',
+  'src/app/en/roadmap/page.tsx',
+  'src/app/en/roadmap/[role]/page.tsx',
+  'src/lib/enPages/roadmapEn.ts',
+  'src/lib/strings/privacy.ts',
   // 실습(/lab) — 내용이 코드에 있다
   'src/lib/labCatalog.ts',
   'src/lib/shell-lab/labs.ts',

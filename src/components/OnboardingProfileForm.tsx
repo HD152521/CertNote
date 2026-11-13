@@ -8,6 +8,7 @@ import { safeNext } from '@/lib/auth/safeNext';
 import { EXPERIENCE_OPTIONS, OCCUPATION_OPTIONS, PURPOSE_OPTIONS } from '@/lib/profileOptions';
 import type { CertOption } from '@/components/AuthForm';
 import { Select } from '@/components/ui/Select';
+import { infoHref } from '@/lib/enEdition';
 import { useLanguage, t } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { accountStrings } from '@/lib/strings/account';
@@ -119,7 +120,7 @@ export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileF
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 shrink-0" />
           <span>
             {t(lang, 'consentText')}{' '}
-            <Link href="/privacy" target="_blank" className="text-fg underline underline-offset-2">{t(lang, 'privacyPolicy')}</Link>
+            <Link href={infoHref('/privacy', lang)} target="_blank" className="text-fg underline underline-offset-2">{t(lang, 'privacyPolicy')}</Link>
           </span>
         </label>
 

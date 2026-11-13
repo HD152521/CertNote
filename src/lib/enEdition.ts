@@ -18,3 +18,43 @@ export function hasEnglishEdition(section: Section, slug: string): boolean {
 export function koSectionOfEnglishSlug(slug: string): Section {
   return EN_EDITION_NON_AWS[slug] ?? 'aws';
 }
+
+// ── 정보 페이지(소개·로드맵·수정 기록·문의·약관·개인정보처리방침) 영어판 ─────────────────────
+// 한국어 정보 페이지와 /en/... 영어판의 1:1 짝. 푸터·헤더 링크, LangToggle, hreflang, 사이트맵,
+// 프록시(존재 검증 우회)가 모두 이 표 하나를 본다. 직무 로드맵 slug 는 content/roadmaps.json 과
+// 어긋나지 않는지 enInfoPages.test.ts 가 검사한다.
+export const EN_ROADMAP_ROLE_SLUGS: readonly string[] = [
+  'solutions-architect',
+  'developer',
+  'sysops-devops',
+  'data-engineer',
+  'ml-ai',
+  'security',
+];
+
+const EN_INFO_ROOTS: readonly string[] = ['/about', '/about/how-we-make', '/roadmap', '/changelog', '/contact', '/terms', '/privacy'];
+
+export const EN_INFO_PAIRS: ReadonlyArray<{ ko: string; en: string }> = [
+  ...EN_INFO_ROOTS.map((ko) => ({ ko, en: `/en${ko}` })),
+  ...EN_ROADMAP_ROLE_SLUGS.map((slug) => ({ ko: `/roadmap/${slug}`, en: `/en/roadmap/${slug}` })),
+];
+
+/** 한국어 정보 페이지의 영어판 경로. 짝이 없으면 undefined. */
+export function enInfoPathOf(koPath: string): string | undefined {
+  return EN_INFO_PAIRS.find((p) => p.ko === koPath)?.en;
+}
+
+/** 영어 정보 페이지의 한국어판 경로. 짝이 없으면 undefined. */
+export function koInfoPathOf(enPath: string): string | undefined {
+  return EN_INFO_PAIRS.find((p) => p.en === enPath)?.ko;
+}
+
+/** 영어 정보 페이지 경로인가(프록시가 콘텐츠 존재 검증 대신 통과시킨다). */
+export function isEnInfoPath(pathname: string): boolean {
+  return EN_INFO_PAIRS.some((p) => p.en === pathname);
+}
+
+/** 한국어 정보 페이지 경로를 화면 언어에 맞는 링크로 바꾼다. 영어판이 없으면 원래 경로. */
+export function infoHref(koPath: string, lang: 'ko' | 'en'): string {
+  return lang === 'en' ? (enInfoPathOf(koPath) ?? koPath) : koPath;
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
+import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
 
 const TITLE = '이용약관';
@@ -9,7 +10,7 @@ const DESCRIPTION = `${SITE_NAME} 서비스 이용 조건, 회원 계정, 콘텐
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: '/terms' },
+  alternates: infoAlternates('/terms'),
   openGraph: { title: TITLE, description: DESCRIPTION, url: '/terms', type: 'website' },
 };
 

@@ -1,4 +1,5 @@
 import { DEFAULT_CATEGORY, EN_CATEGORY, SECTIONS } from './category';
+import { isEnInfoPath } from './enEdition';
 
 // src/proxy.ts 의 경로 분류(순수 함수 — 빌드 없이 단위 테스트한다).
 //
@@ -36,6 +37,8 @@ export function classifyPath(pathname: string): PathDecision {
   const segments = pathname.split('/').filter(Boolean);
   const first = segments[0] ?? '';
 
+  // /en/about 같은 영어 정보 페이지는 자격증 콘텐츠가 아니다 — 존재 검증(contentPathExists)을 거치면 404 가 된다.
+  if (isEnInfoPath(pathname)) return 'pass';
   if (CONTENT_PREFIXES.includes(first)) return 'content';
   // 대소문자만 다른 접두사(/AWS, /Linux). 대소문자 무시 호스트에선 프리렌더 파일 조회가 소문자 페이지로
   // 풀려 200 이 되므로 호스트와 무관하게 404 로 고정한다.

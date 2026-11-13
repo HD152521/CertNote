@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { CHANGELOG_KIND_LABELS, getChangelog, groupChangelogByDate } from '@/lib/trust/changelog';
+import { infoAlternates } from '@/lib/infoAlternates';
 import { SITE_NAME } from '@/lib/site';
 
 // 수정 기록(docs/P4-trust-quality-plan.md Step 5b). 데이터는 content/changelog.json.
@@ -12,7 +13,7 @@ const PATH = '/changelog';
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: PATH },
+  alternates: infoAlternates(PATH),
   openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
 };
 

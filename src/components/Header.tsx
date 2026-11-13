@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { infoHref } from '@/lib/enEdition';
 import { useLanguage } from '@/lib/i18n-client';
 import { ThemeToggle } from './ThemeToggle';
 import { SearchButton } from './SearchButton';
@@ -30,7 +31,7 @@ export function Header({ certTrees, enCertTrees }: HeaderProps) {
         </div>
         <nav className="flex items-center gap-2">
           <Link
-            href="/roadmap"
+            href={infoHref('/roadmap', lang)}
             className="hidden rounded-md px-2 py-1 text-sm font-medium text-fg-muted transition hover:text-fg sm:inline-block"
           >
             {lang === 'en' ? 'Roadmap' : '로드맵'}

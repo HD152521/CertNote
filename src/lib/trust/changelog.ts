@@ -11,6 +11,7 @@ export interface ChangelogEntry {
   cert?: string; // 자격증 slug(선택). 여러 자격증에 걸치거나 사이트 문구면 생략.
   kind: ChangelogKind;
   summary: string;
+  summaryEn?: string; // 영어판(/en/changelog)에 싣는 영어 요약. 없으면 영어판은 그 항목을 싣지 않는다.
 }
 
 export interface ChangelogDay {
@@ -25,6 +26,13 @@ export const CHANGELOG_KIND_LABELS: Record<ChangelogKind, string> = {
   copy: '표현 수정',
 };
 
+export const CHANGELOG_KIND_LABELS_EN: Record<ChangelogKind, string> = {
+  fact: 'Fact correction',
+  exam: 'Exam info',
+  quiz: 'Question fix',
+  copy: 'Wording fix',
+};
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function isKind(v: unknown): v is ChangelogKind {
@@ -36,6 +44,7 @@ function isChangelogEntry(v: unknown): v is ChangelogEntry {
   const e = v as Record<string, unknown>;
   if (typeof e.date !== 'string' || !DATE_RE.test(e.date) || Number.isNaN(Date.parse(e.date))) return false;
   if (typeof e.summary !== 'string' || e.summary.trim() === '') return false;
+  if (e.summaryEn !== undefined && typeof e.summaryEn !== 'string') return false;
   if (!isKind(e.kind)) return false;
   if (e.cert !== undefined && (typeof e.cert !== 'string' || e.cert === '')) return false;
   return true;

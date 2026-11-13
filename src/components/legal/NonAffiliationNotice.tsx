@@ -1,7 +1,16 @@
 import { SITE_NAME } from '@/lib/site';
 
 // 시험 주관 기관 비제휴 고지. 소개(/about)와 제작 방식(/about/how-we-make)이 같은 문구를 쓴다.
-export function NonAffiliationNotice() {
+export function NonAffiliationNotice({ lang = 'ko' }: { lang?: 'ko' | 'en' }) {
+  if (lang === 'en') {
+    return (
+      <p>
+        {SITE_NAME} is an independent study resource and is not affiliated with, or endorsed by, exam administrators such as
+        Amazon Web Services or the Korea Association for ICT Promotion (KAIT). We do not publish recalled or leaked exam
+        questions; every question included is written in-house.
+      </p>
+    );
+  }
   return (
     <p>
       {SITE_NAME}는 Amazon Web Services, 한국정보통신진흥협회(KAIT) 등 시험 주관 기관과 제휴하거나 그 승인을 받은

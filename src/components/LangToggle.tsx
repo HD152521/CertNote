@@ -3,18 +3,21 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { EN_CATEGORY, isSection } from '@/lib/category';
-import { hasEnglishEdition, koSectionOfEnglishSlug } from '@/lib/enEdition';
+import { enInfoPathOf, hasEnglishEdition, koInfoPathOf, koSectionOfEnglishSlug } from '@/lib/enEdition';
 import { cn } from '@/lib/cn';
 import { isLanguageCookieAuthoritative, type Language } from '@/lib/i18n';
 import { setLanguage, useLanguage } from '@/lib/i18n-client';
 
 // 헤더 KO/EN 토글. 동작이 페이지 종류에 따라 갈린다.
 //
-//  - 색인 대상 공개 페이지(/, /aws/*, /linux/*, /en/*): 언어가 URL로 결정되므로 반대 언어 URL로 이동.
+//  - 색인 대상 공개 페이지(/, /aws/*, /linux/*, /en/*, 정보 페이지 /about·/roadmap·/changelog·/contact·/terms·/privacy): 언어가 URL로 결정되므로 반대 언어 URL로 이동.
 //    영어판이 없는 자격증(예: 리눅스마스터)에서 EN을 누르면 영어 홈으로.
 //  - 로그인 전용 페이지(대시보드 등): 대응 URL이 없으므로 lang 쿠키만 바꾸고 그 자리에 머문다.
 //    예전에는 여기서 /en 홈으로 튕겨내 사용자가 보던 페이지를 잃었다.
 function counterpart(pathname: string, to: Language): string {
+  // 정보 페이지(소개·로드맵·수정 기록·문의·약관·개인정보처리방침)는 한국어 ↔ 영어판이 1:1 짝이다.
+  const infoTarget = to === 'en' ? enInfoPathOf(pathname) : koInfoPathOf(pathname);
+  if (infoTarget) return infoTarget;
   // ko 공개 경로는 섹션 세그먼트(/aws·/linux). 섹션을 캡처해 영어판 유무를 판정한다.
   const koMatch = pathname.match(/^\/(aws|linux|data)\/([^/]+)(?:\/week(\d+)\/day(\d+))?$/);
   const enMatch = pathname.match(new RegExp(`^/${EN_CATEGORY}(?:/([^/]+)(?:/week(\\d+)/day(\\d+))?)?$`));
