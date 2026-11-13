@@ -101,7 +101,7 @@ export default function ExamInfoCard({ info, lang, section }: ExamInfoCardProps)
                   <td className="py-2 pr-3 tabular-nums text-fg-muted">{ph.questionCount}</td>
                   <td className="py-2 pr-3 tabular-nums text-fg-muted">{ph.durationMin}{lang === 'en' ? 'min' : '분'}</td>
                   <td className="py-2 pr-3 text-fg-muted">{ph.format}</td>
-                  <td className="py-2 tabular-nums text-fg-muted">{ph.cost ? formatCost(ph.cost) : '—'}</td>
+                  <td className="py-2 tabular-nums text-fg-muted">{ph.cost ? formatCost(ph.cost, lang) : '—'}</td>
                 </tr>
               ))}
             </tbody>

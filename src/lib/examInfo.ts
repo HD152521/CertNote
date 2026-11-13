@@ -119,9 +119,10 @@ export function getExamTips(section?: string, lang: 'ko' | 'en' = 'ko'): string[
 
 // 응시료 표기. 천단위 구분은 직접 넣는다 — toLocaleString 은 실행 환경의 ICU 데이터에 따라
 // 결과가 달라질 수 있어, 빌드타임 정적 생성 결과가 흔들리지 않도록 결정적 구현을 쓴다.
-export function formatCost(cost: ExamCost): string {
+export function formatCost(cost: ExamCost, lang: 'ko' | 'en' = 'ko'): string {
   const grouped = String(Math.trunc(cost.amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return cost.currency === 'KRW' ? `${grouped}원` : `$${grouped}`;
+  if (cost.currency !== 'KRW') return `$${grouped}`;
+  return lang === 'en' ? `KRW ${grouped}` : `${grouped}원`;
 }
 
 const EXAM_INFO_ROOT = path.join(process.cwd(), 'content', 'exam-info');
@@ -269,6 +270,9 @@ export interface ExamInfoEn {
   prerequisites?: string;
   format?: string;
   languages?: string[];
+  passingCriteria?: string;
+  // 다단계 시험(리눅스마스터·SQLD)의 단계별 글 항목. 단계 수가 정본과 같을 때만 덮어쓴다.
+  phases?: { name: string; questionCount: string; format: string; eligibility?: string }[];
   domains?: { name: string }[];
   faq?: ExamFaq[];
 }
@@ -281,6 +285,10 @@ function isExamInfoEn(value: unknown): value is ExamInfoEn {
     strOrUndef(v.difficulty) &&
     strOrUndef(v.prerequisites) &&
     strOrUndef(v.format) &&
+    strOrUndef(v.passingCriteria) &&
+    (v.phases === undefined ||
+      (Array.isArray(v.phases) &&
+        v.phases.every((p) => typeof p === 'object' && p !== null && typeof (p as ExamPhase).name === 'string' && typeof (p as ExamPhase).questionCount === 'string' && typeof (p as ExamPhase).format === 'string'))) &&
     (v.languages === undefined || (Array.isArray(v.languages) && v.languages.every((x) => typeof x === 'string'))) &&
     (v.domains === undefined || (Array.isArray(v.domains) && v.domains.every((d) => typeof d === 'object' && d !== null && typeof (d as ExamDomain).name === 'string'))) &&
     (v.faq === undefined || (Array.isArray(v.faq) && v.faq.every((x) => typeof x === 'object' && x !== null && typeof (x as ExamFaq).q === 'string' && typeof (x as ExamFaq).a === 'string')))
@@ -318,6 +326,10 @@ export function localizeExamInfo(info: ExamInfo, slug: string, lang: 'ko' | 'en'
     ...(en.prerequisites !== undefined ? { prerequisites: en.prerequisites } : {}),
     ...(en.format !== undefined ? { format: en.format } : {}),
     ...(en.languages ? { languages: en.languages } : {}),
+    ...(en.passingCriteria !== undefined ? { passingCriteria: en.passingCriteria } : {}),
+    ...(en.phases && info.phases && en.phases.length === info.phases.length
+      ? { phases: info.phases.map((ph, i) => ({ ...ph, ...en.phases![i] })) }
+      : {}),
     ...(en.faq && en.faq.length > 0 ? { faq: en.faq } : {}),
     domains,
   };

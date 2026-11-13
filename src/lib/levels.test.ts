@@ -20,6 +20,13 @@ describe('certLevelLabel — 섹션별 티어 라벨', () => {
     }
   });
 
+  test('영어판은 한글 없이 영어 티어명을 쓴다(리눅스마스터·SQLD)', () => {
+    expect(certLevelLabel('grade-1', 'linux', 'en')).toBe('Grade 1');
+    expect(certLevelLabel('grade-2', 'linux', 'en')).toBe('Grade 2');
+    expect(certLevelLabel('developer', 'data', 'en')).toBe('Developer');
+    expect(certLevelLabel('grade-1', 'linux')).toBe('1급');
+  });
+
   test('미등록 레벨은 title-case로 폴백한다(회귀 안전)', () => {
     expect(certLevelLabel('some-new-tier', 'kubernetes')).toBe('Some New Tier');
   });

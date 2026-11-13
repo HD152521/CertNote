@@ -89,6 +89,12 @@ describe('buildCourseLd — 자격증 허브', () => {
     expect(ld.provider).toEqual(organizationRef());
   });
 
+  test('영어 허브의 설명에는 한글이 없다(inLanguage와 모순 방지)', () => {
+    const ld = buildCourseLd({ ...base, lang: 'en' }) as Record<string, unknown>;
+    expect(ld.inLanguage).toBe('en');
+    expect(String(ld.description)).not.toMatch(/[가-힣]/);
+  });
+
   test('접근 정책과 일치하게 선언한다 — 전 주차 공개 중에는 강좌 전체가 무료', () => {
     const ld = buildCourseLd({ ...base, lang: 'ko' }) as Record<string, unknown>;
     // 구독제 보류(PAYWALL_ENABLED=false): 전 주차 공개라 강좌 전체가 무료이고 hasPart는 없다.

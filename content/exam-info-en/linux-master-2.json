@@ -1,4 +1,19 @@
 {
+  "passingCriteria": "Score of 60 or higher (automatic fail if any subject is below 40%)",
+  "phases": [
+    {
+      "name": "Part 1",
+      "questionCount": "50 questions",
+      "format": "Online exam (four-option multiple choice)",
+      "eligibility": "No restrictions"
+    },
+    {
+      "name": "Part 2",
+      "questionCount": "80 questions",
+      "format": "Written (four-option multiple choice)",
+      "eligibility": "No restrictions"
+    }
+  ],
   "difficulty": "Beginner · Aimed at learners who are new to Linux",
   "prerequisites": "There are no eligibility requirements for either Part 1 or Part 2. Unlike Level 1, Part 2 does not require passing Part 1.",
   "languages": [

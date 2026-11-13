@@ -154,7 +154,7 @@ export default async function CertIndexPage({ params }: PageProps) {
         <h1 className="text-3xl font-semibold tracking-tight">{meta.name}</h1>
         <p className="text-sm text-fg-muted">
           {lang === 'en' ? `${meta.weeks} week${meta.weeks > 1 ? 's' : ''} · ${meta.dayCount} days · ` : `${meta.weeks}주 · 총 ${meta.dayCount}일 · `}
-          <span className={isHighlightLevel(meta.level, section) ? 'text-accent' : ''}>{certLevelLabel(meta.level, section)}</span>
+          <span className={isHighlightLevel(meta.level, section) ? 'text-accent' : ''}>{certLevelLabel(meta.level, section, lang)}</span>
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {firstDay && (

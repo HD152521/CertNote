@@ -1,4 +1,19 @@
 {
+  "passingCriteria": "Score of 60 or higher (automatic fail if any subject is below 40%)",
+  "phases": [
+    {
+      "name": "Part 1 (written)",
+      "questionCount": "100 questions",
+      "format": "Written (four-option multiple choice)",
+      "eligibility": "No restrictions"
+    },
+    {
+      "name": "Part 2 (practical)",
+      "questionCount": "10 written questions + 5-7 practical questions",
+      "format": "Written 40% (short answer and essay) + practical 60% (hands-on tasks)",
+      "eligibility": "Part 1 passers only, within 2 years of the score announcement date"
+    }
+  ],
   "difficulty": "Advanced · Heavy emphasis on memorizing commands and configuration files",
   "prerequisites": "There are no eligibility requirements for Part 1. Part 2 is open only to Part 1 passers, who may take it within 2 years of the results announcement date.",
   "languages": [

@@ -75,11 +75,12 @@ describe('모의고사 영어판', () => {
     expect(HANGUL.test(koRes.explanation)).toBe(true);
   });
 
-  test('영어판이 없는 문제(SQLD 등)는 한국어로 대체된다', () => {
-    const sqld = getAllExamQuestions().find((q) => q.slug === 'sqld')!;
-    const loc = localizeExamQuestion(sqld, 'en');
-    expect(loc.prompt).toBe(sqld.prompt);
-    expect(loc.domainLabel).toBe(sqld.domain);
+  test('SQLD·리눅스마스터 문제도 영어판이 있어 영어로 나온다', () => {
+    for (const slug of ['sqld', 'linux-master-1']) {
+      const q = getAllExamQuestions().find((x) => x.slug === slug)!;
+      const loc = localizeExamQuestion(q, 'en');
+      expect(HANGUL.test([loc.prompt, loc.domainLabel, ...loc.choices.map((c) => c.text)].join(' ')), slug).toBe(false);
+    }
   });
 
   test('설정 화면용 영어 도메인 이름이 자격증의 모든 도메인을 덮는다', () => {

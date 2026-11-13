@@ -73,7 +73,7 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
             onClick={onNavigate}
             className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md px-2 py-1.5"
           >
-            <span className="font-mono text-[11px] text-fg-faint">{meta.code} · {certLevelLabel(meta.level, (meta.section as Section) ?? 'aws')}</span>
+            <span className="font-mono text-[11px] text-fg-faint">{meta.code} · {certLevelLabel(meta.level, (meta.section as Section) ?? 'aws', en ? 'en' : 'ko')}</span>
             <span className="text-sm leading-tight text-fg">{meta.name}</span>
           </Link>
           <button

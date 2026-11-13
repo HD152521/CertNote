@@ -282,7 +282,6 @@ Next we see CDK expand to entire AWS ecosystem in Week 9 summary, then Week 10 d
 
 ## 📝 Practice Questions
 
-(All practice problems in Korean preserved as required)
 
 **Question 1.** What is the key difference between CDK and Pulumi?
 
@@ -323,7 +322,6 @@ Explanation: The principle of separation of privilege. The deploy role assumed b
 
 ---
 
-(Remaining practice problems in Korean - continuing format...)
 
 **Question 4.** What does self-mutation mean in CDK Pipelines?
 

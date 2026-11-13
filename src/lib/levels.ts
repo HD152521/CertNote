@@ -35,9 +35,18 @@ function titleCase(s: string): string {
   return s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// 영어판(/en)에서 쓰는 국내 자격 티어 표기. 한국어 라벨을 그대로 쓰면 영어 페이지에 '1급' 같은 한글이 남는다.
+const EN_TIER_LABELS: Record<string, string> = {
+  'grade-1': 'Grade 1',
+  'grade-2': 'Grade 2',
+  developer: 'Developer',
+  professional: 'Professional',
+};
+
 // 레벨 표시 라벨. AWS 알려진 값은 기존 라벨, 그 외/미등록은 title-case 폴백(회귀 안전).
 // section 생략 시 'aws' 기본 — 기존 호출부(certLevelLabel(level))가 그대로 동작.
-export function certLevelLabel(level: CertLevel, section: Section = 'aws'): string {
+export function certLevelLabel(level: CertLevel, section: Section = 'aws', lang: 'ko' | 'en' = 'ko'): string {
+  if (lang === 'en' && section !== 'aws' && EN_TIER_LABELS[level]) return EN_TIER_LABELS[level];
   if (section === 'aws' && AWS_LABELS[level]) return AWS_LABELS[level];
   if (section === 'linux' && LINUX_LABELS[level]) return LINUX_LABELS[level];
   if (section === 'data' && DATA_LABELS[level]) return DATA_LABELS[level];

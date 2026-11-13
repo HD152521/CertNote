@@ -273,7 +273,6 @@ Next we explore **CDK** itself. SAM applied Transform Macro abstraction over YAM
 
 ## 📝 Practice Questions
 
-(All practice problems in Korean - preserved from original)
 
 **Question 1.** What happens if a custom resource Lambda fails to send a response to the ResponseURL in any branch?
 

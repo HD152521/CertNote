@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { AWS_EXAM_TIPS, AWS_EXAM_TIPS_EN, getExamInfo, getExamTips, localizeExamInfo } from './examInfo';
+import { AWS_EXAM_TIPS, AWS_EXAM_TIPS_EN, formatCost, getExamInfo, getExamTips, localizeExamInfo } from './examInfo';
 
 // 영어로 전환하면 시험 정보 카드(도메인 이름, 출제 형식, 선수 지식, 언어, FAQ)도 영어로 나와야 한다.
 
@@ -56,6 +56,16 @@ describe('시험 정보 영어판', () => {
       const allowed = new Set(['difficulty', 'prerequisites', 'format', 'languages', 'domains', 'faq']);
       expect(Object.keys(raw).filter((k) => !allowed.has(k)), slug).toEqual([]);
     }
+  });
+
+  test.each(['sqld', 'linux-master-1', 'linux-master-2'])('%s: 단계·합격 기준·응시료까지 영어 화면에 한글이 없다', (slug) => {
+    const en = localizeExamInfo(getExamInfo(slug)!, slug, 'en');
+    const text = [
+      visibleText(en),
+      en.passingCriteria,
+      ...(en.phases ?? []).flatMap((p) => [p.name, p.questionCount, p.format, p.eligibility, p.cost ? formatCost(p.cost, 'en') : '']),
+    ].join('\n');
+    expect(HANGUL.test(text), slug).toBe(false);
   });
 
   test('혜택 팁도 영어판이 있고 개수가 같다', () => {
