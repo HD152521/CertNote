@@ -3,11 +3,19 @@
 import dynamic from 'next/dynamic';
 import { useState, type ReactNode } from 'react';
 import { Play } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n-client';
+import { sqlStrings } from './i18n';
+
+// 엔진을 불러오는 동안의 안내. 경로 기준 언어(useLanguage)로 서버·클라이언트가 같게 그린다.
+function LoadingNote() {
+  const lang = useLanguage();
+  return <div className="px-1 py-2 text-[12.5px] text-fg-muted">{sqlStrings(lang).loading}</div>;
+}
 
 // 엔진은 버튼을 누를 때만 불러온다 — 노트 페이지의 첫 로딩에 SQL 해석기가 실리지 않게.
 const SqlConsole = dynamic(() => import('./SqlConsole').then((m) => m.SqlConsole), {
   ssr: false,
-  loading: () => <div className="px-1 py-2 text-[12.5px] text-fg-muted">실습장을 불러오는 중…</div>,
+  loading: () => <LoadingNote />,
 });
 
 /**
@@ -31,7 +39,7 @@ export function SqlRunBlock({ sql, children, lang = 'ko' }: { sql: string; child
       ) : (
         <div className="not-prose -mt-2 mb-6 rounded-lg border border-border bg-bg px-3 py-3">
           <div className="mb-2 text-[12px] text-fg-faint">{en ? 'Runs against the EMP, DEPT and SALGRADE sample tables. Edit the statement and run it again.' : 'EMP·DEPT·SALGRADE 예제 테이블로 실행해요. 문장을 고쳐서 다시 실행해 보세요.'}</div>
-          <SqlConsole initial={sql} rows={2} />
+          <SqlConsole initial={sql} rows={2} lang={lang} />
         </div>
       )}
     </div>

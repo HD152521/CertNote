@@ -5,6 +5,7 @@ import { Play, RotateCcw } from 'lucide-react';
 import { ResultView } from './ResultView';
 import { runInWorker, type Verdict } from './runner';
 import type { WireResult } from './sqlWorker';
+import { sqlStrings, type SqlLang } from './i18n';
 
 interface SqlConsoleProps {
   initial: string;
@@ -13,13 +14,16 @@ interface SqlConsoleProps {
   renderVerdict?: (verdict: Verdict) => ReactNode;
   label?: string;
   rows?: number;
+  /** 화면 언어(기본 ko) */
+  lang?: SqlLang;
 }
 
 const BUTTON =
   'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-accent';
 
 // SQL 입력창 + 실행 + 결과. Ctrl(⌘)+Enter 로 실행, Tab 은 공백 두 칸.
-export function SqlConsole({ initial, task, renderVerdict, label = 'SQL 입력', rows = 4 }: SqlConsoleProps) {
+export function SqlConsole({ initial, task, renderVerdict, label, rows = 4, lang = 'ko' }: SqlConsoleProps) {
+  const s = sqlStrings(lang);
   const [src, setSrc] = useState(initial);
   const [results, setResults] = useState<WireResult[] | null>(null);
   const [extra, setExtra] = useState<ReactNode>(null);
@@ -33,7 +37,7 @@ export function SqlConsole({ initial, task, renderVerdict, label = 'SQL 입력',
     const out = await runInWorker(src, task);
     setBusy(false);
     if (out.timedOut) {
-      setResults([{ kind: 'note', sql: src, message: '실행이 4초 안에 끝나지 않아서 멈췄어요. 정규식의 반복이 겹치거나, 큰 조인·큰 테이블을 행마다 다시 계산하고 있는지 확인해 보세요.' }]);
+      setResults([{ kind: 'note', sql: src, message: s.timedOut }]);
       setExtra(null);
       return;
     }
@@ -64,7 +68,7 @@ export function SqlConsole({ initial, task, renderVerdict, label = 'SQL 입력',
         value={src}
         onChange={(e) => setSrc(e.target.value)}
         onKeyDown={onKeyDown}
-        aria-label={label}
+        aria-label={label ?? s.consoleLabel}
         spellCheck={false}
         autoCapitalize="off"
         autoCorrect="off"
@@ -73,7 +77,7 @@ export function SqlConsole({ initial, task, renderVerdict, label = 'SQL 입력',
       />
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={run} disabled={busy} className={`${BUTTON} bg-fg text-bg hover:opacity-90 disabled:opacity-60`}>
-          <Play className="h-3.5 w-3.5" aria-hidden /> {busy ? '실행 중…' : '실행'}
+          <Play className="h-3.5 w-3.5" aria-hidden /> {busy ? s.running : s.run}
         </button>
         <button
           type="button"
@@ -85,15 +89,15 @@ export function SqlConsole({ initial, task, renderVerdict, label = 'SQL 입력',
           }}
           className={`${BUTTON} border border-border text-fg-muted hover:text-fg`}
         >
-          <RotateCcw className="h-3.5 w-3.5" aria-hidden /> 처음 문장으로
+          <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {s.reset}
         </button>
-        <span className="hidden text-[12px] text-fg-faint sm:inline">Ctrl + Enter 로도 실행</span>
+        <span className="hidden text-[12px] text-fg-faint sm:inline">{s.ctrlEnter}</span>
       </div>
       {results && (
         <div className="space-y-3" aria-live="polite">
-          {results.length === 0 && <div className="text-[13px] text-fg-muted">실행할 문장이 없어요.</div>}
+          {results.length === 0 && <div className="text-[13px] text-fg-muted">{s.nothingToRun}</div>}
           {results.map((r, i) => (
-            <ResultView key={i} result={r} showSql={results.length > 1} />
+            <ResultView key={i} result={r} showSql={results.length > 1} lang={lang} />
           ))}
           {extra}
         </div>
