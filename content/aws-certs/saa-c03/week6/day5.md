@@ -8,7 +8,7 @@
 
 | 서비스 | 핵심 역할 | 시험 포인트 |
 |--------|---------|-----------|
-| Lambda | 이벤트 기반 함수 실행 | 콜드 스타트 vs Provisioned Concurrency, Reserved vs Provisioned, awsvpc VPC 네트워킹 |
+| Lambda | 이벤트 기반 함수 실행 | 콜드 스타트 vs Provisioned Concurrency, Reserved vs Provisioned, VPC 연결(Hyperplane ENI) |
 | API Gateway REST | 리치 API 기능 | API Key + Usage Plan, Mapping Templates, AWS 서비스 통합, mTLS |
 | API Gateway HTTP | 저비용 HTTP API | JWT Authorizer, Lambda 통합, REST 대비 70% 저렴 |
 | API Gateway WebSocket | 실시간 양방향 | connectionId, $connect/$disconnect/$default, 서버 푸시 |
@@ -42,7 +42,7 @@
 - Reserved: "이 함수에 최대 N개의 동시 실행을 예약" — 다른 함수가 이 용량을 쓸 수 없음. 격리 목적. 콜드 스타트 해결 안 됨.
 - Provisioned: "워밍된 실행 환경 N개를 항상 유지" — 콜드 스타트 0ms. 비용 추가 발생.
 
-> ⚠️ **함정 — Lambda VPC와 인터넷 접근**: Lambda를 VPC에 연결하면(awsvpc 모드) 기본적으로 인터넷 접근이 불가능하다. VPC 내부 자원(RDS, ElastiCache)에는 접근 가능하지만, 외부 API나 AWS Public Endpoints(DynamoDB, S3 기본 엔드포인트)는 접근이 차단된다. 해결책: 프라이빗 서브넷 + NAT Gateway(인터넷 접근), 또는 VPC Gateway/Interface Endpoint(AWS 서비스 접근). Lambda의 Hyperplane ENI는 2019년 이후 ENI 생성 지연 문제를 해결했지만 NAT Gateway 비용은 여전히 존재한다.
+> ⚠️ **함정 — Lambda VPC와 인터넷 접근**: Lambda를 VPC에 연결하면 기본적으로 인터넷 접근이 불가능하다. VPC 내부 자원(RDS, ElastiCache)에는 접근 가능하지만, 외부 API나 AWS Public Endpoints(DynamoDB, S3 기본 엔드포인트)는 접근이 차단된다. 해결책: 프라이빗 서브넷 + NAT Gateway(인터넷 접근), 또는 VPC Gateway/Interface Endpoint(AWS 서비스 접근). Lambda의 Hyperplane ENI는 2019년 이후 ENI 생성 지연 문제를 해결했지만 NAT Gateway 비용은 여전히 존재한다.
 
 ## API Gateway 유형 선택 기준
 
@@ -245,7 +245,7 @@ B) API Gateway WebSocket + Lambda ($connect에서 connectionId 저장, 변경 �
 C) AppSync GraphQL + Subscription
 D) SNS + 클라이언트가 HTTP Long Polling
 
-**정답: C 또는 B**
+**정답: C**
 AppSync GraphQL Subscription(C)은 관리형 실시간 WebSocket 연결을 제공하고, DynamoDB 변경을 자동으로 클라이언트에 push할 수 있다. 인프라 관리가 적고 GraphQL 쿼리와 실시간을 통합한다. API Gateway WebSocket(B)도 유효하지만 connectionId 관리와 push 로직을 직접 구현해야 한다. 폴링(A, D)은 실시간이 아니고 불필요한 요청이 많다.
 
 ---

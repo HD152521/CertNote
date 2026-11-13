@@ -330,8 +330,6 @@ Explanation: A volume created from a snapshot is lazy-loaded — it fetches from
 
 ---
 
-**Question 5 (renumbered to avoid duplicates): NotApplicable. Already asked as number 5.
-
 **Question 7.** A company wants to retain EBS snapshots long-term for 90 days or more. To minimize cost?
 
 A) Leave the snapshots as they are (S3 Standard pricing)

@@ -316,6 +316,7 @@ def lambda_handler(event, context):
 **A client that receives 429 on a synchronous invocation:**
 ```python
 import boto3
+import random
 import time
 from botocore.exceptions import ClientError
 

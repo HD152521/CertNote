@@ -8,7 +8,7 @@ The theme of Week 6 was "managed compute." AWS keeps absorbing more of the burde
 
 | Service | Core role | Exam points |
 |--------|---------|-----------|
-| Lambda | Event-driven function execution | Cold start vs Provisioned Concurrency, Reserved vs Provisioned, awsvpc VPC networking |
+| Lambda | Event-driven function execution | Cold start vs Provisioned Concurrency, Reserved vs Provisioned, VPC attachment (Hyperplane ENI) |
 | API Gateway REST | Rich API features | API Key + Usage Plan, Mapping Templates, AWS service integration, mTLS |
 | API Gateway HTTP | Low-cost HTTP API | JWT Authorizer, Lambda integration, 70% cheaper than REST |
 | API Gateway WebSocket | Real-time two-way | connectionId, $connect/$disconnect/$default, server push |
@@ -42,7 +42,7 @@ The theme of Week 6 was "managed compute." AWS keeps absorbing more of the burde
 - Reserved: "Reserve up to N concurrent executions for this function" — other functions cannot use this capacity. For isolation. Does not fix cold starts.
 - Provisioned: "Always keep N warm execution environments" — 0ms cold start. Incurs additional cost.
 
-> ⚠️ **Trap — Lambda VPC and internet access**: When you attach Lambda to a VPC (awsvpc mode), it cannot access the internet by default. It can reach resources inside the VPC (RDS, ElastiCache), but external APIs and AWS Public Endpoints (the default DynamoDB and S3 endpoints) are blocked. Solutions: a private subnet + NAT Gateway (internet access), or a VPC Gateway/Interface Endpoint (AWS service access). Lambda's Hyperplane ENI has solved the ENI creation delay problem since 2019, but the NAT Gateway cost still exists.
+> ⚠️ **Trap — Lambda VPC and internet access**: When you attach Lambda to a VPC, it cannot access the internet by default. It can reach resources inside the VPC (RDS, ElastiCache), but external APIs and AWS Public Endpoints (the default DynamoDB and S3 endpoints) are blocked. Solutions: a private subnet + NAT Gateway (internet access), or a VPC Gateway/Interface Endpoint (AWS service access). Lambda's Hyperplane ENI has solved the ENI creation delay problem since 2019, but the NAT Gateway cost still exists.
 
 ## Criteria for Choosing an API Gateway Type
 
@@ -245,7 +245,7 @@ B) API Gateway WebSocket + Lambda (store the connectionId in $connect, push to a
 C) AppSync GraphQL + Subscription
 D) SNS + client HTTP Long Polling
 
-**Answer: C or B**
+**Answer: C**
 AppSync GraphQL Subscription (C) provides managed real-time WebSocket connections and can automatically push DynamoDB changes to clients. It requires little infrastructure management and integrates GraphQL queries with real-time. API Gateway WebSocket (B) is also valid, but you must implement connectionId management and push logic yourself. Polling (A, D) is not real-time and generates many unnecessary requests.
 
 ---
