@@ -37,7 +37,7 @@ A multi-model endpoint serves **many models that use the same framework/containe
 - When a call arrives, it **dynamically loads** that model into memory and **unloads** models that are not in use.
 - It puts hundreds to thousands of models on a handful of instances, cutting cost dramatically.
 
-![Multi-model endpoint flow: if the requested model is in the cache it runs inference immediately, otherwise it is downloaded from S3 and loaded](/diagrams/mme-dynamic-load.svg)
+![Multi-model endpoint flow: if the requested model is in the cache it runs inference immediately, otherwise it is downloaded from S3 and loaded](/diagrams/en/mme-dynamic-load.svg)
 
 ```python
 # Specify which model to use with TargetModel at call time

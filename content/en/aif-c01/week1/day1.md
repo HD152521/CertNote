@@ -12,7 +12,7 @@
 
 **AI / ML / DL** are used as if they meant the same thing in news and advertising, but in reality they are nested: smaller circles inside a bigger one.
 
-![Diagram showing machine learning inside AI and deep learning inside machine learning](/diagrams/ai-ml-dl-nesting.svg)
+![Diagram showing machine learning inside AI and deep learning inside machine learning](/diagrams/en/ai-ml-dl-nesting.svg)
 
 - **Artificial Intelligence (AI)**: the broadest concept. Any technology that imitates intelligent human behavior.
 - **Machine Learning (ML)**: one way to implement AI. A technology that "learns" rules from data.

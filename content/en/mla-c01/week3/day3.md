@@ -77,7 +77,7 @@ query.run(query_string="SELECT * FROM customer_features WHERE ...",
           output_location='s3://my-bucket/query-results/')
 ```
 
-![Structure in which Feature Store syncs to an online store and an offline store, used for real-time inference and training datasets respectively](/diagrams/feature-store-online-offline.svg)
+![Structure in which Feature Store syncs to an online store and an offline store, used for real-time inference and training datasets respectively](/diagrams/en/feature-store-online-offline.svg)
 
 > ⚠️ **Trap**: If you enable only the online store, training history is not accumulated in S3, and if you enable only the offline store, you cannot do low-latency lookups in real-time inference. Most real ML systems **enable both**, so the same features are used consistently for training (offline) and inference (online). When you ingest data, SageMaker automatically syncs the latest value to the online store and the history to the offline store.
 

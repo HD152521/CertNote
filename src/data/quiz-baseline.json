@@ -7051,7 +7051,7 @@
   },
   "content/aws-certs/dva-c02/week2/day3.md": {
     "count": 8,
-    "rawStems": 9,
+    "rawStems": 8,
     "byNumber": {
       "1": {
         "answer": "A",
@@ -30393,7 +30393,7 @@
   },
   "content/en/dva-c02/week2/day3.md": {
     "count": 8,
-    "rawStems": 9,
+    "rawStems": 8,
     "byNumber": {
       "1": {
         "answer": "A",
@@ -43999,6 +43999,5304 @@
       },
       "12": {
         "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week10/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week10/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week10/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week10/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week10/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week11/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week11/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week11/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "D",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week11/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week11/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "A",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week12/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week12/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week12/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week12/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week12/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "C",
+        "choices": 4
+      },
+      "11": {
+        "answer": "A",
+        "choices": 4
+      },
+      "12": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week13/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week13/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week13/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week13/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week13/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "D",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week14/day1.md": {
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week14/day2.md": {
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week14/day3.md": {
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week14/day4.md": {
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "C",
+        "choices": 4
+      },
+      "10": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week14/day5.md": {
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week1/day1.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week1/day2.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week1/day3.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week1/day4.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week1/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "D",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "D",
+        "choices": 4
+      },
+      "11": {
+        "answer": "C",
+        "choices": 4
+      },
+      "12": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week2/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "D",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week2/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week2/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week2/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week2/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "C",
+        "choices": 4
+      },
+      "10": {
+        "answer": "C",
+        "choices": 4
+      },
+      "11": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week3/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week3/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week3/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week3/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week3/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week4/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week4/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week4/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week4/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week4/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week5/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week5/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week5/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week5/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week5/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "D",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week6/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week6/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week6/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week6/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week6/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "A",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week7/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week7/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week7/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week7/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week7/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "D",
+        "choices": 4
+      },
+      "12": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week7/day6.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week8/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week8/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week8/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week8/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week8/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "C",
+        "choices": 4
+      },
+      "9": {
+        "answer": "A",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week9/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week9/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week9/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week9/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week9/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "D",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "C",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-1/week9/day6.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week10/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week10/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week10/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week10/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week10/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week11/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week11/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week11/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week11/day4.md": {
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "D",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "A",
+        "choices": 4
+      },
+      "10": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week11/day5.md": {
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "C",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week1/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week1/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week1/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week1/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week1/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week2/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week2/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week2/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week2/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week2/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week3/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week3/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week3/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week3/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week3/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week4/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week4/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week4/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week4/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week4/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week5/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week5/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week5/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week5/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week5/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week6/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week6/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week6/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week6/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week6/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week7/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week7/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week7/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week7/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week7/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week8/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week8/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week8/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week8/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week8/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week9/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week9/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week9/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week9/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/linux-master-2/week9/day5.md": {
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week1/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week1/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week1/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week1/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week1/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week2/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week2/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week2/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week2/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week2/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week3/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week3/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week3/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week3/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week3/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week4/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week4/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week4/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week4/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week4/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week5/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week5/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week5/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week5/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week5/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week6/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week6/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week6/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week6/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week6/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week7/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week7/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week7/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week7/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week7/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week8/day1.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week8/day2.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week8/day3.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week8/day4.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sqld/week8/day5.md": {
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
         "choices": 4
       }
     }

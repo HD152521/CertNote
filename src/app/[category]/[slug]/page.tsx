@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `${meta.code} ${meta.name} 공부 — ${meta.weeks}주 무료 학습 노트`;
   const description =
     lang === 'en'
-      ? `Study ${meta.code} with daily in-depth notes and practice questions. Free to read; Week 1 is fully translated into English.`
+      ? `Study ${meta.code} with daily in-depth notes and practice questions. Free to read, every week available in English.`
       : `${meta.code} 시험을 ${meta.weeks}주(총 ${meta.dayCount}일) 한국어 커리큘럼으로 준비하세요. 매일 읽는 심화 노트 + 연습 문제 + 모의고사·복습. 전 과정 무료.`;
   const url = `/${category}/${slug}`;
   // 반대 언어 허브가 있으면 hreflang 연결(영어판이 없는 자격증은 en 메타가 없어 실패 → 연결 생략).

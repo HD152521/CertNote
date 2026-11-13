@@ -181,7 +181,7 @@ The flow goes like this.
 3. The model quality monitor merges the predictions and the answers and computes performance metrics such as accuracy, F1, and AUC.
 4. If degradation relative to the baseline performance exceeds the threshold, it is flagged as a violation.
 
-![Flow that matches the data captured at prediction time with the actual answers that arrive later to compute performance metrics](/diagrams/model-quality-monitor.svg)
+![Flow that matches the data captured at prediction time with the actual answers that arrive later to compute performance metrics](/diagrams/en/model-quality-monitor.svg)
 
 ```python
 from sagemaker.model_monitor import ModelQualityMonitor

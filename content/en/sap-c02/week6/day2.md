@@ -114,7 +114,7 @@ sudo python3 aws-replication-installer-init.py \
 
 It starts immediately after the Agent registers. The Staging Area (a t3.small EC2 + EBS sized to the source disk) is created automatically.
 
-![Initial sync that transfers every disk block of the on-premises server to the AWS staging area, encrypted](/diagrams/drs-initial-sync.svg)
+![Initial sync that transfers every disk block of the on-premises server to the AWS staging area, encrypted](/diagrams/en/drs-initial-sync.svg)
 
 The source server keeps operating normally during the initial sync. New writes during this period are recorded in the bitmap and caught up by switching to continuous replication after the initial sync completes.
 

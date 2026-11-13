@@ -100,7 +100,7 @@ DynamoDB's strong consistency is offered as an option only within a single Regio
 
 ## Reviewing the Shared Responsibility Model
 
-![The shared responsibility boundary, where customer responsibility grows as you move from fully managed to IaaS](/diagrams/shared-responsibility-4tier.svg)
+![The shared responsibility boundary, where customer responsibility grows as you move from fully managed to IaaS](/diagrams/en/shared-responsibility-4tier.svg)
 
 The higher the service abstraction, the higher the responsibility boundary moves. **Even so, data classification, IAM, and encryption key management are always the customer's** — that's the key point. This principle is shown most clearly by the Capital One incident — AWS had fulfilled its responsibility for its own infrastructure, and the incident came from a WAF misconfiguration (SSRF), IMDSv1, and excessive IAM permissions in the customer's area.
 

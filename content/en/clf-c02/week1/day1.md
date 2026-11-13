@@ -36,7 +36,7 @@ You can understand why the cloud came about at a glance by looking at "what you 
 
 In other words, it was **a structure where money and time went out before you had even written any code**. On top of that, there was a trap you could not escape: the "guessing in advance" in step 1 will be wrong anyway.
 
-![A graph of fixed equipment capacity versus uneven real demand — spare capacity is waste, and exceeding it causes outages](/diagrams/capacity-vs-demand.svg)
+![A graph of fixed equipment capacity versus uneven real demand — spare capacity is waste, and exceeding it causes outages](/diagrams/en/capacity-vs-demand.svg)
 
 - **Buy too much** — your money is tied up in equipment that sits idle most of the time. A few years later, all that is left is depreciation.
 - **Buy too little** — the service stops at precisely the moment people flood in. Even if you try to buy more, it is another few weeks until delivery.

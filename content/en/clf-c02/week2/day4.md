@@ -166,7 +166,7 @@ Looking only at the table, the five seem similar. If you attach to each one the 
 
 The two services aren't separate; they're usually used together. Let's combine the flows.
 
-![The flow where a user request goes through Route 53 to CloudFront, and goes to the origin only on a cache miss](/diagrams/cloudfront-route53.svg)
+![The flow where a user request goes through Route 53 to CloudFront, and goes to the origin only on a cache miss](/diagrams/en/cloudfront-route53.svg)
 
 When a user enters a domain → Route 53 directs "this name goes to CloudFront" → CloudFront serves the content from the nearest edge → and goes to the origin (S3, EC2) only when the content isn't at the edge. This combination completes the division of roles: "name resolution is Route 53, fast delivery is CloudFront, origin storage is S3."
 

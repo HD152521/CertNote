@@ -79,7 +79,7 @@ The customer is responsible for **everything they put on and configure** on top 
 
 **The boundary of the shared responsibility model is not fixed; it moves up and down depending on which service you use.** The more "managed" the service you use, the less the customer is responsible for.
 
-![The shared responsibility boundary, where customer responsibility shrinks and AWS responsibility grows as you move from EC2 to S3 and Lambda](/diagrams/shared-responsibility-spectrum.svg)
+![The shared responsibility boundary, where customer responsibility shrinks and AWS responsibility grows as you move from EC2 to S3 and Lambda](/diagrams/en/shared-responsibility-spectrum.svg)
 
 - **EC2 (virtual server)**: the customer handles everything themselves, including operating system patching, app installation, and firewall settings. Responsibility is greatest.
 - **RDS (managed database)**: AWS handles the database engine's patching and backups for you. The customer focuses on data and access permissions.

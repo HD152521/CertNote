@@ -137,7 +137,7 @@ Member account characteristics:
 - Member account events are stored in the central S3 bucket of the Log Archive Account
 - Path: `AWSLogs/{org-id}/{member-account-id}/CloudTrail/...`
 
-![Structure in which the management account's Organization Trail gathers member account logs and sends them to a central archive account](/diagrams/org-trail-central.svg)
+![Structure in which the management account's Organization Trail gathers member account logs and sends them to a central archive account](/diagrams/en/org-trail-central.svg)
 
 A centralized log archive is a core design pattern of AWS Landing Zone (now Control Tower). The reason for having a separate Log Archive Account is "to prevent an attacker from deleting logs from a compromised workload account." Even if an attacker compromises account A, they cannot erase the logs without permissions on the Log Archive Account's S3 bucket. This is the security value of account separation.
 

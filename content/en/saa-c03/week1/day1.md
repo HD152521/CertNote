@@ -92,7 +92,7 @@ A common misconception among first-time cloud users is "doesn't AWS take care of
 
 Let's start with why this model is needed. In traditional on-premises, everything was the customer's responsibility (servers, network, OS, apps, all of it). In SaaS, almost everything is the vendor's responsibility (if Gmail goes down, it's Google's fault). The cloud is in between, and **the responsibility boundary shifts depending on which service you use**. With EC2 (IaaS), the customer owns everything from the OS up; with RDS (PaaS), AWS handles up to DB engine patching; with fully managed services like Lambda or S3, AWS takes responsibility even further up.
 
-![The shared responsibility boundary, where customer responsibility grows as you move from fully managed to IaaS](/diagrams/shared-responsibility-4tier.svg)
+![The shared responsibility boundary, where customer responsibility grows as you move from fully managed to IaaS](/diagrams/en/shared-responsibility-4tier.svg)
 
 | Responsibility area | AWS | Customer |
 |-----------|-----|------|

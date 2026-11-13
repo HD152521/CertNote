@@ -111,7 +111,7 @@ EFS (Elastic File System) is a fully managed distributed file system that uses t
 
 EFS's internal structure consists of storage servers distributed across multiple AZs. Each file is stored across multiple servers to secure availability and durability. Clients access it through EFS mount targets (one placed in each AZ).
 
-![A structure where mount targets in each Availability Zone converge into a single EFS distributed storage cluster](/diagrams/efs-mount-targets.svg)
+![A structure where mount targets in each Availability Zone converge into a single EFS distributed storage cluster](/diagrams/en/efs-mount-targets.svg)
 
 **Performance modes**:
 - `generalPurpose`: The default. Suitable for 99% of workloads. Metadata operations are fast.

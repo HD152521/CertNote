@@ -14,7 +14,7 @@ AWS has dozens of data-related services. When you first open the console, a floo
 
 Today we draw a map of which services belong where across these five categories. We will cover the deep details of individual services in later weeks; today's goal is to place in your head "which stage of the pipeline is this service in?" A good share of exam questions ask "which service fits this scenario?", and the answer comes from this map.
 
-![Map of AWS services across the four stages of ingest, store, process, and analyze, with governance running through all of them](/diagrams/data-pipeline-map.svg)
+![Map of AWS services across the four stages of ingest, store, process, and analyze, with governance running through all of them](/diagrams/en/data-pipeline-map.svg)
 
 This single picture is the skeleton of DEA-C01 service knowledge. Data flows from the left (ingestion) to the right (analytics), and the governance layer at the bottom oversees permissions, catalog, and encryption across the whole span.
 
