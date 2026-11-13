@@ -53,7 +53,7 @@ Aurora Cluster
 
 ## Aurora 페일오버와 기능
 
-Aurora의 Writer가 죽으면 Reader 하나(승격 우선순위(promotion tier)로 선택)가 새 Writer가 된다. 스토리지가 공유되므로 데이터 복사가 필요 없고 **페일오버는 30초 이내에 끝난다**(Reader가 없어 새로 띄워야 하면 더 길어진다). **Reader 엔드포인트**는 모든 Reader에 부하를 분산하고, **Writer 엔드포인트**는 항상 현재 Writer를 가리킨다.
+Aurora의 Writer가 죽으면 Reader 하나(승격 우선순위(promotion tier)로 선택)가 새 Writer가 된다. 스토리지가 공유되므로 데이터 복사가 필요 없고 **페일오버는 보통 60초 미만, 종종 30초 미만에 끝난다**(Reader가 없어 새로 띄워야 하면 더 길어진다). **Reader 엔드포인트**는 모든 Reader에 부하를 분산하고, **Writer 엔드포인트**는 항상 현재 Writer를 가리킨다.
 
 | 기능 | 핵심 | 비고 |
 |---------|------|------|
@@ -88,12 +88,12 @@ ElastiCache for Redis(지금은 Valkey 포함)는 **복제 그룹(replication gr
 | RDS Single-AZ | 수동 (수 분~수 시간) | 사람이 시작하는 스냅샷 복원 |
 | RDS Multi-AZ | 60~120초 | Standby 승격 + DNS 전환 |
 | RDS Multi-AZ DB Cluster | 35초 미만 | Readable Standby가 이미 실행 중이며 승격 |
-| Aurora (단일 리전) | 30초 미만 | 공유 스토리지라 복사 불필요, Reader 승격 |
+| Aurora (단일 리전) | 보통 60초 미만 (종종 30초 미만) | 공유 스토리지라 복사 불필요, Reader 승격 |
 | Aurora Global (리전 페일오버) | 수 분 단위 | Secondary를 독립 클러스터로 승격 (Day 2) |
 | ElastiCache Redis Multi-AZ | 60초 미만 | Replica 승격 |
 | DynamoDB | 약 0 | 본질적으로 분산 구조라 단일 노드 개념이 없음 |
 
-모든 행을 관통하는 원칙은 이렇다. **"페일오버 후보가 이미 실행 중이고 복사할 데이터가 적을수록 RTO가 짧다."** Aurora가 빠른(30초) 이유는 스토리지가 공유되어 새 Writer가 데이터를 가져올 필요가 없기 때문이다. Multi-AZ DB Cluster가 전통적 Multi-AZ보다 빠른 이유는 Standby가 이미 실행 중이며 읽기를 처리하고 있기 때문이다.
+모든 행을 관통하는 원칙은 이렇다. **"페일오버 후보가 이미 실행 중이고 복사할 데이터가 적을수록 RTO가 짧다."** Aurora가 빠른(보통 60초 미만) 이유는 스토리지가 공유되어 새 Writer가 데이터를 가져올 필요가 없기 때문이다. Multi-AZ DB Cluster가 전통적 Multi-AZ보다 빠른 이유는 Standby가 이미 실행 중이며 읽기를 처리하고 있기 때문이다.
 
 ## 정리
 

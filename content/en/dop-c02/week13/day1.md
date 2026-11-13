@@ -55,7 +55,7 @@ Why this 6/3/2 design emerged is the heart of the Aurora paper (Verbitski et al.
 
 ## Aurora Failover and Added Features
 
-When Aurora Writer dies, one of the live Readers promotes to Writer based on tier priority. Since storage is shared, no data copy needed — **failover under 30 seconds** (longer if no Reader exists and new one must boot). **Reader endpoint** is a load-balancing entry point across all Readers; **Writer endpoint** always points to current Writer.
+When Aurora Writer dies, one of the live Readers promotes to Writer based on tier priority. Since storage is shared, no data copy needed — **failover typically under 60 seconds, often under 30 seconds** (longer if no Reader exists and new one must boot). **Reader endpoint** is a load-balancing entry point across all Readers; **Writer endpoint** always points to current Writer.
 
 | Feature | Core | Remark |
 |---------|------|--------|
@@ -90,12 +90,12 @@ ElastiCache for Redis (now including Valkey) HA operates at **replication group*
 | RDS Single-AZ | Manual (min-hours) | Human restores snapshot |
 | RDS Multi-AZ | 60–120s | Standby promotion + DNS flip |
 | RDS Multi-AZ DB Cluster | <35s | Pre-running Readable Standby promotion |
-| Aurora (single region) | <30s | Shared storage, no copy needed; Reader promote |
+| Aurora (single region) | Typically <60s (often <30s) | Shared storage, no copy needed; Reader promote |
 | Aurora Global (region failover) | In the order of minutes | Secondary promote to standalone (Day 2) |
 | ElastiCache Redis Multi-AZ | <60s | Replica promotion |
 | DynamoDB | ~0 | Inherently distributed, no single-node concept |
 
-One principle threads the table: **"Faster RTO: shorter promotion candidate exists, no data copy needed."** Aurora's 30s comes from shared storage (new Writer needs no data); Multi-AZ DB Cluster beats traditional Multi-AZ because Standby already runs reads. 
+One principle threads the table: **"Faster RTO: shorter promotion candidate exists, no data copy needed."** Aurora's speed (typically under 60s) comes from shared storage (new Writer needs no data); Multi-AZ DB Cluster beats traditional Multi-AZ because Standby already runs reads. 
 
 ## Wrapping Up
 

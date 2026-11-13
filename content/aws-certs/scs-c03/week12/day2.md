@@ -111,7 +111,7 @@ IAM 정책 평가는 시험에서 가장 정밀하게 묻는 영역이다. 평�
 
 핵심 정신 모델은 *"권한 = (Identity ∪ Resource Allow) ∩ SCP ∩ Permission Boundary − 모든 Deny"*. SCP와 Permission Boundary는 권한을 *부여하지 않는다* — 오직 상한선을 *제한*만 한다. 실제 권한은 여전히 identity/resource 정책이 부여해야 한다. "SCP를 붙였는데 왜 권한이 안 생기나" 같은 오해는 여기서 나온다.
 
-### 정밀 버전: 여섯 층을 통과해야 ALLOW
+### 정밀 버전: 일곱 단계를 통과해야 ALLOW
 
 week2에서 판 평가 엔진을 시험 답안 형태로 다시 세운다.
 

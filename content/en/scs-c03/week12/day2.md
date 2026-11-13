@@ -111,7 +111,7 @@ IAM policy evaluation is the area the exam asks about most precisely. You must m
 
 The key mental model is *"permissions = (Identity ∪ Resource Allow) ∩ SCP ∩ Permission Boundary − all Denies"*. SCPs and Permission Boundaries do not *grant* permissions — they only *limit* the ceiling. The actual permissions must still be granted by identity/resource policies. Misunderstandings like "I attached an SCP, so why do the permissions not appear?" come from here.
 
-### Precise Version: You Must Pass Through Six Layers to Get ALLOW
+### Precise Version: You Must Pass Through Seven Steps to Get ALLOW
 
 We rebuild the evaluation engine we dug into in week 2 in exam-answer form.
 

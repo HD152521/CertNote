@@ -93,7 +93,7 @@ exports.handler = async () => {
 
 RUM's Core Web Vitals are user experience metrics proposed by Google in 2020. The three key metrics are LCP (Largest Contentful Paint), FID (First Input Delay), and CLS (Cumulative Layout Shift). They also impact Google search rankings, directly affecting SEO.
 
-> 📚 **Case Study**: According to 2019 Amazon research, a 100ms increase in page loading decreases revenue by 1%. Walmart reported a 2% improvement in conversion rate when improving page speed by 1 second. RUM is the data source that connects these business metrics with technical metrics. While Synthetics only measures "the experience of an average bot," RUM measures the actual experience of "a mobile user on LTE from Seoul."
+> 📚 **Case Study**: According to an internal Amazon experiment around 2006 (publicized by former engineer Greg Linden), a 100ms increase in page loading decreases revenue by 1%. Walmart reported a 2% improvement in conversion rate when improving page speed by 1 second. RUM is the data source that connects these business metrics with technical metrics. While Synthetics only measures "the experience of an average bot," RUM measures the actual experience of "a mobile user on LTE from Seoul."
 
 ## X-Ray: Internal Structure of Distributed Tracing and Sampling Algorithm
 

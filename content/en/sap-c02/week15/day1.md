@@ -6,7 +6,7 @@ Today's scenario is to move 100 TB+ of on-premises SAP and Oracle to AWS across 
 
 ## Multi-Account Governance - Why a Single Account Is Not Enough
 
-Early AWS users crammed everything into a single account. But as an organization grows, this structure collapses. A single account cannot isolate the **blast radius**, makes it hard to separate costs by team, lets IAM permissions balloon into the hundreds, and exposes everything with a single breach. AWS answered this problem with **Organizations** in 2017, **Control Tower** in 2018, and SCPs (Service Control Policies).
+Early AWS users crammed everything into a single account. But as an organization grows, this structure collapses. A single account cannot isolate the **blast radius**, makes it hard to separate costs by team, lets IAM permissions balloon into the hundreds, and exposes everything with a single breach. AWS answered this problem with **Organizations** in 2017, **Control Tower** in 2019, and SCPs (Service Control Policies).
 
 The essence of multi-account is **"using the account as the unit of isolation."** The account boundary is the strongest isolation boundary AWS provides - even if IAM permissions are misconfigured, they cannot reach resources in another account. So Prod, NonProd, Sandbox, Security, and Logging are split into separate accounts, grouped into OUs (Organizational Units), and policies are inherited hierarchically.
 

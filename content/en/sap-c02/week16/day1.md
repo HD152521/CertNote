@@ -8,7 +8,7 @@ Today we organize all of Domain 1 into four areas (governance, networking, integ
 
 ### The History and Principles of Multi-Account
 
-Early AWS users put everything in a single account. As organizations grow, this structure collapses: you can't isolate the blast radius, separating costs by team is hard, IAM permissions balloon to hundreds, and a single breach exposes everything. AWS answered with **Organizations** in 2017 and **Control Tower** and SCPs in 2018.
+Early AWS users put everything in a single account. As organizations grow, this structure collapses: you can't isolate the blast radius, separating costs by team is hard, IAM permissions balloon to hundreds, and a single breach exposes everything. AWS answered with **Organizations** and SCPs in 2017 and **Control Tower** in 2019 (GA).
 
 ```
 Org Root

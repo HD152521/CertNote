@@ -347,8 +347,6 @@ D) RDS 비밀번호 회전
 
 **정답: B**
 
-**정답: B**
-
 해설: CFN Drift Detection은 CFN이 추적하는 AWS 리소스 속성만 비교. Custom Resource는 외부 시스템 자원의 PhysicalResourceId만 기록하고 실제 자원 상태는 추적하지 않음. Slack 채널이 외부에서 archive되거나 권한이 변경돼도 CFN drift로 잡히지 않음. 외부 시스템 audit log streaming(Slack Audit Log, GitHub Audit Log)을 별도로 SIEM에 보내야 함. A/C는 모두 CFN drift로 감지 가능, D는 동적 참조 평문 보호 영역.
 
 ---

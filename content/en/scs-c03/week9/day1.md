@@ -84,7 +84,7 @@ e.g.) UnauthorizedAccess:EC2/SSHBruteForce
 - **ResourceTypeAffected**: EC2, IAMUser, S3, EKSCluster, RDS, Lambda, and so on.
 - **DetectionMechanism**: How it was detected, as in `.B!DNS` (DNS-based, etc.).
 
-Each finding has a **severity** score of 0.1–8.0+: Low (1.0–3.9), Medium (4.0–6.9), High (7.0–8.9). On the exam, *which finding means which threat* matters more than the score itself.
+Each finding has a **severity** score of 1.0–10.0: Low (1.0–3.9), Medium (4.0–6.9), High (7.0–8.9), Critical (9.0–10.0). On the exam, *which finding means which threat* matters more than the score itself.
 
 The ThreatPurpose classification is effectively a mapping to **MITRE ATT&CK** Tactics — Recon, PrivilegeEscalation, Persistence, Exfiltration, Impact, and so on correspond to ATT&CK kill-chain stages. Reading findings from the ATT&CK perspective lets you judge "how far the attack has progressed" and set response priorities.
 

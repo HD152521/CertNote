@@ -43,7 +43,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 | RDS Multi-AZ Instance | 블록 동기 복제 (1 standby) | 60-120초 | ~0 |
 | RDS Multi-AZ Cluster | 동기 quorum (2 readable standby) | 35초 이하 | ~0 |
 | ElastiCache Redis Multi-AZ | Primary-Replica + sentinel | 60초 이하 | replica lag |
-| Aurora Multi-AZ | 6 사본 quorum | 30초 이하 | ~0 |
+| Aurora Multi-AZ | 6 사본 quorum | 보통 60초 미만(종종 30초 미만) | ~0 |
 | Aurora Global Database | redo log shipping (cross-region) | 수 분 (managed failover) | 1초 미만 |
 
 ### "읽기 확장"에 대한 세 서비스의 답
@@ -73,7 +73,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 4. **IAM DB Auth 토큰 = 15분 SigV4, SSL 필수**
 5. **DB 삭제 시 자동 백업은 함께 삭제 (Final Snapshot 옵션 필수)**, 수동 스냅샷은 유지
 6. **Read Replica 쓰기 직후 조회 = stale data** (Read-Your-Writes 위반 가능)
-7. **Aurora Replica 자동 페일오버 < 30초**, RDS Multi-AZ는 60-120초
+7. **Aurora Replica 자동 페일오버 보통 < 60초(종종 < 30초)**, RDS Multi-AZ는 60-120초
 8. **Aurora 스토리지 = 3 AZ × 2 사본 = 6, W=4 R=3**
 9. **Aurora Serverless v1은 분 단위 + 콜드 스타트**, v2는 세밀한 단위 + 스케일링 중 작업 중단 없음(auto-pause 재개 시 약 15초)
 10. **Redis Cluster Mode Disabled는 단일 샤드** — 한 노드 메모리가 한도

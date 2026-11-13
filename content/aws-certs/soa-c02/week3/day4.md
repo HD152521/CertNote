@@ -93,7 +93,7 @@ exports.handler = async () => {
 
 RUM의 Core Web Vitals는 Google이 2020년 제안한 사용자 경험 메트릭이다. LCP(Largest Contentful Paint, 최대 콘텐츠 렌더링 시간), FID(First Input Delay, 첫 입력 지연), CLS(Cumulative Layout Shift, 누적 레이아웃 이동)가 핵심 세 가지다. Google 검색 순위에도 영향을 주므로 SEO와 직결된다.
 
-> 📚 **사례**: 2019년 Amazon 연구에 따르면 페이지 로딩이 100ms 늘어날 때 매출이 1% 감소한다고 알려졌다. Walmart는 페이지 속도를 1초 개선할 때 전환율이 2% 향상됐다고 공개했다. RUM은 이런 비즈니스 지표와 기술 지표를 연결하는 데이터 소스다. Synthetics만으로는 "평균적인 봇의 경험"을 측정하지만, RUM은 "서울에서 LTE로 접속한 모바일 사용자"의 실제 경험을 측정한다.
+> 📚 **사례**: 2006년경 Amazon 내부 실험(전 직원 Greg Linden 소개)으로 알려진 바에 따르면 페이지 로딩이 100ms 늘어날 때 매출이 1% 감소한다고 알려졌다. Walmart는 페이지 속도를 1초 개선할 때 전환율이 2% 향상됐다고 공개했다. RUM은 이런 비즈니스 지표와 기술 지표를 연결하는 데이터 소스다. Synthetics만으로는 "평균적인 봇의 경험"을 측정하지만, RUM은 "서울에서 LTE로 접속한 모바일 사용자"의 실제 경험을 측정한다.
 
 ## X-Ray: 분산 추적의 내부 구조와 Sampling 알고리즘
 

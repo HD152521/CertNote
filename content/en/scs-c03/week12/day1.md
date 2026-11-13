@@ -299,7 +299,7 @@ And all four of these points are not matters of "on/off" but of *combination*. T
 - [ ] Did you turn on GuardDuty, Inspector, Macie, and Config and aggregate them in Security Hub (delegated admin)?
 - [ ] Do you distinguish "what" = GuardDuty, "why/scope" = Detective, "vulnerabilities" = Inspector, "data sensitivity" = Macie?
 - [ ] Did you route findings through EventBridge to Lambda/SSM automatic remediation?
-- [ ] Have you memorized the compromised-EC2 response order (isolate → preserve evidence → separate → investigate → recover)?
+- [ ] Have you memorized the compromised-EC2 response order (separate → preserve evidence → isolate → revoke credentials → investigate → recover)?
 - [ ] Do you know the deactivate/rotate (delete with caution) procedure for credential and key compromise?
 
 ---

@@ -41,7 +41,11 @@ PR #62~#70 에서 한 일을 한곳에 정리한다. 세부 근거는 각 PR 설
   운영 사이트맵 1,648개 전수 크롤(11-14)에서 비200·canonical·noindex·H1·hreflang 이상 0건.
 - #75: 영어 SQL 실습 UI(엔진 안내문 28종 영어 매핑 포함)와 영어 OG 카드 라벨.
 - 영어 정보 페이지: /en/about·how-we-make·roadmap(+직무 6개)·changelog·contact·terms·privacy 와 푸터·헤더·언어 전환 연결, hreflang·사이트맵 등록.
-- 남은 일: 한국어 원문 오류 정리(목록은 PR #66~#70 설명), 색인 감소 원인(GSC 캡처 필요).
+- 한국어 원문 오류 정정(11-14): PR #66~#73 의 의심 항목 43개를 분류해 공식 문서로 확인된 것만 한국어·영어 같이 고침.
+  고친 것: DynamoDB 트랜잭션 100개, Secrets Manager 64KB, Control Tower 2019, GuardDuty severity 1.0–10.0, IAM 평가 7단계, SnapStart 시점 표기(문제 2·5), Aurora 페일오버 "보통 60초 미만", SQS 가시성 타임아웃 부등호, Redis 해시 태그 보기, 침해 대응 체크리스트 순서, 100ms 지연 인용 출처, 소제목·중복 정답 줄.
+  보류(근거 불충분): 정답이 둘로 읽히는 문제(dva week7/day1·day5, week13/day4, sap week1/day2, soa week4/day2, saa week3/day5·week4/day5 등), SnapStart 보기 자체, IAM 다이어그램 순서, Aurora Serverless v1 수치,
+  saa week5/day2·day5 의 "30초" 시험 키워드·보기, en/saa-c03 week3/day2 의 Multi-AZ 30초, dop week7/day3·day5 등의 SnapStart Java 전용 서술.
+- 남은 일: 위 보류 항목 정리, 색인 감소 원인(GSC 캡처 필요).
 - 보류: `<html lang>` 서버 반영(라우트 구조 변경이 커서 SEO 영향 대비 비용이 큼), `/lab` 영어화.
 
 ## 4. 사용자 쪽 일정(변동 없음)

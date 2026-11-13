@@ -43,7 +43,7 @@ Step 5: Cost model
 | RDS Multi-AZ Instance | Block-level synchronous replication (1 standby) | 60-120 seconds | ~0 |
 | RDS Multi-AZ Cluster | Synchronous quorum (2 readable standbys) | 35 seconds or less | ~0 |
 | ElastiCache Redis Multi-AZ | Primary-Replica + sentinel | 60 seconds or less | replica lag |
-| Aurora Multi-AZ | 6-copy quorum | 30 seconds or less | ~0 |
+| Aurora Multi-AZ | 6-copy quorum | Typically under 60 seconds (often under 30) | ~0 |
 | Aurora Global Database | Redo log shipping (cross-region) | On the order of minutes (managed failover) | Under 1 second |
 
 ### The Three Services' Answers to "Read Scaling"
@@ -73,7 +73,7 @@ A collection of easy-to-confuse traps.
 4. **IAM DB Auth token = 15-minute SigV4, SSL required**
 5. **When a DB is deleted, automatic backups are deleted with it (Final Snapshot option is essential)**, while manual snapshots are retained
 6. **Reading right after a write on a Read Replica = stale data** (a Read-Your-Writes violation is possible)
-7. **Aurora Replica automatic failover < 30 seconds**, RDS Multi-AZ is 60-120 seconds
+7. **Aurora Replica automatic failover typically < 60 seconds (often < 30)**, RDS Multi-AZ is 60-120 seconds
 8. **Aurora storage = 3 AZ × 2 copies = 6, W=4 R=3**
 9. **Aurora Serverless v1 is minute-granular + cold start**, v2 is fine-grained + non-disruptive scaling (about 15 s to resume from auto-pause)
 10. **Redis Cluster Mode Disabled is a single shard**: one node's memory is the limit

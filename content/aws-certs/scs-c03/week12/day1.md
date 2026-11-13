@@ -299,7 +299,7 @@ EC2/ECR    ───► Inspector ─┤                               ├─►
 - [ ] GuardDuty·Inspector·Macie·Config를 켜고 Security Hub로 집약(delegated admin)했는가
 - [ ] "무엇이"=GuardDuty, "왜/범위"=Detective, "취약점"=Inspector, "데이터 민감도"=Macie를 구분하는가
 - [ ] EventBridge로 finding을 Lambda/SSM 자동 교정에 라우팅했는가
-- [ ] 침해 EC2 대응 순서(격리→증거보존→분리→조사→복구)를 외웠는가
+- [ ] 침해 EC2 대응 순서(분리→증거보존→격리→자격증명 회수→조사→복구)를 외웠는가
 - [ ] 자격증명·키 침해 시 비활성화·로테이션(삭제 신중) 절차를 아는가
 
 ---

@@ -8,7 +8,7 @@ SAP-C02 도메인 1 "Design Solutions for Organizational Complexity"는 비중 2
 
 ### 멀티 계정의 역사와 원리
 
-초기 AWS 사용자는 모든 것을 단일 계정에 담았다. 조직이 커지면 이 구조가 무너진다 — 폭발 반경(blast radius)을 격리 못 하고, 팀별 비용 분리가 어렵고, IAM 권한이 수백 개로 불어나며, 한 번의 침해가 전체를 노출한다. AWS는 2017년 **Organizations**, 2018년 **Control Tower**와 SCP로 답했다.
+초기 AWS 사용자는 모든 것을 단일 계정에 담았다. 조직이 커지면 이 구조가 무너진다 — 폭발 반경(blast radius)을 격리 못 하고, 팀별 비용 분리가 어렵고, IAM 권한이 수백 개로 불어나며, 한 번의 침해가 전체를 노출한다. AWS는 2017년 **Organizations**와 SCP, 2019년 **Control Tower**(GA)로 답했다.
 
 ```
 Org Root
