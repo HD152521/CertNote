@@ -298,9 +298,9 @@ B) Use hash tags — change the keys to `user:{1}`, `user:{2}`, etc., but use th
 C) Call GET N times instead of MGET
 D) Switch to Memcached
 
-**Answer: B (practical answer) / C (realistic alternative)**
+**Answer: B**
 
-Explanation: In Cluster Mode, a multi-key command requires all keys to be in the same slot. A hash tag, where only the part inside `{...}` is hashed, can force them into the same slot. Example: `cart:{user123}:item1` and `cart:{user123}:item2` both hash on `user123` and so share a slot. A) Turning off Cluster Mode is a big change that gives up memory scalability. C) works, but performance degrades from more round trips — which can be mitigated with pipelining. D) is an excessive change.
+Explanation: In Cluster Mode, a multi-key command requires all keys to be in the same slot. A hash tag, where only the part inside `{...}` is hashed, can force them into the same slot. Example: `cart:{user123}:item1` and `cart:{user123}:item2` both hash on `user123` and so share a slot. A) Turning off Cluster Mode is a big change that gives up memory scalability. C) works, but performance degrades from more round trips — which can be mitigated with pipelining, though that is a less fundamental fix than designing hash tags. D) is an excessive change.
 
 ---
 

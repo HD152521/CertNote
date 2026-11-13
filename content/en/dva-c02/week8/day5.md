@@ -248,7 +248,7 @@ C) Permissions for both accounts in the Key Policy of the KMS CMK for the artifa
 D) Read permission for the Prod account in the artifact S3 bucket policy
 E) Install the Agent on the Prod account ECS service
 
-**Answer: A, B, C, D (E excluded)**
+**Answer: A, B, C, D**
 
 Explanation: The canonical chain for cross-account deployment. A) The Source pipeline role must be able to assume the Prod role. B) A role in Prod that trusts Source. C) The KMS CMK that encrypts the artifacts must be usable cross-account - if only one account has permission, the other account cannot decrypt. D) Read permission for the Prod account in the artifact bucket's bucket policy. E) is unrelated to ECS - the Agent is only for EC2/on-premises. This chain of 4 is a staple answer on the exam.
 

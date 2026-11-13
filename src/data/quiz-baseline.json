@@ -7794,7 +7794,7 @@
         "choices": 4
       },
       "2": {
-        "answer": "C",
+        "answer": "D",
         "choices": 4
       },
       "3": {
@@ -8250,7 +8250,7 @@
         "choices": 4
       },
       "6": {
-        "answer": "A,",
+        "answer": "A, B, C, D",
         "choices": 5
       },
       "7": {
@@ -31136,7 +31136,7 @@
         "choices": 4
       },
       "2": {
-        "answer": "C",
+        "answer": "D",
         "choices": 4
       },
       "3": {
@@ -31592,7 +31592,7 @@
         "choices": 4
       },
       "6": {
-        "answer": "A,",
+        "answer": "A, B, C, D",
         "choices": 5
       },
       "7": {

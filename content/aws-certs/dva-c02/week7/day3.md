@@ -298,9 +298,9 @@ B) hash tag 사용 — 키를 `user:{1}`, `user:{2}` 식으로 변경하되 같�
 C) MGET 대신 GET을 N번 호출
 D) Memcached로 전환
 
-**정답: B (실무 정답) / C (현실적 대안)**
+**정답: B**
 
-해설: Cluster Mode에서 multi-key 명령은 모든 키가 같은 슬롯에 있어야 한다. `{...}` 안의 부분만 해싱되는 hash tag로 같은 슬롯에 강제 배치 가능. 예: `cart:{user123}:item1`, `cart:{user123}:item2`는 둘 다 `user123` 해시로 같은 슬롯. A) Cluster Mode 해제는 메모리 확장성을 포기하는 큰 변경. C)는 작동하지만 round-trip 증가로 성능 저하 — pipelining으로 완화 가능. D)는 과도한 변경.
+해설: Cluster Mode에서 multi-key 명령은 모든 키가 같은 슬롯에 있어야 한다. `{...}` 안의 부분만 해싱되는 hash tag로 같은 슬롯에 강제 배치 가능. 예: `cart:{user123}:item1`, `cart:{user123}:item2`는 둘 다 `user123` 해시로 같은 슬롯. A) Cluster Mode 해제는 메모리 확장성을 포기하는 큰 변경. C)는 작동하지만 round-trip 증가로 성능 저하 — pipelining으로 완화 가능하지만 hash tag 설계보다 덜 근본적인 해결이다. D)는 과도한 변경.
 
 ---
 

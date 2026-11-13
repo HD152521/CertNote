@@ -188,7 +188,7 @@ C) ECR에 이미지 push → CodePipeline의 Source Stage가 ECR 이벤트 감�
 D) GitHub Actions에서 SNS Topic에 메시지 publish → Lambda가 start-pipeline-execution 호출  
 
 **정답: C**  
-해설: ECR Push → CodePipeline Source 트리거 방식(C)이 가장 보안적이고 단순하다. GitHub Actions가 AWS 자격 증명을 전혀 가지지 않아도 된다—단지 ECR에 이미지를 push할 권한(OIDC로 임시 자격 증명 사용)만 있으면 된다. CodePipeline이 ECR의 새 이미지를 감지해서 자동으로 배포 파이프라인을 시작한다. 이미지 자체가 "배포 트리거"가 되는 명확한 분리다. B도 보안적이지만 GitHub Actions가 CodePipeline API 권한을 갖는 복잡성이 있다. A의 IAM User 액세스 키는 장기 자격 증명으로 보안 위험이 있다.
+해설: ECR Push → CodePipeline Source 트리거 방식(C)이 가장 보안적이고 단순하다. GitHub Actions가 파이프라인을 제어하는 권한을 가지지 않아도 된다—단지 ECR에 이미지를 push할 권한(OIDC로 임시 자격 증명 사용)만 있으면 된다. CodePipeline이 ECR의 새 이미지를 감지해서 자동으로 배포 파이프라인을 시작한다. 이미지 자체가 "배포 트리거"가 되는 명확한 분리다. B도 OIDC 임시 자격 증명을 쓰므로 안전하지만, GitHub Actions가 CodePipeline 실행 권한까지 갖게 되어 권한 범위가 더 넓고 연동 설정이 하나 더 필요하다. A의 IAM User 액세스 키는 장기 자격 증명으로 보안 위험이 있다.
 
 ---
 

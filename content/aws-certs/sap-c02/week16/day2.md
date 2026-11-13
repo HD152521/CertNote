@@ -31,7 +31,7 @@ ECS vs EKS의 선택은 **"표준 락인 vs 운영 단순성"**의 trade-off다.
 | RDB 표준 | RDS | Multi-AZ 동기 복제, 6엔진 |
 | RDB 확장·글로벌 DR | Aurora / Aurora Global | 스토리지 분리, 6-way 복제, RPO<1s |
 | 서버리스 RDB | Aurora Serverless v2 | ACU 단위 초당 스케일 |
-| Key-Value 초고TPS | DynamoDB | 무제한 수평 확장, 単자리 ms |
+| Key-Value 초고TPS | DynamoDB | 무제한 수평 확장, 한 자리 ms |
 | 문서(Mongo 호환) | DocumentDB | MongoDB API |
 | 그래프 | Neptune | Gremlin·SPARQL, 관계 탐색 |
 | 시계열 | Timestream | IoT·메트릭, 자동 티어링 |

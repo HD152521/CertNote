@@ -48,7 +48,7 @@ Capacity limits of a single partition:
 - Storage: up to 10GB
 - Throughput: up to 3,000 RCU + 1,000 WCU
 
-When it exceeds 10GB or reaches the throughput limit, S3 automatically splits the partition. This split is automatic but can take several minutes, and throttling can occur in the meantime.
+When it exceeds 10GB or reaches the throughput limit, DynamoDB automatically splits the partition. This split is automatic but can take several minutes, and throttling can occur in the meantime.
 
 DynamoDB's partitioning uses a variant of Consistent Hashing. The key property of consistent hashing is that the amount of data that must be relocated when a node (partition) is added or removed is minimized. A plain hash (`key % N`) has to relocate nearly all data when N changes, but consistent hashing moves only 1/N of the data. This is why DynamoDB can handle adding partitions smoothly even at PB scale.
 
@@ -59,7 +59,7 @@ A common mistake in DynamoDB design is using a low-cardinality value as the part
 ```
 Bad PK examples:
   status: "PENDING"/"COMPLETED"/"FAILED"     → only 3 partitions exist
-  country: "KR"/"US"/"JP"                   → hundreds of partitions
+  country: "KR"/"US"/"JP"                   → if requests pile onto a few countries, only those partitions run hot
   date: "2026-06-26"                         → all of today's writes concentrate on one partition
   boolean: true/false                         → only 2 partitions
 

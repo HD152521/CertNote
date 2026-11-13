@@ -198,7 +198,7 @@ Step Functions가 다른 워크플로 엔진(Airflow, Argo)과 차별되는 핵�
 5. 사람이 Slack에서 "Approve" 클릭 → Lambda 호출
 6. Lambda가 SendTaskSuccess(taskToken, output) 또는 SendTaskFailure(taskToken, error) 호출
 7. Step Functions가 즉시 깨어나 다음 상태로 진행
-8. 1년 안에 응답 없으면 TimeoutSeconds 발동
+8. TimeoutSeconds를 지정했다면 그 시간 안에 응답이 없을 때 타임아웃 발생(지정하지 않으면 최대 1년까지 대기)
 ```
 
 ```python

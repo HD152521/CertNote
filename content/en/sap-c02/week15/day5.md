@@ -69,7 +69,7 @@ D) Monitor abnormal service calls with GuardDuty
 
 **Answer: B**
 
-Explanation: HIPAA requires PHI to be processed only in HIPAA Eligible services (within the BAA's scope), and to enforce this **preventively** across the whole organization, you Deny the APIs of non-Eligible services with an SCP — it can't be bypassed even by root. A doesn't apply to root and makes account-wide enforcement difficult. C and D are detection and monitoring (after the fact), not advance blocking. Trap: "block the use itself at the source" is a preventive SCP.
+Explanation: HIPAA requires PHI to be processed only in HIPAA Eligible services (within the BAA's scope), and to enforce this **preventively** across the whole organization, you Deny the APIs of non-Eligible services with an SCP — it can't be bypassed even by a member account's root user (SCPs do not apply to the management account). A doesn't apply to root and makes account-wide enforcement difficult. C and D are detection and monitoring (after the fact), not advance blocking. Trap: "block the use itself at the source" is a preventive SCP.
 
 ---
 

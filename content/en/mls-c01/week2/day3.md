@@ -204,7 +204,7 @@ C) Validate only with augmented data and do not use real data
 D) Transform only within the range that preserves domain meaning and labels  
 
 **Answer: D**  
-Explanation: Augmentation must diversify the input while keeping the correct answer (the label). For example, rotating the digit "6" by 180 degrees makes it a "9," breaking the label, and a left-right flip of a medical image can damage the diagnostic meaning, so it must be applied only within the range that preserves domain meaning. A and B can ruin labels, and C violates the validation principle.
+Explanation: Augmentation must diversify the input while keeping the correct answer (the label). For example, rotating the digit "6" by 180 degrees makes it a "9," breaking the label, and a left-right flip of a medical image can damage the diagnostic meaning, so it must be applied only within the range that preserves domain meaning. A and B can ruin labels or domain meaning, and C violates the validation principle.
 
 ---
 
@@ -228,6 +228,6 @@ C) Synthetic data does not need labels, so evaluation is impossible
 D) Synthetic data has zero storage cost, so it can be generated without limit  
 
 **Answer: A**  
-Explanation: If synthetic data cannot perfectly reproduce the real data distribution, there is a distribution gap risk that a model trained on it performs worse in the real world. That is why synthetic data should be used to supplement real data, with validation done on real data. A and D are wrong assertions, and synthetic data also needs labels and validation, so C is wrong as well.
+Explanation: If synthetic data cannot perfectly reproduce the real data distribution, there is a distribution gap risk that a model trained on it performs worse in the real world. That is why synthetic data should be used to supplement real data, with validation done on real data. B and D are wrong assertions, and synthetic data also needs labels and validation, so C is wrong as well.
 
 ---

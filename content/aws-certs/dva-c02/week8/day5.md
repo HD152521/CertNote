@@ -248,7 +248,7 @@ C) Artifact S3 bucket의 KMS CMK Key Policy에 양쪽 계정 permission
 D) Artifact S3 bucket policy에 Prod 계정 read 권한
 E) Prod 계정 ECS service에 Agent 설치
 
-**정답: A, B, C, D (E 제외)**
+**정답: A, B, C, D**
 
 해설: Cross-Account 배포의 정석 chain. A) Source의 pipeline role이 Prod role을 assume할 수 있어야 함. B) Prod에 Source를 신뢰하는 role. C) artifact 암호화 KMS CMK가 cross-account 사용 가능해야 — 한쪽 계정만 권한 있으면 다른 계정에서 복호화 불가. D) artifact bucket의 bucket policy에 Prod 계정 read 권한. E)는 ECS와 무관 — Agent는 EC2/온프레미스만. 이 4가지 chain이 시험의 단골 답.
 

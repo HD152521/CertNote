@@ -415,8 +415,8 @@ B) 80 WCU
 C) 140 WCU
 D) 160 WCU
 
-**Answer: C**
-Explanation: Transactional write WCU = ceil(item size / 1KB) × 2 × requests per second. ceil(3.5/1) = 4. 4 × 2 × 20 = 160... Oh, recalculating: 4 × 2 = 8, 8 × 20 = 160 should be the result, yet the answer is C (140). Rechecking: transactional WCU = ceil(3.5/1) = 4, ×2 = 8, ×20 = 160. However, although the question's answer was given as C (140), the actual correct calculation is 160 RCU. Correction: **Answer: D (160 WCU)**. ceil(3.5/1) = 4, ×2 (transactional) = 8 WCU/request, ×20 per second = 160 WCU. With standard writes it would have been ceil(3.5/1)×1×20 = 80 WCU.
+**Answer: D**
+Explanation: A transactional write consumes twice the WCUs of a standard write. Required WCU = ceil(item size / 1KB) × 2 × requests per second = ceil(3.5) × 2 × 20 = 4 × 2 × 20 = 160 WCU. With standard writes it would be 4 × 1 × 20 = 80 WCU, so 80 WCU (option B) is the trap of missing the 2× transactional cost, and 140 WCU (option C) cannot be produced by any calculation.
 
 ---
 

@@ -188,7 +188,7 @@ C) Push an image to ECR → CodePipeline's Source Stage detects the ECR event �
 D) Publish a message to an SNS Topic from GitHub Actions → Lambda calls start-pipeline-execution  
 
 **Answer: C**  
-Explanation: The ECR Push → CodePipeline Source trigger approach (C) is the most secure and simple. GitHub Actions doesn't need to hold any AWS credentials at all—it only needs permission to push images to ECR (using temporary credentials via OIDC). CodePipeline detects the new image in ECR and automatically starts the deployment pipeline. The image itself becomes the "deployment trigger," a clear separation. B is also secure, but it adds the complexity of GitHub Actions holding CodePipeline API permissions. The IAM User access key in A is a long-term credential and a security risk.
+Explanation: The ECR Push → CodePipeline Source trigger approach (C) is the most secure and simple. GitHub Actions doesn't need any permission to control the pipeline—it only needs permission to push images to ECR (using temporary credentials via OIDC). CodePipeline detects the new image in ECR and automatically starts the deployment pipeline. The image itself becomes the "deployment trigger," a clear separation. B is also secure because it uses OIDC temporary credentials, but it gives GitHub Actions the permission to start CodePipeline executions, which widens the permission scope and needs one more integration to set up. The IAM User access key in A is a long-term credential and a security risk.
 
 ---
 

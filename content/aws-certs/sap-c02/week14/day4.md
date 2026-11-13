@@ -60,7 +60,7 @@ Active-Active multi-master의 충돌 해결은 분산 시스템의 가장 어려
 
 2017년 GitLab의 데이터베이스 사고는 복제·백업의 중요성을 역으로 보여준 유명한 사례다. 한 엔지니어가 장애 대응 중 잘못된 서버에서 production 디렉터리를 삭제했고, 설정된 5가지 백업·복제 메커니즘이 모두 제대로 작동하지 않아 6시간치 데이터를 영구 손실했다. 교훈은 "복제·백업은 정기적으로 복원 테스트를 해야 진짜 작동한다"는 것이다. DynamoDB Global Tables나 Aurora Global 같은 관리형 복제는 이런 사람의 실수와 미검증 백업 문제를 구조적으로 줄여준다 — AWS가 복제·페일오버를 관리하므로 "복제가 조용히 멈춰 있었다"는 사고가 발생하기 어렵다. 시험에서 "운영 부담 최소 + 멀티 리전 DR"이 보이면 관리형 글로벌 DB가 직답이다.
 
-Amazon이 2012년 발표한 **Dynamo 논문**은 단순한 제품 발표가 아니라 분산 데이터베이스 역사의 분기점이었다. 2004년 크리스마스 쇼핑 시즌, Amazon의 관계형 DB가 피크 트래픽에 무릎을 꿇으며 장바구니 서비스가 멈춘 사건이 직접적 계기였다. 엔지니어들은 "강한 일관성보다 항상 쓸 수 있는 가용성(always-writeable)이 장바구니에 더 중요하다"는 결론에 도달했고, eventual consistency·정족수·hinted handoff를 채택한 Dynamo를 만들었다. 이 논문이 Cassandra·Riak·Voldemort 등 수많은 NoSQL의 청사진이 됐고, 오늘의 관리형 DynamoDB Global Tables가 그 직계 후손이다. 시험에서 "가용성을 일관성보다 우선(always-writeable)"이 보이면 DynamoDB 계열이 배경 사상이다.
+Amazon이 2007년 발표한 **Dynamo 논문**은 단순한 제품 발표가 아니라 분산 데이터베이스 역사의 분기점이었다. 2004년 크리스마스 쇼핑 시즌, Amazon의 관계형 DB가 피크 트래픽에 무릎을 꿇으며 장바구니 서비스가 멈춘 사건이 직접적 계기였다. 엔지니어들은 "강한 일관성보다 항상 쓸 수 있는 가용성(always-writeable)이 장바구니에 더 중요하다"는 결론에 도달했고, eventual consistency·정족수·hinted handoff를 채택한 Dynamo를 만들었다. 이 논문이 Cassandra·Riak·Voldemort 등 수많은 NoSQL의 청사진이 됐고, 오늘의 관리형 DynamoDB Global Tables가 그 직계 후손이다. 시험에서 "가용성을 일관성보다 우선(always-writeable)"이 보이면 DynamoDB 계열이 배경 사상이다.
 
 ## 기타 데이터 계층의 멀티 리전
 

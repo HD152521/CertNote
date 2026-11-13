@@ -696,7 +696,7 @@ D) 다음 정기 배포 때까지 변경이 유지됨
 
 **정답: B**
 
-`selfHeal: true`는 ArgoCD의 핵심 GitOps 기능이다. application-controller가 주기적으로(기본 3초 간격) live state를 확인하고, Git 상태와 다르면 Git 상태로 되돌린다. 운영자의 `kubectl edit` 변경은 감지 즉시(최대 몇 초 내) 자동으로 복원된다. 이것이 "Git이 진실의 단일 출처"라는 GitOps 원칙의 구체적 구현이다.
+`selfHeal: true`는 ArgoCD의 핵심 GitOps 기능이다. application-controller가 클러스터의 live state를 계속 감시하고(Git 상태 재조정은 기본 3분 주기), Git 상태와 다르면 Git 상태로 되돌린다. 운영자의 `kubectl edit` 변경은 감지되는 대로 자동으로 복원된다. 이것이 "Git이 진실의 단일 출처"라는 GitOps 원칙의 구체적 구현이다.
 
 왜 다른 옵션이 틀렸는가: A는 Manual sync 설정에서의 Slack 알림과 혼동. C는 ArgoCD는 Git을 읽기만 하며 쓰지 않는다(Image Updater는 별도 도구). D는 selfHeal이 없을 때의 동작.
 

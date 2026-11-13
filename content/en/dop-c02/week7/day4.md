@@ -198,7 +198,7 @@ Flow of operation:
 5. The person clicks "Approve" in Slack → a Lambda is invoked
 6. The Lambda calls SendTaskSuccess(taskToken, output) or SendTaskFailure(taskToken, error)
 7. Step Functions wakes up immediately and proceeds to the next state
-8. If there is no response within 1 year, TimeoutSeconds fires
+8. If TimeoutSeconds is set and there is no response within that time, a timeout occurs (without it, the wait can last up to 1 year)
 ```
 
 ```python

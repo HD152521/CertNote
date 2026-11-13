@@ -235,14 +235,14 @@ Explanation: It is a typical data drift in which the data distribution at traini
 
 ---
 
-**Question 5.** Which two areas among the 4 domains of MLA-C01 together carry the largest weight (more than half)?
+**Question 5.** Among the 4 MLA-C01 domains (data preparation 28%, model development 26%, deployment 22%, monitoring, maintenance, and security 24%), which of the following pairs together carry more than half (50%) of the weight?
 
 A) Model development and deployment  
 B) Data preparation and monitoring, maintenance, and security  
 C) Deployment and monitoring  
-D) Data preparation and model development  
+D) Model development and monitoring, maintenance, and security  
 
 **Answer: B**  
-Explanation: Data preparation (28%) and monitoring, maintenance, and security (24%) add up to 52%, more than half. This is consistent with the fact that data pipelines and operations, rather than the ML code itself, are the main body of a real ML system. All the other combinations are missing one of these two areas and so carry a smaller weight.
+Explanation: Data preparation (28%) and monitoring, maintenance, and security (24%) add up to 52%, more than half. This is consistent with the fact that data pipelines and operations, rather than the ML code itself, are the main body of a real ML system. The other options come to 48% (model development + deployment), 46% (deployment + monitoring), and 50% (model development + monitoring), none of which exceeds half.
 
 ---

@@ -63,7 +63,7 @@ An Aurora Replica **has no storage of its own**. It shares the same distributed 
 
 - **Replication lag of 10-20 ms** (really just the time to tell the replica's cache about the redo log)
 - **A new replica is usable immediately** (no storage copy)
-- **Scales up to 15** (RDS: 5)
+- **Scales up to 15** (RDS: 5 by default, up to 15 for MySQL/PG/MariaDB)
 - **You pay only for instances** (no duplicated storage cost)
 
 | Dimension | RDS Read Replica | Aurora Replica |
@@ -275,12 +275,12 @@ Explanation: Aurora Global Database offers ① cross-Region lag < 1 second on de
 
 A) Scales automatically in ACU units (fine-grained 0.5 ACU steps)
 B) Almost no cold start and scales in seconds
-C) Unlike v1, can scale up to 256 ACU
+C) Can scale up to 256 ACU
 D) Min Capacity must always be 1 ACU or more
 
 **Answer: D**
 
-Explanation: D is wrong. The Min Capacity of Aurora Serverless v2 is 0.5 ACU (since 2024, 0 ACU is also possible through auto-pause). Unlike v1, it can start at a smaller granularity. A) Scales gradually in 0.5 ACU steps. B) Seconds-level thanks to the dynamic resource adjustment of Firecracker microVMs. C) Can scale up to 256 ACU. On the exam, the key to the v1 vs v2 comparison is "v2 is fine-grained + fast + no cold start."
+Explanation: D is wrong. The Min Capacity of Aurora Serverless v2 is 0.5 ACU (since 2024, 0 ACU is also possible through auto-pause). It can start at a smaller granularity than v1. A) Scales gradually in 0.5 ACU steps. B) Scales in seconds by adjusting capacity without restarting the instance. C) Can scale up to 256 ACU. On the exam, the key to the v1 vs v2 comparison is "v2 is fine-grained + fast + no cold start."
 
 ---
 

@@ -54,7 +54,7 @@ Compressing these crossroads into a single table gives you something you can pul
 
 ## Summary
 
-The way of thinking that runs through Week 9 is this. When you read a problem, first identify **which of the 4 axes it belongs to** (command/access, state enforcement, app configuration, secrets), and then work through, in order, **time (one-time vs continuous)**, **safety mechanisms (whether rollback or validation is needed)**, **operational overhead (managed first)**, and **audit requirements (CloudTrail, session logs)**. These four questions solve almost every Week 9 scenario. The 10 questions below cement that way of thinking.
+The way of thinking that runs through Week 9 is this. When you read a problem, first identify **which of the 4 axes it belongs to** (command/access, state enforcement, app configuration, secrets), and then work through, in order, **time (one-time vs continuous)**, **safety mechanisms (whether rollback or validation is needed)**, **operational overhead (managed first)**, and **audit requirements (CloudTrail, session logs)**. These four questions solve almost every Week 9 scenario. The 12 questions below cement that way of thinking.
 
 ---
 

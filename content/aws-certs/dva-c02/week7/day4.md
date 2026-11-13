@@ -63,7 +63,7 @@ Aurora Replica는 **자체 스토리지가 없다**. Primary와 같은 분산 �
 
 - **복제 lag 10-20ms** (실제로는 redo log를 replica 캐시에 알려주는 시간만)
 - **Replica 추가 시 즉시 사용 가능** (스토리지 복사 없음)
-- **15개까지 확장** (RDS는 5개)
+- **15개까지 확장** (RDS는 기본 5개, MySQL/PG/MariaDB는 15개까지 상향)
 - **인스턴스 비용만 부담** (스토리지 비용 중복 없음)
 
 | 차원 | RDS Read Replica | Aurora Replica |
@@ -275,12 +275,12 @@ D) DynamoDB Global Tables
 
 A) ACU 단위로 자동 확장 (0.5 ACU 단위 미세 조정)
 B) 콜드 스타트가 거의 없고 초 단위로 확장
-C) v1과 달리 256 ACU까지 확장 가능
+C) 최대 256 ACU까지 확장 가능
 D) Min Capacity는 항상 1 ACU 이상이어야 한다
 
 **정답: D**
 
-해설: D는 틀렸다. Aurora Serverless v2의 Min Capacity는 0.5 ACU(2024년 이후 auto-pause를 통해 0 ACU도 가능). v1과 달리 더 작은 단위로 시작 가능. A) 0.5 ACU 단위로 점진적 확장. B) Firecracker microVM의 동적 리소스 조정 활용으로 초 단위. C) 256 ACU까지 확장 가능. 시험에서 v1 vs v2 비교는 "v2는 미세 조정 + 빠름 + 콜드 스타트 없음"이 핵심.
+해설: D는 틀렸다. Aurora Serverless v2의 Min Capacity는 0.5 ACU(2024년 이후 auto-pause를 통해 0 ACU도 가능). v1보다 더 작은 단위로 시작할 수 있다. A) 0.5 ACU 단위로 점진적 확장. B) 인스턴스를 재시작하지 않고 용량을 조정해 초 단위로 확장. C) 256 ACU까지 확장 가능. 시험에서 v1 vs v2 비교는 "v2는 미세 조정 + 빠름 + 콜드 스타트 없음"이 핵심.
 
 ---
 
