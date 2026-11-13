@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { OG_ACCENT, OG_BACKGROUND, OgLogo } from '@/components/brand/OgLogo';
-import { certLevelLabel, sectionOfCategory } from '@/lib/category';
+import { certLevelLabel, langOfCategory, sectionOfCategory } from '@/lib/category';
+import { ogEnglishSafe } from '@/lib/ogText';
 import { getCertMeta } from '@/lib/content';
 
 // 자격증별 OG 카드. 허브와 그 하위(week/day) 페이지의 링크 미리보기에 쓰인다.
@@ -11,6 +12,7 @@ export const alt = 'CertNote certification study track';
 
 export default async function OgImage({ params }: { params: Promise<{ category: string; slug: string }> }) {
   const { category, slug } = await params;
+  const lang = langOfCategory(category);
   let code = 'CertNote';
   let name = 'Certification Study Notes';
   let level = '';
@@ -21,10 +23,16 @@ export default async function OgImage({ params }: { params: Promise<{ category: 
     const meta = await getCertMeta(category, slug);
     code = meta.code;
     name = meta.name;
-    level = certLevelLabel(meta.level, sectionOfCategory(category));
+    level = certLevelLabel(meta.level, sectionOfCategory(category), lang);
     weeks = meta.weeks;
   } catch {
     // 알 수 없는 slug면 기본 카드로.
+  }
+  // 영어 카드에는 한글 폰트가 없어 한글이 깨지므로, 한글이 든 값은 영어 기본값으로 바꾼다.
+  if (lang === 'en') {
+    code = ogEnglishSafe(code, 'CertNote');
+    name = ogEnglishSafe(name, 'Certification Study Notes');
+    level = ogEnglishSafe(level, '');
   }
   return new ImageResponse(
     (
