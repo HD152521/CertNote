@@ -116,8 +116,8 @@ Multi-AZ Cluster launched in 2022. Where the old Multi-AZ Instance was "1 primar
 
 ### Aurora Global Database
 
-- Up to 5 Regions, secondaries are read-only
-- Typically RPO < 1 second, RTO < 1 minute
+- Up to 10 secondary Regions, secondaries are read-only
+- Typically replication lag under 1 second, RTO in the order of minutes
 - "Managed Planned Failover" or "Unplanned Failover"
 - Data is kept as 6 copies across 3 AZs, and with 4/6 write and 3/6 read quorums it stays available even if 1 AZ is lost
 
@@ -177,7 +177,7 @@ D) Read Replica
 
 **Answer: B**
 
-Explanation: Aurora Global guarantees up to 5 Regions, RPO < 1 second, and RTO < 1 minute. RDS Multi-AZ provides availability only within a single Region, and a Read Replica has weak consistency and no automatic failover SLA. DMS is a migration and replication tool, not a global DB solution. "Global SQL + RPO of 1 second" is the direct answer for Aurora Global.
+Explanation: Aurora Global supports up to 10 secondary Regions, with replication lag typically under 1 second and an RTO in the order of minutes. RDS Multi-AZ provides availability only within a single Region, and a Read Replica has weak consistency and no automatic failover SLA. DMS is a migration and replication tool, not a global DB solution. "Global SQL + RPO of 1 second" is the direct answer for Aurora Global.
 
 ---
 

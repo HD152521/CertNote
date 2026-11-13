@@ -165,7 +165,7 @@ D) DynamoDB (key-value NoSQL, On-Demand billing)
 
 **Answer: B**
 
-Explanation: **Aurora Serverless v2** is a relational DB that scales seamlessly in seconds in 0.5 ACU increments and bills in proportion to usage, suited to highly variable workloads. A has fixed capacity, so idle cost is large. C is an analytics warehouse. D doesn't fit the "relational needed" premise. Trap: "relational + variable + cost proportional" is Aurora Serverless v2.
+Explanation: **Aurora Serverless v2** is a relational DB that scales seamlessly in increments as small as 0.5 ACU and bills in proportion to usage, suited to highly variable workloads. A has fixed capacity, so idle cost is large. C is an analytics warehouse. D doesn't fit the "relational needed" premise. Trap: "relational + variable + cost proportional" is Aurora Serverless v2.
 
 ---
 

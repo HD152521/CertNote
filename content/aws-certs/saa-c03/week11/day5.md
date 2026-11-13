@@ -17,7 +17,7 @@
 | 비교 | 왼쪽 | 오른쪽 | 가르는 기준 |
 |------|------|--------|-------------|
 | Multi-AZ vs Multi-Region | HA(동기, RPO 0) | DR(비동기) | 장애 반경(AZ냐 리전이냐) |
-| Aurora Global vs Cross-Region RR | 단일 라이터, 승격 ~1분 | 비동기 읽기 사본 | 승격 속도·전용 복제 인프라 |
+| Aurora Global vs Cross-Region RR | 단일 라이터, 승격 수 분 | 비동기 읽기 사본 | 승격 속도·전용 복제 인프라 |
 | DynamoDB Global Tables vs Aurora Global | 다중 리전 동시 쓰기(AP) | 단일 리전 쓰기(일관성) | 쓰기 가능 리전 수 |
 | Pilot Light vs Warm Standby | 앱 OFF, DB 복제 | 축소 풀스택 ON | 컴퓨팅 준비 상태 |
 | DMS vs MGN | DB 데이터(CDC) | 서버 전체(블록) | 옮기는 단위 |
@@ -47,7 +47,7 @@
                     ▼
   ┌─ Region B (DR, Warm Standby) ──────────────┐
   │  ALB(상시) → ECS(축소, 장애 시 Scale Up)    │
-  │  Aurora Global Reader (장애 시 ~1분 승격)   │
+  │  Aurora Global Reader (장애 시 수 분 승격)   │
   └────────────────────────────────────────────┘
 
   Route 53 Failover/ARC: Primary 비정상 → Secondary

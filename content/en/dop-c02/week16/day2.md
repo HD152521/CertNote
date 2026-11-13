@@ -21,7 +21,7 @@ The tools that implement DR strategies each take responsibility for a **differen
 
 | Tool | Layer of responsibility | RPO/characteristics | Typical clue |
 |------|------|------|------|
-| Aurora Global Database | Relational DB | RPO <1 second, RTO ~1 minute, up to 5-10 Regions | "RTO 1 minute RPO 1 second SQL DB" |
+| Aurora Global Database | Relational DB | typical replication lag under 1 second, RTO in the order of minutes, up to 10 secondary Regions | "RTO 1 minute RPO 1 second SQL DB" |
 | DynamoDB Global Tables | Key-value DB | Active-Active, LWW conflict resolution | "Simultaneous writes in two Regions, key-value" |
 | S3 CRR / RTC | Object storage | CRR is asynchronous, RTC has a 15-minute SLA | "Guarantee S3 object replication within 15 minutes" |
 | Route 53 | DNS routing | Failover/Latency/Weighted + Health Check | "DNS-based failover" |
@@ -111,7 +111,7 @@ D) DynamoDB Streams - it supports SQL
 
 **Answer: B**
 
-Explanation: Aurora Global Database uses dedicated replication infrastructure to typically keep cross-Region RPO under 1 second and provides failover with an RTO of ~1 minute. The reason RPO is not exactly 0 is the reality of the CAP theorem - synchronous cross-Region replication imposes round-trip latency on every write, so Aurora Global uses asynchronous replication and optimizes that lag to under 1 second. RDS Multi-AZ (A) is single-Region (not multi-Region DR), a Cross-Region RR (C) has worse RPO/RTO than Aurora Global, and DynamoDB (D) is key-value, not SQL.
+Explanation: Aurora Global Database uses dedicated replication infrastructure to typically keep cross-Region RPO under 1 second and provides failover with an RTO in the order of minutes. The reason RPO is not exactly 0 is the reality of the CAP theorem - synchronous cross-Region replication imposes round-trip latency on every write, so Aurora Global uses asynchronous replication and optimizes that lag to under 1 second. RDS Multi-AZ (A) is single-Region (not multi-Region DR), a Cross-Region RR (C) has worse RPO/RTO than Aurora Global, and DynamoDB (D) is key-value, not SQL.
 
 ---
 

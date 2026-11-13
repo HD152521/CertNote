@@ -154,7 +154,7 @@ DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공
 | IAM User | 영구 자격 증명 | IAM Identity Center: 임시 SSO | 다계정·외부 IdP면 IC |
 | ZoneName | 계정별 셔플 | ZoneId: 계정 무관 동일 | 다계정 동기화는 ZoneId |
 | Permissions Boundary | 신원 권한 상한 | SCP: 계정 권한 상한 | 적용 단위가 다름 |
-| Cross-Region Read Replica | Async, 수동 promote | Aurora Global DB: Async + Fast 페일오버 (~1분) | RPO·RTO 차이 |
+| Cross-Region Read Replica | Async, 수동 promote | Aurora Global DB: Async + Fast 페일오버 (수 분 수준) | RPO·RTO 차이 |
 | CloudFront Functions | 엣지 PoP, 1ms 제약 | Lambda@Edge: Regional Edge, 더 무거움 | 위치·런타임 차이 |
 | KMS | 멀티 테넌트 HSM | CloudHSM: 단독 HSM, FIPS 140-2 L3 | 규제 강도 |
 | STS AssumeRole | 일반 cross-account | AssumeRoleWithWebIdentity: OIDC | 외부 IdP 페더레이션 |

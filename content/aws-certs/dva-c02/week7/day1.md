@@ -115,7 +115,7 @@ Read Replica의 비동기 복제는 분산 시스템의 **eventually consistent*
 
 시험에 나오는 Read Replica의 제약은 다음과 같다.
 
-- **최대 개수**: RDS MySQL/MariaDB/PostgreSQL은 **15개** (2022년 이전엔 5개였는데 상향됨). Oracle/SQL Server는 5개. Aurora는 15개.
+- **최대 개수**: RDS MySQL/MariaDB/PostgreSQL/SQL Server는 소스 DB 인스턴스당 같은 Region에서 **최대 15개**. Oracle은 엔진별 문서를 따른다. Aurora 클러스터는 Aurora Replica **최대 15개**.
 - **다단계 chained replica**: MySQL은 가능(replica의 replica), PostgreSQL은 cascading replication 지원.
 - **Cross-Region Read Replica**: 다른 리전에 비동기 복제. DR 용도 + 글로벌 읽기 분산. 데이터 전송 비용 발생.
 - **Promote(승격)**: replica를 독립 primary로 전환. 한번 promote하면 **역방향 복제 불가** — 새 primary가 됨. DR 시나리오와 연결된다.
@@ -276,4 +276,4 @@ C) 서울 Aurora Global Database (Secondary: 도쿄, 싱가포르)
 D) DynamoDB Global Tables
 
 **정답: C (B도 가능하나 C가 우월)**
-해설: 요구사항은 "글로벌 읽기 분산 + 낮은 latency + 단일 쓰기 리전". B)는 RDS Cross-Region Read Replica로 가능하지만 복제 지연이 수 초 ~ 수십 초 수준이고 페일오버가 수동. C) Aurora Global Database는 전용 복제 인프라로 **1초 미만** 복제 지연 + RPO < 1초, RTO < 1분을 보장하며 secondary 리전 최대 5개까지 확장 가능. 게임 리더보드처럼 "신선도가 중요한 읽기"에 더 적합. D)는 RDBMS 모델을 NoSQL로 바꿔야 해서 마이그레이션 비용이 크고, 트랜잭션·JOIN이 필요한 워크로드에 안 맞음. A)는 글로벌 분산을 못 함.
+해설: 요구사항은 "글로벌 읽기 분산 + 낮은 latency + 단일 쓰기 리전". B)는 RDS Cross-Region Read Replica로 가능하지만 복제 지연이 수 초 ~ 수십 초 수준이고 페일오버가 수동. C) Aurora Global Database는 전용 복제 인프라로 일반적으로 **1초 미만**의 복제 지연(RPO는 수 초 수준)을 제공하고, managed failover RTO는 수 분 단위이며, secondary 리전을 최대 10개까지 둘 수 있다. 게임 리더보드처럼 "신선도가 중요한 읽기"에 더 적합. D)는 RDBMS 모델을 NoSQL로 바꿔야 해서 마이그레이션 비용이 크고, 트랜잭션·JOIN이 필요한 워크로드에 안 맞음. A)는 글로벌 분산을 못 함.

@@ -112,7 +112,7 @@ Write-Through: 쓰기 시 캐시도 업데이트
 | "Aurora 사본?" | **3 AZ × 2 = 6** |
 | "Aurora 쓰기 정족수?" | **4/6** |
 | "Aurora Replica Failover?" | **< 30초** |
-| "Aurora Global Replication?" | **< 1초**, RTO < 1분 |
+| "Aurora Global Replication?" | 복제 지연 일반적으로 **< 1초**, RTO 수 분 |
 | "Aurora Backtrack?" | MySQL only, 72시간 in-place |
 | "RDS Proxy 효과?" | 연결 풀링·Lambda·Failover 66% ↓ |
 | "IAM 토큰?" | **15분** + SSL 필수 |

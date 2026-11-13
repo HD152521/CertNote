@@ -99,7 +99,7 @@ AWS 서비스(DynamoDB, SQS)를 Lambda 없이 직접 통합?
 3. 처리 시스템이 `SendTaskSuccess(taskToken)` 또는 `SendTaskFailure(taskToken)` 호출
 4. Step Functions가 결과를 받아 다음 상태로 진행
 
-`HeartbeatSeconds`를 설정하지 않으면 태스크가 무기한 대기한다. 설정하면 HeartbeatSeconds 내에 `SendTaskHeartbeat`가 없을 때 `States.HeartbeatTimeout`으로 실패 — `Catch` 블록으로 처리해야 한다.
+`HeartbeatSeconds`를 설정하지 않으면 태스크는 실행 최대 시간(1년 쿼터)까지 대기한다. 설정하면 HeartbeatSeconds 내에 `SendTaskHeartbeat`가 없을 때 `States.HeartbeatTimeout`으로 실패 — `Catch` 블록으로 처리해야 한다.
 
 **Distributed Map의 위력**: 10,000개의 병렬 자식 워크플로를 실행해 S3의 대용량 데이터를 병렬 처리한다. `ToleratedFailurePercentage`로 일부 실패를 허용하고, `ResultWriter`로 결과를 S3에 저장해 256KB 상태 데이터 제한을 우회한다.
 

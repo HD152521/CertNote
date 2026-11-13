@@ -45,10 +45,10 @@ Example:
 ```
 
 Capacity limits of a single partition:
-- Storage: up to 10GB
+- Storage: when a partition fills up, DynamoDB automatically allocates additional partitions
 - Throughput: up to 3,000 RCU + 1,000 WCU
 
-When it exceeds 10GB or reaches the throughput limit, DynamoDB automatically splits the partition. This split is automatic but can take several minutes, and throttling can occur in the meantime.
+When a partition fills up or the provisioned throughput exceeds what the existing partitions can support, DynamoDB allocates additional partitions. Partition management happens automatically in the background and is transparent to your application.
 
 DynamoDB's partitioning uses a variant of Consistent Hashing. The key property of consistent hashing is that the amount of data that must be relocated when a node (partition) is added or removed is minimized. A plain hash (`key % N`) has to relocate nearly all data when N changes, but consistent hashing moves only 1/N of the data. This is why DynamoDB can handle adding partitions smoothly even at PB scale.
 

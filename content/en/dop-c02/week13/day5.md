@@ -27,7 +27,7 @@ Untested recovery doesn't work. **Chaos Engineering** (originating Netflix Chaos
 | Confusing Pair | Decisive Difference |
 |---|---|
 | RDS Multi-AZ Standby vs Read Replica | Physical sync (can't read) vs logical async (can read) |
-| Aurora vs Aurora Global | Single region 6-copy(30s) vs multi-region async(<1m promote) |
+| Aurora vs Aurora Global | Single region 6-copy(30s) vs multi-region async(promote in minutes) |
 | Aurora Global vs DDB Global Tables | Single reader (no conflicts) vs multi-master (LWW) |
 | Route 53 Failover vs Global Accelerator | DNS (cache TTL delay) vs anycast IP (immediate) |
 | Pilot Light vs Warm Standby | App off (unvalidated) vs scaled-down instance (validated) |
@@ -225,7 +225,7 @@ D) Global Accelerator anycast + S3 CRR instant failover, data replicated objects
 
 **Answer: B**
 
-Explanation: "Lowest-latency + auto-exclude on fail" = Latency Routing + health check; "relational DB, single writer, async replicate" = Aurora Global (single reader, secondary read-only, <1s async, promote~1min on fail) perfect fit. Simple+Single-AZ (A) no distribution/HA; Weighted 50:50 (C) ignores latency, DDB is NoSQL not "relational"; Global Accelerator+S3 (D) not relational DB replication.
+Explanation: "Lowest-latency + auto-exclude on fail" = Latency Routing + health check; "relational DB, single writer, async replicate" = Aurora Global (single reader, secondary read-only, <1s async, promote in minutes on fail) perfect fit. Simple+Single-AZ (A) no distribution/HA; Weighted 50:50 (C) ignores latency, DDB is NoSQL not "relational"; Global Accelerator+S3 (D) not relational DB replication.
 
 ---
 

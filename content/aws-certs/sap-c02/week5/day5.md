@@ -22,8 +22,8 @@ Aurora Global Database는 Pilot Light과 Warm Standby 사이에 위치하는 DR 
 **RPO**: Aurora Global은 **비동기 복제**, Replication Lag은 일반적으로 **1초 미만**이다. 따라서 RPO ~ 1초. 다만 대규모 쓰기 폭풍(예: 배치 인서트 수백만 건)이 발생하면 Lag이 수초~수십초로 늘어날 수 있다.
 
 **RTO**: Managed Planned Failover와 Unplanned Failover의 차이가 있다.
-- **Managed Planned Failover** (계획된 전환): Aurora가 Secondary를 승격 전 Primary와 완전 동기화를 시도. RTO ~수 초. 데이터 손실 없음
-- **Unplanned Failover** (Primary 리전 장애): Secondary 수동 승격 필요. `promote-read-replica-db-cluster` API 또는 콘솔. RTO ~1분(DB 승격) + 앱 재연결 시간
+- **Managed Planned Failover** (계획된 전환): Aurora가 Secondary를 승격 전 Primary와 완전 동기화를 시도. RTO는 지원 버전에서 보통 30초 미만. 데이터 손실 없음
+- **Unplanned Failover** (Primary 리전 장애): Secondary 수동 승격 필요. `promote-read-replica-db-cluster` API 또는 콘솔. RTO 보통 몇 분(DB 승격) + 앱 재연결 시간
 
 ```bash
 # Aurora Global Unplanned Failover: Secondary를 새 Primary로 승격

@@ -20,7 +20,7 @@ DDB's design philosophy starts from Amazon's 2007 **Dynamo paper** (SOSP). From 
 
 > ⚠️ **Trap**: If you memorize "DDB scales infinitely," you fall into the **hot partition** trap. If traffic concentrates on a specific partition key, it is blocked by that partition's throughput limit (about 3,000 RCU/1,000 WCU per partition) and throttled, even if the whole table has headroom. This blows up at 100x scale. The fix is to design the partition key so it distributes evenly (for example, write sharding with date + random suffix), or, for patterns like time series, to add a distribution factor to the key. On the exam, if you see "it's DDB but only some keys are throttled," it is a hot partition, not a capacity shortage.
 
-If you truly need relational, use **Aurora Serverless v2**. The difference between v1 and v2 appears on the exam: v1 has a **pause when scaling**, scales slowly, and goes down to zero but with large cold-start delay. v2 **scales in place without interruption in units of 0.5 ACU, within seconds**, making it suitable for production workloads. However, v2 did not originally go all the way down to zero (in 2024, an automatic pause feature was added, supporting 0 ACU). On the exam, "relational + variable usage + production" is Aurora Serverless v2.
+If you truly need relational, use **Aurora Serverless v2**. The difference between v1 and v2 appears on the exam: v1 has a **pause when scaling**, scales slowly, and goes down to zero but with large cold-start delay. v2 **scales in place without interruption in increments as small as 0.5 ACU**, making it suitable for production workloads. However, v2 did not originally go all the way down to zero (newer versions support 0 ACU through automatic pause). On the exam, "relational + variable usage + production" is Aurora Serverless v2.
 
 ## The Physics of 100x Scaling - Concurrency and Cold Starts
 
@@ -106,7 +106,7 @@ D) DynamoDB
 
 **Answer: B**
 
-Explanation: Aurora Serverless **v2** **scales in place without interruption in units of 0.5 ACU, within seconds**, making it suitable for highly variable production workloads. C's **v1** has a pause when scaling, slow scaling, and cold-start delay, so it is inferior to v2 for handling production variability; this v1/v2 distinction is the key trap. A has fixed capacity, which is inefficient for variability. D is NoSQL and does not fit the premise of "relational required." Trap: "relational + production + variable" is Aurora Serverless v2.
+Explanation: Aurora Serverless **v2** **scales in place without interruption in increments as small as 0.5 ACU**, making it suitable for highly variable production workloads. C's **v1** has a pause when scaling, slow scaling, and cold-start delay, so it is inferior to v2 for handling production variability; this v1/v2 distinction is the key trap. A has fixed capacity, which is inefficient for variability. D is NoSQL and does not fit the premise of "relational required." Trap: "relational + production + variable" is Aurora Serverless v2.
 
 ---
 

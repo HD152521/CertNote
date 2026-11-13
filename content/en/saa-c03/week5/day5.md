@@ -28,7 +28,7 @@ Aurora's differentiator is shared distributed storage. 6 copies, 3 AZs, 4/6 Quor
 
 - **Failover within 30 seconds**: The storage stays alive, so you only need to connect a new Writer instance to the storage. There's no need for time to let the Standby apply the Redo Log, as with RDS.
 - **Up to 15 Read Replicas**: All Readers read from the shared storage, so there's no separate EBS per Replica. You can add Readers with no additional storage cost.
-- **Replication Lag of tens of ms**: Because it's shared storage, there's no "replication" itself. The Readers read from the shared storage, so they see the same data almost simultaneously with the Writer.
+- **Replication Lag usually much less than 100 ms**: Because it's shared storage, there's no "replication" itself. The Readers read from the shared storage, so they see the same data almost simultaneously with the Writer.
 
 Aurora Global Database replicates across regions at the storage layer to achieve < 1 second lag. RDS Cross-Region Read Replica replicates at the DB engine layer (binlog/WAL), so its lag is longer.
 
@@ -103,7 +103,7 @@ Here we sort out, all at once, the pairs most frequently confused on the exam.
 - Loss is acceptable and used as a cache → ElastiCache Redis
 
 **Aurora Global Database vs RDS Cross-Region Read Replica**:
-- < 1s replication lag, storage-layer replication, failover within 1 minute → Aurora Global DB
+- < 1s replication lag, storage-layer replication, managed failover on the order of minutes → Aurora Global DB
 - General-purpose engines (MySQL, PG, Oracle, etc.), seconds of lag acceptable → RDS Cross-Region RR
 
 **DynamoDB Global Tables vs Aurora Global DB**:
@@ -166,7 +166,7 @@ The role of each service in this architecture:
 
 SAA-C03 also covers the Cost Optimization Pillar (20%). Cost perspectives in database selection:
 
-**RDS vs Aurora**: Aurora costs about 20% more. "Scenarios where Aurora is justified for the same MySQL/PostgreSQL workload" are when the failover requirement is within 30 seconds, 15+ Readers are needed, global replication is needed, or traffic fluctuates.
+**RDS vs Aurora**: Aurora costs about 20% more. "Scenarios where Aurora is justified for the same MySQL/PostgreSQL workload" are when the failover requirement is within 30 seconds, many Readers are needed (Aurora allows up to 15 per cluster), global replication is needed, or traffic fluctuates.
 
 **On-Demand vs Provisioned**: DynamoDB On-Demand is up to 4× more expensive than Provisioned for stable traffic. Workloads with predictable traffic are cost-efficient with Provisioned + Auto Scaling.
 
@@ -186,7 +186,7 @@ Here we organize how the Week 5 services play their roles in disaster recovery (
 |---------|-----|-----|-----------|
 | RDS Multi-AZ | ~0 (synchronous) | 60-120s | Automatic DNS Failover |
 | Aurora Multi-AZ | ~0 (shared storage) | Within 30s | Reader → Writer promotion |
-| Aurora Global DB | < 1s | < 1 min | Manual/automatic Promote |
+| Aurora Global DB | < 1s | On the order of minutes | Manual/automatic Promote |
 | DynamoDB (single region) | ~0 (PITR) | ~minutes | New-table recovery |
 | DynamoDB Global Tables | ~1s | ~0 (other region already serving) | Endpoint switch |
 | ElastiCache Redis Multi-AZ | Seconds (async) | Seconds (automatic Failover) | Read Replica promotion |
@@ -205,7 +205,7 @@ D) Migrate to DynamoDB On-Demand (automatic capacity)
 
 **Answer: B**
 
-Explanation: To respond automatically to a traffic surge, compute capacity must auto-scale. Aurora Serverless v2 auto-scales in seconds from 0.5 to 256 ACU and is PostgreSQL-compatible, so migration is easy. A solves HA but not the capacity-shortage problem. C distributes reads but doesn't increase write capacity, and you'd have to create 5 Replicas in advance, so it responds slowly to a sudden surge. D requires a migration period and can't be applied instantly.
+Explanation: To respond automatically to a traffic surge, compute capacity must auto-scale. Aurora Serverless v2 auto-scales in fine-grained increments from 0.5 to 256 ACU and is PostgreSQL-compatible, so migration is easy. A solves HA but not the capacity-shortage problem. C distributes reads but doesn't increase write capacity, and you'd have to create 5 Replicas in advance, so it responds slowly to a sudden surge. D requires a migration period and can't be applied instantly.
 
 ---
 

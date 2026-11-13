@@ -69,33 +69,33 @@ Analytics team ───────────► Custom Endpoint ────
 
 ## Aurora Global Database — Real-Time Replication Across Regions
 
-Aurora Global Database is a feature that extends a single Aurora cluster across multiple regions. It consists of 1 Primary region and up to 5 Secondary regions.
+Aurora Global Database is a feature that extends a single Aurora cluster across multiple regions. It consists of 1 Primary region and up to 10 Secondary regions.
 
 Replication happens directly at the Aurora storage layer. Because it's storage-layer replication rather than DB-engine level (binlog, etc.), it doesn't use the DB instance's CPU, and replication lag is extremely short. Typically **sub-second replication lag (RPO < 1 second)** is achieved.
 
-Secondary regions can be used read-only. If the Primary region goes completely down in a disaster, promoting a Secondary region to the new Primary achieves an RTO of **within 1 minute**.
+Secondary regions can be used read-only. If the Primary region goes completely down in a disaster, promoting a Secondary region to the new Primary the RTO is, per the documentation, **on the order of minutes**.
 
 | Aspect | Aurora Global DB | RDS Cross-Region Read Replica |
 |--------|------------------|-------------------------------|
 | Replication location | Storage layer | DB engine layer (binlog/WAL) |
 | Replication lag | < 1 second | Seconds to tens of seconds |
-| Number of Secondary regions | Up to 5 | Up to 5 (MySQL), several (PG) |
-| Failover time | Within 1 minute | Minutes to tens of minutes (manual promote) |
+| Number of Secondary regions | Up to 10 | Varies by engine (e.g., MySQL and PostgreSQL: up to 15 read replicas per source) |
+| Failover time | On the order of minutes (managed failover) | Minutes to tens of minutes (manual promote) |
 | Secondary reads | Possible | Possible |
 | Cost | Higher | Moderate |
 | Engine | Aurora MySQL / Aurora PG | MySQL / PG / MariaDB / Oracle, etc. |
 
-> 🔍 **Going deeper**: Aurora Global Database's Planned Failover and Unplanned Failover are different. **Planned Failover (Managed Planned Failover)** is used for maintenance or region migration; it first promotes the Secondary to the new Primary, then demotes the original Primary to Secondary. Data loss (RPO) in this process is nearly 0. **Unplanned Failover** is when you manually promote a Secondary on a Primary-region failure, and data corresponding to the replication lag may be lost (usually within a few hundred ms to 1 second).
+> 🔍 **Going deeper**: Aurora Global Database's Planned Failover and Unplanned Failover are different. **Planned Failover (Managed Planned Failover)** is used for maintenance or region migration; it first promotes the Secondary to the new Primary, then demotes the original Primary to Secondary. Data loss (RPO) in this process is nearly 0. **Unplanned Failover** is when you manually promote a Secondary on a Primary-region failure, and data corresponding to the replication lag may be lost (RPO is typically measured in seconds).
 
 > 📚 **Case study**: Samsung Electronics' B2B SaaS platform SmartThings processes hundreds of millions of IoT device events worldwide. In a domestic AWS customer case-study session (AWS Summit Seoul), the SmartThings team described a structure where users in the US, Europe, and Asia read device state from the nearest region's Aurora Secondary via Aurora Global Database. Because replication lag is under 1 second, users worldwide see almost identical, up-to-date state.
 
 ## Aurora Serverless v2 — The Real Meaning of Auto Scaling
 
-Aurora Serverless v2 is a complete redesign of the earlier Serverless v1. On v1, capacity would drop to 0 and take 30-60 seconds to come back up, making practical use difficult. v2 changed the design itself.
+Aurora Serverless v2 is a complete redesign of the earlier Serverless v1. v1 is now a deprecated product. v2 changed the design itself.
 
-Aurora Serverless v2 scales from **0.5 ACU (Aurora Capacity Unit) up to 256 ACU**. Since 1 ACU corresponds to roughly 2GB of RAM, auto scaling is possible up to 512GB of RAM. The scaling speed is on the order of seconds — revolutionary compared to v1's minutes.
+Aurora Serverless v2 scales from a **minimum of 0.5 ACU (Aurora Capacity Unit) up to 256 ACU (Aurora PostgreSQL: up to 384 ACU, depending on platform version)**. Since 1 ACU corresponds to roughly 2GB of RAM, auto scaling is possible up to 512GB of RAM. Scaling happens in increments as small as 0.5 ACU and doesn't disrupt database operations that are underway.
 
-Another characteristic of v2: it doesn't shut off completely to 0 ACU. It always maintains at least 0.5 ACU. There's a separate "auto-pause" feature (for dev/test environments), but in production you typically set a minimum value to prevent cold starts.
+Another characteristic of v2: by default it keeps at least 0.5 ACU. On newer engine versions you can set the minimum to 0 ACU and use "auto-pause" (for dev/test environments), but resuming typically takes about 15 seconds (30 seconds or longer after more than 24 hours paused), so in production you typically set a minimum value to avoid that delay.
 
 Suitable use cases:
 - SaaS services with irregular traffic spikes (billing concentrated at month-start, spikes during event periods)
@@ -132,7 +132,7 @@ Aurora costs about 20% more than RDS MySQL/PostgreSQL. There are scenarios where
 
 **Cases where Aurora is more suitable:**
 - High-availability requirements where failover must be within 30 seconds
-- Large read traffic needing 5 or more Read Replicas
+- Large read traffic needing many Read Replicas (Aurora allows up to 15 per cluster)
 - Global services needing < 1 second cross-region replication (Aurora Global DB)
 - Services with rapidly fluctuating traffic (Aurora Serverless v2)
 - Wanting to scale tens of TB or more with unlimited storage growth (Aurora Storage auto-expansion)
@@ -146,11 +146,11 @@ Aurora costs about 20% more than RDS MySQL/PostgreSQL. There are scenarios where
 |--------|----------------------|-------------------------|
 | Storage | EBS per instance | Shared distributed (6 copies, 3 AZs) |
 | Max storage | 64TB (gp3), 16TB (gp2) | Up to 128TB |
-| Max Read Replicas | 5 | 15 |
-| Replication lag | Asynchronous (seconds) | Tens of ms (shared storage) |
+| Max Read Replicas | 15 per source (MySQL, MariaDB, PostgreSQL, SQL Server) | 15 |
+| Replication lag | Asynchronous (seconds) | Usually much less than 100 ms (shared storage) |
 | Failover time | 60-120s | Within 30s |
 | Global replication | Cross-Region Replica (async) | Global DB (storage-level, < 1s) |
-| Serverless | None | v2 (0.5-256 ACU, second-scale) |
+| Serverless | None | v2 (0.5-256 ACU, fine-grained fast scaling) |
 | Backtrack | None | MySQL-compatible only (72 hours) |
 | Fast Clone | None | Yes (COW) |
 | Cost | Baseline | About 20% higher |
@@ -216,9 +216,9 @@ aws rds create-db-instance \
 
 ## Wrapping Up
 
-Aurora is a service that keeps the exterior of a relational DB while completely redesigning the internal storage architecture. Its 6-copy distributed storage and 4/6 Quorum write protect data even against the total loss of one AZ, and compute-storage separation enables fast failover and easy Reader additions. Aurora Global Database achieves sub-second cross-region lag through storage-layer replication, and Serverless v2 adjusts capacity in seconds.
+Aurora is a service that keeps the exterior of a relational DB while completely redesigning the internal storage architecture. Its 6-copy distributed storage and 4/6 Quorum write protect data even against the total loss of one AZ, and compute-storage separation enables fast failover and easy Reader additions. Aurora Global Database achieves sub-second cross-region lag through storage-layer replication, and Serverless v2 adjusts capacity quickly in fine-grained increments.
 
-From an exam perspective: when you see "5 or more Read Replicas," "failover within 30 seconds," "< 1 second cross-region replication," or "auto-scaling for fluctuating traffic," the Aurora family is the answer. Be sure to remember that "Backtrack" is Aurora MySQL-only, and "PostgreSQL uses PITR" only.
+From an exam perspective: when you see "many Read Replicas," "failover within 30 seconds," "< 1 second cross-region replication," or "auto-scaling for fluctuating traffic," the Aurora family is the answer. Be sure to remember that "Backtrack" is Aurora MySQL-only, and "PostgreSQL uses PITR" only.
 
 Tomorrow we cover the schema-less world, DynamoDB. We'll see why the partition key matters so much, how a Hot Partition can kill a system, and what 1 RCU = 4KB really means.
 
@@ -234,7 +234,7 @@ C) Place RDS MySQL in us-east-1 and create a Cross-Region Read Replica in each r
 D) Use DynamoDB Global Tables
 
 **Answer: B**
-Explanation: Aurora Global Database achieves sub-second cross-region replication lag via storage-layer replication. It supports up to 5 Secondary regions, so a 3-region setup is more than sufficient. A struggles to guarantee data consistency. C's RDS Cross-Region Read Replica has a replication lag of seconds to tens of seconds, longer than Aurora Global DB. D is NoSQL, so it may be unsuitable for a financial service that requires a relational schema.
+Explanation: Aurora Global Database achieves sub-second cross-region replication lag via storage-layer replication. It supports up to 10 Secondary regions, so a 3-region setup is more than sufficient. A struggles to guarantee data consistency. C's RDS Cross-Region Read Replica has a replication lag of seconds to tens of seconds, longer than Aurora Global DB. D is NoSQL, so it may be unsuitable for a financial service that requires a relational schema.
 
 ---
 
@@ -254,11 +254,11 @@ Explanation: Backtrack is an Aurora MySQL-only feature that quickly rewinds the 
 
 A) Aurora MySQL Provisioned (fixed db.r6g.large)
 B) Aurora Serverless v1 (can pause completely at a minimum of 0 ACU)
-C) Aurora Serverless v2 (minimum 0.5 ACU, second-scale scaling)
+C) Aurora Serverless v2 (minimum 0.5 ACU, fast fine-grained scaling)
 D) Aurora MySQL + Auto Scaling Read Replicas
 
 **Answer: C**
-Explanation: Aurora Serverless v2 auto-scales in seconds across the 0.5-256 ACU range, responding quickly to traffic fluctuations. v1 scales slowly (minutes) and has connection-drop issues during scaling, making it unsuitable for production. A is fixed capacity and can lead to waste or shortfalls. D scales reads but does not auto-adjust write capacity.
+Explanation: Aurora Serverless v2 auto-scales in fine-grained increments across the 0.5-256 ACU range, responding quickly to traffic fluctuations, and scaling does not disrupt database operations that are underway. v1 is deprecated, so it is unsuitable for new workloads. A is fixed capacity and can lead to waste or shortfalls. D scales reads but does not auto-adjust write capacity.
 
 ---
 

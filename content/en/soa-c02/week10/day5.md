@@ -22,7 +22,7 @@ All recovery design reduces to two numbers. **RPO (Recovery Point Objective)** i
 | Daily Snapshot/Backup | max 24 hours | Restore time (10s min~hrs) | Cheap (storage only) |
 | RDS Multi-AZ | 0 (sync) | 60~120s auto | Medium (Standby always) |
 | Cross-Region Read Replica | Minutes | Manual promote | Medium (RR always) |
-| Aurora Global Database | < 1s | < 1 min promote | High (multi-region) |
+| Aurora Global Database | seconds | minutes promote | High (multi-region) |
 | S3 CRR (+RTC) | Minutes (15min SLA) | Replication arrival time | Transfer+storage |
 | DRS (CDP) | Seconds | Minutes launch | Low (Staging small offline) |
 
@@ -164,16 +164,16 @@ Explanation: Read Replica async-replicates read-only copy, separate endpoint dis
 
 ---
 
-**Problem 7.** Global users need fast reads from nearby regions + region DR (RPO<1s). Most fit?
+**Problem 7.** Global users need fast reads from nearby regions + region DR (RPO of seconds). Most fit?
 
 A) RDS Multi-AZ different-AZ Standby, HA+fast failover
-B) Aurora Global Database—up to 5 Secondary regions, storage-layer replication RPO<1s/RTO<1min
+B) Aurora Global Database—up to 10 Secondary regions, storage-layer replication RPO seconds/RTO minutes
 C) Multiple Read Replicas single region, Route 53 latency routing nearest
 D) DynamoDB Multi-AZ, global read+region DR
 
 **Answer: B**
 
-Explanation: Aurora Global Database replicates Primary changes via dedicated infra to max 5 Secondary region storage, enabling tens-ms read to nearby regions + region DR (60s promote). Storage-layer replication beats instance-level RDS Cross-Region RR in lag/RTO.
+Explanation: Aurora Global Database replicates Primary changes via dedicated infra to max 10 Secondary region storage, enabling tens-ms read to nearby regions + region DR (managed-failover RTO in minutes). Storage-layer replication beats instance-level RDS Cross-Region RR in lag/RTO.
 
 ---
 

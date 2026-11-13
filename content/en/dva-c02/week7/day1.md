@@ -115,7 +115,7 @@ A Read Replica's asynchronous replication is the **eventually consistent** model
 
 The Read Replica constraints that appear on the exam are as follows.
 
-- **Maximum count**: RDS MySQL/MariaDB/PostgreSQL allow **15** (it was 5 before 2022, then raised). Oracle/SQL Server allow 5. Aurora allows 15.
+- **Maximum count**: RDS MySQL/MariaDB/PostgreSQL/SQL Server allow up to **15** read replicas per source DB instance in the same Region. Oracle follows its own engine documentation. An Aurora cluster allows up to **15** Aurora Replicas.
 - **Multi-tier chained replicas**: possible in MySQL (a replica of a replica); PostgreSQL supports cascading replication.
 - **Cross-Region Read Replica**: asynchronous replication to another Region. For DR purposes + global read distribution. Data transfer costs apply.
 - **Promote**: converts a replica into an independent primary. Once promoted, **reverse replication is not possible** - it becomes a new primary. This connects to DR scenarios.
@@ -276,4 +276,4 @@ C) Seoul Aurora Global Database (Secondary: Tokyo, Singapore)
 D) DynamoDB Global Tables
 
 **Answer: C (B is also possible, but C is superior)**
-Explanation: The requirements are "global read distribution + low latency + a single write Region." B) is possible with RDS Cross-Region Read Replicas, but replication lag is on the order of seconds to tens of seconds and failover is manual. C) Aurora Global Database uses dedicated replication infrastructure to guarantee **sub-second** replication lag, RPO < 1 second, and RTO < 1 minute, and can scale to up to 5 secondary Regions. It is better suited to "freshness-critical reads" like a game leaderboard. D) requires changing the RDBMS model to NoSQL, so migration cost is high, and it does not fit workloads that need transactions and JOINs. A) cannot provide global distribution.
+Explanation: The requirements are "global read distribution + low latency + a single write Region." B) is possible with RDS Cross-Region Read Replicas, but replication lag is on the order of seconds to tens of seconds and failover is manual. C) Aurora Global Database uses dedicated replication infrastructure to typically deliver **sub-second** replication lag (RPO on the order of seconds), a managed-failover RTO on the order of minutes, and up to 10 secondary Regions. It is better suited to "freshness-critical reads" like a game leaderboard. D) requires changing the RDBMS model to NoSQL, so migration cost is high, and it does not fit workloads that need transactions and JOINs. A) cannot provide global distribution.

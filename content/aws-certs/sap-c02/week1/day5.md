@@ -217,11 +217,11 @@ D) CloudFront + Lambda@Edge에서 JWT 검증 후 오리진 포워딩
 
 A) RDS Multi-AZ (동기 standby로 단일 리전 내 페일오버)
 B) RDS Cross-Region Read Replica + 수동 promote
-C) Aurora Global Database (RPO < 1초, RTO ~1분)
+C) Aurora Global Database (복제 지연 보통 1초 미만, RTO 수 분 단위)
 D) DMS continuous replication으로 타 리전 인스턴스에 지속 복제
 
 **정답: C**
-해설: Aurora Global Database는 RPO < 1초, RTO ~1분 (managed failover). 리전 간 storage-level async replication을 사용하지만 latency가 매우 낮다. RDS Cross-Region Read Replica(B)는 RPO 수 초~수십 초, RTO 수 분~수십 분(수동 promote 필요). A는 같은 리전이라 DR 아님. D는 마이그레이션 도구. Trade-off: Aurora Global은 비용이 RDS보다 30% 이상 비쌈, 단일 리전 워크로드에는 과한 선택.
+해설: Aurora Global Database는 복제 지연이 보통 1초 미만이고 RTO는 수 분 단위다 (managed failover). 리전 간 storage-level async replication을 사용하지만 latency가 매우 낮다. RDS Cross-Region Read Replica(B)는 RPO 수 초~수십 초, RTO 수 분~수십 분(수동 promote 필요). A는 같은 리전이라 DR 아님. D는 마이그레이션 도구. Trade-off: Aurora Global은 비용이 RDS보다 30% 이상 비쌈, 단일 리전 워크로드에는 과한 선택.
 
 ---
 

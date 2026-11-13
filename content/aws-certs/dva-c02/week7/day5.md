@@ -44,7 +44,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 | RDS Multi-AZ Cluster | 동기 quorum (2 readable standby) | 35초 이하 | ~0 |
 | ElastiCache Redis Multi-AZ | Primary-Replica + sentinel | 60초 이하 | replica lag |
 | Aurora Multi-AZ | 6 사본 quorum | 30초 이하 | ~0 |
-| Aurora Global Database | redo log shipping (cross-region) | 1분 이하 (managed failover) | 1초 미만 |
+| Aurora Global Database | redo log shipping (cross-region) | 수 분 (managed failover) | 1초 미만 |
 
 ### "읽기 확장"에 대한 세 서비스의 답
 
@@ -52,7 +52,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 |--------|---------|-----------|----------|
 | RDS Read Replica | binlog/WAL 비동기 | 15 (MySQL/PG/MariaDB) | 초 ~ 분 |
 | ElastiCache Redis Replica | Redis replication | 5 per shard | ms |
-| Aurora Replica | redo log 알림 (공유 스토리지) | 15 | 10-20ms |
+| Aurora Replica | redo log 알림 (공유 스토리지) | 15 | 보통 100ms보다 훨씬 짧음 |
 
 ### "비밀번호/키 관리"에 대한 답
 
@@ -75,7 +75,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 6. **Read Replica 쓰기 직후 조회 = stale data** (Read-Your-Writes 위반 가능)
 7. **Aurora Replica 자동 페일오버 < 30초**, RDS Multi-AZ는 60-120초
 8. **Aurora 스토리지 = 3 AZ × 2 사본 = 6, W=4 R=3**
-9. **Aurora Serverless v1은 분 단위 + 콜드 스타트**, v2는 초 단위 + 거의 없음
+9. **Aurora Serverless v1은 분 단위 + 콜드 스타트**, v2는 세밀한 단위 + 스케일링 중 작업 중단 없음(auto-pause 재개 시 약 15초)
 10. **Redis Cluster Mode Disabled는 단일 샤드** — 한 노드 메모리가 한도
 11. **Memcached는 영속성·백업·Multi-AZ·복제 모두 없음**
 12. **Redis Sorted Set = 리더보드 정답 (ZADD/ZREVRANK O(log N))**
@@ -85,7 +85,7 @@ production에서 데이터 계층을 결정할 때 거치는 사고 흐름은 �
 
 > ⚠️ **함정 예시 1 — 자동 백업 보존 기간 0일**: 자동 백업을 "끄고 싶다"는 의도로 보존 기간을 0일로 설정하면 그 순간 PITR이 불가능해지고 Read Replica 생성도 막힌다. 시험 문제: "Read Replica 생성 시도가 실패하는 원인은?" → 자동 백업 비활성화. 해결책: 보존 기간 1일 이상으로 설정.
 
-> ⚠️ **함정 예시 2 — Aurora vs RDS Read Replica 최대 개수**: 2022년 이전 정답은 "Aurora 15개, RDS 5개"였지만, 그 후 RDS도 MySQL/PostgreSQL/MariaDB 한정으로 15개까지 상향. Oracle/SQL Server는 여전히 5개. 시험에서 "RDS Read Replica 최대 개수"라는 단순 문제가 나오면 엔진을 보고 답해야 한다.
+> ⚠️ **함정 예시 2 — Aurora vs RDS Read Replica 최대 개수**: Aurora 클러스터는 Aurora Replica 최대 15개이고, RDS도 MySQL/PostgreSQL/MariaDB/SQL Server는 소스당 최대 15개다. Oracle은 엔진별 문서를 따른다. 시험에서 "RDS Read Replica 최대 개수"라는 단순 문제가 나오면 엔진을 보고 답해야 한다.
 
 ## 실전 패턴: 시나리오 매핑
 
@@ -126,7 +126,7 @@ Production 서울:
 DR 도쿄:
   Aurora Global Database secondary
     └── Read-only, region 내 latency 최소화
-    └── Primary region 다운 시 promote (RTO < 1분)
+    └── Primary region 다운 시 promote (RTO 수 분)
 
 캐시 계층:
   ElastiCache Redis Cluster Mode Enabled (서울)
@@ -355,7 +355,7 @@ D) Aurora Multi-AZ를 3개 AZ로 확장하고 Route 53 latency 라우팅으로 �
 
 **정답: B**
 
-해설: Aurora Global Database는 ① 전용 인프라로 cross-region lag < 1초 ② managed failover RTO < 1분 ③ 각 secondary region에 자체 read replica 가능 → region 내 latency 최소화. A) Cross-Region Read Replica도 가능하지만 lag와 failover 자동화가 약함. C) RDBMS 호환성 잃음(MySQL → NoSQL 마이그레이션 과도). D) Multi-AZ는 동일 region 내 가용성만, cross-region 불가. 단 "자동" failover라는 표현은 함정 — Aurora Global도 managed failover지 자동은 아니다(운영자가 트리거).
+해설: Aurora Global Database는 ① 전용 인프라로 cross-region lag 일반적으로 < 1초 ② managed failover RTO는 수 분 단위 ③ 각 secondary region에 자체 read replica 가능 → region 내 latency 최소화. A) Cross-Region Read Replica도 가능하지만 lag와 failover 자동화가 약함. C) RDBMS 호환성 잃음(MySQL → NoSQL 마이그레이션 과도). D) Multi-AZ는 동일 region 내 가용성만, cross-region 불가. 단 "자동" failover라는 표현은 함정 — Aurora Global도 managed failover지 자동은 아니다(운영자가 트리거).
 
 ---
 

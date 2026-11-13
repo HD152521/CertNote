@@ -112,7 +112,7 @@ Write-Through: Cache is also updated on write
 | "Aurora copies?" | **3 AZ × 2 = 6** |
 | "Aurora write quorum?" | **4/6** |
 | "Aurora Replica Failover?" | **< 30 seconds** |
-| "Aurora Global Replication?" | **< 1 second**, RTO < 1 minute |
+| "Aurora Global Replication?" | Replication lag typically **< 1 second**, RTO in minutes |
 | "Aurora Backtrack?" | MySQL only, 72 hours in-place |
 | "RDS Proxy effect?" | Connection pooling·Lambda·Failover 66% ↓ |
 | "IAM token?" | **15 minutes** + SSL required |

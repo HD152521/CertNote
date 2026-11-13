@@ -60,7 +60,7 @@ Aurora의 Writer가 죽으면 Reader 하나(승격 우선순위(promotion tier)�
 | **Backtrack** (MySQL) | 클러스터를 특정 시점으로 되감기 | S3 백업 불필요, 최대 72시간 윈도우, 제자리(in-place) |
 | **클러스터 볼륨 자동 확장** | 10GB 단위로 최대 128TB까지 자동 증가 | 사전 프로비저닝 불필요 |
 | **Aurora Serverless v2** | 0.5 ACU 단위로 끊김 없이 스케일링 | 트래픽에 따라 자동 확장 |
-| **Global Database** | Primary 1개 + 최대 5개 Secondary 리전 | 비동기 지연 1초 미만 (Day 2) |
+| **Global Database** | Primary 1개 + 최대 10개 Secondary 리전 | 비동기 지연 1초 미만 (Day 2) |
 
 > ⚠️ **함정**: Backtrack은 백업이 아니다. Backtrack은 **클러스터를 제자리에서 되감으며**(새 클러스터가 생기지 않는다) MySQL에서만 동작하고, 활성화한 이후의 변경만 복구한다. "5분 전에 전부 DELETE했다 → 5분 되감기"가 Backtrack의 강점이다. 그러나 "특정 테이블만 복원"이나 "30일 전으로 복구"는 PITR(스냅샷+로그 기반 Point-In-Time Recovery)이 필요하다. 둘을 혼동시키는 것이 시험 함정이다.
 
@@ -89,7 +89,7 @@ ElastiCache for Redis(지금은 Valkey 포함)는 **복제 그룹(replication gr
 | RDS Multi-AZ | 60~120초 | Standby 승격 + DNS 전환 |
 | RDS Multi-AZ DB Cluster | 35초 미만 | Readable Standby가 이미 실행 중이며 승격 |
 | Aurora (단일 리전) | 30초 미만 | 공유 스토리지라 복사 불필요, Reader 승격 |
-| Aurora Global (리전 페일오버) | 1분 미만 | Secondary를 독립 클러스터로 승격 (Day 2) |
+| Aurora Global (리전 페일오버) | 수 분 단위 | Secondary를 독립 클러스터로 승격 (Day 2) |
 | ElastiCache Redis Multi-AZ | 60초 미만 | Replica 승격 |
 | DynamoDB | 약 0 | 본질적으로 분산 구조라 단일 노드 개념이 없음 |
 

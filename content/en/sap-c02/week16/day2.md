@@ -30,7 +30,7 @@ Choosing a database is an important decision in SAP-C02. The key is to read **co
 |------|-----|------------|
 | Standard RDB | RDS | Multi-AZ synchronous replication, 6 engines |
 | RDB scale-out, global DR | Aurora / Aurora Global | Separated storage, 6-way replication, RPO<1s |
-| Serverless RDB | Aurora Serverless v2 | Per-second scaling in ACU units |
+| Serverless RDB | Aurora Serverless v2 | Fine-grained scaling in ACU units |
 | Key-Value ultra-high TPS | DynamoDB | Unlimited horizontal scaling, single-digit ms |
 | Document (Mongo-compatible) | DocumentDB | MongoDB API |
 | Graph | Neptune | Gremlin, SPARQL, relationship traversal |
@@ -98,7 +98,7 @@ Caching is a lever that improves availability, performance, and cost at the same
 | "One service's failure must not affect others" | SNS → multiple SQS fan-out | Queue buffer isolation |
 | "Global SQL, RPO<1s" | Aurora Global Database | Asynchronous storage replication |
 | "Global two-sided writes NoSQL" | DynamoDB Global Tables | Multi-Region Active-Active |
-| "RDB with zero cost at zero traffic" | Aurora Serverless v2 | Per-second ACU scaling |
+| "RDB with zero cost at zero traffic" | Aurora Serverless v2 | Fine-grained ACU scaling |
 | "Hundreds of thousands of TPS Key-Value, single-digit ms" | DynamoDB On-Demand | Unlimited horizontal scaling |
 | "Only some DynamoDB keys throttled" | Partition key redesign, write sharding | Hot partition |
 | "Real-time search, log analytics" | OpenSearch | Inverted index |
@@ -191,7 +191,7 @@ D) Redshift
 
 **Answer: B**
 
-Explanation: "Load only during business hours + cost proportional to usage + automatic scaling + relational" is exactly where Aurora Serverless v2 is used. It scales per second in ACU (Aurora Capacity Unit) units, reducing ACUs when load is low to save cost and expanding instantly on surges (unlike v1, v2 doesn't stop completely at 0, but it lowers the minimum ACU to 0.5). A (fixed instance) incurs full cost at night and on weekends too. C (DynamoDB) is NoSQL, so it may be unsuitable for relational workloads (joins, complex queries). D (Redshift) is an analytics warehouse and unsuitable for an OLTP back office. Pitfall: "relational + cost proportional to usage + automatic scaling" is Aurora Serverless v2.
+Explanation: "Load only during business hours + cost proportional to usage + automatic scaling + relational" is exactly where Aurora Serverless v2 is used. It scales in fine-grained ACU (Aurora Capacity Unit) increments, reducing ACUs when load is low to save cost and expanding instantly on surges (the minimum ACU can go down to 0.5, and newer versions can go down to 0 ACU through automatic pause). A (fixed instance) incurs full cost at night and on weekends too. C (DynamoDB) is NoSQL, so it may be unsuitable for relational workloads (joins, complex queries). D (Redshift) is an analytics warehouse and unsuitable for an OLTP back office. Pitfall: "relational + cost proportional to usage + automatic scaling" is Aurora Serverless v2.
 
 ---
 
@@ -223,7 +223,7 @@ D) Manual promotion of a Cross-Region Read Replica
 
 **Answer: B**
 
-Explanation: "Global SQL + RPO<1s + RTO in minutes + secondary Region read sharing" is exactly where Aurora Global Database is used. Asynchronous replication at the storage layer typically achieves an RPO under 1 second, and the secondary Region shares load as a read-only replica and is promoted within 1 minute during a disaster. A (Multi-AZ) tolerates only AZ failures within a single Region and is powerless against a Region failure. C is NoSQL, so it doesn't fit the "SQL" requirement. D (manually promoted Read Replica) has large replication lag, and promotion is manual and slow, so it can't meet the RTO (Aurora Global uses dedicated replication infrastructure and is far faster). Pitfall: "global SQL + RPO in seconds + fast promotion" is Aurora Global Database.
+Explanation: "Global SQL + RPO<1s + RTO in minutes + secondary Region read sharing" is exactly where Aurora Global Database is used. Asynchronous replication at the storage layer typically achieves an RPO under 1 second, and the secondary Region shares load as a read-only replica and is promoted within minutes during a disaster. A (Multi-AZ) tolerates only AZ failures within a single Region and is powerless against a Region failure. C is NoSQL, so it doesn't fit the "SQL" requirement. D (manually promoted Read Replica) has large replication lag, and promotion is manual and slow, so it can't meet the RTO (Aurora Global uses dedicated replication infrastructure and is far faster). Pitfall: "global SQL + RPO in seconds + fast promotion" is Aurora Global Database.
 
 ---
 

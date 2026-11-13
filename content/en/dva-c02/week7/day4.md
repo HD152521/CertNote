@@ -61,17 +61,17 @@ With an RDS Read Replica, each replica has its own storage, receives the primary
 
 An Aurora Replica **has no storage of its own**. It shares the same distributed storage as the primary. So:
 
-- **Replication lag of 10-20 ms** (really just the time to tell the replica's cache about the redo log)
+- **Replication lag is usually much less than 100 ms** (the docs' wording; it grows under heavy write load)
 - **A new replica is usable immediately** (no storage copy)
-- **Scales up to 15** (RDS: 5 by default, up to 15 for MySQL/PG/MariaDB)
+- **Scales up to 15** (RDS MySQL/PG/MariaDB also allow up to 15 per source)
 - **You pay only for instances** (no duplicated storage cost)
 
 | Dimension | RDS Read Replica | Aurora Replica |
 |------|------------------|----------------|
 | Storage | Each has its own | Shared |
 | Replication mechanism | Asynchronous binlog/WAL | Redo log notification (storage is shared) |
-| Replication lag | Seconds to minutes | 10-20 ms |
-| Max count | 5 (raised to 15 for MySQL/PG/MariaDB) | 15 |
+| Replication lag | Seconds to minutes | Usually much less than 100 ms |
+| Max count | 15 per source (MySQL/PG/MariaDB/SQL Server) | 15 |
 | Initial sync | Full copy required | Immediate |
 | Failover time | Manual promote (minutes) | Automatic (~30 seconds) |
 
@@ -121,13 +121,13 @@ Aurora Serverless automatically scales compute capacity up and down with traffic
 | Scaling unit | Doubling jumps (2→4→8 ACU) | Fine-grained 0.5 ACU steps |
 | Scaling speed | Minutes | Seconds |
 | Min Capacity | 1 ACU (or paused) | 0 ACU (auto-pause) ~ 0.5 ACU |
-| Max Capacity | 256 ACU | 256 ACU |
-| Cold start | ~30 seconds for the first request after pause | Almost none |
+| Max Capacity | — | 256 ACU (Aurora MySQL) / 384 ACU (Aurora PostgreSQL), depending on platform version |
+| Cold start | ~30 seconds for the first request after pause | Scaling is non-disruptive; resuming from auto-pause (0 ACU) takes about 15 seconds (30 s or more after 24 h paused) |
 | Multi-AZ | Optional | Standard |
 | Data API | ✅ | ✅ (since 2023) |
 | New use | Being deprecated | Recommended |
 
-The biggest difference between v1 and v2 is the **scaling mechanism**. v1 moves traffic to a new instance (scale-up), so the jumps are large and slow. v2 adjusts the live instance's CPU/memory allocation at the hypervisor level: it uses the dynamic resource adjustment capability of Firecracker microVMs to raise and lower ACUs without replacing the instance. This is the technical basis of "fine-grained, second-level adjustment." v2 is closer to "a regular Aurora instance with usage-based billing."
+The biggest difference between v1 and v2 is the **scaling mechanism**. v1 moves traffic to a new instance (scale-up), so the jumps are large and slow. v2 adjusts capacity in most scaling events while keeping the writer or reader on the same host, and it does not disrupt database operations that are underway. This is the basis of "fine-grained adjustment." v2 is closer to "a regular Aurora instance with usage-based billing."
 
 The choice by usage scenario is as follows.
 
@@ -139,7 +139,7 @@ The choice by usage scenario is as follows.
 
 ## Aurora Global Database: The Secret to Sub-Second Cross-Region Replication
 
-Aurora Global Database consists of **1 primary Region + up to 5 secondary Regions**. How it differs from an RDS Cross-Region Read Replica: ① dedicated replication infrastructure (storage-level replication); ② lag is typically < 1 second; ③ a secondary can have its own 15 read replicas; ④ RTO < 1 minute for cross-Region failover.
+Aurora Global Database consists of **1 primary Region + up to 10 secondary Regions**. How it differs from an RDS Cross-Region Read Replica: ① dedicated replication infrastructure (storage-level replication); ② lag is typically < 1 second; ③ a secondary can have up to 16 of its own read replicas; ④ managed-failover RTO is on the order of minutes (switchover is typically under 30 seconds on supported versions).
 
 ```
 [Primary Region: ap-northeast-2 Seoul]
@@ -149,22 +149,22 @@ Aurora Global Database consists of **1 primary Region + up to 5 secondary Region
        │
        ├──→ [Secondary: us-east-1 N. Virginia]
        │      Read-only Aurora cluster
-       │      Own read replicas 0-15
+       │      Own read replicas 0-16
        │
        └──→ [Secondary: eu-west-1 Ireland]
               Read-only Aurora cluster
-              Own read replicas 0-15
+              Own read replicas 0-16
 ```
 
-Aurora Global Database replication is **close to redo log shipping but is not the binlog**. The primary's storage nodes additionally send the redo log directly to the storage nodes in the secondary Region. This channel uses the AWS backbone network (average RTT of 100-200 ms on the same backbone), and compression and deduplication are applied, making it more efficient than the public internet. As a result, cross-Region lag stays under 1 second. The answer to a "global distribution + sub-second lag + RDBMS" scenario is Aurora Global Database.
+Aurora Global Database replication is **close to redo log shipping but is not the binlog**. The primary's storage nodes additionally send the redo log directly to the storage nodes in the secondary Region. This channel uses the AWS backbone network (average RTT of 100-200 ms on the same backbone), and compression and deduplication are applied, making it more efficient than the public internet. As a result, cross-Region lag is typically under 1 second. The answer to a "global distribution + sub-second lag + RDBMS" scenario is Aurora Global Database.
 
 | Dimension | RDS Cross-Region Read Replica | Aurora Global Database |
 |------|--------------------------------|------------------------|
 | Replication method | Asynchronous binlog | Redo log shipping (dedicated infrastructure) |
 | Typical lag | Several seconds to tens of seconds | < 1 second |
-| Failover | Manual promote | Managed failover (< 1 minute) |
-| Number of secondary Regions | Many possible (each a separate replica) | Up to 5 (managed clusters) |
-| Secondary read replicas | N/A (it is itself a replica) | Up to 15 per Region |
+| Failover | Manual promote | Managed failover (on the order of minutes) |
+| Number of secondary Regions | Many possible (each a separate replica) | Up to 10 (managed clusters) |
+| Secondary read replicas | N/A (it is itself a replica) | Up to 16 per Region |
 | RPO | Tens of seconds to minutes | < 1 second |
 
 > ⚠️ **Pitfall**: The secondary of an Aurora Global Database is **read-only**. Attempting a plain write gives a read-only error. Also, "managed failover" must be triggered explicitly and is not automatic: when the primary Region is completely down, the operator executes the promote. If you need automatic failover, build the automation yourself with Route 53 health checks + Lambda, or use RDS Proxy. An answer choice saying "Aurora Global Database fails over automatically" is a trap.
@@ -248,13 +248,13 @@ Explanation: Aurora uses distributed storage with 3 AZs × 2 copies = 6 copies, 
 **Question 2.** What is the biggest difference between an Aurora Replica and an RDS Read Replica?
 
 A) An Aurora Replica uses asynchronous binlog replication
-B) An Aurora Replica has no storage of its own and shares it with the primary, so lag is very short at 10-20 ms
+B) An Aurora Replica has no storage of its own and shares it with the primary, so lag is very short (usually much less than 100 ms)
 C) An RDS Read Replica can go up to 30
 D) They are identical
 
 **Answer: B**
 
-Explanation: The key differentiator of an Aurora Replica is shared storage: the replica has no disk of its own and references the same distributed storage as the primary. The replication mechanism sends only a "redo log notification" and reads actual pages directly from storage, so lag is around 10-20 ms (an RDS Read Replica is several seconds to tens of seconds). A) Aurora does not depend on the binlog. C) An RDS Read Replica goes up to 15 (MySQL/PG/MariaDB, raised in 2022). D) There is a big difference.
+Explanation: The key differentiator of an Aurora Replica is shared storage: the replica has no disk of its own and references the same distributed storage as the primary. The replication mechanism sends only a "redo log notification" and reads actual pages directly from storage, so lag is usually much less than 100 ms (an RDS Read Replica is several seconds to tens of seconds). A) Aurora does not depend on the binlog. C) An RDS Read Replica goes up to 15 per source (MySQL/PG/MariaDB). D) There is a big difference.
 
 ---
 
@@ -267,20 +267,20 @@ D) DynamoDB Global Tables
 
 **Answer: C**
 
-Explanation: Aurora Global Database offers ① cross-Region lag < 1 second on dedicated infrastructure; ② managed failover RTO < 1 minute; ③ the ability to promote a secondary to primary if the primary Region goes completely down; ④ each secondary Region can have its own read replicas, minimizing in-Region latency. B is possible with Aurora Cross-Region Read Replicas, but lag and failover automation are weaker. A has no cross-Region distribution. D loses RDBMS compatibility (unsuitable because the requirement is Aurora MySQL).
+Explanation: Aurora Global Database offers ① cross-Region lag typically < 1 second on dedicated infrastructure; ② managed failover RTO on the order of minutes; ③ the ability to promote a secondary to primary if the primary Region goes completely down; ④ each secondary Region can have its own read replicas, minimizing in-Region latency. B is possible with Aurora Cross-Region Read Replicas, but lag and failover automation are weaker. A has no cross-Region distribution. D loses RDBMS compatibility (unsuitable because the requirement is Aurora MySQL).
 
 ---
 
 **Question 4.** Which of the following is NOT a characteristic of Aurora Serverless v2?
 
 A) Scales automatically in ACU units (fine-grained 0.5 ACU steps)
-B) Almost no cold start and scales in seconds
-C) Can scale up to 256 ACU
+B) Scaling does not disrupt database operations that are underway
+C) Can scale up to 256 ACU (up to 384 ACU for Aurora PostgreSQL), depending on version
 D) Min Capacity must always be 1 ACU or more
 
 **Answer: D**
 
-Explanation: D is wrong. The Min Capacity of Aurora Serverless v2 is 0.5 ACU (since 2024, 0 ACU is also possible through auto-pause). It can start at a smaller granularity than v1. A) Scales gradually in 0.5 ACU steps. B) Scales in seconds by adjusting capacity without restarting the instance. C) Can scale up to 256 ACU. On the exam, the key to the v1 vs v2 comparison is "v2 is fine-grained + fast + no cold start."
+Explanation: D is wrong. The Min Capacity of Aurora Serverless v2 is 0.5 ACU (on newer engine versions, 0 ACU is also possible through auto-pause). It can start at a smaller granularity than v1. A) Scales gradually in 0.5 ACU steps. B) Scaling does not disrupt database operations that are underway (resuming from auto-pause takes about 15 seconds). C) Up to 256 ACU, depending on engine and platform version (up to 384 ACU for Aurora PostgreSQL). On the exam, the key to the v1 vs v2 comparison is "v2 is fine-grained + fast + non-disruptive scaling."
 
 ---
 

@@ -1,53 +1,53 @@
 # Day 1 - AWS from a Developer's Perspective: Regions, Infrastructure, and the Boundary of Responsibility
 
-When you join a new company and get your first AWS console access, you usually run into two questions right away. One is "Which region should I create this in?", and the other is "Is this something we have to manage, or does AWS take care of it?" If the SAA exam answers these questions with "How do you design this as an architect?", the DVA exam answers them with "How do you, as a developer, put your code and builds on top of it?" Same infrastructure map, different vantage point.
+When you join a new company and first get the AWS console, you usually run into two things first. One is "which Region should I create this in?" and the other is "do we have to manage this, or does AWS take care of it?" If SAA answers these questions with "how do I design this as an architect," DVA has to answer with "how do I put code and builds on top of it as a developer." It is the same infrastructure map, but from a different point of view.
 
-In this article, we dig into AWS's global infrastructure only as deep as a developer needs — but deep enough to reach the point where SDK calls and endpoint selection get serious. The goal is not to memorize exam keywords, but to truly understand why `region_name` is needed when creating a `boto3` client, how IAM roles enter into the behavior of your code, and which AZ a Lambda function actually runs in.
+In this post we dig into AWS's global infrastructure only as far as a developer needs to know, but down to the point where SDK calls and endpoint selection get deep. The goal is not to memorize exam keywords, but to understand why `region_name` is needed when you create a `boto3` client, how IAM roles come into play in code behavior, and in which AZ a Lambda function runs.
 
-## The Development Paradigm Shift Created by Cloud Computing
+## The Shift in Development Paradigm Created by Cloud Computing
 
-On March 14, 2006, S3 launched to general availability and the era of cloud computing began. Before then, for a developer to ship a new feature, they had to go through four steps — (1) server quotes, (2) data center colocation contracts, (3) OS and middleware installation, (4) deployment — and it took weeks at best. S3, and EC2 which came the following year (August 2006), cut this cycle down to minutes. The real change AWS created was not "we rent out servers" but the model of "**Infrastructure as API**". Once infrastructure became a resource callable from code, the entire set of modern DevOps practices — CI/CD, IaC, Auto Scaling — became possible.
+On March 14, 2006, S3 launched generally and the cloud computing era began. Until then, for a developer to release a new feature they had to go through four steps: ① a server quote, ② a data center colocation contract, ③ OS and middleware installation, ④ deployment, and even a short one took weeks. S3, and EC2, which came out the next year (August 2006), cut this cycle down to minutes. The real change AWS made was not "renting out servers" but the model of "**Infrastructure as API**." Once infrastructure became a resource you can call from code, the whole set of modern DevOps practices such as CI/CD, IaC, and Auto Scaling became possible.
 
-Academically, NIST SP 800-145 (2011) codified this as the five essential characteristics of cloud computing: (1) on-demand self-service, (2) broad network access, (3) resource pooling, (4) rapid elasticity, (5) measured service. When you see keywords like "cost model, scalability, agility" on the DVA exam, identify which of these five aspects is being asked.
+Academically, NIST SP 800-145 (2011) summarizes this as the five essential characteristics of cloud: ① on-demand self-service, ② broad network access, ③ resource pooling, ④ rapid elasticity, ⑤ measured service. When you see keywords like "cost model, scalability, agility" on the DVA exam, you just need to identify which of these five aspects is being asked about.
 
-> 💡 **Related theory**: Viewed through the lens of distributed systems theory, "Infrastructure as API" leads naturally to **declarative configuration** (Kubernetes, Terraform, CloudFormation). Instead of imperatively saying "create N servers", you declaratively write "the desired end state is N servers", and the system runs a reconciliation loop to converge on that state. This pattern originates from logic programming like Prolog in the 1980s and Cisco IOS configuration in the 1990s, and Kubernetes made it the industry standard in 2014. CloudFormation, SAM, and CDK — all of which you meet in the DVA exam — are different implementations of the same philosophy.
+Seen through distributed systems theory, "Infrastructure as API" leads naturally to **declarative configuration** (Kubernetes, Terraform, CloudFormation). Instead of imperatively saying "create N servers," you declaratively write "the desired end state is N servers," and the system runs a reconciliation loop to converge on that state. CloudFormation, SAM, and CDK, which you meet in DVA, are all different implementations of the same philosophy.
 
-You also need to memorize the three deployment models (Public / Private / Hybrid), but on the actual exam they almost always appear as scenarios. "Keep the on-premises SAP as-is and move only the new microservices to the cloud" — that's Hybrid. "Some data cannot leave the premises due to financial regulations" — the answer is Outposts or Hybrid.
+You also need to memorize the three deployment models (Public / Private / Hybrid), but on the real exam they appear as scenarios. "Leave the on-premises SAP as is and move only the new microservices to the cloud" is Hybrid. "Because of electronic financial supervisory regulations some data cannot leave" is answered by Outposts or Hybrid.
 
-## Regions, AZs, Edge: How a Developer Chooses an Endpoint
+## Regions, AZs, Edge: How Developers Choose an Endpoint
 
-AWS's global infrastructure is a three-tier structure: **Region > AZ > Edge Location**. The reason this structure matters to developers is that it determines where a single line of an SDK call goes.
+AWS's global infrastructure is a three-tier structure of **Region > AZ > Edge Location**. This structure matters to developers because it determines where a single line of SDK call goes.
 
 ```python
 import boto3
 
-# Explicit region specification — determines the endpoint
+# Explicitly specify the Region — this determines the endpoint
 s3 = boto3.client('s3', region_name='ap-northeast-2')
 
 # Uses the AWS_REGION environment variable or the default region in ~/.aws/config
 ddb = boto3.client('dynamodb')
 ```
 
-Here, when you write `region_name='ap-northeast-2'`, the SDK sends HTTPS requests to the endpoint `s3.ap-northeast-2.amazonaws.com`. If you specify the wrong region, you either create data in a different region (cost and legal issues) or fail to find the resource at all (`NoSuchBucket` error). So when a DVA scenario asks "why is our code getting a 404?", the first suspects should be `region_name` or `endpoint_url`.
+When you write `region_name='ap-northeast-2'` here, the SDK sends an HTTPS request to the endpoint `s3.ap-northeast-2.amazonaws.com`. If you specify the wrong Region, you either create data in a different Region (cost and legal issues) or cannot find the resource at all (a `NoSuchBucket` error). So when a scenario on DVA asks "why is our code getting a 404," you should suspect `region_name` or `endpoint_url` first.
 
-| Infrastructure tier | Count (2026) | What it means to a developer |
+| Infrastructure tier | Count (2026) | Meaning from a developer's view |
 |-----------|------|-----------|
-| **Region** | 34 | The unit that determines data location, pricing, and endpoint URL |
-| **Availability Zone** | 3+ per region | Where EC2/Lambda actually run, the fail-over unit for Multi-AZ DBs |
-| **Edge Location** | 600+ | CloudFront cache, Lambda@Edge execution points |
+| **Region** | 34 | The deciding unit for data location, pricing, and endpoint URL |
+| **Availability Zone** | 3 or more per Region | Where EC2/Lambda actually run, the failover unit for Multi-AZ DBs |
+| **Edge Location** | 600+ | CloudFront cache, the execution point for Lambda@Edge |
 | **Local Zones** | 30+ | 1-2ms ultra-low latency. Media, gaming, real-time ML inference |
 | **Wavelength** | Carrier 5G edge | Autonomous driving, industrial IoT |
-| **Outposts** | AWS racks in customer DCs | Satisfies data sovereignty + AWS APIs simultaneously |
+| **Outposts** | AWS racks in the customer DC | Satisfies data sovereignty + the AWS API at the same time |
 
-> 🔍 **Going deeper**: AWS service endpoints come in three main kinds. **Regional endpoints** (e.g., `dynamodb.ap-northeast-2.amazonaws.com`) are the most common form, routed to different infrastructure per region. **Global endpoints** (e.g., `iam.amazonaws.com`, `s3.amazonaws.com`) reach global services without a region. **FIPS endpoints** (e.g., `dynamodb-fips.us-east-1.amazonaws.com`) use FIPS 140-2 validated cryptographic modules and are intended for US government and financial customers. You can switch to them automatically with the SDK environment variable `AWS_USE_FIPS_ENDPOINT=true`.
+AWS service endpoints fall into three broad kinds. A **Regional endpoint** (e.g., `dynamodb.ap-northeast-2.amazonaws.com`) is the most common form and routes to different infrastructure per Region. A **Global endpoint** (e.g., `iam.amazonaws.com`, `s3.amazonaws.com`) reaches a global service without a Region. A **FIPS endpoint** (e.g., `dynamodb-fips.us-east-1.amazonaws.com`) is an endpoint that uses FIPS 140-2 validated cryptographic modules, meant for US government and financial customers. You can switch to it automatically with the SDK environment variable `AWS_USE_FIPS_ENDPOINT=true`.
 
-After the us-east-1 EBS outage in April 2011, AWS established the principle that every new region is built with at least 3 AZs. Before then, an AZ was more or less a different rack within the same facility, but this incident forced the definition of an AZ as "**a group of one or more DCs with physically independent power, cooling, and networking**". Inter-AZ latency is usually within 1-2ms, which makes synchronous replication like RDS Multi-AZ possible, but AZs are kept far enough apart (several km to tens of km) that a fire or power outage cannot spread between them.
+After the April 2011 us-east-1 EBS outage, AWS established a principle of building every new Region with at least 3 AZs. Before that, an AZ was little more than a different rack within the same facility, but this event enforced the definition of "**a set of one or more DCs with physically independent power, cooling, and networking**." Latency between AZs is usually within 1-2ms, so synchronous replication like RDS Multi-AZ is possible, but they are placed at a distance (a few km to tens of km) such that a fire or power outage will not spread.
 
-> 📚 **Case study**: The S3 us-east-1 outage of February 28, 2017. An operator made a typo in a billing debugging command and took down more servers than intended, sending the index subsystem into a full restart. Stripe, Slack, Trello, IFTTT, Coursera, and Quora were down for 4 hours, and since the AWS Status Page itself depended on S3, the absurd situation of "there's an outage but the status board shows green" unfolded. AWS subsequently split the Status Page across multiple regions. [AWS official post-mortem](https://aws.amazon.com/message/41926/). The lesson for developers is clear: **a system that depends on a single region dies together with any service in that region.**
+The February 28, 2017 S3 us-east-1 outage. An operator made a typo in a billing debugging command, stopped more servers than intended, and the index subsystem went into a full restart. Stripe, Slack, Trello, IFTTT, Coursera, and Quora were down for 4 hours, and the AWS Status Page itself depended on S3, creating the situation of "there's an outage but the status board is green." AWS later split the Status Page across multiple Regions. [AWS official post-mortem](https://aws.amazon.com/message/41926/). The lesson for developers is clear: **a system that depends on a single Region dies with that Region whenever any of its services dies.**
 
-## Where Is an AZ, Really: The Difference Between ZoneName and ZoneId
+## Where Is an AZ Really: The Difference Between ZoneName and ZoneId
 
-This comes up often on the exam and is a common trap in practice too. Given two AWS accounts at the same company, `ap-northeast-2a` in account A and `ap-northeast-2a` in account B are **physically different AZs**. AWS deliberately shuffles the mapping per account to prevent load concentration from "everyone creating things in a first".
+This shows up often on the exam and has many traps in practice. When one company has two AWS accounts, `ap-northeast-2a` in account A and `ap-northeast-2a` in account B are **physically different AZs**. This is because AWS deliberately shuffles the mapping per account to prevent the load concentration of "everybody creates in a first."
 
 ```bash
 aws ec2 describe-availability-zones \
@@ -62,52 +62,41 @@ aws ec2 describe-availability-zones \
 # ap-northeast-2d   apne2-az4
 ```
 
-The `ZoneId` (`apne2-az1`) points to the same physical AZ across all accounts. If you want to save cross-AZ data transfer costs when connecting to a partner via VPC peering or PrivateLink, you must match by `ZoneId`. If you pair a-to-a based on ZoneName alone, it is often actually cross-AZ.
+`ZoneId` (`apne2-az1`) points to the same physical AZ in every account. If you want to save cross-AZ data transfer costs when connecting with a partner through VPC peering or PrivateLink, you must match by `ZoneId`. If you pair a-with-a by ZoneName alone, it is often actually cross-AZ.
 
-> ⚠️ **Trap**: When you create your VPC subnet in `ap-northeast-2a`, it is easy to assume that putting the partner's PrivateLink in the same "a" automatically lands in the same physical AZ. Wrong. PrivateLink's endpoint network interfaces are assigned an AZ per ENI, and if the two accounts' AZ mappings differ, the traffic flows cross-AZ and incurs an additional $0.01 per GB. Similar costs arise after an RDS Multi-AZ failover if the client sits in a different AZ.
+> ⚠️ **Trap**: It is easy to assume that because you created a subnet in `ap-northeast-2a` when creating the VPC, placing the partner's PrivateLink in the same a automatically attaches it to the same physical AZ. That is wrong. A PrivateLink endpoint network interface is assigned an AZ per ENI, and if the AZ mappings of the two accounts differ, traffic flows cross-AZ and an additional $0.01 per GB cost is incurred. A similar cost arises when the client is in a different AZ even after an RDS Multi-AZ failover.
 
-## Edge Locations Are Not Just Caches
+## An Edge Location Is Not Just a Cache
 
-Edge locations perform four different jobs across 600+ PoPs (Points of Presence): **CloudFront** (HTTP/HTTPS caching and TLS termination), **Route 53** (authoritative DNS responses), **Global Accelerator** (TCP/UDP Anycast acceleration), and **AWS WAF/Shield** (edge DDoS filtering). What developers must know is the difference between CloudFront and Global Accelerator.
+Edge locations do 4 different jobs across more than 600 PoPs (Points of Presence): **CloudFront** (HTTP/HTTPS caching and TLS termination), **Route 53** (authoritative DNS responses), **Global Accelerator** (TCP/UDP Anycast acceleration), and **AWS WAF/Shield** (edge DDoS filtering). The key thing developers need to know is the difference between CloudFront and Global Accelerator.
 
 | Dimension | CloudFront | Global Accelerator |
 |------|-----------|---------------------|
 | OSI layer | L7 (HTTP/HTTPS) | L4 (TCP/UDP) |
-| Caching | Yes | No |
-| Anycast IP | No (DNS based) | Yes (2 static IPs) |
+| Cache | Yes | No |
+| Anycast IP | No (DNS-based) | Yes (2 static IPs) |
 | Suitable workloads | Static and dynamic web content | Gaming, MQTT, VoIP, WebRTC |
 | Failover time | Minutes (DNS TTL) | Seconds (BGP rerouting) |
 
-> 💡 **Related theory**: The two static IPs provided by Global Accelerator are based on **BGP Anycast**. When the same IP is advertised via BGP from multiple edges, the client's ISP routes to the nearest edge according to the BGP best-path algorithm (RFC 4271) using factors like AS_PATH length and local preference. DNS changes propagate on the order of minutes because of the client resolver's TTL cache, but BGP propagates within seconds via KEEPALIVE/UPDATE messages between routers. This is the mechanism by which Global Accelerator guarantees "failover in seconds".
+The 2 static IPs that Global Accelerator provides are based on **BGP Anycast**. When the same IP is advertised by BGP from multiple edges, the client's ISP routes to the nearest edge according to the BGP best-path algorithm (RFC 4271), such as AS_PATH length and local preference. With DNS, changes propagate over minutes because of the TTL cache in the client resolver, but BGP propagates within seconds through KEEPALIVE/UPDATE between routers. This is the mechanism by which Global Accelerator guarantees "second-level failover."
 
-CloudFront Functions and Lambda@Edge are also frequently confused. **CloudFront Functions** run directly at 600+ edges with cold starts under 100μs, but are limited to 2MB memory and 1ms execution time. They only support JavaScript ES5.1 and cannot make external API calls. Simple viewer request header modification and A/B test routing are about the extent of what they can do. **Lambda@Edge** runs at 13 Regional Edge Caches with access to the full Node.js and Python runtimes, but cold starts are in the tens of milliseconds. If you need DynamoDB lookups or external API calls, you must go with Lambda@Edge.
+CloudFront Functions and Lambda@Edge are also frequently confused. **CloudFront Functions** run directly at 600+ edges with a cold start under 100μs, but have limits of 2MB memory and 1ms execution time. They support only JavaScript ES5.1 and cannot make external API calls. Simple viewer request header modification and A/B test routing are about the limit. **Lambda@Edge** runs at 13 Regional Edge Caches and can use the full Node.js and Python runtimes, but cold starts are in the tens of ms. If you need DynamoDB lookups or external API calls, you must go with Lambda@Edge.
 
-## The Shared Responsibility Model: How Far a Developer Is Responsible for Their Own Code
+## The Shared Responsibility Model: How Far Is a Developer Responsible for Their Own Code
 
-The most common misconception among developers new to the cloud is "AWS will take care of security too, right?" In reality, there is a clear division: **AWS = Security OF the Cloud / Customer = Security IN the Cloud**. More importantly, **the responsibility boundary moves up and down depending on the abstraction level of the service you choose**.
+A common misunderstanding among developers new to the cloud is "AWS will handle security too." In reality there is a clear division: **AWS = Security OF the Cloud / Customer = Security IN the Cloud**. More important is that **the responsibility boundary moves up and down depending on the abstraction level of the service you choose**.
 
-```
-Managed ↑                                     AWS responsibility ↑
-  ┌─────────────────────────────┐
-  │ S3 / DynamoDB / Lambda      │  ← Customer only owns data classification, IAM permissions
-  │ RDS / ECS Fargate           │  ← + Customer owns network/SG configuration
-  │ ECS on EC2 / EKS Self       │  ← + Customer owns container runtime, node OS patching
-  │ EC2 + EBS (IaaS)            │  ← Customer owns OS, middleware, and the entire app
-  └─────────────────────────────┘
-Managed ↓                                     Customer responsibility ↑
-```
+![The shared responsibility boundary, where customer responsibility grows from fully managed toward IaaS](/diagrams/shared-responsibility-4tier.svg)
 
-Even for the same "DB query", with RDS the engine patching, backups, and OS are AWS's responsibility, while query writing, index design, and SG configuration are the customer's. If you install MySQL directly on EC2, OS patching also falls down to the customer. With Lambda, even runtime security patching is AWS's responsibility, and the customer only needs to worry about code vulnerabilities and IAM permissions. Memorize the principle that **as the abstraction level goes up, the responsibility boundary moves up** and half of the exam questions solve themselves.
+Even for the same "DB query," with RDS the engine patching, backups, and OS are AWS's, while writing queries, index design, and SG configuration are the customer's. If you install MySQL directly on EC2, even OS patching comes down to the customer. With Lambda, even runtime security patches are AWS's responsibility, and the customer only needs to care about code vulnerabilities and IAM permissions. If you memorize the principle that **the higher the abstraction level, the higher the responsibility boundary moves**, questions about who is responsible become easy to solve.
 
-> 📚 **Case study**: The Capital One data breach of July 2019. The perpetrator was former AWS employee Paige Thompson, but the cause was not AWS infrastructure — it was **an SSRF vulnerability in the WAF operated by Capital One plus IAM role exposure via EC2 IMDSv1**. The attacker used SSRF to access `http://169.254.169.254/latest/meta-data/iam/security-credentials/`, stole temporary credentials, and used them to read the card application data of 106 million people from S3 buckets. As a direct consequence, AWS released **IMDSv2** (session-token based) in November 2019. [DOJ indictment](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
+The July 2019 Capital One data breach. The perpetrator was a former AWS employee, Paige Thompson, but the cause was not AWS infrastructure; it was **an SSRF vulnerability in the WAF that Capital One operated + the exposure of an IAM role through EC2 IMDSv1**. The attacker used SSRF to access `http://169.254.169.254/latest/meta-data/iam/security-credentials/`, stole temporary credentials, and used those credentials to read the card application data of 106 million people from S3 buckets. As a direct result, AWS released **IMDSv2** (session-token based) in November 2019. [DOJ indictment](https://www.justice.gov/usao-edva/press-release/file/1188626/download).
 
-> 🔍 **Going deeper**: IMDSv2 operates in two steps. (1) A `PUT /latest/api/token` request with the `X-aws-ec2-metadata-token-ttl-seconds` header obtains a session token. (2) Metadata requests present the token via the `X-aws-ec2-metadata-token` header. SSRF attackers can usually only issue HTTP GETs, so they cannot send the PUT and cannot obtain a token. IMDSv2 also forces the IP TTL to 1 (or hop limit 1), so it cannot escape outside the container network. When creating an EC2 instance, setting `MetadataOptions.HttpTokens=required` forcibly disables IMDSv1.
-
-> 💡 **Related theory**: The shared responsibility model dovetails precisely with NIST SP 800-145's service models (IaaS / PaaS / SaaS). Of the NIST CSF's five functions (Identify, Protect, Detect, Respond, Recover), Identify and Protect remain almost entirely in the customer's domain. AWS provides tools on top like GuardDuty, Inspector, and Macie, but turning them on and setting policies is the customer's job. ISO 27017 (cloud security) and ISO 27018 (cloud privacy) also codify responsibility areas on top of the same model.
+> 🔍 **Going deeper**: IMDSv2 works in two steps. ① A `PUT /latest/api/token` request receives a session token via the `X-aws-ec2-metadata-token-ttl-seconds` header. ② When making a metadata request, present the token with the `X-aws-ec2-metadata-token` header. An SSRF attacker can usually only send HTTP GET, so they cannot send the PUT and cannot get the token. IMDSv2 also forces the IP TTL to 1 (a hop limit of 1), so it cannot escape outside the container network. When creating an EC2 instance, setting `MetadataOptions.HttpTokens=required` forcibly disables IMDSv1.
 
 ## The 4 Domains the DVA Exam Asks About
 
-Unlike SAA, DVA-C02 puts its weight on **security, deployment, and troubleshooting from the developer's perspective**.
+Unlike SAA, DVA puts the weight on **security, deployment, and troubleshooting from the developer's perspective**.
 
 | Domain | Weight | Key keywords |
 |--------|------|------|
@@ -116,15 +105,15 @@ Unlike SAA, DVA-C02 puts its weight on **security, deployment, and troubleshooti
 | Deployment | 24% | CodePipeline, CodeBuild, CodeDeploy, Beanstalk, CloudFormation |
 | Troubleshooting | 18% | CloudWatch, X-Ray, CloudTrail |
 
-If SAA asks "how do you design it", DVA asks "**how do you build, deploy, and debug it in code**". For example, given the scenario "Lambda is slow due to cold starts", "provision a warming pool" suffices for SAA, but DVA requires answering down to code and option names: "attach Provisioned Concurrency to an alias, and on changes, shift traffic with CodeDeploy Canary 10Percent5Minutes".
+If SAA asks "how will you design it," DVA asks "**how will you build it in code, deploy it, and debug it**." For example, for the scenario "Lambda is slow because of cold starts," SAA is satisfied with "set up a warm pool," but DVA must be answered down to code and option names: "attach Provisioned Concurrency to the alias, and on changes switch with CodeDeploy Canary 10Percent5Minutes."
 
-## Poking Around Directly with the CLI
+## Trying It Out Directly with the CLI
 
 ```bash
-# 1) All currently available regions
+# 1) All currently available Regions
 aws ec2 describe-regions --output table
 
-# 2) AZs in the Seoul region — view ZoneName and ZoneId together
+# 2) AZs in the Seoul Region — look at ZoneName and ZoneId together
 aws ec2 describe-availability-zones \
   --region ap-northeast-2 \
   --query 'AvailabilityZones[*].[ZoneName,ZoneId,State,ZoneType]' \
@@ -134,96 +123,98 @@ aws ec2 describe-availability-zones \
 aws sts get-caller-identity
 ```
 
-`get-caller-identity` is the starting point of debugging. When you wonder "why does it say I don't have permission?", it should be the first thing you type. Looking at the ARN tells you at a glance whether you are an IAM user, which role you assumed, and which account you are in.
+`get-caller-identity` is the starting point of debugging. When you wonder "why does it say I don't have permission?", it is the first thing to run. From the ARN you can see at a glance whether it is an IAM user, which role was assumed, and which account it is in.
 
-## Wrapping Up
+## Summary
 
-There are two pictures we saw today. First, AWS operates on a three-tier **Region > AZ > Edge** infrastructure, and for developers this structure directly determines where the SDK sends its requests. Second, on top of that, the responsibility for security and operations is divided — **AWS from the concrete floor up to the hypervisor, the customer above that** — and the boundary moves up and down depending on which service you choose.
+Today we saw two pictures. First, AWS runs on a three-tier infrastructure of **Region > AZ > Edge**, and for developers this structure is directly tied to where the SDK sends requests. Second, on top of that, the responsibility for security and operations is **AWS from the concrete floor up through the hypervisor, and the customer above that**, and the boundary moves up and down depending on which service you choose.
 
-In the next article, we look at the four core entities of IAM — User, Group, Role, Policy — which decide "who is allowed to do what" on top of this foundation. Recalling that the direct cause of the Capital One incident was IAM configuration, the reason developers must deeply understand IAM comes naturally.
+In the next post, we look at IAM's four core entities, which decide "who gets to do what" on top of that: User, Group, Role, and Policy. Recalling that in the Capital One incident the excessive permissions of the IAM role credentials stolen through SSRF magnified the damage, the reason developers need a deep understanding of IAM becomes obvious.
 
 ---
 
 ## 📝 Practice Questions
 
-**Question 1.** When a boto3 client is created with `s3 = boto3.client('s3')`, how is the region determined?
+**Question 1.** When a boto3 client is created with `s3 = boto3.client('s3')`, how is the Region determined?
 
 A) It is always fixed to us-east-1
-B) It searches the `AWS_REGION` environment variable → `AWS_DEFAULT_REGION` → the default profile in `~/.aws/config`, in that order
-C) The nearest region is automatically selected
-D) S3 is a global service, so the region is irrelevant
+B) It searches in the order: `AWS_REGION` environment variable → `AWS_DEFAULT_REGION` → the default profile in `~/.aws/config`
+C) The nearest Region is selected automatically
+D) S3 is a global service, so the Region is meaningless
 
 **Answer: B**
-Explanation: If no region is specified, boto3 searches environment variables and configuration files according to a priority order. The exact order is: (1) `region_name` in the client constructor, (2) the `AWS_REGION` environment variable, (3) the `AWS_DEFAULT_REGION` environment variable, (4) the `region` value of the active profile in `~/.aws/config`. If none of these yield a region, it raises `NoRegionError`. S3 bucket names live in a global namespace, but the data is stored in a specific region, so a region specification is required (exceptionally, the `s3.amazonaws.com` global endpoint also exists, but since 2020 region-aware endpoints have been recommended).
+Explanation: If you do not specify a Region, boto3 searches environment variables and configuration files in priority order. The exact order is ① `region_name` in the client constructor, ② the `AWS_REGION` environment variable, ③ the `AWS_DEFAULT_REGION` environment variable, ④ the `region` value of the active profile in `~/.aws/config`. If it cannot find one anywhere, it throws `NoRegionError`. S3 bucket names are in a global namespace, but the data is stored in a specific Region, so specifying a Region is necessary (as an exception the global endpoint `s3.amazonaws.com` also exists, but since 2020 region-aware endpoints are recommended).
 
 ---
 
-**Question 2.** A company is using IAM roles on EC2 instances via IMDSv1. The security team has demanded that IMDSv2 be enforced to defend against SSRF attacks. What is the most accurate action?
+**Question 2.** A company uses an IAM role through IMDSv1 on its EC2 instances. The security team has asked to enforce IMDSv2 to counter SSRF attacks. What is the most accurate action?
 
 A) Remove the IAM role
-B) Set the instance metadata options to `HttpTokens=required`
-C) Move the instance to a different region
+B) Set the instance metadata option to `HttpTokens=required`
+C) Move the instance to a different Region
 D) Block 169.254.169.254 in the Security Group
 
 **Answer: B**
-Explanation: Setting `MetadataOptions.HttpTokens=required` rejects any request that has not obtained a token via PUT. Since SSRF attackers can typically only issue GETs, metadata access is blocked. A would prevent the application from using IAM permissions, C is unrelated to the IMDSv1 problem, and D fails because 169.254.169.254 is a link-local address and cannot be controlled by SGs (SGs operate only on ENIs). Additionally, setting `HttpPutResponseHopLimit=1` can also block metadata access from container networks.
+Explanation: With `MetadataOptions.HttpTokens=required`, every request that has not received a token via PUT is rejected. An SSRF attacker can generally only do GET, so metadata access is blocked. A would make the application unable to use IAM permissions, C is unrelated to the IMDSv1 problem, and D cannot work because 169.254.169.254 is a link-local address and cannot be controlled by an SG (SGs operate only on ENIs). In addition, setting `HttpPutResponseHopLimit=1` can also block metadata access from the container network.
 
 ---
 
 **Question 3.** How is the AZ in which a Lambda function runs determined?
 
-A) The developer specifies the AZ in the function definition
-B) AWS automatically selects among available AZs and the developer has no control
-C) A Lambda attached to a VPC runs in the AZs of the specified subnets, while a non-VPC Lambda is distributed internally by AWS
-D) It always runs in the first AZ of the region
+A) The developer specifies the AZ when defining the function
+B) AWS automatically selects from the available AZs and the developer cannot control it
+C) A Lambda attached to a VPC runs in the AZ of the specified subnet, and a Lambda outside a VPC is distributed internally by AWS
+D) It always runs in the Region's first AZ
 
 **Answer: C**
-Explanation: Lambda has no option to directly specify an AZ at function creation. A Lambda unrelated to any VPC (the default) is automatically distributed across the AWS-managed multi-AZ Lambda environment. A Lambda attached to a VPC (via `VpcConfig`) runs in the AZs of the subnets where its ENIs were created, so **you must specify subnets in multiple AZs to survive a single-AZ failure**. If you specify only a single-AZ subnet, Lambda invocations fail when that AZ goes down. Before 2019, VPC Lambda cold starts took 10+ seconds due to ENI creation, but with the introduction of Hyperplane ENIs in September 2019, the ENI is created only on the first invocation and reused thereafter.
+Explanation: Lambda has no option to specify the AZ directly when creating a function. A Lambda not tied to a VPC (the default) is automatically distributed across the multi-AZ Lambda environment managed by AWS. A Lambda attached to a VPC (with `VpcConfig` set) runs in the AZ of the subnet where its ENI was created, so **you must specify subnets in multiple AZs to survive a single-AZ failure**. If you specify only a single-AZ subnet, Lambda invocations fail when that AZ goes down. Before 2019, VPC Lambda cold starts took 10 seconds or more because of ENI creation, but in September 2019 the introduction of Hyperplane ENI improved this to a structure where the ENI is created only on the first invocation and reused afterward.
 
 ---
 
-**Question 4.** Between Global Accelerator and CloudFront, which fits the following scenario? "We must provide an MQTT-based IoT messaging service to users worldwide."
+**Question 4.** Between Global Accelerator and CloudFront, which fits the following scenario? "We must provide an MQTT-based IoT messaging service to users around the world."
 
-A) CloudFront (suitable for accelerating all global traffic)
-B) Global Accelerator (TCP/UDP acceleration; MQTT is TCP-based)
+A) CloudFront (suited to accelerating all global traffic)
+B) Global Accelerator (TCP/UDP acceleration, MQTT is TCP-based)
 C) Route 53 Geolocation (geography-based distribution)
-D) Direct Connect (dedicated lines for all users)
+D) Direct Connect (provide a dedicated line to every user)
 
 **Answer: B**
-Explanation: CloudFront is centered on HTTP/HTTPS L7 caching, so it cannot handle MQTT (TCP 1883/8883). Route 53 Geolocation only branches DNS responses without accelerating the traffic itself, and failover takes minutes due to DNS TTL. Direct Connect is a dedicated line between a specific site and AWS, so it doesn't fit global user distribution. Global Accelerator pulls traffic to the nearest edge via BGP Anycast and forwards it over the AWS backbone, guaranteeing consistent latency for both TCP and UDP. Since two static IPs are guaranteed, it is also well suited for hardcoding IPs into IoT device firmware.
+Explanation: CloudFront is centered on HTTP/HTTPS L7 caching, so it cannot handle MQTT (TCP 1883/8883). Route 53 Geolocation only branches DNS responses and does not accelerate the traffic itself, and because of DNS TTL, failover takes minutes. Direct Connect is a dedicated line between a specific site and AWS, so it does not fit distributing to global users. Global Accelerator pulls traffic into the nearest edge with BGP Anycast and delivers it over the AWS backbone, guaranteeing consistent latency for both TCP and UDP. Since 2 static IPs are guaranteed, it is also suitable for hardcoding the IPs into IoT device firmware.
 
 ---
 
-**Question 5.** A developer created an S3 bucket in us-east-1, but SDK calls from ap-northeast-2 have latency exceeding 200ms. What is the most appropriate improvement?
+**Question 5.** A developer created an S3 bucket in us-east-1, but SDK calls from ap-northeast-2 have latency over 200ms. What is the most appropriate improvement?
 
-A) Move the S3 bucket from us-east-1 to ap-northeast-2 (impossible)
-B) Create another bucket with the same name in ap-northeast-2 (impossible; globally unique)
-C) Create a replica in ap-northeast-2 with S3 Cross-Region Replication and have clients access the bucket in the nearer region
-D) Enable S3 Transfer Acceleration, which automatically selects the nearest region
+A) Move the us-east-1 S3 bucket to ap-northeast-2 (not possible)
+B) Create another bucket with the same name in ap-northeast-2 (not possible, globally unique)
+C) Create a replica in ap-northeast-2 with S3 Cross-Region Replication, and have clients access the bucket in the nearer Region
+D) Turning on S3 Transfer Acceleration automatically selects the nearest Region
 
 **Answer: C**
-Explanation: An S3 bucket's region is fixed at creation and cannot be moved, and names are globally unique so the same name cannot be created in another region. You can create a differently named replica with CRR (Cross-Region Replication), or use **Multi-Region Access Points** (launched December 2020) to have a single global endpoint automatically route to the nearest regional bucket. D's S3 Transfer Acceleration routes through CloudFront edges onto the backbone, so latency improves, but it is not "automatic region selection". It also adds $0.04 per GB on uploads.
+Explanation: An S3 bucket's Region is fixed at creation and cannot be moved, and names are globally unique so you cannot create the same name in another Region. You can create a replica with a separate name through CRR (Cross-Region Replication), or use the **Multi-Region Access Point** released in December 2020 so that a single global endpoint automatically routes to the nearest Region's bucket. S3 Transfer Acceleration in D passes traffic through CloudFront edges to the backbone, which improves latency but is not "automatic Region selection." It also costs an extra $0.04 per GB on uploads.
 
 ---
 
-**Question 6.** Which of the following is NOT in the "customer responsibility" area?
+**Question 6.** Which of the following is NOT a "customer responsibility" area?
 
-A) SQL injection vulnerabilities in Lambda function code
-B) MySQL engine security patches on an RDS instance
-C) S3 bucket policy configuration
+A) A SQL injection vulnerability in Lambda function code
+B) Security patches for the MySQL engine of an RDS instance
+C) Configuring S3 bucket policies
 D) Guest OS patching on EC2
 
 **Answer: B**
-Explanation: RDS is PaaS, so patching the DB engine is AWS's responsibility. However, the customer can choose when patches are applied via the maintenance window. A is a code vulnerability, always the customer's responsibility. C is IAM/resource policy, always the customer's responsibility. D: since EC2 is IaaS, OS patching is the customer's responsibility (conversely, if you move the same workload to ECS Fargate, even container host OS patching shifts to AWS). Memorize this pattern as "the higher the abstraction level, the higher the responsibility boundary moves" and you can solve all the variations on the exam.
+Explanation: RDS is PaaS, so patching the DB engine is AWS's responsibility. However, the customer can choose when to apply patches through the maintenance window. A is a code vulnerability, so it is always the customer's responsibility. C is IAM and resource policy, so it is always the customer's responsibility. D, because EC2 is IaaS, OS patching is the customer's responsibility (conversely, if you move the same workload to ECS Fargate, even the container host OS patching passes to AWS). If you memorize this pattern with the principle that "the higher the abstraction level, the higher the responsibility boundary moves," every variation of this question on the exam gets solved.
 
 ---
 
-**Question 7.** You are connecting PrivateLink to a partner via VPC peering. Both accounts placed subnets in `ap-northeast-2a`, yet traffic flows cross-AZ. What is the cause and the fix?
+**Question 7.** You are going to connect PrivateLink with a partner through VPC peering. Both accounts placed subnets in `ap-northeast-2a`, but the traffic flows cross-AZ. What are the cause and the fix?
 
 A) It is an AWS bug and you should open a support ticket
-B) `ZoneName` maps to different physical AZs per account, so you must compare and match using `ZoneId` (`apne2-az1`, etc.)
-C) VPC peering always operates cross-AZ
-D) The regions must be made the same (they already are)
+B) `ZoneName` maps to different physical AZs per account, so you must compare and match using `ZoneId` (such as `apne2-az1`)
+C) VPC peering always works cross-AZ
+D) The Regions must be made the same (they are already the same Region)
 
 **Answer: B**
-Explanation: AWS deliberately shuffles the AZ mapping per account to prevent load concentration from "everyone creating in a first". Account A's `ap-northeast-2a` (`apne2-az1`) and account B's `ap-northeast-2a` (`apne2-az3`) are physically different AZs. Check the ZoneId with `aws ec2 describe-availability-zones` and place subnets in the same ZoneId to land in the same physical AZ. Cross-AZ data transfer costs $0.01 per GB ($0.02 round-trip) and accumulates quickly with high-volume traffic, so recognizing this trap matters in practice.
+Explanation: AWS deliberately shuffles the AZ mapping per account to prevent the load concentration of "everybody creates in a first." `ap-northeast-2a` (`apne2-az1`) in account A and `ap-northeast-2a` (`apne2-az3`) in account B are physically different AZs. If you check the ZoneId with `aws ec2 describe-availability-zones` and place subnets in the same ZoneId, they attach to the same physical AZ. The cross-AZ data transfer cost is $0.01 per GB ($0.02 round-trip), and it accumulates quickly with large traffic volumes, so being aware of this trap matters in practice.
+
+---

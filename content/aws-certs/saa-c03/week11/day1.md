@@ -32,10 +32,10 @@ RDS Multi-AZ의 페일오버가 "왜 즉시(0초)가 아니라 60초쯤 걸리�
 
 - **S3 Cross-Region Replication(CRR)**: 객체를 다른 리전 버킷으로 비동기 복제한다. 대부분 수 분 내 완료되지만 보장은 아니다(S3 RTC를 켜면 15분 SLA). 같은 리전 복제는 SRR로, 규제·로그 집계 용도다.
 - **DynamoDB Global Tables**: 여러 리전에서 **모두 쓰기 가능한 Active-Active** NoSQL을 만든다. 충돌은 **last-writer-wins**로 자동 해소하고, 복제 지연은 보통 1초 미만이다. "5개 리전 Active-Active NoSQL"이라는 키워드가 나오면 거의 정답이다.
-- **Aurora Global Database**: 한 리전이 프라이머리(쓰기), 최대 5개 리전이 읽기 전용 사본. 전용 복제 인프라로 복제 지연 보통 1초 미만, 리전 장애 시 보조 리전을 보통 1분 안에 쓰기로 승격할 수 있다.
+- **Aurora Global Database**: 한 리전이 프라이머리(쓰기), 최대 10개 리전이 읽기 전용 사본. 전용 복제 인프라로 복제 지연 보통 1초 미만, 리전 장애 시 보조 리전을 보통 수 분 안에 쓰기로 승격할 수 있다.
 - **RDS Cross-Region Read Replica**: 단순 비동기 읽기 사본. Aurora Global보다 복제 지연이 크고 승격도 느리지만, 비-Aurora RDS 엔진에서 쓴다.
 
-DynamoDB Global Tables가 여러 리전에서 동시에 쓰기를 받으면서도 "split-brain(양쪽이 서로 다른 진실을 갖는 상태)"으로 깨지지 않는 비결은 **충돌 해소 규칙을 미리 정해 둔 것**이다. last-writer-wins는 각 쓰기에 타임스탬프를 붙여 가장 나중 것이 이긴다는 단순 규칙이다. 이는 분산 시스템의 **최종 일관성(eventual consistency)** 모델로, "잠깐은 리전마다 값이 다를 수 있지만 복제가 수렴하면 결국 같아진다"를 받아들인다. 강한 일관성을 포기한 대가로 모든 리전이 항상 쓰기를 받을 수 있는 가용성(AP 선택)을 얻은 것이다. 반대로 Aurora Global은 쓰기를 한 리전으로 모아 일관성을 지키되(단일 라이터), 그 리전이 죽으면 승격이라는 절차적 비용(RTO 약 1분)을 치른다 — 같은 Multi-Region이라도 CAP의 어느 쪽을 택했는지가 다르다.
+DynamoDB Global Tables가 여러 리전에서 동시에 쓰기를 받으면서도 "split-brain(양쪽이 서로 다른 진실을 갖는 상태)"으로 깨지지 않는 비결은 **충돌 해소 규칙을 미리 정해 둔 것**이다. last-writer-wins는 각 쓰기에 타임스탬프를 붙여 가장 나중 것이 이긴다는 단순 규칙이다. 이는 분산 시스템의 **최종 일관성(eventual consistency)** 모델로, "잠깐은 리전마다 값이 다를 수 있지만 복제가 수렴하면 결국 같아진다"를 받아들인다. 강한 일관성을 포기한 대가로 모든 리전이 항상 쓰기를 받을 수 있는 가용성(AP 선택)을 얻은 것이다. 반대로 Aurora Global은 쓰기를 한 리전으로 모아 일관성을 지키되(단일 라이터), 그 리전이 죽으면 승격이라는 절차적 비용(RTO 수 분 수준)을 치른다 — 같은 Multi-Region이라도 CAP의 어느 쪽을 택했는지가 다르다.
 
 > ⚠️ **함정**: "Multi-AZ면 재해 복구가 된다"는 보기는 오답이다. Multi-AZ는 같은 리전 안의 격리이므로, 리전 전체를 덮는 재해(앞의 us-east-1 사례)나 리전 단위 규제 요구에는 무력하다. **DR은 반드시 리전 경계를 넘어야** 한다 — Cross-Region 백업이든, Aurora Global이든, CRR이든. 시험에서 "리전 장애에도 견뎌라"가 보이면 Multi-AZ 선택지는 전부 오답으로 걸러야 한다.
 
@@ -187,4 +187,4 @@ D) Route 53 Weighted로 대체
 
 ## 📌 핵심 요약
 
-복원력은 물리적 거리가 일관성·지연·격리·비용을 한꺼번에 결정하는 설계 문제다. AZ는 동기 복제가 견딜 만큼 가깝되 한 재난이 둘을 동시에 치지 못할 만큼 멀게 설계돼 Multi-AZ가 같은 리전 안에서 RPO 0의 HA를 제공한다. 리전은 동기 복제 예산을 넘어 Multi-Region이 본질적으로 비동기이며, S3 CRR·DynamoDB Global Tables(Active-Active, last-writer-wins)·Aurora Global(단일 라이터, 승격 RTO 약 1분)이 각각 다른 CAP/PACELC 선택으로 이를 푼다. RTO(복구 자동화)와 RPO(복제 모드)는 독립 축이고, "Multi-AZ는 DR이 아니다"가 핵심 함정이다. 2021 us-east-1·2017 S3 사고는 리전도 장애 단위이며 복구 경로가 장애와 운명을 공유하면 안 된다는 교훈을 남겼다.
+복원력은 물리적 거리가 일관성·지연·격리·비용을 한꺼번에 결정하는 설계 문제다. AZ는 동기 복제가 견딜 만큼 가깝되 한 재난이 둘을 동시에 치지 못할 만큼 멀게 설계돼 Multi-AZ가 같은 리전 안에서 RPO 0의 HA를 제공한다. 리전은 동기 복제 예산을 넘어 Multi-Region이 본질적으로 비동기이며, S3 CRR·DynamoDB Global Tables(Active-Active, last-writer-wins)·Aurora Global(단일 라이터, 승격 RTO 수 분 수준)이 각각 다른 CAP/PACELC 선택으로 이를 푼다. RTO(복구 자동화)와 RPO(복제 모드)는 독립 축이고, "Multi-AZ는 DR이 아니다"가 핵심 함정이다. 2021 us-east-1·2017 S3 사고는 리전도 장애 단위이며 복구 경로가 장애와 운명을 공유하면 안 된다는 교훈을 남겼다.

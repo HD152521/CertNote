@@ -22,8 +22,8 @@ Aurora Global Database positions between Pilot Light and Warm Standby as DR tool
 **RPO**: Aurora Global uses **async replication**, Replication Lag typically **<1 second**. Thus RPO ~1 second. Large write storms (e.g., batch inserts millions) can increase Lag to seconds/tens of seconds.
 
 **RTO**: Managed Planned Failover vs Unplanned Failover differences exist.
-- **Managed Planned Failover** (planned switch): Aurora fully syncs Secondary with Primary before promotion. RTO ~seconds. Zero data loss.
-- **Unplanned Failover** (Primary region failure): Manual Secondary promotion needed. `promote-read-replica-db-cluster` API or console. RTO ~1 min (DB promotion) + app reconnection.
+- **Managed Planned Failover** (planned switch): Aurora fully syncs Secondary with Primary before promotion. RTO typically under 30 seconds on supported versions. Zero data loss.
+- **Unplanned Failover** (Primary region failure): Manual Secondary promotion needed. `promote-read-replica-db-cluster` API or console. RTO typically a few minutes (DB promotion) + app reconnection.
 
 ```bash
 # Aurora Global Unplanned Failover: promote Secondary to new Primary

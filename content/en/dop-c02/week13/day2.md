@@ -52,7 +52,7 @@ Active-Active (Latency Routing)
 
 ## Aurora Global Database—Single-Writer Asynchronous Global Replication
 
-Aurora Global ties one Primary region and up to 5 Secondary regions. The key insight: **writes happen only in the Primary region**; Secondaries are read-only (single-writer). Replication is asynchronous but, over AWS's private infrastructure (storage-layer replication), typically achieves **sub-1-second lag**.
+Aurora Global ties one Primary region and up to 10 Secondary regions. The key insight: **writes happen only in the Primary region**; Secondaries are read-only (single-writer). Replication is asynchronous but, over AWS's private infrastructure (storage-layer replication), typically achieves **sub-1-second lag**.
 
 On region failure, promote a Secondary **to standalone primary** (usually within a minute). Note: to return to a global configuration post-failover, you must wait for the old Primary to recover, then reconfigure it as the new Secondary—it doesn't auto-reverse bidirectionally.
 
@@ -172,7 +172,7 @@ D) Because there is only one region
 
 **Answer: B**
 
-Explanation: Aurora Global uses a single-leader replication model: writes occur only in the Primary region, and up to five Secondary regions are read-only. Because there is exactly one write point, cross-region write conflicts cannot occur by construction — a design that sidesteps the difficulty of reconciling relational transactions and constraints with conflict resolution. Replication is asynchronous with sub-second lag, not synchronous (A is wrong); conflicts are prevented rather than merged (C); and there are multiple regions (D is wrong). The opposite extreme is DynamoDB Global Tables' multi-master model.
+Explanation: Aurora Global uses a single-leader replication model: writes occur only in the Primary region, and up to ten Secondary regions are read-only. Because there is exactly one write point, cross-region write conflicts cannot occur by construction — a design that sidesteps the difficulty of reconciling relational transactions and constraints with conflict resolution. Replication is asynchronous with sub-second lag, not synchronous (A is wrong); conflicts are prevented rather than merged (C); and there are multiple regions (D is wrong). The opposite extreme is DynamoDB Global Tables' multi-master model.
 
 ---
 

@@ -27,7 +27,7 @@ DR은 "얼마나 빨리"가 아니라 **BIA로 RTO/RPO를 정하고 비용과 �
 | 헷갈리는 쌍 | 결정적 차이 |
 |-------------|-------------|
 | RDS Multi-AZ Standby vs Read Replica | 물리 동기(read 불가) vs 논리 비동기(read 가능) |
-| Aurora vs Aurora Global | 단일 리전 6-copy(30초) vs 멀티 리전 비동기(<1분 promote) |
+| Aurora vs Aurora Global | 단일 리전 6-copy(30초) vs 멀티 리전 비동기(promote 수 분 단위) |
 | Aurora Global vs DDB Global Tables | 단일 리더(충돌 없음) vs 멀티 마스터(LWW) |
 | Route 53 Failover vs Global Accelerator | DNS(캐시 TTL 지연) vs anycast IP(즉각) |
 | Pilot Light vs Warm Standby | 앱 꺼둠(미검증) vs 축소판 상시(검증됨) |
@@ -225,7 +225,7 @@ D) Global Accelerator(anycast IP) + S3 CRR로 즉각 페일오버하고 데이�
 
 **정답: B**
 
-해설: "지연 최저 리전 + 리전 장애 시 자동 제외"는 Latency Routing + 헬스 체크 조합이고, "관계형 DB·쓰기는 한 곳·리전 간 비동기 복제"는 Aurora Global Database(단일 리더, secondary 읽기 전용, <1초 비동기, 장애 시 secondary promote ~1분)에 정확히 맞는다. Simple+Single-AZ(A)는 분산·HA가 없고, Weighted 50:50(C)은 지연을 고려 안 하며 DDB는 NoSQL이라 "관계형"과 안 맞고, Global Accelerator+S3 CRR(D)은 관계형 DB 복제가 아니다.
+해설: "지연 최저 리전 + 리전 장애 시 자동 제외"는 Latency Routing + 헬스 체크 조합이고, "관계형 DB·쓰기는 한 곳·리전 간 비동기 복제"는 Aurora Global Database(단일 리더, secondary 읽기 전용, <1초 비동기, 장애 시 secondary promote 수 분 단위)에 정확히 맞는다. Simple+Single-AZ(A)는 분산·HA가 없고, Weighted 50:50(C)은 지연을 고려 안 하며 DDB는 NoSQL이라 "관계형"과 안 맞고, Global Accelerator+S3 CRR(D)은 관계형 DB 복제가 아니다.
 
 ---
 

@@ -198,7 +198,7 @@ D) Cross-Region Read Replica with manual promotion
 
 **Answer: B**
 
-Explanation: "Global SQL + RPO<1s + RTO in minutes + secondary Region sharing reads" is Aurora Global Database — storage-level asynchronous replication gives an RPO under 1 second, and the secondary Region's read replicas share the load and then promote within 1 minute during a disaster. A (Multi-AZ) is powerless against a Region failure. C is NoSQL, which doesn't fit "SQL." D (manual promotion) can't meet the RTO because of replication lag and manual promotion. Trap: "global SQL + RPO in seconds + fast promotion" is Aurora Global Database.
+Explanation: "Global SQL + RPO<1s + RTO in minutes + secondary Region sharing reads" is Aurora Global Database — storage-level asynchronous replication gives an RPO under 1 second, and the secondary Region's read replicas share the load and then promote within minutes during a disaster. A (Multi-AZ) is powerless against a Region failure. C is NoSQL, which doesn't fit "SQL." D (manual promotion) can't meet the RTO because of replication lag and manual promotion. Trap: "global SQL + RPO in seconds + fast promotion" is Aurora Global Database.
 
 ---
 

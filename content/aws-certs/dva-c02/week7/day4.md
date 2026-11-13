@@ -61,17 +61,17 @@ RDS Read Replica는 각 replica가 자기 스토리지를 가지고 primary의 b
 
 Aurora Replica는 **자체 스토리지가 없다**. Primary와 같은 분산 스토리지를 공유한다. 그래서:
 
-- **복제 lag 10-20ms** (실제로는 redo log를 replica 캐시에 알려주는 시간만)
+- **복제 lag는 보통 100ms보다 훨씬 짧다** (공식 문서 표현; 쓰기 부하가 크면 늘어난다)
 - **Replica 추가 시 즉시 사용 가능** (스토리지 복사 없음)
-- **15개까지 확장** (RDS는 기본 5개, MySQL/PG/MariaDB는 15개까지 상향)
+- **15개까지 확장** (RDS MySQL/PG/MariaDB도 소스당 최대 15개)
 - **인스턴스 비용만 부담** (스토리지 비용 중복 없음)
 
 | 차원 | RDS Read Replica | Aurora Replica |
 |------|------------------|----------------|
 | 스토리지 | 각자 보유 | 공유 |
 | 복제 메커니즘 | 비동기 binlog/WAL | redo log 알림 (스토리지는 공유) |
-| 복제 lag | 초 ~ 분 | 10-20ms |
-| 최대 개수 | 5 (MySQL/PG/MariaDB는 15로 상향) | 15 |
+| 복제 lag | 초 ~ 분 | 보통 100ms보다 훨씬 짧음 |
+| 최대 개수 | 15 (MySQL/PG/MariaDB/SQL Server, 소스당) | 15 |
 | 초기 동기화 | 전체 copy 필요 | 즉시 |
 | 페일오버 시간 | 수동 promote (수 분) | 자동 (~30초) |
 
@@ -121,13 +121,13 @@ Aurora Serverless는 트래픽에 따라 컴퓨트 용량이 자동으로 늘었
 | 확장 단위 | 2배 단위 점프 (2→4→8 ACU) | 0.5 ACU 단위 미세 조정 |
 | 확장 속도 | 분 단위 | 초 단위 |
 | Min Capacity | 1 ACU (또는 일시정지) | 0 ACU (auto-pause) ~ 0.5 ACU |
-| Max Capacity | 256 ACU | 256 ACU |
-| 콜드 스타트 | 일시정지 후 첫 요청 ~30초 | 거의 없음 |
+| Max Capacity | — | 256 ACU(Aurora MySQL) / 384 ACU(Aurora PostgreSQL), 플랫폼 버전에 따라 다름 |
+| 콜드 스타트 | 일시정지 후 첫 요청 ~30초 | 스케일링은 무중단. auto-pause(0 ACU) 재개 시 약 15초(24시간 넘게 정지하면 30초 이상) |
 | Multi-AZ | 옵션 | 표준 |
 | 데이터 API | ✅ | ✅ (2023부터) |
 | 신규 | 단종 절차 | 권장 |
 
-v1과 v2의 가장 큰 차이는 **확장 메커니즘**이다. v1은 새 인스턴스로 트래픽을 옮기는(scale-up) 방식 — 그래서 점프가 크고 느리다. v2는 라이브 인스턴스의 CPU/메모리 할당을 hypervisor 레벨에서 조정하는 방식 — Firecracker microVM의 동적 리소스 조정 기능을 활용해 인스턴스 교체 없이 ACU를 늘리고 줄인다. 이것이 "초 단위 미세 조정"의 기술적 근거다. v2는 "사용량 기반 과금이 가능한 정규 Aurora 인스턴스"에 가깝다.
+v1과 v2의 가장 큰 차이는 **확장 메커니즘**이다. v1은 새 인스턴스로 트래픽을 옮기는(scale-up) 방식 — 그래서 점프가 크고 느리다. v2는 대부분의 스케일링 이벤트에서 라이터/리더를 같은 호스트에 둔 채 용량을 조정하며, 진행 중인 DB 작업을 방해하지 않는다. 이것이 "미세 조정"의 근거다. v2는 "사용량 기반 과금이 가능한 정규 Aurora 인스턴스"에 가깝다.
 
 사용 시나리오별 선택은 다음과 같다.
 
@@ -139,7 +139,7 @@ v1과 v2의 가장 큰 차이는 **확장 메커니즘**이다. v1은 새 인스
 
 ## Aurora Global Database: 1초 미만 cross-region 복제의 비결
 
-Aurora Global Database는 **primary 리전 1개 + secondary 리전 최대 5개**로 구성된다. RDS Cross-Region Read Replica와 다른 점은 ① 전용 복제 인프라(스토리지 레벨 복제) ② 일반적으로 lag < 1초 ③ Secondary가 자체 read replica 15개 보유 가능 ④ Cross-region 페일오버 시 RTO < 1분.
+Aurora Global Database는 **primary 리전 1개 + secondary 리전 최대 10개**로 구성된다. RDS Cross-Region Read Replica와 다른 점은 ① 전용 복제 인프라(스토리지 레벨 복제) ② 일반적으로 lag < 1초 ③ Secondary가 자체 read replica를 최대 16개 보유 가능 ④ managed failover RTO는 수 분 단위(지원 버전의 switchover는 보통 30초 미만).
 
 ```
 [Primary Region: ap-northeast-2 서울]
@@ -149,22 +149,22 @@ Aurora Global Database는 **primary 리전 1개 + secondary 리전 최대 5개**
        │
        ├──→ [Secondary: us-east-1 버지니아]
        │      Read-only Aurora cluster
-       │      자체 read replica 0-15개
+       │      자체 read replica 0-16개
        │
        └──→ [Secondary: eu-west-1 아일랜드]
               Read-only Aurora cluster
-              자체 read replica 0-15개
+              자체 read replica 0-16개
 ```
 
-Aurora Global Database의 복제는 **redo log shipping에 가깝지만 binlog가 아니다**. Primary의 스토리지 노드가 redo log를 추가로 secondary region의 스토리지 노드에게 직접 전송한다. 이 채널은 AWS backbone 네트워크(같은 백본 위에서 평균 RTT 100-200ms)를 사용하고, 압축·중복 제거가 적용되어 일반 인터넷 대비 효율적이다. 그 결과 cross-region lag이 1초 미만으로 유지된다. "글로벌 분산 + 1초 미만 lag + RDBMS" 시나리오의 답은 Aurora Global Database다.
+Aurora Global Database의 복제는 **redo log shipping에 가깝지만 binlog가 아니다**. Primary의 스토리지 노드가 redo log를 추가로 secondary region의 스토리지 노드에게 직접 전송한다. 이 채널은 AWS backbone 네트워크(같은 백본 위에서 평균 RTT 100-200ms)를 사용하고, 압축·중복 제거가 적용되어 일반 인터넷 대비 효율적이다. 그 결과 cross-region lag이 일반적으로 1초 미만이다. "글로벌 분산 + 1초 미만 lag + RDBMS" 시나리오의 답은 Aurora Global Database다.
 
 | 차원 | RDS Cross-Region Read Replica | Aurora Global Database |
 |------|--------------------------------|------------------------|
 | 복제 방식 | binlog 비동기 | redo log shipping (전용 인프라) |
 | 일반 lag | 수 초 ~ 수십 초 | < 1초 |
-| 페일오버 | 수동 promote | Managed 페일오버 (< 1분) |
-| Secondary 리전 수 | 다수 가능 (각각 별개 replica) | 최대 5개 (managed cluster) |
-| Secondary read replica | N/A (자체가 replica) | 각 리전마다 15개까지 |
+| 페일오버 | 수동 promote | Managed 페일오버 (수 분 단위) |
+| Secondary 리전 수 | 다수 가능 (각각 별개 replica) | 최대 10개 (managed cluster) |
+| Secondary read replica | N/A (자체가 replica) | 각 리전마다 16개까지 |
 | RPO | 수십 초 ~ 분 | < 1초 |
 
 > ⚠️ **함정**: Aurora Global Database의 secondary는 **읽기 전용**이다. 단순 write를 시도하면 read-only error. 또한 "관리되는 페일오버(managed failover)"는 명시적으로 트리거해야 하며 자동이 아니다 — primary region이 완전히 죽었을 때 운영자가 promote를 실행. 자동 페일오버가 필요하면 Route 53 health check + Lambda로 직접 자동화하거나 RDS Proxy를 활용한다. "Aurora Global Database가 자동으로 페일오버한다"는 보기는 함정이다.
@@ -248,13 +248,13 @@ D) 2개 AZ에 3개 사본, 쓰기 quorum 2/3
 **문제 2.** Aurora Replica와 RDS Read Replica의 가장 큰 차이는?
 
 A) Aurora Replica는 비동기 binlog 복제를 사용한다
-B) Aurora Replica는 자체 스토리지가 없고 primary와 공유하므로 lag가 10-20ms로 매우 짧다
+B) Aurora Replica는 자체 스토리지가 없고 primary와 공유하므로 lag가 매우 짧다(보통 100ms보다 훨씬 작다)
 C) RDS Read Replica는 최대 30개까지 가능하다
 D) 둘 다 동일하다
 
 **정답: B**
 
-해설: Aurora Replica의 핵심 차별점은 공유 스토리지 — replica는 자체 디스크 없이 primary와 같은 분산 스토리지를 참조한다. 복제 메커니즘은 "redo log 알림"만 보내고 실제 page는 스토리지에서 직접 읽으므로 lag가 10-20ms 수준(RDS Read Replica는 수 초 ~ 수십 초). A) Aurora는 binlog 비의존. C) RDS Read Replica는 최대 15개(MySQL/PG/MariaDB, 2022 상향). D) 큰 차이가 있다.
+해설: Aurora Replica의 핵심 차별점은 공유 스토리지 — replica는 자체 디스크 없이 primary와 같은 분산 스토리지를 참조한다. 복제 메커니즘은 "redo log 알림"만 보내고 실제 page는 스토리지에서 직접 읽으므로 lag가 보통 100ms보다 훨씬 짧다(RDS Read Replica는 수 초 ~ 수십 초). A) Aurora는 binlog 비의존. C) RDS Read Replica는 MySQL/PG/MariaDB에서 소스당 최대 15개. D) 큰 차이가 있다.
 
 ---
 
@@ -267,20 +267,20 @@ D) DynamoDB Global Tables
 
 **정답: C**
 
-해설: Aurora Global Database는 ① 전용 인프라로 cross-region lag < 1초 ② managed failover RTO < 1분 ③ Primary region 완전 다운 시 secondary를 primary로 promote 가능 ④ 각 secondary region이 자체 read replica를 둘 수 있어 region 내 latency 최소화. B는 Aurora의 Cross-Region Read Replica로 가능하지만 lag와 failover 자동화가 약함. A는 cross-region 분산 안 됨. D는 RDBMS 호환성 잃음(요구사항이 Aurora MySQL이므로 부적합).
+해설: Aurora Global Database는 ① 전용 인프라로 cross-region lag 일반적으로 < 1초 ② managed failover RTO는 수 분 단위 ③ Primary region 완전 다운 시 secondary를 primary로 promote 가능 ④ 각 secondary region이 자체 read replica를 둘 수 있어 region 내 latency 최소화. B는 Aurora의 Cross-Region Read Replica로 가능하지만 lag와 failover 자동화가 약함. A는 cross-region 분산 안 됨. D는 RDBMS 호환성 잃음(요구사항이 Aurora MySQL이므로 부적합).
 
 ---
 
 **문제 4.** Aurora Serverless v2의 특징으로 옳지 않은 것은?
 
 A) ACU 단위로 자동 확장 (0.5 ACU 단위 미세 조정)
-B) 콜드 스타트가 거의 없고 초 단위로 확장
-C) 최대 256 ACU까지 확장 가능
+B) 스케일링이 진행 중인 DB 작업을 방해하지 않는다
+C) 엔진·플랫폼 버전에 따라 최대 256 ACU(Aurora PostgreSQL은 최대 384 ACU)까지 확장 가능
 D) Min Capacity는 항상 1 ACU 이상이어야 한다
 
 **정답: D**
 
-해설: D는 틀렸다. Aurora Serverless v2의 Min Capacity는 0.5 ACU(2024년 이후 auto-pause를 통해 0 ACU도 가능). v1보다 더 작은 단위로 시작할 수 있다. A) 0.5 ACU 단위로 점진적 확장. B) 인스턴스를 재시작하지 않고 용량을 조정해 초 단위로 확장. C) 256 ACU까지 확장 가능. 시험에서 v1 vs v2 비교는 "v2는 미세 조정 + 빠름 + 콜드 스타트 없음"이 핵심.
+해설: D는 틀렸다. Aurora Serverless v2의 Min Capacity는 0.5 ACU(최신 엔진 버전에서는 auto-pause를 통해 0 ACU도 가능). v1보다 더 작은 단위로 시작할 수 있다. A) 0.5 ACU 단위로 점진적 확장. B) 스케일링은 진행 중인 DB 작업을 방해하지 않는다(auto-pause 재개 시에는 약 15초가 걸린다). C) 엔진·플랫폼 버전에 따라 최대 256 ACU(Aurora PostgreSQL은 최대 384 ACU). 시험에서 v1 vs v2 비교는 "v2는 미세 조정 + 빠름 + 작업 중단 없는 스케일링"이 핵심.
 
 ---
 

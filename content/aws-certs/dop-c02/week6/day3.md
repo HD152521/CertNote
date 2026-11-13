@@ -543,7 +543,7 @@ GitHub / CodeCommit (k8s-manifests-repo)
     ├─ overlays/prod/kustomization.yaml  ← image tag 업데이트
     └─ base/ (공통 K8s 리소스)
 
-    │ (4) ArgoCD polls every 1m
+    │ (4) ArgoCD polls Git (default ~3m)
     ▼
 ┌─────────────────────────────────────────────────────────┐
 │  EKS Cluster (prod)                                     │
@@ -696,7 +696,7 @@ D) 다음 정기 배포 때까지 변경이 유지됨
 
 **정답: B**
 
-`selfHeal: true`는 ArgoCD의 핵심 GitOps 기능이다. application-controller가 클러스터의 live state를 계속 감시하고(Git 상태 재조정은 기본 3분 주기), Git 상태와 다르면 Git 상태로 되돌린다. 운영자의 `kubectl edit` 변경은 감지되는 대로 자동으로 복원된다. 이것이 "Git이 진실의 단일 출처"라는 GitOps 원칙의 구체적 구현이다.
+`selfHeal: true`는 ArgoCD의 핵심 GitOps 기능이다. application-controller가 클러스터의 live state와 Git 상태를 비교하며(Git 저장소 폴링은 기본 120초에 최대 60초 지터가 더해져 최대 약 3분), live state가 Git과 달라지면 Git 상태로 되돌리는 sync를 실행한다(실패 시 self-heal timeout, 기본 5초 후 재시도). 운영자의 `kubectl edit` 변경은 이렇게 자동으로 복원된다. 이것이 "Git이 진실의 단일 출처"라는 GitOps 원칙의 구체적 구현이다.
 
 왜 다른 옵션이 틀렸는가: A는 Manual sync 설정에서의 Slack 알림과 혼동. C는 ArgoCD는 Git을 읽기만 하며 쓰지 않는다(Image Updater는 별도 도구). D는 selfHeal이 없을 때의 동작.
 
