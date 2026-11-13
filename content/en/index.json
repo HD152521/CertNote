@@ -100,6 +100,33 @@
       "weeks": 12,
       "order": 11,
       "section": "aws"
+    },
+    {
+      "slug": "sqld",
+      "code": "SQLD",
+      "level": "developer",
+      "name": "SQL Developer (SQLD)",
+      "weeks": 8,
+      "order": 13,
+      "section": "data"
+    },
+    {
+      "slug": "linux-master-2",
+      "code": "Linux Master 2",
+      "level": "grade-2",
+      "name": "KAIT Linux Master - Level 2",
+      "weeks": 11,
+      "order": 12,
+      "section": "linux"
+    },
+    {
+      "slug": "linux-master-1",
+      "code": "Linux Master 1",
+      "level": "grade-1",
+      "name": "KAIT Linux Master - Level 1",
+      "weeks": 14,
+      "order": 7,
+      "section": "linux"
     }
   ]
 }

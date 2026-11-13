@@ -115,7 +115,7 @@ def handler(event, context):
 
 In microservices, when one downstream service slows down, every thread calling it gets tied up waiting for a response, and when the tied-up threads run out the upstream service stops too, and this spreads upward until everything collapses: a **cascading failure**. The **Circuit Breaker** pattern borrowed its name from the breaker in an electrical circuit. Just as a breaker cuts the circuit on overcurrent to prevent a fire, when the downstream failure rate crosses a threshold, it cuts the calls themselves and fails immediately (fail fast).
 
-![The three Circuit Breaker states, Closed, Open, and Half-Open, and their transition conditions](/diagrams/circuit-breaker-states.svg)
+![The three Circuit Breaker states, Closed, Open, and Half-Open, and their transition conditions](/diagrams/en/circuit-breaker-states.svg)
 
 The three states are the key. **Closed** is normal: calls pass through. When failures pile up past the threshold it switches to **Open**, and for a set time it rejects every call immediately (giving the downstream room to breathe and recover). After a timeout it goes to **Half-Open** and sends just one trial call; if that succeeds it returns to Closed, and if it fails it goes back to Open. In AWS, the **ECS Deployment Circuit Breaker** applies this pattern to deployments: if new tasks keep failing health checks, it automatically halts the deployment and rolls back to the last healthy version.
 

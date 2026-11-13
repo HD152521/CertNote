@@ -59,7 +59,7 @@ S3 is object storage, so it cannot do directory operations and random reads quic
 
 The killer feature of FSx for Lustre is **S3 repository integration**. With an S3 bucket as the backend, FSx acts like a high-performance cache. You keep the data in S3 (cheap and durable), but read it at Lustre's high throughput during training.
 
-![The I/O path from the S3 source through FSx for Lustre to the training nodes](/diagrams/fsx-lustre-training.svg)
+![The I/O path from the S3 source through FSx for Lustre to the training nodes](/diagrams/en/fsx-lustre-training.svg)
 
 ```python
 from sagemaker.inputs import FileSystemInput

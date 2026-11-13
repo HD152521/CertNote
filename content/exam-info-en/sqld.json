@@ -1,0 +1,37 @@
+{
+  "difficulty": "Entry to intermediate · Even first-time SQL learners can prepare in 8 weeks",
+  "prerequisites": "There are no eligibility requirements to take the exam.",
+  "languages": [
+    "Korean"
+  ],
+  "domains": [
+    {
+      "name": "Understanding Data Modeling"
+    },
+    {
+      "name": "SQL Fundamentals and Application"
+    }
+  ],
+  "faq": [
+    {
+      "q": "How is the SQLD exam administered?",
+      "a": "You answer 50 multiple-choice questions in 90 minutes. Subject 1, Understanding Data Modeling, has 10 questions (20 points), and Subject 2, SQL Fundamentals and Application, has 40 questions (80 points), at 2 points per question."
+    },
+    {
+      "q": "What is the passing standard?",
+      "a": "A total score of 60 or higher passes. However, scoring below 40% in any subject is an automatic fail, so you must score above 8 of 20 points in Subject 1 and above 32 of 80 points in Subject 2."
+    },
+    {
+      "q": "Are there eligibility requirements?",
+      "a": "No. Anyone can take the exam."
+    },
+    {
+      "q": "How many times a year is the exam held?",
+      "a": "It is held regularly four times a year. The exam fee is KRW 50,000, and you can check the registration period for each session on the registration page of the Korea Data Agency's data certification website."
+    },
+    {
+      "q": "Which DBMS syntax do the questions use?",
+      "a": "Oracle syntax is the baseline, and some questions ask about differences from SQL Server (such as TOP and the + string concatenation operator). That is why the example results in these notes were verified by running them on a real Oracle database."
+    }
+  ]
+}

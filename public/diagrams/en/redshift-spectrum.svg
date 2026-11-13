@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 162" width="660" height="162" role="img" aria-labelledby="t d">
+<title id="t">Joining Redshift internal tables with S3 external tables</title>
+<desc id="d">Recent data lives in internal tables in the Redshift cluster, older data in external tables in the S3 data lake, and Spectrum joins them.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="658" height="160" rx="8"/>
+<marker id="a-545d68" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#545d68"/></marker><text class="m" x="149" y="30" text-anchor="middle">Redshift cluster</text>
+<rect x="24" y="46" width="250" height="92" rx="6" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".55"/>
+<text class="h" x="149" y="76" text-anchor="middle" fill="#6cb6ff">Last 3 months (hot)</text><text class="m" x="149" y="98" text-anchor="middle">Internal table</text><text class="m" x="511" y="30" text-anchor="middle">S3 data lake</text>
+<rect x="386" y="46" width="250" height="92" rx="6" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".55"/>
+<text class="h" x="511" y="76" text-anchor="middle" fill="#f0a35e">Past 5 years (cold)</text><text class="m" x="511" y="98" text-anchor="middle">External table</text><line class="ln" x1="280" y1="92" x2="380" y2="92" marker-end="url(#a-545d68)"/>
+<text class="m" x="330" y="82" text-anchor="middle">Join via Spectrum</text>
+</svg>

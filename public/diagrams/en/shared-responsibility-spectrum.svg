@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 174" width="620" height="174" role="img" aria-labelledby="t d">
+<title id="t">The shared responsibility line moves with the service type</title>
+<desc id="d">The more fully managed the service, the less the customer is responsible for and the more AWS is.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="618" height="172" rx="8"/>
+<rect x="20" y="14" width="580" height="44" rx="5" fill="#f47067" fill-opacity=".1" stroke="#f47067" stroke-opacity=".5"/>
+<text class="h" x="36" y="41">EC2 — virtual server (IaaS)</text><text class="m" x="584" y="41" text-anchor="end">OS patches, apps, config: all customer</text><rect x="20" y="64" width="580" height="44" rx="5" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".5"/>
+<text class="h" x="36" y="91">RDS — managed database</text><text class="m" x="584" y="91" text-anchor="end">AWS patches DB engine · customer owns data, access</text><rect x="20" y="114" width="580" height="44" rx="5" fill="#8ddb8c" fill-opacity=".1" stroke="#8ddb8c" stroke-opacity=".5"/>
+<text class="h" x="36" y="141">S3 · Lambda — fully managed</text><text class="m" x="584" y="141" text-anchor="end">Customer: data classification, access · AWS: rest</text>
+</svg>

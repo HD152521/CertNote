@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 224" width="620" height="224" role="img" aria-labelledby="t d">
+<title id="t">The shared responsibility line moves with the level of management</title>
+<desc id="d">The more fully managed the service, the narrower the customer scope; toward IaaS, the OS and applications also become the customer responsibility.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="618" height="222" rx="8"/>
+<rect x="20" y="14" width="580" height="44" rx="5" fill="#8ddb8c" fill-opacity=".1" stroke="#8ddb8c" stroke-opacity=".5"/>
+<text class="h" x="36" y="41">S3 · DynamoDB · Lambda — fully managed</text><text class="m" x="584" y="41" text-anchor="end">Customer: data classification, IAM</text><rect x="20" y="64" width="580" height="44" rx="5" fill="#6cb6ff" fill-opacity=".1" stroke="#6cb6ff" stroke-opacity=".5"/>
+<text class="h" x="36" y="91">RDS · ECS Fargate — PaaS</text><text class="m" x="584" y="91" text-anchor="end">+ Customer: network, security groups</text><rect x="20" y="114" width="580" height="44" rx="5" fill="#f0a35e" fill-opacity=".1" stroke="#f0a35e" stroke-opacity=".5"/>
+<text class="h" x="36" y="141">ECS on EC2 · EKS Self-Managed</text><text class="m" x="584" y="141" text-anchor="end">+ Customer: container runtime, node OS patches</text><rect x="20" y="164" width="580" height="44" rx="5" fill="#f47067" fill-opacity=".1" stroke="#f47067" stroke-opacity=".5"/>
+<text class="h" x="36" y="191">EC2 + EBS — IaaS</text><text class="m" x="584" y="191" text-anchor="end">OS, middleware, apps: all customer</text>
+</svg>

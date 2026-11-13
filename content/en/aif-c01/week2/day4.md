@@ -63,7 +63,7 @@ HITL is a core safeguard of Responsible AI. If you let AI decide everything auto
 - A large part of the force that turns the cyclical lifecycle from Day 1 is **iterative improvement by people**.
 - After deployment, people look at real usage results → collect the wrong cases → attach labels to new data → retrain.
 
-![An improvement loop that goes from labeling through training, model responses, and human evaluation, then back to training](/diagrams/ml-feedback-loop.svg)
+![An improvement loop that goes from labeling through training, model responses, and human evaluation, then back to training](/diagrams/en/ml-feedback-loop.svg)
 
 - The key point: **ML is not "completed" but "continuously improved."** Human labels, feedback, and review keep this loop alive.
 

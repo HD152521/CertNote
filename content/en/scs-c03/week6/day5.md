@@ -87,7 +87,7 @@ aws secretsmanager rotate-secret --secret-id prod/db/mysql --rotate-immediately
 
 Add one more layer on top and ransomware is covered too: put the backup in a **separate account** and apply Object Lock in that account. Even if the production account is completely taken over, the retained versions in the backup account cannot be touched.
 
-![Immutable retention structure that cross-replicates a production account bucket to a backup account and locks it with Object Lock](/diagrams/s3-cross-account-backup.svg)
+![Immutable retention structure that cross-replicates a production account bucket to a backup account and locks it with Object Lock](/diagrams/en/s3-cross-account-backup.svg)
 
 > ⚠️ **Trap summary**: Object Lock must be enabled at **bucket creation time** (post-hoc enabling is an exceptional procedure). Versioning is a prerequisite, and objects within the retention period are **not deleted even by lifecycle policy**; when retention and cost optimization conflict, retention wins. Compliance can only **extend** the period and cannot shorten or release it, so do verification with Governance and move only production to Compliance.
 

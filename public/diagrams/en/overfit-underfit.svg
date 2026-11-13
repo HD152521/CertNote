@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" width="720" height="270" role="img" aria-labelledby="t d">
+<title id="t">Learning curves: underfitting vs. good fit vs. overfitting</title>
+<desc id="d">Underfitting: training and validation loss both stay high and flat. Good fit: both converge low. Overfitting: only training loss keeps falling while validation loss rises again.</desc>
+<style>
+  .bx{fill:#22272e;stroke:#373e47}
+  .t{fill:#adbac7;font:500 14px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .m{fill:#768390;font:400 12.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .h{fill:#adbac7;font:600 14.5px system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif}
+  .ln{stroke:#545d68;stroke-width:1.5;fill:none}
+</style>
+<rect class="bx" x="1" y="1" width="718" height="268" rx="8"/>
+<text class="m" x="20" y="20">Loss ↑</text><text class="t" x="128.5" y="32" text-anchor="middle" fill="#f0a35e">Underfit</text>
+<line class="ln" x1="26" y1="40" x2="26" y2="176"/>
+<line class="ln" x1="26" y1="176" x2="233" y2="176"/><path d="M30.0,62.5 L89.1,70.4 L148.2,73.0 L227.0,74.4" fill="none" stroke="#6cb6ff" stroke-width="2.2" stroke-linecap="round"/><path d="M30.0,57.2 L89.1,65.1 L148.2,67.8 L227.0,69.1" fill="none" stroke="#f47067" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 4"/><text class="m" x="128.5" y="198" text-anchor="middle">Both high and flat</text><text class="m" x="128.5" y="215" text-anchor="middle">Model is too simple</text><text class="t" x="359.5" y="32" text-anchor="middle" fill="#8ddb8c">Good fit</text>
+<line class="ln" x1="257" y1="40" x2="257" y2="176"/>
+<line class="ln" x1="257" y1="176" x2="464" y2="176"/><path d="M261.0,57.2 L310.3,103.4 L359.5,132.4 L408.8,147.0 L458.0,152.2" fill="none" stroke="#6cb6ff" stroke-width="2.2" stroke-linecap="round"/><path d="M261.0,53.2 L310.3,96.8 L359.5,124.5 L408.8,137.7 L458.0,143.0" fill="none" stroke="#f47067" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 4"/><text class="m" x="359.5" y="198" text-anchor="middle">Both converge low</text><text class="m" x="359.5" y="215" text-anchor="middle">Gap stays narrow</text><text class="t" x="590.5" y="32" text-anchor="middle" fill="#f47067">Overfit</text>
+<line class="ln" x1="488" y1="40" x2="488" y2="176"/>
+<line class="ln" x1="488" y1="176" x2="695" y2="176"/><path d="M492.0,57.2 L541.3,107.4 L590.5,136.4 L639.8,154.9 L689.0,165.4" fill="none" stroke="#6cb6ff" stroke-width="2.2" stroke-linecap="round"/><path d="M492.0,53.2 L541.3,99.4 L580.6,128.5 L610.2,120.6 L649.6,96.8 L689.0,75.7" fill="none" stroke="#f47067" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="5 4"/><text class="m" x="590.5" y="198" text-anchor="middle">Only validation rises again</text><text class="m" x="590.5" y="215" text-anchor="middle">Stop early at this point</text><line x1="20" y1="234" x2="44" y2="234" stroke="#6cb6ff" stroke-width="2.2"/>
+<text class="m" x="50" y="238">Train</text>
+<line x1="96" y1="234" x2="120" y2="234" stroke="#f47067" stroke-width="2.2" stroke-dasharray="5 4"/>
+<text class="m" x="126" y="238">Validation</text>
+<text class="m" x="700" y="238" text-anchor="end">Epoch →</text><text class="m" x="20" y="258">Early stopping point: training loss keeps falling while validation loss starts to rise</text>
+</svg>

@@ -1,0 +1,2402 @@
+[
+ {
+  "number": 1,
+  "domain": "Understanding Data Modeling",
+  "prompt": "While modeling shopping mall operations, a team is documenting this statement: \"When a customer submits a return, the stock quantity of the product increases and the payment amount is refunded.\" Which modeling perspective does this description mainly correspond to?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Data perspective (What, Data)"
+   },
+   {
+    "label": "B",
+    "text": "Interaction perspective (Interaction)"
+   },
+   {
+    "label": "C",
+    "text": "Process perspective (How, Process)"
+   },
+   {
+    "label": "D",
+    "text": "Conceptual modeling perspective (Conceptual)"
+   }
+  ],
+  "explanation": "Looking at how data (stock quantity, payment amount) is affected by business processing (accepting a return) is the interaction perspective between data and process. The data perspective in A looks at which data the business is related to (what is stored for customers, products, and orders). The process perspective in C looks at what the business actually does (accepting the return itself) and does not examine its effect on the data. Conceptual modeling in D is the name of a modeling stage (conceptual, logical, physical), not one of the three perspectives."
+ },
+ {
+  "number": 2,
+  "domain": "Understanding Data Modeling",
+  "prompt": "Four entity candidates were identified in a shopping mall business analysis. Considering the characteristics of an entity, which one is the LEAST likely to be an entity?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "A set holding the business name and representative name of the single company that operates the shopping mall"
+   },
+   {
+    "label": "B",
+    "text": "A set whose discount rates by membership grade are defined in advance and referenced every time an order is placed"
+   },
+   {
+    "label": "C",
+    "text": "A set that manages product inquiries left by customers, distinguished by inquiry number"
+   },
+   {
+    "label": "D",
+    "text": "A set that records each product receipt, assigned a receipt number every time a product is received"
+   }
+  ],
+  "explanation": "An entity must have two or more instances. The operating company information is only a single record, so it does not meet the conditions of an entity. B has multiple grades as instances and is referenced by order processing, so it can be a concept entity. C distinguishes multiple inquiries by an identifier called the inquiry number and has relationships with products and customers. D also has multiple receipt records identified by receipt numbers, which are created by the business process."
+ },
+ {
+  "number": 3,
+  "domain": "Understanding Data Modeling",
+  "prompt": "Among the attributes of the shopping mall Order entity, which one is a designed attribute in the classification by characteristics?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Order date (the date the customer placed the order)"
+   },
+   {
+    "label": "B",
+    "text": "Cumulative purchase amount (the sum of payments made so far)"
+   },
+   {
+    "label": "C",
+    "text": "Order status code (`10`, `20`, `30`)"
+   },
+   {
+    "label": "D",
+    "text": "Shipping address (the delivery destination the customer entered when ordering)"
+   }
+  ],
+  "explanation": "A designed attribute is one that does not originally exist in the business but is newly created during design. The order status code, which defines \"received, shipping, delivered\" as the codes `10`, `20`, `30`, falls into this category. A and D are basic attributes taken directly from business analysis. B is a value obtained by summing another attribute (payment amount), so it is a derived attribute."
+ },
+ {
+  "number": 4,
+  "domain": "Understanding Data Modeling",
+  "prompt": "In a relationship line drawn in Barker notation between Product Category and Product, the half on the Product Category side is a dashed line, the half on the Product side is a solid line, and there is a crow's foot at the Product end. Which is the correct interpretation of this relationship?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "One product belongs to multiple categories, and there may be products without a category"
+   },
+   {
+    "label": "B",
+    "text": "One category has multiple products, and there may be products without a category"
+   },
+   {
+    "label": "C",
+    "text": "One product has multiple categories, and there cannot be a category without products"
+   },
+   {
+    "label": "D",
+    "text": "One category has multiple products, and there may be categories without products"
+   }
+  ],
+  "explanation": "In Barker notation, optionality is expressed by the line style of each entity's own half. The category half is dashed, so category participation is optional (a category without products is possible); the product half is solid, so product participation is mandatory (every product belongs to a category). The crow's foot is on the product side, so one category has multiple products. A and C read the direction of the crow's foot in reverse. B gets the cardinality right but misreads the solid line on the product side (mandatory) as optional."
+ },
+ {
+  "number": 5,
+  "domain": "Understanding Data Modeling",
+  "prompt": "The Employee entity has employee number (primary identifier), national ID number, and department number (received through a relationship from the Department entity). Other entities use only the employee number when referencing an employee. Which statement about the identifiers of this entity is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "The national ID number distinguishes employees but is not used for references, so it is an alternate identifier"
+   },
+   {
+    "label": "B",
+    "text": "The department number is a value created within the Employee entity itself, so it is an internal identifier"
+   },
+   {
+    "label": "C",
+    "text": "The employee number consists of a single attribute, so it fails the minimality of a primary identifier"
+   },
+   {
+    "label": "D",
+    "text": "The national ID number also distinguishes employees, so other entities must receive it as a FK"
+   }
+  ],
+  "explanation": "An identifier that can distinguish instances but lacks representativeness and is not used to connect referencing relationships is an alternate identifier. B is wrong. The department number is a foreign identifier received through the relationship with Department. C misunderstands minimality. Minimality means using only as many attributes as needed for uniqueness, and a single attribute naturally satisfies it. D is the opposite of the nature of an alternate identifier. An alternate identifier is used as a search condition or a UNIQUE constraint and is not received as a FK by other entities."
+ },
+ {
+  "number": 6,
+  "domain": "Understanding Data Modeling",
+  "prompt": "The primary identifier of the Order entity is order number, and its attributes are order date, customer number, and customer grade. All attributes are atomic values. Part of the data is as follows.\n(Order number 5001, Order date 2026-11-01, Customer number C01, Customer grade GOLD)\n(Order number 5002, Order date 2026-11-02, Customer number C01, Customer grade GOLD)\n(Order number 5003, Order date 2026-11-02, Customer number C02, Customer grade SILVER)\nThe functional dependencies are `order number -> order date, customer number` and `customer number -> customer grade`. What is the lowest normal form that this entity does NOT satisfy?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Second normal form"
+   },
+   {
+    "label": "B",
+    "text": "Third normal form"
+   },
+   {
+    "label": "C",
+    "text": "BCNF"
+   },
+   {
+    "label": "D",
+    "text": "First normal form"
+   }
+  ],
+  "explanation": "Since order number -> customer number and customer number -> customer grade, order number -> customer grade is a transitive functional dependency. A regular attribute (customer grade) depends on another regular attribute (customer number), so 3NF is not satisfied, and customer number and customer grade must be separated into a Customer entity. That is why GOLD for C01 is repeated as many times as there are orders. D is wrong. All attributes are atomic values, so 1NF is satisfied. A is also wrong. The primary identifier is a single attribute, so a partial functional dependency cannot occur and 2NF is satisfied. BCNF in C is not satisfied either, but 3NF is violated first, so it is not the lowest normal form."
+ },
+ {
+  "number": 7,
+  "domain": "Understanding Data Modeling",
+  "prompt": "DEPT and EMP are modeled with the relationship \"a department has zero or more employees,\" and all 14 EMP rows belong to one of departments 10, 20, and 30. Department 40 has no employees. What is the number of rows returned by the following SQL?\nSELECT D.DEPTNO, E.EMPNO\nFROM DEPT D LEFT OUTER JOIN EMP E\n  ON D.DEPTNO = E.DEPTNO;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "14"
+   },
+   {
+    "label": "B",
+    "text": "4"
+   },
+   {
+    "label": "C",
+    "text": "56"
+   },
+   {
+    "label": "D",
+    "text": "15"
+   }
+  ],
+  "explanation": "An OUTER JOIN based on DEPT adds one row for department 40, which has no employees (with EMPNO as NULL), to the 14 rows matched with employees, giving 15 rows. The 14 in A is the result of an INNER JOIN. The department side is an optional relationship, so some departments have no employees, and an OUTER JOIN is needed to keep them in the result. The 4 in B is just the number of departments, not a join result. The 56 (4 x 14) in C is the number of rows of a CROSS JOIN with no join condition. (Oracle execution result: 15 rows)"
+ },
+ {
+  "number": 8,
+  "domain": "Understanding Data Modeling",
+  "prompt": "In a performance reservation model, Reservation and Reserved Seat have a mandatory relationship on both sides. A reservation without seats and a seat assignment without a reservation are both meaningless. Which is the most appropriate way to develop the save function according to this model?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "COMMIT the reservation first, and save the seats in a separate transaction on the next screen"
+   },
+   {
+    "label": "B",
+    "text": "Group the reservation INSERT and the reserved seat INSERT into one transaction and COMMIT them together"
+   },
+   {
+    "label": "C",
+    "text": "Save and COMMIT the reserved seats first, and save the reservation information separately after payment is fully completed"
+   },
+   {
+    "label": "D",
+    "text": "Because the two entities have a mandatory relationship, the DBMS automatically merges the two rows into one table"
+   }
+  ],
+  "explanation": "A mandatory relationship on both sides means that neither can exist without the other, and it signals that entering the two entities is a single unit of work. So the two INSERTs are processed in the same transaction and committed together. A and C split the two into separate transactions, so a failure midway leaves a reservation without seats or seats without a reservation. D is wrong. Whether a relationship is mandatory is not a basis for the DBMS to merge tables."
+ },
+ {
+  "number": 9,
+  "domain": "Understanding Data Modeling",
+  "prompt": "In the EMP table, there is one employee each with COMM values 300, 500, 1400, and 0, and the remaining 10 are NULL. What is the result of the following SQL?\nSELECT COUNT(*) FROM EMP WHERE COMM <> 300;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "3"
+   },
+   {
+    "label": "B",
+    "text": "13"
+   },
+   {
+    "label": "C",
+    "text": "4"
+   },
+   {
+    "label": "D",
+    "text": "0"
+   }
+  ],
+  "explanation": "The result of comparing NULL with `<>` is neither true nor false but UNKNOWN, so it is filtered out by the WHERE clause. Among the 4 employees with values, only the 3 with 500, 1400, and 0 (not 300) remain. The 13 in B counts even the 10 NULL employees as \"not 300.\" The 4 in C is the number of employees whose COMM is not NULL, without excluding the one with 300. D overlooks that 0 is a numeric value that is not NULL. (Oracle execution result: 3)"
+ },
+ {
+  "number": 10,
+  "domain": "Understanding Data Modeling",
+  "prompt": "The essential identifier of the Enrollment entity is (student ID, course number, semester). It was decided to use a sequential Enrollment ID as the PK instead. What should be done to prevent the same student from enrolling in the same course twice in the same semester?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Because Enrollment ID is the PK, the DBMS prevents duplicate entry of the same enrollment without any extra measures"
+   },
+   {
+    "label": "B",
+    "text": "Define a separate UNIQUE constraint on (student ID, course number, semester)"
+   },
+   {
+    "label": "C",
+    "text": "Define the Enrollment ID column as NOT NULL to prevent empty values"
+   },
+   {
+    "label": "D",
+    "text": "Create one more regular index on the Enrollment ID column in addition to the PK index"
+   }
+  ],
+  "explanation": "A surrogate identifier gets a new value for every row, so even for the same (student ID, course number, semester) combination the PK differs and the DBMS does not block it. To prevent duplicates, a separate UNIQUE constraint (index) must be placed on the essential columns, at the cost of having two indexes. A overlooks exactly this point. C is wrong because a PK is already NOT NULL, and preventing empty Enrollment ID values does not prevent duplicates in the essential columns. D only adds an index on Enrollment ID and has nothing to do with duplicates of the essential column combination."
+ },
+ {
+  "number": 11,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which statement about primary keys and foreign keys in a relational database is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "A primary key column can contain up to one NULL row as long as values do not overlap"
+   },
+   {
+    "label": "B",
+    "text": "A foreign key value is either a primary key value of the referenced table or NULL"
+   },
+   {
+    "label": "C",
+    "text": "A foreign key cannot have duplicate values within its own table"
+   },
+   {
+    "label": "D",
+    "text": "Once a primary key is defined, rows are retrieved in that order"
+   }
+  ],
+  "explanation": "A foreign key references the primary key of another table, so it can only contain a value that exists in that table or NULL (EMP.DEPTNO -> DEPT). A: A primary key cannot have duplicate values and does not allow NULL. C: A foreign key can have duplicates. Multiple employees in EMP have the same DEPTNO. D: Row order within a table has no meaning, and sorted results are obtained only with ORDER BY."
+ },
+ {
+  "number": 12,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which of the following pairs of data modeling terms and relational database terms is NOT correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Entity - Table (Relation)"
+   },
+   {
+    "label": "B",
+    "text": "Attribute - Column"
+   },
+   {
+    "label": "C",
+    "text": "Instance - Column (Field)"
+   },
+   {
+    "label": "D",
+    "text": "Relationship - Foreign key (FK)"
+   }
+  ],
+  "explanation": "An instance, such as a single employee, corresponds to a row (record, tuple) of a table. What corresponds to a column (field) is an attribute. A (entity - table), B (attribute - column), and D (relationship - foreign key) are all correct pairs."
+ },
+ {
+  "number": 13,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the correct result of the following SQL? (The MGR column of EMP contains six values, 7566, 7698, 7782, 7788, 7839, and 7902, and NULL)\nSELECT COUNT(*) FROM (SELECT DISTINCT MGR FROM EMP);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "7"
+   },
+   {
+    "label": "B",
+    "text": "6"
+   },
+   {
+    "label": "C",
+    "text": "13"
+   },
+   {
+    "label": "D",
+    "text": "14"
+   }
+  ],
+  "explanation": "DISTINCT groups NULL like a value and keeps it as a single row. 6 distinct values + 1 NULL row = 7 rows. B: This counts without the NULL row. C: This counts the number of non-NULL rows (13), like COUNT(MGR). D: This is the total number of rows, ignoring DISTINCT."
+ },
+ {
+  "number": 14,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the correct result of the following SQL? (EMPNO 7654 is MARTIN)\nSELECT LPAD(SUBSTR(ENAME, 2, 3), 5, '*') AS R FROM EMP WHERE EMPNO = 7654;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ART**"
+   },
+   {
+    "label": "B",
+    "text": "**ART"
+   },
+   {
+    "label": "C",
+    "text": "*ARTI"
+   },
+   {
+    "label": "D",
+    "text": "**MART"
+   }
+  ],
+  "explanation": "SUBSTR('MARTIN', 2, 3) is ART, 3 characters starting from the 2nd character. LPAD pads the left side with '*' so the total length is 5, giving **ART. A: This is the result of RPAD, which pads the right side. C: This takes the SUBSTR length as 4 and then applies LPAD. D: This reads SUBSTR as 4 characters from the 1st position and ignores the total LPAD length of 5. The LPAD result is always exactly 5 characters."
+ },
+ {
+  "number": 15,
+  "domain": "SQL Basics and Applications",
+  "prompt": "When the session date format is YYYY-MM-DD and KING's HIREDATE is 1981-11-17, what is the correct result of the following SQL?\nSELECT TO_CHAR(HIREDATE + 30, 'YYYY-MM-DD') AS D1,\n       TO_CHAR(LAST_DAY(HIREDATE), 'DD') AS D2\nFROM EMP WHERE ENAME = 'KING';",
+  "choices": [
+   {
+    "label": "A",
+    "text": "D1 = 1981-12-16, D2 = 30"
+   },
+   {
+    "label": "B",
+    "text": "D1 = 1981-12-17, D2 = 31"
+   },
+   {
+    "label": "C",
+    "text": "D1 = 1981-12-17, D2 = 30"
+   },
+   {
+    "label": "D",
+    "text": "D1 = 1981-12-18, D2 = 31"
+   }
+  ],
+  "explanation": "Adding a number to a date increases it by that many days. November has 30 days, so 11-17 + 30 days = 12-17. LAST_DAY is the last day of the month, so for November it is 30. A and D: the number of days in November was miscounted, so the result is off by one day. B and D: LAST_DAY was taken based on December (31)."
+ },
+ {
+  "number": 16,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The COMM values of the 6 employees in department 30 are 300, 500, 1400, 0, NULL, and NULL. What is the correct result of the following SQL?\nSELECT SUM(NVL(COMM, 100)) FROM EMP WHERE DEPTNO = 30;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "2200"
+   },
+   {
+    "label": "B",
+    "text": "2400"
+   },
+   {
+    "label": "C",
+    "text": "2300"
+   },
+   {
+    "label": "D",
+    "text": "An error occurs"
+   }
+  ],
+  "explanation": "NVL replaces each of the two NULLs with 100, and then the sum is calculated. 300 + 500 + 1400 + 0 + 100 + 100 = 2400. A: This is the value of SUM(COMM), which skips NULLs. C: This replaces only one NULL with 100. D: Putting a single-row function such as NVL inside an aggregate function is valid syntax."
+ },
+ {
+  "number": 17,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the correct result of the following SQL? (The employees whose names contain A are ALLEN, WARD, MARTIN, BLAKE, CLARK, ADAMS, and JAMES)\nSELECT COUNT(*) FROM EMP\nWHERE ENAME LIKE '%A%' AND ENAME NOT LIKE 'A%';",
+  "choices": [
+   {
+    "label": "A",
+    "text": "7"
+   },
+   {
+    "label": "B",
+    "text": "5"
+   },
+   {
+    "label": "C",
+    "text": "2"
+   },
+   {
+    "label": "D",
+    "text": "An error occurs"
+   }
+  ],
+  "explanation": "'%A%' matches names containing A anywhere (7 employees), and NOT LIKE 'A%' removes ALLEN and ADAMS, which start with A. 7 - 2 = 5. A: This ignores the second condition. C: This is the number of employees whose names start with A. D: Combining LIKE and NOT LIKE on the same column with AND is valid syntax."
+ },
+ {
+  "number": 18,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In EMP, only 4 employees have COMM values (300, 500, 1400, 0) and 10 are NULL. What is the correct result of the following SQL?\nSELECT COUNT(*) FROM EMP WHERE COMM NOT IN (0, 300);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "2"
+   },
+   {
+    "label": "B",
+    "text": "12"
+   },
+   {
+    "label": "C",
+    "text": "10"
+   },
+   {
+    "label": "D",
+    "text": "0"
+   }
+  ],
+  "explanation": "COMM NOT IN (0, 300) is COMM <> 0 AND COMM <> 300. Rows where COMM is NULL evaluate to UNKNOWN and are filtered out, so only the two rows 500 and 1400 remain. B: This treats even the 10 NULL rows as satisfying the condition. C: This counts only the NULL rows. D: This is confused with the result when the list contains NULL (NOT IN (0, 300, NULL))."
+ },
+ {
+  "number": 19,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The headcount by job in EMP is CLERK 4, SALESMAN 4, MANAGER 3, ANALYST 2, PRESIDENT 1. What is the number of rows returned by the following SQL?\nSELECT JOB, COUNT(*) FROM EMP\nGROUP BY JOB HAVING COUNT(*) >= 3;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "2"
+   },
+   {
+    "label": "B",
+    "text": "5"
+   },
+   {
+    "label": "C",
+    "text": "3"
+   },
+   {
+    "label": "D",
+    "text": "11"
+   }
+  ],
+  "explanation": "GROUP BY creates one row per job (5 rows), and then HAVING keeps only the groups with 3 or more employees. That is three rows: CLERK, SALESMAN, and MANAGER. A: This treats the condition as more than 3 (> 3). B: This is the number of groups before HAVING is applied. D: This is the total headcount of the remaining groups (4 + 4 + 3). The result is the number of rows, not the number of employees."
+ },
+ {
+  "number": 20,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which of the following SQL statements causes an error when executed in Oracle?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "SELECT DEPTNO, MAX(AVG(SAL)) FROM EMP GROUP BY DEPTNO;"
+   },
+   {
+    "label": "B",
+    "text": "SELECT COUNT(*) FROM EMP GROUP BY DEPTNO;"
+   },
+   {
+    "label": "C",
+    "text": "SELECT MAX(AVG(SAL)) FROM EMP GROUP BY DEPTNO;"
+   },
+   {
+    "label": "D",
+    "text": "SELECT DEPTNO, COUNT(*) FROM EMP GROUP BY DEPTNO HAVING MAX(SAL) > 3000;"
+   }
+  ],
+  "explanation": "Nesting aggregate functions (MAX(AVG(SAL))) produces a single row for the entire result, so DEPTNO, which has a value per group, cannot be selected with it. This is ORA-00937. B: The column used in GROUP BY does not have to be listed in SELECT (3 rows). C: Using only the nested aggregate yields a single row with the maximum of the department averages. D: HAVING can use aggregate functions that are not in SELECT."
+ },
+ {
+  "number": 21,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The employees in department 30 are JAMES (CLERK, 950), BLAKE (MANAGER, 2850), ALLEN (SALESMAN, 1600), TURNER (SALESMAN, 1500), WARD (SALESMAN, 1250), and MARTIN (SALESMAN, 1250). What is the ENAME in the third row of the following SQL result?\nSELECT ENAME, JOB, SAL FROM EMP\nWHERE DEPTNO = 30 ORDER BY JOB, SAL DESC;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "JAMES"
+   },
+   {
+    "label": "B",
+    "text": "ALLEN"
+   },
+   {
+    "label": "C",
+    "text": "WARD"
+   },
+   {
+    "label": "D",
+    "text": "TURNER"
+   }
+  ],
+  "explanation": "The first key, JOB, is ascending (ASC omitted), so the order is CLERK -> MANAGER -> SALESMAN, and SAL is in descending order only within the same JOB. After JAMES and BLAKE, ALLEN, who has the highest salary among the SALESMAN employees, is third. A: JAMES is a CLERK, so he is in the first row. C: This is the first SALESMAN row if SAL were ascending. D: This is the second row within SALESMAN."
+ },
+ {
+  "number": 22,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In SALGRADE, grade 3 has LOSAL 1401 and HISAL 2000. What is the correct result of the following SQL?\nSELECT E.ENAME FROM EMP E, SALGRADE S\nWHERE E.SAL BETWEEN S.LOSAL AND S.HISAL AND S.GRADE = 3;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ALLEN, TURNER"
+   },
+   {
+    "label": "B",
+    "text": "ALLEN, TURNER, MILLER"
+   },
+   {
+    "label": "C",
+    "text": "WARD, MARTIN, MILLER"
+   },
+   {
+    "label": "D",
+    "text": "CLARK, ALLEN, TURNER"
+   }
+  ],
+  "explanation": "This is a Non-EQUI join that links with BETWEEN rather than an equals sign. The employees whose SAL is between 1401 and 2000 are two: ALLEN (1600) and TURNER (1500). B: MILLER (1300) is in grade 2 (1201 to 1400). C: These are grade 2 employees. D: CLARK (2450) is in grade 4 (2001 to 3000)."
+ },
+ {
+  "number": 23,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which of the following SQL statements cannot be executed in SQL Server?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "SELECT E.ENAME, D.DNAME FROM EMP E LEFT OUTER JOIN DEPT D ON E.DEPTNO = D.DEPTNO;"
+   },
+   {
+    "label": "B",
+    "text": "SELECT TOP(3) ENAME, SAL FROM EMP ORDER BY SAL DESC;"
+   },
+   {
+    "label": "C",
+    "text": "SELECT E.ENAME, D.DNAME FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO(+);"
+   },
+   {
+    "label": "D",
+    "text": "SELECT ENAME, ISNULL(COMM, 0) FROM EMP;"
+   }
+  ],
+  "explanation": "(+) is an Oracle-specific outer join notation, so it cannot be used in SQL Server. SQL Server uses ANSI LEFT/RIGHT/FULL OUTER JOIN. A: ANSI outer joins work in both databases. B: TOP(n) is the SQL Server syntax for the top N rows. D: ISNULL is the SQL Server function equivalent to Oracle's NVL."
+ },
+ {
+  "number": 24,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which statement about ANSI standard joins in Oracle is NOT correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "A condition can be added to a NATURAL JOIN with an ON clause"
+   },
+   {
+    "label": "B",
+    "text": "A table alias cannot be attached to a common column used in a USING clause"
+   },
+   {
+    "label": "C",
+    "text": "A CROSS JOIN creates all row combinations of two tables without a condition"
+   },
+   {
+    "label": "D",
+    "text": "In an ON clause, a join condition can be written even between columns with different names"
+   }
+  ],
+  "explanation": "NATURAL JOIN joins automatically on all columns with the same name, so ON and USING cannot be used with it, and doing so is a syntax error. B: Putting a prefix such as D.DEPTNO on a USING column causes ORA-25154. C: EMP CROSS JOIN DEPT yields 14 x 4 = 56 rows. D: ON lets you write the condition directly, so the column names may differ and non-equality conditions can be used."
+ },
+ {
+  "number": 25,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In EMP, the salaries of employees whose JOB is MANAGER are 2975 (JONES), 2850 (BLAKE), and 2450 (CLARK). What is the result of the following SQL?\nSELECT COUNT(*)\nFROM EMP\nWHERE SAL < ANY (SELECT SAL FROM EMP WHERE JOB = 'MANAGER');",
+  "choices": [
+   {
+    "label": "A",
+    "text": "8"
+   },
+   {
+    "label": "B",
+    "text": "11"
+   },
+   {
+    "label": "C",
+    "text": "10"
+   },
+   {
+    "label": "D",
+    "text": "ORA-01427 error occurs"
+   }
+  ],
+  "explanation": "`< ANY` is true if the value is less than at least one item in the list, so it means less than the maximum, 2975. The employees below 2975 are 10, excluding KING, FORD, SCOTT, and JONES. The 8 in A is the count using `< ALL` (below the minimum, 2450). The 11 in B is the count using `<=`, which would include JONES. D: ANY is a multiple-row operator, so ORA-01427 does not occur even if the subquery returns 3 rows."
+ },
+ {
+  "number": 26,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Department 40 (OPERATIONS) in DEPT has no employees. What is the result of the following SQL?\nSELECT D.DNAME,\n       (SELECT COUNT(*) FROM EMP E WHERE E.DEPTNO = D.DEPTNO) AS CNT\nFROM DEPT D\nWHERE D.DEPTNO = 40;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "OPERATIONS, NULL"
+   },
+   {
+    "label": "B",
+    "text": "No result rows (0 rows)"
+   },
+   {
+    "label": "C",
+    "text": "ORA-01427 error occurs"
+   },
+   {
+    "label": "D",
+    "text": "OPERATIONS, 0"
+   }
+  ],
+  "explanation": "COUNT(*) without GROUP BY returns one row even when there are no target rows, and its value is 0. So the scalar subquery returns 0 and the result is OPERATIONS, 0. A: A scalar subquery becomes NULL when the subquery returns 0 rows. With MAX(SAL) it would be NULL, but COUNT gives 0. B: The main query reads DEPT, so the row for department 40 remains. C: The subquery result is one row and one column, so it is not ORA-01427."
+ },
+ {
+  "number": 27,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the result of the following SQL? (ANALYST employees are SCOTT and FORD, and both are in department 20)\nSELECT COUNT(*)\nFROM DEPT D\nWHERE NOT EXISTS (SELECT 1\n                  FROM EMP E\n                  WHERE E.DEPTNO = D.DEPTNO\n                    AND E.JOB = 'ANALYST');",
+  "choices": [
+   {
+    "label": "A",
+    "text": "3"
+   },
+   {
+    "label": "B",
+    "text": "1"
+   },
+   {
+    "label": "C",
+    "text": "4"
+   },
+   {
+    "label": "D",
+    "text": "ORA-00904 error occurs"
+   }
+  ],
+  "explanation": "NOT EXISTS is true when a department has no ANALYST employee at all. Only department 20 has ANALYSTs, so departments 10, 30, and 40 remain, which is 3. The 1 in B is the count using EXISTS. The 4 in C is the total number of rows in DEPT. Department 40, which has no employees, also returns 0 rows from the subquery, so NOT EXISTS is true. D: EXISTS only checks whether a row exists, so a constant such as `SELECT 1` can be used."
+ },
+ {
+  "number": 28,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The jobs in department 20 are ANALYST, CLERK, and MANAGER (5 employees), and the jobs in department 30 are CLERK, MANAGER, and SALESMAN (6 employees). What is the result of the following SQL?\nSELECT COUNT(*)\nFROM (SELECT JOB FROM EMP WHERE DEPTNO = 20\n      UNION\n      SELECT JOB FROM EMP WHERE DEPTNO = 30);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "11"
+   },
+   {
+    "label": "B",
+    "text": "2"
+   },
+   {
+    "label": "C",
+    "text": "5"
+   },
+   {
+    "label": "D",
+    "text": "4"
+   }
+  ],
+  "explanation": "UNION combines the two results and removes duplicates. The remaining jobs are four: ANALYST, CLERK, MANAGER, and SALESMAN. The 11 in A is the result of UNION ALL, which keeps duplicates (5 + 6). The 2 in B is the result of INTERSECT, which keeps only the common jobs CLERK and MANAGER. The 5 in C is the number of jobs across all of EMP, but departments 20 and 30 do not have PRESIDENT."
+ },
+ {
+  "number": 29,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The jobs in department 10 are CLERK, MANAGER, and PRESIDENT, in department 20 are ANALYST, CLERK, and MANAGER, and in department 30 are CLERK, MANAGER, and SALESMAN. What is the result of the following SQL?\nSELECT JOB FROM EMP WHERE DEPTNO = 10\nMINUS\nSELECT JOB FROM EMP WHERE DEPTNO = 20\nUNION\nSELECT JOB FROM EMP WHERE DEPTNO = 30\nORDER BY 1;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "PRESIDENT"
+   },
+   {
+    "label": "B",
+    "text": "CLERK, MANAGER, PRESIDENT, SALESMAN"
+   },
+   {
+    "label": "C",
+    "text": "CLERK, MANAGER, SALESMAN"
+   },
+   {
+    "label": "D",
+    "text": "ANALYST, CLERK, MANAGER, PRESIDENT, SALESMAN"
+   }
+  ],
+  "explanation": "Set operators have the same precedence and are evaluated from top to bottom. First, department 10 MINUS department 20 leaves PRESIDENT, and UNION with the department 30 jobs gives CLERK, MANAGER, PRESIDENT, and SALESMAN. A is the result of grouping `UNION` first and calculating `department 10 MINUS (department 20 UNION department 30)`. C misses PRESIDENT. D is all the jobs of the three departments, as if MINUS removed nothing."
+ },
+ {
+  "number": 30,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The jobs in department 10 are CLERK, MANAGER, and PRESIDENT, and the jobs in department 20 are ANALYST, CLERK, and MANAGER. What is the number of rows returned by the following SQL?\nSELECT DEPTNO, JOB, COUNT(*)\nFROM EMP\nWHERE DEPTNO IN (10, 20)\nGROUP BY ROLLUP(DEPTNO, JOB);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "6"
+   },
+   {
+    "label": "B",
+    "text": "8"
+   },
+   {
+    "label": "C",
+    "text": "9"
+   },
+   {
+    "label": "D",
+    "text": "13"
+   }
+  ],
+  "explanation": "`ROLLUP(DEPTNO, JOB)` produces the (DEPTNO, JOB) groups, DEPTNO subtotals, and a grand total. 6 (department, job) combination rows + 2 department subtotal rows + 1 grand total row = 9 rows. The 6 in A is the result of `GROUP BY DEPTNO, JOB` without subtotals. The 8 in B omits the grand total. The 13 in D is the result of CUBE, which also adds 4 job subtotal rows."
+ },
+ {
+  "number": 31,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which of the following produces the same set of result rows as `GROUP BY GROUPING SETS ((DEPTNO, JOB), JOB)`?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "GROUP BY ROLLUP(JOB, DEPTNO)"
+   },
+   {
+    "label": "B",
+    "text": "GROUP BY JOB, ROLLUP(DEPTNO)"
+   },
+   {
+    "label": "C",
+    "text": "GROUP BY DEPTNO, ROLLUP(JOB)"
+   },
+   {
+    "label": "D",
+    "text": "GROUP BY GROUPING SETS (DEPTNO, JOB)"
+   }
+  ],
+  "explanation": "The given GROUPING SETS has two groupings: (DEPTNO, JOB) and JOB. B always groups by JOB and applies ROLLUP only to DEPTNO, producing the two groupings (JOB, DEPTNO) and (JOB), which is the same (14 rows in EMP). A adds the grand total () to this, giving 15 rows. C gives (DEPTNO, JOB) and DEPTNO subtotals, so it yields department subtotals instead of job subtotals. D has a DEPTNO grouping and a JOB grouping, so it has no (DEPTNO, JOB) detail rows."
+ },
+ {
+  "number": 32,
+  "domain": "SQL Basics and Applications",
+  "prompt": "EMP has 3 departments, 9 (department, job) combinations, and JOB has no NULLs. What is the result of the following SQL?\nSELECT COUNT(*)\nFROM (SELECT DEPTNO,\n             CASE GROUPING(JOB) WHEN 1 THEN 'Subtotal' ELSE JOB END AS J,\n             SUM(SAL) AS S\n      FROM EMP\n      GROUP BY ROLLUP(DEPTNO, JOB))\nWHERE J = 'Subtotal';",
+  "choices": [
+   {
+    "label": "A",
+    "text": "4"
+   },
+   {
+    "label": "B",
+    "text": "3"
+   },
+   {
+    "label": "C",
+    "text": "1"
+   },
+   {
+    "label": "D",
+    "text": "13"
+   }
+  ],
+  "explanation": "In `ROLLUP(DEPTNO, JOB)`, the rows where JOB is rolled up are the 3 department subtotal rows and 1 grand total row. In both cases GROUPING(JOB) is 1, so J becomes 'Subtotal', giving 4 rows. The 3 in B misses that JOB is also rolled up in the grand total row. The 1 in C is the value when filtering by GROUPING(DEPTNO) (grand total only). The 13 in D is the total number of ROLLUP rows counted without the outer WHERE."
+ },
+ {
+  "number": 33,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The salaries of EMP in descending order are 5000, 3000, 3000, 2975, 2850, 2450, 1600, 1500, 1300 (MILLER), 1250, 1250, 1100, 950, 800. In the result of the following SQL, what are the R and DR values of the MILLER row?\nSELECT ENAME,\n       RANK() OVER (ORDER BY SAL DESC) AS R,\n       DENSE_RANK() OVER (ORDER BY SAL DESC) AS DR\nFROM EMP;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "9, 9"
+   },
+   {
+    "label": "B",
+    "text": "9, 8"
+   },
+   {
+    "label": "C",
+    "text": "8, 9"
+   },
+   {
+    "label": "D",
+    "text": "10, 8"
+   }
+  ],
+  "explanation": "There are 8 employees ahead of MILLER, so RANK is 9. DENSE_RANK treats ties as one rank and does not skip the next rank. The two employees at 3000 share one rank, so there are 7 distinct salary values before MILLER, and MILLER is 8. A assumes DENSE_RANK also skips. C swaps the two functions. The 10 in D is the RANK value of MARTIN and WARD."
+ },
+ {
+  "number": 34,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The salaries in department 10 are MILLER 1300, CLARK 2450, and KING 5000. In the result of the following SQL, what is the S value of the KING row?\nSELECT ENAME,\n       SUM(SAL) OVER (ORDER BY SAL\n                      ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS S\nFROM EMP\nWHERE DEPTNO = 10\nORDER BY SAL;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "8750"
+   },
+   {
+    "label": "B",
+    "text": "5000"
+   },
+   {
+    "label": "C",
+    "text": "3750"
+   },
+   {
+    "label": "D",
+    "text": "7450"
+   }
+  ],
+  "explanation": "The window is the current row, 1 row before, and 1 row after. KING is the last row, so there is no following row, and CLARK 2450 + KING 5000 = 7450. The 8750 in A is the sum of the entire partition. The 5000 in B looks at only the current row. The 3750 in C is the value of the MILLER row (1300 + 2450)."
+ },
+ {
+  "number": 35,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The salaries in department 10 are KING 5000, CLARK 2450, and MILLER 1300 (total 8750), and the total salary of all EMP is 29025. In the result of the following SQL, what is the R value of the KING row?\nSELECT ENAME,\n       ROUND(RATIO_TO_REPORT(SAL) OVER (PARTITION BY DEPTNO), 2) AS R\nFROM EMP\nWHERE DEPTNO = 10\nORDER BY SAL DESC;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1"
+   },
+   {
+    "label": "B",
+    "text": "0.57"
+   },
+   {
+    "label": "C",
+    "text": "0.17"
+   },
+   {
+    "label": "D",
+    "text": "0.33"
+   }
+  ],
+  "explanation": "RATIO_TO_REPORT is the ratio of a value to the partition total. 5000 / 8750 = 0.571..., so it is 0.57. The 1 in A is the sum of all three row ratios. The 0.17 in C is the value divided by the EMP total of 29025, but WHERE keeps only department 10, so the partition total is 8750. The 0.33 in D is 1/3, divided by the number of rows."
+ },
+ {
+  "number": 36,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Department 30 has 6 employees. What is the result of the following SQL?\nSELECT COUNT(*)\nFROM EMP\nWHERE ROWNUM <= 5 AND DEPTNO = 30;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "0"
+   },
+   {
+    "label": "B",
+    "text": "6"
+   },
+   {
+    "label": "C",
+    "text": "14"
+   },
+   {
+    "label": "D",
+    "text": "5"
+   }
+  ],
+  "explanation": "ROWNUM is assigned starting from 1 to rows that pass the other WHERE conditions. Of the 6 rows that pass DEPTNO = 30, up to the 5th remain, so the result is 5. A: The condition is not like `ROWNUM = 2` or `ROWNUM > 1`, where row number 1 is rejected, so it is not 0 rows. B assumes the ROWNUM condition is ignored. C is the total number of rows in EMP."
+ },
+ {
+  "number": 37,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which statement about TOP in SQL Server is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "In Oracle as well, you can get the top 3 rows by writing `SELECT TOP 3 ENAME FROM EMP`"
+   },
+   {
+    "label": "B",
+    "text": "Using only `TOP(3)` without ORDER BY causes a syntax error"
+   },
+   {
+    "label": "C",
+    "text": "TOP cuts rows from the result after ORDER BY has been processed"
+   },
+   {
+    "label": "D",
+    "text": "`TOP(n) WITH TIES` returns tied rows together even without ORDER BY"
+   }
+  ],
+  "explanation": "SQL Server's TOP cuts from the result after ORDER BY is processed, so there is no trap like ROWNUM, which cuts before sorting. A: Oracle reads TOP as a column name and raises ORA-00923. Oracle uses ROWNUM or FETCH FIRST. B: `TOP(3)` without ORDER BY is not an error; it just means it is not determined which 3 rows are returned. D: WITH TIES needs a criterion for judging ties, so ORDER BY is required."
+ },
+ {
+  "number": 38,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In EMP, the employees whose JOB is MANAGER are the 3 employees JONES, BLAKE, and CLARK, and all are subordinates of KING. What is the result of the following SQL?\nSELECT COUNT(*)\nFROM EMP\nWHERE JOB <> 'MANAGER'\nSTART WITH MGR IS NULL\nCONNECT BY PRIOR EMPNO = MGR;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1"
+   },
+   {
+    "label": "B",
+    "text": "14"
+   },
+   {
+    "label": "C",
+    "text": "An error occurs because of the position of the WHERE clause"
+   },
+   {
+    "label": "D",
+    "text": "11"
+   }
+  ],
+  "explanation": "In a hierarchical query, the WHERE condition is applied after the whole tree is built and removes only the rows that do not meet the condition. From the 14-row tree, only the 3 MANAGER rows are removed, and the employees below them remain, giving 11. The 1 in A is the result (KING only) when the same condition is put in CONNECT BY, cutting off MANAGER and all branches below. B assumes WHERE is not applied. C: Placing WHERE before START WITH is the correct order."
+ },
+ {
+  "number": 39,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The manager of SCOTT and FORD (3000) is JONES (2975), the manager of ADAMS (1100) is SCOTT, and the manager of SMITH (800) is FORD. What is the result of the following SQL?\nSELECT E.ENAME\nFROM EMP E, EMP M\nWHERE E.MGR = M.EMPNO\n  AND E.SAL > M.SAL\nORDER BY E.ENAME;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "FORD"
+   },
+   {
+    "label": "B",
+    "text": "JONES"
+   },
+   {
+    "label": "C",
+    "text": "FORD, SCOTT"
+   },
+   {
+    "label": "D",
+    "text": "BLAKE, CLARK, JONES"
+   }
+  ],
+  "explanation": "E is the employee, and M is the same EMP table playing the role of that employee's manager. The only employees who earn more than their managers are FORD and SCOTT, who earn more than JONES (2975). A misses SCOTT. SCOTT also earns 3000 like FORD, which is more than manager JONES (2975). B is the result of selecting M.ENAME, but the statement shows E.ENAME. D lists employees whose manager is KING. All of them earn less than KING (5000)."
+ },
+ {
+  "number": 40,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Of the 6 employees in department 30, two employees, BLAKE and JAMES, have NULL COMM, and the remaining 4 have COMM values (TURNER has 0). What is the result of the following SQL?\nSELECT COUNT(*)\nFROM (SELECT ENAME, SAL, COMM FROM EMP WHERE DEPTNO = 30)\nUNPIVOT (AMT FOR KIND IN (SAL, COMM));",
+  "choices": [
+   {
+    "label": "A",
+    "text": "12"
+   },
+   {
+    "label": "B",
+    "text": "10"
+   },
+   {
+    "label": "C",
+    "text": "6"
+   },
+   {
+    "label": "D",
+    "text": "8"
+   }
+  ],
+  "explanation": "UNPIVOT turns the two columns SAL and COMM into rows, creating 2 rows per employee. By default it discards rows whose value is NULL, so the 2 COMM rows of BLAKE and JAMES are removed from the 12 rows, giving 10. The 12 in A is the result when `INCLUDE NULLS` is specified. The 6 in C is the original number of rows. The 8 in D assumes TURNER, whose COMM is 0, is also discarded. 0 is not NULL."
+ },
+ {
+  "number": 41,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the result of the following SQL?\nSELECT REGEXP_SUBSTR('a1b22c333', '[0-9]+', 1, 2) FROM DUAL;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1"
+   },
+   {
+    "label": "B",
+    "text": "333"
+   },
+   {
+    "label": "C",
+    "text": "22"
+   },
+   {
+    "label": "D",
+    "text": "122333"
+   }
+  ],
+  "explanation": "`[0-9]+` is a run of one or more consecutive digits. Searching from position 1, the runs are '1', '22', and '333', and the fourth argument, 2, means the 2nd match among them, which is '22'. A is the 1st match. B is the last match, which would require specifying the 3rd. D is all the digits joined together, but REGEXP_SUBSTR extracts only a single match."
+ },
+ {
+  "number": 42,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the result of the last SELECT after the following statements are executed in order? (There are 4 employees in EMP whose JOB is 'SALESMAN', and all four have COMM values)\nCREATE TABLE TEX4_EMP AS SELECT EMPNO, ENAME, SAL, COMM FROM EMP WHERE 1 = 2;\nINSERT INTO TEX4_EMP (EMPNO, ENAME, SAL) SELECT EMPNO, ENAME, SAL FROM EMP WHERE JOB = 'SALESMAN';\nSELECT COUNT(*), COUNT(COMM) FROM TEX4_EMP;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "4, 4"
+   },
+   {
+    "label": "B",
+    "text": "4, 0"
+   },
+   {
+    "label": "C",
+    "text": "0, 0"
+   },
+   {
+    "label": "D",
+    "text": "The INSERT fails because the column list and the number of SELECT columns differ from the table"
+   }
+  ],
+  "explanation": "The 4 SALESMAN rows are inserted in a single statement into the empty table whose structure was copied with WHERE 1 = 2. COMM, which was left out of the column list, has no DEFAULT, so NULL is inserted, and COUNT(COMM) does not count NULLs, so it is 0. A assumes the COMM values of the original EMP were also copied. C assumes the INSERT was not applied to the empty CTAS table. The INSERT column list (3) matches the number of SELECT columns (3), so it is not an error even though it differs from the table's total number of columns, which makes D wrong too."
+ },
+ {
+  "number": 43,
+  "domain": "SQL Basics and Applications",
+  "prompt": "After running the following statement on TEX4_EMP, an exact copy of the 14 EMP rows, what is the result of SELECT COUNT(*) FROM TEX4_EMP;? (The average SAL of EMP is about 2073, and the employees with SAL greater than this are JONES, BLAKE, CLARK, SCOTT, KING, and FORD)\nDELETE FROM TEX4_EMP WHERE SAL < (SELECT AVG(SAL) FROM TEX4_EMP);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "6"
+   },
+   {
+    "label": "B",
+    "text": "8"
+   },
+   {
+    "label": "C",
+    "text": "14"
+   },
+   {
+    "label": "D",
+    "text": "An error occurs because the table being deleted from is read in the subquery"
+   }
+  ],
+  "explanation": "The subquery average is calculated once from the data before deletion. The 8 employees with SAL below the average are deleted, and the 6 above the average remain. B treats the number of deleted rows (8 rows deleted) as the number of remaining rows. C assumes no rows were deleted. Reading the same table in a DELETE's WHERE subquery is allowed in Oracle, so D is also wrong."
+ },
+ {
+  "number": 44,
+  "domain": "SQL Basics and Applications",
+  "prompt": "For an empty table created with CREATE TABLE TEX4_DEPT (DEPTNO NUMBER(2) NOT NULL, DNAME VARCHAR2(10), LOC VARCHAR2(10) DEFAULT 'SEOUL');, which statement causes an error when executed?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "INSERT INTO TEX4_DEPT (DNAME, LOC) VALUES ('IT', 'BUSAN');"
+   },
+   {
+    "label": "B",
+    "text": "INSERT INTO TEX4_DEPT VALUES (10, 'IT', DEFAULT);"
+   },
+   {
+    "label": "C",
+    "text": "INSERT INTO TEX4_DEPT (LOC, DEPTNO) VALUES ('BUSAN', 20);"
+   },
+   {
+    "label": "D",
+    "text": "INSERT INTO TEX4_DEPT VALUES (30, NULL, NULL);"
+   }
+  ],
+  "explanation": "A omits DEPTNO from the column list. DEPTNO has no DEFAULT, so NULL would have to be inserted, but it is NOT NULL, so ORA-01400 occurs. B gives values for all three columns without a column list, and the DEFAULT keyword puts SEOUL into LOC. In C, the column list order may differ from the table definition as long as the values follow the listed column order, and the omitted DNAME is NULL. D explicitly writes NULL, so NULL goes into LOC as well instead of DEFAULT, and there is no error."
+ },
+ {
+  "number": 45,
+  "domain": "SQL Basics and Applications",
+  "prompt": "After the following statements are executed in order on TEX4_DEPT (4 rows), a copy of DEPT, what is the result of SELECT COUNT(*) FROM TEX4_DEPT;?\nINSERT INTO TEX4_DEPT VALUES (50, 'EDU', 'SEOUL');\nSAVEPOINT S1;\nINSERT INTO TEX4_DEPT VALUES (60, 'IT', 'BUSAN');\nSAVEPOINT S2;\nDELETE FROM TEX4_DEPT WHERE DEPTNO = 10;\nROLLBACK TO S1;\nINSERT INTO TEX4_DEPT VALUES (70, 'HR', 'DAEGU');\nCOMMIT;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "5"
+   },
+   {
+    "label": "B",
+    "text": "7"
+   },
+   {
+    "label": "C",
+    "text": "5, because ROLLBACK TO ends the transaction and only department 70 is committed"
+   },
+   {
+    "label": "D",
+    "text": "6"
+   }
+  ],
+  "explanation": "ROLLBACK TO S1 cancels only the department 60 INSERT and the department 10 DELETE that came after S1. The department 50 INSERT before S1 remains. Then department 70 is inserted and COMMIT is issued, so 4 + 1 (50) + 1 (70) = 6. A assumes the department 70 INSERT was missed or that department 50 was also cancelled. B assumes the department 60 INSERT also remained. ROLLBACK TO does not end the transaction, so department 50 is committed as well, which makes C wrong too."
+ },
+ {
+  "number": 46,
+  "domain": "SQL Basics and Applications",
+  "prompt": "After the following statements are executed in order on TEX4_DEPT (10, 20, 30, 40), a copy of DEPT with a PRIMARY KEY added on DEPTNO, what is the result of SELECT COUNT(*) FROM TEX4_DEPT;?\nDELETE FROM TEX4_DEPT WHERE DEPTNO = 10;\nINSERT INTO TEX4_DEPT VALUES (20, 'DUP', 'SEOUL');\nCOMMIT;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "3"
+   },
+   {
+    "label": "B",
+    "text": "4"
+   },
+   {
+    "label": "C",
+    "text": "5"
+   },
+   {
+    "label": "D",
+    "text": "4, because the COMMIT is rejected due to the error in the previous statement"
+   }
+  ],
+  "explanation": "The INSERT fails with ORA-00001 because department 20 already exists. Oracle cancels only the changes of the single failed statement (statement-level rollback) and keeps the earlier DELETE in the transaction. The following COMMIT commits the DELETE, leaving 3 rows. B assumes the whole transaction was cancelled because of the error. C assumes the duplicate INSERT went through. The COMMIT runs normally even if a previous statement had an error, so D is also wrong."
+ },
+ {
+  "number": 47,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In Oracle, the following statement was executed while there was uncommitted DML. Which one does NOT commit the preceding DML?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "GRANT SELECT ON TEX4_A TO KIM;"
+   },
+   {
+    "label": "B",
+    "text": "ALTER TABLE TEX4_A ADD (MEMO VARCHAR2(10));"
+   },
+   {
+    "label": "C",
+    "text": "RENAME TEX4_A TO TEX4_Z;"
+   },
+   {
+    "label": "D",
+    "text": "SAVEPOINT SP1;"
+   }
+  ],
+  "explanation": "SAVEPOINT only sets a save point in the middle of a transaction and does not end the transaction. The preceding DML is still waiting for COMMIT or ROLLBACK. GRANT is DCL, and ALTER and RENAME are DDL. In Oracle, executing DDL or DCL implicitly COMMITs any uncommitted DML before it, so A, B, and C all commit the preceding DML."
+ },
+ {
+  "number": 48,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The parent TEX4_P has DEPTNO 10, 20, and 30. The DEPTNO of the child TEX4_C is `REFERENCES TEX4_P (DEPTNO) ON DELETE SET NULL`, and the DEPTNO values of the 5 child rows are 10, 10, 20, 30, and NULL. After executing DELETE FROM TEX4_P WHERE DEPTNO IN (10, 20);, what is the result of SELECT COUNT(*), COUNT(DEPTNO) FROM TEX4_C;?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "2, 1"
+   },
+   {
+    "label": "B",
+    "text": "5, 1"
+   },
+   {
+    "label": "C",
+    "text": "5, 4"
+   },
+   {
+    "label": "D",
+    "text": "The deletion is rejected with ORA-02292 because child rows exist, so 5, 4"
+   }
+  ],
+  "explanation": "ON DELETE SET NULL keeps the child rows when a parent row is deleted and changes only the foreign key column to NULL. The DEPTNO of the 3 rows that referenced 10 and 20 becomes NULL, so among the 5 rows, only one row, 30, keeps a DEPTNO. A assumes child rows were deleted, as with ON DELETE CASCADE. C assumes the children did not change. ORA-02292 is the behavior when there is no delete option, so D is also wrong."
+ },
+ {
+  "number": 49,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which statement about DELETE, TRUNCATE, and DROP in Oracle is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "TRUNCATE can delete only some rows with WHERE"
+   },
+   {
+    "label": "B",
+    "text": "A parent table referenced by a child can also be dropped with DROP TABLE alone"
+   },
+   {
+    "label": "C",
+    "text": "DELETE returns the storage space of the deleted rows to its initial size"
+   },
+   {
+    "label": "D",
+    "text": "A table dropped without PURGE can be restored with FLASHBACK TABLE"
+   }
+  ],
+  "explanation": "If a table is dropped without PURGE, it goes to the Recycle Bin and can be restored with FLASHBACK TABLE. TRUNCATE does not accept WHERE and always deletes all rows, so A is wrong. A parent referenced by another table's foreign key raises ORA-02449 on a plain DROP and can be dropped only with CASCADE CONSTRAINTS, so B is also wrong. It is TRUNCATE and DROP that release storage space, while DELETE leaves the space as it is, so C is also wrong."
+ },
+ {
+  "number": 50,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which is the correct statement for renaming the table TEX4_OLD to TEX4_NEW in Oracle?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "RENAME TEX4_OLD TO TEX4_NEW;"
+   },
+   {
+    "label": "B",
+    "text": "ALTER TABLE TEX4_OLD RENAME COLUMN TO TEX4_NEW;"
+   },
+   {
+    "label": "C",
+    "text": "EXEC sp_rename 'TEX4_OLD', 'TEX4_NEW';"
+   },
+   {
+    "label": "D",
+    "text": "UPDATE TABLE TEX4_OLD SET NAME = 'TEX4_NEW';"
+   }
+  ],
+  "explanation": "Oracle renames a table with `RENAME old_name TO new_name`. `ALTER TABLE old_name RENAME TO new_name` also works, but using RENAME COLUMN as in B makes it a statement that renames a column, and with the column name missing it is a syntax error. sp_rename in C is a SQL Server system stored procedure. Renaming is DDL and is not done with DML such as UPDATE, so D is also wrong."
+ },
+ {
+  "number": 51,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which statement about Oracle ROLEs and user privileges is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "The CONNECT role is a bundle of privileges for creating objects such as tables and sequences"
+   },
+   {
+    "label": "B",
+    "text": "Privileges are collected into a ROLE, granted with GRANT, and removed all at once with REVOKE"
+   },
+   {
+    "label": "C",
+    "text": "A user created with CREATE USER can log in immediately without any privilege"
+   },
+   {
+    "label": "D",
+    "text": "To revoke a ROLE, you must REVOKE each privilege inside it one by one"
+   }
+  ],
+  "explanation": "A ROLE is a named bundle of several privileges. `GRANT R_DEV TO KIM;` grants them all at once, and `REVOKE R_DEV FROM KIM;` revokes them all at once. So D, which says each privilege must be revoked one by one, is wrong. The role that bundles object-creation privileges is RESOURCE, while CONNECT is the privilege to connect, so A is wrong. A user created only with CREATE USER cannot connect; the CREATE SESSION privilege is required to log in, so C is wrong."
+ },
+ {
+  "number": 52,
+  "domain": "Understanding Data Modeling",
+  "prompt": "In a shopping mall DB, a new loyalty point entity was created and a column was added to the customer table. The applications and screens used by the delivery staff do not use that information, so they were not modified at all. Which statement correctly explains this situation using the three-level schema architecture?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "The internal schema changed, and thanks to physical independence the conceptual schema was not affected"
+   },
+   {
+    "label": "B",
+    "text": "The external schema changed, and thanks to logical independence the conceptual schema was not affected"
+   },
+   {
+    "label": "C",
+    "text": "The conceptual schema changed, and thanks to the conceptual/internal mapping the external schema was not affected"
+   },
+   {
+    "label": "D",
+    "text": "The conceptual schema changed, and thanks to logical independence the external schema was not affected"
+   }
+  ],
+  "explanation": "Adding an entity and a column is a change to the conceptual schema, which is the structure of the whole organization, and the property that keeps this change from spreading to each user's external schema is logical independence. A describes a change in storage structure such as indexes or storage location, so it does not fit the situation. B reverses what changes and what is protected. In logical independence, what changes is the conceptual schema and what is protected is the external schema. C names the wrong mapping to absorb the change. The external/conceptual mapping provides logical independence, while the conceptual/internal mapping provides physical independence."
+ },
+ {
+  "number": 53,
+  "domain": "Understanding Data Modeling",
+  "prompt": "In a shopping mall, the membership grade entity predefines grades such as Basic, Silver, and Gold, and the customer entity references it. It is created independently, without any other entity. How is this entity classified, in order, by tangibility and by time of occurrence?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Tangible entity · Basic (key) entity"
+   },
+   {
+    "label": "B",
+    "text": "Event entity · Main entity"
+   },
+   {
+    "label": "C",
+    "text": "Conceptual entity · Basic entity"
+   },
+   {
+    "label": "D",
+    "text": "Conceptual entity · Action entity"
+   }
+  ],
+  "explanation": "Membership grade is information that is defined and used without a physical form, so by tangibility it is a conceptual entity, and because it is created independently without any other entity, by time of occurrence it is a basic entity. The tangible entity in A is something with a physical form, such as a customer or a product. The event entity in B arises during business activity, such as an order or a payment, and a main entity arises from a basic entity and becomes central to the business. The action entity in D arises from two or more parents (such as an order item), so it does not fit."
+ },
+ {
+  "number": 54,
+  "domain": "Understanding Data Modeling",
+  "prompt": "Which statement about the classification of attributes is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "If an address can be split into city, district, and neighborhood, it is a composite attribute, which is a different criterion from how many values it holds"
+   },
+   {
+    "label": "B",
+    "text": "Multiple delivery addresses registered by a customer are a multi-valued attribute, so the rule is to store them in a single cell separated by commas"
+   },
+   {
+    "label": "C",
+    "text": "Customer number is always classified as a PK attribute, whether in the customer entity or in the order entity"
+   },
+   {
+    "label": "D",
+    "text": "Derived attributes reduce computation and speed up queries, so define as many as possible in the model"
+   }
+  ],
+  "explanation": "Simple/composite attributes ask whether an attribute can be split further, while single-valued/multi-valued attributes ask how many values an instance has; these are different axes. B violates the principle that one attribute holds only one value per instance. A multi-valued attribute should be separated into a separate entity. C is wrong. Customer number is a PK in the customer entity but an FK attribute brought in through a relationship in the order entity. D is the opposite. Derived attributes become inconsistent if they are not updated together when their source changes, so define as few as possible."
+ },
+ {
+  "number": 55,
+  "domain": "Understanding Data Modeling",
+  "prompt": "Which of the following business statements is best viewed as an existence-based relationship?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "A customer puts a product they like into the shopping cart"
+   },
+   {
+    "label": "B",
+    "text": "A product belongs to one product category"
+   },
+   {
+    "label": "C",
+    "text": "A customer writes a review of a product they purchased"
+   },
+   {
+    "label": "D",
+    "text": "The responsible employee approves a customer's return request"
+   }
+  ],
+  "explanation": "An existence-based relationship holds by existence alone, without any action. A product belongs to a category from the moment it is registered, so it is an existence-based relationship. A (puts into), C (writes), and D (approves) are action-based relationships that arise only when some action is performed. An ERD draws both kinds of relationship with the same line, while a UML class diagram distinguishes them as an association (solid line) and a dependency (dotted line)."
+ },
+ {
+  "number": 56,
+  "domain": "Understanding Data Modeling",
+  "prompt": "A mobile phone number was chosen as the primary identifier of the member entity. In operation, whenever a member changed their number, the values in the order and inquiry entities referencing it also had to be corrected. Which characteristic of a primary identifier did this design miss the most?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Uniqueness"
+   },
+   {
+    "label": "B",
+    "text": "Minimality"
+   },
+   {
+    "label": "C",
+    "text": "Existence"
+   },
+   {
+    "label": "D",
+    "text": "Immutability"
+   }
+  ],
+  "explanation": "Immutability is the characteristic that once a primary identifier value is set, it should not change often. A member can change a mobile phone number, so cascading updates arise in the referencing child entities. Uniqueness in A is the property of distinguishing every instance uniquely, and the problem in the situation is not duplicate values. Minimality in B means using only as many attributes as needed, and a mobile phone number is a single attribute. Existence in C means a value must always be present, and no problem of missing values appeared."
+ },
+ {
+  "number": 57,
+  "domain": "Understanding Data Modeling",
+  "prompt": "The attributes of the Consultation Booking entity are (CustomerNo, Field, Counselor), and its primary identifier is (CustomerNo, Field). The business rules are \"One counselor handles only one field\" and \"A customer is counseled by one counselor per field.\" Therefore the functional dependencies are `(CustomerNo, Field) → Counselor` and `Counselor → Field`. Which statement about this entity is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Counselor depends only on CustomerNo, which is part of the composite primary identifier, so 2NF is violated"
+   },
+   {
+    "label": "B",
+    "text": "Counselor and Field are both ordinary attributes, so a transitive dependency arises and 3NF is violated"
+   },
+   {
+    "label": "C",
+    "text": "3NF is satisfied, but there is a determinant, Counselor, that is not a candidate key, so BCNF is violated"
+   },
+   {
+    "label": "D",
+    "text": "Both determinants, Counselor and Field, are included in the primary identifier, so BCNF is satisfied"
+   }
+  ],
+  "explanation": "Counselor depends on the whole primary identifier and there is no transitive dependency among ordinary attributes, so 3NF is satisfied. However, in `Counselor → Field`, the determinant Counselor is not a candidate key, so BCNF, which requires every determinant to be a candidate key, is violated. It is resolved by splitting into (Counselor, Field) and (CustomerNo, Counselor). A is wrong. Counselor is not determined by CustomerNo alone but depends on the whole of (CustomerNo, Field). B is wrong in treating Field as an ordinary attribute; Field is part of the primary identifier. D claims that the determinant Counselor is included in the primary identifier although it is not, and its conclusion is also wrong."
+ },
+ {
+  "number": 58,
+  "domain": "Understanding Data Modeling",
+  "prompt": "The ParentPartNo attribute of the Part entity references the PartNo of the same Part entity. A finished product has no parent part. Which statement about this model is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Joining the same Part table with two aliases (self join) lets you read the parent part name together"
+   },
+   {
+    "label": "B",
+    "text": "The parent part and child part must be split into two different entities to make a hierarchical data model"
+   },
+   {
+    "label": "C",
+    "text": "Even the top-level finished product must have a ParentPartNo, so this column is NOT NULL"
+   },
+   {
+    "label": "D",
+    "text": "A part has a relationship with only one of the two entities, so it is a mutually exclusive relationship"
+   }
+  ],
+  "explanation": "This is a hierarchical data model (recursive relationship) in which an entity references itself, and parent part information is read by a self join that gives the same table two aliases. B is wrong. A hierarchical data model is a structure in which a parent-child relationship arises within a single entity. C is also wrong. The top-level row has no parent, so its FK value is NULL (like KING in EMP). The mutually exclusive (arc) relationship in D is a structure in which one entity has a relationship with only one of several entities, which differs from self-reference."
+ },
+ {
+  "number": 59,
+  "domain": "Understanding Data Modeling",
+  "prompt": "Which statement about relationship notation in data models and about transactions is NOT correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "If the Department side of a Department-Employee relationship is optional, a separate transaction that registers only the department first is possible"
+   },
+   {
+    "label": "B",
+    "text": "If Order and Order Item, which must be stored together, are mistakenly drawn as an optional relationship, data with only an order can remain"
+   },
+   {
+    "label": "C",
+    "text": "Tying together even entities that are stored separately in the business with a mandatory relationship is advantageous because transactions become smaller"
+   },
+   {
+    "label": "D",
+    "text": "A transaction is a group of operations that must succeed together or fail together"
+   }
+  ],
+  "explanation": "If things that are stored separately in the business are tied together with a mandatory relationship, the scope that must be processed together widens and the transaction becomes unnecessarily large. It does not become smaller, so C is not correct. A is correct. A department without employees can exist, so only the department can be registered first. B is also correct. If drawn as optional, data with an order but no order items can remain. D is exactly the definition of a transaction."
+ },
+ {
+  "number": 60,
+  "domain": "Understanding Data Modeling",
+  "prompt": "Which statement is most appropriate when deciding whether an attribute allows Null during the modeling stage?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "NULL is a value stored as 0 in numeric columns and as a space character in character columns"
+   },
+   {
+    "label": "B",
+    "text": "An FK column of a non-identifying relationship can never allow NULL because of existence"
+   },
+   {
+    "label": "C",
+    "text": "Setting a default value of 0 for a commission that is not yet decided distinguishes 'undecided' from '0 won' more accurately"
+   },
+   {
+    "label": "D",
+    "text": "A primary identifier attribute does not allow NULL because of existence"
+   }
+  ],
+  "explanation": "A primary identifier does not allow NULL because of existence, the requirement that a value must be present, and in the physical model this appears as NOT NULL on the PK column. A is wrong. NULL is the state where a value is not determined, which differs from 0 (a numeric value) or a space (a character value). B is also wrong. Existence is a characteristic of primary identifiers, and to accept employees not assigned to a department, `EMP.DEPTNO`, the FK of a non-identifying relationship, must allow NULL. C is the opposite. With a default value of 0, 'not determined' and '0 won' can no longer be distinguished."
+ },
+ {
+  "number": 61,
+  "domain": "Understanding Data Modeling",
+  "prompt": "Which statement about essential identifiers and artificial identifiers is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "An essential identifier is a serial number that does not exist in the business but was artificially created by the designer"
+   },
+   {
+    "label": "B",
+    "text": "Using an artificial identifier leaves the composite key as it is, so the number of columns passed down to children increases"
+   },
+   {
+    "label": "C",
+    "text": "If the essential identifier is not complex, it is better to use the essential identifier as it is"
+   },
+   {
+    "label": "D",
+    "text": "If an artificial identifier is made the PK, one index is always enough even when a constraint is placed on the essential columns"
+   }
+  ],
+  "explanation": "An artificial identifier has costs such as duplicate data and additional indexes, so if the essential identifier is not complex, use it as it is, and consider an artificial identifier only when there are too many attributes. A is the definition of an artificial identifier. An essential identifier is an identifier created by the business (an original identifier). B is the opposite. An artificial identifier is a single column, so fewer columns are inherited by children. D is also wrong. If a UNIQUE index is placed on the essential columns to prevent duplicates, there are two indexes together with the PK index."
+ },
+ {
+  "number": 62,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which of the following groups contains only DDL commands?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "CREATE, TRUNCATE, RENAME"
+   },
+   {
+    "label": "B",
+    "text": "CREATE, DELETE, ALTER, RENAME"
+   },
+   {
+    "label": "C",
+    "text": "DROP, GRANT, ALTER"
+   },
+   {
+    "label": "D",
+    "text": "MERGE, TRUNCATE, DROP"
+   }
+  ],
+  "explanation": "CREATE, TRUNCATE, and RENAME are all DDL that define structure. TRUNCATE deletes data but is classified as DDL. B: DELETE is DML. C: GRANT is DCL, which grants privileges. D: MERGE is DML, which inserts or modifies data."
+ },
+ {
+  "number": 63,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which is the correct result of running the following SQL in SQL Server?\nSELECT 'DB' + NULL + 'A' AS R1,\n       CONCAT('DB', NULL, 'A') AS R2;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "R1 = DBA, R2 = DBA"
+   },
+   {
+    "label": "B",
+    "text": "An error occurs"
+   },
+   {
+    "label": "C",
+    "text": "R1 = DBA, R2 = NULL"
+   },
+   {
+    "label": "D",
+    "text": "R1 = NULL, R2 = DBA"
+   }
+  ],
+  "explanation": "SQL Server concatenates strings with `+`, and if a NULL is involved the whole result is NULL. On the other hand, SQL Server's CONCAT treats NULL as an empty string and accepts multiple arguments, so it yields DBA. A: Reading R1 as DBA mixes in the behavior of Oracle `||` (which skips NULL). B: SQL Server's CONCAT can take three arguments, and `+` concatenation is also valid syntax. C: It writes the NULL handling of the two operations backwards."
+ },
+ {
+  "number": 64,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What value of S does the following SQL return? (SMITH's SAL is 800)\nSELECT ENAME, SAL + 100 * 2 AS S FROM EMP WHERE EMPNO = 7369;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1800"
+   },
+   {
+    "label": "B",
+    "text": "1600"
+   },
+   {
+    "label": "C",
+    "text": "1000"
+   },
+   {
+    "label": "D",
+    "text": "An error occurs"
+   }
+  ],
+  "explanation": "In arithmetic operations, multiplication comes before addition. 100 * 2 = 200 is computed first, and 800 + 200 = 1000. A: This is the value calculated from the left, as in (800 + 100) * 2. B: This is the value treated as 800 * 2. D: Giving an arithmetic expression the alias S is valid syntax."
+ },
+ {
+  "number": 65,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which is the correct result of the following SQL?\nSELECT TRUNC(1789.56, -2) AS A, ROUND(1789.56, 1) AS B, CEIL(-2.3) AS C FROM DUAL;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "A = 1800, B = 1789.6, C = -3"
+   },
+   {
+    "label": "B",
+    "text": "A = 1700, B = 1789.5, C = -2"
+   },
+   {
+    "label": "C",
+    "text": "A = 1800, B = 1789.5, C = -3"
+   },
+   {
+    "label": "D",
+    "text": "A = 1700, B = 1789.6, C = -2"
+   }
+  ],
+  "explanation": "TRUNC(1789.56, -2) discards the tens digit and below to give 1700, ROUND(1789.56, 1) rounds at the 6 in the second decimal place to give 1789.6, and CEIL(-2.3) is -2, the smallest integer greater than or equal to -2.3. A and C: These mix in values that treat TRUNC as rounding and CEIL as FLOOR. B and C: These calculate ROUND like truncation and write 1789.5."
+ },
+ {
+  "number": 66,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which is the correct result of running the following SQL in Oracle?\nSELECT '10' + 5 AS A, '10' || 5 AS B FROM DUAL;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "A = 15, B = 105"
+   },
+   {
+    "label": "B",
+    "text": "A = 105, B = 105"
+   },
+   {
+    "label": "C",
+    "text": "A = 15, B = 15"
+   },
+   {
+    "label": "D",
+    "text": "An error occurs"
+   }
+  ],
+  "explanation": "In Oracle, `+` is only an arithmetic operator, so the string '10' is implicitly converted to the number 10 and the result is 15. `||` is string concatenation, so the number 5 is converted to the string '5' and the result is '105'. B: This treats `+` as concatenation, as in SQL Server. C: This treats `||` as addition too. D: '10' is a string that can be converted to a number, so no error occurs."
+ },
+ {
+  "number": 67,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The salaries in department 20 are SMITH 800, JONES 2975, SCOTT 3000, ADAMS 1100, and FORD 3000. Which is the correct result of the following SQL?\nSELECT SUM(CASE WHEN SAL >= 3000 THEN 1\n                WHEN SAL >= 2000 THEN 2\n                ELSE 0 END)\nFROM EMP WHERE DEPTNO = 20;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "6"
+   },
+   {
+    "label": "B",
+    "text": "3"
+   },
+   {
+    "label": "C",
+    "text": "NULL"
+   },
+   {
+    "label": "D",
+    "text": "4"
+   }
+  ],
+  "explanation": "CASE picks only the first WHEN that is true, from the top. SCOTT and FORD match the first condition and give 1 each, JONES gives 2 by the second condition, and SMITH and ADAMS get ELSE 0. 1 + 1 + 2 = 4. A: This assumes the two employees with 3000 also match the second condition (2). B: This counts the number of people who matched a condition. C: Because of ELSE, no NULL is mixed in, and even if it were, SUM skips NULL."
+ },
+ {
+  "number": 68,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Department 10 has 3 employees (including KING 5000), and the employees in department 20 with SAL of 3000 or more are the two, SCOTT and FORD. Which is the correct result of the following SQL?\nSELECT COUNT(*) FROM EMP\nWHERE DEPTNO = 10 OR DEPTNO = 20 AND SAL >= 3000;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "3"
+   },
+   {
+    "label": "B",
+    "text": "8"
+   },
+   {
+    "label": "C",
+    "text": "5"
+   },
+   {
+    "label": "D",
+    "text": "2"
+   }
+  ],
+  "explanation": "AND binds before OR, so this is DEPTNO = 10 OR (DEPTNO = 20 AND SAL >= 3000). The 3 employees of department 10 plus the 2 employees SCOTT and FORD of department 20 make 5. A: This groups it as (department 10 or 20) AND SAL >= 3000 and counts only KING, SCOTT, and FORD. B: This counts all of departments 10 and 20 without the SAL condition. D: This counts only the department 20 condition."
+ },
+ {
+  "number": 69,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The employees hired from May to September 1981 are BLAKE (05-01), CLARK (06-09), TURNER (09-08), and MARTIN (09-28). Which is the correct result of the following SQL?\nSELECT COUNT(*) FROM EMP\nWHERE HIREDATE BETWEEN DATE '1981-05-01' AND DATE '1981-09-28';",
+  "choices": [
+   {
+    "label": "A",
+    "text": "2"
+   },
+   {
+    "label": "B",
+    "text": "3"
+   },
+   {
+    "label": "C",
+    "text": "An error occurs"
+   },
+   {
+    "label": "D",
+    "text": "4"
+   }
+  ],
+  "explanation": "BETWEEN a AND b means greater than or equal to a and less than or equal to b, so both ends are included. BLAKE on 05-01 and MARTIN on 09-28 are also included, giving 4 employees (HIREDATE has no time component). A: This excludes both end employees. B: This includes only one end. C: BETWEEN can be used with dates, and a DATE literal is also valid syntax."
+ },
+ {
+  "number": 70,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which is the correct result of the following SQL? (KING is the PRESIDENT of department 10 with SAL 5000. Excluding him, the average salary by department is 1875 for 10, 2175 for 20, and about 1566.67 for 30)\nSELECT DEPTNO, MAX(SAL) - MIN(SAL) AS GAP FROM EMP\nWHERE JOB <> 'PRESIDENT'\nGROUP BY DEPTNO HAVING AVG(SAL) > 2000;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Two rows: 10 / 3700 and 20 / 2200"
+   },
+   {
+    "label": "B",
+    "text": "One row: 20 / 2200"
+   },
+   {
+    "label": "C",
+    "text": "Two rows: 10 / 1150 and 20 / 2200"
+   },
+   {
+    "label": "D",
+    "text": "An error occurs"
+   }
+  ],
+  "explanation": "WHERE removes KING before the groups are formed. The only group whose average then exceeds 2000 is department 20, and its GAP is 3000 - 800 = 2200. A: This is the result of passing HAVING with the department 10 average that includes KING (2916.67). C: The GAP for department 10 (2450 - 1300 = 1150) is correct, but its average of 1875 does not pass HAVING. D: Using WHERE and HAVING together is valid syntax."
+ },
+ {
+  "number": 71,
+  "domain": "SQL Basics and Applications",
+  "prompt": "EMP has 14 rows, and KING is the only employee whose MGR is NULL. MGR has 6 distinct values. Which is the correct result of the following SQL?\nSELECT COUNT(MGR), COUNT(DISTINCT MGR) FROM EMP;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "14, 7"
+   },
+   {
+    "label": "B",
+    "text": "13, 7"
+   },
+   {
+    "label": "C",
+    "text": "14, 6"
+   },
+   {
+    "label": "D",
+    "text": "13, 6"
+   }
+  ],
+  "explanation": "COUNT(column) counts excluding NULL. COUNT(MGR) is 13, and COUNT(DISTINCT MGR) is 6, the number of distinct values excluding NULL. A and C: These count COUNT(MGR) like COUNT(*), including NULL. A and B: These confuse the number of result rows of SELECT DISTINCT (7 including NULL) with COUNT(DISTINCT)."
+ },
+ {
+  "number": 72,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In department 10, the MGR values are KING NULL, CLARK 7839, and MILLER 7782. What is the row order of the result of running the following SQL in Oracle?\nSELECT ENAME, MGR FROM EMP WHERE DEPTNO = 10 ORDER BY MGR DESC;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "CLARK, MILLER, KING"
+   },
+   {
+    "label": "B",
+    "text": "MILLER, CLARK, KING"
+   },
+   {
+    "label": "C",
+    "text": "KING, CLARK, MILLER"
+   },
+   {
+    "label": "D",
+    "text": "KING, MILLER, CLARK"
+   }
+  ],
+  "explanation": "Oracle treats NULL as the largest value. In descending order, KING with NULL comes first, followed by 7839 (CLARK) and 7782 (MILLER). A: This is the order of SQL Server, which treats NULL as the smallest value. B: This is the Oracle result of sorting in ASC (NULL last). D: The NULL position is right, but the rest are placed in ascending order."
+ },
+ {
+  "number": 73,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The employees with a salary over 2500 are KING in department 10, JONES, SCOTT, and FORD in department 20, and BLAKE in department 30, and department 40 in DEPT has no employees. Which is the correct result of the following SQL?\nSELECT COUNT(*) FROM DEPT D, EMP E\nWHERE D.DEPTNO = E.DEPTNO(+) AND E.SAL(+) > 2500;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "5"
+   },
+   {
+    "label": "B",
+    "text": "4"
+   },
+   {
+    "label": "C",
+    "text": "15"
+   },
+   {
+    "label": "D",
+    "text": "6"
+   }
+  ],
+  "explanation": "(+) is attached to all conditions on the EMP side, so the SAL condition is also applied at the join stage, and DEPT rows with no match remain, filled with NULL. Department 10 gives 1, department 20 gives 3, department 30 gives 1, and department 40 gives 1 (NULL row), totaling 6. A: Without (+) on E.SAL it becomes a WHERE filter and the department 40 row disappears. B: This counts only the number of departments. C: This is the number of rows from an outer join without the SAL condition (14 + 1)."
+ },
+ {
+  "number": 74,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The employees with a salary of 2000 or more are CLARK and KING in department 10, JONES, SCOTT, and FORD in department 20, and BLAKE in department 30, and OPERATIONS (department 40) has no employees. Which is the correct result of the following SQL?\nSELECT D.DNAME, COUNT(E.EMPNO) AS CNT\nFROM EMP E RIGHT OUTER JOIN DEPT D\n  ON E.DEPTNO = D.DEPTNO AND E.SAL >= 2000\nGROUP BY D.DNAME ORDER BY D.DNAME;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ACCOUNTING 2, RESEARCH 3, SALES 1 (no OPERATIONS row)"
+   },
+   {
+    "label": "B",
+    "text": "ACCOUNTING 2, OPERATIONS 0, RESEARCH 3, SALES 1"
+   },
+   {
+    "label": "C",
+    "text": "ACCOUNTING 2, OPERATIONS 1, RESEARCH 3, SALES 1"
+   },
+   {
+    "label": "D",
+    "text": "ACCOUNTING 3, OPERATIONS 0, RESEARCH 5, SALES 6"
+   }
+  ],
+  "explanation": "Because it is a RIGHT OUTER JOIN, all 4 DEPT rows remain. The SAL condition is in ON, so it is used only at the join stage, and OPERATIONS remains as one row with NULL on the EMP side. COUNT(E.EMPNO) does not count NULL, so it is 0. A: OPERATIONS is missing, as it would be if the SAL condition were placed in WHERE. C: This counts the NULL row too, as COUNT(*) would. D: This ignores the SAL condition and counts all employees in each department."
+ },
+ {
+  "number": 75,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the result of the following SQL? (The average salary by department is about 2916.67 for 10, 2175 for 20, and about 1566.67 for 30, and the overall average is about 2073.21)\nSELECT E.ENAME\nFROM EMP E\nWHERE E.SAL > (SELECT AVG(S.SAL)\n               FROM EMP S\n               WHERE S.DEPTNO = E.DEPTNO)\nORDER BY E.ENAME;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ALLEN, BLAKE, FORD, JONES, KING, SCOTT"
+   },
+   {
+    "label": "B",
+    "text": "BLAKE, CLARK, FORD, JONES, KING, SCOTT"
+   },
+   {
+    "label": "C",
+    "text": "ALLEN, BLAKE, CLARK, FORD, JONES, KING, SCOTT"
+   },
+   {
+    "label": "D",
+    "text": "BLAKE, FORD, KING, SCOTT"
+   }
+  ],
+  "explanation": "The correlated subquery recomputes that department's average using the DEPTNO of the outer row. Those higher than their own department's average are KING (5000) in department 10, SCOTT and FORD (3000) and JONES (2975) in department 20, and BLAKE (2850) and ALLEN (1600) in department 30. B is the result of comparing with the overall average 2073.21, so ALLEN in department 30 is missing and CLARK (2450) in department 10 is included. C mixes the two standards. D is the result you would get by selecting the highest earner (MAX) of each department."
+ },
+ {
+  "number": 76,
+  "domain": "SQL Basics and Applications",
+  "prompt": "What is the first row in the result of the following SQL?\nSELECT D.DNAME, V.CNT\nFROM DEPT D,\n     (SELECT DEPTNO, COUNT(*) AS CNT\n      FROM EMP\n      WHERE SAL >= 1500\n      GROUP BY DEPTNO) V\nWHERE D.DEPTNO = V.DEPTNO\nORDER BY V.CNT DESC, D.DNAME;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ACCOUNTING, 2"
+   },
+   {
+    "label": "B",
+    "text": "RESEARCH, 3"
+   },
+   {
+    "label": "C",
+    "text": "SALES, 3"
+   },
+   {
+    "label": "D",
+    "text": "OPERATIONS, 0"
+   }
+  ],
+  "explanation": "The inline view counts employees with a salary of 1500 or more by department. Department 10 has 2 (KING, CLARK), department 20 has 3 (SCOTT, FORD, JONES), and department 30 has 3 (BLAKE, ALLEN, TURNER). In descending CNT order there are two 3s, so by ascending DNAME RESEARCH comes before SALES. A is the result of reading CNT in ascending order. C: SALES is also 3 but comes later in DNAME order. D: Department 40 has no row in the inline view, so it is dropped in the inner join."
+ },
+ {
+  "number": 77,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The overall average salary of EMP is about 2073.21, and the department averages are about 2916.67 for 10, 2175 for 20, and about 1566.67 for 30. What is the result of the following SQL?\nSELECT DEPTNO\nFROM EMP\nGROUP BY DEPTNO\nHAVING AVG(SAL) > (SELECT AVG(SAL) FROM EMP)\nORDER BY DEPTNO;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "10"
+   },
+   {
+    "label": "B",
+    "text": "20, 30"
+   },
+   {
+    "label": "C",
+    "text": "10, 20"
+   },
+   {
+    "label": "D",
+    "text": "10, 20, 30"
+   }
+  ],
+  "explanation": "The subquery in the HAVING clause is a single-row subquery that returns one overall average. The departments whose average is greater than 2073.21 are 10 and 20. A misses the department 20 average of 2175. B mixes up the direction of comparison. The department 30 average of 1566.67 is smaller than the overall average. D is the result if the HAVING condition had not filtered anything."
+ },
+ {
+  "number": 78,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The jobs in department 10 are CLERK, MANAGER, and PRESIDENT, and the jobs in department 30 are CLERK, MANAGER, and SALESMAN. What is the result of the following SQL?\nSELECT JOB FROM EMP WHERE DEPTNO = 30\nMINUS\nSELECT JOB FROM EMP WHERE DEPTNO = 10\nORDER BY 1;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "SALESMAN"
+   },
+   {
+    "label": "B",
+    "text": "PRESIDENT"
+   },
+   {
+    "label": "C",
+    "text": "CLERK, MANAGER"
+   },
+   {
+    "label": "D",
+    "text": "No result rows"
+   }
+  ],
+  "explanation": "MINUS removes from the upper result the values that are in the lower result. Removing CLERK and MANAGER, which are also in department 10, from the department 30 jobs leaves only SALESMAN. PRESIDENT in B is the result of the swapped `department 10 MINUS department 30`. C is the result of the INTERSECT set operator. D: There is a job only in department 30, so it is not 0 rows."
+ },
+ {
+  "number": 79,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which of the following SQL statements runs in Oracle without error?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "SELECT EMPNO FROM EMP UNION SELECT ENAME FROM EMP;"
+   },
+   {
+    "label": "B",
+    "text": "SELECT EMPNO, ENAME FROM EMP UNION SELECT DEPTNO FROM DEPT;"
+   },
+   {
+    "label": "C",
+    "text": "SELECT DEPTNO FROM DEPT ORDER BY DEPTNO UNION ALL SELECT DEPTNO FROM EMP;"
+   },
+   {
+    "label": "D",
+    "text": "SELECT DEPTNO, NULL FROM DEPT UNION SELECT DEPTNO, ENAME FROM EMP;"
+   }
+  ],
+  "explanation": "D has 2 columns on both the upper and lower sides, and NULL matches any data type, so it can correspond to ENAME. Running it returns 18 rows. A fails with ORA-01790 because the numeric EMPNO and the character ENAME are of different data type families. B has 2 columns above and 1 column below, so the column counts differ, giving ORA-01789. C places ORDER BY after the first SELECT. In a set operation, ORDER BY can be written only once, at the very end."
+ },
+ {
+  "number": 80,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The jobs in department 10 are CLERK, MANAGER, and PRESIDENT, and the jobs in department 20 are ANALYST, CLERK, and MANAGER. What is the number of result rows of the following SQL?\nSELECT DEPTNO, JOB, COUNT(*)\nFROM EMP\nWHERE DEPTNO IN (10, 20)\nGROUP BY CUBE(DEPTNO, JOB);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "13"
+   },
+   {
+    "label": "B",
+    "text": "9"
+   },
+   {
+    "label": "C",
+    "text": "12"
+   },
+   {
+    "label": "D",
+    "text": "16"
+   }
+  ],
+  "explanation": "CUBE creates every possible grouping. (department, job) 6 rows + by department 2 rows + by job 4 rows (ANALYST, CLERK, MANAGER, PRESIDENT) + grand total 1 row = 13 rows. The 9 in B is the result of ROLLUP, which has no per-job subtotals. The 12 in C omits the grand total. The 16 in D counts the per-job subtotals again for each department; CUBE does not create the same grouping twice."
+ },
+ {
+  "number": 81,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The CLERK salaries are SMITH 800, ADAMS 1100 (both in department 20), JAMES 950 (department 30), and MILLER 1300 (department 10). In the result of the following SQL, what are the SUM(SAL), G1, and G2 values of the row where DEPTNO is NULL and JOB is CLERK?\nSELECT DEPTNO, JOB, SUM(SAL),\n       GROUPING(DEPTNO) AS G1, GROUPING(JOB) AS G2\nFROM EMP\nGROUP BY CUBE(DEPTNO, JOB);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "29025, 1, 1"
+   },
+   {
+    "label": "B",
+    "text": "4150, 0, 1"
+   },
+   {
+    "label": "C",
+    "text": "1900, 1, 0"
+   },
+   {
+    "label": "D",
+    "text": "4150, 1, 0"
+   }
+  ],
+  "explanation": "The row where DEPTNO is NULL and JOB is CLERK is the per-job subtotal, with department collapsed and grouped by job only. The sum of the salaries of the 4 CLERKs is 4150, the collapsed DEPTNO has GROUPING 1, and JOB, which is grouped by its actual value, has 0. A is the value of the grand total row, where both columns are collapsed. B reads the 1 and 0 of GROUPING backwards. GROUPING is 1 for a column collapsed by aggregation. The 1900 in C is the sum for department 20 CLERKs only."
+ },
+ {
+  "number": 82,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The hire dates in department 10 are CLARK 1981-06-09, KING 1981-11-17, and MILLER 1982-01-23, the first hire in department 20 is SMITH (1980-12-17), and the first hire in department 30 is ALLEN (1981-02-20). What is the result of the following SQL?\nSELECT ENAME\nFROM (SELECT ENAME,\n             ROW_NUMBER() OVER (PARTITION BY DEPTNO ORDER BY HIREDATE) AS RN\n      FROM EMP)\nWHERE RN = 1\nORDER BY ENAME;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ALLEN, KING, SMITH"
+   },
+   {
+    "label": "B",
+    "text": "ADAMS, JAMES, MILLER"
+   },
+   {
+    "label": "C",
+    "text": "ALLEN, CLARK, SMITH"
+   },
+   {
+    "label": "D",
+    "text": "SMITH"
+   }
+  ],
+  "explanation": "PARTITION BY DEPTNO restarts the numbering from 1 in hire date order for each department, and outside the inline view only number 1 is kept. These are CLARK in department 10, SMITH in department 20, and ALLEN in department 30, sorted by name. A picks KING, the highest-ranking employee in department 10. B is the result if numbered in descending hire date order. D is the employee who is number 1 overall when there is no PARTITION BY."
+ },
+ {
+  "number": 83,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The SALESMAN salaries are ALLEN 1600, TURNER 1500, MARTIN 1250, and WARD 1250. What is the S value in the result of the following SQL?\nSELECT ENAME, SUM(SAL) OVER (PARTITION BY JOB) AS S\nFROM EMP\nWHERE ENAME = 'ALLEN';",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1600"
+   },
+   {
+    "label": "B",
+    "text": "5600"
+   },
+   {
+    "label": "C",
+    "text": "29025"
+   },
+   {
+    "label": "D",
+    "text": "ORA-30483 error occurs"
+   }
+  ],
+  "explanation": "A window function is computed in the SELECT stage on the rows left after WHERE. WHERE leaves only the one row for ALLEN, so the SALESMAN partition also has just one row, ALLEN, and the sum is 1600. The 5600 in B assumes all 4 SALESMAN were added before WHERE. The 29025 in C is the sum of all salaries in EMP. D: ORA-30483 occurs when a window function is used in the WHERE clause, but here it is used in the SELECT clause."
+ },
+ {
+  "number": 84,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Viewing department 20 in hire date order gives SMITH (800), JONES (2975), FORD (3000), SCOTT (3000), and ADAMS (1100). In the result of the following SQL, what is the L value in the SCOTT row?\nSELECT ENAME, LEAD(SAL, 2, 0) OVER (ORDER BY HIREDATE) AS L\nFROM EMP\nWHERE DEPTNO = 20\nORDER BY HIREDATE;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1100"
+   },
+   {
+    "label": "B",
+    "text": "NULL"
+   },
+   {
+    "label": "C",
+    "text": "0"
+   },
+   {
+    "label": "D",
+    "text": "3000"
+   }
+  ],
+  "explanation": "`LEAD(SAL, 2, 0)` fetches the salary two rows later, and uses the default value 0 if there is no such row. After SCOTT there is only one row, ADAMS, so the value is 0. The 1100 in A is the value one row later (ADAMS), which is also the L value in the FORD row. B: The result would be NULL if the default were omitted, but here 0 was given. The 3000 in D is the value of the immediately preceding row (FORD), as if looking backward like `LAG(SAL, 1)`."
+ },
+ {
+  "number": 85,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The most recently hired employee is ADAMS (1987-05-23), the next is SCOTT (1987-04-19), and the earliest hired employee is SMITH (1980-12-17). What is the result of the following SQL?\nSELECT ENAME\nFROM (SELECT ENAME FROM EMP ORDER BY HIREDATE DESC)\nWHERE ROWNUM <= 2;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ADAMS, SCOTT"
+   },
+   {
+    "label": "B",
+    "text": "SMITH, ALLEN"
+   },
+   {
+    "label": "C",
+    "text": "SCOTT, ADAMS"
+   },
+   {
+    "label": "D",
+    "text": "ADAMS, SCOTT, MILLER"
+   }
+  ],
+  "explanation": "The inline view first sorts by hire date in descending order, and the outer ROWNUM assigns 1 and 2 in that order, leaving two rows. The order is ADAMS, SCOTT. B is the first two employees when sorted in ascending order. C assumes the order is reversed outside, but the order of the inline view carries through. D: `ROWNUM <= 2` stops at exactly 2 rows."
+ },
+ {
+  "number": 86,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Viewing EMP in ascending salary order gives SMITH 800, JAMES 950, ADAMS 1100, MARTIN 1250, WARD 1250, MILLER 1300, and so on. What is the number of result rows of the following SQL?\nSELECT ENAME, SAL\nFROM EMP\nORDER BY SAL\nFETCH FIRST 4 ROWS WITH TIES;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "4"
+   },
+   {
+    "label": "B",
+    "text": "5"
+   },
+   {
+    "label": "C",
+    "text": "6"
+   },
+   {
+    "label": "D",
+    "text": "14"
+   }
+  ],
+  "explanation": "`WITH TIES` also returns the rows whose ORDER BY value is the same as that of the nth row. The employees with the same salary as the 4th row, 1250, are MARTIN and WARD, so there are 5 rows. The 4 in A is the result of `ROWS ONLY`. C includes MILLER, who has the next salary of 1300. D: FETCH FIRST is applied normally after ORDER BY, so not all 14 rows are returned."
+ },
+ {
+  "number": 87,
+  "domain": "SQL Basics and Applications",
+  "prompt": "BLAKE has 5 subordinates, ALLEN, WARD, MARTIN, TURNER, and JAMES, and they have no subordinates. What is the result of the following SQL?\nSELECT COUNT(*)\nFROM EMP\nSTART WITH ENAME = 'BLAKE'\nCONNECT BY PRIOR EMPNO = MGR;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "6"
+   },
+   {
+    "label": "B",
+    "text": "5"
+   },
+   {
+    "label": "C",
+    "text": "1"
+   },
+   {
+    "label": "D",
+    "text": "14"
+   }
+  ],
+  "explanation": "START WITH sets BLAKE as the root, and `PRIOR EMPNO = MGR` traverses downward from parent to child. The root BLAKE 1 row + 5 subordinate rows = 6 rows. B misses that the root row is included in the result. The 1 in C counts only the root BLAKE, missing that the child rows are attached. D is the number of rows when expanding with KING as the root."
+ },
+ {
+  "number": 88,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Under KING are JONES, BLAKE, and CLARK; under JONES are SCOTT and FORD; under SCOTT is ADAMS; and under FORD is SMITH. Under BLAKE are 5 employees, and under CLARK is MILLER. What is the result of the following SQL?\nSELECT COUNT(*)\nFROM EMP\nWHERE LEVEL = 3\nSTART WITH MGR IS NULL\nCONNECT BY PRIOR EMPNO = MGR;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "2"
+   },
+   {
+    "label": "B",
+    "text": "8"
+   },
+   {
+    "label": "C",
+    "text": "3"
+   },
+   {
+    "label": "D",
+    "text": "10"
+   }
+  ],
+  "explanation": "For LEVEL, the root KING is 1, and JONES, BLAKE, and CLARK are 2. LEVEL 3 consists of SCOTT and FORD, BLAKE's 5 subordinates, and MILLER, for 8 employees. The 2 in A is the number of LEVEL 4 employees, ADAMS and SMITH. The 3 in C is the number at LEVEL 2. The 10 in D counts everything at LEVEL 3 and above."
+ },
+ {
+  "number": 89,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The salaries by job are: department 10 CLERK 1300 and MANAGER 2450; department 20 CLERK 800 and 1100 and MANAGER 2975; department 30 CLERK 950 and MANAGER 2850. In the result of the following SQL, what are the C and M values of the row where DEPTNO is 20?\nSELECT *\nFROM (SELECT DEPTNO, JOB, SAL FROM EMP)\nPIVOT (MAX(SAL) FOR JOB IN ('CLERK' AS C, 'MANAGER' AS M))\nORDER BY DEPTNO;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1100, 2975"
+   },
+   {
+    "label": "B",
+    "text": "1900, 2975"
+   },
+   {
+    "label": "C",
+    "text": "800, 2975"
+   },
+   {
+    "label": "D",
+    "text": "2975, 1100"
+   }
+  ],
+  "explanation": "PIVOT creates one column for each JOB value in FOR and computes MAX(SAL) grouped by the remaining column, DEPTNO. The maximum for department 20 CLERK is 1100 and for MANAGER is 2975. The 1900 in B is the value when aggregated with SUM. The 800 in C is the MIN value. D reads the IN list order and column order backwards. The columns appear in the order written in the IN list (C, M)."
+ },
+ {
+  "number": 90,
+  "domain": "SQL Basics and Applications",
+  "prompt": "The JOBs in EMP are 4 CLERK, 4 SALESMAN, 3 MANAGER, 2 ANALYST, and 1 PRESIDENT. What is the result of the following SQL?\nSELECT COUNT(*)\nFROM EMP\nWHERE REGEXP_LIKE(JOB, 'MAN$');",
+  "choices": [
+   {
+    "label": "A",
+    "text": "7"
+   },
+   {
+    "label": "B",
+    "text": "3"
+   },
+   {
+    "label": "C",
+    "text": "0"
+   },
+   {
+    "label": "D",
+    "text": "4"
+   }
+  ],
+  "explanation": "`$` means the end of the string, so 'MAN$' finds values ending in MAN. Only the 4 SALESMAN match. The 7 in A counts every MANAGER and SALESMAN, which contain MAN somewhere, as if there were no `$`. The 3 in B is the result of `'^MAN'`, which matches values starting with MAN. The 0 in C assumes the whole string must be equal, as in `LIKE 'MAN'`, but REGEXP_LIKE is true if the pattern appears anywhere."
+ },
+ {
+  "number": 91,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In TEX4_EMP, a copy of EMP, KING's SAL is 5000 and COMM is NULL. After running the following statement, what are KING's SAL and COMM?\nUPDATE TEX4_EMP SET SAL = SAL + 100, COMM = SAL WHERE ENAME = 'KING';",
+  "choices": [
+   {
+    "label": "A",
+    "text": "5100, 5100"
+   },
+   {
+    "label": "B",
+    "text": "5000, 5000"
+   },
+   {
+    "label": "C",
+    "text": "An error occurs because the same column is referenced twice in SET"
+   },
+   {
+    "label": "D",
+    "text": "5100, 5000"
+   }
+  ],
+  "explanation": "Columns on the right side of SET in an UPDATE use their values before the change. SAL becomes 5000 + 100 = 5100, and COMM receives 5000, the SAL before the change. A is the answer that assumes SET is applied from the left in sequence and reads the changed SAL. B is the answer that assumes the SAL change was not applied. Changing a column once on the left side of SET and reading it on the right side is allowed, so C is also wrong."
+ },
+ {
+  "number": 92,
+  "domain": "SQL Basics and Applications",
+  "prompt": "TEX4_BONUS contains 3 employees of department 10 (CLARK SAL 2450, KING 5000, MILLER 1300) with BONUS = SAL. Department 20 has 5 employees. After running the following MERGE, what is the number of rows in TEX4_BONUS?\nMERGE INTO TEX4_BONUS B\nUSING (SELECT EMPNO, ENAME, SAL FROM EMP WHERE DEPTNO IN (10, 20)) E\nON (B.EMPNO = E.EMPNO)\nWHEN MATCHED THEN UPDATE SET B.BONUS = E.SAL * 0.1 DELETE WHERE (B.BONUS > 400)\nWHEN NOT MATCHED THEN INSERT (EMPNO, ENAME, BONUS) VALUES (E.EMPNO, E.ENAME, 0);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "8"
+   },
+   {
+    "label": "B",
+    "text": "3"
+   },
+   {
+    "label": "C",
+    "text": "7"
+   },
+   {
+    "label": "D",
+    "text": "An error occurs because DELETE cannot be used inside MERGE"
+   }
+  ],
+  "explanation": "The 3 employees of department 10 are MATCHED, so BONUS is changed to 10% of SAL (245, 500, 130). Then DELETE WHERE deletes KING, whose changed BONUS is > 400. The 5 employees of department 20 are NOT MATCHED, so they are INSERTed. 3 - 1 + 5 = 7. A is the answer that ignores DELETE WHERE. B is the answer that assumes only the UPDATE happened without the INSERT. Since Oracle 10g, DELETE WHERE can be appended to the MATCHED clause, so D is also wrong."
+ },
+ {
+  "number": 93,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Which statement about Oracle's MERGE statement is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Rows that are not in the source but only in the target are deleted by MERGE"
+   },
+   {
+    "label": "B",
+    "text": "It runs even with only a WHEN NOT MATCHED clause"
+   },
+   {
+    "label": "C",
+    "text": "A target column used in the ON clause can also be changed with UPDATE SET"
+   },
+   {
+    "label": "D",
+    "text": "The target table name must be written again inside the UPDATE and INSERT clauses"
+   }
+  ],
+  "explanation": "Since Oracle 10g, you may write just one of WHEN MATCHED and WHEN NOT MATCHED (in 9i both were required). MERGE runs based on the source and neither deletes nor changes rows that exist only in the target, so A is wrong. Changing a column used in the ON clause with UPDATE SET raises ORA-38104, so C is wrong. Inside MERGE you write `UPDATE SET …` and `INSERT (…) VALUES (…)` directly without repeating the table name, so D is also wrong."
+ },
+ {
+  "number": 94,
+  "domain": "SQL Basics and Applications",
+  "prompt": "In Oracle, there are TEX4_A (4 rows), a copy of DEPT, and TEX4_B (14 rows), a copy of EMP. After running the following statements in order, what is the number of rows in TEX4_A?\nDELETE FROM TEX4_A WHERE DEPTNO IN (30, 40);\nTRUNCATE TABLE TEX4_B;\nROLLBACK;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "4"
+   },
+   {
+    "label": "B",
+    "text": "0"
+   },
+   {
+    "label": "C",
+    "text": "2"
+   },
+   {
+    "label": "D",
+    "text": "The ROLLBACK after TRUNCATE raises an error and TEX4_A has 4 rows"
+   }
+  ],
+  "explanation": "TRUNCATE is DDL, so it implicitly COMMITs the transaction that was open before it ran. This is true even for DDL on a different table, so the DELETE on TEX4_A (2 rows) is also committed. The ROLLBACK afterward has nothing to undo, so TEX4_A has 2 rows. A is the answer that does not take the automatic commit of DDL into account. B is the answer that assumes TRUNCATE was applied to TEX4_A as well. ROLLBACK completes without error even if there are no changes to undo, so D is also wrong."
+ },
+ {
+  "number": 95,
+  "domain": "SQL Basics and Applications",
+  "prompt": "Session 1 UPDATEs a row and has not yet COMMITted. If session 2 then SELECTs the same row, it sees the value before the change. Which transaction property is most closely related to this behavior?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "Atomicity"
+   },
+   {
+    "label": "B",
+    "text": "Isolation"
+   },
+   {
+    "label": "C",
+    "text": "Durability"
+   },
+   {
+    "label": "D",
+    "text": "Consistency"
+   }
+  ],
+  "explanation": "Isolation is what prevents other transactions from seeing the intermediate results of a running transaction. Session 2 cannot see the change before COMMIT and sees the value before the change. Atomicity is the property that all operations of a transaction are applied or none are. Durability is the property that committed results remain after a failure. Consistency is the property that data obeys rules such as constraints before and after execution."
+ },
+ {
+  "number": 96,
+  "domain": "SQL Basics and Applications",
+  "prompt": "After running the following statements in order, what is the result of the last SELECT?\nCREATE TABLE TEX4_SRC (ID NUMBER PRIMARY KEY, NM VARCHAR2(10) NOT NULL, QTY NUMBER DEFAULT 0 CHECK (QTY >= 0));\nINSERT INTO TEX4_SRC VALUES (1, 'A', 5);\nCREATE TABLE TEX4_CPY AS SELECT * FROM TEX4_SRC;\nINSERT INTO TEX4_CPY VALUES (1, 'B', 1);\nINSERT INTO TEX4_CPY VALUES (2, NULL, 1);\nINSERT INTO TEX4_CPY VALUES (3, 'C', -1);\nINSERT INTO TEX4_CPY (ID, NM) VALUES (4, 'D');\nSELECT COUNT(*), COUNT(QTY) FROM TEX4_CPY;",
+  "choices": [
+   {
+    "label": "A",
+    "text": "5, 5"
+   },
+   {
+    "label": "B",
+    "text": "2, 2"
+   },
+   {
+    "label": "C",
+    "text": "4, 3"
+   },
+   {
+    "label": "D",
+    "text": "All constraints are copied, so the four INSERTs fail and the result is 1, 1"
+   }
+  ],
+  "explanation": "When copying with CTAS, only the NOT NULL constraint carries over, and PRIMARY KEY, CHECK, and DEFAULT are dropped. The duplicate ID 1 goes in because there is no PK, and QTY -1 also goes in because there is no CHECK. Only the row that puts NULL in NM fails with ORA-01400 because of NOT NULL. The last row has no DEFAULT, so QTY is NULL. So COUNT(*) is 4 and COUNT(QTY) is 3. A assumes NOT NULL is dropped too and DEFAULT 0 remains. B assumes PK, CHECK, and DEFAULT are all copied (the duplicate ID 1, NULL, and -1 rows fail, and the ID 4 row goes in with QTY 0, giving 2 rows). D assumes all constraints are copied, but even so the ID 4 row would go in, so it does not hold."
+ },
+ {
+  "number": 97,
+  "domain": "SQL Basics and Applications",
+  "prompt": "There is TEX4_EMP, a CTAS copy of the EMPNO, ENAME, and SAL of department 10 (CLARK, KING, MILLER) in EMP. ENAME is VARCHAR2(10). Which of the following statements causes an error?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ALTER TABLE TEX4_EMP MODIFY (ENAME VARCHAR2(4));"
+   },
+   {
+    "label": "B",
+    "text": "ALTER TABLE TEX4_EMP ADD (GRADE NUMBER DEFAULT 1 NOT NULL);"
+   },
+   {
+    "label": "C",
+    "text": "ALTER TABLE TEX4_EMP RENAME COLUMN SAL TO SALARY;"
+   },
+   {
+    "label": "D",
+    "text": "ALTER TABLE TEX4_EMP MODIFY (ENAME VARCHAR2(30));"
+   }
+  ],
+  "explanation": "CLARK (5 characters) and MILLER (6 characters) are longer than 4 bytes, so the MODIFY that shortens the length fails with ORA-01441. In B, DEFAULT is given as well, so the existing 3 rows are filled with 1, and a NOT NULL column can be added even when rows exist. C is valid syntax for renaming a column. A MODIFY that increases the length, as in D, always works."
+ },
+ {
+  "number": 98,
+  "domain": "SQL Basics and Applications",
+  "prompt": "After running the following INSERTs in order on the table created by CREATE TABLE TEX4_U (A NUMBER UNIQUE, B NUMBER CHECK (B > 0));, what is the result of SELECT COUNT(*) FROM TEX4_U;?\nINSERT INTO TEX4_U VALUES (NULL, NULL);\nINSERT INTO TEX4_U VALUES (NULL, 5);\nINSERT INTO TEX4_U VALUES (1, NULL);\nINSERT INTO TEX4_U VALUES (1, 3);\nINSERT INTO TEX4_U VALUES (2, 0);",
+  "choices": [
+   {
+    "label": "A",
+    "text": "1"
+   },
+   {
+    "label": "B",
+    "text": "4"
+   },
+   {
+    "label": "C",
+    "text": "3"
+   },
+   {
+    "label": "D",
+    "text": "NULL cannot be inserted into UNIQUE and CHECK columns, so 1"
+   }
+  ],
+  "explanation": "UNIQUE does not treat NULLs as equal to each other, so column A can accept multiple rows with NULL. CHECK blocks only when the condition is FALSE and lets through the UNKNOWN produced by a NULL comparison. So the first three rows go in. (1, 3) fails with ORA-00001 because A=1 already exists, and (2, 0) fails with ORA-02290 because B > 0 is false. A and D are answers that treat NULL as a UNIQUE or CHECK violation. B misses either the UNIQUE violation or the CHECK violation."
+ },
+ {
+  "number": 99,
+  "domain": "SQL Basics and Applications",
+  "prompt": "User A gave B a privilege with `GRANT CREATE TABLE TO B WITH ADMIN OPTION;`, and B gave C the CREATE TABLE privilege. Then A ran `REVOKE CREATE TABLE FROM B;`. What is the result?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "The privileges of both B and C are revoked together"
+   },
+   {
+    "label": "B",
+    "text": "The REVOKE fails because C still holds the privilege"
+   },
+   {
+    "label": "C",
+    "text": "Only B's privilege is revoked, and C keeps theirs"
+   },
+   {
+    "label": "D",
+    "text": "B's privilege remains and only C's privilege is revoked"
+   }
+  ],
+  "explanation": "CREATE TABLE is a system privilege, and revoking a system privilege received with WITH ADMIN OPTION does not cascade. Only B's privilege disappears, and the privilege B gave to C remains. A, in which both are revoked together, is the behavior when an object privilege was granted with WITH GRANT OPTION. REVOKE does not fail even if privileges were given to other users, so B is also wrong. The target of REVOKE is B, so D is also wrong."
+ },
+ {
+  "number": 100,
+  "domain": "SQL Basics and Applications",
+  "prompt": "SCOTT wants to give KIM the SELECT and UPDATE privileges on his own EMP table, while allowing KIM to grant these privileges to other users again. Which statement is correct?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "GRANT SELECT, UPDATE ON EMP TO KIM WITH ADMIN OPTION;"
+   },
+   {
+    "label": "B",
+    "text": "GRANT SELECT, UPDATE TO KIM ON EMP WITH GRANT OPTION;"
+   },
+   {
+    "label": "C",
+    "text": "GRANT SELECT, UPDATE ON EMP FROM KIM WITH GRANT OPTION;"
+   },
+   {
+    "label": "D",
+    "text": "GRANT SELECT, UPDATE ON EMP TO KIM WITH GRANT OPTION;"
+   }
+  ],
+  "explanation": "Object privileges are granted in the order `GRANT privilege ON object TO user`, and to allow re-granting you attach WITH GRANT OPTION. WITH ADMIN OPTION is an option attached to system privileges, so A is wrong. In B, ON object comes after TO, so the syntax order is wrong. FROM is the keyword used in REVOKE, while GRANT uses TO, so C is also wrong."
+ }
+]

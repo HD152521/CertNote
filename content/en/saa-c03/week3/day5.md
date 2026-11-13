@@ -10,7 +10,7 @@ How do these four areas connect into one?
 
 When you choose an EC2 instance (family and purchase option), you then decide what storage to attach to it (EBS/Instance Store/shared file system). To distribute traffic across multiple instances, you put an ELB in front (ALB/NLB/GLB). And what automatically adjusts the number of instances according to traffic is the ASG.
 
-![The decision path in which each axis of the requirements leads to choices of instance, storage, ELB, and scaling](/diagrams/week3-decision-map.svg)
+![The decision path in which each axis of the requirements leads to choices of instance, storage, ELB, and scaling](/diagrams/en/week3-decision-map.svg)
 
 ## Key Comparison Tables: At a Glance
 

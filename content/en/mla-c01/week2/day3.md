@@ -69,7 +69,7 @@ WHERE year = '2026';
 
 **Redshift Spectrum** is the bridge between the two — from Redshift you can **query data in S3 directly as external tables**. Keep frequently used (hot) data inside Redshift and cold data in S3, and join them with Spectrum.
 
-![Structure that joins Redshift internal tables and S3 external tables with Spectrum](/diagrams/redshift-spectrum.svg)
+![Structure that joins Redshift internal tables and S3 external tables with Spectrum](/diagrams/en/redshift-spectrum.svg)
 
 On the ML integration side there is also **Redshift ML**. With the SQL `CREATE MODEL` statement you can call SageMaker Autopilot from inside Redshift to train and run inference. You create a prediction column with SQL alone, without moving the data.
 

@@ -1,0 +1,40 @@
+{
+  "difficulty": "Beginner · Aimed at learners who are new to Linux",
+  "prerequisites": "There are no eligibility requirements for either Part 1 or Part 2. Unlike Level 1, Part 2 does not require passing Part 1.",
+  "languages": [
+    "Korean"
+  ],
+  "domains": [
+    {
+      "name": "Linux Fundamentals"
+    },
+    {
+      "name": "Linux Operation and Management"
+    },
+    {
+      "name": "Using Linux"
+    }
+  ],
+  "faq": [
+    {
+      "q": "How is the Linux Master Level 2 exam administered?",
+      "a": "It has two stages, Part 1 and Part 2. Part 1 is an online exam of 50 four-option multiple-choice questions in 60 minutes. Part 2 is a written exam taken at a test center, with 80 four-option questions in 100 minutes."
+    },
+    {
+      "q": "What is the passing standard?",
+      "a": "A score of 60 or higher passes, and scoring below 40% in any subject is an automatic fail. This standard applies to Part 1 and Part 2 separately."
+    },
+    {
+      "q": "How much is the exam fee?",
+      "a": "Part 1 costs KRW 22,000 and Part 2 costs KRW 44,000. You register and pay for Part 1 and Part 2 separately."
+    },
+    {
+      "q": "Do I have to pass Part 1 before taking Part 2?",
+      "a": "No. Level 2 has no eligibility requirements for either Part 1 or Part 2. Level 1 restricts Part 2 to Part 1 passers, but Level 2 does not."
+    },
+    {
+      "q": "Which subjects are covered?",
+      "a": "There are three subjects: Linux Fundamentals, Linux Operation and Management, and Using Linux. Linux Fundamentals covers understanding Linux, installation, and basic commands; Operation and Management covers file system commands, the shell, process management, editors, software installation, and device configuration; and Using Linux covers the X Window system, internet usage, and application areas. The scoring weight for each subject is not published in the official notice."
+    }
+  ]
+}

@@ -92,7 +92,7 @@ Pooling reduces the spatial size of the feature map, lowering computation and ma
    Feature extraction (backbone)            Classification head
 ```
 
-![A typical CNN structure that repeats convolution and pooling to abstract from low-level to high-level patterns](/diagrams/cnn-structure.svg)
+![A typical CNN structure that repeats convolution and pooling to abstract from low-level to high-level patterns](/diagrams/en/cnn-structure.svg)
 
 - The front part (conv/pool blocks) is the **feature extractor (backbone)**.
 - The back part (Dense + Softmax) is the **classification head**.

@@ -129,7 +129,7 @@ As a hypothetical case, a company built an automation where, when the "Out of Me
 
 To receive another account's Log Group into your own account's Kinesis, create a **Log Destination** resource and set up a cross-account IAM Trust.
 
-![Structure in which logs from a source account and an analysis account are gathered into Kinesis and flow to Lambda and OpenSearch](/diagrams/cross-account-subscription.svg)
+![Structure in which logs from a source account and an analysis account are gathered into Kinesis and flow to Lambda and OpenSearch](/diagrams/en/cross-account-subscription.svg)
 
 You must attach a Resource Policy that allows `logs:PutSubscriptionFilter` for Account B to the Destination. This pattern is the answer to the exam's "analyze logs from multiple accounts in real time in a central security account" scenario.
 

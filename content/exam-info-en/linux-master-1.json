@@ -1,0 +1,40 @@
+{
+  "difficulty": "Advanced · Heavy emphasis on memorizing commands and configuration files",
+  "prerequisites": "There are no eligibility requirements for Part 1. Part 2 is open only to Part 1 passers, who may take it within 2 years of the results announcement date.",
+  "languages": [
+    "Korean"
+  ],
+  "domains": [
+    {
+      "name": "Understanding Practical Linux"
+    },
+    {
+      "name": "Linux System Administration"
+    },
+    {
+      "name": "Using Linux Networking and Services"
+    }
+  ],
+  "faq": [
+    {
+      "q": "How is the Linux Master Level 1 exam administered?",
+      "a": "It has two stages: Part 1 (written) and Part 2 (practical). Part 1 consists of 100 multiple-choice questions with four options in 100 minutes. Part 2 consists of 10 short-answer or essay written questions plus 5 to 7 hands-on practical tasks, in 100 minutes. Part 2 is weighted 40% written and 60% practical."
+    },
+    {
+      "q": "What is the passing standard?",
+      "a": "A score of 60 or higher passes, and scoring below 40% in any subject is an automatic fail. This standard applies to Part 1 and Part 2 separately."
+    },
+    {
+      "q": "How much is the exam fee?",
+      "a": "Part 1 costs KRW 55,000 and Part 2 costs KRW 77,000. You register and pay for Part 1 and Part 2 separately."
+    },
+    {
+      "q": "How long do I have to take Part 2?",
+      "a": "Part 1 passers may take Part 2 within 2 years of the results announcement date. Part 1 itself has no eligibility requirements."
+    },
+    {
+      "q": "Which subjects are covered?",
+      "a": "There are three subjects: Understanding Practical Linux, Linux System Administration, and Using Linux Networking and Services. The question distribution by subject is not published in the official notice."
+    }
+  ]
+}

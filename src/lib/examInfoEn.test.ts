@@ -44,9 +44,10 @@ describe('시험 정보 영어판', () => {
     expect(HANGUL.test(visibleText(ko))).toBe(true);
   });
 
-  test('영어 파일이 없는 시험(SQLD 등)은 한국어 정본을 그대로 돌려준다', () => {
+  test('영어 파일이 없는 시험은 한국어 정본을 그대로 돌려준다', () => {
     const sqld = getExamInfo('sqld')!;
-    expect(localizeExamInfo(sqld, 'sqld', 'en')).toEqual(sqld);
+    // 영어 파일이 생긴 슬러그라도, 파일이 없는 슬러그로 호출하면 정본이 그대로 나와야 한다.
+    expect(localizeExamInfo(sqld, 'no-english-file', 'en')).toEqual(sqld);
   });
 
   test('영어 파일에는 정본 외의 필드(숫자·URL)가 없다', () => {

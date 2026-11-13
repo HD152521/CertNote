@@ -149,7 +149,7 @@ Diagnosis: if training performance is good but validation performance is bad and
 
 Looking at the learning curves, the three states separate at a glance.
 
-![Comparison of training-loss and validation-loss curves for the three cases: underfitting, good fit, and overfitting](/diagrams/overfit-underfit.svg)
+![Comparison of training-loss and validation-loss curves for the three cases: underfitting, good fit, and overfitting](/diagrams/en/overfit-underfit.svg)
 
 - The point where the validation loss **hits bottom and rises again** is the reference point for early stopping.
 - If training and validation are both high and flat, you need to enlarge the model or train longer (underfitting).

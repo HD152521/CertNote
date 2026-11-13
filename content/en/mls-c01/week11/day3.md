@@ -186,7 +186,7 @@ estimator = Estimator(
 
 ### The Double Gate: Key Policy + IAM Policy
 
-![A double gate: decryption succeeds only when both the KMS key policy and the IAM permission policy allow it](/diagrams/kms-double-gate.svg)
+![A double gate: decryption succeeds only when both the KMS key policy and the IAM permission policy allow it](/diagrams/en/kms-double-gate.svg)
 
 - Most resources are accessed with an IAM policy alone, but **for KMS the key policy is the primary gate**. If the key policy does not delegate to IAM, decryption does not work even with administrator permissions.
 

@@ -199,7 +199,7 @@ Math Expressions can also be used as the direct input of an alarm. A rule such a
 
 Fixed-threshold alarms (e.g., CPU > 80%) produce an explosion of false positives for workloads whose traffic pattern differs by time of day. **Anomaly Detection** learns a metric's daily, weekly, and hourly patterns and generates a dynamic baseline.
 
-![A band of upper and lower bounds built around the learned mean, and a metric that breaks out of it and triggers an alarm](/diagrams/anomaly-detection-band.svg)
+![A band of upper and lower bounds built around the learned mean, and a metric that breaks out of it and triggers an alarm](/diagrams/en/anomaly-detection-band.svg)
 
 CloudWatch learns from the most recent 2 weeks (14 days) of data to build a regression model in the STL/ARIMA family. Model training takes 5 to 15 minutes, and it **retrains every hour** to adapt to pattern changes. The operator only needs to specify the standard deviation multiplier (usually 2 or 3).
 

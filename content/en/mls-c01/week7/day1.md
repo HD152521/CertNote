@@ -146,7 +146,7 @@ To reduce the loss, you need to know how much each weight contributes to it. Bac
 5. Repeat 1~4 per batch/epoch
 ```
 
-![Forward pass from input to loss, and backpropagation passing gradients backward through the chain rule](/diagrams/backpropagation.svg)
+![Forward pass from input to loss, and backpropagation passing gradients backward through the chain rule](/diagrams/en/backpropagation.svg)
 
 - The **gradient** tells you "if I increase this weight, in which direction and by how much does the loss change."
 - With **gradient descent**, the weights are moved a little at a time in the direction opposite to the gradient.

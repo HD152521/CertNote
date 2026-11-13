@@ -1,0 +1,13 @@
+{
+  "slug": "linux-master-2",
+  "code": "Linux Master 2",
+  "level": "grade-2",
+  "name": "KAIT Linux Master - Level 2",
+  "weeks": 11,
+  "accent": "#FCC624",
+  "order": 5,
+  "dayCount": 55,
+  "sourceRepo": "linux-master-2",
+  "syncedAt": "2026-09-02T00:00:00.000Z",
+  "section": "linux"
+}

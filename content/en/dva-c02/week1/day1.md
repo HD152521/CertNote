@@ -86,7 +86,7 @@ CloudFront Functions and Lambda@Edge are also frequently confused. **CloudFront 
 
 A common misunderstanding among developers new to the cloud is "AWS will handle security too." In reality there is a clear division: **AWS = Security OF the Cloud / Customer = Security IN the Cloud**. More important is that **the responsibility boundary moves up and down depending on the abstraction level of the service you choose**.
 
-![The shared responsibility boundary, where customer responsibility grows from fully managed toward IaaS](/diagrams/shared-responsibility-4tier.svg)
+![The shared responsibility boundary, where customer responsibility grows from fully managed toward IaaS](/diagrams/en/shared-responsibility-4tier.svg)
 
 Even for the same "DB query," with RDS the engine patching, backups, and OS are AWS's, while writing queries, index design, and SG configuration are the customer's. If you install MySQL directly on EC2, even OS patching comes down to the customer. With Lambda, even runtime security patches are AWS's responsibility, and the customer only needs to care about code vulnerabilities and IAM permissions. If you memorize the principle that **the higher the abstraction level, the higher the responsibility boundary moves**, questions about who is responsible become easy to solve.
 

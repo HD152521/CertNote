@@ -1,0 +1,1202 @@
+[
+ {
+  "number": 1,
+  "domain": "Linux Operations and Management",
+  "prompt": "Using the BSD-style options of the ps command, you want to list every process on the system, including those not attached to a terminal, together with user information. Which is the most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ps -e"
+   },
+   {
+    "label": "B",
+    "text": "ps aux"
+   },
+   {
+    "label": "C",
+    "text": "ps -u"
+   },
+   {
+    "label": "D",
+    "text": "ps -l"
+   }
+  ],
+  "explanation": "The BSD-style aux combines a (all users), u (user-oriented format) and x (include processes without a controlling terminal), printing all processes with owner, CPU and memory. -e also lists all processes, but it is UNIX style and does not show the user/resource columns by default. -u specifies a particular user, so without an argument it does not match the intent, and -l is a long format showing PPID, priority and so on, not meant for showing all processes with user resource usage."
+ },
+ {
+  "number": 2,
+  "domain": "Linux Operations and Management",
+  "prompt": "You want to send a termination signal to a specific process (PID 1234), using the default termination signal that gives the process a chance to clean up and exit gracefully. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "kill -2 1234"
+   },
+   {
+    "label": "B",
+    "text": "kill -1 1234"
+   },
+   {
+    "label": "C",
+    "text": "kill -15 1234"
+   },
+   {
+    "label": "D",
+    "text": "kill -9 1234"
+   }
+  ],
+  "explanation": "Signal 15 (SIGTERM) is the default signal of kill and asks the process to run its termination handler and exit gracefully. Signal 2 (SIGINT) is the interrupt equivalent to Ctrl+C and is not the standard graceful-termination request, signal 1 (SIGHUP) is used for terminal hangup or reloading daemon configuration, and signal 9 (SIGKILL) forcibly kills the process immediately without running any termination handler, giving it no chance to clean up."
+ },
+ {
+  "number": 3,
+  "domain": "File Systems and Permissions",
+  "prompt": "A file report.txt has the permissions -rw-r--r--. You want to add execute permission for the group only, leaving the read permissions of group and others as they are. Which command, which does not touch the existing permissions, is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chmod g=x report.txt"
+   },
+   {
+    "label": "B",
+    "text": "chmod +x report.txt"
+   },
+   {
+    "label": "C",
+    "text": "chmod 754 report.txt"
+   },
+   {
+    "label": "D",
+    "text": "chmod g+x report.txt"
+   }
+  ],
+  "explanation": "g+x adds only the execute permission while keeping the group's existing permissions, so read for group and others remains. g=x overwrites the group permissions with execute only, removing the existing group read, and +x adds execute for owner, group and others, which is too broad. 754 may look like it gives the same result, but it is absolute mode, so you must compute and specify the whole permission state yourself; it is not a relative way of specifying that leaves the existing permissions untouched."
+ },
+ {
+  "number": 4,
+  "domain": "File Systems and Permissions",
+  "prompt": "You want to change the owner of the directory /data and everything under it to alice and the group to dev in one go. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chown -R dev:alice /data"
+   },
+   {
+    "label": "B",
+    "text": "chown alice:dev -r /data"
+   },
+   {
+    "label": "C",
+    "text": "chown -R alice.dev /data/*"
+   },
+   {
+    "label": "D",
+    "text": "chown -R alice:dev /data"
+   }
+  ],
+  "explanation": "chown -R alice:dev /data recursively changes /data itself and everything beneath it to owner alice and group dev. The dev:alice form swaps owner and group, making dev the owner and alice the group, and the lowercase -r in the alice:dev -r form is not recognized by chown as recursive (-R). The alice.dev /data/* form relies on globbing of /data/*, which can miss hidden entries starting with a dot (.) and /data itself."
+ },
+ {
+  "number": 5,
+  "domain": "File Systems and Permissions",
+  "prompt": "In a shared directory /share, you want anyone to be able to create files, but only the file's creator and root to be able to delete or rename their own files. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chmod 1777 /share"
+   },
+   {
+    "label": "B",
+    "text": "chmod 2777 /share"
+   },
+   {
+    "label": "C",
+    "text": "chmod 0777 /share"
+   },
+   {
+    "label": "D",
+    "text": "chmod 4777 /share"
+   }
+  ],
+  "explanation": "The leading digit 1 is the sticky bit; when it is set, files in the directory can be deleted or renamed only by their owner and root (the /tmp approach). A leading 2 is setgid, which makes new files inherit the group, a leading 4 is setuid, which applies the owner's privileges on execution, and a leading 0 means no special permission, so other users can also delete someone else's files."
+ },
+ {
+  "number": 6,
+  "domain": "File Systems and Permissions",
+  "prompt": "You want to create (format) an ext4 file system on a new partition /dev/sdb1. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "tune2fs -t ext4 /dev/sdb1"
+   },
+   {
+    "label": "B",
+    "text": "mke2fs /dev/sdb1 ext4"
+   },
+   {
+    "label": "C",
+    "text": "mkswap /dev/sdb1"
+   },
+   {
+    "label": "D",
+    "text": "mkfs -t ext4 /dev/sdb1"
+   }
+  ],
+  "explanation": "mkfs -t ext4 (= mkfs.ext4) creates an ext4 file system on the specified partition. tune2fs is a tool for adjusting attributes of an existing ext file system, not a format command, and mke2fs defaults to ext2 and requires the type to be given with -t, so passing 'ext4' as an argument is incorrect syntax. mkswap creates a swap area, not a file system."
+ },
+ {
+  "number": 7,
+  "domain": "File Systems and Permissions",
+  "prompt": "You want to permanently register /dev/sdb1 to be mounted automatically at /data on boot. Which is the correct order of the fields in the /etc/fstab line you edit?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "mount point  device  file system type  mount options  dump  order (fsck)"
+   },
+   {
+    "label": "B",
+    "text": "device  mount point  file system type  mount options  dump  order (fsck)"
+   },
+   {
+    "label": "C",
+    "text": "device  file system type  mount point  dump  mount options  order (fsck)"
+   },
+   {
+    "label": "D",
+    "text": "mount point  device  mount options  file system type  order (fsck)  dump"
+   }
+  ],
+  "explanation": "Each line of /etc/fstab consists of 6 fields: 'device (or UUID) - mount point - file system type - mount options - dump - fsck order'. The 'mount point  device  file system type ...' order and the 'mount point  device  mount options ...' order have the device and mount point swapped, and the 'device  file system type  mount point ...' order misplaces the mount point and file system type, as well as dump and mount options."
+ },
+ {
+  "number": 8,
+  "domain": "User and Group Management",
+  "prompt": "You want to create a new user bob, creating the home directory at the same time and setting the login shell to /bin/bash. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "useradd -m -g /bin/bash bob"
+   },
+   {
+    "label": "B",
+    "text": "useradd -d -s /bin/bash bob"
+   },
+   {
+    "label": "C",
+    "text": "useradd -m -s /bin/bash bob"
+   },
+   {
+    "label": "D",
+    "text": "usermod -m -s /bin/bash bob"
+   }
+  ],
+  "explanation": "In useradd, -m creates the home directory and -s sets the login shell, so the combination -m -s /bin/bash fits exactly. In -m -g /bin/bash, -g is the option for the primary group, so the shell path is wrongly interpreted as a group name, and in -d -s /bin/bash, -d is an option that takes a home directory path, so the following path argument conflicts with -s. usermod modifies an existing user, so it is unsuitable for creating a new one."
+ },
+ {
+  "number": 9,
+  "domain": "User and Group Management",
+  "prompt": "You want to change the maximum number of days user john's password may be used to 90. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chage -m 90 john"
+   },
+   {
+    "label": "B",
+    "text": "chage -E 90 john"
+   },
+   {
+    "label": "C",
+    "text": "chage -M 90 john"
+   },
+   {
+    "label": "D",
+    "text": "chage -d 90 john"
+   }
+  ],
+  "explanation": "chage -M (uppercase) sets the maximum password age (MAX_DAYS). -m (lowercase) is the minimum number of days between password changes, -E sets the account expiration date, and -d sets the date of the last password change, so all have different meanings."
+ },
+ {
+  "number": 10,
+  "domain": "User and Group Management",
+  "prompt": "You want to delegate to user dev1 the ability to run only the /usr/sbin/service command with root privileges without a password. Which is the correct entry to add to /etc/sudoers?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "dev1 ALL=(ALL) ALL"
+   },
+   {
+    "label": "B",
+    "text": "%dev1 ALL=(ALL) NOPASSWD: /usr/sbin/service"
+   },
+   {
+    "label": "C",
+    "text": "dev1 NOPASSWD=(ALL): /usr/sbin/service"
+   },
+   {
+    "label": "D",
+    "text": "dev1 ALL=(ALL) NOPASSWD: /usr/sbin/service"
+   }
+  ],
+  "explanation": "Following the 'user host=(runas) tag: command' format, dev1 ALL=(ALL) NOPASSWD: /usr/sbin/service allows dev1 to run only the service command without a password. dev1 ALL=(ALL) ALL allows all commands (with a password), which is too broad, %dev1 with a leading % means the group dev1, not the user, and the dev1 NOPASSWD=(ALL): ... form places the host/runas field and the NOPASSWD tag in the wrong syntactic positions."
+ },
+ {
+  "number": 11,
+  "domain": "Shell and Scripting",
+  "prompt": "You want to assign a value to the variable MYVAR and, at the same time, export it as an environment variable so child processes can use it. Which one-line command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "set MYVAR=hello"
+   },
+   {
+    "label": "B",
+    "text": "export MYVAR=hello"
+   },
+   {
+    "label": "C",
+    "text": "env MYVAR=hello"
+   },
+   {
+    "label": "D",
+    "text": "export MYVAR = hello"
+   }
+  ],
+  "explanation": "In bash, export MYVAR=hello assigns and exports the variable as an environment variable at once (no spaces around the equals sign). set MYVAR=hello is not handled as a variable assignment because set is for setting shell options and positional parameters, and env MYVAR=hello only creates a new environment with the variable applied temporarily and does not leave it in the current shell. In export MYVAR = hello, the spaces around the equals sign make export treat MYVAR as a command argument, causing an error."
+ },
+ {
+  "number": 12,
+  "domain": "Shell and Scripting",
+  "prompt": "You want to print only the lines of the file access.log that contain 'error', ignoring case. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "grep -c error access.log"
+   },
+   {
+    "label": "B",
+    "text": "grep -i error access.log"
+   },
+   {
+    "label": "C",
+    "text": "grep -v error access.log"
+   },
+   {
+    "label": "D",
+    "text": "grep -n error access.log"
+   }
+  ],
+  "explanation": "-i searches ignoring case, so it also catches 'Error' and 'ERROR'. -c only counts the matching lines, -v prints the lines that do not contain the pattern (inverts the match), and -n prints line numbers along with the matches but is still case-sensitive, so it does not match the intent."
+ },
+ {
+  "number": 13,
+  "domain": "Shell and Scripting",
+  "prompt": "You want to save both the standard output and standard error of the command myapp into the same new file log.txt. Which expression is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "myapp 2>&1 > log.txt"
+   },
+   {
+    "label": "B",
+    "text": "myapp > log.txt 2>&1"
+   },
+   {
+    "label": "C",
+    "text": "myapp > log.txt 1>&2"
+   },
+   {
+    "label": "D",
+    "text": "myapp >> log.txt 2>1"
+   }
+  ],
+  "explanation": "> log.txt sends standard output to the file, and then 2>&1 connects standard error to the same place as standard output (the file), so both are saved to the file. In 2>&1 > log.txt, 2>&1 comes first, so standard error goes to standard output, which is still the terminal, and only afterwards is standard output redirected to the file. 1>&2 sends standard output to standard error, the opposite of the intent, and 2>1 sends standard error to a file named '1'."
+ },
+ {
+  "number": 14,
+  "domain": "Shell and Scripting",
+  "prompt": "You want to schedule the script /usr/local/bin/weekly.sh to run every Sunday at 4:30 AM. Which crontab entry is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "30 4 * * 0 /usr/local/bin/weekly.sh"
+   },
+   {
+    "label": "B",
+    "text": "30 4 * * 7,1 /usr/local/bin/weekly.sh"
+   },
+   {
+    "label": "C",
+    "text": "4 30 * * 0 /usr/local/bin/weekly.sh"
+   },
+   {
+    "label": "D",
+    "text": "30 4 0 * * /usr/local/bin/weekly.sh"
+   }
+  ],
+  "explanation": "The cron fields are minute, hour, day of month, month, day of week, and day of week 0 (or 7) is Sunday, so '30 4 * * 0' runs every Sunday at 04:30. '30 4 * * 7,1' puts 7,1 in the day-of-week field, so it runs on both Sunday and Monday, '4 30 * * 0' swaps minute and hour so hour 30 is invalid, and '30 4 0 * *' puts 0 in the third (day of month) field, which means the 0th day of each month rather than Sunday, so it is wrong."
+ },
+ {
+  "number": 15,
+  "domain": "Service and System Management",
+  "prompt": "On a systemd-based system, you want to register the nginx service to start automatically at boot, but not start it right now. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "systemctl start nginx"
+   },
+   {
+    "label": "B",
+    "text": "systemctl enable nginx"
+   },
+   {
+    "label": "C",
+    "text": "systemctl enable --now nginx"
+   },
+   {
+    "label": "D",
+    "text": "systemctl restart nginx"
+   }
+  ],
+  "explanation": "enable only registers automatic start at boot and does not change the current running state, so it fits the condition 'do not run it now'. start only starts it immediately without registering it for boot, enable --now registers it and also starts it immediately, which violates the condition, and restart restarts a currently running service."
+ },
+ {
+  "number": 16,
+  "domain": "Service and System Management",
+  "prompt": "On a systemd system, you want to view only the log entries of the sshd service recorded since this boot. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "journalctl -k sshd"
+   },
+   {
+    "label": "B",
+    "text": "journalctl -p sshd"
+   },
+   {
+    "label": "C",
+    "text": "journalctl -f sshd"
+   },
+   {
+    "label": "D",
+    "text": "journalctl -u sshd -b"
+   }
+  ],
+  "explanation": "-u specifies the unit (sshd) and -b shows only logs since the current boot, which fits the requirement exactly. -k prints only kernel messages, which does not match a per-service query, -p is an option that filters by log priority, and -f is the real-time follow option, so 'sshd' is not recognized as a unit and an argument error occurs."
+ },
+ {
+  "number": 17,
+  "domain": "Network Management",
+  "prompt": "You want to add the IP address 192.168.0.10/24 to the interface eth0 using an iproute2 command. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ip route add 192.168.0.10/24 dev eth0"
+   },
+   {
+    "label": "B",
+    "text": "ip addr set 192.168.0.10/24 dev eth0"
+   },
+   {
+    "label": "C",
+    "text": "ip addr add 192.168.0.10/24 dev eth0"
+   },
+   {
+    "label": "D",
+    "text": "ip link add 192.168.0.10/24 dev eth0"
+   }
+  ],
+  "explanation": "ip addr add ... dev <interface> is the standard syntax for adding an address to an interface. ip route add adds a routing entry, ip addr has no set subcommand so it is invalid, and ip link add is for creating link devices such as virtual interfaces, which differs from adding an address."
+ },
+ {
+  "number": 18,
+  "domain": "Network Management",
+  "prompt": "You want to verify connectivity to the remote host 192.168.1.10 by sending exactly 4 ICMP requests and then exiting. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ping -c 4 192.168.1.10"
+   },
+   {
+    "label": "B",
+    "text": "ping -t 4 192.168.1.10"
+   },
+   {
+    "label": "C",
+    "text": "ping -s 4 192.168.1.10"
+   },
+   {
+    "label": "D",
+    "text": "ping -i 4 192.168.1.10"
+   }
+  ],
+  "explanation": "-c (count) specifies the number of packets to send, so it sends 4 and then exits. -t sets the TTL value, -s sets the packet data size (in bytes), and -i sets the interval between packets (in seconds), none of which relate to limiting the count."
+ },
+ {
+  "number": 19,
+  "domain": "Network Management",
+  "prompt": "You want to look up the mail server (MX) records for the domain www.example.com. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "dig www.example.com A"
+   },
+   {
+    "label": "B",
+    "text": "dig www.example.com NS"
+   },
+   {
+    "label": "C",
+    "text": "dig -x www.example.com"
+   },
+   {
+    "label": "D",
+    "text": "dig www.example.com MX"
+   }
+  ],
+  "explanation": "Specifying the record type MX after dig queries the mail exchange server records. A queries the IPv4 address record, NS queries the name server records, and -x is the reverse lookup option that converts an IP to a domain name, which differs from an MX lookup."
+ },
+ {
+  "number": 20,
+  "domain": "Network Management",
+  "prompt": "You want to check, in numeric format, the TCP ports currently open in the LISTEN state on this server along with the names of their processes. Which ss command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ss -tanp"
+   },
+   {
+    "label": "B",
+    "text": "ss -tln"
+   },
+   {
+    "label": "C",
+    "text": "ss -tlnp"
+   },
+   {
+    "label": "D",
+    "text": "ss -ulnp"
+   }
+  ],
+  "explanation": "-tlnp, which combines -t (TCP), -l (LISTEN), -n (numeric) and -p (process), matches the requirement exactly. -tanp uses -a instead of -l, so all states such as ESTABLISHED appear along with LISTEN, -tln lacks -p and so shows no process information, and -ulnp targets UDP sockets, not TCP."
+ },
+ {
+  "number": 21,
+  "domain": "Linux Operations and Management",
+  "prompt": "You want to print only the release version of the currently running kernel. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "uname -m"
+   },
+   {
+    "label": "B",
+    "text": "uname -n"
+   },
+   {
+    "label": "C",
+    "text": "uname -r"
+   },
+   {
+    "label": "D",
+    "text": "uname -a"
+   }
+  ],
+  "explanation": "-r prints only the kernel release (version) string. -m prints the machine hardware architecture, -n prints the node (host) name, and -a shows all information at once, including kernel name, host name, version and architecture, which differs from the 'version only' condition."
+ },
+ {
+  "number": 22,
+  "domain": "Linux Operations and Management",
+  "prompt": "You want to display the usage of each mounted file system in human-readable units, along with the file system type (ext4, xfs, etc.). Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "df -k"
+   },
+   {
+    "label": "B",
+    "text": "df -hT"
+   },
+   {
+    "label": "C",
+    "text": "df -hi"
+   },
+   {
+    "label": "D",
+    "text": "df -a"
+   }
+  ],
+  "explanation": "-h uses human-readable units and -T additionally shows the file system type column. -k is fixed 1K-block output with no human-readable effect, -hi shows inode usage instead of capacity, and -a includes all file systems, such as 0-block ones, but does not show the type column."
+ },
+ {
+  "number": 23,
+  "domain": "Linux Operations and Management",
+  "prompt": "You want to check, as a one-line summary in human-readable units, only the total space used by the directory /var/log. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "du -ch /var/log"
+   },
+   {
+    "label": "B",
+    "text": "du -ah /var/log"
+   },
+   {
+    "label": "C",
+    "text": "du -h /var/log"
+   },
+   {
+    "label": "D",
+    "text": "du -sh /var/log"
+   }
+  ],
+  "explanation": "-s prints only the summary (no subentries) and -h uses readable units, so it shows the directory total on one line. -ch prints per-entry output and merely adds a final total line, so it is not a one-line summary, -ah shows everything down to the individual file level, and -h prints the sizes of all subdirectories."
+ },
+ {
+  "number": 24,
+  "domain": "Linux Operations and Management",
+  "prompt": "You want to watch memory usage in real time by repeatedly printing it, refreshing every second. Which free command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "free -c 1"
+   },
+   {
+    "label": "B",
+    "text": "free -l"
+   },
+   {
+    "label": "C",
+    "text": "free -t"
+   },
+   {
+    "label": "D",
+    "text": "free -s 1"
+   }
+  ],
+  "explanation": "-s (seconds) repeats the output at the specified interval in seconds, which is used for real-time observation. -c sets the repeat count together with -s, so on its own it is meaningless for a single run, -l shows detailed low/high memory, and -t merely adds a total line and has no refresh capability."
+ },
+ {
+  "number": 25,
+  "domain": "Linux Operations and Management",
+  "prompt": "You want to install the already downloaded local RPM file sample.rpm with a dependency check and a progress bar. Which rpm command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "rpm -ivh sample.rpm"
+   },
+   {
+    "label": "B",
+    "text": "rpm -qa sample.rpm"
+   },
+   {
+    "label": "C",
+    "text": "rpm -e sample.rpm"
+   },
+   {
+    "label": "D",
+    "text": "rpm -Uvh --nodeps sample.rpm"
+   }
+  ],
+  "explanation": "The combination -i (install) -v (verbose) -h (hash, progress bar) is standard for a new installation and also performs dependency checks. -qa queries all installed packages and does not install a file, -e removes a package, and -Uvh --nodeps is an upgrade that skips the dependency check with --nodeps, violating the 'dependency check' condition."
+ },
+ {
+  "number": 26,
+  "domain": "File Systems and Permissions",
+  "prompt": "For the file script.sh, whose permissions are currently -rwxr-xr-x, you want to remove only the execute permission of others, keeping all other existing permissions. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chmod o-x script.sh"
+   },
+   {
+    "label": "B",
+    "text": "chmod 744 script.sh"
+   },
+   {
+    "label": "C",
+    "text": "chmod a-x script.sh"
+   },
+   {
+    "label": "D",
+    "text": "chmod o=x script.sh"
+   }
+  ],
+  "explanation": "o-x removes only the execute permission of others and leaves the owner and group permissions as they are (the result is -rwxr-xr--). 744 is absolute mode and also removes the group's execute permission, giving -rwxr--r--, a-x removes execute for owner, group and others, giving -rw-r--r--, and o=x overwrites the others' permissions with execute only, so read is lost and the result is -rwxr-x--x."
+ },
+ {
+  "number": 27,
+  "domain": "File Systems and Permissions",
+  "prompt": "You want to change only the group ownership of the file app.log to devs and leave the user owner unchanged. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chown devs app.log"
+   },
+   {
+    "label": "B",
+    "text": "chown :devs app.log:user1"
+   },
+   {
+    "label": "C",
+    "text": "chmod devs app.log"
+   },
+   {
+    "label": "D",
+    "text": "chgrp devs app.log"
+   }
+  ],
+  "explanation": "chgrp changes only the group ownership, so the user owner is kept (chown :devs app.log has the same effect). chown devs changes the user owner to devs, not the group, chown :devs app.log:user1 appends :user1 after the file name, so its argument syntax is wrong, and chmod changes permissions and cannot change ownership."
+ },
+ {
+  "number": 28,
+  "domain": "File Systems and Permissions",
+  "prompt": "You want to create, in the current directory, a symbolic link named conf that points to the file /etc/nginx/nginx.conf. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ln -s conf /etc/nginx/nginx.conf"
+   },
+   {
+    "label": "B",
+    "text": "ln -d /etc/nginx/nginx.conf conf"
+   },
+   {
+    "label": "C",
+    "text": "ln /etc/nginx/nginx.conf conf"
+   },
+   {
+    "label": "D",
+    "text": "ln -s /etc/nginx/nginx.conf conf"
+   }
+  ],
+  "explanation": "The order is ln -s <target> <link name>, so ln -s /etc/nginx/nginx.conf conf creates a symbolic link conf pointing to the original. ln -s conf /etc/nginx/nginx.conf swaps target and link name and would try to create a link at the nginx.conf location pointing to conf, the opposite of the intent, ln without -s creates a hard link, and -d is an option for hard links to directories (requires privileges), so it is unsuitable."
+ },
+ {
+  "number": 29,
+  "domain": "File Systems and Permissions",
+  "prompt": "You want to set the setgid bit on the directory shared so that files created inside it always inherit the directory's group. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chmod u+s shared"
+   },
+   {
+    "label": "B",
+    "text": "chmod g+s shared"
+   },
+   {
+    "label": "C",
+    "text": "chmod +t shared"
+   },
+   {
+    "label": "D",
+    "text": "chmod o+s shared"
+   }
+  ],
+  "explanation": "Giving a directory g+s (setgid) makes files and subdirectories created inside it inherit the parent directory's group. u+s is setuid, used to apply the owner's privileges on executable files, +t is the sticky bit, which restricts deletion, and o+s has no effect because no set bit is defined for others."
+ },
+ {
+  "number": 30,
+  "domain": "File Systems and Permissions",
+  "prompt": "With the directory /pub currently drwxrwxrwx, you want to add only the sticky bit so that other users cannot delete someone else's files. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "chmod +t /pub"
+   },
+   {
+    "label": "B",
+    "text": "chmod 777 /pub"
+   },
+   {
+    "label": "C",
+    "text": "chmod g+s /pub"
+   },
+   {
+    "label": "D",
+    "text": "chmod u+t /pub"
+   }
+  ],
+  "explanation": "+t adds only the sticky bit while keeping the existing rwx permissions, so only the file's owner and root can delete or rename it. 777 sets only ordinary permissions with no special bit, so there is no sticky effect, g+s is setgid (group inheritance) and unrelated to deletion restriction, and u+t is an incorrect specification because the sticky bit is not defined for the owner class, so the intended deletion restriction is not applied."
+ },
+ {
+  "number": 31,
+  "domain": "File Systems and Permissions",
+  "prompt": "You want to check the ext4 file system /dev/sdb1 while it is unmounted, automatically repairing any errors found. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "mkfs -y /dev/sdb1"
+   },
+   {
+    "label": "B",
+    "text": "fsck -y /dev/sdb1"
+   },
+   {
+    "label": "C",
+    "text": "fsck -n /dev/sdb1"
+   },
+   {
+    "label": "D",
+    "text": "fsck -A /dev/sdb1"
+   }
+  ],
+  "explanation": "fsck -y automatically answers 'yes' to every problem found during the check and repairs it. mkfs formats rather than checks, so data is erased, fsck -n answers 'no' to all questions and only checks without making changes, and fsck -A is an option that checks all file systems in /etc/fstab, which differs from the intent of automatically repairing a single device."
+ },
+ {
+  "number": 32,
+  "domain": "User and Group Management",
+  "prompt": "Which configuration file defines the defaults applied by useradd when creating a user, such as the shell, home directory skeleton and UID range?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "/etc/default/useradd"
+   },
+   {
+    "label": "B",
+    "text": "/etc/passwd"
+   },
+   {
+    "label": "C",
+    "text": "/etc/shadow"
+   },
+   {
+    "label": "D",
+    "text": "/etc/group"
+   }
+  ],
+  "explanation": "The defaults of useradd, such as the default shell, home skeleton and group, are defined in /etc/default/useradd (and /etc/login.defs), and can be viewed or changed with useradd -D. /etc/passwd holds information on accounts already created, /etc/shadow holds encrypted passwords and aging information, and /etc/group holds group information, so none of them is where the defaults are defined."
+ },
+ {
+  "number": 33,
+  "domain": "User and Group Management",
+  "prompt": "You want to add the existing user bob to the supplementary group docker while keeping the other supplementary groups he already belongs to. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "gpasswd -d bob docker"
+   },
+   {
+    "label": "B",
+    "text": "usermod -g docker bob"
+   },
+   {
+    "label": "C",
+    "text": "usermod -aG docker bob"
+   },
+   {
+    "label": "D",
+    "text": "usermod -G docker bob"
+   }
+  ],
+  "explanation": "Using -a (append) together with -G (supplementary groups) adds docker while keeping the existing supplementary groups. gpasswd -d on the contrary removes bob from the docker group, -g (lowercase) changes the primary group to docker, and using -G without -a replaces all existing supplementary groups with the specified list, so they are lost."
+ },
+ {
+  "number": 34,
+  "domain": "User and Group Management",
+  "prompt": "As an administrator, you want to expire user carol's password so that she is forced to change it at the next login. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "passwd -u carol"
+   },
+   {
+    "label": "B",
+    "text": "passwd -d carol"
+   },
+   {
+    "label": "C",
+    "text": "passwd -e carol"
+   },
+   {
+    "label": "D",
+    "text": "passwd -l carol"
+   }
+  ],
+  "explanation": "-e (expire) expires the password immediately, forcing a change at the next login. -u unlocks a locked password, -d deletes the password (leaves it empty), and -l locks the account password to block login, so none of them force expiration."
+ },
+ {
+  "number": 35,
+  "domain": "User and Group Management",
+  "prompt": "You want to print only the numeric effective user ID (UID) of user alice. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "id -u alice"
+   },
+   {
+    "label": "B",
+    "text": "id -g alice"
+   },
+   {
+    "label": "C",
+    "text": "id -G alice"
+   },
+   {
+    "label": "D",
+    "text": "id -un alice"
+   }
+  ],
+  "explanation": "-u prints only the numeric effective UID. -g prints the primary group ID (GID), -G prints the list of IDs of all groups the user belongs to, and -un adds -n, so it shows the user name instead of the UID."
+ },
+ {
+  "number": 36,
+  "domain": "User and Group Management",
+  "prompt": "You want to switch to a root shell while keeping the current user's environment variables. Which su command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "su - root"
+   },
+   {
+    "label": "B",
+    "text": "su -c root"
+   },
+   {
+    "label": "C",
+    "text": "su root"
+   },
+   {
+    "label": "D",
+    "text": "su -l root"
+   }
+  ],
+  "explanation": "su root without options switches to the target user and opens a non-login shell that keeps most of the current environment variables. su - root and su -l root switch to a login shell and reload the target user's environment, which differs from keeping the existing environment, and su -c is an option that runs a single command, so the following root is interpreted as the command to run, which does not match the intent."
+ },
+ {
+  "number": 37,
+  "domain": "Shell and Scripting",
+  "prompt": "You want to print only the number of lines in the file access.log that contain 'ERROR'. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "grep -n ERROR access.log"
+   },
+   {
+    "label": "B",
+    "text": "grep -l ERROR access.log"
+   },
+   {
+    "label": "C",
+    "text": "grep -o ERROR access.log"
+   },
+   {
+    "label": "D",
+    "text": "grep -c ERROR access.log"
+   }
+  ],
+  "explanation": "-c prints only the number of lines matching the pattern. -n prints the matching lines with line numbers, -l shows only the names of files containing a match, and -o extracts only the matched substrings, so if there are several matches on one line the count differs from the number of lines."
+ },
+ {
+  "number": 38,
+  "domain": "Shell and Scripting",
+  "prompt": "You want to show the output of the command build.sh on screen while also appending it to the end of the existing log build.log. Which is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "build.sh | tee -a build.log"
+   },
+   {
+    "label": "B",
+    "text": "build.sh >> build.log"
+   },
+   {
+    "label": "C",
+    "text": "build.sh | cat >> build.log"
+   },
+   {
+    "label": "D",
+    "text": "build.sh | tee build.log"
+   }
+  ],
+  "explanation": "tee writes output to both the screen and a file, and -a (append) appends to the existing content. >> appends to the file but nothing is shown on screen, | cat >> likewise appends only to the file without screen output, and tee without -a shows output on screen but overwrites the file."
+ },
+ {
+  "number": 39,
+  "domain": "Shell and Scripting",
+  "prompt": "In a shell script, which special variable holds the exit status (success/failure) of the most recently executed command?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "$!"
+   },
+   {
+    "label": "B",
+    "text": "$?"
+   },
+   {
+    "label": "C",
+    "text": "$$"
+   },
+   {
+    "label": "D",
+    "text": "$#"
+   }
+  ],
+  "explanation": "$? holds the exit status value of the previous command (0 means success). $! is the PID of the most recent background process, $$ is the PID of the current shell, and $# is the number of positional arguments passed to the script."
+ },
+ {
+  "number": 40,
+  "domain": "Shell and Scripting",
+  "prompt": "You want to connect two commands so that cmd2 runs only when cmd1 succeeds (exit status 0). Which is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "cmd1 && cmd2"
+   },
+   {
+    "label": "B",
+    "text": "cmd1 || cmd2"
+   },
+   {
+    "label": "C",
+    "text": "cmd1 | cmd2"
+   },
+   {
+    "label": "D",
+    "text": "cmd1 ; cmd2"
+   }
+  ],
+  "explanation": "&& runs the second command only if the first succeeded (exit status 0). || on the contrary runs the second command when the first failed, | is a pipe that connects the output of the first command to the input of the second, and ; runs them sequentially regardless of success."
+ },
+ {
+  "number": 41,
+  "domain": "Shell and Scripting",
+  "prompt": "In the colon-delimited file /etc/passwd, you want to extract only the 7th field (login shell) of each line. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "awk -F: '{print $1}' /etc/passwd"
+   },
+   {
+    "label": "B",
+    "text": "cut -d: -c7 /etc/passwd"
+   },
+   {
+    "label": "C",
+    "text": "cut -d: -f7 /etc/passwd"
+   },
+   {
+    "label": "D",
+    "text": "cut -f7 /etc/passwd"
+   }
+  ],
+  "explanation": "-d sets the delimiter to a colon and -f7 extracts the 7th field. awk -F: '{print $1}' sets the delimiter to a colon but, because of $1, prints the first field (user name), -c7 cuts the 7th character, not the field, and using only -f7 without -d uses the default delimiter, a tab, so in a colon-delimited file the whole line is treated as one field, which does not match the intent."
+ },
+ {
+  "number": 42,
+  "domain": "Service and System Management",
+  "prompt": "After directly editing a systemd unit file, you want the daemon to re-read the changes. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "systemctl reset-failed"
+   },
+   {
+    "label": "B",
+    "text": "systemctl daemon-reload"
+   },
+   {
+    "label": "C",
+    "text": "systemctl restart systemd"
+   },
+   {
+    "label": "D",
+    "text": "systemctl reload nginx"
+   }
+  ],
+  "explanation": "daemon-reload makes systemd re-read the unit file definitions and refresh the manager configuration. reset-failed merely clears the failed state of units and does not re-read unit files, restart systemd is a dangerous and inappropriate command that tries to restart the PID 1 manager entirely, and reload nginx only re-reads the configuration of a specific service."
+ },
+ {
+  "number": 43,
+  "domain": "Service and System Management",
+  "prompt": "You want to check the default systemd target (the operating level entered at boot) of the current system. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "systemctl isolate multi-user.target"
+   },
+   {
+    "label": "B",
+    "text": "systemctl list-units --type=target"
+   },
+   {
+    "label": "C",
+    "text": "systemctl get-default"
+   },
+   {
+    "label": "D",
+    "text": "systemctl set-default multi-user.target"
+   }
+  ],
+  "explanation": "get-default prints the default target used at boot (for example multi-user.target or graphical.target). isolate switches to the given target immediately, list-units --type=target merely lists the currently loaded targets and does not point out the 'default' target, and set-default is a command that changes the default target, so it is not for checking."
+ },
+ {
+  "number": 44,
+  "domain": "Service and System Management",
+  "prompt": "You want to view only the logs in the systemd journal with priority error (3) or higher. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "journalctl -u err"
+   },
+   {
+    "label": "B",
+    "text": "journalctl -p err"
+   },
+   {
+    "label": "C",
+    "text": "journalctl -f err"
+   },
+   {
+    "label": "D",
+    "text": "journalctl -b err"
+   }
+  ],
+  "explanation": "-p (priority) filters by syslog priority, and specifying err shows messages of err and above (emerg to err). -u is the unit option, so 'err' would be mistaken for a unit name, -f is real-time following, and -b selects a boot, so none of them is a priority filter."
+ },
+ {
+  "number": 45,
+  "domain": "Service and System Management",
+  "prompt": "You want to print the top list of processes, sorted by highest CPU usage, as text just once (without repeated refreshing) so it can be saved in a script or log. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "top -b -n 1"
+   },
+   {
+    "label": "B",
+    "text": "top -d 1"
+   },
+   {
+    "label": "C",
+    "text": "top -i"
+   },
+   {
+    "label": "D",
+    "text": "top -u root"
+   }
+  ],
+  "explanation": "-b (batch mode) prints text instead of the interactive screen and -n 1 prints once and exits, which suits saving to a log. -d 1 merely shortens the refresh interval to 1 second and it keeps repeating, -i is a toggle that hides idle processes, and -u root is an option that filters to processes owned by root."
+ },
+ {
+  "number": 46,
+  "domain": "Service and System Management",
+  "prompt": "You want to send a termination signal (SIGTERM) to all processes named 'httpd' at once. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "pgrep httpd"
+   },
+   {
+    "label": "B",
+    "text": "killall -0 httpd"
+   },
+   {
+    "label": "C",
+    "text": "kill httpd"
+   },
+   {
+    "label": "D",
+    "text": "pkill httpd"
+   }
+  ],
+  "explanation": "pkill sends a signal (SIGTERM by default) to every process matching the name. pgrep only finds and prints the matching PIDs and does not terminate anything, killall -0 sends signal 0, which only checks for existence and does not actually terminate, and kill requires a PID, so giving the name 'httpd' as an argument causes an error."
+ },
+ {
+  "number": 47,
+  "domain": "Network Management",
+  "prompt": "You want to check only the link state (UP/DOWN) and MAC address of a particular network interface card, without IP information. Which command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ip addr show"
+   },
+   {
+    "label": "B",
+    "text": "ip neigh show"
+   },
+   {
+    "label": "C",
+    "text": "ip route show"
+   },
+   {
+    "label": "D",
+    "text": "ip link show"
+   }
+  ],
+  "explanation": "ip link show displays the link-layer information of interfaces (state, MAC address, MTU). ip addr show additionally displays IP addresses, which differs from the 'without IP' condition, ip neigh show prints the ARP/neighbor table, and ip route show prints the routing table."
+ },
+ {
+  "number": 48,
+  "domain": "Network Management",
+  "prompt": "You want to configure routing by adding 192.168.0.1 as the default gateway. Which iproute2 command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ip route add 192.168.0.1 default"
+   },
+   {
+    "label": "B",
+    "text": "ip route add default dev 192.168.0.1"
+   },
+   {
+    "label": "C",
+    "text": "ip route add default via 192.168.0.1"
+   },
+   {
+    "label": "D",
+    "text": "ip addr add default via 192.168.0.1"
+   }
+  ],
+  "explanation": "A default gateway is added with the syntax 'ip route add default via <gateway IP>'. ip route add 192.168.0.1 default has the wrong argument order and keywords, in ip route add default dev ... an interface name, not an IP, must follow dev, and ip addr add ... is an address management command, not a routing one, so it cannot accept route syntax."
+ },
+ {
+  "number": 49,
+  "domain": "Network Management",
+  "prompt": "You want to receive only the HTTP response headers of a URL, without saving the response body, to check the status code. Which curl command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "curl -O http://example.com"
+   },
+   {
+    "label": "B",
+    "text": "curl -I http://example.com"
+   },
+   {
+    "label": "C",
+    "text": "curl -s http://example.com"
+   },
+   {
+    "label": "D",
+    "text": "curl -L http://example.com"
+   }
+  ],
+  "explanation": "-I (uppercase) sends a HEAD request and fetches only the response headers (including the status code). -O saves the body under its original file name, -s merely hides the progress display and still receives the body, and -L follows redirects and fetches the body."
+ },
+ {
+  "number": 50,
+  "domain": "Network Management",
+  "prompt": "You want to look up which route (interface, gateway, source IP) the system chooses when a packet goes out to the specific destination 8.8.8.8. Which iproute2 command is most appropriate?",
+  "choices": [
+   {
+    "label": "A",
+    "text": "ip route show 8.8.8.8"
+   },
+   {
+    "label": "B",
+    "text": "ip route flush 8.8.8.8"
+   },
+   {
+    "label": "C",
+    "text": "ip route get 8.8.8.8"
+   },
+   {
+    "label": "D",
+    "text": "ip route add 8.8.8.8"
+   }
+  ],
+  "explanation": "ip route get computes and shows the route actually selected for a specific destination (output interface, gateway, src address). ip route show merely lists routing table entries and does not compute the selection result for a single destination, ip route add adds a route, and ip route flush deletes routes, which is the exact opposite of a lookup."
+ }
+]
