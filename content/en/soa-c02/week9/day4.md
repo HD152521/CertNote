@@ -1,4 +1,4 @@
-﻿# Day 4 - Four Eyes Detecting Threats, and How to Bring Them Together
+# Day 4 - Four Eyes Detecting Threats, and How to Bring Them Together
 
 Almost every security incident ends with "there were signs, but no one saw them." SSH brute force attempts were logged for days but no one watched those logs; credit card numbers sat in plaintext in S3 but no one opened that bucket; an unpatched EC2 instance ran for six months carrying a known CVE but no one scanned it. The essence of a breach is "time that could have been detected but wasn't." The security industry has a metric for measuring this - **MTTD (Mean Time To Detect)**, the average detection time. IBM's 2023 Cost of a Data Breach report said it took an average of 277 days to identify and contain a breach. That means attackers walked around inside the house for nine months.
 

@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { EN_INDEXABLE_WEEK, isIndexableDay } from '@/lib/day/indexPolicy';
+import { isIndexableDay } from '@/lib/day/indexPolicy';
 import { SITE_URL } from '@/lib/site';
 import sitemap from './sitemap';
 
@@ -54,12 +54,10 @@ describe('sitemap', () => {
     }
   });
 
-  test('영어판은 번역이 끝난 주차만 실린다', { timeout: 30000 }, async () => {
+  test('영어판도 Week2 이후 day가 사이트맵에 실린다(번역이 끝났다 — enContentLanguage.test.ts 가 보증)', { timeout: 30000 }, async () => {
     const entries = await sitemap();
-    for (const e of entries) {
-      const m = e.url.match(/\/en\/[^/]+\/week(\d+)\/day\d+$/);
-      if (m) expect(Number(m[1])).toBeLessThanOrEqual(EN_INDEXABLE_WEEK);
-    }
+    const later = entries.filter((e) => /\/en\/[^/]+\/week([2-9]|\d{2})\/day\d+$/.test(e.url));
+    expect(later.length).toBeGreaterThan(0);
   });
 
   test('/pricing은 리다이렉트되므로 사이트맵에 없다', { timeout: 30000 }, async () => {

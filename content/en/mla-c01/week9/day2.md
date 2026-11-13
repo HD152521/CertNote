@@ -1,4 +1,4 @@
-﻿# Day 2 - Network Isolation: VPC-Mode SageMaker and PrivateLink
+# Day 2 - Network Isolation: VPC-Mode SageMaker and PrivateLink
 
 ## 📌 Key Takeaways
 

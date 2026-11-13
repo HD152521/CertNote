@@ -79,13 +79,10 @@ describe('DayView — 광고 슬롯 배치', () => {
     expect(bottom).toBeLessThan(footer);
   });
 
-  test('영어판 2주차 이상(noindex)에는 슬롯 ID 가 있어도 위·아래 어느 슬롯도 그리지 않는다', async () => {
+  test('영어판 2주차 이상도 색인 대상이라 위·아래 슬롯을 모두 그린다', async () => {
     stubAds({ top: '1111111111', bottom: '2222222222' });
 
-    const html = await renderDay({ category: 'en', w: 2 });
-
-    expect(slotIds(html)).toEqual([]);
-    expect(html).not.toMatch(/adsbygoogle/);
+    expect(slotIds(await renderDay({ category: 'en', w: 2 }))).toEqual(['1111111111', '2222222222']);
   });
 
   test('영어판 1주차(색인 대상)에는 둘 다 그린다', async () => {

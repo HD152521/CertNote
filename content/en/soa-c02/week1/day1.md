@@ -1,4 +1,4 @@
-﻿# Day 1 - AWS Infrastructure Through an Operator's Eyes: Regions, AZs, and the Boundary of Responsibility
+# Day 1 - AWS Infrastructure Through an Operator's Eyes: Regions, AZs, and the Boundary of Responsibility
 
 At 3:12 AM, the phone vibrates. PagerDuty alert: "us-east-1 API Gateway 5xx ratio exceeds 30%, duration 4m." You open the console and expand the region selector. Only us-east-1 is red; ap-northeast-2 looks fine. But 99% of your company's service users are in Korea. Why did a US region outage trigger an alarm affecting us? To answer that, you need to understand which component of your infrastructure is tied to which region, and whether the "Global" labels in the upper right of the console—IAM, Route 53, CloudFront—actually operate in a specific region behind the scenes.
 

@@ -1,4 +1,4 @@
-﻿# Day 1 - SageMaker IAM Security: Execution Roles and Least Privilege
+# Day 1 - SageMaker IAM Security: Execution Roles and Least Privilege
 
 ## 📌 Key Takeaways
 

@@ -1,4 +1,4 @@
-﻿# Day 4 - ML Cost Optimization: Spot Training to Cost Monitoring
+# Day 4 - ML Cost Optimization: Spot Training to Cost Monitoring
 
 ## 📌 Key Takeaways
 

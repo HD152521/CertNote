@@ -1,4 +1,4 @@
-﻿# Day 5 - Week 9 Review: Security, Governance, and Cost
+# Day 5 - Week 9 Review: Security, Governance, and Cost
 
 ## 📌 Key Takeaways
 

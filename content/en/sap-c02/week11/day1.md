@@ -1,4 +1,4 @@
-﻿# Day 1 - KMS Deep Dive: Mathematics of Envelope Encryption, Key Policy Authorization Model, Multi-Region Keys
+# Day 1 - KMS Deep Dive: Mathematics of Envelope Encryption, Key Policy Authorization Model, Multi-Region Keys
 
 There is a fundamental contradiction that engineers encounter when designing encryption for the first time. "To encrypt data, I need a key, but where do I safely store that key?" Storing the key in plaintext next to the data makes encryption meaningless, and having people memorize keys and input them manually is impractical. This "key protecting the key" problem (key management problem) has been a decades-old challenge in cryptography, and the cloud solves it using **hardware-based root keys + envelope encryption** architecture. AWS KMS (Key Management Service) is exactly this architecture provided as a managed service.
 

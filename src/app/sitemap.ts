@@ -40,7 +40,7 @@ function sitemapEntry(
 // - lastModified는 실제 콘텐츠/코드 변경 시각(git 커밋 시각 기반 매니페스트)에서 도출한다 —
 //   new Date()(매 빌드 갱신)와 fs.stat 파일 mtime(Vercel 체크아웃 시 빌드 시각으로 리셋됨,
 //   Step6 후속 사고) 둘 다 Google이 lastmod 신호를 불신하게 만드는 안티패턴이라 쓰지 않는다.
-// - noindex day 페이지(isIndexableDay가 false — 현재는 영어판 Week2+)는 sitemap에서 제외한다.
+// - noindex day 페이지(isIndexableDay가 false — 현재는 유료 주차만 해당)는 sitemap에서 제외한다.
 //   noindex URL을 제출하면 Search Console에 "제출된 URL이 noindex" 경고가 뜨고 크롤 예산을 낭비한다.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 섹션별(공개 URL /aws·/linux) 자격증을 순회한다. 콘텐츠는 content/aws-certs/ 에 공존하지만
@@ -123,7 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   out.push(sitemapEntry(`${SITE_URL}/lab`, labLastMod, 'monthly', 0.7));
   for (const lab of LAB_CATALOG) out.push(sitemapEntry(`${SITE_URL}/lab/${lab.id}`, labLastMod, 'monthly', 0.6));
 
-  // 영어판(번역이 끝난 주차만 색인). 콘텐츠가 없으면 조용히 생략.
+  // 영어판(전 주차 색인). 콘텐츠가 없으면 조용히 생략.
   const enCerts = await listCerts(EN_CATEGORY).catch(() => []);
   if (enCerts.length > 0) {
     const enCertMetaMtimes = await Promise.all(enCerts.map((c) => getCertMetaMtime(EN_CATEGORY, c.slug)));

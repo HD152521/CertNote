@@ -1,4 +1,4 @@
-﻿# Day 5 - Week 3 Review: Advanced Networking Architecture Synthesis
+# Day 5 - Week 3 Review: Advanced Networking Architecture Synthesis
 
 Week 3 covered the entire spectrum of AWS advanced networking. Three axes—inter-VPC connectivity (Peering, TGW, Cloud WAN), on-premises connectivity (Direct Connect, Site-to-Site VPN, Client VPN), and service-level private access (PrivateLink, Gateway Endpoint)—and how they complement and substitute for each other was this week's core. Today's goal isn't re-memorizing individual services but developing the ability to instantly judge "why this service is correct in this scenario and why others aren't."
 

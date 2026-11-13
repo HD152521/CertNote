@@ -1,4 +1,4 @@
-﻿# Day 4 - PrivateLink and VPC Endpoint: Service-Oriented Networking
+# Day 4 - PrivateLink and VPC Endpoint: Service-Oriented Networking
 
 In traditional networks, two systems communicating requires IP routing. Routes must exist in routing tables, CIDRs can't overlap, and firewall rules must allow it. AWS PrivateLink fundamentally changes this paradigm. Instead of IP routing, communicate via **service names**; overlapping CIDRs work fine; and since it's unidirectional, the service consumer never sees the service producer's internal network structure. Today we'll cover PrivateLink's operating principles from the start through Gateway/Interface/GWLB Endpoint differences, DNS resolution mechanisms, and security appliance chaining patterns—all to SAP-C02 depth.
 

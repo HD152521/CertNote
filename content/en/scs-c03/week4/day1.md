@@ -1,4 +1,4 @@
-﻿# Day 1 - AWS WAF: Web ACLs, Rules and Rule Groups, Rate-Based Rules, SQLi/XSS Defense
+# Day 1 - AWS WAF: Web ACLs, Rules and Rule Groups, Rate-Based Rules, SQLi/XSS Defense
 
 A firewall sounds like "a device that blocks," but the essence of WAF (Web Application Firewall) is "a policy evaluation engine that inspects an HTTP request and decides whether to allow, block, count, or issue a CAPTCHA." Where network firewalls (Security Groups, NACLs) work at layer 4 on IP, port, and protocol, AWS WAF works at layer 7 and looks into HTTP headers, body, URI, query string, method, and cookies. From a security exam's point of view, the key is to understand precisely the decision model of "which request is evaluated, in what priority order, with what action."
 

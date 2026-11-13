@@ -156,12 +156,6 @@ export default async function CertIndexPage({ params }: PageProps) {
           {lang === 'en' ? `${meta.weeks} week${meta.weeks > 1 ? 's' : ''} · ${meta.dayCount} days · ` : `${meta.weeks}주 · 총 ${meta.dayCount}일 · `}
           <span className={isHighlightLevel(meta.level, section) ? 'text-accent' : ''}>{certLevelLabel(meta.level, section)}</span>
         </p>
-        {lang === 'en' && (
-          <p className="text-xs text-fg-faint">
-            Week 1 is fully translated into English. The rest of the course is currently Korean-only —{' '}
-            <Link href={certHref(meta)} className="underline underline-offset-4 hover:text-fg">view the Korean track</Link>.
-          </p>
-        )}
         <div className="flex flex-wrap items-center gap-2">
           {firstDay && (
             <Link href={firstDay.href}

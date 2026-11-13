@@ -82,8 +82,8 @@ describe('linkDayHref — 화면에 거는 day 링크', () => {
     expect(linkDayHref('en', 'saa-c03', 1, 4)).toBe('/en/saa-c03/week1/day4');
   });
 
-  test('번역이 덜 된 영어판 주차(noindex)는 한국어 원문으로 보낸다', () => {
-    expect(linkDayHref('en', 'saa-c03', 2, 1)).toBe('/aws/saa-c03/week2/day1');
-    expect(linkDayHref('en', 'dop-c02', 16, 5)).toBe('/aws/dop-c02/week16/day5');
+  test('영어판은 번역이 끝나 2주차 이상도 영어 주소로 보낸다', () => {
+    expect(linkDayHref('en', 'saa-c03', 2, 1)).toBe('/en/saa-c03/week2/day1');
+    expect(linkDayHref('en', 'dop-c02', 16, 5)).toBe('/en/dop-c02/week16/day5');
   });
 });

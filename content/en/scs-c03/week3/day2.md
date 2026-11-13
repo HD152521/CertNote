@@ -1,4 +1,4 @@
-﻿# Day 2 - Security Groups vs Network ACLs: The Essence of Stateful and Stateless
+# Day 2 - Security Groups vs Network ACLs: The Essence of Stateful and Stateless
 
 Inside a VPC there are two layers of firewall: security groups (SG) and network ACLs (NACL). If you cannot distinguish the two precisely, you get stuck repeatedly, both on the exam and in real-world troubleshooting. Questions like "I opened everything on the SG, so why doesn't the response come back?" or "I only opened inbound on the NACL, so why doesn't the communication work?" almost all come from missing the difference between **stateful and stateless**.
 

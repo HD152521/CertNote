@@ -1,4 +1,4 @@
-﻿# Day 1 - SageMaker Pipelines: Steps, DAG, Parameters, Condition Steps
+# Day 1 - SageMaker Pipelines: Steps, DAG, Parameters, Condition Steps
 
 ## 📌 Key Takeaways
 

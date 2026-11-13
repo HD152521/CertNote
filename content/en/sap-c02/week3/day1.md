@@ -1,4 +1,4 @@
-﻿# Day 1 - VPC Peering vs Transit Gateway: Network Topology Selection
+# Day 1 - VPC Peering vs Transit Gateway: Network Topology Selection
 
 When designing a cloud network, the first question you encounter is simple: "How do I connect two VPCs?" Initially, VPC Peering appears to be a clear solution. A few clicks in the console and two VPCs are communicating. But the moment VPCs grow from two to five, ten, or fifty, that initial clarity transforms into exponential complexity. To fundamentally solve this complexity, AWS launched Transit Gateway in 2018. Today, we'll delve deep into the architectural differences between the two services from a network theory perspective and master the routing isolation patterns that the SAP-C02 exam frequently tests.
 

@@ -1,4 +1,4 @@
-﻿# Day 4 - Retraining and Model Maintenance: Automated Retraining Pipelines and A/B and Shadow Testing
+# Day 4 - Retraining and Model Maintenance: Automated Retraining Pipelines and A/B and Shadow Testing
 
 ## 📌 Key Takeaways
 

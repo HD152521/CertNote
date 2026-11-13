@@ -1,4 +1,4 @@
-﻿# Day 2 - Model Registry & Model Governance: Model Package Groups, Approval Workflows, Version Management
+# Day 2 - Model Registry & Model Governance: Model Package Groups, Approval Workflows, Version Management
 
 ## 📌 Key Takeaways
 

@@ -1,4 +1,4 @@
-﻿# Day 3 - Full Mock Exam Pace: Final Check with the Four-Domain Service Map and Decision Trees
+# Day 3 - Full Mock Exam Pace: Final Check with the Four-Domain Service Map and Decision Trees
 
 ## 📌 Key Takeaways
 

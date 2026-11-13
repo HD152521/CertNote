@@ -1,4 +1,4 @@
-﻿# Day 4 - Private Connectivity: VPC Endpoints and Sealing Off Data Exfiltration
+# Day 4 - Private Connectivity: VPC Endpoints and Sealing Off Data Exfiltration
 
 On Day 1 we said a NAT Gateway can become a data exfiltration path. For the App Tier to read objects from S3, it normally goes out to the Internet through NAT. But NAT permits outbound broadly — it cannot tell whether traffic is going to S3 or to an attacker's server. When a compromised instance uses stolen credentials to move company data into an external S3 bucket, NAT cannot stop it.
 

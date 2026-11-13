@@ -1,4 +1,4 @@
-﻿# Day 4 - IAM Identity Center and Federation: SAML, OIDC, and ABAC
+# Day 4 - IAM Identity Center and Federation: SAML, OIDC, and ABAC
 
 So far (days 1-3) we have covered "how to restrict permissions." Today we look at the modern answer to "how to grant access to people." Creating an individual IAM user for each of thousands of employees across hundreds of accounts is a nightmare. Long-term credentials (access keys) carry a high risk of leakage, and cleaning up after employees who leave is hard.
 

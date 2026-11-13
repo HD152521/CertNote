@@ -1,4 +1,4 @@
-﻿# Day 4 - IaC & Workflow Orchestration: CloudFormation/CDK, Step Functions, EventBridge, Airflow (MWAA)
+# Day 4 - IaC & Workflow Orchestration: CloudFormation/CDK, Step Functions, EventBridge, Airflow (MWAA)
 
 ## 📌 Key Takeaways
 

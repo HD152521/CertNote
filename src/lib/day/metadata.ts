@@ -13,7 +13,7 @@ import { dayHeadline } from '@/lib/day/dayTitle';
 // 호출부 책임: isSupportedCategory 검증과 week/day 세그먼트 파싱은 각 라우트의 generateMetadata가
 // 먼저 끝내고, 유효한 category/숫자 w·d만 이 함수에 넘긴다(유효하지 않으면 호출부가 {}를 반환).
 export async function buildDayMetadata(category: string, slug: string, w: number, d: number): Promise<Metadata> {
-  // 색인 대상이 아닌 day(isIndexableDay 참고 — 현재는 번역이 덜 된 영어판 Week2+)는 noindex.
+  // 색인 대상이 아닌 day(isIndexableDay 참고 — 현재는 유료 주차만 해당)는 noindex.
   // 그래도 canonical은 반드시 자기 자신을 가리켜야 한다 — 지정하지 않으면 루트 레이아웃의
   // canonical('/')과 languages(ko/en/x-default 전부 '/')를 그대로 상속해서, "noindex인데
   // canonical은 홈"이라는 충돌 신호가 나간다(홈으로 noindex가 전파될 위험). hreflang도 상호
