@@ -20,7 +20,7 @@
 KMS Direct Encryption: Max 4KB
 Envelope Encryption: GenerateDataKey, for data >4KB
 CMK: $1/month, key policy required
-Secrets Manager: Auto rotation, $0.40/secret, 65KB
+Secrets Manager: Auto rotation, $0.40/secret, 64KB (65,536 bytes)
 Parameter Store: Standard free, SecureString = KMS encrypted
 Cognito User Pool: JWT, API Gateway Authorizer
 Cognito Identity Pool: JWT → IAM temporary credentials → AWS resources

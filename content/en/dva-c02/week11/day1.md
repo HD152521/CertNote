@@ -66,7 +66,7 @@ for message in messages.get('Messages', []):
     )
 ```
 
-The classic operational incident is "**when processing time is longer than the visibility timeout**." Suppose you receive a message and start a 60-second job, but the visibility timeout is 30 seconds. At the 30-second mark the message becomes visible again, and a second consumer processes the same message again. The first consumer calls `DeleteMessage` much later, but by then it has already been processed twice. So "processing time + margin > visibility timeout" is the iron rule, and if processing looks like it will run long, you extend the lock midway with `ChangeMessageVisibility`.
+The classic operational incident is "**when processing time is longer than the visibility timeout**." Suppose you receive a message and start a 60-second job, but the visibility timeout is 30 seconds. At the 30-second mark the message becomes visible again, and a second consumer processes the same message again. The first consumer calls `DeleteMessage` much later, but by then it has already been processed twice. So "visibility timeout > processing time + margin" is the iron rule, and if processing looks like it will run long, you extend the lock midway with `ChangeMessageVisibility`.
 
 The visibility timeout is the **lease pattern** of distributed systems. "I'll lend you this resource for N seconds. Finish within that time and return it (delete), or if you can't finish, ask for an extension. If you say nothing, the lease expires and goes to someone else."
 

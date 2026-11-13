@@ -73,9 +73,9 @@ An Aurora Replica **has no storage of its own**. It shares the same distributed 
 | Replication lag | Seconds to minutes | Usually much less than 100 ms |
 | Max count | 15 per source (MySQL/PG/MariaDB/SQL Server) | 15 |
 | Initial sync | Full copy required | Immediate |
-| Failover time | Manual promote (minutes) | Automatic (~30 seconds) |
+| Failover time | Manual promote (minutes) | Automatic (typically under 60 seconds, often under 30) |
 
-> ⚠️ **Pitfall**: The 30-second Aurora Replica failover time applies **when the instance class is the same**. If there is a replica with an instance class different from the primary, its failover priority drops, and performance can degrade after failover. The cause in an "Aurora performance degradation after failover" scenario can be a replica instance size mismatch. You can specify the failover order with **Tier 0-15** priorities.
+> ⚠️ **Pitfall**: The fast Aurora Replica failover (typically under 60 seconds, often under 30) applies **when the instance class is the same**. If there is a replica with an instance class different from the primary, its failover priority drops, and performance can degrade after failover. The cause in an "Aurora performance degradation after failover" scenario can be a replica instance size mismatch. You can specify the failover order with **Tier 0-15** priorities.
 
 ## The 5 Aurora Endpoint Types: Tools for Deciding Where to Connect
 

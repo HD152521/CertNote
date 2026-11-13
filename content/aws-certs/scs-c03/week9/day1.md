@@ -84,7 +84,7 @@ ThreatPurpose:ResourceTypeAffected/ThreatFamilyName.DetectionMechanism!Artifact
 - **ResourceTypeAffected**: EC2, IAMUser, S3, EKSCluster, RDS, Lambda 등.
 - **DetectionMechanism**: `.B!DNS`처럼 어떻게 탐지했는지(DNS 기반, etc).
 
-각 결과는 **severity(심각도)** 점수 0.1~8.0+를 가진다: Low(1.0–3.9), Medium(4.0–6.9), High(7.0–8.9). 시험에서는 점수 자체보다 *어떤 결과가 어떤 위협을 의미하는지*가 중요하다.
+각 결과는 **severity(심각도)** 점수 1.0~10.0을 가진다: Low(1.0–3.9), Medium(4.0–6.9), High(7.0–8.9), Critical(9.0–10.0). 시험에서는 점수 자체보다 *어떤 결과가 어떤 위협을 의미하는지*가 중요하다.
 
 ThreatPurpose 분류는 사실상 **MITRE ATT&CK** 전술(Tactics) 매핑이다 — Recon(정찰), PrivilegeEscalation(권한 상승), Persistence(지속성), Exfiltration(유출), Impact(영향) 등은 ATT&CK의 킬체인 단계와 대응한다. 결과를 ATT&CK 관점에서 읽으면 "공격이 어느 단계까지 왔는가"를 판단해 대응 우선순위를 정할 수 있다.
 

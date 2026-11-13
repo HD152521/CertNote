@@ -38,7 +38,7 @@ LSI: Same PK, different SK, creation-time only, strong consistency support
 GSI: Different PK/SK, anytime, eventually consistent only, separate capacity
 Streams: 24 hour retention, 4 view types
 TTL: Free, async deletion within 48 hours
-Transactional: Max 25 items, 4MB, cost 2x
+Transactional: Max 100 items, 4MB, cost 2x
 Optimistic Locking: Version number prevents concurrent modifications
 ```
 

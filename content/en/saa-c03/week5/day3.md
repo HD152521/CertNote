@@ -71,7 +71,7 @@ Calculation examples:
 
 > 💡 **The internal behavior of On-Demand mode** — On-Demand mode doesn't preset RCU/WCU; it bills based on actual usage. Internally, DynamoDB sets an "automatic maximum" up to 2× the table's historical peak traffic. If you exceed this limit, DynamoDB accepts it initially but may gradually throttle if it persists. In On-Demand, a sudden tens-of-times traffic surge can cause throttling for the first several minutes. With Provisioned + Auto Scaling, the Auto Scaling policy helps smooth things out, but the scaling itself takes several minutes. If a new table is about to experience a traffic spike, it's safe to first set a high Provisioned capacity, then switch to On-Demand, since the "automatic maximum" will be set high.
 
-> 🔍 **Why transaction cost is 2×** — DynamoDB transactions (TransactWriteItems/TransactGetItems) internally use a 2-Phase Commit (2PC)-like protocol. The first phase performs locking/reservation on all items, and the second phase performs the actual commit. Because these two phases each consume capacity, 2× the WCU/RCU is consumed compared to a single operation of the same data size. A transaction can handle up to 25 items and 4MB at once.
+> 🔍 **Why transaction cost is 2×** — DynamoDB transactions (TransactWriteItems/TransactGetItems) internally use a 2-Phase Commit (2PC)-like protocol. The first phase performs locking/reservation on all items, and the second phase performs the actual commit. Because these two phases each consume capacity, 2× the WCU/RCU is consumed compared to a single operation of the same data size. A transaction can handle up to 100 items and 4MB at once.
 
 ## LSI and GSI — The Difference Between the Two Secondary Indexes
 
@@ -230,7 +230,7 @@ Comparing with other clouds:
 | Consistency model | Eventual/strong choice | Eventual (Firestore: Strong) | 5 levels (Strong ~ Eventual) |
 | Secondary index | LSI/GSI | Composite Index | Partial/Spatial/Composite |
 | TTL | O | O | O (Time to Live) |
-| Transactions | O (25-item limit) | O | O |
+| Transactions | O (100-item limit) | O | O |
 | In-memory cache | DAX | Memorystore | Azure Cache for Redis |
 
 > 📚 **Lyft's Cassandra → DynamoDB migration** — In 2022, Lyft shared its experience of switching from Cassandra to DynamoDB. The main reasons were reduced operational burden and multi-region HA through Global Tables. The biggest challenge during migration was redesigning the partition key — a key strategy that distributed well in Cassandra created a Hot Partition in DynamoDB, so they had to redesign from scratch. Also, code that relied on Cassandra's tunable consistency (QUORUM, LOCAL_QUORUM, etc.) had to be replaced with DynamoDB's binary consistency (strong/eventual). This case teaches the lesson that "a NoSQL migration is not data movement but model redesign."

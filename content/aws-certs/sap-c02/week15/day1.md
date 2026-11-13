@@ -6,7 +6,7 @@
 
 ## 멀티 계정 거버넌스 — 왜 하나의 계정으로는 안 되는가
 
-초기 AWS 사용자들은 모든 것을 단일 계정에 욱여넣었다. 그러나 조직이 커지면 이 구조가 무너진다. 단일 계정은 **폭발 반경(blast radius)**을 격리하지 못하고, 팀별 비용을 분리하기 어렵고, IAM 권한이 수백 개로 불어나며, 한 번의 침해가 전체를 노출시킨다. AWS는 이 문제에 2017년 **Organizations**, 2018년 **Control Tower**, 그리고 SCP(Service Control Policy)로 답했다.
+초기 AWS 사용자들은 모든 것을 단일 계정에 욱여넣었다. 그러나 조직이 커지면 이 구조가 무너진다. 단일 계정은 **폭발 반경(blast radius)**을 격리하지 못하고, 팀별 비용을 분리하기 어렵고, IAM 권한이 수백 개로 불어나며, 한 번의 침해가 전체를 노출시킨다. AWS는 이 문제에 2017년 **Organizations**, 2019년 **Control Tower**, 그리고 SCP(Service Control Policy)로 답했다.
 
 멀티 계정의 본질은 **"계정을 격리의 단위로 쓴다"**는 것이다. 계정 경계는 AWS가 제공하는 가장 강력한 격리 경계다 — IAM 권한이 잘못 설정돼도 다른 계정의 리소스에는 닿지 못한다. 그래서 Prod·NonProd·Sandbox·Security·Logging을 별도 계정으로 쪼개고, 이를 OU(Organizational Unit)로 묶어 정책을 계층적으로 상속시킨다.
 

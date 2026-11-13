@@ -20,7 +20,7 @@
 KMS 직접 암호화: 최대 4KB
 Envelope Encryption: GenerateDataKey, 4KB 초과 데이터
 CMK: 월 $1, 키 정책 필수
-Secrets Manager: 자동 로테이션, $0.40/비밀, 65KB
+Secrets Manager: 자동 로테이션, $0.40/비밀, 64KB(65,536바이트)
 Parameter Store: 표준 무료, SecureString = KMS 암호화
 Cognito User Pool: JWT, API Gateway Authorizer
 Cognito Identity Pool: JWT → IAM 임시 자격 증명 → AWS 리소스

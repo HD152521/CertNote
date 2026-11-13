@@ -294,7 +294,7 @@ Explanation: B solves all the problems of sticky sessions (session loss when an 
 **Question 4.** In ElastiCache Redis Cluster Mode Enabled, the command `MGET user:1 user:2 user:3` returns the error "CROSSSLOT Keys in request don't hash to the same slot". What is the most appropriate solution?
 
 A) Change Cluster Mode to Disabled
-B) Use hash tags — change the keys to `user:{1}`, `user:{2}`, etc., but use the same tag for the same group
+B) Use hash tags — change the keys to `{user}:1`, `{user}:2`, etc., so the same group shares the same tag (`{user}`)
 C) Call GET N times instead of MGET
 D) Switch to Memcached
 

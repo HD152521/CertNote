@@ -247,7 +247,7 @@ new lambda.DockerImageFunction(this, 'MLFn', {
 
 > Lambda Container Image는 일반 OCI 이미지가 아니다. AWS가 정의한 **Lambda Container Image Spec**을 따라야 하며, 이미지에 Lambda Runtime Interface Client(RIC)가 포함되어야 한다. AWS 공식 베이스 이미지(`public.ecr.aws/lambda/*`)에는 RIC가 이미 들어있어 `CMD ["app.handler"]`만 하면 동작한다. 자체 베이스 이미지를 쓰려면 RIC를 직접 추가해야 한다. 한편 콜드 스타트 시 Lambda는 이미지 전체를 다운로드하지 않고, **레이어별 lazy load** + **block-level caching**으로 시작에 필요한 부분만 먼저 가져온다(2020 SOSP 논문 "On-demand Container Loading in AWS Lambda" 참고). 그래서 10GB 이미지라도 콜드 스타트가 zip 패키지의 2~3배 정도에 머무른다.
 
-> ⚠️ **함정**: Container Image Lambda는 **Lambda Layer를 쓸 수 없다**. 모든 의존성이 이미지에 포함되어야 한다. 또 Provisioned Concurrency는 지원하지만 SnapStart는 zip Java만 지원(Container 미지원, 2024년 12월 기준). 시험에서 "ML 모델 5GB를 Lambda에 배포하려면?" 답은 Container Image이지만, "기존 Layer 4개를 그대로 쓰면서 패키지 크기를 줄이려면?" 답은 Layer 유지 + zip 패키지 최적화이지 Container가 아니다.
+> ⚠️ **함정**: Container Image Lambda는 **Lambda Layer를 쓸 수 없다**. 모든 의존성이 이미지에 포함되어야 한다. 또 Provisioned Concurrency는 지원하지만 SnapStart는 zip Java만 지원(Container 미지원, 2024년 12월 기준. 이후 컨테이너 이미지·Python·.NET 지원이 추가돼 2026-11 현재 공식 문서는 ZIP·컨테이너 모두 지원). 시험에서 "ML 모델 5GB를 Lambda에 배포하려면?" 답은 Container Image이지만, "기존 Layer 4개를 그대로 쓰면서 패키지 크기를 줄이려면?" 답은 Layer 유지 + zip 패키지 최적화이지 Container가 아니다.
 
 ## IaC 도구 선택 매트릭스
 
@@ -372,7 +372,7 @@ Lambda는 invocation이 없으면 컨테이너가 회수되고, 다음 invocatio
 | 완화 기법 | 효과 | 비용 | 적용 |
 |-----------|------|------|------|
 | **Provisioned Concurrency** | Cold start 거의 0 (사전 워밍) | 활성 시간 과금 | 트래픽 예측 가능 시 |
-| **SnapStart (Java)** | Java init 시간 90%+ 단축 | 무료 | zip Java 11/17/21 |
+| **SnapStart (Java)** | Java init 시간 90%+ 단축 | 무료 | zip Java 11/17/21 (2024년 말 기준) |
 | **ARM 아키텍처** | x86보다 10~20% 빠른 init | 20% 저렴 | 호환되는 런타임 |
 | **패키지 최소화** | 다운로드 시간 단축 | - | 모든 함수 |
 | **Top-level import 최소화** | Init code 단축 | - | Python/Node 특히 |
@@ -438,7 +438,7 @@ D) Lambda 함수만 자동 권한 부여, 다른 자원에는 적용 안 됨
 
 ---
 
-**문제 2.** Lambda Container Image와 zip 패키지의 차이로 정확하지 않은 것은?
+**문제 2.** Lambda Container Image와 zip 패키지의 차이로 정확하지 않은 것은? (2024년 말 기준)
 
 A) Container는 최대 10GB, zip은 250MB
 B) Container는 Lambda Layer 사용 불가
@@ -474,7 +474,7 @@ D) IAM Role 자동 회전
 
 ---
 
-**문제 5.** SnapStart의 핵심 메커니즘과 시험에서의 적용 범위는?
+**문제 5.** SnapStart의 핵심 메커니즘과 시험에서의 적용 범위는? (2024년 말 기준)
 
 A) 모든 런타임의 cold start 단축
 B) Java 함수 init 단계의 JVM 메모리 스냅샷을 S3에 저장 → 다음 invocation은 복원해 init 건너뜀; zip Java 11/17/21만 지원

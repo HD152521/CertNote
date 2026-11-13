@@ -247,7 +247,7 @@ new lambda.DockerImageFunction(this, 'MLFn', {
 
 > A Lambda Container Image is not an ordinary OCI image. It must follow the **Lambda Container Image Spec** defined by AWS, and the image must include the Lambda Runtime Interface Client (RIC). The official AWS base images (`public.ecr.aws/lambda/*`) already include the RIC, so just `CMD ["app.handler"]` works. If you use your own base image, you must add the RIC yourself. Meanwhile, on a cold start Lambda doesn't download the whole image; with **per-layer lazy loading** + **block-level caching**, it first fetches only the part needed to start (see the 2020 SOSP paper "On-demand Container Loading in AWS Lambda"). That's why even a 10GB image has a cold start of only about 2 to 3 times that of a zip package.
 
-> ⚠️ **Trap**: Container Image Lambda **cannot use Lambda Layers**. All dependencies must be included in the image. Also, Provisioned Concurrency is supported, but SnapStart supports only zip Java (not Container, as of December 2024). On the exam, the answer to "how do you deploy a 5GB ML model to Lambda?" is Container Image, but the answer to "how do you reduce package size while keeping the existing 4 Layers as they are?" is to keep the Layers and optimize the zip package, not Container.
+> ⚠️ **Trap**: Container Image Lambda **cannot use Lambda Layers**. All dependencies must be included in the image. Also, Provisioned Concurrency is supported, but SnapStart supports only zip Java (not Container, as of December 2024; container image, Python, and .NET support were added later, and as of 2026-11 the official docs support both ZIP and container images). On the exam, the answer to "how do you deploy a 5GB ML model to Lambda?" is Container Image, but the answer to "how do you reduce package size while keeping the existing 4 Layers as they are?" is to keep the Layers and optimize the zip package, not Container.
 
 ## IaC Tool Selection Matrix
 
@@ -372,7 +372,7 @@ When Lambda has no invocations, the container is reclaimed, and the next invocat
 | Mitigation technique | Effect | Cost | Applies to |
 |-----------|------|------|------|
 | **Provisioned Concurrency** | Cold start nearly 0 (pre-warmed) | Billed for active time | When traffic is predictable |
-| **SnapStart (Java)** | Cuts Java init time by 90%+ | Free | zip Java 11/17/21 |
+| **SnapStart (Java)** | Cuts Java init time by 90%+ | Free | zip Java 11/17/21 (as of late 2024) |
 | **ARM architecture** | 10 to 20% faster init than x86 | 20% cheaper | Compatible runtimes |
 | **Minimize package** | Reduces download time | - | All functions |
 | **Minimize top-level imports** | Shortens init code | - | Especially Python/Node |
@@ -438,7 +438,7 @@ Explanation: The core of CDK grant methods is **expressing intent + mapping reso
 
 ---
 
-**Question 2.** Which statement about the differences between Lambda Container Image and a zip package is NOT accurate?
+**Question 2.** Which statement about the differences between Lambda Container Image and a zip package is NOT accurate? (As of late 2024.)
 
 A) Container is up to 10GB, zip is 250MB
 B) Container cannot use Lambda Layers
@@ -474,7 +474,7 @@ Explanation: CDK Pipelines declares the pipeline itself as CDK code, in the spir
 
 ---
 
-**Question 5.** What is SnapStart's core mechanism and its scope of application on the exam?
+**Question 5.** What is SnapStart's core mechanism and its scope of application on the exam? (As of late 2024.)
 
 A) Shortens cold start for all runtimes
 B) Saves a JVM memory snapshot of the Java function's init phase to S3 → the next invocation restores it and skips init; supports only zip Java 11/17/21

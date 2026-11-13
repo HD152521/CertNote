@@ -69,7 +69,7 @@ DynamoDB의 비용과 성능은 WCU(Write Capacity Unit)와 RCU(Read Capacity Un
 
 **On-Demand 모드의 내부 동작** — On-Demand 모드는 RCU/WCU를 미리 설정하지 않고 실제 사용량에 따라 과금한다. 내부적으로 DynamoDB는 테이블의 과거 피크 트래픽의 2배까지 "자동 최대값"을 설정한다. 이 한도를 초과하는 경우 DynamoDB는 초기에는 수용하지만 지속되면 점진적으로 스로틀링할 수 있다. On-Demand에서 갑작스럽게 트래픽이 수십 배 급증하면 초기 수 분간 스로틀링이 발생할 수 있다. Provisioned + Auto Scaling에서는 Auto Scaling 정책이 평활화를 돕지만 스케일링 자체가 몇 분이 걸린다. 신규 테이블에서 트래픽이 폭증할 예정이라면, 시작 전에 한 번 대용량 Provisioned로 설정했다가 On-Demand로 전환하면 "자동 최대값"이 높게 설정되어 있어 안전하다.
 
-**트랜잭션 비용이 2배인 이유** — DynamoDB 트랜잭션(TransactWriteItems/TransactGetItems)은 2-Phase Commit(2PC) 유사 프로토콜을 내부적으로 사용한다. 첫 번째 페이즈에서 모든 항목에 대한 잠금/예약을 수행하고, 두 번째 페이즈에서 실제 커밋을 수행한다. 이 두 단계가 각각 용량을 소비하기 때문에 동일한 데이터 크기의 단일 작업 대비 2배의 WCU/RCU가 소비된다. 트랜잭션은 한 번에 최대 25개 항목, 4MB까지 처리 가능하다.
+**트랜잭션 비용이 2배인 이유** — DynamoDB 트랜잭션(TransactWriteItems/TransactGetItems)은 2-Phase Commit(2PC) 유사 프로토콜을 내부적으로 사용한다. 첫 번째 페이즈에서 모든 항목에 대한 잠금/예약을 수행하고, 두 번째 페이즈에서 실제 커밋을 수행한다. 이 두 단계가 각각 용량을 소비하기 때문에 동일한 데이터 크기의 단일 작업 대비 2배의 WCU/RCU가 소비된다. 트랜잭션은 한 번에 최대 100개 항목, 4MB까지 처리 가능하다.
 
 ## LSI와 GSI — 두 가지 보조 인덱스의 차이
 
@@ -228,7 +228,7 @@ DAX가 적합한 경우와 그렇지 않은 경우:
 | 일관성 모델 | 결과적/강한 선택 | 결과적 (Firestore: Strong) | 5가지 레벨 (Strong ~ Eventual) |
 | 보조 인덱스 | LSI/GSI | Composite Index | Partial/Spatial/Composite |
 | TTL | O | O | O (Time to Live) |
-| 트랜잭션 | O (25 항목 한도) | O | O |
+| 트랜잭션 | O (100 항목 한도) | O | O |
 | 인메모리 캐시 | DAX | Memorystore | Azure Cache for Redis |
 
 **Lyft의 Cassandra → DynamoDB 마이그레이션** — 2022년 Lyft는 Cassandra에서 DynamoDB로 전환한 경험을 공유했다. 주요 이유는 운영 부담 감소와 Global Tables를 통한 멀티 리전 HA였다. 마이그레이션 과정에서 가장 큰 도전은 파티션 키 재설계였다 — Cassandra에서 분산이 잘 됐던 키 전략이 DynamoDB에서는 Hot Partition을 만들어서 처음부터 다시 설계해야 했다. 또한 Cassandra의 튜너블 일관성(QUORUM, LOCAL_QUORUM 등)에 의존하던 코드가 DynamoDB의 이분법적 일관성(강한/결과적)으로 대체되었다. 이 사례는 "NoSQL 마이그레이션은 데이터 이동이 아니라 모델 재설계"라는 교훈을 준다.

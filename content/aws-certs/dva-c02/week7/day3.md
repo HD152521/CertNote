@@ -294,7 +294,7 @@ D) S3에 세션 JSON 파일 저장
 **문제 4.** ElastiCache Redis Cluster Mode Enabled에서 `MGET user:1 user:2 user:3` 명령이 "CROSSSLOT Keys in request don't hash to the same slot" 에러를 낸다. 가장 적절한 해결책은?
 
 A) Cluster Mode를 Disabled로 변경
-B) hash tag 사용 — 키를 `user:{1}`, `user:{2}` 식으로 변경하되 같은 그룹은 동일 tag 사용
+B) hash tag 사용 — 키를 `{user}:1`, `{user}:2` 식으로 변경해 같은 그룹은 동일 tag(`{user}`) 사용
 C) MGET 대신 GET을 N번 호출
 D) Memcached로 전환
 
