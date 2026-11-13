@@ -1,108 +1,178 @@
-# Day 3 - Data Augmentation and Synthesis: Addressing Insufficient and Imbalanced Data
+# Day 3 - Data Augmentation and Synthesis: Handling Scarce and Imbalanced Data
 
-Building a good model requires sufficient and balanced data. However, reality is often different. Rare disease diagnostic data has very few positive samples, fraudulent transactions represent only 0.1% of the total, and certain classes of images may have only a handful of examples. If this situation is left unchanged, the model will only match the majority class well and miss the important minority class.
+## 📌 Key Takeaways
 
-Today, we cover the concepts of **data augmentation** and **synthesis**, as well as techniques for handling **imbalanced data** (such as SMOTE). The MLS-C01 exam asks not so much about code implementation, but rather "which technique is appropriate for which situation."
+- **Augmentation** = transforming existing data to diversify it. The golden rule is "**only transformations that do not change the label**."
+- **Synthesis** = generating data that did not exist before (GANs, simulation, synthetic tabular data). It addresses privacy and scarce data.
+- The biggest risk of synthetic data is the **distribution gap**. Use it as a supplement, and **always validate with real data**.
+- Handling imbalance has three layers: the **data layer** (over/undersampling, SMOTE), the **algorithm layer** (class weights, threshold), and the **evaluation layer** (no accuracy; recall, F1, PR-AUC).
+- **SMOTE** is different from simple duplication. It creates new points by **interpolating between** a minority sample and its nearest neighbors.
 
-## What is Data Augmentation?
+## Why This Problem Arises
 
-Data augmentation is a technique that **transforms existing data to create new training samples**. Without collecting new data, it increases the diversity and volume of a dataset, improving the model's generalization performance and reducing overfitting.
+Building a good model requires enough balanced data, but reality is different. Rare disease diagnosis data has extremely few positive samples, fraudulent transactions are 0.1% of the total, and some image classes have only a handful of pictures. Left as is, the model gets the majority class right and misses the minority class that actually matters.
 
-> 💡 **Related Theory**: The core principle of augmentation is "transformation that does not change the label." Flipping a cat photo horizontally still leaves it a cat. In other words, only transformations that diversify the input while preserving the correct answer (label) should be applied. Through this, the model learns invariance—that "the essence is the same even if position, angle, or brightness differ."
+MLS-C01 asks not about code implementation but "**which technique fits which situation**."
+
+| Situation | First response | Second response |
+|---|---|---|
+| The total amount of data is small | Transfer learning, data augmentation | Supplement with synthetic data |
+| Only a specific class is scarce | Oversampling/SMOTE, class weights | Threshold adjustment |
+| Real data cannot be used (privacy) | Synthetic tabular data | Anonymization, differential privacy |
+| There are no examples of rare or dangerous situations | Simulation | Domain-rule-based generation |
+| Labels are scarce | Active learning, weak supervision | Semi-supervised learning |
+
+## What Is Data Augmentation
+
+Data augmentation is a technique that **creates new training samples by transforming existing data**. Without collecting new data, it increases the diversity and quantity of the dataset, improving generalization and reducing overfitting.
+
+The core principle of augmentation is "**a transformation that does not change the label**." A cat photo flipped horizontally is still a cat. In other words, you should apply only transformations that preserve the correct answer (the label) while diversifying just the input. Through this, the model learns invariance: "the essence is the same even when position, angle, or brightness differ."
 
 ### Image Augmentation
 
-Images are the most active domain for augmentation. Representative transformations include:
+Images are the area where augmentation is most active.
 
-- **Geometric transformations**: Horizontal/vertical flips, rotation, translation, scaling, cropping
-- **Color and brightness transformations**: Adjusting brightness, contrast, saturation; color jitter
-- **Noise and masking**: Adding Gaussian noise, masking regions (Cutout), mixing two images (Mixup/CutMix)
+| Transformation family | Examples | Invariance the model gains |
+|---|---|---|
+| Geometric transforms | Horizontal/vertical flip, rotation, translation, scaling, crop | Changes in position, angle, and size |
+| Color/brightness transforms | Brightness, contrast, saturation adjustment, color jitter | Differences in lighting and cameras |
+| Noise/masking | Gaussian noise, region occlusion (Cutout) | Partial occlusion, degraded quality |
+| Mixing | Blending two images (Mixup/CutMix) | Smoother decision boundaries |
 
 ```python
-# Image augmentation (conceptual example — torchvision transforms)
+# Image augmentation (conceptual example - torchvision transforms)
 from torchvision import transforms
 
 augment = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),   # horizontal flip
-    transforms.RandomRotation(degrees=15),    # ±15 degree rotation
-    transforms.ColorJitter(brightness=0.2,    # brightness and contrast changes
+    transforms.RandomRotation(degrees=15),    # rotate by ±15 degrees
+    transforms.ColorJitter(brightness=0.2,    # brightness/contrast changes
                            contrast=0.2),
-    transforms.RandomResizedCrop(224),        # random crop then resize
+    transforms.RandomResizedCrop(224),        # random crop, then resize
 ])
 ```
 
-> ⚠️ **Pitfall**: Indiscriminate augmentation can corrupt labels. For example, in digit recognition, rotating "6" by 180 degrees becomes "9," corrupting the label. Additionally, in medical imaging, horizontal flipping can swap left/right organs and compromise diagnostic meaning. Augmentation should be applied **only within the bounds of preserving domain meaning**.
+> ⚠️ **Pitfall**: Indiscriminate augmentation ruins labels. In digit recognition, rotating a "6" by 180 degrees makes it a "9," breaking the label. In medical imaging, a horizontal flip swaps left and right organs and damages the diagnostic meaning. Augmentation must be applied **only within the range that preserves domain meaning**.
 
-### Text Augmentation
+### Text and Audio Augmentation
 
-Text is more challenging than images (changing a single word can change meaning). Still, commonly used techniques include:
+- **Text** is trickier than images (a single word can change the meaning).
+  - **Synonym replacement**: swap some words with synonyms
+  - **Back-translation**: round-trip Korean → English → Korean to diversify the phrasing
+  - **Random insertion, deletion, and swap**: insert or remove some words, or swap their positions
+  - **Embedding-based replacement and contextual models**: generate natural variations with a pretrained language model
+- **Audio** uses speed changes, pitch shifts, added background noise, and time/frequency masking.
 
-- **Synonym replacement**: Replacing some words with synonyms
-- **Back-translation**: Translating Korean → English → Korean to diversify expressions
-- **Random insertion, deletion, and swap**: Adding, removing, or rearranging some words
-- **Embedding-based substitution and contextual model usage**: Creating natural variations using pre-trained language models
+> ⚠️ **Pitfall**: In text augmentation, touching a negation word ("not," "no") flips the label to the opposite. Applying heavy random deletion to sentiment analysis data actually lowers performance.
 
-## Data Synthesis — Creating Data That Doesn't Exist
+## Data Synthesis: Creating Data That Does Not Exist
 
-If augmentation is "transformation of existing data," synthesis is closer to **generating completely new virtual data**. It is used when real data is extremely scarce or when real data cannot be used due to privacy concerns.
+If augmentation is "transforming existing data," synthesis is closer to **generating entirely new virtual data**. It is used when real data is extremely scarce or cannot be used because of privacy.
 
-- **GAN (Generative Adversarial Network)**: A generator and discriminator compete to produce realistic images.
-- **Simulation and synthetic datasets**: Generating rare or dangerous scenarios via simulation, as in autonomous driving.
-- **Synthetic tabular data**: Generating fake table data without personal information by mimicking statistical distributions (privacy protection).
+| Method | Description | Typical use |
+|---|---|---|
+| **GAN** | A generator and a discriminator compete to produce realistic data | Image generation, supplementing rare cases |
+| **Simulation** | Creates situations with a physics or rule engine | Dangerous scenarios for autonomous driving, robotics |
+| **Synthetic tabular data** | Mimics statistical distributions to create a fake table with no personal information | Privacy protection, external sharing |
 
-> 💡 **Related Theory**: Synthetic data is powerful but carries the risk of "distribution gap." If synthetic data fails to perfectly reproduce the actual data distribution, models trained on it will show degraded performance in the real world. Therefore, synthetic data is typically used to **supplement** real data, and validation must always be done on real data.
+Synthetic data is powerful, but it carries the risk of a "**distribution gap**." If synthetic data cannot perfectly reproduce the real data distribution, a model trained on it performs worse in the real world. So use synthetic data to **supplement** real data, and always validate with real data.
 
 ## Handling Imbalanced Data
 
-Class imbalance is a recurring topic in ML exams. In fraud detection, where positive:negative = 1:999, a model that answers "all negative" achieves 99.9% accuracy—but it's a useless model that catches no fraud.
+Class imbalance is an easily confusing topic on the ML exam. In fraud detection with positive:negative = 1:999, a model that answers "all negative" gets 99.9% accuracy but is a useless model that catches no fraud at all.
 
-The response strategy has three major approaches.
+The response strategy has three broad layers.
 
-### 1. Data Level — Resampling
+```
+[Data layer]       Oversampling / Undersampling / SMOTE
+      ▼
+[Algorithm layer]  Class weights / Decision threshold adjustment / Cost-sensitive learning
+      ▼
+[Evaluation layer] No accuracy → recall · F1 · PR-AUC
+```
 
-- **Oversampling**: Duplicating and augmenting minority class samples to increase them.
-- **Undersampling**: Reducing majority class samples to balance (risks data loss).
-- **SMOTE (Synthetic Minority Over-sampling Technique)**: Interpolating between minority class samples to **generate new synthetic samples**. Unlike simple duplication, it adds diversity.
+### 1. Data Layer: Resampling
+
+| Technique | Behavior | Advantage | Risk |
+|---|---|---|---|
+| **Oversampling (duplication)** | Increases the minority class by duplicating it | No information loss | Repeating the same points → overfitting |
+| **Undersampling** | Reduces the majority class to balance | Faster training | Loss of majority class information |
+| **SMOTE** | Generates new points by interpolating between a minority sample and its nearest neighbors | Secures diversity, mitigates overfitting | Wrong synthesis in boundary and noisy regions |
 
 ```python
-# Synthetic minority oversampling with SMOTE (conceptual example — imbalanced-learn)
+# Synthetic oversampling of the minority class with SMOTE (conceptual example - imbalanced-learn)
 from imblearn.over_sampling import SMOTE
 
 smote = SMOTE(random_state=42)
 X_balanced, y_balanced = smote.fit_resample(X_train, y_train)
-# Synthetic samples interpolated between minority class samples are added, balancing class ratios
+# Synthetic samples interpolated between minority-class samples are added so the class ratio is balanced
 ```
 
-> 💡 **Related Theory**: Unlike simple duplication (which risks overfitting from duplication), SMOTE **creates new points** along the line between existing minority samples and their nearest neighbors. This helps the model learn a more generalized decision boundary. However, caution is needed as it can create incorrect synthetic samples in noisy or ambiguous class boundary data.
+Unlike simple duplication (which risks overfitting from repeats), SMOTE **creates new points** on the line connecting an existing minority sample and its nearest neighbors. As a result, the model learns a more generalized decision boundary. However, with noisy data or ambiguous class boundaries it can create wrong synthetic samples, so caution is needed.
 
-### 2. Algorithm Level — Weights and Thresholds
+Resampling must be applied **only to the training set**. If you balance the validation and test sets too, they differ from the real operating distribution and the performance is inflated. Even when using cross-validation, run SMOTE only on the training portion of each fold.
 
-- **Class weights**: Applying larger penalties for minority class errors in the loss function.
-- **Decision threshold adjustment**: Moving the threshold from the default 0.5 to better capture the minority class.
+### 2. Algorithm Layer: Weights and Thresholds
 
-### 3. Evaluation Metric Level
+- **Class weights**: put a larger penalty on minority-class errors in the loss function. XGBoost's `scale_pos_weight` is the typical example.
+- **Decision threshold adjustment**: lower the default 0.5 to catch the minority class better. Set the threshold by looking at the precision-recall curve and matching it to business cost.
+- **Cost-sensitive learning**: optimize by explicitly including the real costs of false positives and false negatives.
 
-> ⚠️ **Pitfall**: With imbalanced data, **accuracy provides false reassurance**. 99.9% accuracy on 1:999 data is essentially meaningless. Instead, metrics like **precision, recall, F1, PR-AUC, ROC-AUC** should be used to properly evaluate minority class performance. Especially for fraud and disease where the minority class is critical, **recall** and **PR-AUC** are key.
+### 3. Evaluation Layer: Change the Metric First
 
-## Application in AWS Context
+On imbalanced data, **accuracy gives false reassurance**. A 99.9% accuracy on 1:999 data is virtually meaningless. Instead, you must evaluate minority-class performance properly with **precision, recall, F1, PR-AUC, and ROC-AUC**. In problems where the minority class matters, such as fraud or disease, **recall** and **PR-AUC** are the key.
 
-- **SageMaker Processing / Data Wrangler**: Execute resampling and augmentation logic during preprocessing.
-- **Weight options in SageMaker built-in algorithms**: For example, using XGBoost's `scale_pos_weight` to correct imbalance.
-- **GAN training**: Train generative models through SageMaker training jobs to create synthetic data.
+## When and Where to Apply Augmentation
 
-> 🎯 **Scenario**: "Credit card fraud detection data is extremely imbalanced at 0.2% positive rate. The model barely catches fraud." → (1) Correct imbalance with oversampling like SMOTE or class weights, (2) evaluate using recall and PR-AUC instead of accuracy, and (3) adjust the decision threshold toward fraud detection.
+Even the same augmentation changes in character depending on when it is applied.
 
-## Summary
+| Approach | When it is created | Advantage | Disadvantage |
+|---|---|---|---|
+| **Pre-generated (offline)** | Created and stored in advance before training | No CPU load during training, easy to reproduce | More storage, diversity is fixed |
+| **Real-time (on-the-fly)** | Random transformation each time a batch is built | Different transformations every epoch → greater diversity | The data loader can become a bottleneck |
 
-Today we learned how to handle situations with insufficient or imbalanced data. **Augmentation diversifies existing data through label-preserving transformations** (image flipping/rotation, text back-translation, etc.), while **synthesis generates new virtual data** (GANs, simulation, synthetic tabular data). For imbalanced data, use **resampling (SMOTE), class weights, and threshold adjustment**, but evaluate using **recall, F1, and PR-AUC** rather than accuracy. Remember the principle that validation of synthesized and augmented data must always be done on real data.
+- **Do not apply augmentation to the validation and test sets.** Evaluation must be done on the real input distribution.
+- There is an exceptional technique (test-time augmentation) that averages the predictions of several transformations at inference time, but this does not enlarge the evaluation data; it is a separate technique that stabilizes predictions.
 
-Tomorrow we will cover **how to efficiently store and read large-scale data during training** (Pipe/File mode, FSx for Lustre, sharding).
+You should not be reassured just by a statement like "we lacked training data, so we expanded it 10x with augmentation." Augmentation **cannot create new information.** If the original is 100 images, however much you expand it, you cannot get more diversity than those 100 images contain. The fundamental solutions are data collection or transfer learning.
 
----
+## Other Paths When Labels Are Scarce
+
+Separate from imbalance, there are also situations where "the labels themselves are scarce."
+
+- **Transfer learning**: take a model pretrained on large data and retrain only the last layers on our data. It greatly reduces the amount of labels needed.
+- **Semi-supervised learning**: use a small amount of labeled data together with a large amount of unlabeled data.
+- **Active learning**: pick only the samples the model is confused about and ask humans to label them.
+- **Weak supervision**: generate a large number of rough labels with rules and heuristics, then train accepting the noise.
+
+All four of these attack the same goal, "reduce the number of labels humans must attach," from different directions. Transfer learning reduces the problem on the **model side**, augmentation on the **input side**, active learning on the **selection side**, and weak supervision on the **label-generation side**. When "reducing labeling cost" appears on the exam, the answer is often one of these four.
+
+## Application in the AWS Context
+
+- **SageMaker Processing / Data Wrangler**: run resampling and augmentation logic in the preprocessing stage.
+- **Weight options in built-in algorithms**: for example, correct imbalance with XGBoost's `scale_pos_weight`.
+- **GAN training**: train a generative model with a SageMaker training job to create synthetic data.
+
+> 🎯 **Scenario**: "Credit card fraud detection data is extremely imbalanced at 0.2% positive. The model almost never catches fraud." → (1) Correct the imbalance with oversampling such as SMOTE or with class weights, (2) evaluate with recall and PR-AUC instead of accuracy, and (3) adjust the decision threshold toward fraud detection.
+
+Tomorrow we cover **how to feed prepared data efficiently into training** (Pipe/File mode, FSx for Lustre, sharding).
+
+## 📖 Glossary
+
+- **Data augmentation**: A technique that increases training samples by transforming existing data without changing the labels.
+- **Invariance**: The property of giving the same answer even when position, angle, or brightness changes. Augmentation instills it in the model.
+- **Back-translation**: A text augmentation that diversifies sentence phrasing by translating into another language and back.
+- **Data synthesis**: Creating data that did not actually exist. GANs, simulation, and so on.
+- **GAN**: A neural network architecture in which a generator and a discriminator compete while learning to produce realistic data.
+- **Distribution gap**: The risk that the distribution of synthetic or augmented data deviates from the real distribution, degrading real-world performance.
+- **Class imbalance**: A state where the number of samples per class is extremely skewed, such as 0.2% fraud.
+- **SMOTE**: An oversampling technique that synthesizes new samples by interpolating between a minority-class sample and its nearest neighbors.
+- **Class weights**: A setting that puts a larger penalty on minority-class errors in the loss function.
+- **Decision threshold**: The cutoff that separates probabilities into positive/negative. The default 0.5 is shifted to match cost.
 
 ## 📝 Practice Questions
 
-**Question 1.** In fraud detection data that is extremely imbalanced with 0.2% positives, which metric is MOST inappropriate for evaluating model performance?
+**Question 1.** On extremely imbalanced fraud detection data with 0.2% positives, which is the least appropriate metric for evaluating model performance?
 
 A) Recall  
 B) PR-AUC  
@@ -110,54 +180,54 @@ C) Accuracy
 D) F1 score  
 
 **Answer: C**  
-Explanation: With an imbalance on the order of 1:499, even answering "all negative" yields accuracy above 99%, giving false reassurance that does not reflect minority-class performance at all. Therefore accuracy is the most inappropriate. Recall, PR-AUC, and F1 appropriately reveal minority-class detection performance and are therefore suitable for imbalanced situations.
+Explanation: With imbalance on the order of 1:499, even answering "all negative" yields an accuracy above 99%, which reflects none of the minority-class performance and gives false reassurance. Therefore accuracy is the least appropriate. Recall, PR-AUC, and F1 properly reveal minority-class detection performance, so they suit imbalanced situations.
 
 ---
 
-**Question 2.** What is the key characteristic that distinguishes the SMOTE technique from simple duplication (duplicate oversampling)?
+**Question 2.** What is the key characteristic that distinguishes SMOTE from simple duplication (duplicate oversampling)?
 
 A) It generates new synthetic samples by interpolating between a minority-class sample and its nearest neighbors  
-B) It randomly deletes majority-class samples  
-C) It only adjusts the weights of the loss function  
+B) It randomly deletes the majority class  
+C) It only adjusts the weights in the loss function  
 D) It fixes the evaluation metric to accuracy  
 
 **Answer: A**  
-Explanation: SMOTE synthesizes new points by interpolating between a minority-class sample and its nearest neighbors, so unlike simple duplication it adds diversity and reduces the risk of overfitting. Deleting majority-class samples (B) is undersampling, weight adjustment (C) is an algorithm-level technique, and D concerns evaluation and is unrelated to the definition of SMOTE.
+Explanation: SMOTE synthesizes new points by interpolating between a minority-class sample and its nearest neighbors, so unlike simple duplication it adds diversity and reduces the risk of overfitting. Deleting the majority class (B) is undersampling, adjusting weights (C) is an algorithm-level technique, and D concerns evaluation and has nothing to do with the definition of SMOTE.
 
 ---
 
 **Question 3.** Which is the most correct principle that must be followed when applying data augmentation?
 
-A) Maximize the transformation strength, even if the label changes  
-B) Always apply all kinds of transformations at the same time  
+A) Raise the transformation strength to the maximum, even if the label changes  
+B) Always apply every kind of transformation at the same time  
 C) Validate only with augmented data and do not use real data  
-D) Transform only within the range that preserves the domain meaning and the label  
+D) Transform only within the range that preserves domain meaning and labels  
 
 **Answer: D**  
-Explanation: Augmentation must diversify the input while keeping the answer (label) intact. For example, rotating the digit "6" by 180 degrees turns it into "9", breaking the label, and horizontally flipping a medical image can corrupt its diagnostic meaning, so augmentation must be applied only within a range that preserves the domain meaning. A and D can ruin the label, and C violates validation principles.
+Explanation: Augmentation must diversify the input while keeping the correct answer (the label). For example, rotating the digit "6" by 180 degrees makes it a "9," breaking the label, and a left-right flip of a medical image can damage the diagnostic meaning, so it must be applied only within the range that preserves domain meaning. A and B can ruin labels, and C violates the validation principle.
 
 ---
 
-**Question 4.** When real data is extremely scarce or cannot be used directly because of privacy constraints, which approach to generating new virtual data is MOST appropriate?
+**Question 4.** When real data is extremely scarce or cannot be used directly because of privacy constraints, which approach for generating new virtual data is the most appropriate?
 
 A) Undersampling  
-B) GAN- or simulation-based data synthesis  
+B) Data synthesis based on GANs or simulation  
 C) Decision threshold adjustment  
 D) Using the accuracy metric  
 
 **Answer: B**  
-Explanation: GANs, simulation, and synthetic structured data generation go beyond simple transformations of existing data to create new virtual data, so they suit situations of real-data scarcity or privacy constraints. Undersampling (A) is a technique that reduces the majority class, threshold adjustment (C) is an algorithm-level correction, and accuracy (D) is an evaluation metric unrelated to data synthesis.
+Explanation: GANs, simulation, and synthetic tabular data generation go beyond simple transformation of existing data to create new virtual data, so they suit situations of real-data scarcity or privacy constraints. Undersampling (A) is a technique that reduces the majority class, threshold adjustment (C) is an algorithm-level correction, and accuracy (D) is an evaluation metric unrelated to data synthesis.
 
 ---
 
-**Question 5.** What is the most important risk to consider before putting a model trained on synthetic data into production?
+**Question 5.** Before putting a model trained on synthetic data into production, which is the most important risk to consider?
 
-A) A gap between the synthetic data and the real distribution (distribution gap) can degrade real-world performance  
+A) The gap between the synthetic data and the real distribution (distribution gap) may degrade real-world performance  
 B) Synthetic data is always better than real data, so there is no risk  
 C) Synthetic data does not need labels, so evaluation is impossible  
 D) Synthetic data has zero storage cost, so it can be generated without limit  
 
 **Answer: A**  
-Explanation: If synthetic data cannot perfectly reproduce the real data distribution, there is a distribution gap risk that a model trained on it performs worse in the real world. Therefore synthetic data should be used to supplement real data, and validation should be done with real data. A and D are incorrect assertions, and synthetic data also needs labels and validation, so C is also wrong.
+Explanation: If synthetic data cannot perfectly reproduce the real data distribution, there is a distribution gap risk that a model trained on it performs worse in the real world. That is why synthetic data should be used to supplement real data, with validation done on real data. A and D are wrong assertions, and synthetic data also needs labels and validation, so C is wrong as well.
 
 ---

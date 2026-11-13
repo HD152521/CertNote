@@ -1,96 +1,103 @@
-# Day 4 - Aurora: How AWS Rewrote the RDBMS Storage Layer
+# Day 4 - Aurora: The Story of How AWS Rewrote the Storage Layer of an RDBMS
 
-Aurora confused many when first announced at 2014 re:Invent. "MySQL-compatible but not MySQL" — odd phrasing. AWS's message was clear — **SQL engine code uses MySQL/PostgreSQL nearly as-is, but the storage, replication, and transaction layers below are redesigned from scratch for cloud**. Result: "5x MySQL performance, 3x PostgreSQL + auto-scaling storage + < 1 sec cross-region replication."
+When Aurora was first unveiled at re:Invent 2014, it left many people puzzled. "MySQL-compatible, but not MySQL" was an awkward phrase. AWS's message was clear: **the SQL engine code is nearly the same MySQL/PostgreSQL code, but the storage, replication, and transaction layers underneath were redesigned from scratch for the cloud environment**. The result of that decision is numbers like "5x the performance of MySQL, 3x that of PostgreSQL + auto-scaling storage + sub-second cross-Region replication."
 
-In DVA-C02, Aurora appears almost as frequently as RDS but asks differently. RDS asks "managed DB trade-offs," Aurora asks "why is RDS insufficient, when to pick Aurora." Understanding that requires knowing Aurora's storage structure and quorum-based replication. Today we look inside.
+On DVA-C02, Aurora is asked about from a different angle than RDS. RDS asks about "the trade-offs of a managed DB," while Aurora asks "why is RDS not enough, and in which scenarios should you pick Aurora?" To understand the answer, you need to know Aurora's storage structure and quorum-based replication. Today we look inside.
 
-## Aurora's Origin: "Database is Fundamentally Storage"
+## The Birth of Aurora: "The Essence of a Database Is Storage"
 
-Traditional MySQL/PostgreSQL designed for 1990s single-server. Binlog/WAL on disk, backup copies disk, replication sends binlog elsewhere — cloud straight-lift brings ① EBS single volume risk — AZ failure vulnerable ② async binlog replication → lag ③ storage manual scale ④ backup/restore time proportional to instance size — all limitations follow.
+Traditional MySQL/PostgreSQL was designed assuming a 1990s single-server environment. It writes the binlog/WAL to disk, backups copy that disk, and replication sends the binlog to another server. Moving this model to the cloud as is brings these limitations along: ① it depends on a single EBS volume, so it is vulnerable to a single-AZ failure; ② replication is asynchronous and binlog-based, so lag occurs; ③ storage expansion is manual; ④ backup/restore takes time proportional to instance size.
 
-2014 Aurora paper (SIGMOD 2017 "Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases", Verbitski et al.) dropped key insight simply: **"Network is the new bottleneck. Reducing network traffic is performance."** Traditional DB commits do ① data page ② undo log ③ redo log ④ binlog ⑤ double-write buffer — same data written multiple forms to disk. AWS measurement: MySQL ~7.4 disk I/Os per commit. Aurora discards all, **sends only redo log to distributed storage, page reconstruction happens background on storage nodes**. Result: I/O reduced to 1/6, network traffic 7.7x less.
+The core insight of the Aurora paper (SIGMOD 2017, "Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases," Verbitski et al.) was simple: **"The network is the new bottleneck. Therefore reducing network traffic is performance."** A traditional DB, at commit time, writes the same data to disk in several forms: ① data pages, ② undo log, ③ redo log, ④ binlog, ⑤ double-write buffer, and so on. According to AWS measurements, MySQL performs about 7.4 disk I/Os per commit.
+
+Aurora sends only the redo log to the distributed storage, and the storage nodes handle page reconstruction in the background. As a result, the I/O count dropped to about one-sixth and network traffic dropped by 7.7x.
 
 ```
-Normal MySQL commit:
+Commit in ordinary MySQL:
   Application → MySQL
                   ↓
               Local disk writes (data page, redo log, undo log, binlog, double-write...)
                   ↓
-              Binlog-based replica replication (async)
+              Binlog-based replica replication (asynchronous)
 
-Aurora commit:
+Commit in Aurora:
   Application → Aurora
                   ↓
-              Send "redo log record" to 6 storage nodes only
+              Send only the "redo log record" to 6 storage nodes
                   ↓
-              Commit when 4/6 ack
-              (storage nodes background-reconstruct data page)
+              Commit completes once 4 of 6 ack
+              (storage nodes reconstruct data pages in the background)
 ```
 
-> 🔍 **Going Deeper**: Aurora storage node not simple EBS volume. **Small server able to reconstruct pages from redo log**. Storage node receives log records, appends to local disk, simultaneously creates page versions with that log applied. Read request asks "this page at this LSN version" — storage node instantly responds. Structure enables ① binlog vanishes ② replica has no own storage, shares primary storage ③ backup essentially free (continuous) ④ storage auto-expands (10GB segment add/remove). These are roots of Aurora's all differentiators.
+An Aurora storage node is not a simple EBS volume. It is **a small server that can receive redo logs and reconstruct pages**. An Aurora storage node appends incoming log records to its own local disk and builds page versions with that log applied. When a read request asks for "this page's version as of a specific LSN," the storage node responds immediately.
 
-## 6 Copies × 3 AZ + Quorum: "Survives Any Failure Combination"
+Thanks to this structure: ① the binlog disappears; ② replicas have no storage of their own and reference the same storage as the primary; ③ backup is effectively free (continuous backup); ④ storage expansion is automatic (segments of 10 GB are added/removed). This is the source of Aurora's differentiation.
 
-Aurora storage's famous picture: "6 copies across 3 AZs." Number not arbitrary but **minimum from distributed systems fault tolerance math**.
+## 6 Copies × 3 AZs + Quorum: "Survives Any Combination of Failures"
+
+The representative picture explaining Aurora storage is "6 copies across 3 AZs." This number was not chosen arbitrarily; it is **a value derived from the mathematics of fault tolerance in distributed systems**.
 
 ```
-3 AZ × 2 copies = 6 replicas
+3 AZ × 2 copies = 6 copies
 
-Write quorum: V_w = 4 (commit after 4/6 ack)
-Read quorum: V_r = 3 (read from 3/6 valid)
+Write quorum: V_w = 4 (commit once 4 of 6 copies ack)
+Read quorum: V_r = 3 (a read from 3 of 6 copies is valid)
 
-V_w + V_r > N (4 + 3 > 6) → strong consistency
-2 × V_w > N (8 > 6) → no concurrent write collision
+V_w + V_r > N (4 + 3 > 6) → guarantees strong consistency
+2 × V_w > N (8 > 6) → prevents concurrent write conflicts
 ```
 
-This setup guarantees:
+What this configuration guarantees:
 
-- **1 AZ + 1 extra node lost = readable** (3 remaining copies satisfy V_r)
-- **Entire 1 AZ lost = writable** (4 remaining copies satisfy V_w)
-- **2 AZs lost = no data loss** (2 remaining copies recoverable)
+- **Loss of 1 AZ + 1 additional node = reads still possible** (the remaining 3 copies satisfy V_r)
+- **Loss of an entire AZ = writes still possible** (the remaining 4 copies satisfy V_w)
+- **Loss of 2 AZs = no data loss** (the remaining 2 copies can be used for recovery)
 
-> 💡 **Related Theory**: Quorum replication originates 1979 Robert Thomas "majority consensus algorithm." 2007 Werner Vogels Dynamo paper moved to N/R/W notation for cloud scale; Cassandra, MongoDB, DynamoDB all use same model. Aurora (N=6, W=4, R=3) optimally balances "surviving simultaneous AZ + node failure." AZ-unit failure + node-unit failure survivable requires ① N≥6 ② N/AZ-value that N-W≥1 → 3 AZ × 2 = 6, W=4 is minimum. So 6 is math-derived optimum.
+Aurora's (N=6, W=4, R=3) was chosen to withstand AZ-level failures and node-level failures together.
 
-> 📚 **Case Study**: February 28, 2017, AWS S3 us-east-1 massive outage (~4 hours) — debug command typo downed index servers, full index restart. Aurora's quorum model: one AZ disappears → still hits V_w=4 with remaining copies, maintains consistency while alive. S3 went down, Aurora would survive. AWS then reinforced — "1 AZ + 1 node simultaneous loss = still readable" standard SLO.
+## Aurora Replicas: Millisecond-Level Replication from Shared Storage
 
-## Aurora Replica: Shared Storage Makes Sub-ms Replication
+With an RDS Read Replica, each replica has its own storage, receives the primary's binlog, and applies it to its own disk. The limitations of this model are: ① storage cost is incurred for each replica; ② lag depends on binlog transfer + apply speed (usually several seconds to tens of seconds); ③ adding a replica takes time for the initial sync.
 
-RDS Read Replica: each replica owns storage, pulls primary's binlog, applies to own disk. Limits: ① per-replica storage cost ② replication lag binlog speed (seconds to tens sec) ③ adding replica needs initial sync time.
+An Aurora Replica **has no storage of its own**. It shares the same distributed storage as the primary. So:
 
-Aurora Replica: **no own storage**. Shares primary's distributed storage. Result:
-
-- **10-20ms replication lag** (really just time to notify replica cache of redo log)
-- **Instant add** (no storage copy)
-- **Up to 15** (RDS 5)
-- **Instance cost only** (no duplicate storage)
+- **Replication lag of 10-20 ms** (really just the time to tell the replica's cache about the redo log)
+- **A new replica is usable immediately** (no storage copy)
+- **Scales up to 15** (RDS: 5)
+- **You pay only for instances** (no duplicated storage cost)
 
 | Dimension | RDS Read Replica | Aurora Replica |
 |------|------------------|----------------|
-| Storage | Each own | Shared |
-| Mechanism | Async binlog/WAL | Redo log notification (storage shared) |
-| Replication lag | Seconds ~ minutes | 10-20ms |
-| Max count | 5 (MySQL/PG/MariaDB now 15) | 15 |
-| Initial sync | Full copy needed | Instant |
-| Failover time | Manual promote (minutes) | Automatic (~30 sec) |
+| Storage | Each has its own | Shared |
+| Replication mechanism | Asynchronous binlog/WAL | Redo log notification (storage is shared) |
+| Replication lag | Seconds to minutes | 10-20 ms |
+| Max count | 5 (raised to 15 for MySQL/PG/MariaDB) | 15 |
+| Initial sync | Full copy required | Immediate |
+| Failover time | Manual promote (minutes) | Automatic (~30 seconds) |
 
-> ⚠️ **Trap**: Aurora Replica failover 30 sec **when same instance class**. Different-class replicas lower failover priority, post-failover performance drops. Exam "Aurora failover then slow" → replica size mismatch sometimes answers. **Tier 0-15** failover priority explicit control.
+> ⚠️ **Pitfall**: The 30-second Aurora Replica failover time applies **when the instance class is the same**. If there is a replica with an instance class different from the primary, its failover priority drops, and performance can degrade after failover. The cause in an "Aurora performance degradation after failover" scenario can be a replica instance size mismatch. You can specify the failover order with **Tier 0-15** priorities.
 
-## Aurora Endpoints 5 Types: Deciding Connection Route
+## The 5 Aurora Endpoint Types: Tools for Deciding Where to Connect
 
-Aurora cluster-level endpoints (not instance-level like RDS). Five types requiring memorization.
+Unlike RDS, Aurora defaults to **cluster-level endpoints** rather than instance-level endpoints. You must distinguish the 5 types.
 
-| Endpoint | DNS Form | Role |
+| Endpoint | DNS form | Role |
 |-----------|---------|------|
-| **Cluster Endpoint (Writer)** | `myclu.cluster-xxxx.region.rds.amazonaws.com` | Current primary auto-routed (auto-updates on failover) |
-| **Reader Endpoint** | `myclu.cluster-ro-xxxx.region.rds.amazonaws.com` | All read replicas DNS round-robin (load balance) |
-| **Custom Endpoint** | `myclu-analytics.cluster-custom-xxxx...` | User-specified instance group (e.g., analytics-only large replicas) |
-| **Instance Endpoint** | `myinst-1.xxxx.region.rds.amazonaws.com` | Direct specific instance (ops debugging) |
-| **Global Database Writer** | Auto-issued | Global DB all regions, auto-routes primary region writer |
+| **Cluster Endpoint (Writer)** | `myclu.cluster-xxxx.region.rds.amazonaws.com` | Automatically routes to the current primary (updated automatically on failover) |
+| **Reader Endpoint** | `myclu.cluster-ro-xxxx.region.rds.amazonaws.com` | DNS round-robin across all read replicas (load balancing) |
+| **Custom Endpoint** | `myclu-analytics.cluster-custom-xxxx...` | A user-specified group of instances (for example, only the large replicas for analytics workloads) |
+| **Instance Endpoint** | `myinst-1.xxxx.region.rds.amazonaws.com` | A specific instance directly (for operational debugging) |
+| **Global Database Writer** | Issued automatically | The same endpoint in every Region of the Global DB, automatically routed to the writer in the primary Region |
 
-> 🔍 **Going Deeper**: Reader Endpoint load balancing happens **DNS level**. Resolving same endpoint returns different replica IPs each time (TTL 5 sec). Gotcha: ① long-held connection pins to one replica — small pool = unbalanced ② stub resolver TTL cache (Java default: infinite) = no refresh. Production needs ① short connection lifetime ② Aurora cluster-aware library (MariaDB Connector/J Aurora-aware, Aurora Postgres JDBC wrapper) ③ RDS Proxy routing. Exam: "Reader Endpoint used but load to one replica only" → connection hold + DNS cache.
+Reader Endpoint load balancing happens at the **DNS level**. Resolving the same endpoint returns a different replica IP each time (TTL 5 seconds). This causes two problems.
+
+- If a client keeps a connection open, that connection is pinned to one replica. If the connection pool is small, the load isn't distributed evenly.
+- A stub resolver that caches DNS (the Java DNS default cache is infinite) doesn't refresh.
+
+In practice you need one of: ① short connection lifetimes; ② Aurora client libraries (MariaDB Connector/J Aurora cluster aware, the Aurora Postgres JDBC wrapper); ③ delegating routing to RDS Proxy. The cause in a scenario such as "I used the Reader Endpoint but the load concentrates on one replica" is persistent connections + DNS caching.
 
 ```python
-# Practical: analytics workload via custom endpoint
+# In practice: isolate analytics workloads with a custom endpoint
 ANALYTICS_ENDPOINT = "myclu-analytics.cluster-custom-xxxx.region.rds.amazonaws.com"
 OLTP_READER_ENDPOINT = "myclu.cluster-ro-xxxx.region.rds.amazonaws.com"
 WRITER_ENDPOINT = "myclu.cluster-xxxx.region.rds.amazonaws.com"
@@ -105,203 +112,211 @@ def get_write_conn():
     return pymysql.connect(host=WRITER_ENDPOINT, ...)
 ```
 
-## Aurora Serverless v2: ACU's Secret
+## Aurora Serverless v2: The Secret of ACUs
 
-Aurora Serverless auto-scales compute per traffic. Unit: **ACU (Aurora Capacity Unit)** — 1 ACU ≈ 2GB memory + proportional CPU/network. v1 vs v2 differences hit exams.
+Aurora Serverless automatically scales compute capacity up and down with traffic. The unit is the **ACU (Aurora Capacity Unit)**: 1 ACU ≈ 2 GB of memory plus the corresponding CPU/network. The differences between v1 and v2 appear on the exam.
 
-| Item | Aurora Serverless v1 (Legacy) | Aurora Serverless v2 (Recommended) |
+| Item | Aurora Serverless v1 (legacy) | Aurora Serverless v2 (recommended) |
 |------|------------------------------|------------------------------|
-| Scale unit | 2x jumps (2→4→8 ACU) | 0.5 ACU micro-steps |
-| Speed | Minute-level | Second-level |
-| Min Capacity | 1 ACU (or pause) | 0 ACU (auto-pause) ~ 0.5 ACU |
+| Scaling unit | Doubling jumps (2→4→8 ACU) | Fine-grained 0.5 ACU steps |
+| Scaling speed | Minutes | Seconds |
+| Min Capacity | 1 ACU (or paused) | 0 ACU (auto-pause) ~ 0.5 ACU |
 | Max Capacity | 256 ACU | 256 ACU |
-| Cold start | After pause ~30 sec | Barely any |
-| Multi-AZ | Option | Standard |
-| Data API | ✅ | ✅ (2023+) |
-| New | Deprecation underway | Recommended |
+| Cold start | ~30 seconds for the first request after pause | Almost none |
+| Multi-AZ | Optional | Standard |
+| Data API | ✅ | ✅ (since 2023) |
+| New use | Being deprecated | Recommended |
 
-> 🔍 **Going Deeper**: v1 vs v2 biggest diff: **scaling mechanism**. v1 moves traffic to new instance (scale-up) — big jumps, slow. v2 hypervisor-level CPU/memory allocation adjustment — Firecracker microVM dynamic resource feature used for 0.5 ACU steps without instance swap. Enables "second-level micro-tuning."
+The biggest difference between v1 and v2 is the **scaling mechanism**. v1 moves traffic to a new instance (scale-up), so the jumps are large and slow. v2 adjusts the live instance's CPU/memory allocation at the hypervisor level: it uses the dynamic resource adjustment capability of Firecracker microVMs to raise and lower ACUs without replacing the instance. This is the technical basis of "fine-grained, second-level adjustment." v2 is closer to "a regular Aurora instance with usage-based billing."
 
-> 💡 **Use Decision Tree**:
-> - 24-hour steady traffic → regular Aurora (Reserved for cost cut)
-> - Periodic predictable traffic → Aurora + Auto Scaling replicas
-> - Sporadic unpredictable traffic → Aurora Serverless v2
-> - Dev/staging (nighttime unused) → Aurora Serverless v2 (auto-pause)
-> - Data API calls primary → Aurora Serverless v2
+The choice by usage scenario is as follows.
 
-## Aurora Global Database: < 1 Sec Cross-Region Replication Secret
+- Traffic is constant 24 hours a day → regular Aurora instances (cut costs with Reserved)
+- Traffic is periodic but predictable → Aurora + Auto Scaling for replicas
+- Traffic is intermittent and unpredictable → Aurora Serverless v2
+- Development/staging environments (unused at night) → Aurora Serverless v2 (auto-pause enabled)
+- Mainly Data API calls → Aurora Serverless v2
 
-Aurora Global Database: **1 primary region + max 5 secondary regions**. Differs RDS Cross-Region Read Replica: ① dedicated replication infra (storage-level) ② typically lag < 1 sec ③ each secondary has own 15 read replicas ④ cross-region failover RTO < 1 min.
+## Aurora Global Database: The Secret to Sub-Second Cross-Region Replication
+
+Aurora Global Database consists of **1 primary Region + up to 5 secondary Regions**. How it differs from an RDS Cross-Region Read Replica: ① dedicated replication infrastructure (storage-level replication); ② lag is typically < 1 second; ③ a secondary can have its own 15 read replicas; ④ RTO < 1 minute for cross-Region failover.
 
 ```
-[Primary: ap-northeast-2 Seoul]
+[Primary Region: ap-northeast-2 Seoul]
   Aurora Writer + Replicas
        │
-       │ (storage-level replication, < 1sec)
+       │ (storage-level replication, < 1 second)
        │
-       ├──→ [Secondary: us-east-1 Virginia]
+       ├──→ [Secondary: us-east-1 N. Virginia]
        │      Read-only Aurora cluster
-       │      Own 0-15 read replicas
+       │      Own read replicas 0-15
        │
        └──→ [Secondary: eu-west-1 Ireland]
               Read-only Aurora cluster
-              Own 0-15 read replicas
+              Own read replicas 0-15
 ```
 
-> 🔍 **Going Deeper**: Aurora Global Database replication resembles redo log shipping but not binlog. Primary storage nodes send redo log additionally to secondary region storage nodes. Channel uses AWS backbone network (same backbone avg RTT 100-200ms), compression/dedup applied vs internet efficiency. Result: cross-region lag < 1 sec. Exam: "global distribution + < 1 sec lag + RDBMS" → nearly always Aurora Global Database.
+Aurora Global Database replication is **close to redo log shipping but is not the binlog**. The primary's storage nodes additionally send the redo log directly to the storage nodes in the secondary Region. This channel uses the AWS backbone network (average RTT of 100-200 ms on the same backbone), and compression and deduplication are applied, making it more efficient than the public internet. As a result, cross-Region lag stays under 1 second. The answer to a "global distribution + sub-second lag + RDBMS" scenario is Aurora Global Database.
 
 | Dimension | RDS Cross-Region Read Replica | Aurora Global Database |
 |------|--------------------------------|------------------------|
-| Replication | Async binlog | Redo log shipping (dedicated infra) |
-| Typical lag | Seconds ~ tens seconds | < 1 sec |
-| Failover | Manual promote | Managed failover (< 1 min) |
-| Secondary regions | Many possible (separate replicas) | Max 5 (managed cluster) |
-| Secondary read replicas | N/A (itself replica) | 15 each region |
-| RPO | Tens sec ~ minutes | < 1 sec |
+| Replication method | Asynchronous binlog | Redo log shipping (dedicated infrastructure) |
+| Typical lag | Several seconds to tens of seconds | < 1 second |
+| Failover | Manual promote | Managed failover (< 1 minute) |
+| Number of secondary Regions | Many possible (each a separate replica) | Up to 5 (managed clusters) |
+| Secondary read replicas | N/A (it is itself a replica) | Up to 15 per Region |
+| RPO | Tens of seconds to minutes | < 1 second |
 
-> ⚠️ **Trap**: Aurora Global Database secondaries **read-only**. Write attempt = read-only error. Also "managed failover" needs explicit trigger, not automatic — primary region dies, operator executes promote. Auto-failover needs Route 53 health check + Lambda or RDS Proxy. Exam: "Aurora Global Database auto-fails" is trap.
+> ⚠️ **Pitfall**: The secondary of an Aurora Global Database is **read-only**. Attempting a plain write gives a read-only error. Also, "managed failover" must be triggered explicitly and is not automatic: when the primary Region is completely down, the operator executes the promote. If you need automatic failover, build the automation yourself with Route 53 health checks + Lambda, or use RDS Proxy. An answer choice saying "Aurora Global Database fails over automatically" is a trap.
 
 ## Aurora Backtrack vs PITR: In-Place Time Travel
 
-Aurora MySQL exclusive — **Backtrack** — rewinds data to past point **without new instance** creation. PITR creates new instance; Backtrack rewinds same instance to past time only.
+Aurora MySQL has a feature RDS lacks: **Backtrack**. It rewinds data to a past point **without creating a new instance**, up to 72 hours back. PITR creates a new instance, but Backtrack rewinds the same instance in time.
 
 | Item | Backtrack | PITR |
 |------|-----------|------|
-| New instance creation | ❌ (in-place) | ✅ |
-| Speed | Seconds ~ minutes | Minutes ~ hours (DB size dependent) |
+| Creates a new instance | ❌ (in-place) | ✅ |
+| Speed | Seconds to minutes | Minutes to hours (depends on DB size) |
 | Support | Aurora MySQL only | RDS + Aurora |
-| Max period | 72 hours | 35 days |
-| Cost | Separate Backtrack window | Within auto-backup free tier |
-| Scenario | "Just dropped table" instant rollback | "Yesterday incident" data recovery |
+| Maximum period | 72 hours | 35 days |
+| Cost | Backtrack window billed separately | Within the free range of automated backups |
+| Scenario | Instant rollback of "I just ran DROP TABLE" | Restore data from an incident yesterday |
 
-> 📚 **Case Study**: 2020 game company developer ran `DELETE FROM users` without WHERE on production Aurora MySQL (confused prod/dev). Backtrack enabled, "roll back 5 minutes" one console click ~3 minutes restored. PITR would need ① new instance (30 min) ② export/import (hours) ③ endpoint switch. "Backtrack saved us hours," they reported. Exam: "Aurora quick mistake recovery" → Backtrack answer.
+As a hypothetical case, a developer at a game company ran `DELETE FROM users` with no WHERE clause on a production Aurora MySQL (confusing it with the dev DB). Backtrack was enabled, so a single "rewind to 5 minutes ago" in the console recovered it in about 3 minutes. With PITR, a complicated procedure would have been needed: ① create a new instance (30 minutes), ② export/import the data (hours), ③ switch the application endpoint. For "fast mistake recovery in Aurora," Backtrack is the answer.
 
-## Aurora Database Cloning: COW Instant Clone
+## Aurora Database Cloning: Instant Clones Built with COW
 
-Aurora clusters **clone in seconds**. Clone shares storage copy-on-write — clone modifications trigger only that page's copy.
+Aurora can **clone a cluster in a few seconds**. The clone shares the same storage and works by **copy-on-write**: only when data is modified in the clone is that page copied anew. The result: ① a clone can be created instantly; ② initial cost = 0; ③ you pay extra storage only for the amount modified.
 
 ```
-[Primary Aurora] ────┬──── [Clone A] (dev)
+[Primary Aurora] ────┬──── [Clone A] (development environment)
                      │
-                     ├──── [Clone B] (test)
+                     ├──── [Clone B] (test environment)
                      │
-                     └──── [Clone C] (analytics)
+                     └──── [Clone C] (analytics workload)
 
-Initially all share storage pages
-Modification → only that page copied for clone (COW)
+At first, all share the same storage pages
+When a modification occurs, only that page is copied for the clone (COW)
 ```
 
-> 💡 **Practical Pattern**: Cloning production DB for dev testing is standard. Regular mysqldump takes hours on TB; Aurora clone nearly instant. CI/CD per-build clone for test, delete after — workflow common.
+There is a pattern of making a clone of the production DB and testing with production-grade data. A regular mysqldump/export takes hours at TB scale, but an Aurora clone is created almost instantly. You can also use it in a CI/CD pipeline workflow that creates a clone for every build, tests against it, and deletes it afterward.
 
 ## RDS vs Aurora Decision Table
 
-| Scenario Keywords | Recommendation |
+| Scenario keywords | Recommendation |
 |----------------|------|
 | Standard MySQL/PostgreSQL/MariaDB/Oracle/SQL Server | RDS |
-| 5x performance / 15 replicas / auto storage scale | Aurora |
-| Global distribution + < 1 sec lag | Aurora Global Database |
-| Sporadic traffic + auto-scale | Aurora Serverless v2 |
-| 72-hour in-place rollback | Aurora MySQL Backtrack |
-| Oracle/SQL Server BYOL | RDS (Aurora unsupported) |
-| Minimal cost simple DB | RDS (~20% cheaper vs Aurora) |
+| 5x performance / 15 replicas / auto-scaling storage | Aurora |
+| Global distribution + sub-second lag | Aurora Global Database |
+| Intermittent traffic + automatic scaling | Aurora Serverless v2 |
+| In-place rollback within 72 hours | Aurora MySQL Backtrack |
+| Oracle/SQL Server BYOL | RDS (not supported by Aurora) |
+| Lowest-cost simple DB | RDS (~20% cheaper than Aurora) |
 
-## Wrapping Up
+## Summary
 
-Aurora differentiators all flow from **"redesigned storage layer"** one sentence. 6-copy quorum ensures availability, shared storage makes replicas ms-latency, redo log shipping makes cross-region < 1 sec, copy-on-write clones instant. Exams ask this causality in scenario form — "which Aurora feature answers requirement X."
+Aurora's differentiation derives from one sentence: **"the storage layer was redesigned."**
 
-RDS is "existing DBMS to cloud" (1st gen managed DB), Aurora "DBMS redesigned cloud-native" (2nd gen). DynamoDB "relational model abandoned" (different answer). Same problem (persistence, scale, availability) — three answers. Understanding why Aurora differs from RDS is core to passing.
+- The 6-copy quorum guarantees availability.
+- Shared storage makes replicas millisecond-level.
+- Redo log shipping makes cross-Region replication sub-second.
+- Copy-on-write makes clones instant.
 
-Next: Week 7 synthesis, RDS + ElastiCache + Aurora scenario comprehensives.
+The exam asks about these causal relationships in scenario form. You need to judge "which Aurora feature is the answer for which requirement."
+
+RDS is the first-generation managed DB that "moved an existing DBMS to the cloud," and Aurora is the second generation that "redesigned the DBMS to be cloud-native." DynamoDB is yet another answer that "discarded the relational model itself." If you understand that there are three different answers to the same problem (data durability, scalability, availability), you can solve the exam scenarios.
+
+In the next post, we tie together this whole week (RDS + ElastiCache + Aurora) in a scenario-centered way and wrap up the Week 7 comprehensive assessment.
 
 ---
 
 ## 📝 Practice Questions
 
-**Question 1.** Aurora storage config is?
+**Question 1.** Which is correct about Aurora's storage configuration?
 
-A) Single AZ 1 replica
-B) Single AZ 6 replicas
-C) 3 AZ 6 replicas, write quorum 4/6
-D) 2 AZ 3 replicas, write quorum 2/3
+A) 1 copy in a single AZ
+B) 6 copies in a single AZ
+C) 6 copies across 3 AZs, write quorum 4/6
+D) 3 copies across 2 AZs, write quorum 2/3
 
 **Answer: C**
 
-Explanation: Aurora 3 AZ × 2 replicas = 6, write quorum V_w=4, read quorum V_r=3. V_w + V_r > N (4+3>6) strong consistency. Single AZ failure still write-capable (4 copies V_w), 1 AZ + 1 node loss still read-capable (3 copies V_r). Math-optimized minimums.
+Explanation: Aurora uses distributed storage with 3 AZs × 2 copies = 6 copies, with write quorum V_w=4 and read quorum V_r=3. It satisfies V_w + V_r > N(6), guaranteeing strong consistency. Writes remain possible even with the loss of 1 AZ (the remaining 4 copies satisfy the quorum), and reads remain possible even with the loss of 1 AZ + 1 node. These numbers are the minimal solution satisfying fault tolerance in distributed systems.
 
 ---
 
-**Question 2.** Aurora Replica vs RDS Read Replica biggest difference?
+**Question 2.** What is the biggest difference between an Aurora Replica and an RDS Read Replica?
 
-A) Aurora Replica uses async binlog replication
-B) Aurora Replica no own storage, primary-shared → 10-20ms lag, very short
-C) RDS Read Replica max 30
-D) Identical
+A) An Aurora Replica uses asynchronous binlog replication
+B) An Aurora Replica has no storage of its own and shares it with the primary, so lag is very short at 10-20 ms
+C) An RDS Read Replica can go up to 30
+D) They are identical
 
 **Answer: B**
 
-Explanation: Aurora Replica core: no own disk, shares primary distributed storage. Replication: redo log notification → lag 10-20ms (RDS Read: seconds~tens sec). A: Aurora no binlog. C: RDS max 15 (MySQL/PG/MariaDB 2022 upward). D: Major differences.
+Explanation: The key differentiator of an Aurora Replica is shared storage: the replica has no disk of its own and references the same distributed storage as the primary. The replication mechanism sends only a "redo log notification" and reads actual pages directly from storage, so lag is around 10-20 ms (an RDS Read Replica is several seconds to tens of seconds). A) Aurora does not depend on the binlog. C) An RDS Read Replica goes up to 15 (MySQL/PG/MariaDB, raised in 2022). D) There is a big difference.
 
 ---
 
-**Question 3.** SaaS Aurora MySQL globally, Tokyo read latency < 100ms needed, Tokyo region down → 1 min failover. Best config?
+**Question 3.** A SaaS company uses Aurora MySQL for global users. Read latency must be 100 ms or less in Tokyo and London as well, and if the Seoul Region goes down it must fail over to another Region within 1 minute. What is the most suitable configuration?
 
-A) Tokyo Aurora Multi-AZ only
-B) Tokyo Aurora + Virginia/Ireland Cross-Region Read Replicas each
-C) Aurora Global Database (Primary: Tokyo, Secondary: Virginia, Ireland)
+A) Use only Seoul Aurora Multi-AZ
+B) Seoul Aurora + Aurora Cross-Region Read Replicas in Tokyo and London (one each)
+C) Aurora Global Database (Primary: Seoul, Secondary: Tokyo and London)
 D) DynamoDB Global Tables
 
 **Answer: C**
 
-Explanation: Aurora Global Database: ① dedicated infra cross-region lag < 1 sec ② managed failover RTO < 1 min ③ each secondary region own 15 read replicas → region latency min. B: Cross-Region Read Replica viable but lag/failover automation weak. A: cross-region scatter missing. D: RDBMS compatibility lost. "Auto" failover phrase trap — "managed" still requires operator trigger.
+Explanation: Aurora Global Database offers ① cross-Region lag < 1 second on dedicated infrastructure; ② managed failover RTO < 1 minute; ③ the ability to promote a secondary to primary if the primary Region goes completely down; ④ each secondary Region can have its own read replicas, minimizing in-Region latency. B is possible with Aurora Cross-Region Read Replicas, but lag and failover automation are weaker. A has no cross-Region distribution. D loses RDBMS compatibility (unsuitable because the requirement is Aurora MySQL).
 
 ---
 
-**Question 4.** Aurora Serverless v2 untrue statement?
+**Question 4.** Which of the following is NOT a characteristic of Aurora Serverless v2?
 
-A) 0.5 ACU unit micro-adjust
-B) Cold start barely any, fast expand
-C) v1 vs v2 differ: v2 second-level vs v1 minute-level
-D) Min capacity always ≥ 1 ACU
+A) Scales automatically in ACU units (fine-grained 0.5 ACU steps)
+B) Almost no cold start and scales in seconds
+C) Unlike v1, can scale up to 256 ACU
+D) Min Capacity must always be 1 ACU or more
 
 **Answer: D**
 
-Explanation: D false. Aurora Serverless v2 Min 0.5 ACU (auto-pause to 0 ACU post-2024). v1: 1 ACU min. A: 0.5 unit fine-tuning. B: Firecracker microVM resource adjust, no instance swap. C: v2 hypervisor-level, v1 instance-swap. Exam v1 vs v2: "v2 fine-tune + fast + cold start none."
+Explanation: D is wrong. The Min Capacity of Aurora Serverless v2 is 0.5 ACU (since 2024, 0 ACU is also possible through auto-pause). Unlike v1, it can start at a smaller granularity. A) Scales gradually in 0.5 ACU steps. B) Seconds-level thanks to the dynamic resource adjustment of Firecracker microVMs. C) Can scale up to 256 ACU. On the exam, the key to the v1 vs v2 comparison is "v2 is fine-grained + fast + no cold start."
 
 ---
 
-**Question 5.** Aurora Backtrack true statement?
+**Question 5.** Which is correct about Aurora Backtrack?
 
-A) RDS + Aurora both support
-B) Max 35 days rollback
-C) Aurora MySQL only, in-place time-rewind (no new instance)
-D) Identical mechanism to PITR
+A) It can be used on both RDS and Aurora
+B) It can rewind up to 35 days
+C) It is available only on Aurora MySQL and rewinds time in place (no new instance created)
+D) It is the same mechanism as PITR
 
 **Answer: C**
 
-Explanation: Backtrack: Aurora MySQL feature, same cluster past-time in-place (seconds~min). New instance creation doesn't happen. Speed: sec~min. A: RDS unsupported. B: max 72 hours, not 35 days. D: PITR different mechanism (new instance + backup+log replay). Exam "Aurora quick mistake recovery" → Backtrack.
+Explanation: Backtrack is a feature unique to Aurora MySQL that rewinds the same cluster to a past point (up to 72 hours back) without creating a new instance. It is very fast (seconds to minutes). A) RDS does not support it. B) The maximum is 72 hours, not 35 days. D) PITR creates a new instance and restores by backup + log replay, a different mechanism from Backtrack. On the exam, the "fast mistake recovery in Aurora" scenario is Backtrack.
 
 ---
 
-**Question 6.** Aurora Reader Endpoint load balance is?
+**Question 6.** What is the load balancing mechanism of the Aurora Reader Endpoint?
 
-A) Application round-robin
-B) DNS: resolve same endpoint → different replica IP each time (TTL 5 sec)
-C) Network Load Balancer
-D) Application Load Balancer
+A) Round-robin at the application layer
+B) At the DNS level, returning a different replica IP on each resolve
+C) Uses a Network Load Balancer
+D) Uses an Application Load Balancer
 
 **Answer: B**
 
-Explanation: Aurora Reader Endpoint DNS round-robin — resolve same endpoint, get different replica IP each time (TTL 5 sec). Long-held connection → one replica pinned, small pool → unbalanced. Fix: short connection lifetime, cluster-aware client, or RDS Proxy. C/D: irrelevant to Aurora endpoint.
+Explanation: The Aurora Reader Endpoint works by DNS round-robin: each time you resolve the same endpoint, a different replica IP is returned (TTL 5 seconds). As a result, **if you hold a connection for a long time, it is pinned to one replica**, and if the connection pool is small the load is uneven. Fixes: short connection lifetimes, Aurora cluster-aware clients (such as MariaDB Connector/J), or RDS Proxy. C) and D) ALB/NLB have nothing to do with Aurora's own endpoints.
 
 ---
 
-**Question 7.** SaaS production Aurora MySQL: developer runs `DELETE FROM orders WHERE created_at > '2024-01-01'` mistake. Fastest recovery (< 30 min)?
+**Question 7.** A fintech company wants to build an analytics environment every night from the data in its Aurora MySQL production DB. It used to take 6 hours with mysqldump + import, and they want it done within 5 minutes. What is the most suitable approach?
 
-A) PITR new cluster 5 min ago, export/import deleted rows
-B) Backtrack in-place 5 min ago rollback
-C) Multi-AZ failover manual, restart another AZ instance
-D) Recent auto-snapshot restore, new cluster, endpoint switch
+A) Create an Aurora Cross-Region Read Replica
+B) Aurora Database Cloning (instant COW-based clone)
+C) Copy an RDS Snapshot every day
+D) Migrate every day with DMS
 
 **Answer: B**
 
-Explanation: Backtrack: in-place seconds~min (no new instance, no endpoint switch). A: PITR new instance (30 min) + endpoint switch procedure slow. C: failover unrelated data recovery. D: snapshot restore min~hour + new instance steps slow. Exam "Aurora MySQL fast mistake recovery" = Backtrack instant.
+Explanation: Aurora Database Cloning shares the same storage with copy-on-write and creates a clone instantly: even TB-scale data is cloned in a few seconds. Only the pages modified in the clone incur extra storage cost. It is a standard pattern for CI/CD and daily ETL workloads. A) Cross-Region is for replication between Regions, not instant cloning. C) Snapshots take time to create/restore. D) DMS is a cross-engine migration tool and is excessive for same-engine replication.

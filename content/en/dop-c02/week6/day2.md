@@ -1,37 +1,38 @@
-# Day 2 - ECS Automatic Deployment: From Task Definition Update to Auto Scaling
+# Day 2 - ECS Automated Deployment: From Task Definition Updates to Auto Scaling
 
-The two most common blocking points when first configuring ECS deployment automation are: one, "I pushed a new image to ECR but ECS Service doesn't automatically update," and two, "Rolling and Blue/Green deployments require CodeBuild to generate different files, but what exactly is different?" Today, starting from these two pain points, we cover the complete ECS operational automation from Task Definition refresh to Auto Scaling and ECS Exec.
+When setting up ECS deployment automation for the first time, people get stuck at two points most often. One is "I pushed a new image to ECR but the ECS Service did not update automatically," and the other is "they say CodeBuild has to generate a different file for Rolling and Blue/Green deployments, so what exactly is different?" Today we start with these two points and then cover the whole of ECS operations automation, including Auto Scaling, Capacity Providers, and ECS Exec.
 
-## Core of ECS Deployment Automation: Task Definition Update Flow
+## The Core of ECS Deployment Automation: The Task Definition Update Flow
 
-ECS Service manages "which Task Definition revision to execute." Deploying a new image ultimately means registering a new Task Definition revision and updating the ECS Service to use that revision.
+An ECS Service manages "which Task Definition revision to run." Deploying a new image is ultimately the process of registering a new Task Definition revision and updating the ECS Service to use that revision.
 
-**Manual Method (for understanding)**:
+**Manual approach (a foundation for understanding)**:
 ```bash
-# 1. Push new image
+# 1. Push the new image
 docker push 111.dkr.ecr.ap-northeast-2.amazonaws.com/checkout:abc123
 
-# 2. Get current Task Definition
+# 2. Get the current Task Definition
 aws ecs describe-task-definition --task-definition checkout-prod \
   --query 'taskDefinition' > current-taskdef.json
 
-# 3. Replace image URI + register new revision
+# 3. Replace the image URI + register a new revision
+# (after editing current-taskdef.json)
 NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
   --cli-input-json file://new-taskdef.json \
   --query 'taskDefinition.taskDefinitionArn' --output text)
 
-# 4. Update ECS Service
+# 4. Update the ECS Service
 aws ecs update-service \
   --cluster prod \
   --service checkout-service \
   --task-definition $NEW_TASK_DEF_ARN
 ```
 
-CodePipeline + CodeBuild automates these 4 steps.
+CodePipeline + CodeBuild automate these 4 steps.
 
-## Rolling Deployment vs Blue/Green Deployment: File Format Differences
+## Rolling Deployment vs Blue/Green Deployment: The Difference in File Formats
 
-CodePipeline's ECS Deploy Action has two modes, and CodeBuild must output different files for each mode.
+The CodePipeline ECS Deploy Action has two modes, and the files CodeBuild must output differ in each mode.
 
 ### Rolling Deployment (Amazon ECS Provider)
 
@@ -47,14 +48,14 @@ CodeBuild → imagedefinitions.json → Pipeline ECS Action
 ]
 ```
 
-- `name` field must exactly match the container name in Task Definition
-- Multiple containers can be updated simultaneously
-- CodePipeline ECS Action reads this file, replaces image URIs in Task Definition, auto-registers new revision + updates Service
+- The `name` field must exactly match the container name in the Task Definition
+- Multiple containers can be updated at once
+- The CodePipeline ECS Action reads this file, replaces the image URI in the Task Definition, automatically registers a new revision, and updates the Service
 
 ### Blue/Green Deployment (CodeDeploy ECS Provider)
 
 ```
-CodeBuild → taskdef.json + appspec.yaml + imageDetail.json → Pipeline ECS(Blue/Green) Action
+CodeBuild → taskdef.json + appspec.yaml + imageDetail.json → Pipeline ECS (Blue/Green) Action
 ```
 
 `imageDetail.json` format:
@@ -62,7 +63,7 @@ CodeBuild → taskdef.json + appspec.yaml + imageDetail.json → Pipeline ECS(Bl
 {"ImageURI": "111.dkr.ecr.ap-northeast-2.amazonaws.com/checkout:abc123"}
 ```
 
-`taskdef.json` (image URI uses placeholder):
+`taskdef.json` (uses a placeholder for the image URI):
 ```json
 {
   "family": "checkout-prod",
@@ -116,11 +117,11 @@ Hooks:
   - AfterAllowTraffic: "arn:aws:lambda:ap-northeast-2:111:function:PostCutover"
 ```
 
-CodePipeline ECS(Blue/Green) Action substitutes `<IMAGE1_NAME>` with imageDetail.json's ImageURI and `<TASK_DEFINITION>` with newly registered Task Definition ARN.
+The CodePipeline ECS (Blue/Green) Action replaces `<IMAGE1_NAME>` with the ImageURI from imageDetail.json, and replaces `<TASK_DEFINITION>` with the newly registered Task Definition ARN.
 
-> 💡 **Related Theory**: Blue/Green deployment's theoretical foundation is **zero-downtime replacement**. The existing environment (Blue) is maintained while the new environment (Green) is completely prepared, then traffic is switched instantaneously via ALB Target Group replacement. On failure, immediate rollback to Blue is possible (Target Group replacement again). Rolling gradually replaces without downtime, but rollback is slower (new Tasks must be replaced with previous version). When deployment speed is critical, use Rolling; when rollback speed matters, use Blue/Green.
+> The theoretical basis of Blue/Green deployment is **Zero-Downtime Replacement**. While keeping the existing environment (Blue), you fully prepare the new environment (Green) and then switch traffic instantly by swapping the ALB Target Group. If it fails, you can roll back to Blue immediately (by swapping the Target Group again). Rolling replaces gradually without service interruption but rollback is slow (the new Tasks must be changed back to the previous version). If deployment time matters, choose Rolling; if rollback time matters, choose Blue/Green.
 
-## Creating Correct Files in buildspec.yml
+## Generating the Right Files in buildspec.yml
 
 ```yaml
 version: 0.2
@@ -160,18 +161,18 @@ artifacts:
     - taskdef.json
 ```
 
-> ⚠️ **Trap**: Container name in `taskdef.json` must exactly match the `name` field in `imagedefinitions.json`. Mismatch causes "Container name not found in task definition" error. Also in Blue/Green deployment, `taskdef.json` image URI must use `<IMAGE1_NAME>` placeholder—hardcoding actual URI prevents CodePipeline from substituting.
+> ⚠️ **Trap**: The container name in `taskdef.json` must exactly match the `name` field in `imagedefinitions.json`. If they do not match, a "Container name not found in task definition" error occurs. Also, in a Blue/Green deployment the image URI in `taskdef.json` must use the `<IMAGE1_NAME>` placeholder; if you hardcode the real URI, CodePipeline will not substitute it.
 
-> 💡 **Related Theory**: File format differences stem from internal operation differences of the two Providers. ECS Rolling Provider lets CodePipeline directly call ECS APIs to register Task Definition and update Service—pure API automation. Blue/Green Provider uses CodeDeploy orchestration—CodeDeploy manages Target Group replacement, deployment hooks (Lambda), traffic transition ratios, and rollback. This is why Blue/Green requires `appspec.yaml`—CodeDeploy reads deployment hooks and ALB settings from this file. The `<IMAGE1_NAME>` placeholder is substituted by CodePipeline with actual URI from `imageDetail.json`.
+> The difference in file formats between Rolling and Blue/Green comes from the difference in how the two Providers work internally. With the ECS Rolling Provider, CodePipeline calls the ECS API directly to register the Task Definition and update the Service; it is simple API-call automation. With the Blue/Green Provider, CodeDeploy handles the orchestration: CodeDeploy manages the ALB Target Group swap, the deployment hooks (Lambda), the traffic shift percentage, and rollback. For this reason Blue/Green needs `appspec.yaml`, because CodeDeploy reads the deployment hooks and ALB settings from this file. The `<IMAGE1_NAME>` placeholder is replaced by CodePipeline with the real URI from `imageDetail.json`.
 
-> 📚 **Case Study**: Netflix's ECS deployment strategy. Netflix operates hundreds of ECS services, differentiating deployment methods by service criticality. Critical Path services like API Gateway use Blue/Green deployment (instant rollback possible), while internal background jobs (batch processing, email sending) use Rolling deployment (faster deployment). The selection criterion is "Is rollback speed more important than deployment speed?" Blue/Green rollback via Target Group replacement takes seconds, while Rolling requires re-deploying with previous image, taking minutes.
+> Netflix's ECS deployment strategy. While operating hundreds of ECS services, Netflix differentiates the deployment method by the importance of the service. Critical Path services such as an API Gateway use Blue/Green deployment (instant rollback possible), and internal background jobs (batch processing, email sending) use Rolling deployment (faster deployment). The selection criterion is "is rollback speed more important than deployment speed?" With Blue/Green, rollback is a Target Group swap that takes seconds, but with Rolling a rolling deployment back to the previous image is needed, which takes minutes.
 
 ## ECS Service Auto Scaling: How Application Auto Scaling Works
 
-ECS Auto Scaling uses **Application Auto Scaling** service, not AWS EC2 Auto Scaling. Application Auto Scaling handles scaling for ECS, DynamoDB, Aurora, SageMaker Endpoints, and other services.
+ECS Auto Scaling uses the **Application Auto Scaling** service, not AWS EC2 Auto Scaling. Application Auto Scaling is a unified scaling service that handles scaling for many services besides ECS, such as DynamoDB, Aurora, and SageMaker Endpoints.
 
 ```bash
-# 1. Register ECS Service as scalable target
+# 1. Register the ECS Service as a scalable target
 aws application-autoscaling register-scalable-target \
   --service-namespace ecs \
   --scalable-dimension ecs:service:DesiredCount \
@@ -179,7 +180,7 @@ aws application-autoscaling register-scalable-target \
   --min-capacity 2 \
   --max-capacity 50
 
-# 2. Target Tracking policy (maintain CPU 70%)
+# 2. Target Tracking policy (maintain a CPU target of 70%)
 aws application-autoscaling put-scaling-policy \
   --policy-name checkout-cpu-target-tracking \
   --service-namespace ecs \
@@ -195,7 +196,7 @@ aws application-autoscaling put-scaling-policy \
     "ScaleOutCooldown": 60
   }'
 
-# 3. ALB request-count based Target Tracking (more responsive)
+# 3. Target Tracking based on ALB request count (more responsive)
 aws application-autoscaling put-scaling-policy \
   --policy-name checkout-alb-target-tracking \
   --service-namespace ecs \
@@ -228,19 +229,19 @@ aws application-autoscaling put-scheduled-action \
   --scalable-target-action MinCapacity=2,MaxCapacity=50
 ```
 
-**Scaling Type Comparison**:
+**Comparison of scaling types**:
 
-| Type | Operation | Use Case |
+| Type | How it works | Use case |
 |------|-----------|-----------|
-| Target Tracking | Adjust metric to target value (PID controller-like) | CPU 70%, 1000 req/Target |
-| Step Scaling | Different adjustment amounts by threshold excess | "CPU 80% → +5 instances, CPU 90% → +10 instances" |
-| Scheduled | Time-based pre-scaling | Daily lunch time, Monday morning |
+| Target Tracking | Keeps a metric at a target value (like a PID controller) | CPU 70%, requests 1000/Target |
+| Step Scaling | Different adjustment amounts depending on how far the threshold is exceeded | "CPU 80% → +5, CPU 90% → +10" |
+| Scheduled | Time-based pre-scaling | Every lunch, Monday morning |
 
-> 🔍 **Deep Dive**: Application Auto Scaling's Target Tracking is a simplified version of **PID Controller (proportional-integral-derivative control)** from control theory. It calculates error (difference between current CPU and 70% target) and determines adjustment amount. AWS implements only the P (proportional) term with ScaleIn/Out Cooldown to prevent overshooting. Full PID Controller would be more sophisticated but simple Target Tracking suffices for most web services. For rapid bursts (e.g., flash sales), Scheduled Scaling pre-scaling is more effective than Target Tracking—Target Tracking takes 1-3 minutes to react.
+> Target Tracking in Application Auto Scaling is a simplified version of the **PID Controller (proportional-integral-derivative controller)** from control theory. It computes the error between the measured value (current CPU) and the target value (70%) to determine the adjustment amount. AWS implements only the P (proportional) term as a simple proportional control and adds ScaleIn/Out Cooldown to prevent overshooting (excessive scaling). Implementing a real PID Controller would be more sophisticated, but for most web services simple Target Tracking is enough. For fast bursts (e.g., a flash sale), scaling out in advance with Scheduled Scaling is more effective than Target Tracking, because Target Tracking takes 1-3 minutes to react.
 
 ## Capacity Provider Strategy: Combining Spot and On-Demand
 
-Capacity Provider determines infrastructure (Fargate On-Demand, Fargate Spot, EC2 ASG) where ECS Tasks run. Strategy defines the ratio of these infrastructure combinations.
+A Capacity Provider determines the infrastructure on which ECS Tasks run (Fargate On-Demand, Fargate Spot, EC2 ASG). The Strategy defines the ratio of this infrastructure mix.
 
 ```json
 {
@@ -259,14 +260,15 @@ Capacity Provider determines infrastructure (Fargate On-Demand, Fargate Spot, EC
 }
 ```
 
-Calculation method:
-- `base: 2` for FARGATE → first 2 Tasks are always On-Demand FARGATE
-- Remaining Tasks: distributed by weight ratio
-  - FARGATE weight=1, FARGATE_SPOT weight=4 → total 5 units: On-Demand 1/5(20%), Spot 4/5(80%)
-- If 10 Tasks: 2 On-Demand(base) + ratio → roughly 2 additional On-Demand + 6 Spot
+How to calculate:
+- FARGATE with `base: 2` → the first 2 Tasks are always On-Demand FARGATE
+- Additional Tasks after that: distributed by weight ratio
+  - FARGATE weight=1, FARGATE_SPOT weight=4 → out of 5 total units, On-Demand is 1/5 (20%) and Spot is 4/5 (80%)
+- Result: with 10 Tasks → 2 On-Demand (base) + 6.4 On-Demand (by ratio) + 1.6... no, that's not right
+- **Exact calculation**: the 2 base Tasks are On-Demand. For the remaining 8, the weight ratio is 1:4 → 1.6 On-Demand → rounded = 2, 6.4 Spot → 6. In practice, Tasks are allocated one by one to match the ratio.
 
 ```bash
-# Apply Capacity Provider Strategy to ECS Service
+# Apply a Capacity Provider Strategy to an ECS Service
 aws ecs create-service \
   --cluster prod-cluster \
   --service-name checkout-service \
@@ -276,7 +278,7 @@ aws ecs create-service \
     capacityProvider=FARGATE,weight=1,base=2 \
     capacityProvider=FARGATE_SPOT,weight=4
 
-# Update existing service
+# Update an existing service
 aws ecs update-service \
   --cluster prod-cluster \
   --service checkout-service \
@@ -286,11 +288,11 @@ aws ecs update-service \
   --force-new-deployment
 ```
 
-**Must-know considerations for Fargate Spot**:
-- Spot instance reclaimed 2 minutes before: SIGTERM delivered
-- ECS Agent sends SIGTERM to container; after `stopTimeout`(default 30s), SIGKILL
-- Application must handle SIGTERM and perform graceful shutdown (complete in-flight HTTP requests, cleanup DB connections)
-- Suitable only for stateless workloads—state must be in external storage (RDS, ElastiCache, S3)
+**Essential considerations when using Fargate Spot**:
+- SIGTERM is delivered 2 minutes before the Spot capacity is reclaimed
+- The ECS Agent sends SIGTERM to the Task, and once `stopTimeout` (default 30 seconds) passes, SIGKILL
+- The application must perform a graceful shutdown when it receives SIGTERM (finish in-flight HTTP requests, clean up DB connections)
+- Suitable only for stateless workloads: the 12-factor app principle of keeping state in external storage (RDS, ElastiCache, S3)
 
 ```python
 # Python FastAPI graceful shutdown example
@@ -304,29 +306,29 @@ class GracefulShutdown:
     
     def _handle_sigterm(self, signum, frame):
         self.shutdown = True
-        # Logic to wait for in-flight requests to complete
+        # Logic to wait for in-flight requests to finish
         asyncio.get_event_loop().create_task(self._graceful_exit())
     
     async def _graceful_exit(self):
         # Start rejecting new requests
-        # Wait up to 25s for in-flight requests (30s SIGKILL - 5s margin)
+        # Wait up to 25 seconds for in-flight requests to finish (before the 30-second SIGKILL)
         await asyncio.sleep(25)
 ```
 
-> 📚 **Case Study**: 2020 Lyft's ECS Fargate Spot adoption. Lyft adopted Fargate Spot for irregular batch jobs (data processing, report generation), reducing compute costs by 60%. The key was designing jobs with **checkpoint** pattern—save progress to S3 when Spot reclaimed, new Task restarts from checkpoint. This pattern appears as "Spot usage + fault-tolerant design" keyword in DOP-C02 scenarios.
+> The 2020 case of Lyft adopting ECS Fargate Spot. Lyft adopted Fargate Spot for irregular batch jobs (data processing, report generation) and cut compute cost by 60%. The key was designing the jobs in a **checkpoint** style: when Spot capacity is reclaimed, the progress state is saved to S3, and a new Task is implemented to restart from the checkpoint. This pattern can appear in DOP-C02 under the keywords "Spot usage + fault-tolerant design."
 
-## ECS Exec: Container Debugging Without Bastion
+## ECS Exec: Debugging Containers Without a Bastion
 
-ECS Exec allows direct access to running containers through AWS Systems Manager Session Manager. No SSH Bastion needed, works without EC2 instances.
+ECS Exec is a feature that connects directly to a running container through AWS Systems Manager Session Manager. No SSH Bastion is needed, and it works even without EC2 instances.
 
-**Activation Requirements (all three necessary)**:
+**Activation conditions (all three are required)**:
 
-1. Task Definition has `enableExecuteCommand: true`
-2. Task Role has SSM Session Manager permissions
-3. Service updated to create new Tasks
+1. `enableExecuteCommand: true` in the Task Definition
+2. SSM Session Manager permissions on the Task Role
+3. A Service update to create new Tasks
 
 ```bash
-# 1. Add SSM permissions to Task Role
+# 1. Add SSM permissions to the Task Role
 aws iam put-role-policy \
   --role-name checkout-task-role \
   --policy-name ECSExecPolicy \
@@ -344,19 +346,19 @@ aws iam put-role-policy \
     }]
   }'
 
-# 2. Enable enableExecuteCommand in Task Definition (new revision needed)
+# 2. Enable enableExecuteCommand in the Task Definition (a new revision must be registered)
 # CloudFormation:
 # Properties:
 #   EnableExecuteCommand: true
 
-# 3. Update Service (doesn't apply to existing Tasks, only new ones)
+# 3. Update the Service (does not apply to existing Tasks, only to new Tasks)
 aws ecs update-service \
   --cluster prod-cluster \
   --service checkout-service \
   --enable-execute-command \
   --force-new-deployment
 
-# 4. Access container
+# 4. Connect to the container
 aws ecs execute-command \
   --cluster prod-cluster \
   --task arn:aws:ecs:ap-northeast-2:111:task/prod-cluster/abc123 \
@@ -365,44 +367,44 @@ aws ecs execute-command \
   --command "/bin/sh"
 ```
 
-> ⚠️ **Trap**: ECS Exec can only be enabled while Tasks are running. Setting `--enable-execute-command` on Service doesn't apply to already-running Tasks—`--force-new-deployment` creates new Tasks with ECS Exec Agent. Also, without VPC Endpoints, accessing SSM APIs requires internet, so for ECS Exec in Private Subnets, VPC Endpoints for `ssm.amazonaws.com`, `ssmmessages.amazonaws.com`, `s3.amazonaws.com` are required.
+> ⚠️ **Trap**: ECS Exec cannot be enabled on a Task that is already running. Even if you set `--enable-execute-command` on the Service, it does not apply to Tasks that are already running; you must create new Tasks with `--force-new-deployment`. Also, in an environment without VPC Endpoints you must reach the SSM API over the internet, so to use ECS Exec in a private subnet you need the `ssm.amazonaws.com`, `ssmmessages.amazonaws.com`, and `s3.amazonaws.com` VPC Endpoints.
 
-> 💡 **Related Theory**: ECS Auto Scaling's ALB RequestCountPerTarget metric is often a better scaling signal than CPU/Memory. The problem with CPU-based scaling is "high CPU = system already under stress"—reaction is late. ALB request count increases before CPU rises (requests accumulate before CPU processing delays). Setting 1000 requests/target means "each Task handles avg 1000 RPS," and this target auto-adjusts Task count. For predictable traffic (lunch hour spike), Scheduled Action + Target Tracking combination is most effective—Scheduled pre-scales and Target Tracking fine-tunes.
+> The ALB RequestCountPerTarget metric for ECS Auto Scaling is often a better scaling signal than CPU/Memory. The problem with CPU-based scaling is that "the moment CPU rises = the moment the system is already under pressure," so the reaction is late. ALB request counts, on the other hand, rise before CPU rises (before requests pile up and CPU processing is delayed). Setting a target of 1000 requests/target means "each Task handles 1000 RPS on average," and the number of Tasks is adjusted automatically to maintain this target. For services with predictable traffic patterns (a lunchtime traffic surge), the combination of a Scheduled Action + Target Tracking is most effective: Scheduled scales out in advance and Target Tracking fine-tunes.
 
-> 🎯 **Scenario**: E-commerce service predicting Black Friday traffic. Currently 5 Tasks handle 1,000 RPS; 50,000 RPS expected on Black Friday. Problem: Target Tracking alone can't react fast enough (1-3 min scale-out time) to sudden surge. Solution: (1) Schedule MinCapacity=100 10 min before event, (2) Target Tracking fine-tunes actual traffic, (3) Schedule MinCapacity=5 after event, (4) Capacity Provider Strategy with base=10 On-Demand + Spot ratio for cost optimization. Predictive pre-scaling beats reactive scaling for traffic spikes.
+> 🎯 **Scenario**: An e-commerce service is anticipating Black Friday traffic. Normally 5 Tasks handle 1,000 RPS, and 50,000 RPS is expected on Black Friday. Problem: with Target Tracking alone, when traffic surges suddenly, the service is overloaded during the scale-out reaction time (1-3 minutes). Solution: (1) 10 minutes before Black Friday, scale out in advance with a Scheduled Action to MinCapacity=100, (2) Target Tracking fine-tunes to actual traffic, (3) after the event ends, restore MinCapacity=5 with a Scheduled Action, (4) optimize cost with a Capacity Provider Strategy of base=10 On-Demand + a Spot ratio. Pre-scaling (Predictive Scaling) is more effective than reactive scaling during a traffic surge.
 
 ## Container Insights: ECS Operational Visibility
 
-Container Insights automatically collects metrics at ECS cluster, service, and Task levels to CloudWatch.
+Container Insights is a feature that automatically collects ECS cluster-, service-, and Task-level metrics into CloudWatch.
 
 ```bash
-# Enable at cluster level
+# Enable at the cluster level
 aws ecs update-cluster-settings \
   --cluster prod-cluster \
   --settings name=containerInsights,value=enabled
 ```
 
-Collected metrics:
-- `CpuUtilized`, `CpuReserved`, `MemoryUtilized`, `MemoryReserved` (at Task/Service/Cluster levels)
+Metrics collected:
+- `CpuUtilized`, `CpuReserved`, `MemoryUtilized`, `MemoryReserved` (at each of the Task/Service/Cluster levels)
 - `NetworkRxBytes`, `NetworkTxBytes`
 - `StorageReadBytes`, `StorageWriteBytes`
 - `RunningTaskCount`, `DesiredTaskCount`, `PendingTaskCount`
 - `DeploymentCount`
 
-Collection cost: CloudWatch custom metrics charge ($0.30/metric/month) + CloudWatch Logs charge. Even small clusters add tens of dollars monthly—cost estimation needed before enabling.
+Collection cost: CloudWatch custom metric pricing ($0.30/metric/month) + CloudWatch Logs pricing. Even a small cluster can add tens of dollars per month, so estimate the cost before enabling it.
 
-Real-time analysis via CloudWatch Logs Insights:
+Real-time analysis with CloudWatch Logs Insights:
 ```
-# Find Tasks with memory utilization > 90%
+# Find Tasks with memory utilization of 90% or more
 fields @timestamp, ServiceName, TaskId, MemoryUtilized, MemoryReserved
 | filter Type="Task" and (MemoryUtilized / MemoryReserved * 100) > 90
 | sort @timestamp desc
 | limit 20
 ```
 
-## force-new-deployment: Deploying New Images with Same Tag
+## force-new-deployment: Deploying a New Image Under the Same Tag
 
-Used when keeping image tag fixed (like `latest`) and changing only content. Task Definition revision unchanged; new Tasks created and image re-pulled.
+It is used in the pattern of keeping the image tag fixed, such as `latest`, changing only the contents, and redeploying. It creates new Tasks without changing the Task Definition revision, so the image is pulled again.
 
 ```bash
 aws ecs update-service \
@@ -411,9 +413,9 @@ aws ecs update-service \
   --force-new-deployment
 ```
 
-This approach conflicts with IMMUTABLE tags principle. **Recommended pattern**: Always use commit SHA-based tags; new images get new tags. Task Definition revision then precisely tracks which image is used, eliminating dependency on `--force-new-deployment`.
+This approach conflicts with the IMMUTABLE tag principle. **Recommended pattern**: always use a commit-SHA-based tag and use a new tag for every new image. This way you can trace exactly which image a Task Definition revision uses, and you do not have to depend on `--force-new-deployment`.
 
-## Real-World Architecture: Complete CodePipeline + ECS Flow
+## Real-World Architecture: The Full CodePipeline + ECS Flow
 
 ```
 GitHub (main push)
@@ -426,7 +428,7 @@ Stage: Source
 Stage: Build  
   ├── Action: BuildAndPush (CodeBuild)
   │     ├── docker build + push to ECR
-  │     ├── imagedefinitions.json generation
+  │     ├── generate imagedefinitions.json
   │     └── outputs: BuildArtifact
     ↓
 Stage: Test
@@ -435,7 +437,7 @@ Stage: Test
     ↓
 Stage: Deploy-Staging
   ├── Action: DeployStaging (ECS Rolling)
-  │     └── imagedefinitions.json → staging ECS Service update
+  │     └── imagedefinitions.json → update the staging ECS Service
     ↓
 Stage: Approve
   ├── Action: ManualApproval → SNS → Chatbot → Slack
@@ -444,69 +446,69 @@ Stage: Deploy-Prod
   ├── beforeEntry: CloudWatch Alarm Check (error rate < 1%)
   ├── Action: DeployProd (ECS Blue/Green via CodeDeploy)
   │     ├── taskdef.json + appspec.yaml + imageDetail.json
-  │     └── ALB Target Group replacement (zero-downtime)
-  └── onSuccess: PostDeploy Health Check (5min)
+  │     └── ALB Target Group swap (zero-downtime)
+  └── onSuccess: PostDeploy Health Check (5 minutes)
 ```
 
-> 🎯 **Scenario**: E-commerce payment service on ECS Fargate. Requirements: (1) zero-downtime prod deployment, (2) auto-scale on traffic spike, (3) cost optimization with Spot, (4) no transaction loss on Spot reclamation. Design: Blue/Green deployment (CodeDeploy Action) for zero-downtime. Capacity Provider Strategy base=2 On-Demand + Spot 4:1 ratio. Fargate Spot SIGTERM handling: reject new payment requests (HTTP 503) + complete in-flight transactions within 25s. DB transactions use Aurora ACID for automatic rollback on Spot reclamation.
+> 🎯 **Scenario**: An e-commerce company runs its payment service on ECS Fargate. Requirements: (1) prod deployment must be zero-downtime, (2) automatic scaling during traffic surges, (3) use Spot to optimize cost, (4) no loss of payment transactions when Spot capacity is reclaimed. Design: Blue/Green deployment (ECS CodeDeploy Action) for zero-downtime. A Capacity Provider Strategy of base=2 On-Demand + Spot at weight 4:1. When a Fargate Spot reclaim SIGTERM is received, reject new payment requests (HTTP 503) + finish in-flight transactions and then exit (within 25 seconds). DB transactions are automatically rolled back on Spot reclaim thanks to Aurora's ACID guarantee.
 
-## Summary
+## Wrapping Up
 
-ECS deployment automation's core is the file format difference between deployment modes. Rolling uses `imagedefinitions.json`; Blue/Green uses `taskdef.json + appspec.yaml + imageDetail.json` with `<IMAGE1_NAME>` placeholder. Auto Scaling adjusts ECS Service DesiredCount via Application Auto Scaling. Capacity Provider Strategy's base+weight determines On-Demand/Spot ratio. ECS Exec requires three simultaneous conditions: Task Definition enableExecuteCommand + Task Role + Service update.
+In ECS deployment automation, the difference in file formats between the two deployment modes is the fork in the road. Rolling uses `imagedefinitions.json`; Blue/Green uses `taskdef.json + appspec.yaml + imageDetail.json (the <IMAGE1_NAME> placeholder)`. Auto Scaling adjusts the ECS Service's DesiredCount through the Application Auto Scaling service. The base+weight calculation of the Capacity Provider Strategy determines the On-Demand/Spot ratio. ECS Exec needs all three at the same time: the Task Definition + the Task Role + a Service update.
 
 ---
 
 ## 📝 Practice Questions
 
-**Question 1.** What combination of files must CodeBuild output for an ECS Blue/Green deployment?
+**Question 1.** In an ECS Blue/Green deployment, what combination of files must CodeBuild output?
 
 A) imagedefinitions.json only
-B) taskdef.json + appspec.yaml + imageDetail.json (the image URI is the `<IMAGE1_NAME>` placeholder in taskdef.json)
+B) taskdef.json + appspec.yaml + imageDetail.json (the image URI in taskdef.json is the `<IMAGE1_NAME>` placeholder)
 C) buildspec.yml + Dockerfile
 D) template.yaml + parameters.json
 
 **Answer: B**
-Explanation: A Blue/Green deployment (the CodeDeploy ECS provider) requires three files. Use the `<IMAGE1_NAME>` placeholder at the container image URI position in `taskdef.json`, and put the actual image URI in `imageDetail.json`. `appspec.yaml` defines the CodeDeploy deployment hooks (BeforeInstall, AfterInstall, and so on) and the ALB configuration. A rolling deployment needs only `imagedefinitions.json`.
+Explanation: A Blue/Green deployment (CodeDeploy ECS Provider) needs three files. In `taskdef.json` the container image URI is the `<IMAGE1_NAME>` placeholder, and `imageDetail.json` holds the actual image URI. `appspec.yaml` defines the CodeDeploy deployment hooks (BeforeInstall, AfterInstall, and so on) and the ALB settings. A Rolling deployment needs only one file, `imagedefinitions.json`.
 
 ---
 
-**Question 2.** How do you implement the requirement "on weekdays raise the minimum task count to 10 at 9 AM and reduce it back to 2 at 6 PM" with ECS service auto scaling?
+**Question 2.** In ECS Service Auto Scaling, how do you implement the requirement "set the minimum Task count to 10 at 9 AM on weekdays and reduce it back to 2 at 6 PM"?
 
-A) Create hourly alarms with CloudWatch alarms
-B) Set a cron schedule with an Application Auto Scaling scheduled action
+A) Create hourly alarms with CloudWatch Alarms
+B) Set a cron schedule with an Application Auto Scaling Scheduled Action
 C) Run Lambda every hour to call update-service
-D) Manually change the ECS service desiredCount every day
+D) Manually change the ECS Service's desiredCount every day
 
 **Answer: B**
-Explanation: A scheduled action is the exact tool for this requirement. MinCapacity=10 at `cron(0 0 * * MON-FRI *)` (UTC 00:00 = KST 09:00), and MinCapacity=2 at `cron(0 9 * * MON-FRI *)` (UTC 09:00 = KST 18:00). When target tracking and scheduled actions are used together, the scheduled action raises MinCapacity to guarantee the minimum task count, and target tracking handles additional scaling on top of that to match the actual load.
+Explanation: A Scheduled Action is the exact tool for this requirement: MinCapacity=10 at `cron(0 0 * * MON-FRI *)` (UTC 00:00 = KST 09:00), and MinCapacity=2 at `cron(0 9 * * MON-FRI *)` (UTC 09:00 = KST 18:00). When Target Tracking and Scheduled Actions are used together, the Scheduled Action raises MinCapacity to guarantee a minimum Task count, and Target Tracking handles additional scaling on top of that to match the actual load.
 
 ---
 
-**Question 3.** With the capacity provider strategy `FARGATE base=2, weight=1; FARGATE_SPOT weight=4` and 10 tasks running, what is the distribution of On-Demand and Spot?
+**Question 3.** With the Capacity Provider Strategy `FARGATE base=2, weight=1; FARGATE_SPOT weight=4`, what is the distribution of On-Demand and Spot when 10 Tasks are running?
 
 A) 5 On-Demand, 5 Spot
-B) 2 On-Demand (base) + the remaining 8 split 1:4 → about 4 On-Demand (2+1.6), about 6 Spot
+B) 2 On-Demand (base) + the remaining 8 at a 1:4 ratio → On-Demand ~4 (2+1.6), Spot ~6
 C) 2 On-Demand, 8 Spot
 D) All On-Demand
 
 **Answer: B**
-Explanation: base=2 guarantees that the first 2 tasks are always On-Demand. The remaining 8 are distributed in the weight ratio 1:4 — 8/(1+4)=1.6 On-Demand, 6.4 Spot. After rounding, about 2 On-Demand and about 6 Spot. In total about 4 On-Demand and about 6 Spot. AWS maintains a "roughly targeted ratio" rather than an exact ratio, so the actual distribution may differ slightly.
+Explanation: base=2 guarantees that the first 2 Tasks are always On-Demand. The remaining 8 are distributed at the weight ratio 1:4: 8/(1+4)=1.6 On-Demand and 6.4 Spot. After rounding, about 2 On-Demand and about 6 Spot. The total is On-Demand ~4 and Spot ~6. Since AWS maintains a "rough ratio target" rather than an exact ratio, the actual distribution may differ slightly.
 
 ---
 
-**Question 4.** When trying to connect to a running container with ECS Exec, the error "ExecuteCommandAgent is not running" occurs. What is the most likely cause?
+**Question 4.** When trying to connect to a running container with ECS Exec, an "ExecuteCommandAgent is not running" error occurs. What is the most likely cause?
 
-A) The task role lacks permissions
-B) enableExecuteCommand was set in the task definition, but the service was not updated with --enable-execute-command, or new tasks were not created with --force-new-deployment
+A) The Task Role has no permissions
+B) enableExecuteCommand was set in the Task Definition, but the Service was not updated with --enable-execute-command or new Tasks were not created with --force-new-deployment
 C) There is no VPC endpoint
-D) The ECS cluster version is too old
+D) The ECS cluster version is low
 
 **Answer: B**
-Explanation: The ECS Exec agent is initialized when a task starts. Even if you set enableExecuteCommand on the service, it does not apply to existing tasks that are already running. You must replace the existing tasks with `--force-new-deployment` so that new tasks start with the ECS Exec agent. A missing enableExecuteCommand in the task definition (which also needs to be checked) or a missing ssmmessages permission in the task role can also be causes, but the specific error "Agent is not running" often appears when new tasks have not yet been created.
+Explanation: The ECS Exec Agent is initialized when a Task starts. Even if you set enableExecuteCommand on the Service, it does not apply to existing Tasks that are already running. You must replace the existing Tasks with `--force-new-deployment` so that new Tasks start with the ECS Exec Agent. The cause could also be that enableExecuteCommand is missing from the Task Definition (this also needs checking) or that the Task Role lacks ssmmessages permissions, but the specific error "Agent is not running" often appears when new Tasks have not been created yet.
 
 ---
 
-**Question 5.** In an ECS rolling deployment, new tasks have started but the old tasks are not terminated, so more tasks than the desired count are running. Which ECS service setting controls this behavior?
+**Question 5.** In an ECS Rolling deployment, new Tasks have started but the old Tasks have not stopped, so more Tasks than the desired count are running. Which ECS Service setting controls this behavior?
 
 A) maximumPercent and minimumHealthyPercent
 B) desiredCount
@@ -514,11 +516,11 @@ C) Capacity Provider Strategy
 D) enableExecuteCommand
 
 **Answer: A**
-Explanation: `maximumPercent` (default 200%) is the maximum percentage of running tasks during a deployment, and `minimumHealthyPercent` (default 100%) is the minimum percentage of healthy tasks that must be maintained during a deployment. With the default settings, a service with desired=4 can run at most 8 tasks (200%) and at least 4 tasks (100%) during a deployment. To optimize cost, lower maximumPercent to 150%; if availability is the priority, lower minimumHealthyPercent so that more new tasks can be started first and old tasks replaced quickly.
+Explanation: `maximumPercent` (default 200%) is the maximum percentage of Tasks that can run during a deployment, and `minimumHealthyPercent` (default 100%) is the minimum percentage of healthy Tasks that must be maintained during a deployment. With the default settings, a service with desired=4 can have up to 8 (200%) and at least 4 (100%) Tasks running during a deployment. To optimize cost, lower maximumPercent to 150%; if availability is the priority, lower minimumHealthyPercent so you can start more new Tasks first and replace the old Tasks quickly.
 
 ---
 
-**Question 6.** You pushed a new version to ECR with the same image tag (`latest`), but the ECS service is not updated automatically. What is the command to force an update manually?
+**Question 6.** You pushed a new version to ECR under the same image tag (`latest`), but the ECS Service did not update automatically. What is the command to force a manual update?
 
 A) aws ecs update-service --task-definition :latest
 B) aws ecs update-service --cluster prod --service checkout --force-new-deployment
@@ -526,18 +528,19 @@ C) aws ecs start-task
 D) aws ecs run-task
 
 **Answer: B**
-Explanation: `--force-new-deployment` forces the ECS service to start new tasks without changing the task definition. When new tasks start they pull the image again, so the newly pushed `latest` image in ECR is used. This approach goes against the IMMUTABLE tag principle (since a different image is used with the same tag), but it is used in urgent situations that need a quick hotfix deployment without changing the tag. In the long term, using commit SHA-based tags is recommended.
+Explanation: `--force-new-deployment` forces the ECS Service to start new Tasks without changing the Task Definition. Since the image is pulled again when a new Task starts, the `latest` image newly pushed to ECR is used. This approach goes against the IMMUTABLE tag principle (because a different image is used under the same tag), but it is used in urgent situations that need a quick hotfix deployment without changing the tag. In the long term, using commit-SHA-based tags is recommended.
 
 ---
 
-**Question 7.** What design prevents loss of payment transactions when an ECS Fargate Spot task is suddenly reclaimed?
+**Question 7.** What design prevents loss of payment transactions when an ECS Fargate Spot Task is suddenly reclaimed?
 
 A) Use only On-Demand instead of Fargate Spot
-B) Implement graceful shutdown logic that rejects new requests on receiving SIGTERM and exits after in-flight transactions complete + DB transactions are rolled back automatically through ACID guarantees
-C) Save data to local disk before the task terminates
-D) Detect the Spot reclamation with CloudWatch Events and recover manually
+B) Implement graceful shutdown logic that rejects new requests on SIGTERM and exits after finishing in-flight transactions + DB transactions roll back automatically through the ACID guarantee
+C) Save the data to the local disk before the Task terminates
+D) Detect the Spot reclaim with CloudWatch Events and recover manually
 
 **Answer: B**
-Explanation: Two minutes before a Fargate Spot reclamation, SIGTERM is delivered to the container through the ECS agent. The application handles SIGTERM to (1) respond 503 to new HTTP requests → the load balancer routes to other tasks, (2) wait up to 25 seconds (stopTimeout 30 seconds minus a 5-second margin) for in-flight transactions to complete, and (3) DB transactions either complete or are rolled back automatically through the ACID guarantees of the RDBMS. Local disk (C) disappears when the task terminates, so it has no persistence.
+Explanation: 2 minutes before Fargate Spot reclaim, SIGTERM is delivered to the container through the ECS Agent. The application handles SIGTERM to (1) respond 503 to new HTTP requests → the load balancer routes to other Tasks, (2) wait up to 25 seconds (stopTimeout 30 seconds - 5 seconds margin) for in-flight transactions to finish, and (3) DB transactions either complete or roll back automatically through the RDBMS's ACID guarantee. The local disk (C) disappears when the Task terminates, so it has no persistence.
 
 ---
+

@@ -1,45 +1,45 @@
 # Day 3 - EKS CI/CD: Why GitOps Was Born, and How ArgoCD and Flux Changed Kubernetes
 
 📅 Date: Week 6 (Day 3)
-🎯 Topic: Modern GitOps Patterns in Kubernetes Environment — Pull-based Deployment, Helm/Kustomize, IRSA, Karpenter
-⏱️ Study Time: Approximately 90 minutes
+🎯 Topic: Modern GitOps patterns for Kubernetes: pull-based deployment, Helm/Kustomize, IRSA, Karpenter
+⏱️ Study time: about 90 minutes
 
 ---
 
-In 2017, Alexis Richardson from Weaveworks described a recurring problem his team faced while introducing the term "GitOps." The problem was simple. When operations teams directly changed Kubernetes cluster state using `kubectl apply`, nobody could be sure what the actual cluster state was a few days later. Someone urgently modified a ConfigMap. Another modified Deployment replica count. This is called Drift—the quiet divergence between declared specification and actual system state. Richardson's solution was surprisingly clear: "Make Git the single source of truth. Have the cluster look at Git and self-converge." This is GitOps's core insight.
+In 2017, Alexis Richardson, an engineer at Weaveworks, first used the word "GitOps" while describing a recurring problem his team faced. The problem was simple. When the operations team changed the state of a Kubernetes cluster directly with `kubectl apply`, a few days later nobody could be sure what state the actual cluster was in. Someone had urgently edited a ConfigMap, and someone else had changed a Deployment's replica count. This is called drift: the phenomenon where the declarative specification and the actual system state quietly diverge. Richardson's solution was strikingly clear: "Make Git the single source of truth, and let the cluster watch Git and converge itself." That is the core insight of GitOps.
 
-However, understanding GitOps requires first understanding the method it replaces—push-based deployment—and why it becomes problematic at K8s scale. When CI/CD systems directly `kubectl` the cluster, this works fine for small teams. Problems emerge as cluster count grows, teams expand, and security audits appear. The CI server must hold cluster admin credentials, and storing these in GitHub Actions, Jenkins, or CodeBuild becomes an attack surface. Kubernetes community member Kelsey Hightower expressed this: "Your CI doesn't need to be inside the trust boundary of your production cluster."
+But to understand GitOps, you first need to understand why the approach it aims to replace, push-based deployment, becomes a problem at K8s scale. Having the CI/CD system fire `kubectl` directly at the cluster works well for small teams. The problems show up as the number of clusters grows, the team grows, and security audit requirements appear. The CI server must hold the cluster's admin credentials, and the very fact that these credentials are stored in GitHub Actions, Jenkins, or CodeBuild becomes an attack surface. In the Kubernetes community, Kelsey Hightower put this problem as "there is no reason your CI should be inside the production cluster's trust boundary."
 
-GitOps inverts this trust boundary. CI builds images and pushes to registry—that's it. Deployment decisions are expressed by committing declarative specification to Git. A GitOps operator inside the cluster (ArgoCD or Flux) periodically polls Git, comparing current cluster state. On differences, the operator calls Kubernetes API directly to converge. CI servers don't need cluster credentials.
-
----
-
-## Push-based vs Pull-based: Different Trust Boundary Locations
-
-Push-based deployment: CodeBuild or GitHub Actions run `aws eks update-kubeconfig` and hit the cluster with `helm upgrade` or `kubectl apply`. This means CI systems live inside the cluster's trust boundary. Small systems enjoy simplicity advantage, but one of these three conditions creates problems:
-
-First, cluster count increases. Ten clusters require ten sets of credentials. Second, security audits begin. SOC2 or PCI-DSS auditors ask "who has access to production clusters?" CI server holding admin credentials is unfavorable. Third, post-drift detection is impossible. Manual changes via `kubectl edit` go untracked until next deployment.
-
-Pull-based GitOps redefines trust boundary around Git repository. Cluster operators need only read permission to Git. Backward—cluster to external—credential exposure disappears.
-
-💡 **GitOps Core Security Principle**: CI servers don't write directly to clusters. They only declare "cluster state = Git state." Clusters self-converge to Git.
+GitOps flips this trust boundary. CI builds the image and pushes it to the registry. That is where it ends. The deployment decision is expressed by committing a declarative specification to the Git repository, and a GitOps operator inside the cluster (ArgoCD or Flux) periodically polls Git and compares it with the current cluster state. If there is a difference, the operator calls the Kubernetes API directly to converge it. The CI server does not need to hold cluster credentials.
 
 ---
 
-## ArgoCD Internal Architecture: Role Separation of 4 Components
+## Push-Based vs Pull-Based: The Trust Boundary Sits in a Different Place
 
-ArgoCD is not a single process. Four core components have clearly separated responsibilities. Understanding this architecture reveals why specific components scale in high-availability setups.
+In push-based deployment, CodeBuild or GitHub Actions runs `aws eks update-kubeconfig` and fires `helm upgrade` or `kubectl apply` directly at the cluster. This means the CI system is inside the cluster's trust boundary. When the system is small, this has the advantage of simplicity, but it becomes a problem when any one of the following three conditions arises.
 
-**argocd-application-controller** is ArgoCD's heart. This controller is a textbook Kubernetes Controller Pattern implementation. It periodically compares `desired state` (manifests rendered from Git) vs `live state` (actual Kubernetes API state), computing Diff. When `automated.selfHeal: true`, this controller auto-triggers sync. Stateful by nature, normally single-instance, but large environments (thousands of Applications) support sharding.
+First, the number of clusters grows. Pushing to 10 clusters requires 10 sets of credentials, and you have to manage a different IAM Role or kubeconfig for each. Second, security audits begin. A SOC2 or PCI-DSS assessor asks "who has access to the production cluster?" An answer of "the CI server has admin credentials" is unfavorable. Third, drift cannot be detected after it occurs. A setting changed directly with `kubectl edit` is not tracked until the next deployment.
 
-**argocd-repo-server** fetches and renders manifests from Git. Executes `helm template` on Helm Charts, runs Kustomize, or parses plain YAML. Stateless, freely horizontally scalable. When Git polling load increases, scale up repo-server.
+Pull-based GitOps redefines the trust boundary around the Git repository. The cluster operator only needs permission to read Git. The exposure of credentials in the reverse direction, from outside into the cluster, disappears.
 
-**argocd-server** is gRPC/HTTP API server. ArgoCD CLI and web UI access Application state, manually trigger sync, apply RBAC policy through this server. Stateless, horizontally scalable. Large multi-team environments distribute UI load.
+**The core GitOps security principle**: the CI server never writes to the cluster directly. It only declares "cluster state = Git state." The cluster converges itself to Git.
 
-**Redis** caches Application state. Stores application-controller's computed Diff results and live state cache, reducing repetitive Kubernetes API calls. Redis restart doesn't break ArgoCD but loses cache, so initial load is heavy.
+---
+
+## ArgoCD Internal Architecture: Separation of Roles Across 4 Components
+
+ArgoCD is not a single process. Four core components have clearly separated responsibilities. Understanding this structure makes it natural to see which component you scale in a high-availability setup.
+
+**argocd-application-controller** is the heart of ArgoCD. This controller is a textbook implementation of the Kubernetes Controller Pattern. It periodically compares the `desired state` (manifests rendered from Git) with the `live state` (the actual Kubernetes API state) and computes the difference, that is, the diff. When `automated.selfHeal: true` is set, this controller triggers a sync automatically. This component keeps state, so by default it runs as a single instance, but in large environments running thousands of Applications it supports sharding.
+
+**argocd-repo-server** fetches manifests from the Git repository and renders them. It renders Helm Charts with `helm template`, runs Kustomize, or parses plain YAML. This component is stateless, so it scales horizontally with ease. When the Git polling load increases, you add repo-servers.
+
+**argocd-server** is the gRPC/HTTP API server. The argocd CLI and the web UI use this server to look up Application state, trigger syncs manually, and apply RBAC policies. This component is also stateless and can scale horizontally, and in large team environments it can spread the UI access load.
+
+**Redis** acts as a cache of Application state. It stores the diff results computed by the application-controller and a cache of the live state to reduce repeated Kubernetes API calls. If Redis restarts, ArgoCD keeps working, but the cache is gone, so the initial load becomes heavy.
 
 ```
-ArgoCD Internal Flow:
+ArgoCD internal flow:
 ────────────────────────────────────────────
   [Git Repository]
         │ (1m interval polling)
@@ -48,32 +48,32 @@ ArgoCD Internal Flow:
         │ rendered manifests
         ▼
   [application-controller]
-        │ desired state vs live state comparison
-        │ (Redis cache reference)
-        ├─ No Diff → Synced
-        └─ Diff exists → auto-sync? → Kubernetes API call
+        │ compare desired state vs live state
+        │ (consult Redis cache)
+        ├─ No diff → Synced
+        └─ Diff → auto-sync? → call Kubernetes API
         
-  [argocd-server] ← CLI/WebUI request handling (RBAC applied)
+  [argocd-server] ← handles CLI/WebUI requests (RBAC applied)
 ────────────────────────────────────────────
 ```
 
-🔍 **Kubernetes Controller Pattern**: ArgoCD uses the same philosophy as Kubernetes itself. Just as Deployment Controller within kube-controller-manager reconciles `desired replicas vs actual replicas`, ArgoCD's application-controller reconciles `desired manifests (Git) vs live state (K8s API)`. This pattern is Leslie Lamport's practical implementation of "eventual consistency" from distributed systems theory.
+**Kubernetes Controller Pattern**: ArgoCD uses the same pattern as Kubernetes' own control-loop philosophy. Just as the Deployment Controller inside kube-controller-manager reconciles `desired replicas vs actual replicas`, ArgoCD's application-controller reconciles `desired manifests (Git) vs live state (K8s API)`. This pattern is a practical implementation of the "eventual consistency" that Leslie Lamport discusses in distributed systems theory.
 
 ---
 
-## Flux v2 Toolkit: Composable Controller Collection, Not Monolith
+## Flux v2 Toolkit: A Set of Composable Controllers, Not a Single Tool
 
-Flux v1 was a single process. Flux v2 completely redesigned as GitOps Toolkit, splitting into 5 independent controllers. This design decision was faithful to Unix philosophy—each tool does one thing well, composable together.
+Flux v1 was a single process. Flux v2 was completely redesigned as the GitOps Toolkit and split into 5 independent controllers. This design decision is more faithful to the Unix philosophy (one tool does one thing, and they are composable) than a "one does it all" approach.
 
-**source-controller** manages "where to fetch from." Supports Git Repository, Helm Repository, OCI Repository (Helm Charts or Kustomize packaged as OCI artifacts). Define `GitRepository` resource; source-controller periodically polls Git, detecting changes and making downloaded archive available as local artifact for other controllers.
+**source-controller** is responsible for "where to fetch from." It supports Git Repositories, Helm Repositories, and OCI Repositories (Helm Charts or Kustomize packaged as OCI artifacts). When you define a `GitRepository` resource, the source-controller polls Git periodically, and when it detects a change, it turns the downloaded archive into a local artifact that other controllers can reference.
 
-**kustomize-controller** processes `Kustomization` CRD. Executes Kustomize on artifact source-controller provides, applies to cluster.
+**kustomize-controller** handles the `Kustomization` CRD. It runs Kustomize on the artifact provided by the source-controller and applies the result to the cluster.
 
-**helm-controller** processes `HelmRelease` CRD. Installs or upgrades Helm Chart with specified values. Manages Helm release state as Kubernetes CRD, so check status with `kubectl get helmrelease` instead of `helm list`.
+**helm-controller** handles the `HelmRelease` CRD. It installs or upgrades a Helm Chart with the specified values. Because it manages Helm release state as a Kubernetes CRD, you check status with `kubectl get helmrelease` rather than `helm list`.
 
-**notification-controller** notifies external systems of cluster events. Sends sync results to Slack, Teams, PagerDuty, GitHub Status API, etc.
+**notification-controller** reports cluster events to external systems. It sends sync results to Slack, Teams, PagerDuty, the GitHub Status API, and so on.
 
-**image-automation-controller** is Flux's unique feature. Polls container registries, detecting new image tags, auto-updates manifests repo with commit updating image tag. When source-controller detects commit, kustomize-controller or helm-controller reflects new image to cluster. Complete automated GitOps loop.
+**image-automation-controller** is a distinctive Flux feature. It polls a registry such as ECR, and when it detects a new image tag, it creates a commit that automatically updates the manifest in the Git repository. When the source-controller detects this commit, the kustomize-controller or helm-controller applies the new image to the cluster. It is a fully automated GitOps loop.
 
 ```yaml
 # Flux GitRepository
@@ -102,25 +102,25 @@ spec:
     kind: GitRepository
     name: myapp-manifests
   path: ./overlays/prod
-  prune: true         # Delete resources removed from Git
+  prune: true         # Delete resources that disappeared from Git
   interval: 5m
   timeout: 3m
-  healthChecks:       # Validate deployment success
+  healthChecks:       # Verify the deployment succeeded
     - apiVersion: apps/v1
       kind: Deployment
       name: myapp
       namespace: prod
 ```
 
-📚 **Flux vs ArgoCD Selection Criteria**: ArgoCD's powerful UI and RBAC suit multi-tenant environments where multiple teams share one ArgoCD. Flux is lighter, more Kubernetes-native, suitable for "platform team without UI." Real-world uses both simultaneously or runs only argocd-image-updater from Flux on top of ArgoCD.
+**Flux vs ArgoCD selection criteria**: ArgoCD has a strong UI and RBAC, so it suits multi-tenant environments where several teams share one ArgoCD. Flux is lighter and more K8s-native, and suits "platform teams that don't need a UI." In practice, people use both at the same time, and there is also a hybrid pattern that uses only Flux's image-automation-controller on top of ArgoCD.
 
 ---
 
-## Helm: Design Philosophy of Kubernetes Package Manager
+## Helm: The Design Philosophy of the Kubernetes Package Manager
 
-Helm was born from simple need. Deploying one application to Kubernetes requires multiple YAMLs: Deployment, Service, ConfigMap, Ingress, ServiceAccount, HorizontalPodAutoscaler. These YAMLs relate to each other; some values differ per environment (dev/staging/production). Helm packages these correlated YAML bundles as Charts, externalizing variable parts as values.
+The reason Helm exists is simple. Deploying one application to Kubernetes requires many YAML files: Deployment, Service, ConfigMap, Ingress, ServiceAccount, HorizontalPodAutoscaler, and more. These YAML files are related to each other, and some values differ per environment (dev/staging/production). Helm packages this related set of YAML as a Chart and externalizes the variable parts as values.
 
-Helm Chart comprises three key files. `Chart.yaml` holds metadata (name, version, dependencies). `values.yaml` defines defaults. `templates/` contains Kubernetes manifest templates written in Go template syntax.
+A Helm Chart consists of three core files. `Chart.yaml` holds metadata (name, version, dependencies). `values.yaml` defines default values. The `templates/` directory holds Kubernetes manifest templates written in Go template syntax.
 
 ```yaml
 # Chart.yaml
@@ -140,7 +140,7 @@ dependencies:
 replicaCount: 2
 image:
   repository: 111222333.dkr.ecr.ap-northeast-2.amazonaws.com/myapp
-  tag: "latest"      # Override during deployment with --set image.tag=<SHA>
+  tag: "latest"      # Override at deploy time with --set image.tag=<SHA>
   pullPolicy: Always
 resources:
   requests:
@@ -155,8 +155,8 @@ autoscaling:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
 postgresql:
-  enabled: false     # Use external RDS when false
-
+  enabled: false     # false when using an external RDS
+ 
 ---
 # templates/deployment.yaml
 apiVersion: apps/v1
@@ -185,7 +185,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
 ```
 
-Helm deployment command is `helm upgrade --install`. `--install` creates if missing, upgrades if exists, idempotent for CI.
+Helm's deployment command is `helm upgrade --install`. `--install` installs the release if it doesn't exist and upgrades it if it does, so you can use it idempotently in CI.
 
 ```bash
 # Per-environment values file + image tag override
@@ -194,20 +194,20 @@ helm upgrade --install myapp ./chart \
   --create-namespace \
   --values values.prod.yaml \
   --set image.tag=${CODEBUILD_RESOLVED_SOURCE_VERSION} \
-  --wait \           # Wait for Pods to be Ready (validates rollout)
+  --wait \           # Wait until Pods are Ready (rollout verification)
   --timeout 5m \
-  --atomic           # Auto-rollback on failure
+  --atomic           # Automatic rollback on failure
 ```
 
-`--atomic` flag, added in Helm 3, is important. If upgrade doesn't complete within `--timeout`, automatically rolls back to previous release. Equivalent to ECS Blue/Green rollback but implemented with Kubernetes and Helm native mechanisms.
+The `--atomic` flag is an important feature added in Helm 3. If the upgrade does not complete within `--timeout`, it automatically rolls back to the previous release. Helm provides on its own the equivalent of ECS's Blue/Green rollback.
 
-⚠️ **Helm vs Kustomize Selection Trap**: Helm is powerful but Go template debugging is hard. Kustomize uses pure YAML overlay approach with lower learning curve. ArgoCD supports both, so recommended pattern is starting new projects with Kustomize, switching to Helm when sharing packages needed.
+⚠️ **Helm vs Kustomize selection pitfall**: Helm is powerful, but Go templates are hard to debug. Kustomize uses plain YAML overlays and has a low learning curve. ArgoCD supports both, so the recommended pattern is to start a new project with Kustomize and switch to Helm when you need a shared package.
 
 ---
 
-## Kustomize: Expressing Environment Differences Without YAML Copy
+## Kustomize: Expressing Per-Environment Differences Without Copying YAML Files
 
-Kustomize's core concept is "base + overlay." Keep common Kubernetes manifests in base; express environment differences (environment variables, image tags, resource limits, replica counts) as patches in overlay. Instead of copying YAML files per environment, describe differences only.
+Kustomize's core concept is "base + overlay." You put the common Kubernetes manifests in the base and express per-environment differences (environment variables, image tags, resource limits, replica counts) as patches in overlays. Instead of copying YAML files per environment, you describe only the differences.
 
 ```
 k8s-manifests/
@@ -238,7 +238,7 @@ resources:
 images:
   - name: myapp
     newName: 111222333.dkr.ecr.ap-northeast-2.amazonaws.com/myapp
-    newTag: abc1234def  # CI updates this value via kustomize edit set image
+    newTag: abc1234def  # CI updates this value with kustomize edit set image
 patches:
   - path: replica-patch.yaml
   - path: resource-patch.yaml
@@ -250,24 +250,24 @@ kind: Deployment
 metadata:
   name: myapp
 spec:
-  replicas: 5  # prod only has 5
+  replicas: 5  # 5 only in prod
 ```
 
-Kustomize's `images` section is particularly useful in CI/CD pipelines. Single command `kustomize edit set image myapp=111.dkr.ecr.../myapp:${GIT_SHA}` updates specific overlay's image tag and commits to Git. This is the manual version of what image-automation-controller does.
+Kustomize's `images` section is especially useful in CI/CD pipelines. A single command, `kustomize edit set image myapp=111.dkr.ecr.../myapp:${GIT_SHA}`, can update the image tag of a specific overlay and commit it to Git. This is the manual version of what the image-automation-controller does.
 
 ---
 
-## IRSA vs EKS Pod Identity: Two Methods for Granting AWS Permissions at Pod Level
+## IRSA vs EKS Pod Identity: Two Ways to Grant AWS Permissions Per Pod in Kubernetes
 
-Kubernetes Pods often need AWS service access. Read files from S3, write to DynamoDB, fetch secrets from Secrets Manager. Early approach used node EC2 Instance Profile. Assigning needed permissions to node IAM Role meant all Pods on that node had those permissions. This clearly violates least privilege. Bill payment Pod and log collector Pod running on same node—log collector could access payment DynamoDB.
+It is very common for a Kubernetes Pod to need access to AWS services: reading files from S3, writing to DynamoDB, or fetching secrets from Secrets Manager. The early approach was to use the node's EC2 Instance Profile. If you granted the needed permissions to the node's IAM Role, every Pod running on that node could use them. This is a clear violation of least privilege. When a payment service Pod and a log collector Pod run on the same node, the log collector can also access the payment system's DynamoDB.
 
-**IRSA (IAM Roles for Service Accounts)** solves this with OIDC. EKS clusters have OIDC Provider URLs. Registering this Provider in IAM lets AWS trust ServiceAccount tokens issued by EKS. Operation is:
+**IRSA (IAM Roles for Service Accounts)** solves this problem based on OIDC. An EKS cluster has an OIDC Provider URL, and when you register this Provider in IAM, AWS can trust the Service Account tokens issued by EKS. It works as follows.
 
-1. Register EKS cluster OIDC Provider URL to AWS IAM
-2. Create IAM Role; specify specific Namespace and ServiceAccount in Trust Policy as Subject
-3. Add `eks.amazonaws.com/role-arn` annotation to Kubernetes ServiceAccount
-4. When Pod uses ServiceAccount, EKS mounts OIDC token to Pod
-5. Pod's AWS SDK calls STS `AssumeRoleWithWebIdentity` with token to get temporary credentials
+1. Register the EKS cluster's OIDC Provider URL in AWS IAM.
+2. Create an IAM Role and specify a particular Namespace and ServiceAccount as the Subject in the Trust Policy.
+3. Add the `eks.amazonaws.com/role-arn` annotation to the Kubernetes ServiceAccount.
+4. When a Pod uses this ServiceAccount, EKS mounts an OIDC token into the Pod.
+5. The Pod's AWS SDK uses this token to call STS `AssumeRoleWithWebIdentity` and obtain temporary credentials.
 
 ```json
 {
@@ -290,7 +290,7 @@ Kubernetes Pods often need AWS service access. Read files from S3, write to Dyna
 }
 ```
 
-**EKS Pod Identity** (launched November 2023) is IRSA simplified. No separate OIDC Provider registration needed. Instead, `eks:CreatePodIdentityAssociation` API directly connects ServiceAccount to IAM Role. AWS provides tokens via EKS Pod Identity Agent (DaemonSet). Largest difference from IRSA: Trust Policy setup unnecessary—IAM Role's Trust Policy only needs `eks.amazonaws.com` as Principal.
+**EKS Pod Identity** (released in November 2023) is a simplified version of IRSA. You don't need to register an OIDC Provider separately. Instead, you link a ServiceAccount to an IAM Role directly with the `eks:CreatePodIdentityAssociation` API. AWS delivers tokens through the EKS Pod Identity Agent (a DaemonSet). The biggest difference from IRSA is that no Trust Policy setup is needed: you only specify `eks.amazonaws.com` as the Principal in the IAM Role's Trust Policy.
 
 ```bash
 # EKS Pod Identity setup (much simpler than IRSA)
@@ -301,15 +301,15 @@ aws eks create-pod-identity-association \
   --role-arn arn:aws:iam::111222333:role/MyAppRole
 ```
 
-🔍 **IRSA vs Pod Identity Exam Point**: IRSA supported since EKS 1.13; widely used in existing clusters. Pod Identity requires EKS 1.24+; simpler setup advantage. Exams frequently ask IRSA's 3-step process: OIDC Provider registration → Trust Policy → ServiceAccount annotation.
+**IRSA vs Pod Identity exam points**: IRSA has been supported since EKS 1.13 and is widely used in existing clusters. Pod Identity requires EKS 1.24+, and its advantage is simpler setup. The exam includes questions that ask about the 3 steps of IRSA: OIDC Provider registration → Trust Policy → ServiceAccount annotation.
 
 ---
 
-## Karpenter: Scheduling-Aware Node Provisioner
+## Karpenter: A Scheduling-Aware Node Provisioner
 
-Cluster Autoscaler (CA), appearing in 2016, is traditional reactive node autoscaler. Operation is reactive. When Pod becomes Pending, CA checks currently configured Auto Scaling Groups and adds one instance type from that ASG. This approach's constraint is clear: ASG must be pre-configured with specific instance types. Using `m5.xlarge` ASG, if Pending Pod needs more memory, CA can't add larger instances.
+Cluster Autoscaler (CA), which appeared in 2016, is the traditional node autoscaler. It works reactively. When a Pod becomes Pending, CA checks the currently configured Auto Scaling Group (ASG) and adds one of that ASG's instance types. The limitation of this approach is clear: an ASG must be configured with specific instance types in advance. If you are using an `m5.xlarge` ASG and a Pending Pod requires more memory, CA cannot add a larger instance.
 
-Karpenter, open-sourced by AWS in 2021, bypasses ASG and calls EC2 API directly. Core differential is scheduling-aware characteristic. Karpenter directly analyzes Pending Pod resource requests (CPU, memory), Node Selector, Affinity, Toleration, choosing optimal EC2 instance type simultaneously scheduling all Pods. From dozens of candidate instance types considering cost and availability, it selects real-time.
+Karpenter is a node provisioner that AWS open-sourced in 2021, and it bypasses ASGs and calls the EC2 API directly. Its key differentiator is that it is scheduling-aware. Karpenter directly analyzes the Pending Pods' resource requests (CPU, memory), Node Selectors, Affinity, and Tolerations, and chooses the optimal EC2 instance type that can schedule those Pods all at once. It keeps dozens of instance types as candidates and chooses among them in real time, considering cost and availability.
 
 ```yaml
 apiVersion: karpenter.sh/v1
@@ -331,7 +331,7 @@ spec:
           values: ["4", "8", "16", "32"]
         - key: karpenter.sh/capacity-type
           operator: In
-          values: ["spot", "on-demand"] # Spot preferred, On-Demand fallback
+          values: ["spot", "on-demand"] # Spot first, On-Demand if unavailable
         - key: kubernetes.io/arch
           operator: In
           values: ["amd64"]
@@ -344,7 +344,7 @@ spec:
     memory: "4000Gi"
   disruption:
     consolidationPolicy: WhenEmptyOrUnderutilized
-    consolidateAfter: 30s              # Remove empty nodes after 30s
+    consolidateAfter: 30s              # Remove empty nodes after 30 seconds
 
 ---
 apiVersion: karpenter.k8s.aws/v1
@@ -362,29 +362,29 @@ spec:
         karpenter.sh/discovery: prod-cluster
 ```
 
-Karpenter's Consolidation is unique to CA. When cluster runs several small nodes at low utilization, Karpenter simulates whether Pods can be rebinned to fewer nodes. If possible, drains existing nodes and reprovisioning more efficiently. This is not simple scale-down but empty-space fill optimization.
+Karpenter's Consolidation feature is something CA does not have. When several small nodes are running at low utilization in the cluster, Karpenter simulates whether those Pods can be repacked onto fewer nodes. If so, it drains the existing nodes and provisions new nodes more efficiently. This is not a simple scale-down but a bin-packing optimization that fills empty gaps.
 
-📚 **Karpenter and Fargate Spot Similarity**: Similar to Fargate Spot's SIGTERM 2-minute warning (Week 6 Day 2), Karpenter Spot nodes receive EC2 Spot Interruption Notice, draining node and rescheduling Pods elsewhere. Add `karpenter.sh/do-not-disrupt: "true"` annotation to Pod to prevent Karpenter's voluntary disruption (Consolidation).
-
----
-
-## Why CodeDeploy Doesn't Support EKS
-
-This is frequently set up as exam trap. Because CodeDeploy Blue/Green works excellently with ECS, exam takers assume identical function on EKS. CodeDeploy doesn't support EKS.
-
-Reason stems from design philosophy differences. CodeDeploy is AWS-managed deployment service with CodeDeploy Agent handling deployment mechanism. ECS has native CodeDeploy integration. Kubernetes has its own Rolling Update and Deployment rollout mechanisms, completed inside Kubernetes control plane. Adding CodeDeploy Agent to K8s cluster conflicts with this architecture.
-
-Three methods implement Blue/Green-like deployment on EKS. First, Argo Rollouts—separate controller in ArgoCD ecosystem implementing Canary and Blue/Green strategies as Kubernetes-native CRD. Second, Helm's `--atomic` with two Deployments switched at Service level. Third, AWS Load Balancer Controller's weighted target group routing—conceptually identical to CodeDeploy Blue/Green but implemented in Kubernetes.
-
-⚠️ **Exam Trap**: "How to use CodeDeploy on EKS?" Answer is "CodeDeploy doesn't support EKS." Don't confuse with ECS.
+**Karpenter and Fargate Spot similarities**: Just like the 2-minute SIGTERM warning for Fargate Spot covered in Week 6 Day 2, a Karpenter Spot node that receives an EC2 Spot Interruption Notice drains the node and reschedules the Pods onto other nodes. Adding the `karpenter.sh/do-not-disrupt: "true"` annotation to a Pod prevents Karpenter's voluntary disruption (Consolidation).
 
 ---
 
-## ArgoCD Image Updater: Complete Automated GitOps Loop
+## Why CodeDeploy Does Not Support EKS
 
-General GitOps flow has manual image tag update step. After CI pushes image to ECR, someone (or CI differently) must update manifests repo YAML and commit. ArgoCD Image Updater automates this step.
+This is used as a pitfall on the exam. Because CodeDeploy Blue/Green works so well with ECS, test takers assume it works the same way with EKS. But CodeDeploy does not support EKS.
 
-Image Updater connects to ArgoCD Application via `ImageUpdatePolicy` CRD. Periodically polls ECR, Docker Hub, GitHub Container Registry, etc., detecting new image tags. Detection methods vary—latest semver, specific regex pattern, specific prefix, etc. On detecting new tag, creates commit directly to Git repo or updates ArgoCD Application parameter. ArgoCD detects change and syncs.
+The reason comes from a difference in design philosophy. CodeDeploy is a managed deployment service provided by AWS, in which the CodeDeploy Agent handles the deployment mechanism. In ECS, the ECS service itself is integrated with CodeDeploy. Kubernetes has its own Rolling Update and Deployment rollout mechanism, and it is completed inside the Kubernetes control plane. Adding a CodeDeploy Agent to a K8s cluster does not fit this architecture.
+
+There are three ways to implement Blue/Green-like deployment on EKS. First, Argo Rollouts: a separate controller in the ArgoCD ecosystem that implements Canary and Blue/Green strategies as Kubernetes-native CRDs. Second, switching between two Deployments at the Service level together with Helm's `--atomic`. Third, weighted target group routing in the AWS Load Balancer Controller: conceptually the same as CodeDeploy Blue/Green but implemented in Kubernetes.
+
+⚠️ **Exam pitfall**: the correct answer to the question "How do you use CodeDeploy with EKS?" is "CodeDeploy does not support EKS." Don't confuse it with ECS.
+
+---
+
+## ArgoCD Image Updater: A Fully Automated GitOps Loop
+
+In a typical GitOps flow, updating the image tag includes a manual step. After CI pushes the image to ECR, someone (or another CI stage) must update the YAML in the manifests repository and commit it. ArgoCD Image Updater automates this step.
+
+Image Updater connects to an ArgoCD Application through the `ImageUpdatePolicy` CRD. It periodically polls ECR, Docker Hub, GitHub Container Registry, and others to detect new image tags. There are several detection methods: the latest semver, a specific regex pattern, a specific prefix, and so on. When it detects a new tag, it either creates a commit directly in the Git repository or updates the ArgoCD Application's parameters. ArgoCD detects this change and performs the sync.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -399,18 +399,18 @@ metadata:
     argocd-image-updater.argoproj.io/git-branch: main
 ```
 
-🎯 **Complete Automated GitOps Flow Summary**:
-1. Developer commits code → CodeBuild triggered
-2. CodeBuild: builds image → pushes to ECR (tag: `git SHA`)
-3. Image Updater: polls ECR → detects new tag → commits to manifests repo
-4. ArgoCD: detects manifest change → syncs → calls K8s API → updates Pod
-5. Drift occurs: selfHeal automatically restores previous state
+🎯 **Summary of the fully automated GitOps flow**:
+1. A developer commits code → CodeBuild is triggered
+2. CodeBuild: builds the image → pushes to ECR (tag: `git SHA`)
+3. Image Updater: polls ECR → detects the new tag → commits to the manifests repo
+4. ArgoCD: detects the manifests change → sync → calls the K8s API → Pods are updated
+5. If drift occurs, selfHeal automatically restores the previous state
 
 ---
 
 ## Pod Disruption Budget: Guaranteeing Availability During Deployment and Scaling
 
-During Kubernetes node upgrade, Karpenter Consolidation, or Deployment rollout, simultaneous Pod termination can cause service interruption. Pod Disruption Budget (PDB) prevents this.
+In Kubernetes, if certain Pods are terminated at the same time during a node upgrade, Karpenter Consolidation, or a Deployment rollout, a service outage can occur. A Pod Disruption Budget (PDB) is the policy that prevents this.
 
 ```yaml
 apiVersion: policy/v1
@@ -419,38 +419,38 @@ metadata:
   name: myapp-pdb
   namespace: prod
 spec:
-  minAvailable: 2      # Keep minimum 2 Pods always Running
+  minAvailable: 2      # Always keep at least 2 Pods in Running state
   selector:
     matchLabels:
       app: myapp
 ```
 
-Or express with `maxUnavailable`:
+Or you can express it with `maxUnavailable`:
 
 ```yaml
 spec:
-  maxUnavailable: 1    # Maximum 1 simultaneous disruption
+  maxUnavailable: 1    # Allow at most 1 disruption at a time
 ```
 
-PDB is respected by Karpenter, Cluster Autoscaler, `kubectl drain`, Deployment rolling update. When Karpenter attempts Consolidation, PDB-violating disruption doesn't execute. ArgoCD/Flux GitOps deployment also applies—during rollout if `maxUnavailable: 1`, ArgoCD follows Kubernetes Deployment rollout strategy which considers PDB.
+PDBs are respected by Karpenter, Cluster Autoscaler, `kubectl drain`, and Deployment rolling updates alike. When Karpenter attempts Consolidation, a disruption that would violate the PDB is not executed. This also applies during GitOps deployments through ArgoCD/Flux: if `maxUnavailable: 1` during a rollout, ArgoCD follows the Kubernetes Deployment's rollout strategy, and the Deployment's rollout strategy takes the PDB into account.
 
 ---
 
-## Real Case: Weaveworks Production GitOps
+## A Real Case: Weaveworks' Own Production GitOps
 
-Weaveworks, the company that created GitOps concept, made its production environment the first large-scale GitOps implementation. 2017 published case shared concrete numbers from switching. Deployment frequency increased from weekly to dozens daily. Rollback time shortened from hours to minutes. Most important: Drift detection—weekend emergency hotfix via `kubectl edit` followed by Monday regular deployment overwriting it completely vanished. selfHeal instantly reverts Drift.
+Because Weaveworks is the company that created the GitOps concept, its own production environment became the first large-scale real-world example of GitOps. In a case published in 2017, Weaveworks shared concrete numbers from starting with a single cluster and moving to GitOps. Deployment frequency rose from once a week to dozens of times a day, and rollback time dropped from hours to minutes. Most important was drift detection: the problem where someone applied an urgent hotfix with `kubectl edit` over the weekend and the regular Monday deployment overwrote it disappeared completely, because selfHeal reverts drift immediately.
 
-2021 published Codefresh benchmark provided actual ArgoCD vs Flux performance comparison. At 1000 Application baseline, ArgoCD had higher API server and app-controller memory usage but excelled in web UI and RBAC features. Flux was more memory-efficient but lacked UI. This benchmark is widely cited by platform teams for "ArgoCD vs Flux" decision-making.
+A Codefresh benchmark published in 2021 provided a real performance comparison of ArgoCD and Flux. At 1000 Applications, ArgoCD showed higher memory usage in the API server and app-controller, but it was ahead in web UI and RBAC features. Flux was memory-efficient but had no UI. This benchmark is widely cited by platform teams as a criterion for choosing between "ArgoCD vs Flux."
 
-💡 **Spotify Case**: Spotify manages 1000+ Kubernetes services with ArgoCD. Interesting: uses ArgoCD ApplicationSet—CRD creating multiple Applications from single template—managing multi-region deployment. DOP-C02 emphasizes basic Application and syncPolicy over ApplicationSet, but ApplicationSet is practical multi-cluster solution worth knowing.
+**Spotify case**: Spotify uses ArgoCD to manage more than 1000 Kubernetes services. What is interesting is that it manages multi-Region deployment with ArgoCD ApplicationSet, a CRD that creates the same Application across multiple clusters from a single template. On the DOP-C02 exam, the basic Application and syncPolicy matter more than ApplicationSet, but it is good to know ApplicationSet as the practical solution to the multi-cluster problem.
 
 ---
 
-## Admission Controller and Policy as Code
+## Admission Controllers and Policy as Code
 
-If GitOps controls "what to deploy via Git," Admission Controller controls "which deployments are allowed in cluster." OPA Gatekeeper and Kyverno are representative implementations.
+If GitOps controls "what to deploy" through Git, an Admission Controller controls "which deployments are allowed" in the cluster. OPA Gatekeeper and Kyverno are the representative implementations.
 
-Policy example: "All Production namespace Containers must use only signed images." Expressed as Kyverno ClusterPolicy:
+Example policy: "Every container in the Production namespace must use only signed images." Expressed as a Kyverno ClusterPolicy:
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -477,50 +477,50 @@ spec:
                       -----END PUBLIC KEY-----
 ```
 
-With this policy, when ArgoCD attempts syncing with unsigned image, Kubernetes API server requests verification from Kyverno via Admission Webhook. Kyverno returns Deny; Pod isn't created. ArgoCD sync fails and alerts.
+With this policy in place, when ArgoCD tries to sync with an unsigned image, the Kubernetes API server asks Kyverno for validation through an Admission Webhook, and if Kyverno returns Deny, the Pod is not created. ArgoCD's sync fails and a warning is raised.
 
-This connects Week 6 Day 1's ECR image signing (Sigstore, cosign). End-to-End image integrity guarantee architecture: ECR image signing (cosign) → ECR Enhanced Scanning (Inspector) → Kyverno/OPA Admission Control → ArgoCD/Flux deployment.
+This connects to the ECR image signing (Sigstore, cosign) from Week 6 Day 1. Having Kyverno verify at cluster entry the images signed in ECR is the end-to-end image integrity architecture.
 
-🔍 **DOP-C02 Connection**: Image signing (ECR + cosign) → ECR Enhanced Scanning (Inspector) → Kyverno/OPA Admission Control → ArgoCD/Flux deployment. This entire chain is "container security pipeline," frequently appearing as Security domain DOP-C02 problems.
+**DOP-C02 connection**: image signing (ECR + cosign) → ECR Enhanced Scanning (Inspector) → Kyverno/OPA Admission Control → ArgoCD/Flux deployment. This whole chain is the "container security pipeline," and it can appear as a Security domain question on DOP-C02.
 
 ---
 
 ## EKS CI/CD Pattern Decision Tree
 
 ```
-[EKS Deployment Strategy Selection]
+[Choosing an EKS deployment strategy]
 │
 ├─ Don't want to expose cluster credentials to CI?
 │      Yes → GitOps (ArgoCD or Flux)
 │      No  → Push-based (CodeBuild + Helm/kubectl)
 │
-├─ [GitOps Selection]
-│      Multiple teams share one GitOps + need UI?
+├─ [If you chose GitOps]
+│      Multiple teams share one GitOps server? + need a UI?
 │             Yes → ArgoCD
-│             No  → Flux (lighter, K8s-native)
+│             No  → Flux (lighter and K8s-native)
 │
-├─ [Template Tool Selection]
-│      Need shared packages? Deploy chart to Helm Hub?
+├─ [Choosing a templating tool]
+│      Need a shared package? Publish charts to a Helm hub?
 │             Yes → Helm
-│             Environment overlay only? → Kustomize
+│             Only need per-environment overlays? → Kustomize
 │
-├─ [Node Provisioning]
-│      Arbitrary instance type + Spot + fast scale?
+├─ [Node provisioning]
+│      Arbitrary instance types + Spot + fast scaling?
 │             Yes → Karpenter
-│             Simple ASG sufficient?
+│             Is simple ASG-based enough?
 │             Yes → Cluster Autoscaler
 │
-└─ [Pod IAM Permission]
+└─ [Pod IAM permissions]
        New cluster (EKS 1.24+)? → EKS Pod Identity (simpler)
-       Existing cluster / existing IRSA? → Keep IRSA
+       Existing cluster / already using IRSA? → Keep IRSA
 ```
 
 ---
 
-## Architecture Diagram: Complete EKS GitOps Pipeline
+## Architecture Diagram: A Complete EKS GitOps Pipeline
 
 ```
-EKS GitOps Complete Architecture (DOP-C02 Perspective)
+Full EKS GitOps architecture (DOP-C02 perspective)
 ════════════════════════════════════════════════════════════════
 
 Developer
@@ -550,164 +550,164 @@ GitHub / CodeCommit (k8s-manifests-repo)
 │                                                         │
 │  [argocd namespace]                                     │
 │   ├─ repo-server   (Kustomize rendering)                │
-│   ├─ app-controller (desired vs live comparison, sync)  │
-│   ├─ argocd-server  (UI/API, RBAC)                     │
+│   ├─ app-controller (compare desired vs live, run sync) │
+│   ├─ argocd-server  (UI/API, RBAC)                      │
 │   └─ redis          (state cache)                       │
 │                                                         │
 │  [prod namespace]                                       │
-│   ├─ Deployment (myapp) — IRSA/Pod Identity for ECR    │
+│   ├─ Deployment (myapp) — ECR pull via IRSA/Pod Identity│
 │   ├─ Service (ClusterIP)                                │
 │   ├─ Ingress (AWS ALB Controller)                       │
 │   └─ HPA (CPU 70%)                                      │
 │                                                         │
 │  [karpenter namespace]                                  │
-│   └─ NodePool (spot + on-demand, c/m/r family)         │
+│   └─ NodePool (spot + on-demand, c/m/r family)          │
 │                                                         │
 │  [kyverno]                                              │
-│   └─ ClusterPolicy: require-signed-images              │
+│   └─ ClusterPolicy: require-signed-images               │
 │                                                         │
 │  IRSA/Pod Identity:                                     │
-│   SA(myapp) → IAM Role → S3, DynamoDB, SM access       │
+│   SA(myapp) → IAM Role → access S3, DynamoDB, SM        │
 └─────────────────────────────────────────────────────────┘
                 │
-                │ Karpenter: EC2 Fleet API direct call
+                │ Karpenter: calls EC2 Fleet API directly
                 ▼
-            EC2 Spot / On-Demand (optimal instance auto-selection)
+            EC2 Spot / On-Demand (optimal instance auto-selected)
 
 ════════════════════════════════════════════════════════════════
 ```
 
 ---
 
-## Core Concepts Summary Table
+## Key Concepts Summary Table
 
-| Concept | Key Point | Exam Trap |
-|---------|-----------|-----------|
-| GitOps | Cluster pulls from Git; CI creds unnecessary | Confuse with push-based |
-| ArgoCD selfHeal | Auto-restore Drift to Git state | Difference between prune and selfHeal |
-| Flux image-updater | ECR polling → manifests commit automation | ArgoCD has separate Image Updater |
-| Helm --atomic | Auto-rollback on timeout | --atomic alone without --wait caution |
-| IRSA | OIDC → Trust Policy → SA annotation | Memorize Trust Policy Subject format |
-| Pod Identity | IRSA simplified, EKS 1.24+ | OIDC Provider registration unnecessary |
-| Karpenter | EC2 Fleet API direct, arbitrary instances | ASG bypass = structural difference from CA |
-| CodeDeploy + EKS | Not supported | ECS confusion caution |
-| PDB | Voluntary disruption Pod minimum guarantee | Karpenter, drain, rollout all respect |
+| Concept | Key point | Exam pitfall |
+|------|------------|----------|
+| GitOps | Cluster pulls from Git, no credentials needed on the CI side | Confused with push-based |
+| ArgoCD selfHeal | Automatically restores drift to the Git state | Difference between prune and selfHeal |
+| Flux image-updater | Automates ECR polling → manifests commit | ArgoCD also has a separate Image Updater |
+| Helm --atomic | Automatic rollback on timeout | Be careful using --atomic alone without --wait |
+| IRSA | OIDC → Trust Policy → SA annotation | Memorize the Trust Policy Subject format |
+| Pod Identity | Simplified IRSA, EKS 1.24+ | No OIDC Provider registration needed |
+| Karpenter | Calls the EC2 Fleet API directly, arbitrary instances | Bypassing ASGs = structural difference from CA |
+| CodeDeploy + EKS | Not supported | Beware of confusion with ECS |
+| PDB | Guarantees a minimum number of Pods during voluntary disruption | Honored by Karpenter, drain, and rollouts alike |
 
 ---
 
 ## Practice Questions
 
-**Question 1.** Team building EKS CI/CD pipeline. Security requirement: "CI server (CodeBuild) must not have production cluster credentials." Most appropriate architecture?
+**Question 1.** A team wants to build an EKS CI/CD pipeline. The security requirement is that "the CI server (CodeBuild) must not hold production cluster credentials." What is the most appropriate architecture?
 
-A) Give CodeBuild EKS Admin Role, execute kubectl apply  
-B) Install ArgoCD in cluster; CodeBuild commits to manifests repo. ArgoCD polls Git for sync  
-C) Lambda receives CodeBuild result, directly call Kubernetes API  
+A) Grant CodeBuild an EKS Admin Role and run kubectl apply  
+B) Install ArgoCD in the cluster, and CodeBuild only commits to the manifests repository. ArgoCD polls Git and syncs  
+C) Lambda receives the CodeBuild result and calls the Kubernetes API directly  
 D) Integrate CodeDeploy with EKS for Blue/Green deployment  
 
 **Answer: B**
 
-This is pull-based GitOps core security principle. CodeBuild needs access to app code repo and manifests repo. Cluster maintains write permission internally via ArgoCD. No external→cluster credential exposure.
+This is the core security principle of pull-based GitOps. CodeBuild only needs access to the application code repository and the manifests repository. Write permission to the cluster is held by ArgoCD inside the cluster. There is no exposure of credentials in the outside-to-cluster direction.
 
-Why other options wrong: A violates security requirement. C also needs cluster credential. D: CodeDeploy doesn't support EKS.
+Why the other options are wrong: A violates the security requirement. In C, Lambda also ultimately needs cluster credentials. In D, CodeDeploy does not support EKS.
 
 ---
 
-**Question 2.** Difference between `syncPolicy.automated.selfHeal: true` and `syncPolicy.automated.prune: true` in ArgoCD Application?
+**Question 2.** What is the difference between `syncPolicy.automated.selfHeal: true` and `syncPolicy.automated.prune: true` in an ArgoCD Application?
 
-A) selfHeal deletes removed Git resources from cluster; prune restores Drift  
-B) selfHeal auto-restores manually-changed Drift to Git state; prune deletes resources removed from Git  
-C) Both options identical  
-D) selfHeal fixes node failure; prune restarts Pod  
+A) selfHeal deletes resources removed from Git from the cluster, and prune restores drift  
+B) selfHeal restores manually changed drift in the cluster to the Git state, and prune deletes resources removed from Git from the cluster as well  
+C) The two options have the same function  
+D) selfHeal recovers from node failures, and prune restarts Pods  
 
 **Answer: B**
 
-`selfHeal` auto-reverts when someone `kubectl edit` or `kubectl patch`; ArgoCD restores Git state. `prune` deletes Kubernetes resources when manifest file deleted from Git repo. Independent settings, activate separately.
+`selfHeal` is the feature by which ArgoCD automatically reverts to the Git state when someone modifies the cluster directly with `kubectl edit` or `kubectl patch`. `prune` is the feature that, when a particular manifest file is deleted from the Git repository, also deletes the K8s resources created from that file from the cluster. The two options are independent and must each be enabled.
 
-Why other wrong: A reverses roles. C completely different functions. D confuses with Kubernetes native features (liveness probe).
+Why the other options are wrong: A swaps the roles of selfHeal and prune. C: they are entirely different features. D confuses them with Kubernetes' own feature (liveness probe).
 
 ---
 
 **Question 3.** Which of the following is NOT a required step when setting up IRSA (IAM Roles for Service Accounts)?
 
-A) Register the EKS cluster's OIDC provider URL in IAM  
-B) Specify the OIDC provider as a Federated principal in the IAM role's trust policy  
+A) Register the EKS cluster's OIDC Provider URL in IAM  
+B) Specify the OIDC Provider as the Federated Principal in the IAM Role's Trust Policy  
 C) Add the `eks.amazonaws.com/role-arn` annotation to the Kubernetes ServiceAccount  
-D) Attach the IAM role to an EC2 instance profile  
+D) Attach the IAM Role to an EC2 Instance Profile  
 
 **Answer: D**
 
-IRSA does not use an EC2 instance profile. The core of IRSA is OIDC federation — EKS issues the ServiceAccount token as a JWT, and the AWS SDK in the Pod uses this token to call STS `AssumeRoleWithWebIdentity`. An instance profile is a legacy approach that applies to the entire node.
+IRSA does not use an EC2 Instance Profile. The core of IRSA is OIDC federation: EKS issues the ServiceAccount token as a JWT, and the Pod's AWS SDK uses this token to call STS `AssumeRoleWithWebIdentity`. An Instance Profile is a legacy approach that applies to the entire node.
 
-Why the other options are wrong: A, B, and C are all required steps of IRSA. Register the OIDC provider (A) → set the trust policy (B) → add the SA annotation (C) → the Pod automatically performs STS AssumeRole.
+Why the other options are wrong: A, B, and C are all required steps of IRSA. Register the OIDC Provider (A) → set the Trust Policy (B) → add the SA annotation (C) → the Pod automatically performs STS AssumeRole.
 
 ---
 
-**Question 4.** What is the most important architectural difference between Karpenter and the Cluster Autoscaler (CA)?
+**Question 4.** What is the most important architectural difference between Karpenter and Cluster Autoscaler (CA)?
 
 A) Karpenter supports only ECS  
 B) CA calls the EC2 API directly, and Karpenter adds nodes through an ASG  
-C) Karpenter calls the EC2 Fleet API directly and selects, in real time, the instance types that match the needs of Pending Pods, while CA uses only the instance types of pre-configured ASGs  
+C) Karpenter calls the EC2 Fleet API directly to choose, in real time, an instance type that fits the Pending Pods' needs, while CA uses only the instance types of pre-configured ASGs  
 D) CA does not support Spot Instances  
 
 **Answer: C**
 
-Karpenter's core innovation is bypassing ASGs. CA must add nodes through an ASG, so it can use only the instance types predefined in the ASG. Karpenter calls the EC2 Fleet API directly, so it selects, in real time, the instance type that best fits the requirements of Pending Pods from dozens of instance types. As a result, provisioning is also much faster with Karpenter (seconds vs. minutes).
+Karpenter's core innovation is bypassing ASGs. CA must add nodes through an ASG, so it can use only the instance types predefined in the ASG. Karpenter calls the EC2 Fleet API directly, so it chooses in real time, from dozens of instance types, the one that best fits the Pending Pods' requirements. As a result, provisioning is also much faster with Karpenter (minutes vs seconds).
 
-Why the other options are wrong: A: Karpenter is EKS-only. B: the description is reversed. D: CA also supports Spot ASGs, but in a different way.
+Why the other options are wrong: A: Karpenter is EKS-only. B has the explanation reversed. D: CA also supports Spot ASGs, but in a different way.
 
 ---
 
-**Question 5.** What is the effect of the `--atomic` flag in the Helm command `helm upgrade --install --atomic`?
+**Question 5.** In the Helm command `helm upgrade --install --atomic`, what is the effect of the `--atomic` flag?
 
 A) Builds the image atomically  
 B) Automatically rolls back to the previous release if the upgrade does not complete within `--timeout`  
-C) Bundles multiple Helm releases into a transaction and deploys them simultaneously  
+C) Bundles multiple Helm releases into a transaction and deploys them at the same time  
 D) Pauses other Deployments in the cluster  
 
 **Answer: B**
 
-`--atomic` implicitly includes `--wait`, and if the upgraded Pods do not become Ready within `--timeout` (default 5 minutes), it automatically rolls back to the previous Helm release. Conceptually it is the same as automatic rollback in ECS Blue/Green, but it is implemented with the native mechanisms of Kubernetes and Helm.
+`--atomic` implicitly includes `--wait`, and if the upgraded Pods do not reach the Ready state within `--timeout` (default 5 minutes), it automatically rolls back to the previous Helm release. It is conceptually the same as the automatic rollback of ECS Blue/Green, but it is implemented with the basic mechanisms of Kubernetes and Helm.
 
-Why the other options are wrong: A is not a Helm concept. C: Helm does not support transactional deployments. D: it does not affect other Deployments.
+Why the other options are wrong: A is not a Helm concept. In C, Helm does not support transactional deployment. D does not affect other Deployments.
 
 ---
 
-**Question 6.** When multiple Pods are Pending in an EKS cluster, how does Karpenter provision nodes?
+**Question 6.** When several Pods are Pending in an EKS cluster, how does Karpenter provision nodes?
 
-A) Adds nodes using a single instance type specified in advance by the administrator  
-B) Analyzes the Pending Pods' resource requests, node selectors, and affinity, selects the optimal instance types, and provisions directly with the EC2 Fleet API  
-C) Increases the number of nodes by one at a time through an ASG  
-D) Uses a Fargate profile to run serverless Pods  
+A) Adds nodes of the single instance type specified in advance by the administrator  
+B) Analyzes the Pending Pods' resource requests, Node Selectors, and Affinity to choose the optimal instance type, and provisions directly through the EC2 Fleet API  
+C) Increases the node count by one at a time through an ASG  
+D) Runs serverless Pods using a Fargate profile  
 
 **Answer: B**
 
-Karpenter analyzes the Pending Pods in a batch and finds the combination of instance types that can schedule all the Pods with the fewest nodes. This scheduling-aware property is the core of Karpenter. CA reacts Pod by Pod, but Karpenter optimizes the whole set of Pending Pods.
+Karpenter analyzes the Pending Pods in a batch and finds the combination of instance types that can schedule all the Pods on the fewest nodes. This scheduling-aware characteristic is the heart of Karpenter. CA reacts Pod by Pod, but Karpenter optimizes the whole set of Pending Pods together.
 
-Why the other options are wrong: A is how CA behaves. C is CA's incremental ASG-based scaling. D: Fargate is a separate serverless option unrelated to Karpenter.
+Why the other options are wrong: A is how CA behaves. C is CA's gradual ASG-based expansion. D: Fargate is a separate serverless option unrelated to Karpenter.
 
 ---
 
-**Question 7.** A team is deploying to EKS through ArgoCD. In an emergency, an operator changed the replica count from 5 to 10 with `kubectl edit deployment myapp`. What happens if `selfHeal: true` is set on the ArgoCD Application?
+**Question 7.** A team is deploying to EKS through ArgoCD. In an emergency, an operator changed the replica count from 5 to 10 with `kubectl edit deployment myapp`. If `selfHeal: true` is set on the ArgoCD Application, what happens?
 
 A) ArgoCD detects the change and sends an approval request to Slack  
 B) ArgoCD detects the drift and automatically restores the replica count of 5 defined in Git  
 C) ArgoCD learns the change and automatically updates Git  
-D) The change is kept until the next scheduled deployment  
+D) The change persists until the next regular deployment  
 
 **Answer: B**
 
-`selfHeal: true` is a core GitOps feature of ArgoCD. The application-controller periodically (every 3 seconds by default) checks the live state and, if it differs from the Git state, reverts it to the Git state. The operator's `kubectl edit` change is restored automatically as soon as it is detected (within a few seconds at most). This is a concrete implementation of the GitOps principle that "Git is the single source of truth."
+`selfHeal: true` is a core GitOps feature of ArgoCD. The application-controller periodically checks the live state (every 3 seconds by default), and if it differs from the Git state, it reverts to the Git state. The operator's `kubectl edit` change is restored automatically as soon as it is detected (within a few seconds at most). This is the concrete implementation of the GitOps principle that "Git is the single source of truth."
 
-Why the other options are wrong: A confuses this with Slack notifications under a manual sync setup. C: ArgoCD only reads Git and does not write to it (Image Updater is a separate tool). D is the behavior when selfHeal is not set.
+Why the other options are wrong: A confuses this with Slack notifications under a manual sync setup. In C, ArgoCD only reads Git and never writes to it (Image Updater is a separate tool). D is the behavior when selfHeal is not set.
 
 ---
 
-## Week 6 Summary
+## Today's Summary
 
-GitOps is paradigm introduced 2017 to solve Drift. Core: trust boundary shifted to Git. CI only pulls; cluster self-converges to Git. ArgoCD's 4 components (app-controller, repo-server, api-server, Redis) implement control loop philosophy from Kubernetes. ArgoCD selfHeal reverts Drift; prune removes deleted resources.
+GitOps is a paradigm that Weaveworks introduced in 2017 to solve the drift problem. The core is the shift of the trust boundary: CI writes only as far as Git, and the cluster reads Git on its own and converges itself. ArgoCD implements this principle with 4 components (app-controller, repo-server, api-server, Redis). selfHeal automatically restores drift, and prune removes from the cluster the resources deleted from Git.
 
-Flux v2 is composable toolkit (5 independent controllers). image-automation-controller enables complete automation loop.
+Flux v2 is a Composable Toolkit made of 5 independent controllers (source, kustomize, helm, notification, image-automation). The image-automation-controller polls ECR and automatically updates manifests, enabling a fully automated loop.
 
-Helm packages manifests with values.yaml for environment differentiation; `--atomic` provides auto-rollback. Kustomize uses base+overlay avoiding YAML duplication.
+Helm is a package manager that externalizes per-environment differences with values.yaml and provides automatic rollback on failure with `--atomic`. Kustomize expresses per-environment differences without copying YAML through the base+overlay pattern.
 
-IRSA: OIDC + Trust Policy + SA annotation enables Pod-level IAM permission. EKS Pod Identity simplifies this. Karpenter bypasses ASG, EC2 Fleet API direct-calling, selecting optimal instance types real-time. CodeDeploy doesn't support EKS—use GitOps or Helm instead.
+IRSA grants per-Pod IAM permissions in 3 steps: OIDC + Trust Policy + ServiceAccount annotation. EKS Pod Identity provides the same capability more simply, without OIDC registration. Karpenter calls the EC2 Fleet API directly to choose instances optimized for the Pending Pods' needs, bypassing CA's ASG constraint. CodeDeploy does not support EKS, which is a perennial exam pitfall.

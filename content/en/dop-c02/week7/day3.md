@@ -1,10 +1,10 @@
 # Day 3 - Lambda Versions and Aliases: A Mutable Pointer on Top of Immutable Snapshots
 
-Anyone who has operated Lambda functions has probably asked questions like these at least once. "I just deployed new function code; which version do in-flight invocations finish on?" Or "How do I change the function code that API Gateway calls within 5 seconds?" Or "If 5xx errors suddenly spike during a canary deployment, how do I roll back immediately?" The answers to all of these point to one place: the two abstractions called **Lambda Version and Alias**.
+Anyone who has operated Lambda functions has asked questions like these at least once. "I just deployed new function code, so which version will the in-flight invocations finish on?" Or "How do I change the function code that API Gateway calls within 5 seconds?" Or "If 5xx errors suddenly spike during a canary deployment, how do I roll back immediately?" The answers to all these questions point to one place. Two abstractions: **Lambda Versions and Aliases**.
 
-The design philosophy of this model is simple. **A Version is an immutable snapshot**, and **an Alias is a mutable pointer to that snapshot**. This is essentially the same as the relationship between a Git commit hash and a branch, or between a Docker image's tag and its sha256 digest. Once code is published (`publish-version`), that Version never changes. A deployment is defined as "create a new Version and change what the Alias points to." This structure makes weighted routing, instant rollback, and multi-environment operation come naturally.
+The design philosophy of this model is simple. **A Version is an immutable snapshot**, and **an Alias is a mutable pointer to that snapshot.** It is essentially the same as the relationship between a Git commit hash and a branch, or between a Docker image's sha256 digest and its tag. Once code is published (`publish-version`), that Version never changes. A deployment is defined as "create a new Version and change what the Alias points to." This structure makes weighted routing, instant rollback, and multi-environment operations come naturally.
 
-Today we look at the inner workings of these two concepts and the edge cases that often show up as exam traps. CodeDeploy Canary, Provisioned Concurrency, API Gateway Stage Variables, and SnapStart all sit on top of the Version/Alias model.
+Today we look at the internal behavior of these two concepts and the edge cases that often appear as traps on the exam. CodeDeploy Canary, Provisioned Concurrency, API Gateway Stage Variables, and even SnapStart - all of them sit on top of the Version/Alias model.
 
 ## Why a Version Is Truly Immutable
 
@@ -12,7 +12,7 @@ Today we look at the inner workings of these two concepts and the edge cases tha
 # Upload new code to $LATEST
 aws lambda update-function-code --function-name MyFn --zip-file fileb://app.zip
 
-# Publish a Version (at this moment the code + configuration snapshot of $LATEST is frozen as V7)
+# Publish a Version (at this moment the code+config snapshot of $LATEST is frozen as V7)
 aws lambda publish-version --function-name MyFn
 # {"FunctionName": "MyFn", "Version": "7", "CodeSha256": "abc...", ...}
 
@@ -24,18 +24,18 @@ aws lambda update-function-configuration \
 # More precisely: ResourceConflictException: Cannot modify a published version
 ```
 
-The moment a Version is published, everything is frozen: the code (`CodeSha256`), environment variables, memory, timeout, runtime, and Layer references. After that, the only things you can still change for that Version are the **Resource Policy** and the **Provisioned Concurrency configuration**.
+The moment a Version is published, its code (`CodeSha256`), environment variables, memory, timeout, runtime, and Layer references - all of its configuration - are frozen. After that, the only things you can change for that Version are the **Resource Policy** and the **Provisioned Concurrency configuration**.
 
-Why does this immutability matter? Because of **reproducibility** and **rollback safety**. Only if there is a guarantee that calling yesterday's V6 again today runs in the same code and environment can you make the comparison "it worked on V6 yesterday but broke on V7 today." If Versions were mutable, debugging would be hell.
+Why does this immutability matter? Because of **reproducibility** and **rollback safety**. You need a guarantee that invoking V6, deployed yesterday, again today runs in the identical code and environment, so that a comparison like "it worked on V6 yesterday but broke on V7 today" is possible. If Versions were mutable, debugging would become hell.
 
-> The immutable snapshot model is the same pattern as the functional programming **persistent data structure** (Chris Okasaki, 1996). Git commits, Docker image digests, AWS AMI IDs, S3 object versions, and Kubernetes ReplicaSets all share the same idea. The key is the principle that "what has been created is never changed, and a change creates a new object." If this principle breaks, the consistency and debuggability of a distributed system collapse. The Lambda Version is the enforcement mechanism for this principle.
+> The immutable snapshot model is the same pattern as the **persistent data structure** of functional programming (Chris Okasaki, 1996). Git commits, Docker image digests, AWS AMI IDs, S3 object versions, and Kubernetes ReplicaSets all share the same idea. The core is the principle "never change what you have made once; a change creates a new object." If this breaks, consistency and debuggability in distributed systems collapse. A Lambda Version is the enforcement mechanism of this principle.
 
-> `$LATEST` is an unversioned mutable working copy. Version numbers increase as positive integers starting from 1, and a number that has been used is never recycled (even after `delete-function --qualifier 5`, V5 stays permanently a gap). This is the same guarantee as a Git commit hash never being reused once created, even after garbage collection. The `CodeSha256` field is the SHA-256 of the zip contents, so publishing the same code twice yields the same sha256 but different Version numbers. This can be used for idempotency checks such as CI re-runs.
+> `$LATEST` is an unversioned mutable working copy. Version numbers increase as positive integers starting from 1, and a number once used is never recycled (even after `delete-function --qualifier 5`, V5 remains permanently missing). This is the same guarantee as a Git commit hash never being reused once created, even after garbage collection. The `CodeSha256` field is the SHA-256 of the zip contents; publishing identical code twice gives the same sha256 but different Version numbers. This can be used for idempotency verification such as CI reruns.
 
 ## Alias: The Cloud Version of a Symbolic Link
 
 ```bash
-# Create an Alias — a 'live' pointer to V5
+# Create an Alias - a 'live' pointer to V5
 aws lambda create-alias \
   --function-name MyFn \
   --name live \
@@ -47,7 +47,7 @@ aws lambda invoke \
   --payload '{}' out.json
 # V5 runs internally
 
-# Change what the Alias points to (traffic shifts immediately)
+# Change what the Alias points to (instant traffic shift)
 aws lambda update-alias \
   --function-name MyFn \
   --name live \
@@ -55,7 +55,7 @@ aws lambda update-alias \
 # V6 runs from the next invocation
 ```
 
-An Alias is the same kind of abstraction as a Unix symbolic link, a Git branch, or a DNS CNAME. The real target lives elsewhere, and the Alias is a single line of name -> target mapping. Because the cost of a change is nearly zero (updating one line of metadata), **traffic can be shifted within tens of milliseconds**.
+An Alias is the same abstraction as a Unix symbolic link, a Git branch, or a DNS CNAME. The actual target is elsewhere, and the Alias is just one line of name→target mapping. Because the cost of change is nearly zero (updating one line of metadata), a **traffic shift within tens of milliseconds** is possible.
 
 The most important application is **Weighted Routing**.
 
@@ -68,36 +68,36 @@ aws lambda update-alias \
   --routing-config 'AdditionalVersionWeights={"6"=0.1}'
 ```
 
-The invoker inside the Lambda service generates a random number for each request and routes to V5 or V6 according to the weights. This process is **stateless**, so even the same user can reach a different Version on every request (sticky routing is not possible).
+The invoker inside the Lambda service generates a random number for each request and routes to V5 or V6 according to the weights. This process is **stateless**, so even the same user can reach a different Version on each request (sticky routing is not possible).
 
-> ⚠️ **Trap**: Alias weighted routing allows only **1 primary + 1 additional** Version. That is, an Alias can point to at most 2 Versions at the same time. A 3-way split such as "V5 70%, V6 20%, V7 10%" is impossible. If the exam presents a scenario like "distribute traffic across 3 Versions at once," the answer is one of (1) split it into two Canary stages (V5->V6, then V6->V7), (2) use an Application Load Balancer weighted target group, or (3) use Route 53 weighted routing. This single constraint is the structural reason CodeDeploy Canary proceeds only "one step at a time."
+> ⚠️ **Trap**: An Alias's weighted routing allows only **1 primary + 1 additional**. That is, one Alias can point to at most 2 Versions at the same time. A 3-way split such as "V5 70%, V6 20%, V7 10%" is impossible. If a scenario like "distribute traffic across 3 Versions simultaneously" appears on the exam, the answer is one of three: (1) split into two-stage Canaries (V5→V6, then V6→V7), (2) use an Application Load Balancer with weighted target groups, or (3) Route 53 weighted routing. This single constraint is the structural reason CodeDeploy Canary proceeds only "one step at a time."
 
-> 🎯 **Scenario**: "An Alias 'prod' points to V10. We deploy V11 and want to verify it with 5% of traffic for 30 minutes. How do we configure this?" The answer is `update-alias --function-version 10 --routing-config 'AdditionalVersionWeights={"11"=0.05}'`, then 30 minutes later `--function-version 11 --routing-config '{}'`. These two steps can be automated in a single line with CodeDeploy `Canary5Percent30Minutes`.
+> 🎯 **Scenario**: "An Alias 'prod' points to V10. You want to deploy V11 and verify it with 5% of traffic for 30 minutes. How do you configure it?" - The answer is `update-alias --function-version 10 --routing-config 'AdditionalVersionWeights={"11"=0.05}'`, then after 30 minutes `--function-version 11 --routing-config '{}'`. These two steps can be automated in one line with CodeDeploy `Canary5Percent30Minutes`.
 
-## How CodeDeploy Shifts the Alias
+## How CodeDeploy Shifts an Alias
 
 When a SAM function with `AutoPublishAlias` + `DeploymentPreference` is deployed, CodeDeploy performs the following sequence.
 
 ```
-1. CFN updates the Lambda function code (-> $LATEST is updated)
-2. CFN calls publish-version -> V7 is created
+1. CFN updates the Lambda function code (→ $LATEST updated)
+2. CFN calls publish-version → V7 created
 3. CFN creates a CodeDeploy Deployment
 4. CodeDeploy runs the PreTraffic Hook Lambda
-   ↓ On failure -> deployment stops, V6 is kept
+   ↓ On failure → deployment halts, V6 stays
 5. CodeDeploy sets Alias weighted routing
    live: V6=90%, V7=10%
-6. CloudWatch Alarm monitoring (5/30 minutes)
-   ↓ Alarm fires -> live: V6=100%, V7=0% (rollback)
-7. Wait time ends -> live: V6=0%, V7=100%
+6. CloudWatch Alarm monitoring (5/30 min)
+   ↓ Alarm fires → live: V6=100%, V7=0% (rollback)
+7. Wait time ends → live: V6=0%, V7=100%
 8. CodeDeploy runs the PostTraffic Hook Lambda
-   ↓ On failure -> rollback
-9. Deployment complete, V6 is preserved in history
+   ↓ On failure → rollback
+9. Deployment complete, V6 preserved as history
 ```
 
-Every step of this flow works on top of the **mutability of the Alias**. Each traffic shift is a single `update-alias` API call, and a rollback is just another call to the same API with different parameters.
+Every step of this flow operates on the **mutability of the Alias**. Each traffic shift is just a single `update-alias` API call, and a rollback is just a call to the same API with different parameters.
 
 ```yaml
-# SAM Template — the complete Canary + Hook + Alarm setup
+# SAM Template - the complete Canary + Hook + Alarm setup
 GetOrderFn:
   Type: AWS::Serverless::Function
   Properties:
@@ -120,7 +120,7 @@ ErrorRateAlarm:
       - Name: FunctionName
         Value: !Ref GetOrderFn
       - Name: Resource
-        Value: !Sub '${GetOrderFn}:live'   # <- split per Alias!
+        Value: !Sub '${GetOrderFn}:live'   # ← Separated per Alias!
     Statistic: Sum
     Period: 60
     EvaluationPeriods: 2
@@ -129,15 +129,15 @@ ErrorRateAlarm:
     TreatMissingData: notBreaching
 ```
 
-> Lambda CloudWatch Metrics have only the `FunctionName` dimension by default, but adding the `Resource` dimension produces separate metrics per Alias/Version, such as `MyFn:live` and `MyFn:7`. To see the error rates of the old and new Versions separately during a Canary deployment, this dimension is essential. The extra cost is the standard rate per metric (the first 10,000 free, then $0.30/metric). A PostTraffic Hook often queries these separated metrics and contains code that checks whether the new Version's P99 latency is under 1.5 times the previous one.
+> Lambda CloudWatch metrics by default have only the `FunctionName` dimension, but adding the `Resource` dimension yields metrics separated per Alias/Version, in the form `MyFn:live`, `MyFn:7`. This dimension is essential for viewing the error rates of the old and new Versions separately during a Canary deployment. The additional cost is the standard rate per metric (first 10,000 free, then $0.30/metric). A PostTraffic Hook often queries these separated metrics to write code that checks whether the new Version's P99 latency is under 1.5x that of the existing one.
 
-> In 2021, an e-commerce company deploying with Canary10Percent5Minutes had no Error Alarm fire within the 5 minutes, shifted to 100%, and then had a memory leak explode in the following hours. The causes were (1) the leak was gradual and did not reach the threshold within 5 minutes, and (2) the Alarm used a 1-minute average, so it caught only spikes and missed the cumulative pattern. Afterward the team lengthened the deployment to `Canary10Percent30Minutes` and changed the PostTraffic Hook to also check the memory usage trend. The lesson: set the Canary duration based on the slowest failure pattern in the scenario.
+> In 2021, an e-commerce company deployed with Canary10Percent5Minutes, but the Error Alarm did not fire within 5 minutes, and after a 100% shift a memory leak blew up in the following time window. The causes were (1) the leak was gradual, so it did not reach the threshold within 5 minutes, and (2) the Alarm used a 1-minute average, so it caught only spikes and not cumulative patterns. Afterward the team extended to `Canary10Percent30Minutes` and added a check of the memory usage trend in the PostTraffic Hook. Lesson: set the Canary duration based on the slowest failure pattern in the scenario.
 
 ## Two Ways API Gateway Points to an Alias
 
-This is the most commonly tested pattern for the API Gateway -> Lambda integration.
+This is the most commonly tested pattern in API Gateway → Lambda integration.
 
-**Method 1: The Stage Variable pattern (REST API)**
+**Method 1: Stage Variable pattern (REST API)**
 
 ```
 Integration URI:
@@ -153,7 +153,7 @@ aws apigateway update-stage \
   --patch-operations 'op=replace,path=/variables/lambdaAlias,value=live'
 ```
 
-This pattern makes it possible to use a **different Alias per Stage**. The `dev` Stage uses `lambdaAlias=staging`, and the `prod` Stage uses `lambdaAlias=live`. When the function code changes, there is no need to redeploy API Gateway; the Alias shift takes effect immediately.
+This pattern lets each **Stage use a different Alias**. The `dev` Stage has `lambdaAlias=staging`, and the `prod` Stage has `lambdaAlias=live`. When the function code changes, there is no need to redeploy API Gateway - the Alias shift is reflected immediately.
 
 **Method 2: Referencing the Alias ARN directly (HTTP API or static integration)**
 
@@ -165,19 +165,19 @@ aws apigatewayv2 create-integration \
   --payload-format-version 2.0
 ```
 
-In this case the Integration's URI itself is the Alias ARN. To change it, you must update the Integration itself.
+In this case the Integration's URI itself is the Alias ARN. To change it, you have to update the Integration itself.
 
-> ⚠️ **Trap**: For API Gateway to invoke Lambda, a **resource-based policy** is needed on the Lambda side, and it is added with the `add-permission` API. The `--qualifier` flag is the key.
+> ⚠️ **Trap**: For API Gateway to invoke Lambda, a **resource-based policy** is needed on the Lambda side, added with the `add-permission` API. The `--qualifier` flag is the key.
 
 ```bash
-# ❌ Wrong way — permission on the Function ARN only
+# ❌ Wrong way - permission only on the Function ARN
 aws lambda add-permission \
   --function-name MyFn \
   --statement-id api-gw-invoke \
   --action lambda:InvokeFunction \
   --principal apigateway.amazonaws.com
 
-# ✅ Right way — permission on the Alias
+# ✅ Correct way - permission on the Alias
 aws lambda add-permission \
   --function-name MyFn \
   --qualifier live \
@@ -187,33 +187,33 @@ aws lambda add-permission \
   --source-arn 'arn:aws:execute-api:ap-northeast-2:111:abc123/*/GET/orders/*'
 ```
 
-A permission on the Function ARN applies only to `$LATEST` invocations. Invoking the Alias (MyFn:live) needs a separate resource policy. If you add it through "Add trigger" in the console, API Gateway grants the permission with the exact qualifier for you, but with manual CLI/CFN you must specify it explicitly. On the exam, the answer to the scenario "API Gateway calls are denied" is almost always this missing qualifier.
+Permissions on the Function ARN apply only to `$LATEST` invocations. Alias invocations (MyFn:live) need a separate resource policy. If you add it through "Add trigger" in the console without knowing this, API Gateway grants the permission with the exact qualifier, but with manual CLI/CFN you must specify it explicitly. On the exam, the answer to an "API Gateway invocation is denied" scenario is almost always this missing qualifier.
 
 ## Provisioned Concurrency: The Cost vs. Effect of Warm-Up
 
-PC is a feature that "keeps N containers warm in advance."
+PC is a feature that "keeps N containers pre-warmed."
 
 ```bash
-# Set 10 PC on the Alias 'live'
+# Set 10 PC on Alias 'live'
 aws lambda put-provisioned-concurrency-config \
   --function-name MyFn \
   --qualifier live \
   --provisioned-concurrent-executions 10
 ```
 
-PC can be configured at the **Version or Alias** level, but not on `$LATEST`. If PC were placed on a mutable target, the warm-up would be invalidated by every code change and would be meaningless.
+PC can be set at the **Version or Alias** level, but not on `$LATEST`. Placing PC on a mutable target would invalidate the warm-up on every code change, making it meaningless.
 
 | Item | Reserved Concurrency | Provisioned Concurrency |
 |------|----------------------|--------------------------|
 | Purpose | Set a concurrent execution limit (protect other functions) | Pre-warming (eliminate cold starts) |
 | Cost | Free | Proportional to active time ($0.0000041667/GB-s) |
 | Cold Start | No effect (throttled when the limit is reached) | Eliminated (within PC capacity) |
-| Applies to | Function | Alias or Version |
-| When the limit is reached | 429 Throttle | Falls back to ordinary cold starts (the request is still processed) |
+| Scope | Function | Alias or Version |
+| When the limit is reached | 429 Throttle | Falls back to a normal cold start (the request is still processed) |
 | Auto Scaling | Not possible | Application Auto Scaling possible |
 
 ```bash
-# Adjust PC automatically with Target Tracking (target 70% utilization)
+# Auto-adjust PC with Target Tracking (target 70% utilization)
 aws application-autoscaling register-scalable-target \
   --service-namespace lambda \
   --resource-id function:MyFn:live \
@@ -234,13 +234,13 @@ aws application-autoscaling put-scaling-policy \
   }'
 ```
 
-> What happens when a Canary deployment occurs while PC is on? The answer is "**both Versions must have PC**." SAM `DeploymentPreference` automatically pre-allocates PC to the new Version before starting the shift. Without automatic allocation, the new Version would suffer full cold starts as soon as it received traffic, defeating the purpose of the Canary. The result is that **PC cost temporarily doubles** during the deployment (PC 10 on V5 and PC 10 on V6 at the same time). For cost-sensitive workloads, this is a reason to hesitate over PC.
+> What happens when a Canary deployment occurs while PC is enabled? The answer is "**both Versions must have PC**." SAM `DeploymentPreference` automatically pre-allocates PC to the new Version before starting the shift. Without automatic allocation, the new Version would suffer full cold starts the moment it received traffic, defeating the point of the Canary. The result is that during the deployment, **PC cost temporarily doubles** (PC 10 on V5 and PC 10 on V6 simultaneously). For cost-sensitive workloads, this is a reason to hesitate over PC.
 
-> When PC usage exceeds PC capacity, the overflow is handled as ordinary cold starts and the invocations are not rejected (this is the difference from Reserved). So even if 100 concurrent invocations arrive at a function with 5 PC, the first 5 are served without cold starts and the remaining 95 are served as ordinary cold starts. Understand precisely that PC is a "warm-up boost," not a throttle. As an exam trap, the option "PC also acts as a limit" is used as a wrong answer.
+> When PC usage exceeds PC capacity, the excess is handled as normal cold starts and invocations are not rejected (this is where it differs from Reserved). So even if 100 concurrent invocations arrive at a function configured with 5 PC, the first 5 are handled without cold starts and the remaining 95 with normal cold starts. Understand precisely that PC is a "warm boost," not a throttle. On the exam, an option saying "PC also acts as a limit" is used as a wrong answer.
 
 ## SnapStart: The Cold Start Revolution for Java
 
-SnapStart, announced at re:Invent 2022, is a feature that creates a **memory snapshot of the JVM init phase** in advance.
+SnapStart, announced at re:Invent 2022, is a feature that **pre-creates a memory snapshot of the JVM init phase**.
 
 ```yaml
 # SAM
@@ -256,25 +256,25 @@ aws lambda update-function-configuration \
   --snap-start ApplyOn=PublishedVersions
 ```
 
-When you publish a new Version after enabling it, Lambda does the following in the background.
+After enabling it, when you publish a new Version, Lambda does the following in the background.
 
-1. Runs the function's init phase in a temporary microVM (for example, initializing Spring Boot's ApplicationContext)
-2. Captures a snapshot of memory and disk state -> encrypts it and stores it in a distributed fashion
-3. Subsequent invocations start from a snapshot restore -> the init phase is skipped
+1. Runs the function init phase in a temporary microVM (e.g., Spring Boot ApplicationContext initialization)
+2. Captures a snapshot of memory and disk state → encrypts it and stores it in a distributed fashion
+3. Subsequent invocations start by restoring the snapshot → skipping the init phase
 
-The effect is dramatic. The cold start of a Spring Boot Lambda drops from 5~10 seconds to **300~500ms** (about a 90% reduction).
+The effect is dramatic. The cold start of a Spring Boot Lambda drops from 5-10 seconds to **300-500 ms** (about a 90% reduction).
 
 | Item | Value |
 |------|-----|
 | Supported runtimes | Java 11/17/21, Python 3.12+, .NET 8+ (added in late 2024) |
-| Supported packages | zip only (Container Image not supported) |
+| Supported packaging | zip only (Container Image not supported) |
 | Java cost | Free |
 | Python/.NET cost | $0.0000015625/GB-s (snapshot cache) + restore time billing |
 | Compatibility constraint | Cannot be used together with Provisioned Concurrency |
 
-> SnapStart is the same idea as the **image-based persistence** of Self/Smalltalk in the 1980s. It saves the whole program execution state (memory pages, CPU registers) and restores it to skip the start-up time. In modern times, VMware's vMotion, Google's zigzag (snapshot-based cold boot), and CRIU (Checkpoint/Restore in Userspace for Linux) follow the same pattern. SnapStart exposes the snapshot capability of the Firecracker MicroVM to Lambda.
+> SnapStart is the same idea as the **image-based persistence** of Self/Smalltalk in the 1980s. It saves the entire program execution state (memory pages, CPU registers) and restores it to skip startup time. In modern times, VMware's vMotion, Google's zigzag (snapshot-based cold boot), and CRIU (Checkpoint/Restore in Userspace on Linux) follow the same pattern. SnapStart exposes Firecracker MicroVM's snapshot capability to Lambda.
 
-> The **uniqueness assumption violation** caused by SnapStart: because it is a snapshot restore, the results of `random.seed()`, `UUID.randomUUID()`, and `Instant.now()` from the init phase start out identical in every invocation. This is a serious security problem (predictable token generation). The fix is a **Runtime Hook**.
+> A **uniqueness assumption violation** caused by SnapStart - because it is a snapshot restore, the results of `random.seed()`, `UUID.randomUUID()`, and `Instant.now()` from the init phase start identically in every invocation. This is a serious security problem (predictable token generation). The fix is the **Runtime Hook**.
 
 ```java
 import com.amazonaws.services.lambda.runtime.events.snapstart.*;
@@ -288,26 +288,26 @@ public class SnapAwareHandler implements Resource {
 
     @Override
     public void beforeCheckpoint(org.crac.Context<? extends Resource> context) {
-        // Right before the snapshot — close DB connections, clear caches
+        // Right before the snapshot - close DB connections, clear caches
     }
 
     @Override
     public void afterRestore(org.crac.Context<? extends Resource> context) {
-        // Right after the snapshot restore — reset the random seed, re-establish connections
+        // Right after snapshot restore - reset the random seed, re-establish connections
         SecureRandom.getInstanceStrong();  // new entropy pool
     }
 }
 ```
 
-If you forget this hook, you get the terrible bug of the same UUID being produced on every call. On the exam, the answer to the scenario "the same token is generated after enabling SnapStart" is to add a Runtime Hook.
+If you forget this hook, the awful bug of getting the same UUID on every call occurs. On the exam, the answer to a "the same token is generated after enabling SnapStart" scenario is adding a Runtime Hook.
 
 ## Version Pruning: Managing Ever-Growing Versions
 
-If you deploy 5 times a day with CodeDeploy Canary, you have 1,800 Versions after a year. Lambda has a 75GB Version limit per function, so large functions reach the limit quickly.
+If you deploy 5 times a day with CodeDeploy Canary, after a year you have 1,800 Versions. Lambda has a 75 GB Version limit per function, so large functions hit the limit quickly.
 
 ```bash
 # Identify and delete Versions unused for 90+ days
-# (look up the last invocation time from CloudWatch Logs)
+# (query the last invocation time from CloudWatch Logs)
 LATEST_USED_VERSION=$(aws logs filter-log-events ...)
 
 aws lambda list-versions-by-function --function-name MyFn \
@@ -326,20 +326,20 @@ CDK manages this automatically with `currentVersionOptions`:
 new lambda.Function(this, 'F', {
   // ...
   currentVersionOptions: {
-    removalPolicy: cdk.RemovalPolicy.RETAIN,   // or DESTROY to clean up automatically
+    removalPolicy: cdk.RemovalPolicy.RETAIN,   // or DESTROY for automatic cleanup
     description: 'Deployed by CDK',
     provisionedConcurrentExecutions: 5,
   },
 });
 ```
 
-With `RemovalPolicy.DESTROY`, the previous Version is deleted on every new deployment. However, for rollback possibilities, prod is recommended to use RETAIN plus a separate cleanup Lambda.
+With `RemovalPolicy.DESTROY`, the previous Version is deleted on every new deployment. However, for rollback possibility, RETAIN + a separate cleanup Lambda is recommended for prod.
 
-> In 2020, a SaaS team accumulated 10,000 Versions on a single function, and new deployments failed with `CodeStorageExceededException`. The limit was 75GB (default) and each Version averaged 8MB, so the limit was reached at around 9,300 Versions. They recovered by requesting a limit increase from AWS Support plus an emergency Version cleanup. The lessons are (1) monitor the Version limit (the `CloudWatch FunctionVersions` metric) and (2) an automatic pruning pipeline is essential.
+> In 2020, a SaaS team accumulated 10,000 Versions on a single function and new deployments failed with `CodeStorageExceededException`. The limit was 75 GB (default) and each Version averaged 8 MB, so the limit was reached at around 9,300 Versions. They recovered by requesting a limit increase from AWS Support plus an emergency Version cleanup. The lessons are (1) monitor the Version limit (the `CloudWatch FunctionVersions` metric), and (2) an automatic prune pipeline is mandatory.
 
 ## Function URLs and Aliases
 
-Function URLs, released in 2022, expose Lambda directly over HTTP without API Gateway.
+Function URLs, launched in 2022, expose Lambda directly over HTTP without API Gateway.
 
 ```bash
 aws lambda create-function-url-config \
@@ -349,146 +349,116 @@ aws lambda create-function-url-config \
   --cors '{"AllowOrigins":["https://example.com"],"AllowMethods":["GET","POST"]}'
 ```
 
-With `--qualifier live`, you can create a URL per Alias. The resulting URL is `https://<unique-id>.lambda-url.ap-northeast-2.on.aws`. Each of several Aliases can have its own URL, which makes for a natural Blue/Green pattern.
+With `--qualifier live` you can create a per-Alias URL. The resulting URL is `https://<unique-id>.lambda-url.ap-northeast-2.on.aws`. Each Alias can have its own URL, which makes a natural Blue/Green pattern.
 
-> 🎯 **Scenario**: "How do we expose a single Lambda over HTTPS without API Gateway and separate prod and canary onto different URLs?" The answer is to create two Function URLs, one on the `prod` Alias and one on the `canary` Alias. Clients distribute across the two URLs with weighted DNS (Route 53) or CloudFront origin failover. Cost and latency are lower than with API Gateway, but features such as API Keys, throttling, and request validation are missing.
+> 🎯 **Scenario**: "How do you expose a single Lambda over HTTPS without API Gateway and separate prod and canary into different URLs?" - The answer is to create two Function URLs, one for the `prod` Alias and one for the `canary` Alias. Clients distribute across the two URLs with weighted DNS (Route 53) or CloudFront origin failover. Compared with API Gateway it saves cost and latency, but it lacks features such as API Keys, throttling, and request validation.
 
-## Summary
+## Wrapping Up
 
-We saw four pictures today. First, **a Version is an immutable snapshot and an Alias is a mutable pointer**, the same idea as Git's commit/branch, which guarantees reproducibility and rollback safety. Second, the **Alias weighted routing constraint of primary + 1 secondary** is the cause of CodeDeploy Canary's "one step at a time" structure. Third, **the qualifier is mandatory for API Gateway integration**: a Function ARN permission alone leads to denied Alias invocations. Fourth, **Provisioned Concurrency and SnapStart** are the two standard solutions to cold starts, but they are not compatible with each other, and SnapStart requires care about uniqueness assumptions.
+Today's picture has four parts. First, **a Version is an immutable snapshot and an Alias is a mutable pointer** - the same idea as Git's commit/branch, guaranteeing reproducibility and rollback safety. Second, **the Alias weighted routing constraint of primary + 1 secondary** is the cause of CodeDeploy Canary's "one step at a time" structure. Third, **a qualifier is required for API Gateway integration** - a Function ARN permission alone rejects Alias invocations. Fourth, **Provisioned Concurrency and SnapStart** are the two standard solutions to cold starts, but they are incompatible with each other, and SnapStart requires care about the uniqueness assumption.
 
-In the next post, we look at patterns for orchestrating multiple Lambda functions with Step Functions and EventBridge. The era of the monolithic Lambda that crammed all the logic into one function is over, and now it is the era of workflow engines managing the flow between functions.
+In the next article, we look at patterns for orchestrating multiple Lambdas with Step Functions and EventBridge. The era of monolithic Lambdas that crammed all the logic into one function is over; now workflow engines manage the flow between functions.
 
 ---
 
 ## 📝 Practice Questions
 
-**Question 1.** What is the purpose of configuring throttling in API Gateway?
+**Question 1.** How many Versions can a Lambda Alias's weighted routing point to at the same time?
 
-A) Limiting Lambda function execution time  
-B) Limiting the API request rate to defend against DDoS and control cost  
-C) Caching API responses  
-D) Managing the CORS policy  
+A) 1 (primary only)
+B) 2 (primary + 1 additional)
+C) 3
+D) Unlimited - possible as long as the weights sum to 1.0
 
 **Answer: B**
-Explanation: Throttling limits the request rate per account or per method. It defends against malicious requests and prevents cost explosions by limiting Lambda concurrent executions.
+Explanation: An Alias can have only `function-version` (primary) plus at most 1 additional Version in `routing-config.AdditionalVersionWeights`. That is, a maximum 2-way split. A 3-way split such as "V5 70%, V6 20%, V7 10%" is impossible. This is the structural reason CodeDeploy Canary proceeds only "one step at a time." If you need a 3-way split, use ALB weighted target groups or Route 53 weighted routing. A frequently tested trap; answering "multiple Versions can be distributed" is wrong.
 
 ---
 
-**Question 2.** What if multiple different systems must process the same message?
+**Question 2.** A Java Spring Boot Lambda has an 8-second cold start that ruins P95 latency. What is the most effective solution?
 
-A) Store the message in an SQS queue  
-B) Publish to an SNS topic and have each system subscribe  
-C) Call an external API from Lambda each time  
-D) Store the message in S3  
+A) Increase Reserved Concurrency
+B) Enable SnapStart + reset uniqueness with a Runtime Hook
+C) Use a Lambda Layer
+D) Change the architecture to ARM (20% improvement)
 
 **Answer: B**
-Explanation: The SNS pub/sub pattern is suited to cases where multiple subscribers independently receive one message. With SQS, only one consumer processes a message.
+Explanation: SnapStart creates a memory snapshot of the JVM init phase and skips the init time that accounts for 80-90% of the cold start, cutting 8 seconds to 300-500 ms. Because Spring Boot's ApplicationContext initialization happens in the init phase, the effect is largest. However, parts that need uniqueness guarantees, such as random seeds and UUIDs, must be reinitialized in an `afterRestore` Hook (if not, the same UUID is generated on every call). A is a limit setting unrelated to cold starts, C has a negligible effect, and D gives some improvement but is not the primary solution.
 
 ---
 
-**Question 3.** What if Lambda needs to handle asynchronous work?
+**Question 3.** API Gateway invokes the Lambda Alias `MyFn:live` but a 403/Permission denied occurs. What is the most likely cause?
 
-A) Synchronous invocation from API Gateway  
-B) SQS queue → EventBridge pattern  
-C) Map an SQS queue as the event source for Lambda, or subscribe to an SNS topic  
-D) Polling S3  
+A) A Lambda code bug
+B) `aws lambda add-permission` was run without `--qualifier live` → permission only on the Function ARN, Alias invocation denied
+C) A missing IAM Role
+D) A missing VPC configuration
 
-**Answer: C**
-Explanation: A Lambda event source mapping polls SQS, or an SNS topic subscription automatically triggers Lambda. This is the standard for asynchronous processing.
+**Answer: B**
+Explanation: Lambda resource policies are evaluated by ARN precision. A permission on `arn:aws:lambda:...:MyFn` (unqualified) allows only `$LATEST` and unqualified invokes, while invoking `arn:aws:lambda:...:MyFn:live` (qualified) needs a separate permission. This is a very common troubleshooting point in both the exam and practice. "Add trigger" in the console automatically grants the permission with the qualifier, but it is easy to omit when writing CLI/CFN by hand. The fix is to specify `add-permission --qualifier live` explicitly.
 
 ---
 
-**Question 4.** How many versions can a Lambda alias's weighted routing point to at the same time?
+**Question 4.** Is Alias weighted routing possible with `$LATEST`?
 
-A) 1 (primary only)  
-B) 2 (primary + 1 additional)  
-C) 3  
-D) Unlimited — possible as long as the weights sum to 1.0  
+A) Possible
+B) Not possible - Versions must be positive integers (weighted routing is meaningless on a mutable target)
+C) Supported in only some Regions
+D) Can be worked around with a Layer
 
 **Answer: B**
-Explanation: An alias can have `function-version` (primary) plus at most one additional version in `routing-config.AdditionalVersionWeights`. That is, a maximum 2-way split. A 3-way split such as "V5 70%, V6 20%, V7 10%" is not possible. This is the structural reason CodeDeploy Canary proceeds only "one step at a time." If you need a 3-way split, use an ALB weighted target group or Route 53 weighted routing. It is a frequent exam trap: answering "multiple versions can be distributed" is wrong.
+Explanation: `$LATEST` is a mutable working copy. Because the code changes every time, it inherently conflicts with the purpose of weighted routing, which is to "compare two different pieces of code." The Lambda API itself rejects `$LATEST` or non-numeric strings for `function-version` (`ValidationException`). PC likewise cannot be set on `$LATEST` - code changes would invalidate the warm-up. The fix is always to create a numeric Version with `publish-version` and use that.
 
 ---
 
-**Question 5.** A Java Spring Boot Lambda function has an 8-second cold start that ruins P95 latency. What is the most effective solution?
+**Question 5.** Which is the most accurate difference between Provisioned Concurrency and Reserved Concurrency?
 
-A) Increase reserved concurrency  
-B) Enable SnapStart + reset uniqueness with runtime hooks  
-C) Use a Lambda layer  
-D) Change the architecture to ARM (20% improvement)  
+A) The same feature - only the name differs
+B) PC keeps pre-warmed containers (paid, eliminates cold starts), while Reserved sets a concurrent execution limit (free, protects other functions)
+C) PC is free, Reserved is paid
+D) Reserved eliminates cold starts, PC sets a concurrency limit
 
 **Answer: B**
-Explanation: SnapStart takes a memory snapshot of the JVM init phase and skips the init time, which accounts for 80 to 90% of the cold start. 8 seconds → 300 to 500 ms. Because Spring Boot's ApplicationContext initialization happens in the init phase, the effect is largest. However, parts that need uniqueness guarantees, such as random seeds and UUIDs, must be re-initialized in the `afterRestore` hook (otherwise every invocation generates the same UUID). A is a limit setting and unrelated to cold starts, C has a negligible effect, and D gives partial improvement but is not the primary solution.
+Explanation: The exact distinction between the two concepts appears frequently on the exam. PC aims at "zero cold starts," while Reserved aims at "a limit so that this function cannot eat into other functions' concurrent execution." Invocations exceeding the PC capacity are handled as normal cold starts and are not rejected, whereas exceeding the Reserved limit results in a 429 throttle. PC is billed per usage time, and Reserved is free. Also, PC can be a subset of Reserved (if PC is 10, Reserved is at least 10).
 
 ---
 
-**Question 6.** API Gateway invokes the Lambda alias `MyFn:live` and gets 403/Permission denied. What is the most likely cause?
+**Question 6.** What is the cost impact of a Canary deployment on a function with PC enabled?
 
-A) A bug in the Lambda code  
-B) `aws lambda add-permission` was run without `--qualifier live` → the permission applies only to the function ARN, and alias invocations are denied  
-C) The IAM role is missing  
-D) The VPC configuration is missing  
+A) No change
+B) PC is temporarily active on both the old and new Versions, so PC cost roughly doubles (CodeDeploy allocates it automatically)
+C) PC is released automatically
+D) Cost decreases by 50%
 
 **Answer: B**
-Explanation: Lambda resource policies are evaluated by ARN exactness. A permission on `arn:aws:lambda:...:MyFn` (unqualified) allows only `$LATEST` and unqualified invokes; invoking `arn:aws:lambda:...:MyFn:live` (qualified) requires a separate permission. This is a very common troubleshooting point on the exam and in practice. The console's "Add trigger" automatically grants a permission that includes the qualifier, but it is easy to miss when writing by hand with the CLI/CFN. The fix is to specify `add-permission --qualifier live`.
+Explanation: During a Canary shift, the new Version must also be warm to avoid cold starts, so SAM/CodeDeploy automatically allocates the same PC to the new Version. The result is that PC cost temporarily doubles during the deployment (e.g., PC 10 on V5 + PC 10 on V6 = 20). When the shift completes at 100%, V5's PC is released automatically. When introducing PC for cost-sensitive workloads, this must be calculated in advance. A, C, and D are not true.
 
 ---
 
-**Question 7.** Can alias weighted routing be used with `$LATEST`?
+**Question 7.** After enabling SnapStart, a bug occurred where the same UUID is generated on every call. What are the cause and the fix?
 
-A) Yes  
-B) No — versions must be positive integers (weighted routing on a mutable target is meaningless)  
-C) Only supported in some Regions  
-D) It can be worked around through a layer  
+A) A Lambda bug - open an AWS Support request
+B) Because it is a snapshot restore, the init-phase random seed is the same in every invocation → reinitialize SecureRandom in the `afterRestore` Hook of `org.crac.Resource`
+C) Upgrade the Java version to 17
+D) Add a Layer
 
 **Answer: B**
-Explanation: `$LATEST` is a mutable working copy. Because the code changes every time, it fundamentally conflicts with the purpose of weighted routing, "comparing two different pieces of code." The Lambda API itself rejects `$LATEST` or non-numeric strings for `function-version` (`ValidationException`). PC likewise cannot be configured on `$LATEST` — code changes would invalidate the warm-up. The fix is to always create a numbered version with `publish-version` and use that.
+Explanation: SnapStart is image-based persistence, so all memory state from the init phase is duplicated. If `new SecureRandom()` runs only once during init, it starts with the same entropy. A reinitialization such as `SecureRandom.getInstanceStrong()` in `afterRestore` via a Runtime Hook (`org.crac.Core.getGlobalContext().register(this)`) is required. The same problem applies to DB connections, HTTP client pools, and file descriptors, all of which must be re-established through hooks. The uniqueness assumption violation is the most common security trap when adopting SnapStart.
 
 ---
 
-**Question 8.** What is the most accurate difference between provisioned concurrency and reserved concurrency?
+**Question 8.** How do you implement Blue/Green by creating Function URLs per Alias?
 
-A) They are the same feature — only the names differ  
-B) PC keeps pre-warmed containers (paid, eliminates cold starts), while reserved sets a concurrency limit (free, protects other functions)  
-C) PC is free and reserved is paid  
-D) Reserved eliminates cold starts and PC sets the concurrency limit  
+A) Function URLs are possible only at the whole-function level
+B) Create per-Alias URLs with `create-function-url-config --qualifier <alias>` → clients distribute with Route 53 weighted or CloudFront origin failover
+C) API Gateway is mandatory
+D) Add a Lambda Layer
 
 **Answer: B**
-Explanation: The exact distinction between the two concepts frequently appears on the exam. PC aims for "zero cold starts"; reserved aims to "cap this function so it cannot eat into other functions' concurrency." Invocations beyond the PC limit are handled as ordinary cold starts and are not rejected, but exceeding the reserved limit results in a 429 throttle. PC is billed per time in use, and reserved is free. Also, PC can be a subset of reserved (if PC is 10, reserved must be at least 10).
+Explanation: Function URLs (launched in 2022) can create per-Version or per-Alias URLs with `--qualifier`. Creating a URL for each of the prod Alias and the canary Alias yields two different endpoints. Client distribution is done with a Route 53 weighted record or CloudFront origin failover. It saves latency and cost compared with API Gateway, but lacks features such as API Keys, throttling, and request validation. A is not true, C is wrong because the key feature of Function URLs is working without API Gateway, and D is unrelated.
 
 ---
 
-**Question 9.** What is the cost impact on a function with PC enabled during a canary deployment?
+## 📌 Today's Summary
 
-A) No change  
-B) PC is temporarily active on both the old and new versions, so the PC cost roughly doubles (CodeDeploy allocates it automatically)  
-C) PC is released automatically  
-D) Cost decreases by 50%  
-
-**Answer: B**
-Explanation: During a canary shift the new version must also be warm to avoid cold starts, so SAM/CodeDeploy automatically allocates the same PC to the new version. The result is that PC cost temporarily doubles during deployment (for example, PC 10 on V5 + PC 10 on V6 = 20). When the shift completes to 100%, V5's PC is released automatically. When adopting PC for cost-sensitive workloads, you should calculate this in advance. A/C/D are not factual.
-
----
-
-**Question 10.** After enabling SnapStart, a bug occurs where the same UUID is generated on every invocation. What is the cause and the fix?
-
-A) A Lambda bug — contact AWS Support  
-B) Because the snapshot is restored, the random seed from the init phase is the same in every invocation → reinitialize SecureRandom in the `afterRestore` hook of `org.crac.Resource`  
-C) Upgrade the Java version to 17  
-D) Add a layer  
-
-**Answer: B**
-Explanation: SnapStart is image-based persistence, so all memory state from the init phase is cloned. If `new SecureRandom()` is executed only once during init, it starts with the same entropy. You must reinitialize using a runtime hook (`org.crac.Core.getGlobalContext().register(this)`) in `afterRestore`, such as with `SecureRandom.getInstanceStrong()`. The same problem applies to DB connections, HTTP client pools, and file descriptors, all of which must be re-established through hooks. Uniqueness assumption violation is the most common security trap when adopting SnapStart.
-
----
-
-**Question 11.** How do you implement Blue/Green by creating a function URL per alias?
-
-A) A function URL can only be created for the whole function  
-B) Create a URL per alias with `create-function-url-config --qualifier <alias>` → clients distribute traffic with Route 53 weighted records or CloudFront origin failover  
-C) API Gateway is required  
-D) Add a Lambda layer  
-
-**Answer: B**
-Explanation: A function URL (launched in 2022) can be created per version or alias with `--qualifier`. Creating a URL for each of the prod alias and the canary alias gives you two different endpoints. Client distribution is done with a Route 53 weighted record or CloudFront origin failover. It reduces latency and cost compared with API Gateway, but lacks features such as API keys, throttling, and request validation. A is not true, C is wrong because a key feature of function URLs is working without API Gateway, and D is unrelated.
+The key points of the Version/Alias model covered today are five: (1) a Version is an immutable snapshot and an Alias is a mutable pointer, guaranteeing reproducibility and rollback safety, (2) the Alias weighted routing constraint of primary + 1 secondary is the structural cause of CodeDeploy Canary's staged progression, (3) in API Gateway integration, a missing `--qualifier` is the most common cause of permission denials, (4) Provisioned Concurrency means warm-up + paid + Auto Scaling capable, while Reserved Concurrency means a concurrency limit + free, and (5) SnapStart cuts Java cold starts by 90%, but the uniqueness assumption violation must be corrected with a Runtime Hook.

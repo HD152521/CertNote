@@ -1,34 +1,34 @@
-# Day 2 - Change Set, Drift Detection, Rollback Trigger: Three Pillars of Safe CFn Operations
+# Day 2 - Change Set, Drift Detection, Rollback Trigger: The Three Pillars of Safe CFn Operations
 
-January 2021, Fastly CDN major outage. Root cause: configuration change during software deployment interacted unexpectedly, causing CDN to stop responding entirely. Thousands of sites—GitHub, Twitch, Amazon, The Guardian, Financial Times—went down for ~49 minutes. Fastly's CEO stated in postmortem: "didn't sufficiently validate changes before deployment."
+In January 2021, a major Fastly CDN outage occurred. The cause was that during a software deployment, a configuration change interacted in an unexpected way and the CDN service stopped responding as a whole. Tens of thousands of sites, including GitHub, Twitch, Amazon, The Guardian, and the Financial Times, went down for about 49 minutes. In its post-incident report, Fastly's CEO said that "changes were not sufficiently validated before deployment."
 
-Three CloudFormation tools prevent such incidents. **Change Set** dry-runs changes before deployment, **Drift Detection** catches reality-code gaps from manual changes, and **Rollback Trigger** auto-reverts to previous state if service anomalies appear post-deployment. All three guard different time windows: pre-deployment (Change Set), ongoing operations (Drift Detection), post-deployment (Rollback Trigger).
+CloudFormation has three tools to prevent incidents like this. **Change Set** checks changes before deployment as a dry-run, **Drift Detection** detects the gap between reality and code caused by manual changes, and **Rollback Trigger** automatically reverts to the previous state if a service anomaly is detected after deployment. The three tools each cover a time window: before deployment (Change Set), ongoing operations (Drift Detection), and after deployment (Rollback Trigger).
 
-## Change Set: "See First, Execute Later"
+## Change Set: "Look First, Then Execute"
 
-Operators familiar with Terraform know `terraform plan`. Change Set is CloudFormation's `terraform plan`. `update-stack` immediately starts changes; Change Set shows "which resources will change and how" beforehand.
+If you are an operator who has used Terraform, you are familiar with `terraform plan`. Change Set is CloudFormation's `terraform plan`. `update-stack` starts changes immediately, but a Change Set shows in advance "which resources will change and how."
 
-**Change Set Internal Operation:**
+**Internal behavior of a Change Set:**
 
-1. Compare current Stack Template with new Template
-2. Calculate required Action (Add/Modify/Remove) for each resource
-3. If Modify, analyze whether change triggers Replacement (recreation)
-4. Don't touch actual resources; return plan only
+1. Compare the current stack's template with the new template
+2. Calculate the required Action (Add/Modify/Remove) for each resource
+3. For Modify, analyze whether the change triggers a Replacement (recreation)
+4. Return only the plan without touching actual resources
 
-**Replacement Determination:**
+**Criteria for judging Replacement:**
 
-AWS documents whether each property is changeable. If "Update requires: Replacement," changing that property recreates resource.
+AWS documents whether each resource property can be changed. If a property says "Update requires: Replacement," the resource is recreated when you change that property.
 
-| Replacement Value | Meaning | Operator Action |
+| Replacement value | Meaning | Operator response |
 |----------------|------|-------------|
-| `True` | Must recreate. Delete existing, create new | Data loss risk, check UpdateReplacePolicy |
-| `False` | In-place update. Modify properties only | Safe, can execute immediately |
-| `Conditional` | Runtime-determined by other attributes | Needs review, conservative approach |
-| `N/A` | Doesn't apply to Add/Remove | New resource created, existing deleted—be careful |
+| `True` | Always recreated. The existing resource is deleted and a new one is created | Data loss risk, checking UpdateReplacePolicy is mandatory |
+| `False` | In-place update. Only the property is changed on the existing resource | Safe. Can be executed immediately |
+| `Conditional` | Decided at runtime depending on other property values | Additional checking needed, approach conservatively |
+| `N/A` | Not applicable to Add/Remove operations | If adding, a new resource is created; if Remove, note that it will be deleted |
 
-**Common Replacement-Triggering Changes:**
+**Property changes that often trigger Replacement:**
 
-| Resource Type | Changed Property | Replacement |
+| Resource type | Changed property | Replacement |
 |-------------|-----------|-------------|
 | `AWS::RDS::DBInstance` | `MultiAZ` false→true | True |
 | `AWS::RDS::DBInstance` | `DBInstanceIdentifier` | True |
@@ -38,13 +38,13 @@ AWS documents whether each property is changeable. If "Update requires: Replacem
 | `AWS::ElastiCache::ReplicationGroup` | `ClusterMode` | True |
 | `AWS::Lambda::Function` | `FunctionName` | True |
 | `AWS::RDS::DBInstance` | `DBInstanceClass` (mostly) | False |
-| `AWS::EC2::SecurityGroup` | `SecurityGroupIngress` add | False |
-| `AWS::EC2::Instance` | `InstanceType` (same EBS optimization) | Conditional |
+| `AWS::EC2::SecurityGroup` | Adding `SecurityGroupIngress` | False |
+| `AWS::EC2::Instance` | `InstanceType` (when EBS optimization is the same) | Conditional |
 
-**Practical Change Set Workflow:**
+**Practical Change Set workflow:**
 
 ```bash
-# 1. Create Change Set (no actual changes)
+# 1. Create the Change Set (no actual change)
 aws cloudformation create-change-set \
   --stack-name my-prod-app \
   --template-body file://new-template.yaml \
@@ -52,12 +52,12 @@ aws cloudformation create-change-set \
   --parameters ParameterKey=AppVersion,ParameterValue=2.1 \
   --capabilities CAPABILITY_NAMED_IAM
 
-# 2. Wait for Change Set CREATE_COMPLETE
+# 2. Wait until the Change Set status becomes CREATE_COMPLETE
 aws cloudformation wait change-set-create-complete \
   --stack-name my-prod-app \
   --change-set-name "release-2.1-20260527-1430"
 
-# 3. Review changes in detail (key: Replacement field)
+# 3. Check the change details (key: the Replacement field)
 aws cloudformation describe-change-set \
   --stack-name my-prod-app \
   --change-set-name "release-2.1-20260527-1430" \
@@ -70,7 +70,7 @@ aws cloudformation describe-change-set \
   ]' \
   --output table
 
-# Sample output:
+# Example output:
 # Action   | LogicalId          | Type                    | Replacement | Scope
 # ---------|--------------------|-----------------------------|-------------|----------
 # Modify   | WebServer          | AWS::EC2::Instance          | False       | [Properties]
@@ -78,27 +78,27 @@ aws cloudformation describe-change-set \
 # Add      | NewSecurityGroup   | AWS::EC2::SecurityGroup     | N/A         | []
 # Remove   | OldCacheCluster    | AWS::ElastiCache::...       | N/A         | []
 
-# 4a. If no Replacement=True, execute
+# 4a. If there is no Replacement=True, execute
 aws cloudformation execute-change-set \
   --stack-name my-prod-app \
   --change-set-name "release-2.1-20260527-1430"
 
-# 4b. If risky changes exist, discard
+# 4b. If there are risky changes, discard
 aws cloudformation delete-change-set \
   --stack-name my-prod-app \
   --change-set-name "release-2.1-20260527-1430"
 ```
 
-> 🔍 **Deeper Dive**: When Change Set shows "Replacement: Conditional," AWS can't determine pre-runtime whether change causes Replacement. E.g., RDS `DBSubnetGroupName` change: in-place if new group in same VPC, Replacement if different VPC. EC2 `InstanceType` change: False if current supports EBS optimization consistently, Conditional if EBS support differs. Conditional → check AWS docs directly to understand runtime conditions. Production Conditional → always consider safer strategies (pre-snapshot etc).
+> 🔍 **Going Deeper**: When a Change Set shows "Replacement: Conditional," it means AWS cannot know before runtime whether the change will trigger a Replacement. For example, if you change RDS's `DBSubnetGroupName`, an in-place update is possible if the new subnet group is in the same VPC as the existing DB, but a Replacement is needed if it is in a different VPC. Changing an EC2 `InstanceType` is also False if the current instance supports EBS optimization, but can be Conditional if support differs. When you encounter Conditional, you must read that resource's AWS documentation directly to understand the runtime condition. In a production environment, when Conditional appears, you should always consider a safer strategy (such as creating a snapshot first).
 
-**CI/CD Pipeline Change Set Automation:**
+**Automating Change Sets in a CI/CD pipeline:**
 
 ```bash
-# Auto-script: stop pipeline if Replacement=True found
+# Automation script: stop the pipeline if there is Replacement=True
 STACK_NAME="my-prod-app"
 CHANGE_SET_NAME="pipeline-$(date +%Y%m%d-%H%M%S)"
 
-# Create Change Set
+# Create the Change Set
 aws cloudformation create-change-set \
   --stack-name $STACK_NAME \
   --template-body file://new-template.yaml \
@@ -117,16 +117,17 @@ RISKY_RESOURCES=$(aws cloudformation describe-change-set \
   --output text)
 
 if [ -n "$RISKY_RESOURCES" ]; then
-  echo "WARNING: Following resources may be replaced:"
+  echo "⚠️  WARNING: The following resources may be replaced:"
   echo "$RISKY_RESOURCES"
-  echo "Requires manual review and approval"
+  echo "Manual review and approval are required."
+  # Delete the Change Set (not executed)
   aws cloudformation delete-change-set \
     --stack-name $STACK_NAME \
     --change-set-name $CHANGE_SET_NAME
   exit 1
 fi
 
-# Safe—execute automatically
+# If safe, execute automatically
 aws cloudformation execute-change-set \
   --stack-name $STACK_NAME \
   --change-set-name $CHANGE_SET_NAME
@@ -135,27 +136,27 @@ aws cloudformation wait stack-update-complete --stack-name $STACK_NAME
 echo "Deployment complete"
 ```
 
-> 💡 **Related Theory**: Change Set design applies software engineering's "Preview Before Commit" principle to infrastructure. Like Git's `git diff --staged` showing changes before commit, Change Set shows infrastructure change diff. Both offer "human review opportunity before execution." Distributed systems theory calls this "Two-Phase Commit simplified": Phase 1 (Prepare = Change Set creation) establishes plan, Phase 2 (Commit = execute-change-set) implements. CloudFormation inserts human review: "Human-in-the-loop 2PC."
+The design of Change Set applies the software engineering principle "Preview Before Commit" to infrastructure. Just as Git's `git diff --staged` shows the changes before a commit, Change Set shows a diff of the infrastructure change. Both are the same in that they "execute after giving a human a chance to review." In distributed systems theory, this can be seen as a "simplification of Two-Phase Commit": the change plan is established in Phase 1 (Prepare = creating the Change Set), and actually applied in Phase 2 (Commit = execute-change-set). CloudFormation's Change Set is a "Human-in-the-loop 2PC" with human review inserted in the middle.
 
 ## Drift Detection: "Find the Gap Between Code and Reality"
 
-Operations inevitably diverge code from reality. Emergency patches might add security group rules manually, someone changed instance type via console, tags added outside CloudFormation. Drift Detection catches these gaps.
+During operations, code and reality inevitably diverge. During an emergency incident response someone may have added a rule directly to a security group, someone may have changed an instance type in the console, or a tag may have been added outside CloudFormation. Drift Detection detects such gaps.
 
-**Drift Detection Mechanism:**
+**How Drift Detection works:**
 
-CloudFormation queries each Stack resource's actual AWS config via API, compares with Template's desired state (Expected).
+CloudFormation queries the current actual resource settings for each stack resource through AWS APIs and compares them with the desired state (Expected) defined in the template.
 
-| Drift Status | Meaning | Operator Action |
+| Drift status | Meaning | Operator action |
 |------------|------|-------------|
-| `IN_SYNC` | Template matches reality | Normal |
-| `MODIFIED` | Exists in Template but properties changed | Review changes, correct via CFn or update Template |
-| `DELETED` | In Template but actual resource deleted | Redeploy stack to restore |
-| `NOT_CHECKED` | Drift Detection unsupported for this resource type | Manual verification needed |
+| `IN_SYNC` | Template and actual state match | Normal |
+| `MODIFIED` | In the template but some properties were changed | Check the changed properties, then correct via CFn or update the template |
+| `DELETED` | In the template but the actual resource was deleted | Redeploy the stack to restore the resource |
+| `NOT_CHECKED` | Drift Detection does not support that resource type | Manual checking needed |
 
-**Run Drift Detection:**
+**Running Drift Detection:**
 
 ```bash
-# Start Drift Detection (async)
+# Start Drift Detection (asynchronous)
 DRIFT_ID=$(aws cloudformation detect-stack-drift \
   --stack-name my-prod-app \
   --query 'StackDriftDetectionId' \
@@ -163,7 +164,7 @@ DRIFT_ID=$(aws cloudformation detect-stack-drift \
 
 echo "Drift Detection ID: $DRIFT_ID"
 
-# Wait for completion (typically tens seconds to minutes)
+# Wait for completion (usually tens of seconds to a few minutes)
 while true; do
   STATUS=$(aws cloudformation describe-stack-drift-detection-status \
     --stack-drift-detection-id $DRIFT_ID \
@@ -178,14 +179,14 @@ while true; do
   sleep 5
 done
 
-# Query drifted resources
+# List resources that have drift
 aws cloudformation describe-stack-resource-drifts \
   --stack-name my-prod-app \
   --stack-resource-drift-status-filters MODIFIED DELETED \
   --query 'StackResourceDrifts[*].[LogicalResourceId,ResourceType,StackResourceDriftStatus]' \
   --output table
 
-# Detailed drift info (which properties changed)
+# Detailed drift for a specific resource (which properties changed)
 aws cloudformation describe-stack-resource-drifts \
   --stack-name my-prod-app \
   --stack-resource-drift-status-filters MODIFIED \
@@ -193,7 +194,7 @@ aws cloudformation describe-stack-resource-drifts \
   --output json
 ```
 
-**Parse Detailed Drift Output:**
+**Interpreting detailed Drift output:**
 
 ```json
 [
@@ -210,39 +211,43 @@ aws cloudformation describe-stack-resource-drifts \
   }
 ]
 ```
-Shows `WebServerSG` has SSH rule (port 22, fully open) not in Template.
+This output shows that an SSH (port 22, open to everyone) rule that is not in the template was added to the `WebServerSG` security group.
 
-**Drift Detection Limitations:**
+**Drift Detection limitations:**
 
-1. Not all resource types supported (check AWS docs for "Resources supporting import and drift detection")
-2. Can't detect resources added **outside** CloudFormation (Stack doesn't know them)
-3. Only detects deletions/modifications (external changes to Stack-managed resources)
-4. Async operation; must wait for completion
-5. Large Stacks (100+ resources) may take minutes
+1. It does not support all resource types (supported list: "Resources that support import and drift detection operations" in the AWS documentation)
+2. It cannot detect resources **added outside** CloudFormation (resources the Stack doesn't know about)
+3. It can only detect deletions and modifications (only external changes to Stack-managed resources)
+4. It is an asynchronous operation, so you need to wait for completion
+5. For large stacks (100+ resources), Drift Detection can take several minutes
 
-> 📚 **Case Study**: 2023, fintech company G: developer added `0.0.0.0/0:22` to CFn-managed security group during emergency. Outage fixed but rule remained 3 months. External scanner found it; data privacy law violation possible. Daily automated Drift Detection would've caught same-day, immediate fix. Later built EventBridge Scheduled Rule + Lambda + Drift Detection + SNS automation. Satisfies NIST SP 800-53 CM-3 (Configuration Change Control) and CM-6 (Configuration Settings).
+As a hypothetical case, at a fintech company G in 2023, a developer added a `0.0.0.0/0:22` (SSH open to everyone) rule to a CFn-managed security group during an emergency incident response. The incident was resolved, but this rule remained for 3 months. By the time an external vulnerability scanner found it, there was already a possible violation of privacy law. If Drift Detection had been running automatically every day, it would have been detected the same day and fixed immediately. After this incident, they built an automation pipeline of EventBridge Scheduled Rule + Lambda + Drift Detection + SNS notification. This automation satisfies the requirements of NIST SP 800-53 CM-3 (Configuration Change Control) and CM-6 (Configuration Settings).
 
-**Automated Drift Check Pattern (EventBridge + Lambda):**
+**Automated drift check pattern (EventBridge + Lambda):**
 
 ```python
-# Lambda: daily drift check + SNS notification
-import boto3, time
+# Lambda function: check drift daily and send an SNS alert
+import boto3
+import time
 
 def handler(event, context):
     cfn = boto3.client('cloudformation')
     sns = boto3.client('sns')
-    drifted_stacks = []
     
+    # List production Stacks (filter by prod tag)
     paginator = cfn.get_paginator('describe_stacks')
+    drifted_stacks = []
     
     for page in paginator.paginate():
         for stack in page['Stacks']:
             if stack['StackStatus'] not in ['CREATE_COMPLETE', 'UPDATE_COMPLETE']:
                 continue
             
+            # Start Drift Detection
             resp = cfn.detect_stack_drift(StackName=stack['StackName'])
             detection_id = resp['StackDriftDetectionId']
             
+            # Wait for completion (up to 60 seconds)
             for _ in range(12):
                 status_resp = cfn.describe_stack_drift_detection_status(
                     StackDriftDetectionId=detection_id
@@ -257,33 +262,33 @@ def handler(event, context):
                 time.sleep(5)
     
     if drifted_stacks:
-        message = "CloudFormation Drift Detected:\n\n"
+        message = "CloudFormation drift detected:\n\n"
         for item in drifted_stacks:
-            message += f"- {item['stack']}: {item['drifted_count']} drifted resources\n"
+            message += f"- {item['stack']}: {item['drifted_count']} resources drifted\n"
         
         sns.publish(
             TopicArn='arn:aws:sns:ap-northeast-2:123456789012:ops-alerts',
             Message=message,
-            Subject='[Alert] CloudFormation Drift Detected'
+            Subject='[ALERT] CloudFormation drift detected'
         )
     
     return {'drifted_stacks': len(drifted_stacks)}
 ```
 
-> 🔍 **Deeper Dive**: Drift Detection's fundamental issue: need direction reversal from "code → reality" to "reality → code." Detected drift has two strategies: (1) **Revert**: restore actual resources to Template state (redeploy). Manual changes were mistakes. (2) **Adopt**: update Template to actual state. Manual changes were intentional, correct. Choose based on business judgment. Combined with AWS Config and CloudTrail, both "who changed when" and "what changed how" visible.
+The fundamental problem of Drift Detection is that it requires reversing the direction from "code → reality" to "reality → code." When drift is detected, there are two strategies: (1) **Revert**: return the actual resource to the template state (redeploy). For when the emergency manual change was wrong, (2) **Adopt**: update the template to the actual state. For when the manual change was intentional and correct. Which strategy to choose requires a business judgment. Using AWS Config and Drift Detection together lets you understand both "who changed it and when (linked to CloudTrail)" and "what changed and how (Drift)."
 
-## Rollback Trigger: "10-Minute Safety Window Post-Deployment"
+## Rollback Trigger: "The Safety Standard Is 10 Minutes After Deployment"
 
-Rollback Trigger monitors specified CloudWatch Alarms for duration after Stack update completes; if alarm fires, auto-reverts to previous state.
+Rollback Trigger is a feature that, after a stack update completes, monitors CloudWatch Alarms for a specified time and automatically rolls back to the previous state if an alarm fires.
 
-**Design Rationale:**
+**Design background:**
 
-Netflix's "Fail Fast, Recover Faster" principle inspired this. Martin Fowler's 2010 "Canary Release": "if new version causes problems, revert immediately." Implemented at CloudFormation level. Differs from Blue-Green: doesn't maintain dual infrastructure; instead ensures "post-change monitoring window" for safety.
+It is a pattern inspired by Netflix's "Fail Fast, Recover Faster" principle. It implements at the CloudFormation level the "Canary Release" concept that Martin Fowler defined in 2010, namely "if the new version causes problems, revert immediately." The difference from Blue/Green deployment is that it doesn't maintain two sets of infrastructure; instead it secures safety through a "post-change monitoring period."
 
-**Configure Rollback Trigger:**
+**Configuring Rollback Trigger:**
 
 ```bash
-# Create CloudWatch Alarm first
+# Create the CloudWatch Alarm first
 aws cloudwatch put-metric-alarm \
   --alarm-name "HighErrorRate-ProdALB" \
   --comparison-operator GreaterThanThreshold \
@@ -295,9 +300,9 @@ aws cloudwatch put-metric-alarm \
   --threshold 10 \
   --dimensions Name=LoadBalancer,Value=app/my-alb/abc123 \
   --alarm-actions arn:aws:sns:ap-northeast-2:123456789012:ops-alerts \
-  --treat-missing-data notBreaching  # No data → normal
+  --treat-missing-data notBreaching  # Treat as normal if there is no data
 
-# Update Stack with Rollback Trigger
+# Update the Stack with Rollback Triggers
 aws cloudformation update-stack \
   --stack-name my-prod-app \
   --template-body file://new-template.yaml \
@@ -315,80 +320,81 @@ aws cloudformation update-stack \
     ]
   }'
 
-# Use with Change Set (recommended)
+# Use together with a Change Set (recommended)
 aws cloudformation execute-change-set \
   --stack-name my-prod-app \
   --change-set-name my-change-set \
-  --disable-rollback false  # Default, explicit
+  --disable-rollback false  # Default value, specified explicitly
 ```
 
-**Rollback Trigger Scenario:**
+**Rollback Trigger operating scenario:**
 
 ```
-Time 0:00 → update-stack (with RollbackTriggers)
-Time 0:05 → UPDATE_COMPLETE (resources changed)
+Time 0:00 → run update-stack (with RollbackTriggers configured)
+Time 0:05 → UPDATE_COMPLETE (resource changes complete)
             │
-            └── [MonitoringTimeInMinutes = 10 min countdown]
+            └── [MonitoringTimeInMinutes = 10-minute countdown starts]
                       │
-                      CloudFormation polls alarms for 10 min
+                      │ CloudFormation polls the specified Alarm states for 10 minutes
                       │
-Time 0:08 → HighErrorRate-ProdALB transitions to ALARM!
-            (5xx errors 10+/min)
+Time 0:08 → HighErrorRate-ProdALB alarm switches to ALARM state!
+            (5xx errors exceed 10/minute)
                       │
-Time 0:08 → UPDATE_ROLLBACK_IN_PROGRESS auto-starts
+Time 0:08 → UPDATE_ROLLBACK_IN_PROGRESS starts automatically
                       │
-Time 0:12 → UPDATE_ROLLBACK_COMPLETE (prior state restored)
-            SNS notified
+Time 0:12 → UPDATE_ROLLBACK_COMPLETE (previous state restored)
+            SNS notification to the operator (alarm action)
 
 ─────────────────────────────────────────
 
-vs. normal deployment:
+vs. normal deployment scenario:
 
-Time 0:00 → update-stack
+Time 0:00 → run update-stack
 Time 0:05 → UPDATE_COMPLETE
-Time 0:15 → MonitoringTime 10 min complete, no alarm
-            UPDATE_COMPLETE confirmed (monitoring ends)
-            → Later alarms don't auto-rollback (manual action needed)
+Time 0:15 → MonitoringTime 10 minutes complete, no alarm fired
+            UPDATE_COMPLETE state is finalized (monitoring period ended)
+            → No automatic rollback even if an alarm fires afterward (manual response needed)
 ```
 
-**Alarm Selection Principles:**
+**Principles for choosing Rollback alarms:**
 
-| Alarm Type | Why Recommended | Config Tips |
-|----------|----------|---------|
-| `HTTPCode_Target_5XX_Count` | Immediate response, direct outage indicator | threshold: 10-50/min, period: 60s |
-| `TargetResponseTime` P99 | Early performance degradation detection | threshold: 2-5s, evaluation: 3x |
-| `UnhealthyHostCount` | Direct instance anomaly | threshold: >0, treat-missing-data: missing |
-| `Lambda Errors` | Lambda-based app error detection | threshold: 1-5%, period: 60s |
-| Custom Metric | Business KPI (order success rate etc) | Advanced pattern, separate metric publish |
+| Alarm type | Why recommended | Configuration tip |
+|-----------|-----------|---------|
+| `HTTPCode_Target_5XX_Count` | Immediate reaction right after deployment, a direct failure indicator | threshold: 10-50/min, period: 60 seconds |
+| `TargetResponseTime` P99 | Early detection of performance degradation | threshold: 2-5 seconds, evaluation: 3 times |
+| `UnhealthyHostCount` | Directly detects instance problems | threshold: above 0, treat-missing-data: missing |
+| `Lambda Errors` | Error detection for Lambda-based apps | threshold: 1-5%, period: 60 seconds |
+| Custom Metric | Business KPIs (order success rate, etc.) | Advanced pattern, requires publishing a separate metric |
 
-> ⚠️ **Pitfall**: Rollback Trigger monitors **after** update complete only. No alarm monitoring **during** update. After `MonitoringTimeInMinutes` passes, later alarms don't trigger rollback. Max 5 triggers; any one ALARM state starts rollback. Alarm `treat-missing-data: breaching` can trigger rollback on missing data post-deployment. **Must** use `notBreaching`.
+> ⚠️ **Pitfall**: The Rollback Trigger monitoring period applies only **after** the update completes. There is no alarm monitoring **during** the update. Also, once `MonitoringTimeInMinutes` passes, alarms that fire afterward do not trigger an automatic rollback. You can configure up to 5 triggers, and if even one goes into ALARM state, the rollback starts. If you set the alarm's `treat-missing-data` to `breaching`, a rollback can start even when there is no metric data right after deployment. Always set it to `notBreaching`.
 
-> 💡 **Related Theory**: Rollback Trigger's "monitor then confirm" pattern mirrors control theory's **feedback control loop**. Measure system output (service metrics), compare desired state (normal error rate), act on deviation (rollback). Traces to 1940s Norbert Wiener's Cybernetics. Modern software sees same pattern: Kubernetes HPA (Horizontal Pod Autoscaler), AWS Auto Scaling Step Scaling Policy.
+Rollback Trigger's "finalize after monitoring" pattern is identical to the **Feedback Control Loop** of control theory. It measures the system output (service metrics), compares it with the desired state (normal error rate), and takes a corrective action (rollback) if it deviates. This pattern has its roots in Norbert Wiener's cybernetics theory of the 1940s. In modern software, the same pattern can be seen in the Kubernetes HPA (Horizontal Pod Autoscaler) and AWS Auto Scaling's Step Scaling Policy.
 
-## Termination Protection: Prevent Accidental Deletion
+## Termination Protection: Preventing Accidental Deletion
 
 ```bash
-# Enable (prod Stacks mandatory)
+# Enable Termination Protection (mandatory for prod Stacks)
 aws cloudformation update-termination-protection \
   --stack-name my-prod-app \
   --enable-termination-protection
 
-# Attempt delete → error
+# Attempt deletion → error
 aws cloudformation delete-stack --stack-name my-prod-app
 # Error: "Stack [my-prod-app] cannot be deleted while TerminationProtection is enabled"
 
-# Disable first to delete
+# To delete, first disable protection
 aws cloudformation update-termination-protection \
   --stack-name my-prod-app \
   --no-enable-termination-protection
 
-# Now deletable
+# Now it can be deleted
 aws cloudformation delete-stack --stack-name my-prod-app
 ```
 
-**Enable at Creation (recommended):**
+**Enable immediately at creation (recommended):**
 
 ```bash
+# Enable Termination Protection at Stack creation time
 aws cloudformation create-stack \
   --stack-name my-prod-app \
   --template-body file://template.yaml \
@@ -396,39 +402,39 @@ aws cloudformation create-stack \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-## Termination Protection vs Stack Policy vs IAM Policy Comparison
+## Comparing Stack Policy vs Termination Protection vs IAM Policy
 
-| Protection | Target | Scope | Bypass | Primary Use |
-|----------|--------|-------|--------|-------------|
-| **Termination Protection** | Stack deletion | Stack level | Disable then delete | Prevent accidental deletion |
-| **Stack Policy** | Update-time resource modify/delete | Resource level | Temp override policy | Prevent critical resource changes |
-| **IAM Policy** | CloudFormation API calls | User/role level | Grant permission | User-level access control |
-| **SCP** | Org-wide API calls | Account level | Admin-only change | Org-wide governance |
+| Protection mechanism | Protected target | Scope | Bypass method | Main purpose |
+|---------------|-----------|-----------|-----------|----------------|
+| **Termination Protection** | Deletion of the stack itself | Stack level | Disable protection, then delete | Prevent accidental deletion |
+| **Stack Policy** | Modifying/deleting specific resources during updates | Resource level | Temporary override policy | Prevent accidental changes to critical resources |
+| **IAM policy** | The CloudFormation API calls themselves | User/role level | Permission must be granted | Human-level access control |
+| **Service Control Policy (SCP)** | API calls across the organization | Account level | Changeable only from the management account | Organization-wide governance |
 
-Combined hierarchically: stronger protection.
+Using the three together in layers gives stronger protection.
 
-## Resource Import: Bring Existing Resources Under IaC
+## Resource Import: Bringing Existing Resources Under IaC Management
 
-Bring manually-created resources into CloudFormation Stack without deletion. "Absorb Shadow IT into IaC."
+This is a feature for bringing resources created manually in the console into a CloudFormation Stack without deleting them. It is used to "absorb Shadow IT into IaC."
 
 ```bash
-# Prep Import Template (DeletionPolicy: Retain required!)
+# Prepare the Template for Import (DeletionPolicy: Retain is required!)
 cat > import-template.yaml << 'EOF'
 Resources:
   ExistingBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain     # Must Retain - import fails without
+    DeletionPolicy: Retain     # Must be Retain - Import is rejected without it
     Properties:
-      BucketName: my-existing-bucket  # Must match actual name exactly
+      BucketName: my-existing-bucket  # Must exactly match the actual bucket name
   ExistingRDSInstance:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Retain
     Properties:
       DBInstanceIdentifier: my-existing-db
-      # Include other required attributes matching actual resource
+      # The other required properties of the actual RDS must also be stated exactly
 EOF
 
-# Create Import Change Set
+# Create the Import Change Set
 aws cloudformation create-change-set \
   --stack-name import-stack \
   --change-set-name "import-existing-resources" \
@@ -447,32 +453,32 @@ aws cloudformation create-change-set \
   ]' \
   --template-body file://import-template.yaml
 
-# Review then execute
+# Execute after review
 aws cloudformation execute-change-set \
   --stack-name import-stack \
   --change-set-name "import-existing-resources"
 ```
 
-**Resource Import Caveats:**
-- Template resource must have `DeletionPolicy: Retain` or import fails
-- Run Drift Detection immediately post-import to verify Template matches reality
-- Template properties must match actual resource or appear MODIFIED in Drift Detection
+**Resource Import cautions:**
+- If the resource in the template lacks `DeletionPolicy: Retain`, Import is rejected
+- Run Drift Detection right after Import to check whether the template matches the actual state
+- If the imported resource's actual properties differ from the template properties, Drift Detection shows MODIFIED
 
-> 📚 **Case Study**: 2024, manufacturing company H converted 3-year manually-built infrastructure (50 EC2s, 12 RDS, 3 VPCs) to IaC. Chose Resource Import instead of "delete and recreate." 7-week phased import; Drift Detection verified Template accuracy post-import. EC2 replacement time reduced hours (manual) to 15 min (CFn auto). Lesson: pre-import run `cfn-schema validate` on each resource's required attributes.
+As a hypothetical case, in 2024 a manufacturer H started a project to convert infrastructure it had configured manually in the console for 3 years (50 EC2 instances, 12 RDS databases, 3 VPCs) to IaC. For the conversion strategy, it chose Resource Import instead of "delete and recreate." It performed the Import in stages over a total of 7 weeks, and verified the template accuracy with Drift Detection after Import. After the conversion, EC2 replacement time dropped from several hours (manual) to 15 minutes (CFn automatic). The key lesson: before Import you must understand each resource's required properties with `cfn-schema validate`.
 
-## CloudFormation Guard: Template Policy Validation (Policy as Code)
+## CFn Guard: Template Policy Validation (Policy as Code)
 
-CFn Guard validates Templates comply with org policies pre-deployment. Auto-check "public S3 bucket blocked," "unencrypted EBS blocked."
+CFn Guard (AWS CloudFormation Guard) is a DSL-based tool that validates before deployment whether templates comply with the organization's policies. It automatically validates policies such as "block public S3 buckets" and "block unencrypted EBS."
 
 ```bash
 # Install Guard
 brew install cloudformation-guard  # macOS
-# Or
+# or
 cargo install cfn-guard
 
-# Write policy file
+# Write the policy file
 cat > security-rules.guard << 'EOF'
-# S3 buckets must have encryption
+# S3 buckets must have encryption configured
 rule s3_bucket_encryption {
   AWS::S3::Bucket {
     Properties.BucketEncryption exists
@@ -487,14 +493,14 @@ rule ebs_encrypted {
   }
 }
 
-# RDS MultiAZ (prod assumption)
+# RDS must be MultiAZ (assuming the prod environment)
 rule rds_multiaz when %env == "prod" {
   AWS::RDS::DBInstance {
     Properties.MultiAZ == true
   }
 }
 
-# S3 public block required
+# S3 public block configuration is required
 rule s3_block_public_access {
   AWS::S3::Bucket {
     Properties.PublicAccessBlockConfiguration.BlockPublicAcls == true
@@ -505,108 +511,107 @@ rule s3_block_public_access {
 }
 EOF
 
-# Validate Template
+# Validate the Template
 cfn-guard validate \
   --data template.yaml \
   --rules security-rules.guard
 
-# CI/CD integration
+# Integrate into the CI/CD pipeline
 if ! cfn-guard validate --data template.yaml --rules security-rules.guard; then
-  echo "Policy violation! Deployment stopped"
+  echo "Policy violation! Deployment aborted"
   exit 1
 fi
 ```
 
-> 💡 **Related Theory**: CFn Guard implements "Policy as Code" pattern. Open Policy Agent (OPA), HashiCorp Sentinel, Kubernetes OPA Gatekeeper are similar tools. Core: express policy as executable code, not human docs/procedures. SOC2, PCI-DSS, ISO 27001 requirements become CFn Guard rules; pipeline auto-validates compliance. AWS publishes official Guard rule sets (PCI-DSS, HIPAA, NIST SP 800-53) on GitHub.
+CFn Guard is an implementation of the "Policy as Code" pattern. Open Policy Agent (OPA), HashiCorp Sentinel, and Kubernetes OPA Gatekeeper are tools of the same concept. The core of this pattern is to express policies not as human-readable documents or procedures but as code that machines can execute. If you express compliance requirements such as SOC2, PCI-DSS, and ISO 27001 as CFn Guard rules, they can be validated automatically in the deployment pipeline. AWS publishes official Guard rule sets for PCI-DSS, HIPAA, NIST SP 800-53, and others on GitHub.
 
-## Complete Safe Deployment Pattern
+## The Full Safe Deployment Pattern
 
 ```
-CFn Safe Deployment Pipeline (3 Pillars Integrated)
+CFn safe deployment pipeline (integrating the 3 pillars)
 ============================================================
 
-Code Repository
+Code repository
     │ PR merge
     ▼
-[cfn-lint] ─────────────── Syntax/type validation
+[cfn-lint] ─────────────── Syntax/type check
     │ Pass
-[cfn-guard] ──────────────── Policy validation (encryption, public settings)
+[cfn-guard] ──────────────── Policy check (encryption, public settings, etc.)
     │ Pass
 [create-change-set] ─────── Check for Replacement
-    │ Replacement=True? ──── Yes → Pipeline stop, manual review
+    │ Replacement=True? ──── Yes → stop the pipeline, manual review
     │ No
 [execute-change-set] ────── Actual deployment
 + RollbackConfiguration
   MonitoringTimeInMinutes: 10
   Triggers: [5xx alarm, P99 latency alarm]
     │
-    UPDATE_COMPLETE ─────── Monitoring window starts (10 min)
+    UPDATE_COMPLETE ─────── Monitoring period starts (10 minutes)
     │
-    ├── Alarm fires ───────── Auto-rollback → SNS notified
-    └── Normal ───────────── Deployment confirmed
+    ├── Alarm fires ────────── Automatic rollback → SNS notification
+    └── Normal ──────────────── Deployment finalized
 
 ─────────────────────────────────────────────────
+Post-deployment check (automatic, daily):
 
-Post-Deployment Check (daily auto):
-
-[detect-stack-drift] ─────── Runs daily 08:00 UTC
+[detect-stack-drift] ─────── Runs daily at 08:00 UTC
     │
-    ├── MODIFIED/DELETED ─── SNS → operator review
+    ├── MODIFIED/DELETED ─── SNS alert → operator review
     │                        (Revert or update Template)
-    └── IN_SYNC ──────────── Normal, logged
+    └── IN_SYNC ──────────── Record as normal
 ```
 
 ## 📝 Practice Questions
 
-**Question 1.** An operator wants to update the RDS instance class in a CloudFormation Stack from `db.t3.medium` to `db.r5.large`. What is the best way to verify that this is safe with no data loss?
+**Question 1.** An operator wants to update an RDS instance class in a CloudFormation Stack from `db.t3.medium` to `db.r5.large`. What is the best way to confirm it is safe without data loss?
 
 A) Run `update-stack` and monitor the events
 B) Change the instance class directly in the RDS console
-C) Create a Change Set and check the `Replacement` field in `describe-change-set`. `False` means safe; `True` means the resource will be recreated and data may be lost
-D) Take a snapshot first, then run `update-stack`
+C) Create a Change Set and check the `Replacement` field in `describe-change-set`. `False` means safe; `True` means recreation, with possible data loss
+D) Create a snapshot first and then run `update-stack`
 
 **Answer: C**
-Explanation: This is exactly the core purpose of a Change Set. After `create-change-set`, check each resource's `Replacement` field with `describe-change-set`. Changing the RDS instance class is normally `Replacement: False` (an in-place update), but it can become `True` when changed together with properties such as Multi-AZ, engine version, or DB Subnet Group. Running update-stack without checking in advance (A) can cause unexpected data loss.
+Explanation: This is exactly the core purpose of a Change Set. After `create-change-set`, check each resource's `Replacement` field with `describe-change-set`. Changing the RDS instance class is generally `Replacement: False` (in-place update), but it can become `True` when changed together with properties such as Multi-AZ, engine version, or DB Subnet Group. Running update-stack without a prior check (A) can cause unexpected data loss.
 
 ---
 
-**Question 2.** Someone added a `0.0.0.0/0:22` rule in the console to a security group managed by CFn. Which tool can automatically detect this change?
+**Question 2.** Someone added a `0.0.0.0/0:22` rule in the console to a security group the operations team manages with CFn. Which tool can automatically detect this change?
 
-A) Search the logs with CloudWatch Logs Insights
-B) Look for the `AuthorizeSecurityGroupIngress` event in CloudTrail
+A) Search logs with CloudWatch Logs Insights
+B) Find the `AuthorizeSecurityGroupIngress` event in CloudTrail
 C) Run Drift Detection and check whether the security group resource is shown as `MODIFIED`
-D) Enable the AWS Config `restricted-ssh` Config Rule
+D) Enable AWS Config's `restricted-ssh` Config Rule
 
 **Answer: C**
-Explanation: Drift Detection compares the resource state defined in the CFn Template with the actual state. If an SG rule that is not in the Template was added, it is detected as `MODIFIED`. CloudTrail (B) can tell you who added it and when, but it does not show drift in the current state. The AWS Config `restricted-ssh` Rule in D also detects open SSH, but it is Drift Detection that detects drift against CFn-managed resources. In real operations, the two are used together.
+Explanation: Drift Detection compares the resource state defined in the CFn Template with the actual state. If an SG rule that is not in the Template was added, it is detected as `MODIFIED`. CloudTrail (B) can tell you "who added it and when," but doesn't show drift in the current state. AWS Config's `restricted-ssh` Rule in D also detects SSH exposure, but detecting drift from CFn-managed resources is what Drift Detection does. In real operations, the two are used together.
 
 ---
 
-**Question 3.** You want the Stack to automatically revert to its previous state if the HTTP 5xx error rate spikes after a Stack update. What configuration is needed?
+**Question 3.** You want to configure it so that if the HTTP 5xx error rate surges after a Stack update, it automatically reverts to the previous state. What configuration is needed?
 
-A) Monitor a CloudWatch Alarm with a Lambda function and call the `update-stack` API in reverse
+A) Monitor the CloudWatch Alarm with a Lambda function and call the `update-stack` API in reverse
 B) Integrate CodeDeploy with CloudFormation
 C) When running `update-stack` or `execute-change-set`, set the CloudWatch Alarm ARN and `MonitoringTimeInMinutes` in `--rollback-configuration`
 D) Enable the "Auto Rollback" checkbox in the CloudFormation console
 
 **Answer: C**
-Explanation: Rollback Configuration is the exact feature. Specify the CloudWatch Alarm ARNs in the `RollbackTriggers` array and set `MonitoringTimeInMinutes` (1 to 180 minutes). If any of the specified alarms enters the ALARM state during the monitoring period after the update completes, `UPDATE_ROLLBACK_IN_PROGRESS` starts automatically. You can specify up to 5 alarms as triggers.
+Explanation: Rollback Configuration is the exact feature. Specify CloudWatch Alarm ARNs in the `RollbackTriggers` array and set `MonitoringTimeInMinutes` (1-180 minutes). If any of the specified alarms goes into ALARM state during the monitoring period after the update completes, `UPDATE_ROLLBACK_IN_PROGRESS` starts automatically. You can specify up to 5 alarms as triggers.
 
 ---
 
-**Question 4.** You want to keep 3 S3 buckets that were created manually in the console under the management of an existing CloudFormation Stack without deleting them. What should you do?
+**Question 4.** You want to put 3 S3 buckets created manually in the console under the management of an existing CloudFormation Stack without deleting them. What should you do?
 
 A) Add the buckets with a Stack Policy
-B) Add the bucket resources to the Template and run `update-stack`
-C) Create a Change Set with `change-set-type: IMPORT` and specify a `ResourceIdentifier` with the actual name of each bucket. The corresponding resources in the Template require `DeletionPolicy: Retain`
-D) It is not possible because the resources were created directly
+B) Add bucket resources to the Template and run `update-stack`
+C) Create a Change Set with `change-set-type: IMPORT` and specify the `ResourceIdentifier` with each bucket's actual name. The corresponding resources in the Template need `DeletionPolicy: Retain`
+D) It is impossible because the resources were created directly
 
 **Answer: C**
-Explanation: The Resource Import feature is exactly for this purpose. Create a Change Set with `ChangeSetType=IMPORT` and map each existing resource to a Logical ID in the Template. Important: the corresponding resources in the Template must have `DeletionPolicy: Retain` set (the import is rejected without it). B creates new buckets rather than using the existing ones.
+Explanation: The Resource Import feature is exactly for this purpose. Create a Change Set with `ChangeSetType=IMPORT` and map each existing resource to a Logical ID in the Template. Important: the corresponding resource in the Template must have `DeletionPolicy: Retain` set (import is rejected otherwise). B creates new buckets rather than the existing ones.
 
 ---
 
-**Question 5.** The Stack is in the `UPDATE_ROLLBACK_FAILED` state. You determined that the cause of the rollback failure is a dependency problem with a specific resource (LogicalId: `LegacyDatabase`). How do you recover?
+**Question 5.** The Stack is in `UPDATE_ROLLBACK_FAILED` state. You determined that the cause of the rollback failure is a dependency problem with a specific resource (LogicalId: `LegacyDatabase`). How do you recover?
 
 A) Run `delete-stack`
 B) Try a new change with `create-change-set`
@@ -614,18 +619,16 @@ C) Run `continue-update-rollback` and add `LegacyDatabase` to `--resources-to-sk
 D) Contact AWS Support
 
 **Answer: C**
-Explanation: The `UPDATE_ROLLBACK_FAILED` state can be recovered with the `continue-update-rollback` command. The `--resources-to-skip` option lets you skip the problematic resource and complete the rest of the rollback. Skipped resources must be cleaned up manually afterward. `delete-stack` (A) is likely to fail, and a new Change Set (B) is not possible in this state.
+Explanation: The `UPDATE_ROLLBACK_FAILED` state can be recovered with the `continue-update-rollback` command. The `--resources-to-skip` option lets you skip the problematic resource and complete the rest of the rollback. Skipped resources must be cleaned up manually after completion. `delete-stack` (A) has a high chance of failing, and a new Change Set (B) is impossible in this state.
 
 ---
 
-**Question 6.** What value should `treat-missing-data` be set to for a CloudWatch Alarm used as a Rollback Trigger, to avoid unnecessary rollbacks when there is no metric data right after deployment?
+**Question 6.** What value should the CloudWatch Alarm's `treat-missing-data` be set to in a Rollback Trigger, to prevent an unnecessary rollback when there is no metric data right after deployment?
 
-A) `breaching` - treat missing data as ALARM
-B) `notBreaching` - treat missing data as OK
-C) `ignore` - keep the previous state when data is missing
-D) `missing` - treat missing data as INSUFFICIENT_DATA
+A) `breaching` - treat as ALARM when there is no data
+B) `notBreaching` - treat as OK when there is no data
+C) `ignore` - keep the previous state when there is no data
+D) `missing` - treat as INSUFFICIENT_DATA when there is no data
 
 **Answer: B**
-Explanation: An alarm used for a Rollback Trigger should be set to `treat-missing-data: notBreaching`. Right after deployment, metric data may not have been collected yet, so the alarm can be in the INSUFFICIENT_DATA state. If set to `breaching`, missing data is treated as ALARM, causing an unnecessary rollback even though the deployment is healthy. If set to `notBreaching`, missing data is treated as OK, so a rollback occurs only when there is a real problem.
-
----
+Explanation: Alarms used for Rollback Triggers should be set to `treat-missing-data: notBreaching`. Right after deployment, metric data may not have been collected yet, which can put the alarm in INSUFFICIENT_DATA state. If set to `breaching`, no data = ALARM, causing an unnecessary rollback even for a normal deployment. If set to `notBreaching`, no data = OK, so rollback occurs only when there is a real anomaly.
