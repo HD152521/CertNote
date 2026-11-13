@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { NonAffiliationNotice } from '@/components/legal/NonAffiliationNotice';
+import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
 
 const TITLE = '소개';
@@ -10,7 +11,7 @@ const DESCRIPTION = `${SITE_NAME}는 ${OPERATOR_NAME}가 운영하는 AWS·리�
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: '/about' },
+  alternates: infoAlternates('/about'),
   openGraph: { title: TITLE, description: DESCRIPTION, url: '/about', type: 'website' },
 };
 

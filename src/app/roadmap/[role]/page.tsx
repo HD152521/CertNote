@@ -5,6 +5,7 @@ import { ArrowRight, Check } from 'lucide-react';
 import { certLevelLabel } from '@/lib/category';
 import { buildRoleFaq, getRoadmapRole, loadRoadmapRoles } from '@/lib/roadmap';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
+import { infoAlternates } from '@/lib/infoAlternates';
 import { JsonLd } from '@/components/JsonLd';
 import { buildItemListLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description: role.description,
-    alternates: { canonical: url },
+    alternates: infoAlternates(url),
     openGraph: { title, description: role.description, url, type: 'website' },
   };
 }

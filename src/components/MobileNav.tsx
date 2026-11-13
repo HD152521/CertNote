@@ -4,6 +4,7 @@ import { useMounted } from '@/lib/useMounted';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Menu, X, Route } from 'lucide-react';
+import { infoHref } from '@/lib/enEdition';
 import { useLanguage } from '@/lib/i18n-client';
 import { SidebarNav, type CertTree } from './SidebarNav';
 import { cn } from '@/lib/cn';
@@ -69,7 +70,7 @@ export function MobileNav({ certTrees, enCertTrees }: MobileNavProps) {
           </button>
         </div>
         <Link
-          href="/roadmap"
+          href={infoHref('/roadmap', lang)}
           onClick={() => setOpen(false)}
           className="mb-3 flex items-center gap-2 rounded-md border border-border bg-bg-subtle px-3 py-2 text-sm font-medium text-fg transition hover:border-border-strong"
         >

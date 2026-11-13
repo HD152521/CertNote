@@ -6,6 +6,7 @@ import { getSourceFileMtime } from '@/lib/fileMtime';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
 import { LAB_CATALOG } from '@/lib/labCatalog';
+import { EN_INFO_PAIRS } from '@/lib/enEdition';
 import { SITE_URL } from '@/lib/site';
 
 // 여러 파일의 lastModified 중 최댓값(가장 최근 변경)을 고른다. undefined는 무시.
@@ -33,6 +34,39 @@ function sitemapEntry(
     priority,
     ...(lastModified ? { lastModified } : {}),
   };
+}
+
+// 영어 정보 페이지(/en/about 등)의 사이트맵 항목. 한국어 정적 페이지와 같은 방식 — lastModified 는 페이지 소스
+// (와 그 데이터)의 커밋 시각 매니페스트에서 도출하고, 모르면 생략한다. 짝 표는 enEdition.ts 의 EN_INFO_PAIRS.
+const EN_INFO_SOURCES: Record<string, { files: string[]; changeFrequency: 'yearly' | 'monthly'; priority: number }> = {
+  '/en/about': { files: ['src/app/en/about/page.tsx'], changeFrequency: 'yearly', priority: 0.4 },
+  '/en/about/how-we-make': { files: ['src/app/en/about/how-we-make/page.tsx'], changeFrequency: 'yearly', priority: 0.4 },
+  '/en/changelog': { files: ['src/app/en/changelog/page.tsx', 'content/changelog.json'], changeFrequency: 'monthly', priority: 0.4 },
+  '/en/contact': { files: ['src/app/en/contact/page.tsx'], changeFrequency: 'yearly', priority: 0.3 },
+  '/en/terms': { files: ['src/app/en/terms/page.tsx'], changeFrequency: 'yearly', priority: 0.3 },
+  '/en/privacy': { files: ['src/app/privacy/PrivacyContent.tsx', 'src/lib/strings/privacy.ts'], changeFrequency: 'yearly', priority: 0.3 },
+};
+const EN_ROADMAP_FILES = [
+  'src/app/en/roadmap/page.tsx',
+  'src/app/en/roadmap/[role]/page.tsx',
+  'src/lib/enPages/roadmapEn.ts',
+  'content/roadmaps.json',
+];
+
+async function enInfoEntries(): Promise<MetadataRoute.Sitemap> {
+  const roadmapLastMod = maxMtime(await Promise.all(EN_ROADMAP_FILES.map((f) => getSourceFileMtime(f))));
+  const entries: MetadataRoute.Sitemap = [];
+  for (const { en } of EN_INFO_PAIRS) {
+    const src = EN_INFO_SOURCES[en];
+    if (src) {
+      const lastMod = maxMtime(await Promise.all(src.files.map((f) => getSourceFileMtime(f))));
+      entries.push(sitemapEntry(`${SITE_URL}${en}`, lastMod, src.changeFrequency, src.priority));
+    } else {
+      // /en/roadmap(허브)과 /en/roadmap/<role>(한국어판과 같은 우선순위).
+      entries.push(sitemapEntry(`${SITE_URL}${en}`, roadmapLastMod, 'monthly', en === '/en/roadmap' ? 0.7 : 0.6));
+    }
+  }
+  return entries;
 }
 
 // 전체 공개 페이지 지도.
@@ -70,6 +104,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sitemapEntry(`${SITE_URL}/contact`, await getSourceFileMtime('src/app/contact/page.tsx'), 'yearly', 0.3),
     sitemapEntry(`${SITE_URL}/terms`, await getSourceFileMtime('src/app/terms/page.tsx'), 'yearly', 0.3),
   ];
+  out.push(...(await enInfoEntries()));
   for (const { section, certs } of sections) {
     if (certs.length === 0) continue; // 콘텐츠 없는 섹션(향후 준비중)은 허브도 생략.
     // 섹션 허브 = "{section} 자격증 순서/종류" 착지 페이지. lastModified = 산하 meta.json 최신값.

@@ -3,6 +3,7 @@ import type { Lang } from '@/lib/category';
 import type { CertMeta } from '@/lib/content';
 import { fmt, pick } from '@/lib/strings/dict';
 import { trustStrings } from '@/lib/strings/trust';
+import { infoHref } from '@/lib/enEdition';
 
 export interface DaySourceLineProps {
   certMeta: Pick<CertMeta, 'code' | 'section'>;
@@ -15,8 +16,8 @@ export interface DaySourceLineProps {
 
 // 오류 제보 링크. 문의 페이지는 정적이라 쿼리를 읽지 않지만, 제보자가 주소창의 경로를 그대로
 // 복사해 보낼 수 있고 접속 기록에서도 어느 노트에서 왔는지 보인다. 정적 링크라 캐시 계약에 영향이 없다.
-export function reportErrorHref(pagePath: string): string {
-  return `/contact?page=${encodeURIComponent(pagePath)}`;
+export function reportErrorHref(pagePath: string, lang: Lang = 'ko'): string {
+  return `${infoHref('/contact', lang)}?page=${encodeURIComponent(pagePath)}`;
 }
 
 // day 본문 상단의 출처·검수 메타 줄(docs/P4-trust-quality-plan.md Step 5a).
@@ -34,7 +35,7 @@ export function DaySourceLine({ certMeta, lang, reviewedMonth, pagePath }: DaySo
         </>
       )}
       <span aria-hidden className="text-fg-faint">·</span>
-      <Link href={reportErrorHref(pagePath)} className="underline underline-offset-4 hover:text-fg">
+      <Link href={reportErrorHref(pagePath, lang)} className="underline underline-offset-4 hover:text-fg">
         {s.reportError}
       </Link>
     </p>

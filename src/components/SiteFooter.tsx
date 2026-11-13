@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n-client';
+import { infoHref } from '@/lib/enEdition';
 import { OPERATOR_NAME, SITE_NAME } from '@/lib/site';
 
 const LINKS = [
@@ -25,7 +26,7 @@ export function SiteFooter() {
           <ul className="flex flex-wrap gap-x-4 gap-y-2">
             {LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="underline-offset-4 transition hover:text-fg hover:underline">
+                <Link href={infoHref(l.href, lang)} className="underline-offset-4 transition hover:text-fg hover:underline">
                   {lang === 'en' ? l.en : l.ko}
                 </Link>
               </li>

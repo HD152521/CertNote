@@ -44,4 +44,8 @@ describe('DaySourceLine — day 메타 줄', () => {
   test('오류 제보 링크는 문의 페이지 + 인코딩된 노트 경로(정적 링크)', () => {
     expect(reportErrorHref('/aws/saa-c03/week1/day1')).toBe('/contact?page=%2Faws%2Fsaa-c03%2Fweek1%2Fday1');
   });
+
+  test('영어 노트의 오류 제보 링크는 영어 문의 페이지로 간다', () => {
+    expect(reportErrorHref('/en/saa-c03/week1/day1', 'en')).toBe('/en/contact?page=%2Fen%2Fsaa-c03%2Fweek1%2Fday1');
+  });
 });

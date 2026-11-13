@@ -30,13 +30,16 @@ describe('resolveLanguage — indexed pages ignore the cookie', () => {
     ['/'],
     ['/aws-certs'],
     ['/aws-certs/saa-c03/week1/day1'],
+    ['/about'],
+    ['/privacy'],
+    ['/roadmap/developer'],
   ])('%s is always Korean', (path) => {
     expect(resolveLanguage(path, 'en')).toBe('ko');
     expect(resolveLanguage(path, 'ko')).toBe('ko');
   });
 
   // 영어판 URL이 없는 공개 페이지는 쿠키를 따른다. 쿠키 없는 크롤러에겐 한국어가 나가 그대로 색인된다.
-  test.each([['/pricing'], ['/privacy']])('%s follows the cookie, defaulting to Korean', (path) => {
+  test.each([['/pricing']])('%s follows the cookie, defaulting to Korean', (path) => {
     expect(resolveLanguage(path, undefined)).toBe('ko');
     expect(resolveLanguage(path, 'en')).toBe('en');
   });
@@ -79,7 +82,7 @@ describe('isLanguageCookieAuthoritative', () => {
 
   test('true on public pages that have no English URL', () => {
     expect(isLanguageCookieAuthoritative('/pricing')).toBe(true);
-    expect(isLanguageCookieAuthoritative('/privacy')).toBe(true);
+    expect(isLanguageCookieAuthoritative('/privacy')).toBe(false); // 영어판 /en/privacy 가 있어 URL 이 언어를 정한다
   });
 });
 

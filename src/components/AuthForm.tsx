@@ -10,6 +10,7 @@ import { oauthErrorMessage } from '@/lib/auth/oauthErrors';
 import { track } from '@/lib/analytics';
 import { enablePush, isPushSupported } from '@/lib/push/client';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
+import { infoHref } from '@/lib/enEdition';
 import { useLanguage, t } from '@/lib/i18n-client';
 import { Select } from '@/components/ui/Select';
 
@@ -231,7 +232,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
                 className="mt-0.5 shrink-0" />
               <span>
                 {t(lang, 'consentText')}{' '}
-                <Link href="/privacy" target="_blank" onClick={(e) => e.stopPropagation()} className="text-fg underline underline-offset-2">
+                <Link href={infoHref('/privacy', lang)} target="_blank" onClick={(e) => e.stopPropagation()} className="text-fg underline underline-offset-2">
                   {t(lang, 'privacyPolicy')}
                 </Link>
               </span>
@@ -271,7 +272,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
           </a>
           <p className="text-center text-[11px] leading-relaxed text-fg-faint">
             {t(lang, 'googleContinueText')}{' '}
-            <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-fg">{t(lang, 'privacyPolicy')}</Link>
+            <Link href={infoHref('/privacy', lang)} target="_blank" className="underline underline-offset-2 hover:text-fg">{t(lang, 'privacyPolicy')}</Link>
             {t(lang, 'googleAgreeTerms')}
           </p>
         </>
