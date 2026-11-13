@@ -30,7 +30,7 @@ AWS의 개발자 도구 — CodeCommit, CodeBuild, CodeDeploy, CodePipeline — 
 
 > 같은 "Blue/Green"이라도 플랫폼마다 메커니즘이 완전히 다르다. **Lambda**의 Blue/Green은 **Alias + 가중 라우팅**이다 — `prod` Alias가 버전 1에 90%, 버전 2에 10%를 분배하고, CodeDeploy가 이 가중치를 시간에 따라 옮긴다(Canary/Linear). **ECS**의 Blue/Green은 **ALB의 두 Target Group + 두 Listener(프로덕션/테스트)**다 — CodeDeploy가 새 Task Set을 테스트 리스너에 띄워 검증한 뒤 프로덕션 리스너를 새 Target Group으로 전환한다. **EC2**의 Blue/Green은 **새 Auto Scaling Group을 띄우고 ELB 등록을 교체**한다. 시험에서 "ECS Blue/Green"이라는 단서가 나오면 거의 항상 답에 "CodeDeploy + ALB Test/Prod Listener"가 들어가고, "Lambda 5분마다 50% 두 단계"는 `Canary50Percent5Minutes`, "10분마다 10%씩"은 `Linear10PercentEvery10Minutes`다. Canary는 **2단계(소수→전체)**, Linear는 **N단계 균등 증분**이라는 구조 차이를 반드시 구분해야 한다.
 
-> 2017년 영국 **TSB 은행**의 IT 마이그레이션 실패는 배포 전략의 교훈으로 자주 인용된다. TSB는 새 코어뱅킹 플랫폼으로 전체를 한 번에(big-bang) 전환했고, 검증되지 않은 시스템에 190만 고객을 동시에 노출시켰다. 결과는 수주간의 장애, 고객 자금 접근 불능, 약 3억3천만 파운드의 손실과 규제 제재였다. 만약 카나리/점진 전략으로 소수 지점·소수 고객부터 단계적으로 이전했다면 폭발 반경이 그 비율로 제한됐을 것이다. 이 사건의 핵심 교훈은 DOP 시험 철학과 정확히 일치한다 — **"되돌릴 수 없는 big-bang 배포를 피하고, 영향 범위를 점진적으로 키우며, 자동 롤백 경로를 항상 준비하라."** 시험에서 "리스크 최소화", "사용자 영향 최소화" 단서가 나오면 All-at-once는 오답이다.
+> 2018년 영국 **TSB 은행**의 IT 마이그레이션 실패는 배포 전략의 교훈으로 자주 인용된다. 영국 PRA의 최종 통지문에 따르면 TSB는 약 520만 고객을 새 코어뱅킹 플랫폼(Proteo4UK)으로 "사실상 단일 이벤트(predominantly single migration event)"로 이전했고, 이 플랫폼은 "검증되지 않은(unproven)" 버전이었다. 결과는 장기간의 서비스 장애와 PRA·FCA의 규제 제재였다. 만약 카나리/점진 전략으로 소수 지점·소수 고객부터 단계적으로 이전했다면 폭발 반경이 그 비율로 제한됐을 것이다. 이 사건의 핵심 교훈은 DOP 시험 철학과 정확히 일치한다 — **"되돌릴 수 없는 big-bang 배포를 피하고, 영향 범위를 점진적으로 키우며, 자동 롤백 경로를 항상 준비하라."** 시험에서 "리스크 최소화", "사용자 영향 최소화" 단서가 나오면 All-at-once는 오답이다.
 
 ## 공급망 무결성 — 빌드 파이프라인이 표적이 되는 이유
 

@@ -1,154 +1,168 @@
-# Day 3 - IAM Access Analyzer and Trusted Advisor, Proving Permissions with Code
+# Day 3 - IAM Access Analyzer and Trusted Advisor: How to Prove Permissions with Code
 
-Security's hardest question isn't "who can do what" but "who can do **what they shouldn't**?" Manually reading IAM policies line-by-line for external exposure is impossible. S3 bucket policy, KMS key policy, IAM role trust policy intertwining make "is this bucket open to outside?" unanswerable by human eyes alone. Policy combination permutations explode.
+The hardest question in permission management is not "who can do what" but "who can do **what they should not**." Reading IAM policies line by line and judging by eye whether something is exposed externally is practically impossible. When S3 bucket policies, KMS key policies, and IAM role trust policies get entangled, even the simple question "is this bucket open to an external account" cannot be answered reliably by human eyes. This is because the number of policy combinations explodes.
 
-IAM Access Analyzer's essence: **mathematically proving** this question. Not executing policies observing results (can't try all cases), but converting policies to logic formulae asking "does input allowing external access exist?" using formal logic. Why this "proof" not "detection," how automated reasoning handles infinite cases finitely, why Trusted Advisor auto-checks best practices — understanding these tools transcend simple scanners.
+The essence of IAM Access Analyzer is an engine that **mathematically proves** this question. Instead of running the policy and observing the result (you cannot try every case that way), it converts the policy itself into a logical formula and solves "does an input exist that allows external access" with formal logic. This article follows why this is "proof" and not "detection," how a technique called automated reasoning decides an infinite number of cases in finite time, and how Trusted Advisor automatically checks best practices - why these tools are more than simple scanners.
 
-## "Detection" Not "Proof" — Why Access Analyzer Uses Formal Logic
+## Not "Detection" but "Proof" - Why Access Analyzer Uses Formal Logic
 
-Most security scanners pattern-match. Hold rule list "this policy shape is dangerous," flag matching patterns. Problem: IAM language expressiveness prevents enumerating all risky patterns. Condition clause combinations, wildcards, NotPrincipal, NotAction negation intertwining create "looks-safe actually-external-open" policies infinitely. Pattern lists miss these bypasses.
+Most security scanners work by pattern matching. They keep a list of rules saying "policies shaped like this are dangerous," and warn when a policy fits the pattern. The problem is that the policy language (IAM) is so expressive that you cannot enumerate every dangerous pattern. When combinations of `Condition` clauses, wildcards, and negation operators such as `NotPrincipal` and `NotAction` get entangled, countless policies that are "safe on the surface but actually open externally" can be created. A pattern list cannot catch all such workarounds.
 
-Access Analyzer uses fundamentally different approach: **Automated Reasoning** — convert policies to formal logic propositions, ask "does principal outside Zone of Trust exist that can access this resource?" via **SMT (Satisfiability Modulo Theories) solver**. Solver finding "such input exists" is finding; proving "not exists" means safe. This **mathematically judges all possible cases once**, not tries them.
+Access Analyzer takes a fundamentally different approach. **Automated Reasoning** - it converts the policy into a formal logic proposition and solves the question "does an input exist that lets a principal outside the Zone of Trust access this resource?" with an **SMT (Satisfiability Modulo Theories) solver**. If the solver finds a solution saying "such an input exists," that is a finding, and if it proves "none exists," it asserts that the resource is safe. This is not trying things out but **mathematically deciding all possible cases at once**.
 
-Difference decisive: pattern matching says "didn't hit known dangers" — unknown bypass might exist. Formal proof asserts "input enabling external access logically doesn't exist" — false negatives impossible in principle. AWS implements this with Zelkova engine (company's Automated Reasoning Group), running in Access Analyzer, S3 Block Public Access, some IAM validation.
+The difference is decisive. Pattern matching can only say "it did not match any dangerous pattern I know" - there may be workarounds I do not know. Formal proof asserts "an input that allows external access logically does not exist" - in principle there are no false negatives. AWS implemented this technology as an engine called Zelkova, developed by its in-house Automated Reasoning Group, and Access Analyzer, S3 Block Public Access, and some IAM validation all run on top of this engine.
 
-> 💡 **Related Theory**: SMT solver extends SAT (boolean satisfiability) NP-complete "do boolean variable assignments make this formula true?" to rich theories (integers, strings, sets). Post-1962 DPLL algorithm practical solvers (Z3, CVC) evolved solving millions-variables. Applying SMT to IAM means "does (Principal, Action, Resource, Condition) combo satisfying this policy exist outside Zone of Trust?" becomes satisfiability problem. Same technique applies hardware verification (CPU circuit meets spec), program verification — Access Analyzer applies theorem-proving to cloud permissions.
+An SMT solver extends the SAT (boolean satisfiability) problem with rich theories such as integers, strings, and sets. SAT is an NP-complete problem that asks "is there a variable assignment that makes this logical formula true," and since the DPLL algorithm of 1962, practical solvers (Z3, CVC, and others) have developed to the point of solving problems with millions of variables in seconds. Using SMT for IAM policy analysis means reducing "among the (Principal, Action, Resource, Condition) combinations that satisfy this policy, does one exist outside the Zone of Trust" to a satisfiability problem. The same technology is used for hardware verification (proving that a CPU circuit satisfies its specification) and program verification - Access Analyzer is a case of applying theorem proving to cloud permissions.
 
-> 🔍 **Deeper Dive**: Zelkova compares two policies: "does policy A allow more access than policy B (A ⊇ B)?" Set containment proof via logic conversion — no infinite-request substitution, just set containment. This underlies Policy Validation "does this change widen permissions?", S3 Block Public Access "does this policy allow public access?" instant determination. Access Analyzer lacks "scan period" — evaluates near real-time on policy change.
+The Zelkova engine can also compare two IAM policies and decide "does policy A allow more access than policy B (A ⊇ B)." This is the basis of Policy Validation's check of "does this change broaden permissions," and the principle by which S3 Block Public Access instantly decides "does this bucket policy allow public access." The key is to express the allowed sets of the two policies as logical formulas and prove the containment relationship - it decides set containment in one go without substituting infinitely many requests one by one. For this reason Access Analyzer has no separate "scan cycle" and re-evaluates in near real time when a policy changes.
 
-## Zone of Trust — Defining "Outside"
+## Zone of Trust - How "External" Is Defined
 
-Access Analyzer's External Access reports only findings "outside Zone of Trust." Same-account access considered normal, ignored. Precisely what "outside" means? This boundary determines analysis meaning.
+Access Analyzer's External Access analysis reports only "access from outside the Zone of Trust" as findings. Access within the same account is considered normal and ignored. But what exactly is "external"? How you draw this boundary determines the meaning of the analysis.
 
-Creating Analyzer, define Zone of Trust **account-level** or **Organization-level**. Account Analyzer treats all outside that account "outside" — other AWS accounts, Organizations, anonymous access (`Principal: *`) all findings. Same-Organization sibling accounts caught external. Organization Analyzer treats entire Organization as trust boundary; within-organization access normal, outside-organization findings only.
+When you create an Analyzer, you set the Zone of Trust at the **account level** or **Organization level**. An account-level Analyzer treats every principal outside that account as "external" - other AWS accounts, other Organizations, and anonymous access (`Principal: *`) are all finding targets. Sibling accounts within the same Organization are also caught as external. An Organization-level Analyzer takes the entire Organization as the trust boundary, treating access between accounts within the organization as normal and reporting only access outside the organization as findings.
 
-Distinction matters: **governance model determines "normal sharing" scope.** Multi-account organizations often intentionally share S3 between sibling accounts — this account-level Analyzer makes legitimate sharing noise-findings. Organization-level finds only "real leaks" out-organization. Single-account strict isolation? Account-level correct. Zone of Trust defines "what counts normal" — policy decision not technical detail.
+This distinction matters because **the scope of "normal sharing" differs by governance model**. In a multi-account organization, S3 sharing between sibling accounts is often intended, normal behavior - viewed through an account-level Analyzer, a flood of normal sharing pours out as findings and becomes noise. If you set it at the Organization level, sharing within the organization passes quietly and only the real risk of "leaking outside the organization" remains. Conversely, if the goal is strict isolation of a single account, the account level is right. The Zone of Trust is a policy decision that defines "what to treat as normal," not a technical detail.
 
-Analysis targets: S3 buckets, IAM roles (trust policy), KMS keys, Lambda (resource policy), SQS queues, Secrets Manager, EBS/RDS snapshots, ECR repositories, EFS — all can open external access via resource-based policy.
+The analysis targets are resources where external exposure leads directly to data leakage - S3 buckets, IAM roles (trust policies), KMS keys, Lambda (resource policies), SQS queues, Secrets Manager secrets, EBS/RDS snapshots, ECR repositories, EFS, and so on. What they have in common is that they are all **resources whose resource-based policy can open external access**.
 
-> ⚠️ **Trap**: Analyzer sees only Zone of Trust **outside**. Account internal excessive permissions (department accessing another's data) doesn't trigger External analysis. Internal unused/excess permissions handled separately by **Unused Access Analyzer**. Exam: "external exposure detect" = External, "unused permissions/roles find" = Unused. Access Analyzer per-region (not global); multi-region governance requires analyzer per-region or Security Hub integration.
+> ⚠️ **Pitfall**: Access Analyzer looks only at access **outside** the Zone of Trust. Excessive permissions inside an account (for example, one department accessing another department's data) are not caught by External Access analysis. Unused and excessive internal permissions are handled by a separate **Unused Access Analyzer**. On the exam, "detecting external exposure" is External, and "finding unused permissions and roles" is Unused. Also, Access Analyzer must be created per Region (it is not global), and multi-Region governance requires placing an Analyzer in each Region or consolidating with Security Hub.
 
-## Unused Access — Fighting Permission Entropy
+## Unused Access - How to Fight the Entropy of Permissions
 
-Permissions always increase over time. Add for new features; when features disappear, permissions remain. Rarely someone narrows permissions back. Result: IAM role/user permissions monotonically increase; hold far more than actually use. Called **permission creep** or permission entropy — left alone, disorder grows.
+Permissions inevitably grow over time. You add permissions for a new feature, but even when the feature disappears, the permissions remain. Few people narrow a temporarily widened permission back down. As a result, the permissions of IAM roles and users increase monotonically, and they end up holding far more permissions than they actually use. This is called **permission creep** or the entropy of permissions - left alone, disorder grows.
 
-Unused Access Analyzer measures entropy. CloudTrail activity analysis finds 90-day unused: inactive IAM users, 90+ days unused roles, API permissions never called, unused access keys. This list candidates for "safe-to-remove permissions."
+Unused Access Analyzer measures this entropy. It analyzes CloudTrail activity records to find what was not actually used during a specified period (for example, 90 days) - IAM users with no activity, roles unused for over 90 days, API permissions that were granted but never called, and unused access keys. This list is the candidate set of "permissions that are safe to reduce."
 
-Why security-critical? **Principle of Least Privilege** practically impossible executing — everyone knows it's right but "what's actually minimal?" no way to know. Narrow permissions risking breaking functionality; nobody touches. Unused Access provides data: "unused 90 days, safe to remove," making data-based narrowing possible, not guessing.
+Why is this important for security? Here lies the reason that practicing the **Principle of Least Privilege** was practically impossible. Everyone knows least privilege is right, but there was no way for a person to know "what is actually the minimum." People are afraid narrowing permissions might break working functionality, so no one touches them. Unused Access Analyzer provides the grounds "this was not used for 90 days, so it can be removed" from actual usage data, letting you reduce permissions based on data instead of guesswork.
 
-> 💡 **Related Theory**: Least Privilege from 1975 Saltzer-Schroeder classic "Protection of Information in Computer Systems" — one of eight design principles. "All programs and users must operate only minimal permission to complete tasks." Reason simple — less permission means smaller damage (blast radius) if compromised. 50-year-old principle newly challenging in cloud: permission types/quantity exploded. Unused Access Analyzer + Policy Generation automate this ancient principle.
+The principle of least privilege is one of the eight security design principles established in Saltzer and Schroeder's classic 1975 paper "The Protection of Information in Computer Systems." "Every program and every user of the system should operate using the least set of privileges necessary to complete the job." The reason is simple - the fewer the permissions, the smaller the damage (blast radius) when that principal is compromised, and the lower the chance of accidents. The reason this 50-year-old principle has become newly difficult in the cloud is that the kinds and amount of permissions have exploded. Unused Access Analyzer + Policy Generation are tools that made this old principle practicable again through automation.
 
-## Policy Generation — Automating "Broad First, Narrow Later"
+## Policy Generation - Automating "Broad First, Narrow Later"
 
-Creating new app/role, knowing exactly needed permissions almost impossible. Reality: "broaden with `*`, see if it works, narrow later." Problem: "later" never comes. Narrowing risky (wrong narrowing breaks functionality), tedious; `*` stays production.
+When creating a new application or role, knowing in advance exactly which permissions are needed is nearly impossible. So real-world operation becomes "open it broadly with `*` and run it, and narrow it later once it works." The problem is that this "later" never comes. Narrowing is risky (narrow it wrongly and functionality breaks) and tedious, so the `*` permission stays in production as is.
 
-Policy Generation automates "narrow later." Specify role, Access Analyzer scans **90 days CloudTrail activity**, extracts actually-called APIs, generates minimal-permission policy JSON. Analyzes not just Actions but which Resource ARNs, which Conditions. Operator reviews, replaces `*` policy.
+Policy Generation automates this "narrow it later." When you specify a role, Access Analyzer scans **the last 90 days of CloudTrail activity**, picks out only the APIs that role actually called, and generates a least-privilege policy JSON. It analyzes not only the Actions but also which Resource ARNs were accessed under which Conditions to produce a specific policy. The operator reviews the generated policy and replaces the existing `*` policy.
 
-This flow elegant: **inverts theory/practice order.** Traditional: "design needed permissions → write policy → deploy" — fails because can't know permissions upfront. Generation: "deploy broad → observe real usage → reverse-engineer policy from data" — reality-aligned. Extract policy from observed behavior, not design assumptions.
+What makes this flow elegant is that it **reverses the order of theory and reality**. The traditional approach is "design the needed permissions in advance → write the policy → deploy," but in reality the needed permissions cannot be known in advance, so it fails. Policy Generation automates the order that fits reality: "deploy broadly first → observe actual use → back-compute the policy from the usage data." Instead of designing by guesswork, it derives the policy from observed behavior.
 
-> 🔍 **Deeper Dive**: Policy Generation accuracy requires CloudTrail kept sufficiently long (ideally 90d), period analysis includes role's **all normal paths**. Quarter-end batch job not running during analysis period means permission omitted, post-replacement quarter-end breaks. Generated policies need validation against Access Advisor, sufficiently-long analysis period (rare-run tasks included). Auto-generation is starting point, not final answer.
+For Policy Generation to be accurate, CloudTrail must have been on long enough (ideally 90 days), and **all normal paths of that role must have been executed** during the analysis period. If a batch job that runs only at quarter end did not run during the analysis period, that permission is missing from the generated policy, and after replacing the policy that batch breaks at quarter end. So do not apply a policy created with Policy Generation immediately - first cross-check it against IAM Access Advisor (service last accessed information), or set the analysis period long enough (so that rarely run jobs are included). Automatic generation is a starting point, not a final answer to trust as is.
 
-> 📚 **Case Study**: Permission creep's typical incident: 2019 Capital One breach. Excessive S3 permissions on WAF role, combined with SSRF, let attackers read 100M+ customer records via temp credentials. Key lesson: "role didn't need such broad S3 access" — minimal privilege would limit breach scope. Unused Access Analyzer and Policy Generation find exactly "unused-held broad permissions."
+A classic incident caused by permission creep is the 2019 Capital One data breach. An excessive S3 permission granted to a WAF role combined with an SSRF (Server-Side Request Forgery) attack, and the attacker used that role's temporary credentials to read S3 buckets holding about 106 million customers' information. One of the key lessons is that "that role did not need such broad S3 permissions" - with least privilege, far less data would have been readable through the compromised role. Policy Generation and Unused Access Analyzer are tools for finding and reducing exactly this kind of "broad permissions held without being used."
 
-## Policy Validation — 100+ Checks at Write-Time
+## Policy Validation - 100 Checks That Block at Authoring Time
 
-Access Analyzer intervenes not just post-detection but policy **write-time**. Validation runs 100+ checks real-time on write/modify, presenting security warnings, syntax errors, improvement suggestions. Auto-attached to IAM console policy editor; instant feedback "wildcard too broad," "Action doesn't apply to Resource type."
+Access Analyzer does not only detect after the fact; it also intervenes at policy **authoring time**. Policy Validation runs more than 100 checks in real time when you write or edit an IAM policy, raising security warnings, syntax errors, and improvement suggestions. It is automatically attached to the IAM console's policy editor, giving instant feedback such as "the wildcard in this policy is too broad" and "this Action does not apply to this Resource type."
 
-More valuable than post-detection because **shift left** — earlier lifecycle problem-catch cheaper fix. Risky policy post-deployment caught as finding much worse than write-moment prevention.
+The reason this is more valuable than after-the-fact detection is **shift left** - the earlier in the lifecycle you catch a problem, the cheaper it is to fix. It is far cheaper and safer to block "this is dangerous" at the moment of writing than to catch a dangerous policy as a finding after it has been deployed to production.
 
-Custom Policy Checks (paid) further enforce company guardrails via code. "No policy ever allows `s3:DeleteBucket`", "change doesn't widen permissions" — enforce in CI/CD pipeline. Policy change PR violating guardrails blocks merge. Leverages Zelkova's policy-comparison ability (A ⊇ B determination), formally proving "does this PR expand permissions?" to block.
+Custom Policy Checks (paid) go one step further, enforcing the company's own guardrails as code. You put rules such as "no policy may allow `s3:DeleteBucket`" and "this change must not broaden permissions compared with before" into the CI/CD pipeline, so that if a policy change PR violates a guardrail, the merge is blocked. This leverages the Zelkova policy comparison (A ⊇ B decision) ability seen above, formally proving "does this PR expand permissions" to block it.
 
-> 💡 **Related Theory**: Shift left from software quality "defects cost exponentially more if found late" (Boehm cost curve). Design defect fix cost = 1; coding ~6x, testing ~15x, production ~100x. Validation (write-time) and Custom Checks (CI/CD) catch security defects leftmost (write/merge), avoiding expensive production-incident remediation path.
+Shift left comes from the rule of thumb in software quality engineering that "the later a defect is found, the more its fix cost rises exponentially" (Boehm's cost curve). It is a classic estimate that if the cost of fixing a design-stage defect is 1, the coding stage is ~6x, the testing stage ~15x, and production ~100x. Policy Validation (authoring time) and Custom Policy Checks (CI/CD) catch security defects at the far left (authoring and merge time), avoiding the expensive path of discovering them as findings in production and responding to an incident. It is a concrete implementation of the "put security in the pipeline (DevSecOps)" movement.
 
-## Trusted Advisor — Automatically Scoring Best Practices
+## Trusted Advisor - A System That Automatically Grades Best Practices
 
-Where Access Analyzer formally-validates permissions, Trusted Advisor auto-scores account-wide best practices. AWS rule-codes accumulated customer operations, scans account, reports violations five categories: Cost Optimization, Performance, Security, Fault Tolerance, Service Limits.
+If Access Analyzer is formal verification of permissions, Trusted Advisor is an automatic best practice grader for the account as a whole. It turns the best practices AWS has accumulated from the operations of countless customers into rules, scans the account, and reports violations in five categories - Cost Optimization, Performance, Security, Fault Tolerance, Service Limits.
 
-Service Limits especially operationally useful. Most AWS resources have account/region limits (EC2 count, EIP count, VPC count); hitting limit blocks new resources — traffic spike autoscaling tries launching instances but hits limit, scaling stops. Advisor warns at 80%, prompting pre-incident limit increase requests.
+| Category | Check examples | Operational meaning |
+|----------|-----------|-----------|
+| Cost Optimization | Unused EBS volumes, idle EC2, unused RIs | Eliminate waste |
+| Performance | Overloaded EBS, over-provisioned EC2, CloudFront not used | Find bottlenecks |
+| Security | Root without MFA, public S3, 0.0.0.0/0 SG, exposed access keys | Risk exposure |
+| Fault Tolerance | No Multi-AZ, RDS backups disabled, single-AZ ASG | Availability weaknesses |
+| Service Limits | Reaching 80% of a limit | Advance warning before exceeding a limit |
 
-Core constraint: **access scope varies by Support plan.** Basic/Developer: 7 security checks + service limits only; 100+ checks Business ($100/month) or Enterprise only. Exam: "whole Trusted Advisor?" → "Business+ Support."
+The Service Limits check is especially useful operationally. Many AWS resources have per-account, per-Region limits (number of EC2 instances, number of EIPs, number of VPCs, and so on), and when you hit a limit, creating new resources fails - a classic incident is that a traffic surge makes Auto Scaling try to launch more instances but it is blocked by the limit and scaling stops. Trusted Advisor warns in advance when 80% of a limit is reached, so that you can submit a limit increase request before an incident.
 
-> 🔍 **Deeper Dive**: Beyond console, Trusted Advisor exposes API (`describe-trusted-advisor-checks`, `describe-trusted-advisor-check-result`), EventBridge integration. Result change (new public S3) issues event triggering SNS/Lambda. `refresh-trusted-advisor-check` immediate re-check possible. Trusted Advisor "recommends," doesn't auto-fix — auto-remediation via AWS Config remediation or Lambda. Advisor diagnoses, doesn't treat.
+The key constraint is that **the scope of access differs by Support plan**. The Basic/Developer plans can see only 7 core security checks and service limits, and the full set of 100+ checks opens only on the Business ($100/month) or Enterprise plan. On the exam, the answer to "to use the full Trusted Advisor checks?" is always "Business or higher Support."
 
-## Access Analyzer vs Trusted Advisor vs Config — Three Tools' Roles
+Trusted Advisor goes beyond a tool you look at in the console, offering an API (`describe-trusted-advisor-checks`, `describe-trusted-advisor-check-result`) and EventBridge integration. When a check result changes (for example, when a new public S3 bucket appears), it publishes an EventBridge event that can trigger an SNS notification or a Lambda automatic response. You can also recheck immediately with `refresh-trusted-advisor-check`. However, Trusted Advisor only gives "recommendations" and does not fix things automatically - automatic remediation is implemented with AWS Config remediation actions or a separate Lambda. Trusted Advisor is a diagnostic tool that tells you "what is wrong," not a treatment tool.
 
-All three find "wrong config" seeming overlap, frequently confused in exams. Roles clear: **Access Analyzer formally-proves permission external exposure**, **Trusted Advisor checks broad best practices**, **Config tracks resource configuration changes and rule evaluation.**
+## Access Analyzer vs Trusted Advisor vs Config - The Division of Labor Among the Three That Look Overlapping
 
-Analyzer specialists in "resource open to outside?" — narrow deep. Advisor broad health-check (cost/performance/security/availability/limit) — broad shallow. Config "resource config at time T?", "follows rule (e.g., all EBS encrypted)?" tracks history, compliance state (next section's Security Hub integrates).
+All three tools look overlapping in that they "find misconfigurations," so they are often confused on the exam. The division of labor is clear. **Access Analyzer formally proves the external exposure of permissions**, **Trusted Advisor checks a broad range of best practices**, and **Config tracks changes to resource configuration and evaluates rules**.
 
-| Question | Best Tool |
+Access Analyzer is a specialized tool that mathematically answers the permission question "is this resource open externally." It is narrow and deep. Trusted Advisor is a broad health checkup that covers cost, performance, security, availability, and limits - shallow in depth but wide in breadth. Config tracks and evaluates "what was this resource's configuration at time T" and "does the configuration follow rules (for example, all EBS must be encrypted)," and manages change history and compliance state (Security Hub in the next article consolidates these).
+
+| Question | Suitable tool |
 |------|-------------|
-| S3 exposed to outside account? | Access Analyzer (External) |
-| Unused IAM permissions/roles? | Access Analyzer (Unused) |
-| Policy safe (write-time)? | Access Analyzer (Validation) |
-| MFA root absence, public S3, best-practice violations? | Trusted Advisor (Security) |
-| EC2 limit 80%? | Trusted Advisor (Service Limits) |
-| All EBS encrypted, rule-violation track? | AWS Config |
-| Resource config changed when/how? | AWS Config |
+| Is this S3 bucket exposed to an external account | Access Analyzer (External) |
+| Which IAM permissions and roles are unused | Access Analyzer (Unused) |
+| Is this policy safe (at authoring time) | Access Analyzer (Validation) |
+| Best practice violations such as root without MFA or public S3 | Trusted Advisor (Security) |
+| Has the EC2 instance limit reached 80% | Trusted Advisor (Service Limits) |
+| Are all EBS volumes encrypted, tracking rule violations | AWS Config |
+| When and how did this resource's configuration change | AWS Config |
 
-Plus **AWS Health Dashboard** entirely different — Advisor/Analyzer/Config see "customer config issues," Health sees "AWS-side issues" (instance retirement, EBS performance, deprecation). And **AWS Artifact** not checking tool but AWS compliance-report (SOC, PCI, ISO) free download — provide "AWS infrastructure meets standard" evidence to auditors.
+In addition, the **AWS Health Dashboard** is of a completely different nature - while the three above look at "customer configuration problems," the Health Dashboard notifies customers of "AWS-side issues" (scheduled instance retirement, EBS performance degradation, service deprecation). And **AWS Artifact** is not a checking tool but a window to download AWS's compliance reports (SOC, PCI, ISO, and so on) for free - you use it to submit evidence to an auditor that "the AWS infrastructure complies with this standard."
 
-> ⚠️ **Trap**: "Need compliance report" confuses Artifact and Audit Manager. Artifact is **AWS complies** SOC/PCI reports (AWS responsibility proof); Audit Manager is **customer** standards compliance evidence gathering (customer responsibility). Shared Responsibility: Artifact "AWS side," Audit Manager "customer side."
+> ⚠️ **Pitfall**: In scenarios saying "compliance reports are needed," it is easy to confuse AWS Artifact with Audit Manager. AWS Artifact is where you get the reports such as SOC/PCI that **AWS complies with** (evidence of AWS's area of responsibility), and Audit Manager is a tool that collects evidence that **the customer's own** environment complies with a standard and builds an audit report (evidence of the customer's area of responsibility). In the shared responsibility model, Artifact proves "the AWS side," and Audit Manager proves "the customer side."
 
-## Summary
+## Wrap-Up
 
-All tools automate "questions humans can't reliably answer." Analyzer proves external exposure not pattern-matching, no false negatives; Unused/Generation make 50-year Least Privilege principle data-driven; Validation shift-left risk write-time; Advisor scores account best-practices AWS-accumulated.
+The tools in this article all automate "questions that human eyes cannot answer reliably." Access Analyzer decides the external exposure of permissions with formal proof (automated reasoning) rather than pattern matching, eliminating false negatives in principle; Unused Access and Policy Generation make the 50-year-old principle of least privilege practicable with actual usage data; Policy Validation blocks risk at authoring time through shift left; and Trusted Advisor grades the whole account with AWS's accumulated best practices.
 
-Five operator memory points: ① Analyzer External formally-proves Zone of Trust outside-access. ② Unused finds unused permissions/roles/keys CloudTrail-based, reinforce least-privilege. ③ Generation reverse-engineers policy CloudTrail 90d, watch rare-job omission. ④ Advisor five categories (Cost/Performance/Security/Fault Tolerance/Service Limits), full Business+ Support. ⑤ Artifact (AWS proof) vs Audit Manager (customer proof), Health Dashboard (AWS issues) distinct.
+The five things for an operator to remember are these. ① Access Analyzer External detects only access outside the Zone of Trust (account or Organization), by formal proof. ② Unused Access Analyzer finds unused permissions, roles, and keys based on CloudTrail to strengthen least privilege. ③ Policy Generation back-computes a least-privilege policy from 90 days of CloudTrail activity, but watch for omission of rarely run jobs. ④ The 5 Trusted Advisor categories (Cost/Performance/Security/Fault Tolerance/Service Limits), with the full set requiring Business+ Support. ⑤ Distinguish Artifact (evidence of AWS compliance) vs Audit Manager (evidence of customer compliance), and Health Dashboard (AWS-side issues).
 
-Next shifts from static setting checks to **real-time threats**: someone actually attacking? (GuardDuty), known vulnerabilities? (Inspector), sensitive data exposed? (Macie), integrating all findings (Security Hub).
+In the next article we move beyond static configuration checks to **real-time threats**. We look at four tools that detect whether someone is actually attacking (GuardDuty), whether the system has known vulnerabilities (Inspector), and whether sensitive information is exposed in data (Macie), and that consolidate all these findings in one place (Security Hub).
 
 ---
 
-## 📝 Practice Problems
+## 📝 Practice Questions
 
-**Problem 1.** Prove "no outside-exposed S3 buckets." Why IAM Access Analyzer better than pattern-scanner?
+**Question 1.** The security team demands "prove that none of our S3 buckets is exposed to an external account." What is the fundamental reason IAM Access Analyzer is better than a pattern-based scanner?
 
-A) More danger patterns
-B) Formal-logic policy conversion + SMT solver proves "no outside-access input exists," zero false negatives
-C) Try all requests real-time
-D) AWS staff manual review
+A) It has a longer list of risk patterns
+B) It converts policies to formal logic and uses an SMT solver to prove that "no input allowing external access exists," so in principle there are no false negatives
+C) It tries every request in real time
+D) AWS staff review manually
 
 **Answer: B**
 
+Explanation: A pattern matching scanner can only say "it did not match any dangerous pattern I know," so it can miss unknown workarounds (Condition combinations, NotPrincipal, and so on). Access Analyzer uses Automated Reasoning to convert the policy into a logical proposition and solves "does an input exist that lets a principal outside the Zone of Trust access it" with an SMT solver. If it proves none exists, it can assert safety, so in principle there are no false negatives. AWS's Zelkova engine implements this, and the same technology is used for hardware and program verification. Trying every request as in C is impossible because the number of cases is infinite.
+
 ---
 
-**Problem 2.** Multi-account Organization intentional sibling sharing. Prevent in findings?
+**Question 2.** In a multi-account Organization, S3 sharing between sibling accounts is intended, normal behavior. To avoid seeing this normal sharing as noise in External Access findings?
 
-A) Manual bucket policy exceptions
-B) Zone of Trust Organization-level — inside-organization normal, outside-organization findings
-C) Disable Analyzer, use Trusted Advisor
+A) Manually handle each bucket policy as an exception
+B) Set the Analyzer's Zone of Trust at the Organization level - access within the organization is treated as normal and only access outside the organization is reported as findings
+C) Turn off Access Analyzer and use only Trusted Advisor
 D) Replace with GuardDuty
 
 **Answer: B**
 
+Explanation: The Zone of Trust is the trust boundary that defines "what to treat as normal." If set at the account level, sibling accounts of the same organization are also caught as external, and normal sharing floods out as findings. If set at the Organization level, access between accounts within the organization passes as normal and only the real risk leaking outside the organization remains. You must choose the Zone of Trust according to the governance model (single-account isolation vs organization-wide sharing), which is a policy decision, not a technical detail.
+
 ---
 
-**Problem 3.** New IAM role `*` permissions, operating. Auto-shrink to actual minimal?
+**Question 3.** You are running a new IAM role with `*` permission. To automatically shrink it to a least-privilege policy matching its actual usage pattern?
 
-A) Manually track API calls, write policy
-B) Policy Generation — CloudTrail 90d activity extracts actual APIs/Resources/Conditions, reverse-engineers minimal policy JSON
-C) Inspector scan
-D) Trusted Advisor Security
+A) Manually trace all API calls and write the policy
+B) Access Analyzer Policy Generation - picks out only the APIs, Resources, and Conditions actually called in the last 90 days of CloudTrail activity and back-computes a least-privilege policy JSON
+C) Scan with Inspector
+D) Trusted Advisor Security checks
 
 **Answer: B**
 
+Explanation: Policy Generation automates the realistic order "deploy broadly first → observe actual use → back-compute the policy from usage data." It scans 90 days of CloudTrail activity and generates a policy that includes only the APIs that role actually called. However, CloudTrail must have been on long enough and all normal paths (quarter-end batches, etc.) must have run during the analysis period for it to be accurate - if rarely run jobs are missing, things can break after the policy is replaced, so the auto-generated result is a starting point, not a final answer to trust as is.
+
 ---
 
-**Problem 4.** A company wants to enforce, in CI/CD, the guardrail that "no IAM policy change may broaden permissions compared with the existing one." Which feature is suitable?
+**Question 4.** A company wants to enforce in CI/CD the guardrail "no IAM policy change may broaden permissions compared with before." Which feature is suitable?
 
 A) Trusted Advisor
-B) Access Analyzer Custom Policy Checks: formally proves whether a change expands permissions using Zelkova's policy comparison capability (A ⊇ B), and blocks the merge
+B) Access Analyzer Custom Policy Checks - uses Zelkova's policy comparison (A ⊇ B) ability to formally prove whether a change expands permissions and blocks the merge
 C) GuardDuty
 D) Config Rule
 
 **Answer: B**
 
-Explanation: Custom Policy Checks put a company's own guardrails (prohibiting specific Actions, prohibiting permission expansion, and so on) into CI/CD and block the merge when a policy-change PR violates them. "Does this change broaden permissions" is a matter of formally proving the containment relationship between the allowed sets of two policies (A ⊇ B), which the Zelkova engine decides. In line with the shift-left principle, it blocks at merge time instead of taking the expensive path of discovering it as a finding in production.
+Explanation: Custom Policy Checks put the company's own guardrails (forbidding specific Actions, forbidding permission expansion, and so on) into CI/CD, blocking the merge if a policy change PR violates them. "Does this change broaden permissions" is formally proving the containment relationship (A ⊇ B) of the allowed sets of two policies, which the Zelkova engine decides. In line with the shift left principle, it blocks at merge time instead of the expensive path of discovering a finding in production.
 
 ---
 
-**Problem 5.** What is required to access the full set of 100+ Trusted Advisor checks?
+**Question 5.** What is needed to access the full 100+ checks of Trusted Advisor?
 
 A) The free Basic plan is enough
 B) A Business or Enterprise Support plan (Basic/Developer get only 7 core security checks + service limits)
@@ -157,32 +171,32 @@ D) Enable GuardDuty
 
 **Answer: B**
 
-Explanation: The scope of access to Trusted Advisor differs by Support plan. The Basic/Developer plans can see only 7 core security checks and service limits, and the full set of 100+ checks, including Cost Optimization, Performance, and Fault Tolerance, opens only at Business ($100/month) or higher. On the exam, the answer to "to use the full set of checks?" is always Business or higher Support.
+Explanation: The scope of Trusted Advisor access differs by Support plan. The Basic/Developer plans can see only 7 core security checks and service limits, and the full set of 100+ checks, including Cost Optimization, Performance, and Fault Tolerance, opens only on Business ($100/month) or higher. On the exam, the answer to "to use the full checks?" is always Business or higher Support.
 
 ---
 
-**Problem 6.** A company wants to know in advance the risk that Auto Scaling will be blocked during a traffic surge because it has reached 80% of its EC2 instance limit. Which tool and category?
+**Question 6.** You want to know in advance the risk that Auto Scaling will be blocked during a traffic surge because you have reached 80% of the EC2 instance limit. Which tool and category?
 
-A) Trusted Advisor: the Service Limits category warns when 80% of a limit is reached
+A) Trusted Advisor - the Service Limits category warns when 80% of a limit is reached
 B) GuardDuty
 C) Access Analyzer
 D) Macie
 
 **Answer: A**
 
-Explanation: The Service Limits category of Trusted Advisor warns in advance when 80% of per-account, per-Region limits such as the number of EC2 instances, EIPs, and VPCs is reached. When you hit a limit, creating new resources fails; the classic incident is Auto Scaling trying to launch more instances during a traffic surge and being blocked. With the advance warning, you can submit a limit increase request before an incident occurs. With EventBridge integration, automatic notification when check results change is also possible.
+Explanation: Trusted Advisor's Service Limits category warns in advance when 80% of per-account, per-Region limits such as the number of EC2 instances, EIPs, and VPCs is reached. When you hit a limit, creating new resources fails, and a classic incident is Auto Scaling trying to launch more instances during a traffic surge but being blocked. With the advance warning, you can submit a limit increase request before an incident. With EventBridge integration, automatic notification when a check result changes is also possible.
 
 ---
 
-**Problem 7.** An external auditor requires evidence that "AWS infrastructure complies with SOC 2." Separately, the company must also gather evidence that its own environment complies with PCI-DSS and produce a report. Which tool is used for each?
+**Question 7.** An external auditor demands evidence that "the AWS infrastructure complies with SOC 2." Separately, you must also gather evidence and build a report that our company's own environment complies with PCI-DSS. Which tool is for each?
 
-A) Both Trusted Advisor
-B) Evidence of AWS infrastructure compliance is AWS Artifact (free download); collecting and reporting evidence of customer environment compliance is Audit Manager
-C) Both Access Analyzer
-D) Both AWS Artifact
+A) Both are Trusted Advisor
+B) Evidence of AWS infrastructure compliance is AWS Artifact (free download), and collecting and reporting evidence of customer environment compliance is Audit Manager
+C) Both are Access Analyzer
+D) Both are AWS Artifact
 
 **Answer: B**
 
-Explanation: Under the shared responsibility model, AWS Artifact is the window for getting, free of charge, the SOC/PCI/ISO reports that **AWS complies with** (evidence for AWS's area of responsibility), and Audit Manager is the tool that automatically collects evidence that **the customer's own** environment complies with a standard and produces audit reports (evidence for the customer's area of responsibility). Artifact proves "the AWS side" and Audit Manager proves "the customer side." The two cover different responsibility boundaries, so you must distinguish them exactly according to the scenario.
+Explanation: In the shared responsibility model, AWS Artifact is the window to get, for free, the reports such as SOC/PCI/ISO that **AWS complies with** (evidence of AWS's area of responsibility), and Audit Manager is a tool that automatically collects evidence that **the customer's own** environment complies with a standard and builds an audit report (evidence of the customer's area of responsibility). Artifact proves "the AWS side," and Audit Manager proves "the customer side." The two deal with different responsibility boundaries, so you must distinguish them precisely depending on the scenario.
 
 ---

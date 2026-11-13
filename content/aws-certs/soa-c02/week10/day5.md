@@ -22,7 +22,7 @@ Week 10을 관통하는 질문은 하나였다. **"원본이 사라지는 순간
 | 일별 Snapshot/Backup | 최대 24시간 | 복원 시간(수십 분~수 시간) | 저렴(저장만) |
 | RDS Multi-AZ | 0 (동기) | 60~120초 자동 | 중간(Standby 상시) |
 | Cross-Region Read Replica | 분 단위 | 수동 promote | 중간(RR 상시) |
-| Aurora Global Database | < 1초 | < 1분 promote | 높음(멀티 리전) |
+| Aurora Global Database | 수 초 | 수 분 promote | 높음(멀티 리전) |
 | S3 CRR (+RTC) | 분(15분 SLA) | 복제 도달 시간 | 전송+저장 |
 | DRS (CDP) | 초 단위 | 분 단위 launch | 낮음(평소 Staging 작음) |
 
@@ -164,16 +164,16 @@ D) 자동 Snapshot 빈도를 높여 분석은 스냅샷에서 복원한 별도 �
 
 ---
 
-**문제 7.** 글로벌 사용자에게 가까운 리전에서 빠른 읽기 + 리전 단위 DR(RPO<1초)이 필요하다. 가장 적합한 도구는?
+**문제 7.** 글로벌 사용자에게 가까운 리전에서 빠른 읽기 + 리전 단위 DR(RPO 수 초)가 필요하다. 가장 적합한 도구는?
 
 A) RDS Multi-AZ로 다른 AZ Standby에 동기 복제해 가용성과 빠른 페일오버를 확보
-B) Aurora Global Database — 최대 5 Secondary 리전, 스토리지 계층 복제로 RPO<1초·RTO<1분
+B) Aurora Global Database — 최대 10 Secondary 리전, 스토리지 계층 복제로 RPO 수 초·RTO 수 분
 C) 단일 리전에 Read Replica를 여러 개 두고 Route 53 Latency 라우팅으로 가까운 사본에 연결
 D) DynamoDB를 Multi-AZ로 구성해 글로벌 읽기와 리전 DR을 함께 처리
 
 **정답: B**
 
-해설: Aurora Global Database는 Primary 변경을 전용 인프라로 최대 5개 Secondary 리전 스토리지에 복제해, 각 지역에서 수십 ms 지연 읽기를 제공하고 리전 DR(promote 60초 이내)을 제공한다. 스토리지 계층 복제라 인스턴스 단위 RDS Cross-Region RR보다 지연·RTO가 작다.
+해설: Aurora Global Database는 Primary 변경을 전용 인프라로 최대 10개 Secondary 리전 스토리지에 복제해, 각 지역에서 수십 ms 지연 읽기를 제공하고 리전 DR(managed failover RTO는 수 분 수준)을 제공한다. 스토리지 계층 복제라 인스턴스 단위 RDS Cross-Region RR보다 지연·RTO가 작다.
 
 ---
 

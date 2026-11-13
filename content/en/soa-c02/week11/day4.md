@@ -1,209 +1,238 @@
-# Day 4 - Savings Plans and Spot: The Economics of Commitments and Gambles That Cut Compute Cost by 70%
+# Day 4 - Savings Plans and Spot: The Economics of Commitments and Gambles That Cut Compute Costs by 70%
 
-The On-Demand price is AWS's list price — the price paid for maximum flexibility to use it any time and shut it off any time. But most workloads do not use all of that flexibility. Production servers run 24 hours a day, 365 days a year, and do not change families often. If so, from AWS's point of view too, a guarantee that "this customer will definitely use this much for a year" has value — because capacity planning becomes easier. **Commitment discounts (Savings Plans, Reserved Instances)** turn this mutual benefit into a deal. The customer promises "I will spend $X per hour for 1 or 3 years," and in return AWS gives up to 72% off.
+On-Demand pricing is the list price AWS sets - the price of maximum flexibility to use whenever you want and shut off whenever you want. But most workloads do not use all of that flexibility. Production servers run 24 hours a day, 365 days a year, and do not change families often. If so, from AWS's point of view too, a guarantee that "this customer will definitely use this much for a year" has value - because it makes capacity planning easier. **Commitment discounts (Savings Plans, Reserved Instances)** turn this mutual benefit into a transaction. The customer promises "I will spend $X per hour for 1 or 3 years," and in return AWS takes up to 72% off.
 
-At the opposite extreme is **Spot**. AWS data centers always have unsold spare capacity — like empty seats on an airplane. AWS offers this spare capacity at a Spot price discounted up to 90%, but with the condition that "when the capacity is needed, we notify you 2 minutes before and reclaim it." If a commitment is "a deal that buys certainty," Spot is "a gamble that accepts uncertainty to get a bargain price." This note digs into the economic principles on which these two axes — the certainty of commitments and the volatility of Spot — stand, and how to combine them to design a cost structure.
+At the opposite extreme is **Spot**. AWS data centers always have unsold spare capacity - like empty seats on an airplane. AWS offers this spare capacity at Spot prices discounted by up to 90%, with the condition that "when capacity is needed, we give 2 minutes' notice and reclaim it." If a commitment is "a transaction that buys certainty," Spot is "a gamble that accepts uncertainty to get a bargain price." This article digs into what economic principles these two axes - the certainty of commitments and the volatility of Spot - stand on, and how to combine them to design a cost structure.
 
-## The Economics of Commitment Discounts: Why Does AWS Cut the Price for a Promise About the Future
+## The Economics of Commitment Discounts - Why Does AWS Discount for Future Promises?
 
-A commitment discount is not charity but a **deal in which both sides gain**. Once you understand this, it explains why every SP and RI option (1 year vs 3 years, the degree of Upfront) is priced the way it is.
+A commitment discount is not charity but **a deal that benefits both sides.** Understanding this explains why every option of SPs and RIs (1 year vs. 3 years, the degree of upfront payment) is priced the way it is.
 
-From AWS's point of view, the most expensive cost is **uncertainty**. Building a data center and bringing in servers is an enormous up-front investment, and if demand is uneven, it bears the risk of over-investment (idle servers) or under-investment (insufficient capacity). When a customer promises "we will definitely use this much for 3 years," AWS can know that demand in advance and plan precisely — and returns that value as a discount. So **the longer the commitment (3 years > 1 year) and the more is paid upfront (All Upfront > No Upfront), the bigger the discount.** This is because a longer, more certain promise removes more of AWS's uncertainty.
+From AWS's point of view, the most expensive cost is **uncertainty.** Building data centers and bringing in servers is an enormous up-front investment, and if demand is erratic, it bears the risk of overinvestment (idle servers) or underinvestment (insufficient capacity). When a customer promises "I will definitely use this much for 3 years," AWS can know this demand in advance and plan precisely - and it returns that value as a discount. So **the longer the commitment (3 years > 1 year) and the more is paid upfront (All Upfront > No Upfront), the greater the discount.** This is because a longer and more certain promise removes more of AWS's uncertainty.
 
-> 💡 **Related Theory**: The core of this deal is the finance concept of the **time value of money**. All Upfront means the customer pays now the money it would have paid in the future, and since AWS can receive and put that cash to work now (or save that much on the cost of raising capital), it gives a bigger discount. Conversely, No Upfront is paid in monthly installments, so the present value AWS receives is smaller and the discount is smaller. This is exactly the same principle as a bond's discount rate or the prepayment discount in a lease contract — when future cash flows are converted to present value, money received earlier is worth more. The price list of commitment discounts is, in essence, a table that converts "the risk the customer takes on (the risk of failing to keep the promise) and the present value AWS gains" into a price.
+> 💡 **Related theory**: The core of this transaction is the financial **time value of money**. All Upfront (full prepayment) means the customer pays now the money it would have paid in the future, and since AWS can receive and deploy that cash now (or saves that much capital-raising cost), it gives a bigger discount. Conversely, No Upfront is paid in monthly installments, so the present value AWS receives is smaller and the discount is smaller. This is exactly the same principle as bond discount rates and prepayment discounts on lease contracts - when future cash flows are converted to present value, money received earlier is worth more. The price list of commitment discounts is in essence a table that converts "the risk the customer takes on (the risk of failing to keep the promise) and the present value AWS gains" into prices.
 
-## Savings Plans vs Reserved Instances: A Tug of War Between Flexibility and Discount Rate
+## Savings Plans vs. Reserved Instances - The Tug of War Between Flexibility and Discount Rate
 
-There are two generations of commitment discounts. **Reserved Instances (RI)**, which came first, are a model of "reserving a specific instance type," and **Savings Plans (SP)**, which came later, are a more flexible model that "commits to hourly compute spend." AWS recommends SP, and new commitments almost all go to SP — but knowing the difference between the two precisely is the heart of the exam.
+There are two generations of commitment discounts. The earlier **Reserved Instances (RI)** is a model that "reserves a specific instance type," and the later **Savings Plans (SP)** is a more flexible model that "commits to an hourly compute spend amount." AWS recommends SPs, and new commitments go almost entirely to SPs - but knowing the difference between the two precisely is the key to the exam.
 
 **The 3 kinds of Savings Plans**:
 
-| Type | Applies to | Maximum discount | Flexibility |
-|------|------------|------------------|-------------|
-| **Compute SP** | EC2 + Fargate + Lambda, all Regions, families, and OSes | ~66% | Most flexible |
+| Type | Applies to | Max discount | Flexibility |
+|------|-----------|-----------|--------|
+| **Compute SP** | EC2 + Fargate + Lambda, all Regions, families, and OSs | ~66% | Most flexible |
 | **EC2 Instance SP** | A specific Region + a specific family (e.g., the C family in ap-northeast-2) | ~72% | Limited |
 | **SageMaker SP** | SageMaker training and inference | ~64% | SageMaker only |
 
-Here the key trade-off shows — **flexibility and discount rate are inversely proportional.** Compute SP gives the highest flexibility, automatically applying within the committed amount to EC2, Fargate, or Lambda, in any Region and any family, but the discount rate is ~66%. EC2 Instance SP is bound to "a specific family in a specific Region" and in exchange discounts more, ~72%. It is the same principle that the narrower and more specific the promise (= the more it reduces AWS's uncertainty), the bigger the discount.
+Here the core trade-off becomes visible - **flexibility and discount rate are inversely related.** Compute SP gives the highest flexibility, applying automatically within the commitment amount whether EC2, Fargate, or Lambda, in any Region and any family, but the discount rate is ~66%. EC2 Instance SP is tied to "a specific family in a specific Region" but takes more off at ~72%. It is the same principle: the narrower and more specific the promise (= the more it reduces AWS's uncertainty), the larger the discount.
 
-**The two kinds of RI** are the same tug of war — **Standard RI** gives up to 72% off, but after commitment the instance family can hardly be changed (locked in), while **Convertible RI** lets you exchange family, size, and OS but at a smaller discount of ~66%.
+**The two kinds of RI** are the same tug of war - **Standard RI** offers up to a 72% discount but, after commitment, the instance family can hardly be changed (locked in), while **Convertible RI** allows exchanging family, size, and OS but has a smaller discount of ~66%.
 
 | Axis | RI | Savings Plans |
-|------|----|----------------|
-| Scope of application | Specific services (EC2, RDS, Redshift, etc.) | EC2/Fargate/Lambda |
+|----|-----|----------------|
+| Scope | Specific services (EC2, RDS, Redshift, etc.) | EC2/Fargate/Lambda |
 | Commitment unit | Instance type | Hourly spend ($/hr) |
 | Flexibility | Low (except Convertible) | High (automatic reallocation) |
-| Trend | Legacy and for services SP does not support | Recommended for new commitments |
+| Trend | Legacy / for services SP does not support | Recommended for new commitments |
 
-The reason Savings Plans are more flexible than RI is that **the object of the commitment is different**. An RI "reserves one c5.large," so if you move the workload from c5 to c7g, that RI applies only to c5 and is useless for the new instance (Convertible needs a manual exchange). Compute SP, in contrast, is a **monetary commitment** of "I will use $10 per hour of compute," so whether you use c5, c7g, or Fargate, up to that $10 limit the discount is applied automatically, starting from the most expensive On-Demand usage. Because it is tied to "spend," not to an instance, the commitment follows even when the workload changes. This difference in abstraction level — a concrete resource (RI) vs abstract spend (SP) — is the key by which SP greatly reduced the operational burden. However, since there is no SP for RDS, Redshift, ElastiCache, or OpenSearch, commitments for those services are still RI.
+The reason Savings Plans are more flexible than RIs is **because what is committed is different.** An RI "reserves one c5.large," so if you move the workload from c5 to c7g, that RI applies only to c5 and is useless for the new instance (Convertible requires a manual exchange). A Compute SP, by contrast, is a **monetary commitment** of "I will use $10 per hour of compute," so whether you use c5, c7g, or Fargate, it automatically applies the discount up to that $10 limit, starting from the most expensive On-Demand usage. Because it is tied to "spend" rather than to an instance, the commitment follows even when the workload changes. This difference in abstraction level - a concrete resource (RI) vs. abstract spend (SP) - is the key reason SPs greatly reduced operational burden. However, there are no SPs for RDS, Redshift, ElastiCache, or OpenSearch, so commitments for those services are still RIs.
 
-## Spot: An Auction of Spare Capacity with a Market Price
+## Spot - An Auction for Spare Capacity Whose Market Price Has Disappeared
 
-Spot is the exact opposite of a commitment. If a commitment is "fixing the future to get a discount," Spot is "giving up on the future to get a bargain price." It lends the unsold spare capacity of AWS data centers at a price discounted up to 90%, but when AWS needs that capacity, it **reclaims it after a 2-minute notice**.
+Spot is the opposite of a commitment. If a commitment is "fixing the future to get a discount," Spot is "giving up the future to get a bargain." It lends out AWS data centers' unsold spare capacity at a price discounted by up to 90%, but when AWS needs that capacity, it **reclaims it after a 2-minute notice.**
 
-In the past, Spot was a **bidding** model in which the user wrote down a price, but in 2017 AWS abolished it and changed to a **market price model** that changes gradually according to supply and demand. Now users do not need to agonize over a bid price and just use the current Spot price, which is cheaper than On-Demand. It became far more predictable than the old model, where prices swung sharply.
+In the past, Spot was a **bidding** model in which users wrote down a price, but in 2017 AWS abolished it and changed to a **market price model** that changes gently with supply and demand. Now users do not need to agonize over a bid price; they can simply use the current Spot price, which is cheaper than On-Demand. It became much more predictable than the old model, in which prices fluctuated sharply.
 
-Spot's suitability is split by **state and interruption tolerance**.
+Spot suitability is divided by **state and interruption tolerance.**
 
-| Suitable (Spot OK) | Unsuitable (Spot forbidden) |
-|--------------------|-----------------------------|
-| Big data batch (EMR/Spark) | Stateful DB and cache |
-| CI/CD builds | Workloads that need a long startup |
-| Containers (Fargate Spot, EKS) | Anything where losing work on reclaim is fatal |
-| Stateless web (mixed ASG) | Services that depend on a single instance |
+| Suitable (Spot OK) | Unsuitable (no Spot) |
+|----------------|--------------------|
+| Big data batch (EMR/Spark) | Stateful DBs and caches |
+| CI/CD builds | Workloads needing a long startup |
+| Containers (Fargate Spot, EKS) | Anything where losing work on reclamation is fatal |
+| Stateless web (ASG mixed) | Services dependent on a single instance |
 
-It must be a workload where "even if reclaimed, another instance takes over, or you can simply rerun the job." If it is stateless, distributable, and tolerates interruption, Spot is a 90% discount jackpot; if it holds state and reclamation is fatal, Spot is a disaster.
+It must be a workload where "even if reclaimed, another instance takes over, or you can just rerun the work." If it is stateless, distributable, and tolerates interruption, Spot is a 90% discount jackpot; if it has state and reclamation is fatal, Spot is a disaster.
 
-The evolution of Spot is a lesson in itself. Under the bidding model before 2017, Spot prices at times spiked instantly to several times On-Demand during demand surges, and users who set bid prices wrongly got unexpected bills or suffered mass reclamation. AWS abolished bidding and moved to a gradual market price because this volatility was blocking Spot adoption. After the change, Spot became the standard cost-saving means for EMR, Kubernetes, and CI pipelines, and companies such as Pinterest and Lyft publicly shared cases of running large-scale batch and data processing on Spot and cutting cost by tens of percent. The key design lesson is that "however large the discount, if it is unpredictable, production will not use it" — which is why stability-first strategies such as capacityOptimized are recommended over lowestPrice.
+The evolution of Spot is itself a lesson. Under the pre-2017 bidding model, Spot prices could momentarily spike to several times On-Demand during demand surges, and users who set bid prices wrongly received unexpected bills or suffered mass reclamations. AWS abolished bidding and moved to gentle market prices because this volatility was blocking Spot adoption. After the change, Spot became the standard cost-saving means for EMR, Kubernetes, and CI pipelines, and companies like Pinterest and Lyft have publicly shared cases of running large-scale batch and data processing on Spot and saving tens of percent in cost. The key design lesson is "however large the discount, production will not use it if it is unpredictable" - which is why stability-first strategies like capacityOptimized are recommended over lowestPrice.
 
-## Handling Reclamation Gracefully: The 2-Minute Notice and Allocation Strategy
+## Handling Reclamation Gracefully - The 2-Minute Notice and Allocation Strategy
 
-To use Spot in production, you must **handle reclamation gracefully**. AWS sends an **EventBridge event** (`EC2 Spot Instance Interruption Warning`) and an instance metadata (IMDS) signal 2 minutes before reclamation. Within those 2 minutes you must finish the work in progress or hand it to another instance.
+To use Spot in production, you must **handle reclamation gracefully.** AWS sends an **EventBridge event** (`EC2 Spot Instance Interruption Warning`) and an instance metadata (IMDS) signal 2 minutes before reclamation. Within these 2 minutes you must finish the work in progress or hand it off to another instance.
 
 ```
 2-minute notice before Spot reclamation
    │
    ├──► EventBridge Rule (detail-type: EC2 Spot Instance Interruption Warning)
-   │       └──► Lambda: deregister from the ALB → save a checkpoint of work in progress → back up logs
+   │       └──► Lambda: deregister from ALB → save checkpoint of in-progress work → back up logs
    │
    └──► ASG Lifecycle Hook (buy time with a Heartbeat in the Terminating state)
            └──► terminate after drain completes
 ```
 
-A more fundamental response is to **reduce reclamation itself** — here **Allocation Strategy** is the key. Spot capacity forms a separate "pool" for each combination of instance type x AZ, and which pool you draw instances from governs the frequency of reclamation.
+A more fundamental response is to **reduce reclamation itself** - and here the **Allocation Strategy** is the key. Spot capacity forms a separate "pool" for each instance type x AZ combination, and which pool you draw instances from determines the reclamation frequency.
 
 | Strategy | Behavior | Reclamation risk |
-|----------|----------|------------------|
+|------|------|-----------|
 | **lowestPrice** | From the cheapest pool | High (the cheap pool may soon run short) |
 | **diversified** | Spread across multiple pools | Medium |
 | **capacityOptimized** | From the pool with the most spare capacity | Low (recommended) |
-| **priceCapacityOptimized** | Balance of price + spare capacity | Low (latest recommendation) |
+| **priceCapacityOptimized** | Balance of price + spare capacity | Low (newest recommendation) |
 
-Contrary to intuition, **lowestPrice is risky.** The cheapest pool usually has little spare capacity and is likely to be reclaimed by AWS soon. capacityOptimized picks "the pool with the most spare capacity right now" and lowers the probability of reclamation — it may be slightly more expensive, but stability is far higher. The latest recommendation, priceCapacityOptimized, looks at price and spare capacity together.
+Contrary to intuition, **lowestPrice is risky.** The cheapest pool usually has little spare capacity and is likely to be reclaimed by AWS soon. capacityOptimized picks "the pool with the most spare capacity right now" to lower the probability of reclamation - it may be slightly more expensive but is far more stable. The newest recommendation, priceCapacityOptimized, looks at price and spare capacity together.
 
-Spreading across multiple Spot pools (diversified, capacityOptimized) is the same idea as financial **portfolio diversification**. If you bet everything on one pool (one instance type x AZ), the whole thing disappears at once when that pool is reclaimed (correlation 1). If you split across multiple pools, even if one pool is reclaimed the rest survive, and the volatility of total available capacity falls. Just as diversification offsets individual asset risk, Spot pool diversification offsets the reclamation risk of individual pools. That is why specifying several instance types (m5/m5a/m6i) in a Mixed Instances ASG is more stable than a single type — the more pools to spread across, the lower the probability of simultaneous reclamation.
+Spreading across multiple Spot pools (diversified, capacityOptimized) is the same idea as financial **portfolio diversification.** If you bet everything on one pool (one instance type x AZ), the whole thing disappears at once when that pool is reclaimed (correlation of 1). If you split across multiple pools, even if one pool is reclaimed the rest survive, reducing the volatility of total available capacity. Just as diversification offsets the risk of individual assets, spreading across Spot pools offsets the reclamation risk of individual pools. That is why specifying multiple instance types (m5/m5a/m6i) in a Mixed Instances ASG is more stable than a single type - the more pools to spread across, the lower the probability of simultaneous reclamation.
 
-## The 3-Layer Cost Structure: Designing a Combination of Commitments, On-Demand, and Spot
+## The 3-Layer Cost Structure - Designing a Combination of Commitments, On-Demand, and Spot
 
-Practical cost optimization is not choosing one option but **stacking three layers**. You divide the workload by stability and volatility and apply the matching pricing model to each layer.
+Real-world cost optimization is not picking one option but **stacking three layers.** You divide the workload by stability and variability and apply the matching pricing model to each layer.
 
 ```
-Layer 3 ─ Spot (up to 90% off) ──────── Variable, stateless, tolerates reclamation
-            batch, builds, cache nodes    (10-20% of the total)
+Layer 3 ─ Spot (up to 90% discount) ──────── Variable, stateless, tolerates reclamation
+            Batch, builds, cache nodes         (10-20% of total)
             capacityOptimized strategy
 
 Layer 2 ─ On-Demand ─────────────────── Hard-to-predict variable portion
-            list price, available at once   (20-30% of the total)
+            List price, available instantly    (20-30% of total)
 
 Layer 1 ─ Savings Plans / RI (~72%) ──── 24/7 stable baseline
-            predictable always-on operation  (60-70% of the total)
+            Predictable always-on operation    (60-70% of total)
 ```
 
-The core design principle is **"commit only to the baseline."** SP and RI require paying the committed amount whether you use it or not (use it or lose it), so you should commit only to the minimum usage that never falls (the baseline). The variable portion that fluctuates above the baseline goes to On-Demand, and the part of it that is stateless and tolerates reclamation goes down to Spot. **Mixed Instances ASG** is the standard tool that implements this On-Demand + Spot mix in a single group — `OnDemandBaseCapacity` guarantees the minimum On-Demand and the portion above it is filled with Spot.
+The core design principle is **"commitments only for the baseline."** SPs and RIs require paying the commitment amount whether you use it or not (use it or lose it), so you should commit only to the minimum usage (baseline) that never drops. The variable portion that fluctuates above the baseline goes to On-Demand, and the part of it that is stateless and tolerates reclamation goes down to Spot. **Mixed Instances ASG** is the standard tool that implements this On-Demand + Spot mix in a single group - `OnDemandBaseCapacity` guarantees the minimum On-Demand and Spot fills above it.
 
-Finally, you must not confuse **Capacity Reservation** with a commitment. A Capacity Reservation is a **capacity guarantee, not a discount** — it secures instance capacity in a specific AZ, and the price is the same as On-Demand (combined with SP/RI it also gets a discount). It is used for the immediate-availability guarantee of a DR site, preparation for Black Friday, and responding to a shortage of availability of a new instance type. You are buying not a "discount" but "the certainty that you can launch an instance at that moment."
+Finally, **Capacity Reservation** must not be confused with a commitment. Capacity Reservation is **a capacity guarantee, not a discount** - it secures instance capacity in a specific AZ, and the price is the same as On-Demand (combine with an SP/RI to also get a discount). It is used for guaranteeing immediate availability of a DR site, preparing for Black Friday, and dealing with availability shortages of new instance types. You are buying not a "discount" but "the ability to definitely launch an instance at that moment."
 
-> ⚠️ **Pitfall**: SP and RI **cost money even if unused.** If you underestimate workload volatility and commit more than the baseline, you tie up money for 3 years in an unused commitment. That is why you must periodically check commitment adequacy with Cost Explorer's **Utilization (the actual usage rate of the commitment)** and **Coverage (the share of usage the commitment covers)** reports. Low Utilization means over-commitment (wasted money), and low Coverage means room to commit more (an additional savings opportunity). If the exam asks "the workload is highly variable, which commitment?", the answer is almost always Compute SP (flexible) or On-Demand + Spot, and Standard RI (locked in) is wrong.
+> ⚠️ **Trap**: SPs and RIs **cost money even if unused.** If you underestimate workload variability and commit more than the baseline, you tie up money for 3 years in unused commitments. That is why you must periodically check commitment appropriateness with Cost Explorer's **Utilization (the actual usage rate of the commitment)** and **Coverage (the share of usage the commitment covers)** reports. Low Utilization means over-commitment (wasted money), and low Coverage means room to commit more (an additional savings opportunity). On the exam, if "the workload is highly variable, which commitment?" the answer is almost always Compute SP (flexible) or On-Demand + Spot, and Standard RI (locked in) is wrong.
 
-## Summary
+## Wrapping Up
 
-Compute cost optimization is the work of mapping certainty and volatility onto price. Cut the certain baseline with a commitment (up to 72%), support the variable portion with On-Demand, and process the stateless variable portion at a bargain price with Spot (up to 90%).
+Compute cost optimization is the work of mapping certainty and variability onto prices. Cut the certain baseline with commitments (up to 72%), support the variable portion with On-Demand, and handle the stateless variable portion at a bargain price with Spot (up to 90%).
 
-The five things an operator should remember are these. ① A commitment discount is a deal where both sides gain — the longer and more upfront (3 years, All Upfront), the more of AWS's uncertainty is removed and the bigger the discount. ② Flexibility and discount rate are inversely proportional — Compute SP (flexible, ~66%) vs EC2 Instance SP/Standard RI (locked in, ~72%). SP commits to spend, not instances, so it follows even when the workload changes. ③ RDS, Redshift, ElastiCache, and OpenSearch have no SP, so they use RI. ④ Spot is only for stateless workloads that tolerate reclamation; receive the 2-minute notice via EventBridge and Lifecycle Hook to handle it gracefully, and reduce reclamation with capacityOptimized (lowestPrice is risky). ⑤ Capacity Reservation is a capacity guarantee, not a discount, and commitments go only on the baseline, with adequacy checked through Utilization and Coverage.
+Five things for the operator to remember. (1) A commitment discount is a two-sided-benefit deal - the longer and the more prepaid (3 years, All Upfront), the more AWS's uncertainty is removed and the larger the discount. (2) Flexibility and discount rate are inversely related - Compute SP (flexible, ~66%) vs. EC2 Instance SP/Standard RI (locked in, ~72%). An SP commits to spend rather than an instance, so it follows even when the workload changes. (3) RDS, Redshift, ElastiCache, and OpenSearch have no SP and use RIs. (4) Spot is only for stateless workloads that tolerate reclamation; receive the 2-minute notice with EventBridge and Lifecycle Hooks to handle it gracefully, and reduce reclamation with capacityOptimized (lowestPrice is risky). (5) Capacity Reservation is a capacity guarantee, not a discount, and commitments go only on the baseline, with appropriateness checked using Utilization and Coverage.
 
-In the next note we tie together all of Week 11 — Compute Optimizer, Trusted Advisor, Cost Explorer, Budgets, commitments, and Spot — into practical scenario questions and firm up the "exam keyword → correct service" mapping.
+In the next article, we tie all of Week 11 - Compute Optimizer, Trusted Advisor, Cost Explorer, Budgets, commitments, and Spot - into practical scenario questions to cement the "exam keyword → correct service" mapping.
 
 ---
 
-## Practice Problems
+## 📝 Practice Questions
 
-**Question 1.** A company uses EC2, Fargate, and Lambda, and its workloads' families and Regions change frequently. Which commitment gives automatic discounts without code or operational changes?
+**Question 1.** A company uses EC2, Fargate, and Lambda, and the workloads' families and Regions change often. Which commitment gets a discount automatically without code or operational changes?
 
 A) Standard RI
-B) Compute Savings Plans: apply automatically to all EC2, Fargate, and Lambda usage, across all Regions and families, up to the committed amount
+
+B) Compute Savings Plans - applied automatically within the commitment amount across all of EC2/Fargate/Lambda, all Regions and families
+
 C) EC2 Instance Savings Plans
+
 D) Convertible RI
 
 **Answer: B**
 
-Explanation: A Compute Savings Plan commits to "hourly compute spend" rather than an instance type, so whether the usage is c5, c7g, Fargate, or Lambda, the discount is applied automatically starting with the most expensive On-Demand usage, up to the commitment. The commitment follows the workload even when it changes, which makes it ideal for environments where families and Regions change frequently. EC2 Instance SP (C) and Standard RI (A) give larger discounts but are tied to a specific family/Region. Convertible RI (D) can be exchanged but requires manual work.
+Explanation: Compute SP commits to "hourly compute spend" rather than an instance type, so whether c5, c7g, Fargate, or Lambda, it automatically applies the discount up to the commitment limit, starting from the most expensive On-Demand usage. Because the commitment follows even when the workload changes, it is optimal for environments where families and Regions change often. EC2 Instance SP (C) and Standard RI (A) are tied to a specific family/Region in exchange for a larger discount. Convertible RI (D) can be exchanged but requires manual work.
 
 ---
 
 **Question 2.** Why are EC2 Instance Savings Plans not always recommended even though their discount rate is higher than Compute Savings Plans?
 
 A) EC2 Instance SP is more expensive
-B) Flexibility and discount rate are inversely related: EC2 Instance SP is tied to a specific Region and family, so the commitment cannot follow the workload when it changes
+
+B) Flexibility and discount rate are inversely related - EC2 Instance SP is tied to a specific Region and family, so the commitment cannot follow when the workload changes
+
 C) EC2 Instance SP also applies to Lambda
-D) They are the same thing
+
+D) The two are the same thing
 
 **Answer: B**
 
-Explanation: The narrower and more specific the scope of a commitment, the more AWS's uncertainty is reduced, and the larger the discount. EC2 Instance SP gives up to ~72% off in exchange for being tied to "a specific family in a specific Region", but if you move the workload to a different family or Region, that commitment no longer applies. Compute SP gives a smaller discount of ~66% for the sake of flexibility, but it follows the workload anywhere. If the workload is stable and fixed, EC2 Instance SP is advantageous; if it is variable, Compute SP is advantageous. It is a tug-of-war between flexibility and discount rate.
+Explanation: The narrower and more specific the scope of the commitment, the more AWS's uncertainty is reduced and the larger the discount. EC2 Instance SP gives up to ~72% off in exchange for being tied to "a specific family in a specific Region," but if you move the workload to a different family/Region, that commitment does not apply. Compute SP has a smaller discount of ~66% for the sake of flexibility but follows anywhere. If the workload is stable and fixed, EC2 Instance SP is advantageous, and if variable, Compute SP is advantageous - a tug of war between flexibility and discount rate.
 
 ---
 
-**Question 3.** A company runs an EMR big data batch job on 100 nodes every night. It is stateless, and if instances are reclaimed the job can simply be rerun. What is the cost-minimizing strategy?
+**Question 3.** Every night an EMR big data batch runs on 100 nodes. It is stateless, and if reclaimed the work can just be rerun. What is the cost-minimizing strategy?
 
 A) 100 On-Demand instances
-B) Spot Fleet + capacityOptimized strategy: stateless, interruption-tolerant batch is the ideal target for Spot (up to 90% discount)
+
+B) Spot Fleet + capacityOptimized strategy - stateless, interruption-tolerant batch is the optimal target for Spot (up to 90% discount)
+
 C) 100 Standard RIs on a 3-year commitment
+
 D) Compute Savings Plans
 
 **Answer: B**
 
-Explanation: A stateless, interruption-tolerant, distributable batch job is the textbook workload for Spot. You get up to a 90% discount, and the capacityOptimized strategy takes instances from the pools with the most spare capacity to reduce how often they are reclaimed. On-Demand (A) is list price and therefore wasteful, and RI (C) and SP (D) are commitments for 24/7 always-on workloads, so they are unsuitable for a batch that runs only at night (most of the committed hours would go unused and be wasted).
+Explanation: A batch job that is stateless, tolerates interruption, and is distributable is a textbook suitable workload for Spot. You get up to a 90% discount while the capacityOptimized strategy draws instances from pools with plenty of spare capacity to lower reclamation frequency. On-Demand (A) is list price and wasteful, and RI (C) and SP (D) are commitments for 24/7 always-on workloads, so they are unsuitable for a batch that runs only at night (most of the committed time goes unused and is wasted).
 
 ---
 
-**Question 4.** A company wants to automate this: when a Spot Instance is reclaimed, deregister it from the ALB, save in-progress work as a checkpoint, and then terminate. What configuration should it use?
+**Question 4.** On Spot reclamation, you want to automate deregistering from the ALB, saving in-progress work as a checkpoint, and then terminating. What is the configuration?
 
 A) Periodic checks with cron
-B) Receive the 2-minute warning via EventBridge (EC2 Spot Instance Interruption Warning) → Lambda, or via an ASG Lifecycle Hook, and perform the cleanup
-C) A CloudWatch Alarm
+
+B) Receive the 2-minute notice via EventBridge (EC2 Spot Instance Interruption Warning) → Lambda, or an ASG Lifecycle Hook, and perform the cleanup
+
+C) CloudWatch Alarm
+
 D) Only an infinite loop polling IMDS every second
 
 **Answer: B**
 
-Explanation: AWS sends an EventBridge event and an IMDS signal 2 minutes before reclaiming a Spot Instance. The standard approach is to receive it with an EventBridge Rule and trigger a Lambda function (deregister from the ALB, save a checkpoint, back up logs), or to use an ASG Lifecycle Hook to buy time with a Heartbeat in the Terminating state and complete the drain. Within these 2 minutes you must gracefully finish the work or hand it over to another instance.
+Explanation: AWS sends an EventBridge event and an IMDS signal 2 minutes before Spot reclamation. The standard is to catch this with an EventBridge Rule and trigger a Lambda (ALB deregister, checkpoint save, log backup), or to buy time with a Heartbeat in the Terminating state through an ASG Lifecycle Hook to complete the drain. Within these 2 minutes you must wrap up the work gracefully or hand it off to another instance.
 
 ---
 
-**Question 5.** After choosing lowestPrice as the Spot Allocation Strategy, interruptions happen far too often. How can stability be improved?
+**Question 5.** You chose lowestPrice as the Spot Allocation Strategy and reclamations happen too often. How do you improve stability?
 
 A) Keep lowestPrice
-B) capacityOptimized (or priceCapacityOptimized): take instances from the pools with the most spare capacity to lower the probability of interruption
+
+B) capacityOptimized (or priceCapacityOptimized) - draw from the pool with the most spare capacity to lower the probability of reclamation
+
 C) Switch everything to On-Demand
-D) Standardize on a single instance type
+
+D) Unify to a single instance type
 
 **Answer: B**
 
-Explanation: The cheapest pool (lowestPrice) usually has little spare capacity, so AWS is more likely to reclaim it soon; contrary to intuition, it is risky. capacityOptimized picks the pool with the most spare capacity right now to lower the probability of interruption, and priceCapacityOptimized considers both price and spare capacity (the latest recommendation). Also, standardizing on a single instance type (D) reduces the number of pools to spread across and increases the risk of simultaneous interruptions, so it is more stable to specify multiple types and spread across pools (portfolio diversification).
+Explanation: The cheapest pool (lowestPrice) usually has little spare capacity and is likely to be reclaimed by AWS soon - risky, contrary to intuition. capacityOptimized picks the pool with the most spare capacity right now to lower the probability of reclamation, and priceCapacityOptimized looks at price and spare capacity together (newest recommendation). Also, unifying to a single instance type (D) reduces the pools to spread across and increases the risk of simultaneous reclamation, so instead specifying multiple types to spread across pools (portfolio diversification) is more stable.
 
 ---
 
-**Question 6.** A company wants to guarantee that it can always launch new m7i instances immediately in a specific AZ for BCP (disaster recovery). The goal is availability, not cost savings. What should it use?
+**Question 6.** You want to guarantee that a new m7i instance can always be launched immediately in a specific AZ for BCP (disaster recovery). The goal is availability, not cost savings. What do you use?
 
-A) Standard RI (it gives a discount but does not guarantee capacity)
-B) EC2 Capacity Reservation: reserves capacity in a specific AZ; the discount is separate (can be combined with SP/RI)
+A) Standard RI (gives a discount but does not guarantee capacity)
+
+B) EC2 Capacity Reservation - secures capacity in a specific AZ, discount separate (can be combined with SP/RI)
+
 C) Spot
+
 D) Compute Savings Plans
 
 **Answer: B**
 
-Explanation: A Capacity Reservation buys the guarantee that "an instance can definitely be launched at that moment"; the price is the same as On-Demand and a discount is not its purpose. Its exact use cases are AZ capacity shortages for new instance types, guaranteeing immediate availability for DR, and preparing for large events. SP/RI (A, D) are only discounts and do not guarantee capacity; if needed, combine them with a Capacity Reservation to get both the discount and the guarantee. Spot (C) can be reclaimed, so it is the opposite of an availability guarantee.
+Explanation: A Capacity Reservation buys "the ability to definitely launch an instance at that moment"; the price is the same as On-Demand and a discount is not the purpose. AZ capacity shortages of new instance types, guaranteeing immediate availability for DR, and preparing for large events are exactly the use cases. SP/RI (A, D) are only discounts and do not guarantee capacity; if needed, combine them with a Capacity Reservation to get both a discount and a guarantee. Spot (C) can be reclaimed, so it is the opposite of an availability guarantee.
 
 ---
 
-**Question 7.** A company purchased a Compute SP, but Utilization shows a low 60% in Cost Explorer. What does this mean, and what action should be taken?
+**Question 7.** A company purchased a Compute SP, but Utilization in Cost Explorer shows low at 60%. What does this mean and what is the action?
 
-A) The commitment is insufficient; buy more
-B) It is over-committed: 40% of the committed amount is going unused and wasted, so the next commitment should be scaled down to match the baseline
-C) Switching to Spot will solve it
+A) The commitment is insufficient - buy more
+
+B) It is an over-committed state - 40% of the committed amount is being discarded unused, so the next commitment should be sized down to match the baseline
+
+C) Switching to Spot solves it
+
 D) Utilization is a meaningless metric
 
 **Answer: B**
 
-Explanation: Utilization is the proportion of the committed amount that was actually used and benefited from the discount. At 60%, you are paying for 40% of the commitment without using it, which means over-commitment. SP and RI are use-it-or-lose-it, so the money goes out even if unused; you underestimated the variability and committed more than the baseline. The action is to scale the next commitment down to match the baseline, the minimum usage that never drops below that level. Conversely, low Coverage (the proportion of usage covered by commitments) means there is room to commit more and save additional cost.
+Explanation: Utilization is the share of the committed amount that was actually used and benefited from the discount. At 60%, it means you are paying for 40% of the commitment without using it - an over-commitment. SPs and RIs are use-it-or-lose-it, so they cost money even when unused, which means variability was underestimated and more was committed than the baseline. The action is to size the next commitment down to match the minimum usage that never drops (the baseline). Conversely, low Coverage (the share of usage the commitment covers) means room to commit more for additional savings.
 
 ---
+
+## 📌 Today's Summary
+
+1. A commitment discount is a two-sided-benefit deal - the longer and the more prepaid, such as 3 years and All Upfront, the more AWS's uncertainty is reduced and the larger the discount (time value of money)
+2. Flexibility and discount rate are inversely related - Compute SP (flexible ~66%) vs. EC2 Instance SP/Standard RI (locked in ~72%). An SP commits to spend, not an instance
+3. RDS, Redshift, ElastiCache, and OpenSearch have only RIs with no SP, and new commitments are almost all SPs
+4. Spot is only for stateless workloads that tolerate reclamation (up to 90%), handle the 2-minute notice with EventBridge and Lifecycle Hooks, reduce reclamation with capacityOptimized (lowestPrice is risky)
+5. Capacity Reservation is a capacity guarantee, not a discount, commitments go only on the baseline, and appropriateness is checked with Utilization and Coverage

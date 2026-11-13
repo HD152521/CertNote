@@ -1,145 +1,145 @@
-# Day 5 - Integrated Security: Encryption·Detection·Unified Monitoring·Edge Defense in One Scenario
+# Day 5 - Security Wrap-Up: Encryption, Detection, Unified Monitoring, and Edge Defense in One Scenario
 
-AWS security doesn't end with a single service. Everything we saw in Week 11 **stacks into 4 layers** — **encryption (KMS·CloudHSM)**, **detection (Macie·GuardDuty·Inspector)**, **unified monitoring (Security Hub·Detective·Audit Manager)**, **edge defense (WAF·Shield·Firewall Manager·Network Firewall·DNS Firewall)**. Production-grade security only completes when these 4 layers combine organically. And SAP-C02 exam security scenarios **almost always have multiple layers appearing simultaneously in one question** — "encrypt the data (L1), detect threats (L2), investigate incidents (L3), defend the edge (L4)."
+AWS security doesn't end with a single service. Everything we saw in Week 11 stacks into **4 layers**: **encryption (KMS, CloudHSM)**, **detection (Macie, GuardDuty, Inspector)**, **unified monitoring (Security Hub, Detective, Audit Manager)**, and **edge defense (WAF, Shield, Firewall Manager, Network Firewall, DNS Firewall)**. Production-grade security is complete only when these four are organically combined. And security scenarios on the SAP-C02 exam almost always have **several layers appear in a single question at once** - "encrypt the data (L1), detect threats (L2), investigate incidents (L3), and defend the edge (L4)."
 
-Today we integrate these 4 layers into one scenario for review, and nail down the most frequently conflicting traps in Pro exams (Macie vs GuardDuty vs Inspector, Shield Standard vs Advanced, Network Firewall vs DNS Firewall, Security Hub vs Detective vs Audit Manager) with keyword → correct answer mapping. The core is "similar names, different roles."
+Today we review these 4 layers bundled into one scenario, and nail down the traps that collide most often on the Pro exam (Macie vs GuardDuty vs Inspector, Shield Standard vs Advanced, Network Firewall vs DNS Firewall, Security Hub vs Detective vs Audit Manager) as keyword → answer mappings. The key is that "similar names are different roles."
 
-## 4-Layer Security Big Picture
+## The Big Picture of the 4 Security Layers
 
 ```
 [Internet]
     │
-─── L4 Edge Defense ──────────────────────────────────
-   Route 53(DNS Firewall) → CloudFront(WAF+Shield) → ALB(WAF)
-   → VPC(Network Firewall) / Firewall Manager(Org bulk)
+─── L4 Edge defense ──────────────────────────────────
+   Route 53 (DNS Firewall) → CloudFront (WAF+Shield) → ALB (WAF)
+   → VPC (Network Firewall) / Firewall Manager (Org-wide bulk)
     │
 ─── L1 Encryption ────────────────────────────────────
-   KMS(Envelope Encryption·MRK) / CloudHSM(FIPS L3) — protect data at rest·in transit
+   KMS (envelope encryption, MRK) / CloudHSM (FIPS L3) - protects data at rest and in transit
     │
-─── L2 Detection ──────────────────────────────────────
-   Macie(S3 content) / GuardDuty(behavior) / Inspector(vulnerabilities)
+─── L2 Detection ─────────────────────────────────────
+   Macie (S3 content) / GuardDuty (behavior) / Inspector (vulnerabilities)
     │
-─── L3 Unified Monitoring ─────────────────────────────
-   Security Hub(current posture) / Detective(past investigation) / Audit Manager(compliance proof)
-   ── Foundation: Config(setting evaluation) + CloudTrail(API logs)
+─── L3 Unified monitoring ────────────────────────────
+   Security Hub (current posture) / Detective (past investigation) / Audit Manager (compliance proof)
+   ── Foundation: Config (configuration evaluation) + CloudTrail (API logs)
 ```
 
-> 💡 **Related Theory**: This 4-layer structure implements security's **defense in depth** principle. NIST SP 800-53 and cyber kill chain models commonly emphasize — assuming single controls are always penetrable, you stack multiple independent layers so if one layer breaks, the next blocks. The 2019 Capital One breach paradoxically proves this: WAF misconfiguration (L4) → SSRF stealing IMDS credentials → bulk S3 exfiltration. If GuardDuty (L2, anomalous behavior detection) and stricter IAM least privilege had worked together, the chain would have been broken. Pro exams ask "multiple layers in one scenario" for this reason — real-world security doesn't end with one layer.
+This 4-layer structure is an implementation of the security principle of **defense in depth**. What NIST SP 800-53 and the cyber kill chain model both emphasize is that - on the premise that any single control will be breached - you stack several independent layers so that even if one layer is breached, the next one blocks. The 2019 Capital One breach ironically proves this: WAF misconfiguration (L4) → SSRF to steal IMDS credentials → mass S3 exfiltration. If GuardDuty (L2, anomalous behavior detection) and stricter IAM least privilege had worked together, the chain would have been broken. This is why the Pro exam asks about "several layers in one scenario" - real-world security doesn't end with one layer.
 
-## Layer 1: Encryption — KMS · CloudHSM
+## Layer 1: Encryption - KMS and CloudHSM
 
-| Type | Key Ownership | Auto Rotation | Core Use |
+| Type | Key owner | Automatic rotation | Core use |
 |------|---------|----------------|-----------|
-| AWS Managed Key | AWS | 1yr auto (forced) | Service default encryption |
-| Customer Managed Key (CMK) | Customer | Activatable | Policy·rotation·audit control |
-| Multi-Region Key (MRK) | Customer | Possible | Cross-Region DR·decryption |
-| Imported (BYOK) | Customer(external) | **Not possible** | Key origin control·compliance |
-| CloudHSM-backed | Customer(dedicated HSM) | Possible | FIPS 140-2 L3·single tenant |
+| AWS Managed Key | AWS | Automatic every 1 year (mandatory) | Default service encryption |
+| Customer Managed Key (CMK) | Customer | Can be enabled | Policy, rotation, and audit control |
+| Multi-Region Key (MRK) | Customer | Possible | Cross-Region DR, decryption |
+| Imported (BYOK) | Customer (external) | **Not possible** | Control of key origin, compliance |
+| CloudHSM-backed | Customer (dedicated HSM) | Possible | FIPS 140-2 L3, single tenant |
 
-Key reaffirmation — KMS uses **envelope encryption**. The master key (CMK) never leaves HSM, the DEK received via `GenerateDataKey` locally encrypts actual data, and only the encrypted DEK is stored with data. Permissions check with **Key Policy (root) + IAM delegation + Grant (temporary)** triple-check.
+Core reconfirmation - KMS works through **envelope encryption**. The master key (CMK) never leaves the HSM, the DEK obtained via `GenerateDataKey` encrypts the actual data locally, and only the encrypted DEK is stored with the data. Permissions are a triple check of **Key Policy (root) + IAM delegation + Grant (temporary)**.
 
-> 🔍 **Deeper Dive**: Choosing KMS key type is trading "control vs operational burden." AWS Managed Key has 0 operational burden but nearly no policy/rotation control. CMK gives full control but comes with $1/month per key and policy management responsibility. BYOK completely controls key origin but sacrifices auto rotation. CloudHSM gives single tenant/FIPS L3 but carries cluster operations (HA, backup, user management) burden. The exam asks about this trade-off balance point — "policy/audit control" means CMK, "external creation+expiry" means BYOK, "single tenant+L3" means CloudHSM, no special requirements means defaults are best.
+Choosing a KMS key type is a trade of "control vs operational burden." An AWS Managed Key has zero operational burden but almost no policy or rotation control. A CMK gives full control but comes with $1 per key per month and the responsibility of managing policy. BYOK gives full control of the key origin but gives up automatic rotation. CloudHSM gives single tenancy and FIPS L3 but carries a large burden of cluster operations (HA, backup, user management). The exam asks about the balance point of this trade - "policy and audit control" means CMK, "externally generated + expiry" means BYOK, "single tenant + L3" means CloudHSM, and if there is no special requirement, the default is best.
 
-> 📚 **Case Study**: A fintech imported keys created from their own HSM into KMS via BYOK, keeping key material permanently in their HSM (AWS can't permanently recover; KMS only caches, deletes on expiry). Advantage: key origin fully controlled. Disadvantage: no auto rotation — had to manually re-import each rotation. Lesson: BYOK is trading control gain for operational burden and loss of auto rotation.
+(Hypothetical case) A fintech imported a key generated in its own HSM into KMS using BYOK. The advantage was that the key material was permanently kept in its own HSM so AWS could not permanently retain it (KMS keeps only a cache and deletes it on expiry). The disadvantage was that automatic rotation didn't work, so it had to re-import manually at every rotation. Lesson: BYOK is a trade that gains control at the cost of operational burden and automatic rotation.
 
-> ⚠️ **Trap**: "Grant permissions with IAM Policy only" is wrong. Without IAM delegation in Key Policy to account root, IAM permissions are ineffective. Also "immediately delete key" isn't possible — KMS enforces 7-30 day PendingDeletion grace (key deletion = permanent data loss).
+> ⚠️ **Pitfall**: "Granting KMS permissions with an IAM Policy alone" is wrong. If the Key Policy lacks IAM delegation to the account root, IAM permissions are void. Also "immediate key deletion" is impossible - KMS enforces a 7-30 day PendingDeletion grace period (because key deletion = permanent data loss).
 
-## Layer 2: Detection Trinity — Content · Behavior · Defects
+## Layer 2: The Three Detection Musketeers - Content, Behavior, Flaws
 
-| Service | Sees | Data Source | Method |
+| Service | Looks at | Data source | Method |
 |--------|------|------------|------|
-| **Macie** | S3 object **content** (PII/PCI) | S3 object bytes | ML content classification |
-| **GuardDuty** | Account·network **behavior** | VPC FL·CloudTrail·DNS | Threat intel + ML |
-| **Inspector v2** | Software **defects** (CVE) | EC2·ECR·Lambda inventory | CVE database matching |
+| **Macie** | The **content** of S3 objects (PII/PCI) | S3 object bytes | ML content classification |
+| **GuardDuty** | The **behavior** of accounts and networks | VPC FL, CloudTrail, DNS | Threat intel + ML |
+| **Inspector v2** | The **flaws** (CVEs) of software | EC2, ECR, Lambda inventory | CVE database matching |
 
-These three have **non-overlapping data sources** — Macie is object bytes, GuardDuty is logs, Inspector is inventory. This difference determines the correct answer.
+These three **don't overlap in data sources** - Macie uses object bytes, GuardDuty uses logs, Inspector uses inventory. This difference decides the answer.
 
-> 🎯 **Scenario**: "Does S3 bucket contain credit card numbers" → **Macie** (content inspection). "EC2 communicates with known malicious IP" → **GuardDuty** (network behavior). "EC2 OS missing patch CVE scan" → **Inspector v2** (vulnerability DB). "Abnormal access behavior to S3" → **GuardDuty S3 Protection** (not Macie — it's behavior, not content).
+> 🎯 **Scenario**: "Has a credit card number ever been stored in an S3 bucket" → **Macie** (content inspection). "EC2 is communicating with a known malicious IP" → **GuardDuty** (network behavior). "Scan for CVEs from missing EC2 OS patches" → **Inspector v2** (vulnerability DB). "Abnormal access behavior to S3" → **GuardDuty S3 Protection** (not Macie - it's behavior, not content).
 
-> 🔍 **Deeper Dive**: GuardDuty's Protection modules are opt-in with separate billing each — S3 Protection (access anomalies), Malware Protection (EBS snapshot scan, no agent required), EKS Protection (Kubernetes audit+runtime), RDS Protection (DB login anomalies), Lambda Protection (network anomalies). In exams, "EKS runtime suspicious behavior" means EKS Protection, "EC2 malware scan without agent" means Malware Protection. GuardDuty's agent-less operation comes from "analyzing logs AWS already collects."
+GuardDuty's Protection modules are opt-in and each costs extra - S3 Protection (access anomalies), Malware Protection (EBS snapshot scanning, no agent required), EKS Protection (Kubernetes audit + runtime), RDS Protection (DB login anomalies), Lambda Protection (network anomalies). On the exam, "suspicious EKS runtime behavior" is EKS Protection, and "scan EC2 for malware without an agent" is Malware Protection. The secret to how GuardDuty works without an agent is that it "analyzes logs AWS already collects."
 
-> 📚 **Case Study**: When Log4Shell (CVE-2021-44228) hit in December 2021, "where in our infrastructure is vulnerable Log4j" itself was the challenge. Organizations with Inspector v2 enabled could **automatically identify all affected resources (EC2, ECR images, Lambda layers) without additional scanning** as soon as the new CVE registered in NVD. Lesson: vulnerability response's first step is "knowing where it is," and continuous scanning + auto re-evaluation determines 0-day response speed. But Inspector detects only; Patch Manager applies patches.
+When Log4Shell (CVE-2021-44228) broke in 2021, simply knowing "where in our infrastructure there is a vulnerable Log4j" was a challenge in itself. Organizations that had Inspector v2 turned on automatically identified affected EC2 instances, ECR images, and Lambda functions as soon as the new CVE was registered in the NVD, without additional scanning. Lesson: the first step of vulnerability response is "knowing where it is," and continuous scanning + automatic re-evaluation decides the speed of 0-day response. However, Inspector only detects, and applying patches is the job of Patch Manager.
 
-> ⚠️ **Trap**: The misconception that "Inspector applies patches." Inspector **detects and assesses only** ("this instance has this CVE"). **Patch application** is **Systems Manager Patch Manager's** job (complementary). "Find vulnerability" = Inspector, "patch found" = Patch Manager.
+> ⚠️ **Pitfall**: The misconception that "Inspector applies patches." Inspector only detects and assesses. Applying patches is Systems Manager **Patch Manager** (a complementary relationship). "Finding vulnerabilities" = Inspector, "patching what was found" = Patch Manager.
 
-## Layer 3: Unified Monitoring — Current · Past · Proof
+## Layer 3: Unified Monitoring - Present, Past, Proof
 
 | Service | Tense | Role |
 |--------|------|------|
-| **Security Hub** | Current | CSPM·standards checks (CIS/PCI/NIST) + Finding integration (ASFF) |
-| **Detective** | Past | Graph-based incident investigation·root cause |
-| **Audit Manager** | Proof | Auto-collect compliance evidence·audit reports |
+| **Security Hub** | Present | CSPM, standards checks (CIS/PCI/NIST) + Finding consolidation (ASFF) |
+| **Detective** | Past | Graph-based incident investigation, root cause |
+| **Audit Manager** | Proof | Automatic compliance evidence collection, audit reports |
 
-Security Hub asks "are we meeting standards now," Detective asks "how did this incident happen," Audit Manager asks "how do we prove compliance." All three use **Config (setting evaluation)** and **CloudTrail (API logs)** as data foundations.
+Security Hub is "are we meeting the standards right now," Detective is "how did this incident happen," and Audit Manager is "how do we prove compliance." All three use **Config (configuration evaluation)** and **CloudTrail (API logs)** as their data foundation.
 
-> 💡 **Related Theory**: Security Hub belongs to **CSPM (Cloud Security Posture Management)** category (third-party: Wiz, Prisma Cloud, Lacework). CSPM's essence is "configuration drift detection + standards violation identification." Many Security Hub standards checks are implemented internally as **Config Rules**, so Config being inactive makes checks show "No data" — frequent exam trap. Config is the evaluation engine; Security Hub is the layer above aggregating and standardizing results from security perspective.
+Security Hub belongs to the **CSPM (Cloud Security Posture Management)** category (third-party: Wiz, Prisma Cloud, Lacework). CSPM handles "configuration drift detection + identifying standards violations." Many of Security Hub's standards checks are implemented internally as **Config Rules**, so if Config is disabled, the checks show "No data" - an easy trap to use. Config is the evaluation engine and Security Hub is the security aggregation and standardization layer on top of it.
 
-> 🔍 **Deeper Dive**: Audit Manager's decisive difference from Security Hub is **point-in-time vs continuous**. Security Hub sees "right now." Audits demand "sustained compliance during the period" — you can't fix settings just before audit and prove compliance. Audit needs timestamp evidence that controls worked throughout the period. Audit Manager accumulates evidence over time. "Real-time checks" = Security Hub, "period evidence+reports" = Audit Manager.
+The decisive point where Audit Manager differs from Security Hub is **point-in-time vs continuous**. Security Hub looks at "this very moment." An audit demands evidence of "continuous compliance over a period" - fixing things the day before the audit won't do; you need timestamped evidence that controls worked throughout the quarter. That's why Audit Manager accumulates CloudTrail and Config evidence over time. "Real-time check" = Security Hub, "period evidence + report" = Audit Manager.
 
-> 📚 **Case Study**: A healthcare SaaS wasted 3-4 weeks per HIPAA audit having engineers manually capture evidence. After enabling Audit Manager's HIPAA framework, control-mapped evidence from CloudTrail, Config, Security Hub **automatically accumulated with timestamps**, report generation became one button click. Prep time dropped to days. Lesson: audit cost is "proving compliance (evidence collection)," not "maintaining controls."
+(Hypothetical case) A healthcare SaaS spent 3-4 weeks every time as engineers manually captured HIPAA audit evidence. With the Audit Manager HIPAA framework, evidence per control was collected and accumulated automatically, cutting preparation to a few days. Lesson: the cost of an audit lies not in "complying with controls" but in "proving compliance (collecting evidence)."
 
-## Layer 4: Edge and DDoS Defense — Blocking by Layer
+## Layer 4: Edge and DDoS Defense - Blocking by Layer
 
-| Service | Layer | Targets | Core |
+| Service | Layer | Applies to | Key point |
 |--------|------|-----------|------|
-| **WAF** | L7 | CloudFront·ALB·APIGW·AppSync·App Runner·Cognito | OWASP Managed Rule·Rate-Based |
-| **Shield Standard** | L3/L4 | All AWS resources (free) | volumetric/protocol auto mitigation |
-| **Shield Advanced** | L3-7 | Designated resources ($3,000/month~) | L7+Cost Protection+SRT 24/7 |
-| **Firewall Manager** | Policy | Organization-wide | bulk deployment·auto·drift correction |
-| **Network Firewall** | L3-7 | VPC internal | IDS/IPS·TLS Inspection (Suricata) |
-| **DNS Firewall** | DNS | VPC-egress queries | block malicious domains (name-based) |
+| **WAF** | L7 | CloudFront, ALB, APIGW, AppSync, App Runner, Cognito | OWASP Managed Rules, Rate-Based |
+| **Shield Standard** | L3/L4 | All AWS resources (free) | Automatic mitigation of volumetric/protocol attacks |
+| **Shield Advanced** | L3-7 | Designated resources ($3,000/month~) | L7 + Cost Protection + SRT 24/7 |
+| **Firewall Manager** | Policy | Entire Organization | Bulk, automatic deployment, drift remediation |
+| **Network Firewall** | L3-7 | Inside the VPC | IDS/IPS, TLS Inspection (Suricata) |
+| **DNS Firewall** | DNS | Queries originating from the VPC | Blocks malicious domains (name-based) |
 
-> 💡 **Related Theory**: DDoS divides by OSI layer — Volumetric/Protocol (L3/L4, Shield), Application (L7, Shield Advanced+WAF Rate-Based). Following the principle "block at lower layers before reaching higher layers," Shield absorbs volumetric attacks at AWS edge to prevent application reach. The exam's first question is always "what layer is this attack?"
+DDoS is divided by OSI layer - Volumetric/Protocol (L3/L4, Shield), Application (L7, Shield Advanced + WAF Rate-Based). Following the principle "don't push to a higher layer what can be blocked at a lower layer," Shield absorbs volumetric attacks at the AWS edge and blocks them before they reach the application. The exam's first question is always "which layer is this attack?"
 
-> 🎯 **Scenario**: "L7 HTTP flood DDoS + auto scale-out cost spike + no specialist during attack" → **Shield Advanced** (L7 protection + Cost Protection waives charges + SRT 24/7). Standard lacks L7 protection+Cost Protection. WAF alone lacks auto DDoS mitigation and cost protection.
+> 🎯 **Scenario**: "L7 HTTP flood DDoS + surging auto scale-out charges + no expert during the attack" → **Shield Advanced** (L7 protection + Cost Protection charge waiver + SRT 24/7). Standard has no L7 protection + no Cost Protection. WAF alone has no automatic DDoS mitigation or cost protection.
 
-> 📚 **Case Study**: In 2020, AWS Shield mitigated record-scale DDoS (approx 2.3 Tbps CLDAP reflection amplification). Such massive volumetric attacks can't be absorbed by single data centers and need AWS's global edge capacity (tens of Tbps). Lesson: volumetric DDoS defense's essence is "absorption capacity exceeding attack," hardest for individuals to build themselves.
+In 2020, AWS Shield mitigated a roughly 2.3 Tbps CLDAP reflection amplification DDoS (among the largest on record at the time). Such huge volumetric attacks cannot be absorbed by a single data center and can only be stopped by AWS's global edge capacity (tens of Tbps). Lesson: the essence of volumetric DDoS defense is "absorption capacity larger than the attack," and it is the area hardest for an individual company to build on its own.
 
-> ⚠️ **Trap**: Firewall Manager vs SCP vs Config. **Firewall Manager** = proactively deploy security policies (WAF/Shield/SG/NWF), **SCP** = forbid actions (denial guardrails), **Config** = assess non-compliance. "Org-wide WAF policy + new accounts auto" is Firewall Manager.
+Firewall Manager vs SCP vs Config. **Firewall Manager** = actively deploys security policies (WAF/Shield/SG/NWF), **SCP** = prohibits actions (deny guardrails), **Config** = evaluates non-compliance. "Org-wide WAF policy + automatic for new accounts" is Firewall Manager.
 
-## Security Keyword → Answer Mapping (Pre-Exam Memorization Table)
+## Security Keyword → Answer Mapping (Memorization Table Right Before the Exam)
 
 | Keyword | Answer | Layer |
-|--------|--------|--------|
-| "Envelope encryption·large data + KMS" | GenerateDataKey + DEK | L1 |
-| "Multi-Region same-key decrypt·DR" | MRK | L1 |
-| "External-created key + expiry + no-rotation" | Imported(BYOK) | L1 |
+|--------|------|--------|
+| "Envelope encryption, large data + KMS" | GenerateDataKey + DEK | L1 |
+| "Multi-Region decryption with the same key, DR" | MRK | L1 |
+| "Externally generated key + expiry + no rotation" | Imported (BYOK) | L1 |
 | "FIPS 140-2 L3 + single tenant" | CloudHSM / Custom Key Store | L1 |
-| "Permission via IAM only" | Wrong (Key Policy delegation required) | L1 |
-| "Delete key immediately" | Impossible (7~30d PendingDeletion) | L1 |
-| "S3 content PII/card numbers" | Macie | L2 |
-| "S3 abnormal access behavior" | GuardDuty S3 Protection | L2 |
-| "EC2 ↔ malicious IP·credential theft" | GuardDuty | L2 |
-| "EC2·ECR·Lambda CVE detection" | Inspector v2 | L2 |
-| "Apply patches to detected vulnerabilities" | Patch Manager | L2 |
-| "EKS runtime suspected behavior" | GuardDuty EKS Protection | L2 |
-| "EC2 malware scan without agent" | GuardDuty Malware Protection | L2 |
-| "CIS/PCI standards auto-check + integration" | Security Hub | L3 |
+| "KMS permissions with IAM only" | Wrong (Key Policy delegation required) | L1 |
+| "Immediate key deletion" | Impossible (7-30 day PendingDeletion) | L1 |
+| "PII/card numbers in S3 content" | Macie | L2 |
+| "Abnormal S3 access behavior" | GuardDuty S3 Protection | L2 |
+| "EC2 ↔ malicious IP, credential theft" | GuardDuty | L2 |
+| "Detect EC2, ECR, Lambda CVEs" | Inspector v2 | L2 |
+| "Apply patches for detected vulnerabilities" | Patch Manager | L2 |
+| "Suspicious EKS runtime behavior" | GuardDuty EKS Protection | L2 |
+| "Scan EC2 for malware without an agent" | GuardDuty Malware Protection | L2 |
+| "Automatic CIS/PCI standards evaluation + consolidation" | Security Hub | L3 |
 | "Incident timeline graph investigation" | Detective | L3 |
-| "HIPAA audit evidence auto-collect·report" | Audit Manager | L3 |
-| "Resource non-compliance auto-evaluation" | Config Rule | L3 |
-| "CloudTrail event SQL query" | CloudTrail Lake | L3 |
-| "OWASP immediate protection + minimal ops" | WAF Managed Rule Groups | L4 |
+| "Automatic HIPAA audit evidence + report" | Audit Manager | L3 |
+| "Automatic evaluation of resource non-compliance" | Config Rule | L3 |
+| "SQL query of CloudTrail events" | CloudTrail Lake | L3 |
+| "Immediate OWASP protection + minimal operations" | WAF Managed Rule Groups | L4 |
 | "L7 DDoS + Cost Protection + SRT" | Shield Advanced | L4 |
-| "Org-wide WAF/SG policy auto" | Firewall Manager | L4 |
-| "VPC internal IDS/IPS + TLS Inspection" | Network Firewall | L4 |
-| "VPC internal malicious domain blocking" | DNS Firewall | L4 |
-| "Block specific country" | WAF Geo Match | L4 |
-| "Single IP L7 flood/brute force" | WAF Rate-Based | L4 |
-| "EC2 access without SSH" | SSM Session Manager | - |
-| "Auto-rotate Secrets" | Secrets Manager | - |
+| "Org-wide WAF/SG policy automation" | Firewall Manager | L4 |
+| "IDS/IPS inside the VPC + TLS Inspection" | Network Firewall | L4 |
+| "Block malicious domains inside the VPC" | DNS Firewall | L4 |
+| "Block specific countries" | WAF Geo Match | L4 |
+| "Single-IP L7 flood/brute force" | WAF Rate-Based | L4 |
+| "EC2 access without human SSH" | SSM Session Manager | - |
+| "Automatic secrets rotation" | Secrets Manager | - |
 
 ## Summary
 
-AWS security combines 4 layers (encryption → detection → unified monitoring → edge defense). Within each layer, similar names serve different roles — Macie (content) vs GuardDuty (behavior) vs Inspector (defects), Security Hub (current) vs Detective (past) vs Audit Manager (proof), Shield Standard (L3/4) vs Advanced (L7+cost protection), Network Firewall (VPC traffic) vs DNS Firewall (domain names). Pro exams have multiple layers appearing simultaneously, so you need keyword → answer mapping memorized for instant recall and training to think of all 4 layers at once.
+AWS security is a combination of 4 layers (encryption → detection → unified monitoring → edge defense). Even within each layer, similar names play different roles - Macie (content) vs GuardDuty (behavior) vs Inspector (flaws), Security Hub (present) vs Detective (past) vs Audit Manager (proof), Shield Standard (L3/4) vs Advanced (L7 + cost protection), Network Firewall (VPC traffic) vs DNS Firewall (domain names). Since the Pro exam has several layers appear in one scenario, you need to train yourself to memorize keyword → answer mappings to the level of instant recall and to recall all 4 layers at once.
 
-Next week (Week 12) is **Cost Optimization Deep-Dive** — Savings Plans math, Compute Optimizer, Cost Explorer, hidden cost areas like S3·NAT Gateway.
+Next week (Week 12) is **advanced cost optimization** - the math of Savings Plans, Compute Optimizer, Cost Explorer, and hidden cost areas like S3 and NAT Gateway.
 
 ---
 
 ## 📝 Practice Questions
 
-**Question 1.** You must build a DR environment in which a multi-Region RDS snapshot can be decrypted in both Regions. You want to restore immediately without additional KMS calls or re-encryption, and to control key access permissions separately for each Region.
+**Question 1.** You must build a DR environment that decrypts multi-Region RDS snapshots in both Regions. You want to restore immediately without extra KMS calls or re-encryption, and to control key access permissions separately per Region.
 
 A) Cross-Region Copy + re-encrypt every time
 
@@ -150,12 +150,11 @@ C) AWS Managed Key
 D) Import BYOK separately into each of the two Regions
 
 **Answer: B**
-
-**Explanation:** An MRK replicates the same key material across multiple Regions and has the same key ID, so ciphertext from one Region is decrypted directly by the Replica in another Region. Access control is also separated through per-Region Key Policies. A is Region-bound and inefficient. C cannot control policy or rotation and is Region-bound. D makes the two imported keys different keys, so the same ciphertext cannot be decrypted on both sides, and automatic rotation is also impossible. Trap: "same-key decryption across Regions + DR" is MRK.
+Explanation: An MRK replicates the same key material to several Regions and has the same key ID, so ciphertext from one Region can be decrypted directly by the Replica in another Region. Access control is also separated through per-Region Key Policies. A is Region-bound and inefficient. C offers no policy or rotation control and is Region-bound. D makes the two imported keys different keys, so the same ciphertext cannot be decrypted on both sides, and automatic rotation is also impossible. Pitfall: "Cross-Region decryption with the same key + DR" is MRK.
 
 ---
 
-**Question 2.** You must automatically detect and classify whether card numbers or SSNs have ever been stored in S3 buckets and prioritize buckets by sensitivity.
+**Question 2.** You must automatically detect and classify whether card numbers or SSNs have ever been stored in S3 buckets, and prioritize sensitivity per bucket.
 
 A) Inspector v2
 
@@ -166,12 +165,11 @@ C) GuardDuty S3 Protection
 D) Config Rule
 
 **Answer: B**
-
-**Explanation:** Macie uses ML to scan the contents of S3 objects, classifies PII/PCI, and assigns sensitivity scores. A (Inspector) covers CVE vulnerabilities in EC2, ECR, and Lambda. C (GuardDuty S3 Protection) detects "anomalies in access behavior" and is not content inspection. D (Config) evaluates configuration and does not classify object contents. Trap: "sensitive data in S3 contents" = Macie; "anomalous S3 access behavior" = GuardDuty.
+Explanation: Macie scans S3 object content with ML to classify PII/PCI and assign sensitivity scores. A (Inspector) handles CVE vulnerabilities for EC2, ECR, and Lambda. C (GuardDuty S3 Protection) detects "anomalies in access behavior," not content inspection. D (Config) evaluates configuration, not object content classification. Pitfall: "sensitive data in S3 content" = Macie, "S3 access behavior anomalies" = GuardDuty.
 
 ---
 
-**Question 3.** You must continuously and automatically detect known CVEs in EC2, container images (ECR), and Lambda, and have them automatically re-evaluated without additional scans when a new CVE is published.
+**Question 3.** You must continuously and automatically detect known CVEs in EC2, container images (ECR), and Lambda, with automatic re-evaluation without extra scanning when new CVEs are published.
 
 A) Inspector v2
 
@@ -182,12 +180,11 @@ C) GuardDuty
 D) Macie
 
 **Answer: A**
-
-**Explanation:** Inspector v2 continuously matches the inventory of EC2, ECR, and Lambda against the CVE DB and automatically re-evaluates when a new CVE is registered. B (Patch Manager) "applies" patches and does not "detect and assess" vulnerabilities (they are complementary). C (GuardDuty) is behavior/threat detection, not CVE assessment. D (Macie) is for S3 data. Trap: "automatic CVE detection and re-evaluation" = Inspector; "applying patches" = Patch Manager.
+Explanation: Inspector v2 continuously matches EC2, ECR, and Lambda inventory against the CVE DB and automatically re-evaluates when new CVEs are registered. B (Patch Manager) "applies" patches rather than "detecting and assessing" vulnerabilities (a complementary relationship). C (GuardDuty) detects behavior and threats, not CVE evaluation. D (Macie) is for S3 data. Pitfall: "automatic CVE detection and re-evaluation" = Inspector, "applying patches" = Patch Manager.
 
 ---
 
-**Question 4.** You must detect anomalous behavior, such as EC2 communicating with a known malicious IP or IAM credentials being used in a Region that is not normally used, without an agent.
+**Question 4.** You must detect anomalous behavior without an agent, such as EC2 communicating with a known malicious IP and IAM credentials being used from a Region that is not normally used.
 
 A) Inspector v2
 
@@ -198,8 +195,7 @@ C) Macie
 D) WAF
 
 **Answer: B**
-
-**Explanation:** GuardDuty analyzes VPC Flow Logs, CloudTrail, and DNS, detects anomalies using threat intelligence (malicious IPs) + ML behavioral baselining, and needs no agent. A is CVE assessment, C is S3 data, and D is an L7 web filter. Trap: "malicious IP communication + abnormal behavior + no agent" = GuardDuty.
+Explanation: GuardDuty analyzes VPC FL, CloudTrail, and DNS and detects anomalies with threat intelligence (malicious IPs) + ML behavior baselining, and requires no agent. A is CVE evaluation, C is S3 data, and D is an L7 web filter. Pitfall: "communication with malicious IPs, abnormal behavior, no agent" = GuardDuty.
 
 ---
 
@@ -214,12 +210,11 @@ C) Audit Manager
 D) Detective
 
 **Answer: B**
-
-**Explanation:** Security Hub automatically checks the CIS, PCI, and NIST standards, consolidates all security Findings in ASFF, and manages all accounts through the Org delegated administrator. A performs general best-practice checks and is not an integrated hub for security standards. C collects audit evidence and is not a real-time check or dashboard. D is for incident investigation. Trap: "automatic standards checks + consolidated Finding dashboard" = Security Hub.
+Explanation: Security Hub automatically checks the CIS, PCI, and NIST standards, consolidates all security Findings into ASFF, and manages all accounts through an Org delegated administrator. A is a general best-practice check, not a security standards consolidation hub. C collects audit evidence, not real-time checks or a dashboard. D is incident investigation. Pitfall: "automatic standards checks + Finding consolidation dashboard" = Security Hub.
 
 ---
 
-**Question 6.** GuardDuty detected suspected credential theft on an EC2 instance. You must investigate in depth with a time-series graph — since when, with which credentials, and with which resources this instance communicated — to identify the root cause.
+**Question 6.** GuardDuty detected suspected EC2 credential theft. You must investigate deeply with a timeline graph to determine since when this instance communicated with which resources using which credentials, and identify the root cause.
 
 A) Manual search in the CloudTrail console
 
@@ -230,12 +225,11 @@ C) X-Ray
 D) Macie
 
 **Answer: B**
-
-**Explanation:** Detective consolidates VPC Flow Logs, CloudTrail, and GuardDuty Findings to build a behavior graph and visualizes entity relationships and the time axis to help investigate the root cause (you can jump to it directly from a Finding). A is slow and easy to miss things because of manual joins. C is application distributed tracing. D is for S3 data. Trap: "incident time series, relationship visualization, root cause" = Detective.
+Explanation: Detective consolidates VPC FL, CloudTrail, and GuardDuty Findings to build a behavior graph and visualizes entity relationships and the time axis to help with root cause investigation (you can jump straight from a Finding). A is a manual join, so it is slow and easy to miss things. C is application distributed tracing. D is for S3 data. Pitfall: "incident timeline, relationship visualization, root cause" = Detective.
 
 ---
 
-**Question 7.** You are under an L7 HTTP flood DDoS attack, want to be exempted from the surge in auto scale-out charges it causes, and need 24/7 expert support during the attack.
+**Question 7.** You were hit by an L7 HTTP flood DDoS, you want a waiver of the surging auto scale-out charges it caused, and you need 24/7 expert support during the attack.
 
 A) Shield Standard
 
@@ -246,8 +240,7 @@ C) WAF Rate-Based only
 D) CloudFront only
 
 **Answer: B**
-
-**Explanation:** Shield Advanced provides L7 DDoS protection + Cost Protection (charge waiver) + 24/7 SRT. A is free but covers only L3/4, with no L7, Cost Protection, or SRT. C helps somewhat with L7 mitigation but has no cost protection or expert support. D is caching and distribution, not DDoS cost protection. Trap: the three keywords "L7 DDoS + Cost Protection + SRT" belong exclusively to Shield Advanced.
+Explanation: Shield Advanced provides all of L7 DDoS protection + Cost Protection (charge waiver) + SRT 24/7. A is free but covers only L3/4, with no L7, Cost Protection, or SRT. C helps somewhat with L7 mitigation but has no cost protection or expert support. D is caching and distribution, not DDoS cost protection. Pitfall: the three keywords "L7 DDoS + Cost Protection + SRT" are exclusive to Shield Advanced.
 
 ---
 
@@ -262,14 +255,13 @@ C) Shield
 D) GuardDuty
 
 **Answer: B**
-
-**Explanation:** Network Firewall is a Suricata rule-based L3-7 IDS/IPS that inspects traffic inside the VPC inline and supports TLS Inspection. A (WAF) covers only edge L7 web traffic and cannot cover VPC-wide traffic or TLS Inspection. C (Shield) is DDoS protection. D (GuardDuty) is log-based detection, not inline IPS or TLS Inspection. Trap: "IDS/IPS inside the VPC + TLS Inspection" = Network Firewall.
+Explanation: Network Firewall is an L3-7 IDS/IPS based on Suricata rules that inspects traffic inside the VPC inline and supports TLS Inspection. A (WAF) covers only edge L7 web, not the whole VPC or TLS Inspection. C (Shield) is DDoS defense. D (GuardDuty) is log-based detection, not inline IPS or TLS Inspection. Pitfall: "IDS/IPS inside the VPC + TLS Inspection" = Network Firewall.
 
 ---
 
-**Question 9.** You want to prevent EC2 instances in the VPC from reaching malware C2 servers or known malicious domains by blocking at the name resolution stage.
+**Question 9.** You want to block EC2 instances in the VPC from reaching malware C2 servers or known malicious domains at the name resolution stage.
 
-A) Block IPs with a NACL
+A) Block IPs with NACLs
 
 B) WAF
 
@@ -278,12 +270,11 @@ C) Route 53 Resolver DNS Firewall
 D) Security Group
 
 **Answer: C**
-
-**Explanation:** DNS Firewall blocks DNS queries originating from the VPC using malicious domain lists, preventing access to C2 and malicious domains at the name resolution stage. A and D (NACL/SG) are IP-based, and the IPs of malicious domains change constantly, so they are unsuitable. B (WAF) filters inbound L7 web requests and does not block outbound DNS. Trap: "blocking malicious domains (name-based)" = DNS Firewall.
+Explanation: DNS Firewall blocks DNS queries originating from the VPC using a malicious domain list, stopping access to C2 and malicious domains at the name resolution stage. A and D (NACL/SG) are IP-based, and malicious domains' IPs change constantly, so they are unsuitable. B (WAF) is an inbound L7 web filter, not outbound DNS blocking. Pitfall: "block malicious domains (name-based)" = DNS Firewall.
 
 ---
 
-**Question 10.** You want to apply the same WAF Managed Rule to all internet-facing ALBs in a 500-account Organization, have it applied automatically to newly added accounts and resources, and have it automatically detected and remediated if someone turns off WAF.
+**Question 10.** In a 500-account Organization, you want to apply the same WAF Managed Rule to every internet-facing ALB, apply it automatically to new accounts and resources, and automatically detect and remediate if someone turns WAF off.
 
 A) AWS Config Rule
 
@@ -294,12 +285,11 @@ C) SCP
 D) Control Tower
 
 **Answer: B**
-
-**Explanation:** Firewall Manager deploys WAF, Shield, SG, and Network Firewall policies across the Organization at once, applies them automatically to new accounts and resources, and automatically remediates drift. A (Config) is primarily about evaluating noncompliance, not active deployment. C (SCP) prohibits actions (deny) and does not deploy policies. D (Control Tower) is landing zone governance. Trap: "multi-account security policy deployment + automatic for new + drift remediation" = Firewall Manager.
+Explanation: Firewall Manager deploys WAF, Shield, SG, and Network Firewall policies in bulk at the Org level, applies them automatically to new accounts and resources, and automatically remediates drift. A (Config) is mainly about evaluating non-compliance, not actively deploying. C (SCP) prohibits actions (deny), not deploying policies. D (Control Tower) is landing zone governance. Pitfall: "multi-account security policy deployment + automatic for new + drift remediation" = Firewall Manager.
 
 ---
 
-**Question 11.** You need FIPS 140-2 Level 3 key management on a single-tenant dedicated HSM, while the development team wants to keep using the existing KMS APIs (`Encrypt`/`Decrypt`).
+**Question 11.** You need FIPS 140-2 Level 3 key management in a single-tenant dedicated HSM, while the development team wants to keep using the existing KMS API (`Encrypt`/`Decrypt`) as is.
 
 A) Plain KMS CMK (multi-tenant)
 
@@ -310,12 +300,11 @@ C) Secrets Manager
 D) Imported Key Material
 
 **Answer: B**
-
-**Explanation:** A Custom Key Store keeps the KMS API while storing the actual key only in the customer's dedicated CloudHSM (single-tenant, FIPS L3). A is multi-tenant and does not meet the single-tenant L3 requirement. C is a secret store, not HSM key management. D fails the single-tenant requirement because imported keys are also stored in KMS's multi-tenant HSMs. Trap: "single-tenant + FIPS L3 + keep the KMS API" = Custom Key Store + CloudHSM.
+Explanation: A Custom Key Store keeps the KMS API while storing the actual keys only in the customer's dedicated CloudHSM (single tenant, FIPS L3). A is multi-tenant, so it falls short of the single-tenant L3 requirement. C is a secrets store, not HSM key management. D stores imported keys in KMS's multi-tenant HSM too, so it falls short of the single-tenant requirement. Pitfall: "single tenant + FIPS L3 + keep the KMS API" = Custom Key Store + CloudHSM.
 
 ---
 
-**Question 12.** For an annual HIPAA audit, you must automatically collect evidence for each control (access logs, encryption settings, backup policies, and so on) over the audit period and generate a report for submission to the auditor.
+**Question 12.** For an annual HIPAA audit, you must automatically collect per-control evidence (access logs, encryption settings, backup policies, etc.) across the audit period and generate a report for submission to the auditor.
 
 A) Security Hub
 
@@ -326,13 +315,4 @@ C) Detective
 D) Config
 
 **Answer: B**
-
-**Explanation:** Audit Manager automatically collects and accumulates CloudTrail, Config, and Security Hub evidence for each control of frameworks such as HIPAA and generates audit reports. A (Security Hub) is a point-in-time standards check and does not accumulate evidence over a period or automate reports. C (Detective) is for incident investigation. D (Config) is an evaluation engine (serving as an evidence source) and does not package reports. Trap: "automatic audit evidence collection + report" = Audit Manager; "real-time checks" = Security Hub.
-
----
-
-## 📌 Today's Summary
-
-AWS security combines 4 organic layers: **L1 Encryption** (KMS·CloudHSM protect data, MRK for multi-region), **L2 Detection** (Macie content·GuardDuty behavior·Inspector defects, non-overlapping data sources), **L3 Unified Monitoring** (Security Hub current·Detective past·Audit Manager proof, all grounded in Config + CloudTrail), **L4 Edge Defense** (Shield DDoS·WAF L7·Network Firewall VPC·DNS Firewall domains). Each layer handles one piece, similar names mean different roles. Pro exams combine all 4 layers into single scenarios — practice keyword-to-answer mapping at instant-recall speed and thinking about all 4 together.
-
-Next week: **Cost Optimization Deep-Dive** — Savings Plans mechanics, Compute Optimizer, Cost Explorer, hidden costs.
+Explanation: Audit Manager automatically collects and accumulates CloudTrail, Config, and Security Hub evidence per control of frameworks such as HIPAA and generates audit reports. A (Security Hub) is a point-in-time standards check, not period evidence accumulation or report automation. C (Detective) is incident investigation. D (Config) is an evaluation engine (it serves as an evidence source), not report packaging. Pitfall: "automatic audit evidence collection + report" = Audit Manager, "real-time check" = Security Hub.

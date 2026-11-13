@@ -1,4 +1,4 @@
-﻿# Day 3 - Advanced IAM: Building Guardrails with Permission Boundary, SCP, and Identity Center
+# Day 3 - Advanced IAM: Building Guardrails with Permission Boundary, SCP, and Identity Center
 
 Yesterday's IAM evaluation algorithm described single-account permission flow. But real companies don't operate one account—they segment: Operations, Development, Data Analytics, Security Audit, Billing. Each account then distributes users by department and role. A company with 100 AWS accounts is common (Amazon itself has tens of thousands), and the question becomes: "How do we prevent a developer with AdministratorAccess from obtaining permissions close to company IAM root?" Today's answer: **SCP, Permission Boundary, and IAM Identity Center.**
 

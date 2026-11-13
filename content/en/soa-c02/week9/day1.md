@@ -1,53 +1,53 @@
-# Day 1 - KMS, Managing Keys Without Ever Seeing Them
+# Day 1 - KMS: How to Manage Keys Without Ever Seeing Them
 
-Encryption ultimately reduces to key management. AES-256 encryption algorithms are solved since 1990s and never broken. Incidents stem from keys, not algorithms. Hardcoded in code pushed to GitHub, stored plaintext in S3, no tracking who used keys when, departed employee's laptop holding key copies. Overwhelmingly, security breaches are "where did we put the key" problems.
+Encryption ultimately comes down to a key management problem. The algorithm for encrypting data with AES-256 was a finished story back in the 1990s, and it has never been broken. Incidents come not from the algorithm but from the keys. A key gets hardcoded and pushed to GitHub, a key gets uploaded to S3 in plaintext, nobody can trace who used a key and when, a copy of a key remains on the laptop of an employee who left. The overwhelming majority of security incidents are a question of "where did you put the key?"
 
-KMS's core design philosophy is simple: **users must never see raw key material.** You can create, rotate, schedule deletion of keys, but no API exists to download plaintext master key bytes. This section follows why this design, how HSM hardware enables it, why Envelope Encryption is necessary, why Key Policy takes precedence over IAM — understanding these decisions.
+KMS's core design philosophy is simple. **Never let users see the key material.** You can create keys, rotate them, and schedule them for deletion, but there is no API for downloading the plaintext master key bytes. This post follows the reasons behind these decisions: why it was designed this way, how a physical device called an HSM guarantees it, why Envelope Encryption is needed, and why the Key Policy takes precedence over IAM.
 
-## A System Where Keys Can't Download — Why KMS Emerged
+## A System Where Keys Can't Be Downloaded: Why KMS Appeared
 
-Early AWS made encryption entirely customer responsibility. Uploading to S3 required client-side encryption; key custody was your problem. The problem: key custody is harder than encryption itself. Where put keys? Environment variables? Every process reading that variable sees keys. Files? Disk images include keys. Encrypt keys with another key? Where put that key? This infinite regress ("turtles all the way down") is key management's essence.
+In the early days of AWS, encryption was entirely the customer's responsibility. To upload data to S3, you had to encrypt it on the client yourself and store the key on your own. The problem is that storing the key is much harder than the encryption itself. Where do you put the key? In an environment variable? Then every process that can read that variable sees the key. In a file? Then taking a disk image carries the key along with it. Encrypt the key with another key? Then where do you put that key? This infinite regress (turtles all the way down) is the fundamental difficulty of key management.
 
-KMS breaks this regress **in hardware.** Top-level master keys exist only inside FIPS 140-2 certified HSM (Hardware Security Module); physically impossible for plaintext to leave HSM. HSM detects key extraction attempts and self-destructs keys via tamper-resistant circuits. Users send "encrypt this data with this key" requests, receive encrypted results. Key bytes never transit networks.
+KMS **cuts this regress in hardware.** The top-level master key exists only inside an HSM (Hardware Security Module) certified to FIPS 140-2, and it is physically impossible for it to leave the HSM in plaintext. The HSM has tamper-resistant circuitry that destroys the key by itself if it detects an attempt to extract it externally. The user only sends a request, "encrypt this data with this key," and receives only the encrypted result. The key bytes themselves never travel over the network.
 
-This model's name: **"keys never leave the HSM unencrypted."** Before 2014 KMS launch, this isolation level required buying HSM hardware for datacenter — thousands of dollars per device. KMS made it a $1/month API service. Exam question "why use KMS, encrypt directly?" isn't convenience — **making keys untouchable is security's foundation**.
+The name of this model is **"keys never leave the HSM unencrypted."** Before KMS launched in 2014, this level of key isolation was possible only by buying HSM equipment yourself and installing it in a data center, and a single unit cost tens of thousands of dollars. KMS turned it into an API service at $1 a month. The answer on the exam to "why use KMS, why not just encrypt directly?" is not mere convenience: **making the key impossible for people to touch is itself the core of security.**
 
-> 💡 **Related Theory**: KMS's trust model implements "minimize Trusted Computing Base (TCB)" security engineering principle. TCB is component set responsible for system security; smaller TCB means easier verification and narrower attack surface. KMS reduces TCB to HSM hardware + internal firmware. Even if OS, application code, network stacks all compromised, master keys never leave HSM — TCB intact. Orange Book (TCSEC) established this 1980s concept, foundational to modern cloud KMS.
+KMS's trust model is an implementation of the security engineering principle of "minimize the Trusted Computing Base (TCB)." The TCB is the set of components responsible for a system's security, and the smaller it is, the easier it is to verify and audit and the narrower the attack surface. KMS shrinks the TCB to the HSM hardware plus the firmware inside it. Even if the operating system, application code, and network stack are all compromised, the master key does not leave the HSM, so the TCB is not broken. This concept, established in the 1980s Orange Book (TCSEC), is the foundation of modern cloud KMS.
 
-> 🔍 **Deeper Dive**: KMS HSM doesn't store master keys plaintext on disk. All master keys stay encrypted with domain key (KMS-operated) in durable storage, decrypted only in HSM memory at use time. Domain key itself accessible only via quorum method across multiple HSMs, so stealing one HSM can't recover master keys. AWS validated this design via public whitepaper (KMS Cryptographic Details), proving mathematically plaintext keys never cross HSM boundary from creation through destruction.
+The KMS HSM does not store master keys on disk in plaintext. Every master key is encrypted with a domain key operated by KMS and kept in durable storage, and is decrypted in HSM memory only at the moment of use. The domain key itself is accessible only through a quorum spread across multiple HSMs, so stealing a single HSM can't restore the master key. AWS had this design validated in a public whitepaper (KMS Cryptographic Details), which shows mathematically that from the moment a key is created until it is destroyed, there is never a single moment when it crosses the HSM boundary in plaintext.
 
-## Envelope Encryption — Why KMS Handles Only 4KB
+## Envelope Encryption: Why KMS Handles Only 4 KB
 
-Maximum data KMS directly encrypts is 4KB. Send 1GB file to KMS for encryption, you get error. Initially seems like constraint, actually **intentional design** with Envelope Encryption solution.
+The maximum data you can encrypt directly with KMS is 4 KB. If you try to send a 1 GB file to KMS for encryption, you get an error. At first this looks like a limitation, but in fact it is **intentional design**, and the solution is Envelope Encryption.
 
-Why 4KB limit? First, large data sent to KMS slows per-size round-trip — sending 1GB via KMS API nonsensical. Second, processing all bytes through HSM makes HSM throughput bottleneck. Third, most importantly, **encrypting large data directly with master key exposes same key to excessive ciphertexts, broadening cryptanalysis attack surface.**
+Why limit it to 4 KB? First, sending large data to KMS makes the network round trip slower in proportion to the data size: round-tripping 1 GB through the KMS API makes no sense. Second, doing so would force every byte through the HSM, making the HSM a throughput bottleneck. Third, and most importantly, **directly encrypting a large amount of data with a master key exposes the same key to too many ciphertexts, widening the attack surface for cryptanalysis.**
 
-Envelope Encryption solves this two-stage: large data encrypts quickly locally with one-time **Data Encryption Key (DEK)**, then encrypt only short DEK with master key, store together with data. Letter in envelope, sealed with master key.
+Envelope Encryption solves this problem in two steps. Large data is encrypted quickly and locally with a one-time **Data Encryption Key (DEK)**, and only that short DEK is encrypted with the master key and stored alongside the data. The picture is putting a letter (the data) in an envelope and sealing the envelope with the master key.
 
 ```
-GenerateDataKey(KeyId) call
-   → KMS creates one DEK, returns two forms:
-       Plaintext DEK  (memory-only, destroy after encryption)
-       Encrypted DEK  (master-key encrypted, store with data)
+Call GenerateDataKey(KeyId)
+   → KMS creates one DEK and returns it in two forms:
+       Plaintext DEK  (in memory only, discarded immediately after use for encryption)
+       Encrypted DEK  (encrypted with the master key, stored together with the data)
 
-Encrypt: Plaintext DEK locally AES-256 encrypt 1GB data → destroy DEK in memory
-Store:   (Encrypted data, Encrypted DEK) bundle together
-Decrypt: Send Encrypted DEK to KMS Decrypt → recover Plaintext DEK → local decryption
+Encrypt: Encrypt 1 GB of data locally with AES-256 using the Plaintext DEK → destroy the DEK in memory
+Store:   Store (encrypted data, Encrypted DEK) as one bundle
+Decrypt: Send the Encrypted DEK to KMS Decrypt → recover the Plaintext DEK → decrypt locally
 ```
 
-Core: **destroy Plaintext DEK from memory after use.** Disk holds only encrypted data and encrypted DEK; together, unrecoverable without master key. S3 SSE-KMS, EBS encryption, RDS encryption all internally use this pattern. EBS creates separate DEK per volume, encrypts with assigned KMS key, attaches to volume metadata.
+The key point is that **the Plaintext DEK is erased from memory right after use.** All that remains on disk is the encrypted data and the encrypted DEK, and even combining the two, you can't decrypt without the master key. S3 SSE-KMS, EBS encryption, and RDS encryption all use this pattern internally. EBS creates a separate DEK for each volume, encrypts that DEK with the designated KMS key, and attaches it to the volume metadata.
 
-> 💡 **Related Theory**: Envelope Encryption isn't new invention — PGP (Pretty Good Privacy, 1991) established hybrid encryption 30 years ago. PGP encrypts messages with fast symmetric key (session key), encrypts only that session key with slow recipient public key (RSA), sends together. Symmetric fast but hard to exchange; asymmetric easy to exchange but slow — hybrid combines both strengths. KMS's master key isn't asymmetric but hierarchical "slow secure top key + fast bottom data key" identical. TLS session key negotiation follows same principle.
+Envelope Encryption is not a new invention but the hybrid encryption pattern that PGP (Pretty Good Privacy, 1991) established 30 years ago. PGP encrypts the message with a fast symmetric key (a session key) and encrypts only that session key with the recipient's slow public key (RSA), sending them together. Symmetric keys are fast but key exchange is hard, and asymmetric keys make key exchange easy but are slow; the essence of hybrid encryption is taking only the strengths of both. KMS's master key is not asymmetric, but the hierarchical structure of "a slow, secure upper key + a fast lower data key" is the same. TLS session key negotiation follows the same principle.
 
-> ⚠️ **Trap**: `GenerateDataKey` gives both Plaintext and Encrypted DEK, but `GenerateDataKeyWithoutPlaintext` gives only Encrypted DEK. Latter for "not encrypting now, pre-generate DEK for later decryption" patterns (e.g., daily key pre-generation). Exam: "generate DEK without plaintext" → `WithoutPlaintext` version. Common mistake: storing Plaintext DEK to disk — that moment, all Envelope Encryption security collapses. Plaintext DEK lives in memory only.
+> ⚠️ **Pitfall**: `GenerateDataKey` gives you both the Plaintext and Encrypted DEK, but `GenerateDataKeyWithoutPlaintext` gives only the Encrypted DEK. The latter is used for the pattern of "not encrypting right now, but creating in advance a DEK to use when decrypting later" (for example, pre-generating daily keys). When the exam describes "create a DEK but don't receive the plaintext," it's the `WithoutPlaintext` version. Another common mistake is saving the Plaintext DEK to disk: at that moment all the security of Envelope Encryption collapses. The Plaintext DEK must live only in memory.
 
-## Key Policy Takes Precedence over IAM — Two Lambda Bots Deadlock
+## Why the Key Policy Takes Precedence Over IAM: The Deadlock of Two Lambda Bots
 
-KMS has unique permission rule absent from other AWS services: **every KMS key must have Key Policy, and unless explicitly allowed by Key Policy, IAM permissions however broad can't use that key.** S3 buckets work with IAM alone without bucket policy; KMS differs. Why?
+KMS has a unique permission rule that other AWS services lack. **Every KMS key must have a Key Policy, and unless the Key Policy explicitly allows it, you cannot use that key no matter how broad your IAM permissions are.** An S3 bucket can be accessed with IAM alone even without a bucket policy, but KMS is different. Why was it designed this way?
 
-Reason: **contain key compromise blast radius.** If KMS used IAM-only, someone stealing `kms:*` permission admin role instantly uses all account keys. Mandating Key Policy, each key specifies its usable subjects on itself — key owns defense line. Security's most sensitive assets (keys) enforce resource-based policy, preventing all keys compromise from single IAM break.
+The reason is **to limit the blast radius if a key is stolen**. If KMS could be accessed with IAM alone, the moment someone stole an administrator role with `kms:*` permissions they could use every key in the account. By enforcing a Key Policy, each key states on the key itself which principals can use it: the key has its own line of defense. For the most security-sensitive asset (the key), a policy attached to the resource itself (a resource-based policy) is mandatory, so that even if IAM is breached in one place, all keys are not exposed at once.
 
-Default Key Policy's key line achieves this:
+One line in the default Key Policy creates this structure.
 
 ```json
 {
@@ -59,170 +59,170 @@ Default Key Policy's key line achieves this:
 }
 ```
 
-`root` means **"entire account"** not root user. This line permits "if this account's IAM policy allows it, use key" — normal IAM permission management works. Remove this line, IAM becomes powerless; only Key Policy subjects can use key. Most dreaded ops accident: accidentally remove default Key Policy's root line without specifying yourself — **that key becomes unusable by anyone, recoverable only via AWS Support ticket.** Operator locks their own key out.
+`root` does not mean the root user but **"this entire account."** With this one line, it becomes "if this account's IAM policy allows it, you can use the key," so you can manage permissions with IAM as usual. If you remove this line, IAM becomes powerless and only the principals named in the Key Policy can use the key. This is the scariest of the operational accidents: if you accidentally delete the root line from the default Key Policy and don't name yourself either, **no one can use that key and the only way to undo it is an AWS Support ticket.** This is because the operator who locked the key also loses permissions on the key itself.
 
-> 🔍 **Deeper Dive**: KMS permission evaluation proceeds Key Policy → IAM Policy → Grant → Encryption Context. Precisely, "does Key Policy trust IAM?" determines first, delegated then either IAM/Grant permission allows passes. Any explicit Deny at any stage immediately rejects — "explicit deny wins" principle common across IAM. Grant provides temporary permissions without modifying Key Policy, useful for automation — AWS services (EBS, RDS) internally issue Grants when using keys on user behalf. Creating encrypted EBS volume automatically attaches Grant to key, visible via `list-grants`.
+KMS permission evaluation is reviewed cumulatively in the order Key Policy → IAM Policy → Grant → Encryption Context. More precisely, "did the Key Policy delegate trust to IAM?" is decided first, and if delegated, passing requires just one of IAM/Grant to allow it. However, an explicit Deny at any stage is rejected immediately: this is the "explicit deny wins" principle common to all of IAM. A Grant is a device for giving temporary permissions without modifying the Key Policy, so it is useful for automation, and when AWS services (EBS, RDS, and so on) use a key on a user's behalf, they internally issue a Grant. That is why, when you create an encrypted EBS volume, you can see with `list-grants` that a Grant is automatically attached to the key.
 
-> 📚 **Case Study**: 2017, SaaS company managing KMS key policies via IaC (Terraform) omitted root delegation line in template, deployed to production, locked key. RDS and S3 data encrypted with that key became temporarily inaccessible; AWS Support took hours recovering key policy. Two lessons: always explicitly specify key management subject (usually security team role) separate from root delegation; require explicit approval step in IaC for key deletion/policy changes. That company later gated key policy changes with SCP (Service Control Policy).
+Suppose a SaaS company manages its KMS key policy with IaC (Terraform), deploys a template with the root delegation line missing, and locks its production key. The RDS and S3 data encrypted with that key becomes inaccessible, and the company needs AWS Support's help to restore the key policy. This hypothetical case has two lessons. First, always name in the Key Policy the principal that will manage the key (usually the security team role), separately from the root delegation. Second, place an explicit human approval step even in IaC for KMS key deletion and policy changes. To prevent a recurrence, you can put a guardrail on Key Policy changes with an SCP (Service Control Policy).
 
-## Key Rotation — backing key changes, Key ID stays
+## Key Rotation: The Backing Key Changes but the Key ID Stays the Same
 
-Key rotation initially seems counterintuitive. "Rotate key, decrypt old data how?" Change keys yearly but old data reads fine. Secret: KMS keys are **containers holding multiple backing keys (actual crypto material).**
+Key rotation has a counterintuitive part the first time you meet it. "If you rotate the key, how do you decrypt the old data?" You change the key every year, yet data encrypted last year can still be read. The secret is that a KMS key is actually **a container holding multiple backing keys (the actual cryptographic material)**.
 
-Enable `enable-key-rotation`, KMS generates new backing key yearly (currently default 365 days, adjustable 90~2560 days via configuration). But **Key ID and ARN, alias stay unchanged.** Newly encrypted data uses latest backing key; past encrypted data uses backing key ID recorded with that data, decrypted with that time's old backing key. KMS permanently retains all backing keys so past data always reads. User sees one key unchanged; inside, material quietly refreshes.
+When you turn on `enable-key-rotation`, KMS creates a new backing key every year (currently 365 days by default, adjustable from 90 to 2,560 days by setting). But **the Key ID, ARN, and alias stay the same.** Newly encrypted data is processed with the latest backing key, and data encrypted in the past is decrypted with the old backing key from that time, by looking at the backing key identifier recorded with the data. KMS keeps all backing keys permanently, so past data can always be read. From the user's perspective, the one key stays as is while only the material inside is quietly renewed.
 
-This design's advantage: **applications never worry about rotation.** Code calls `alias/myapp` only; doesn't matter if internal backing keys multiply. Manual rotation (create new key, move alias) requires old key staying active to decrypt old data — management burden. Symmetric keys thus default automatic rotation; manual rotation only for asymmetric or imported key material impossible to auto-rotate.
+The advantage of this design is that **the application doesn't need to care about rotation at all.** The code just calls `alias/myapp`, and it doesn't matter how many backing keys grow inside. In contrast, with manual rotation (creating a new key and moving the alias), the moment you move the alias, you have to keep the old key explicitly alive to decrypt data encrypted with it, which is a heavy management burden. That is why automatic rotation is the standard for symmetric keys, and manual rotation is used only where automatic rotation is impossible, such as asymmetric keys or imported key material.
 
-| Key Type | Auto-Rotation | Rotation Period | Notes |
+| Key type | Automatic rotation | Rotation period | Notes |
 |---------|-----------|-----------|------|
-| Customer Managed (Symmetric) | Optional (toggle) | Default 365d, adjustable 90~2560d | backing keys accumulate, Key ID immutable |
-| AWS Managed | Forced (can't disable) | 365d (older 1095d) | user uncontrolled |
-| Imported (BYOK) | Impossible | - | manual re-import only, expiry settable |
-| Asymmetric | Impossible | - | manual rotation only |
+| Customer Managed (symmetric) | Optional (on/off) | 365 days by default, adjustable 90-2,560 days | Backing keys accumulate, Key ID unchanged |
+| AWS Managed | Forced (can't be turned off) | 365 days (1,095 days for older ones) | Not user-controllable |
+| Imported (BYOK) | Not possible | - | Manual re-import only, expiration date can be set |
+| Asymmetric | Not possible | - | Manual rotation only |
 
-> ⚠️ **Trap**: Auto-rotation changes only encryption backing key. If **key permissions compromised or key suspected damaged, rotation doesn't solve it.** Rotation just replaces crypto material, old backing keys permanently kept so old data stays decryptable. Real damage requires disabling key and re-encrypting data with new key. Exam trap: "key seems compromised, rotate?" — No. Rotation prevents future problems, not past ones.
+> ⚠️ **Pitfall**: Automatic rotation changes only the backing key used for encryption. **In a situation where the key's permissions (the Key Policy) have leaked or you suspect the key is compromised, rotation is not the solution.** Rotation merely swaps the cryptographic material for a new one and doesn't discard the old backing keys, so the ability to decrypt old data remains. In a real compromise you must disable the key and re-encrypt the data with a new key. On the exam, "the key seems to have leaked, will rotating fix it?" is a trap: rotation is preventive, not a post-incident response.
 
-## Multi-Region Key — The Only Exception Breaking Region Isolation
+## Multi-Region Key: The Only Exception That Breaks Regional Binding
 
-Normal KMS keys strictly region-bound. Data encrypted with Seoul region key absolutely can't decrypt via Tokyo region KMS. Key ARN contains region; backing material exists only in that region's HSMs. Intentional — region isolation underlies AWS availability and compliance; keys crossing regions break isolation.
+Ordinary KMS keys are strictly bound to a Region. Data encrypted with a key created in the Seoul Region can never be decrypted by KMS in the Tokyo Region. This is because the Region is embedded in the key ARN, and the key's backing material exists only in that Region's HSM. This is intentional: Regional isolation is the foundation of AWS availability and regulatory compliance, and if keys crossed Regions that isolation would break.
 
-Cross-Region scenarios make this isolation problematic. Global DynamoDB Table replicates data across regions; A region key-encrypted data needs same key in B region for reading. S3 Cross-Region Replication with SSE-KMS encrypted objects must find decryption keys in destination region.
+But in cross-Region scenarios, this isolation becomes an obstacle. A Global DynamoDB Table replicates data across several Regions, and to read data encrypted with Region A's key in Region B, the same key is needed in Region B too. When S3 Cross-Region Replication replicates SSE-KMS-encrypted objects to another Region, there must be a key to decrypt them in the destination Region.
 
-**Multi-Region Key** creates this exception. Create Primary key, create replicas in other regions, both keys share **same Key ID (precisely `mrk-` prefix shared identifier) and same backing material.** Decrypt data encrypted in one region via another region's replica key unchanged. But exceptional tool — key material crosses regions reducing isolation; one region's compromise affects all replicas. Thus "use only when Cross-Region decryption truly necessary."
+**Multi-Region Key** creates this exception. When you create a primary key and create a replica in another Region, the two keys share **the same Key ID (more precisely, a common key identifier starting with `mrk-`) and the same backing material**. Data encrypted in one Region can be decrypted as is with the replica key in another Region. However, this is strictly an exceptional tool: because key material is replicated across Regions, isolation weakens, and if the key is compromised in one Region, all replicas are affected. That is why it is recommended to use it "only when cross-Region decryption is truly needed."
 
-> 🔍 **Deeper Dive**: Multi-Region Key backing material replication doesn't transit plaintext networks. Primary region's HSM and replica region's HSM establish mutually authenticated secure channel, transmit key material encrypted, decrypt only inside destination HSM. "Keys never leave HSM unencrypted" principle maintained cross-region replication. Replica keys independently rotate and manage policies post-creation but share backing material identification scheme. Can promote Primary to another region's replica for DR scenarios.
+The replication of a Multi-Region Key's backing material does not travel over the network in plaintext. The primary Region's HSM and the replica Region's HSM establish an authenticated secure channel with each other, transmit the key material in encrypted form, and decrypt it only inside the destination HSM. That is, the principle "keys never leave the HSM unencrypted" is maintained even in cross-Region replication. After it is created, a replica key is rotated and policy-managed independently, but it shares the backing material identification scheme. You can also promote the primary to a replica in another Region, which is used in DR scenarios.
 
-## KMS vs CloudHSM — Multitenant HSM vs Sole HSM Divergence
+## KMS vs CloudHSM: The Fork Between Multi-Tenant HSM and Dedicated HSM
 
-If KMS runs on HSM, why CloudHSM separately? Difference: **share HSM with other customers or rent entire HSM solo.** KMS's HSM AWS-operated, multiple customer keys (logically isolated) co-housed multitenant. CloudHSM customers solely lease HSM devices, controlling everything inside.
+If KMS also runs on HSMs in the end, why does CloudHSM exist separately? The difference is **whether you share the HSM with other customers or rent it whole.** KMS's HSMs are operated by AWS and are a multi-tenant structure that holds multiple customers' keys together (logically isolated). With CloudHSM, the customer rents the HSM device itself exclusively and directly controls everything inside it.
 
-This difference determines certification level. KMS uses FIPS 140-2 Level 3 certified HSM but entire service multitenant-operated, typically described Level 2 context (HSM module itself Level 3); CloudHSM sole-occupied achieves **complete FIPS 140-2 Level 3.** Some regulated industries (specific finance, government contracts) mandate "keys on sole HSM only our access" — KMS can't satisfy, CloudHSM only answer.
+This difference splits the certification level. KMS uses HSMs validated at FIPS 140-2 Level 3, but as a whole service, because of the multi-tenant operating model, it is usually described in a Level 2 context (the HSM module itself is Level 3), while CloudHSM, being exclusively occupied by the customer, **fully meets FIPS 140-2 Level 3**. Some regulated industries (certain financial and government contracts) explicitly require "the key must be in a dedicated HSM that only we can access," and in that case KMS can't satisfy compliance and CloudHSM is the only answer.
 
 | Item | KMS | CloudHSM |
 |------|-----|----------|
-| HSM Occupation | Multitenant (AWS-operated) | Sole (customer leased) |
-| FIPS 140-2 | Module L3, service L2 context | L3 (sole) |
-| Key Control | AWS operates, customer policy-controls | Customer 100% (AWS can't access) |
-| Cost | $1/month/key + API | $1.45+/hour (continuous) |
-| Integration | AWS services native | Standard PKCS#11/JCE/OpenSSL |
-| AWS Key Recovery | Impossible (customer locks, Support limit) | Impossible (customer loses, permanent loss) |
-| Use Case | Most encryption | Strict regulation, sole control required |
+| HSM occupancy | Multi-tenant (AWS-operated) | Dedicated (customer-rented) |
+| FIPS 140-2 | Module L3, service context L2 | L3 (dedicated) |
+| Key control | AWS operates, customer controls policy | Customer 100% (even AWS can't access) |
+| Cost | $1/month/key + API | $1.45+ per hour (always billed) |
+| Integration | Native to AWS services | Standard PKCS#11/JCE/OpenSSL |
+| AWS key recovery | Not possible (within Support limits if the customer locks it) | Not possible (permanent loss if the customer loses it) |
+| Use cases | Most encryption | Strict regulation, requirement for dedicated control |
 
-CloudHSM's frightening aspect: **AWS can't recover keys.** Lose CloudHSM cluster admin credentials, keys permanently gone, AWS can't help. Complete control's price is complete responsibility. Bridge connecting both worlds: **KMS Custom Key Store** — enjoy KMS API convenience but backing keys reside in customer CloudHSM cluster, hybrid configuration.
+The scary thing about CloudHSM is that **even AWS can't recover the key.** If you lose the administrator credentials of a CloudHSM cluster, the keys inside are permanently gone and AWS can't help either. The price of complete control is complete responsibility. The bridge connecting the two worlds is the **KMS Custom Key Store**, a hybrid configuration that uses the convenience of the KMS API as is, but keeps the actual backing keys in the customer's CloudHSM cluster.
 
-> 💡 **Related Theory**: KMS vs CloudHSM choice exemplifies cloud security's fundamental trade-off: "control vs operational burden." Shared Responsibility Model — higher customer control (CloudHSM) means higher security incident responsibility. KMS delegates key availability, durability, physical security to AWS accepting multitenancy; CloudHSM opposite. "More secure always better" wrong thinking — "does regulation mandate sole HSM, or operational simplicity more valuable?" Most workloads answer KMS correctly; CloudHSM reserve for regulation-forced scenarios.
+The choice between KMS and CloudHSM is the classic case of the fundamental cloud security trade-off, "control vs operational burden." In the Shared Responsibility Model, the more control the customer takes (CloudHSM), the more responsibility for security incidents also lands on the customer. KMS delegates key availability, durability, and physical security to AWS in exchange for accepting multi-tenancy, and CloudHSM is the opposite. The question isn't "safer is unconditionally better" but "does regulation mandate a dedicated HSM, or is operational simplicity more valuable?" For most workloads KMS is the answer, and CloudHSM is a card you pull out only when regulation compels it.
 
-## Key Deletion Waiting Period — Brake on Irreversible Operations
+## Key Deletion Waiting Period: A Design That Puts a Brake on an Irreversible Operation
 
-KMS keys can't delete immediately. Call `schedule-key-deletion`, 7~30 day waiting period sets (default 30d), actual deletion after period passes. During wait, key stays `Pending Deletion` state, disabled rejecting any encryption/decryption. Why enforce this inconvenient delay?
+A KMS key can't be deleted immediately. When you call `schedule-key-deletion`, a waiting period of 7 to 30 days (30 days by default) is set, and it is actually deleted only after that period passes. While waiting, the key is disabled in the `Pending Deletion` state and rejects any encryption or decryption. Why enforce such an inconvenient delay?
 
-**Key deletion directly means data permanent loss, irreversible operation.** Data encrypted with key can't decrypt without that key ever. Accidentally delete one key, terabytes of S3, RDS, EBS data instantly become digital garbage. If backups encrypted with same key, backups useless too. Different magnitude than file trash deletion.
+The reason is that **key deletion is an irreversible operation that leads directly to permanent data loss.** Data encrypted with a key can never be decrypted without that key. If you delete a key by mistake, terabytes of S3, RDS, and EBS data encrypted with it turn into digital garbage in an instant. If even the backups are encrypted with the same key, the backups are useless too. This is an accident on a different scale from deleting a file from the recycle bin.
 
-Waiting period **forcefully brakes this irreversible operation, safety mechanism.** During 7~30 days anyone can `cancel-key-deletion`, rollback during monitoring "Pending Deletion key decryption attempts" with CloudWatch catch "oh, this key still in use" and cancel. Operational best practice: before deleting, first **disable** key, operate days/weeks and if no problems, then schedule deletion — disable immediately reversible, essentially free rehearsal.
+The waiting period is **a safety device that forcibly puts a brake on this irreversible operation.** For 7 to 30 days anyone can undo it with `cancel-key-deletion`, and in the meantime, if you monitor "decryption attempts against a Pending Deletion key" with CloudWatch, you can notice "oh, this key was still in use" and cancel the deletion. The operational best practice is to first **disable** the key before deleting it, run for a few days to weeks, and schedule deletion only if there's no problem: disabling can be undone immediately, so it is effectively a free rehearsal.
 
-> 📚 **Case Study**: KMS's 7~30 day waiting period design learns from industry's many "irreversible delete" incidents. Pre-waiting-period database/storage services enabled "instant permanent delete"; operator typos (`DELETE` wrong target, script variable unset) evaporated production data repeatedly. 2017 code hosting company dropping production DB accidentally with broken backups left "irreversible operations need delay and confirmation stages" lesson industry-wide. KMS embedded this lesson into key deletion — longest safety delay at highest-cost-mistake point.
+KMS's 7-30 day waiting period is a safeguard against "irreversible deletion" incidents. In the days when "immediate permanent deletion" was possible in database and storage services, incidents repeated in which production data evaporated in an instant from an operator's single-line typo (specifying the wrong `DELETE` target, an unset script variable, and so on). The 2017 incident in which a code hosting company accidentally dropped its production DB and found even its backups broken left the industry the lesson that "irreversible operations must have a delay and confirmation step." KMS nailed this lesson into key deletion: it placed the longest safety delay at the point where the most expensive mistake can occur.
 
-> ⚠️ **Trap**: Also memorize Encryption Context. Encryption with `--encryption-context "Project=Web"` key-value pairs means **exactly same context required for decryption** or rejected. Works as Additional Authenticated Data (AAD) binding ciphertext to intended context only. E.g., S3 SSE-KMS automatically uses object ARN as context, preventing ciphertext-from-one-object-to-another-location decryption attempts. Exam: "decryption fails, permissions all correct" scenarios' hidden cause often Encryption Context mismatch.
+You should memorize Encryption Context as well. If you give a key-value pair at encryption time, such as `--encryption-context "Project=Web"`, decryption succeeds **only if you present exactly the same context**. It works as Additional Authenticated Data (AAD), binding the ciphertext so that it can be unlocked only in its intended context. For example, S3 SSE-KMS automatically uses the object ARN as the context, preventing attempts to move one object's ciphertext to another location and decrypt it. In an exam scenario of "decryption fails though the permissions are all correct," the hidden cause is often an Encryption Context mismatch.
 
 ## Summary
 
-All KMS design decisions derive from one principle: "never let people touch keys." No key download API because keys only exist inside HSM; 4KB limit forces Envelope Encryption avoiding large data direct master-key exposure; Key Policy precedes IAM limiting blast radius per-key compromise; 7~30 deletion wait gates irreversible data loss.
+Every KMS design decision derives from a single principle: "keep people from touching the key." There is no API to download a key because the key exists only inside the HSM; there is a 4 KB limit because Envelope Encryption is enforced to avoid exposing large data directly to the master key; the Key Policy takes precedence over IAM to limit the blast radius so that one breached key doesn't expose everything; and deletion takes 7 to 30 days as a safety device that puts a brake on irreversible data loss.
 
-Five operator memory points: ① Envelope Encryption — big data local DEK encryption, KMS seals DEK only. ② Key Policy priority — never casually delete default policy's root delegation line. ③ Auto-rotation changes backing key, Key ID immutable, not damage response. ④ Cross-Region decryption only via Multi-Region Key. ⑤ Key deletion 7~30 day wait, rehearse with pre-deletion disable. These five cover most KMS problems.
+The five things for an operator to remember are these. ① Envelope Encryption: encrypt large data locally with a DEK, and KMS only seals the DEK. ② Key Policy first: never casually delete the root delegation line of the default policy. ③ Automatic rotation changes only the backing key and leaves the Key ID unchanged; it is not a remedy for compromise. ④ Multi-Region Key is the only path for cross-Region decryption. ⑤ Key deletion has a 7-30 day wait; rehearse by disabling first. These five cover most KMS questions.
 
-Next covers KMS's most demanding encryption target — automatically-rotating secrets. Secrets Manager's password rotation 4-step dance and Cross-Region shared secrets.
+In the next post, we cover the trickiest thing KMS encrypts: secrets that have to change automatically. It's the 4-step dance by which Secrets Manager rotates a password with zero downtime, and how to share the same secret across multiple Regions.
 
 ---
 
-## 📝 Practice Problems
+## 📝 Practice Questions
 
-**Problem 1.** Encrypt 1GB log file with KMS, get 4KB limit error. Standard solution?
+**Question 1.** You tried to encrypt a 1 GB log file with KMS and got a 4 KB limit error. What is the standard solution?
 
-A) Split file 4KB chunks, encrypt each separately with KMS
-B) Envelope Encryption — GenerateDataKey for DEK, locally encrypt file, store encrypted DEK with encrypted data
-C) Use CloudHSM instead for direct encryption
-D) Bypass with S3 bucket policy
+A) Split the file into 4 KB pieces and encrypt each with KMS
+B) Envelope Encryption: receive a DEK with GenerateDataKey, encrypt the file locally, and store the encrypted DEK together with the data
+C) Encrypt directly with CloudHSM instead of KMS
+D) Work around it with an S3 bucket policy
 
 **Answer: B**
 
-Explanation: KMS's 4KB limit is intentional design. Master key encrypting large data causes network bottleneck, HSM throughput limits, expanded cryptanalysis surface. Envelope Encryption uses one-time DEK for large local data fast encryption, seals only short DEK with master key, stores together. Plaintext DEK destroyed from memory after use; disk holds only encrypted data and encrypted DEK. S3 SSE-KMS, EBS, RDS encryption all internally use this pattern.
+Explanation: KMS's 4 KB limit is intentional design. Directly encrypting large data with a master key causes three problems: a network bottleneck, HSM throughput limits, and an expanded cryptanalysis surface. Envelope Encryption encrypts large data quickly and locally with a one-time DEK and seals only the short DEK with the master key, storing them together. The Plaintext DEK must be discarded from memory right after use, and only the encrypted data and encrypted DEK remain on disk. S3 SSE-KMS, EBS, and RDS encryption all use this pattern internally.
 
 ---
 
-**Problem 2.** IAM user has `kms:*` permission yet specific KMS key use denied. Highest-probability cause?
+**Question 2.** An IAM user was granted `kms:*` permissions, yet use of a particular KMS key is denied. What is the most likely cause?
 
-A) MFA unauthenticated
-B) Key Policy doesn't allow account/subject — KMS Key Policy resource-based policy takes precedence over IAM
-C) Key in different region
+A) MFA not authenticated
+B) The Key Policy doesn't allow that account/principal: KMS is a resource-based policy in which the Key Policy takes precedence over IAM
+C) The key is in a different Region
 D) API call limit exceeded
 
 **Answer: B**
 
-Explanation: KMS uniquely requires all keys have Key Policy; without explicit Key Policy permission (or IAM delegation), no IAM permission width grants access. Keys' blast radius containment design. Default Key Policy includes `Principal: arn:aws:iam::account:root` line "delegate to this account's IAM" — without this, IAM powerless. Accidentally deleting root delegation without specifying yourself locks key, AWS Support-only recovery.
+Explanation: Unlike other services, KMS requires a Key Policy on every key, and unless the Key Policy explicitly allows it (or delegates to IAM), the request is denied no matter how broad the IAM permissions are. This is a design to limit the blast radius even if one key is breached. The default Key Policy has a line with `Principal: arn:aws:iam::account:root` that "delegates to this account's IAM policies," and without this line IAM becomes powerless. If you accidentally delete this root line and don't name yourself either, the key is locked and can be recovered only through AWS Support.
 
 ---
 
-**Problem 3.** Security team: "Key seems compromised, enable auto-rotation?" Correct judgment?
+**Question 3.** The security team asks, "This key seems to have leaked, so can't we just turn on automatic rotation?" What is the correct judgment?
 
-A) Yes, enable auto-rotation immediately invalidates compromised key
-B) Auto-rotation adds new backing key only, doesn't discard old, not damage response — disable key then re-encrypt data with new key
-C) Just delete key immediately
-D) Switch to Multi-Region Key
+A) Yes, turning on automatic rotation immediately invalidates the leaked key
+B) Automatic rotation only adds a new backing key and doesn't discard the old backing keys, so it is not a compromise remedy: you must disable the key and re-encrypt the data with a new key
+C) Instead of rotating, just delete the key immediately
+D) Switching to a Multi-Region Key fixes it
 
 **Answer: B**
 
-Explanation: Auto-rotation is preventive, not remedial. Rotation changes encryption backing key, but past data decryption requires permanent old backing key preservation, so old-key decryption ability remains. Real compromise requires disable key then completely re-encrypt all that key's data with new key. Immediate deletion (C) enforces 7~30 day wait and permanent data loss risk — inappropriate.
+Explanation: Automatic rotation is a preventive device, not a post-incident response. Rotation swaps the backing key used for encryption for a new one, but it keeps the old backing keys permanently to decrypt past data, so the ability to decrypt data with the old key remains. If the key is really compromised, you must disable the key and fully re-encrypt the data encrypted with it under a brand-new key (re-encrypt). Immediate deletion in C is inappropriate because a 7-30 day wait is enforced and there is a risk of permanent data loss.
 
 ---
 
-**Problem 4.** Global DynamoDB Table across Seoul and Tokyo, decrypt same KMS key both regions. What key type?
+**Question 4.** You operate a Global DynamoDB Table in the Seoul and Tokyo Regions and need to decrypt data on both sides with the same KMS key. What key type is needed?
 
-A) General Customer Managed Key separately per region
-B) Multi-Region Key — Primary with replicas share same ID, backing material, Cross-Region decryption possible
+A) Create an ordinary Customer Managed Key separately in each Region
+B) Multi-Region Key: create a primary and place a replica in the other Region, and with the same key identifier and backing material, cross-Region decryption is possible
 C) AWS Managed Key
-D) CloudHSM sole cluster
+D) A dedicated CloudHSM cluster
 
 **Answer: B**
 
-Explanation: General KMS keys region-bound; one region's encryption can't decrypt via another region's key. Key ARN contains region; backing material exists only that region's HSMs. Multi-Region Key exception: Primary and replica keys share same identifier (`mrk-`) and backing material enabling Cross-Region decryption. Backing material replication via encrypted HSM-to-HSM channel preserving plaintext never leaves HSM principle. Global Table, S3 CRR (SSE-KMS), multi-region backup typical use cases.
+Explanation: An ordinary KMS key is bound to a Region, so data encrypted in one Region can't be decrypted with a key in another Region. This is because the Region is embedded in the key ARN and the backing material exists only in that Region's HSM. Multi-Region Key is the exception to this isolation: the primary key and replica key share the same key identifier (`mrk-`) and backing material, enabling cross-Region decryption. The replication of backing material also happens over an encrypted channel between HSMs, so no plaintext travels over the network. Global Tables, S3 CRR (SSE-KMS), and Multi-Region backups are representative use cases.
 
 ---
 
-**Problem 5.** Finance regulation mandates "keys on sole HSM only our access, AWS can't access." Which service?
+**Question 5.** A financial regulatory requirement explicitly states that "the key must be in a dedicated HSM accessible only to the company, and even AWS must not be able to access it." Which service is needed?
 
-A) KMS Customer Managed Key + auto-rotation
+A) KMS Customer Managed Key + automatic rotation
 B) KMS Multi-Region Key
-C) CloudHSM — sole-leased HSM, FIPS 140-2 Level 3, AWS can't access
+C) CloudHSM: a customer-exclusive rented HSM, FIPS 140-2 Level 3, and even AWS can't access the keys
 D) Secrets Manager
 
 **Answer: C**
 
-Explanation: KMS's HSM multitenant (multiple customers shared) structure can't satisfy "sole HSM" requirement. CloudHSM customers lease entire HSM device controlling 100%, fully satisfies FIPS 140-2 Level 3, AWS can't access keys. Trade-off: lose admin credentials, AWS can't recover keys, permanent loss — complete control means complete responsibility. For KMS convenience + CloudHSM control, use KMS Custom Key Store.
+Explanation: KMS's HSMs are multi-tenant (shared by multiple customers), so they can't satisfy a "dedicated HSM" requirement. With CloudHSM the customer rents the whole HSM device with 100% control, it fully meets FIPS 140-2 Level 3, and even AWS can't access the keys. However, the price is that if the customer loses the administrator credentials, even AWS can't recover the keys and they are permanently lost: complete control comes with complete responsibility. To combine KMS's convenience with CloudHSM's control, use the KMS Custom Key Store.
 
 ---
 
-**Problem 6.** An operator wants to delete a KMS key because it is no longer used. What is the safest procedure?
+**Question 6.** An operator wants to delete a KMS key because it's no longer used. What is the safest procedure?
 
 A) Schedule immediate deletion with `schedule-key-deletion` and be done
-B) First disable the key and run for a few days to a few weeks, confirm there are no decryption attempts, and then schedule deletion
-C) Remove all permissions in the Key Policy
+B) First disable the key and run for a few days to weeks, then schedule deletion after confirming there are no decryption attempts
+C) Remove all permissions from the Key Policy
 D) Delete only the alias attached to the key
 
 **Answer: B**
 
-Explanation: Key deletion is irreversible, and all data encrypted with that key (including backups) can never be decrypted again. This risk is why KMS enforces a 7-30 day waiting period. The safe procedure is to first disable the key (which can be undone immediately) and run while monitoring decryption attempts with CloudWatch, and if there is no problem for a set period, then schedule deletion with `schedule-key-deletion`. Disabling serves as a free rehearsal. Even during the waiting period, you can undo it with `cancel-key-deletion`.
+Explanation: Key deletion is irreversible, and all data encrypted with that key (including backups) becomes permanently undecryptable. This risk is also why KMS enforces a 7-30 day waiting period. The safe procedure is to first disable the key (immediately reversible), monitor decryption attempts with CloudWatch while running, and, if there is no problem for a while, schedule deletion with `schedule-key-deletion`. Disabling serves as a free rehearsal. Even during the waiting period you can undo it with `cancel-key-deletion`.
 
 ---
 
-**Problem 7.** Permissions and key state are both normal, yet decryption of a specific ciphertext keeps failing. Besides permissions, what cause should be suspected?
+**Question 7.** Permissions and key state are both normal, yet decryption of a particular ciphertext keeps failing. Besides permissions, what cause should you suspect?
 
-A) Key rotation is in progress and temporarily blocking it
+A) Key rotation is in progress, so it's temporarily blocked
 B) The Encryption Context used at encryption does not match the context presented at decryption
-C) Because it is not a Multi-Region Key
+C) It isn't a Multi-Region Key
 D) The DEK has expired
 
 **Answer: B**
 
-Explanation: The Encryption Context is a key-value pair passed along at encryption time and works as additional authenticated data (AAD). Decryption succeeds only if you present **exactly the same context**, and if even one character differs, decryption is rejected even when permissions are perfect. S3 SSE-KMS automatically uses the object ARN as the context, preventing attempts to move ciphertext to another location and decrypt it. Key rotation (A) does not block decryption because the backing key identifier is recorded in the data and the old key is found automatically. When permissions are correct but decryption fails, suspect an Encryption Context mismatch first.
+Explanation: Encryption Context is a key-value pair passed along at encryption time and works as Additional Authenticated Data (AAD). Decryption succeeds only if you present **exactly the same context**, and if even one character differs, decryption is rejected even with perfect permissions. S3 SSE-KMS automatically uses the object ARN as the context to prevent attempts to move ciphertext to another location and decrypt it. Key rotation (A) doesn't block decryption, since the backing key identifier is recorded with the data and the old key is found automatically. When permissions are right but decryption fails, suspect an Encryption Context mismatch first.
 
 ---

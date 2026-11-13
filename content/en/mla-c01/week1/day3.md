@@ -1,4 +1,4 @@
-﻿# Day 3 - AWS ML Stack at a Glance
+# Day 3 - AWS ML Stack at a Glance
 
 ## 📌 Key Takeaways
 

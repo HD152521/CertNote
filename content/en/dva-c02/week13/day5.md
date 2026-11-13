@@ -278,11 +278,11 @@ D) OpenID Connect
 **10.** Aurora Global Database disaster recovery targets?
 
 A) RPO < 5 min, RTO < 1 hour  
-B) RPO < 1 sec, RTO < 1 min  
+B) RPO of seconds, RTO of minutes  
 C) RPO < 1 hour, RTO < 4 hours  
 D) RPO = 0, RTO = 0  
 
-**Answer: B** - Aurora Global provides <1 second replication lag (RPO) and <1 minute failover (RTO).
+**Answer: B** - Aurora Global provides typically sub-second replication lag, an RPO of seconds, and a failover time (RTO) on the order of minutes.
 
 ---
 

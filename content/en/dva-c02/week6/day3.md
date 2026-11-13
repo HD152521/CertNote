@@ -1,282 +1,282 @@
-# Day 3 - DynamoDB: RCU/WCU Mathematics, DAX Architecture, Streams Processing
+# Day 3 - DynamoDB: RCU/WCU Math, DAX Architecture, and Streams Processing
 
-Many developers are shocked when receiving their first DynamoDB bill. The amount often runs 10× or 100× higher than expected for three reasons — RCU/WCU calculation mistakes, wrong choice between on-demand and provisioning modes, and wasted capacity from incomplete work. In this day, we understand RCU/WCU calculation precisely through mathematics, how DAX manages caching, and how DynamoDB Streams connects with Lambda.
+The causes of a DynamoDB bill coming in much higher than expected usually narrow down to three — mistakes in the RCU/WCU calculation, choosing the wrong between on-demand and provisioned mode, and waste from unfinished work. In this day we get the RCU/WCU calculation mathematically exact, and dig into how DAX manages its cache and how DynamoDB Streams integrates with Lambda.
 
-## The Mathematics of RCU Calculation — ceil function is key
+## The Math of RCU Calculation — The ceil Function Is the Key
 
-RCU (Read Capacity Unit) calculation formula:
-
-```
-Strongly Consistent RCU = ceil(item size / 4KB) × 1
-Eventually Consistent RCU  = ceil(item size / 4KB) × 0.5
-Transactional Read RCU    = ceil(item size / 4KB) × 2
-```
-
-**ceil** is the ceiling function. A 4.1KB item: ceil(4.1/4) = ceil(1.025) = 2.
-
-Frequently appearing RCU calculation examples on exams:
+The RCU (Read Capacity Unit) formulas:
 
 ```
-Example 1: 1KB item, Eventually Consistent reads 100/sec
+Strongly consistent RCU = ceil(item size / 4KB) × 1
+Eventually consistent RCU  = ceil(item size / 4KB) × 0.5
+Transactional RCU    = ceil(item size / 4KB) × 2
+```
+
+**ceil** is the round-up function. If the item is 4.1KB, ceil(4.1/4) = ceil(1.025) = 2.
+
+RCU calculation examples:
+
+```
+Example 1: 1KB item, 100 eventually consistent reads/sec
   RCU = ceil(1/4) × 0.5 × 100 = 1 × 0.5 × 100 = 50 RCU
 
-Example 2: 6KB item, Strongly Consistent reads 50/sec
+Example 2: 6KB item, 50 strongly consistent reads/sec
   RCU = ceil(6/4) × 1 × 50 = 2 × 1 × 50 = 100 RCU
 
-Example 3: 9KB item, Transactional reads 20/sec
+Example 3: 9KB item, 20 transactional reads/sec
   RCU = ceil(9/4) × 2 × 20 = 3 × 2 × 20 = 120 RCU
 
-Example 4: 400KB item (max size), Eventually Consistent 10/sec
+Example 4: 400KB item (maximum size), 10 eventually consistent reads/sec
   RCU = ceil(400/4) × 0.5 × 10 = 100 × 0.5 × 10 = 500 RCU
 ```
 
-## The Mathematics of WCU Calculation
+## The Math of WCU Calculation
 
-WCU (Write Capacity Unit) calculation formula:
-
-```
-Standard Write WCU      = ceil(item size / 1KB)
-Transactional Write WCU  = ceil(item size / 1KB) × 2
-```
-
-WCU is based on 1KB — different from RCU's 4KB. Missing this difference makes calculations wrong by 4×.
+The WCU (Write Capacity Unit) formulas:
 
 ```
-Example 1: 2.5KB item, standard write 10/sec
+Standard write WCU      = ceil(item size / 1KB)
+Transactional write WCU  = ceil(item size / 1KB) × 2
+```
+
+WCU is based on 1KB — different from the 4KB of RCU. Miss this difference and the calculation is wrong.
+
+```
+Example 1: 2.5KB item, 10 standard writes per second
   WCU = ceil(2.5/1) × 1 × 10 = 3 × 10 = 30 WCU
 
-Example 2: 0.5KB item, transactional write 50/sec
+Example 2: 0.5KB item, 50 transactional writes per second
   WCU = ceil(0.5/1) × 2 × 50 = 1 × 2 × 50 = 100 WCU
 
-Example 3: 7KB item, standard write 5/sec
+Example 3: 7KB item, 5 standard writes per second
   WCU = ceil(7/1) × 1 × 5 = 7 × 5 = 35 WCU
 ```
 
-> ⚠️ **Trap**: WCU is 1KB-based, RCU is 4KB-based. Confusing them makes calculation wrong by 4×. Memorize: "writes are more expensive" — same item consumes 4× more WCU units than RCU (Strongly Consistent).
+WCU is in 1KB units and RCU is in 4KB units. Mix them up and the calculation is off by 4x. You can remember it as "writes are more expensive." For the same item, WCU consumes 4 times as many capacity units as RCU (strongly consistent).
 
-## On-Demand vs Provisioning — The Mathematics of Selection Criteria
+## On-Demand vs Provisioned — The Math of the Selection Criteria
 
-| Aspect | Provisioning + Auto Scaling | On-Demand |
+| Category | Provisioned + Auto Scaling | On-demand |
 |------|------------------------|---------|
-| Pricing | Per-hour RCU/WCU charge | Per-request charge |
-| Price ratio | Baseline | ~2~3× more expensive |
-| Predictability | Favorable for predictable traffic | Favorable for unpredictable traffic |
-| Management | Auto Scaling policy required | No configuration |
-| Max throughput | Set value | 2× previous peak (warmed up) |
-| Mode switch | To on-demand once/24hr | To provisioning once/24hr |
+| Pricing | Provisioned RCU/WCU billed per hour | Billed per actual request |
+| Price ratio | Baseline | About 2-3x more expensive |
+| Predictability | Favors predictable traffic | Favors unpredictable traffic |
+| Management | Auto Scaling policy must be set | No configuration |
+| Maximum throughput | The configured value | 2x the previous peak (pre-warmed) |
+| Mode switch | To on-demand once per 24 hours | To provisioned once per 24 hours |
 
-On-demand suitable situations: ① New service (traffic unpredictable), ② Batch jobs (irregular heavy processing), ③ Dev/test environment, ④ Completely random traffic pattern.
+When on-demand fits: ① a new service (unpredictable traffic), ② batch jobs (irregular bulk processing), ③ dev/test environments, ④ a completely random traffic pattern.
 
-Provisioning suitable situations: ① Stable, predictable traffic, ② Cost optimization important for large services, ③ Using Reserved Capacity (~76% discount).
+When provisioned fits: ① stable, predictable traffic, ② large services where cost optimization matters, ③ when you use Reserved Capacity (about 76% discount).
 
-> ⚠️ **Trap**: On-demand mode doesn't scale infinitely. Starts at minimum throughput on initial setup and auto-scales only to 2× previous traffic peak. If traffic suddenly surges 10×, even an on-demand table not "warmed up" will throttle. Warming method: Run in provisioning mode for sufficient time to handle adequate traffic before switching to on-demand.
+> ⚠️ **Pitfall**: On-demand mode does not scale infinitely. At initial setup it starts at the minimum throughput and auto-scales only up to 2x the previous traffic peak. So if 10x traffic suddenly arrives, throttling occurs even on an on-demand table that hasn't been warmed up. How to warm up: run in provisioned mode for a period to handle enough traffic, then switch to on-demand.
 
-## DAX Architecture — The Meaning of Write-Through Cache
+## DAX Architecture — What Write-Through Cache Means
 
-DAX (DynamoDB Accelerator) is a DynamoDB-exclusive in-memory cache. Reduces response time from milliseconds (ms) to microseconds (μs).
+DAX (DynamoDB Accelerator) is an in-memory cache dedicated to DynamoDB. It reduces response time from milliseconds (ms) to microseconds (μs).
 
-DAX is a fully managed cluster. Consists of one Primary node and multiple Read Replica nodes. Clients use DAX SDK instead of DynamoDB SDK but API is identical.
+DAX is configured as a fully managed cluster. A cluster consists of one primary node and several read replica nodes. The client uses the DAX SDK instead of the DynamoDB SDK, but the API is the same.
 
 **DAX's two caches**:
 
 ```
 1. Item Cache
-   - Target: GetItem, BatchGetItem results
-   - TTL: Default 5 minutes (adjustable)
-   - On cache miss: Read from DynamoDB, store in cache, return
+   - Target: results of GetItem, BatchGetItem
+   - TTL: default 5 minutes (adjustable)
+   - On a cache miss: read from DynamoDB, store in the cache, then return
 
 2. Query Cache
-   - Target: Query, Scan results
-   - TTL: Default 5 minutes (adjustable)
-   - Same query with same parameters returns from cache
-   - Cache key: Hash of table name + all parameters
+   - Target: results of Query, Scan
+   - TTL: default 5 minutes (adjustable)
+   - Running the same query with the same parameters returns the cache
+   - Cache key: table name + hash of all parameters
 ```
 
 **DAX read flow**:
 ```
 Client → DAX cluster
-            ↓ Cache hit?
-            YES → Return from cache immediately (~μs)
-            NO  → Read from DynamoDB → Store in cache → Return (~ms)
+                ↓ cache hit?
+                YES → return immediately from the cache (~μs)
+                NO  → read from DynamoDB → store in cache → return (~ms)
 ```
 
 **DAX write flow (Write-Through)**:
 ```
 Client → DAX cluster
-            ↓
-            Write to DynamoDB (synchronously)
-            ↓
-            Update Item Cache
-            ↓
-            Return completion
+                ↓
+                write to DynamoDB (synchronous)
+                ↓
+                update the Item Cache
+                ↓
+                return completion
 ```
 
-Write-Through meaning: When write request arrives at DAX, DAX writes to DynamoDB first, and only updates cache upon success. Unlike Write-Back where writes only hit cache, there's no data loss risk.
+What Write-Through means: when a write request comes into DAX, DAX writes to DynamoDB first and, after it succeeds, updates the cache too. Unlike Write-Back, where the write is stored only in the cache, there is no risk of data loss.
 
-> 💡 **Related theory**: Three cache strategies — Lazy Loading (Cache-Aside): app reads from DB on cache miss and stores in cache. Write-Through: update cache and DB simultaneously on write. Write-Back (Write-Behind): write hits cache only, async reflection to DB later. DAX uses Lazy Loading for reads, Write-Through for writes. ElastiCache can implement all three but requires developer to code cache logic.
+The three types of caching strategy — Lazy Loading (Cache-Aside): on a cache miss, the application reads from the DB and stores it in the cache. Write-Through: on a write, the cache and DB are updated together. Write-Back (Write-Behind): the write goes only to the cache and is reflected in the DB asynchronously later. DAX uses Lazy Loading for reads and Write-Through for writes. ElastiCache can implement all three strategies, but the developer must code the cache logic themselves.
 
-**DAX's important constraints**:
+**Important DAX constraints**:
 
-1. **Strongly Consistent reads bypass cache** — `ConsistentRead: true` requests make DAX query DynamoDB directly. DAX benefits lost for always-latest-data cases.
+1. **Strongly consistent reads bypass the cache** — if you request with `ConsistentRead: true`, DAX queries DynamoDB directly. When you always need the latest data, you don't get DAX's benefit.
 
-2. **VPC-only access** — ENI created in DAX cluster, accessible only inside VPC. No direct internet access.
+2. **Usable only inside a VPC** — an ENI is created for the DAX cluster, and it is reachable only inside the VPC. No direct access from the internet.
 
 3. **No write performance improvement** — DAX is a read cache. Writes always go through DynamoDB.
 
-## DAX vs ElastiCache — When to Use Which
+## DAX vs ElastiCache — When to Use What
 
-| Item | DAX | ElastiCache(Redis) |
+| Item | DAX | ElastiCache (Redis) |
 |------|-----|-------------------|
-| Target data | DynamoDB-only | Any data |
-| API compatibility | Same as DynamoDB SDK | Separate Redis/Memcached API |
-| Cache logic | Automatic (transparent) | Developer-implemented |
-| TTL management | Automatic (DAX handles) | Developer configures |
-| Cache invalidation | DAX auto on write | Developer manually deletes |
-| Use cases | DynamoDB read acceleration | Session management, Pub/Sub, complex caching |
-| Cost | DAX node hourly charge | ElastiCache node hourly charge |
+| Target data | DynamoDB only | Any data |
+| API compatibility | Same as the DynamoDB SDK | Separate Redis/Memcached API |
+| Cache logic | Automatic (transparent) | Developer implements it |
+| TTL management | Automatic (DAX handles it) | Developer sets it |
+| Cache invalidation | Automatic by DAX on writes | Developer deletes manually |
+| Use cases | Accelerating DynamoDB reads | Session management, Pub/Sub, complex caching |
+| Cost | DAX node hourly rate | ElastiCache node hourly rate |
 
-Exam scenario: "DynamoDB read response is ms level, want μs level" → DAX. "Fast session data storage needed" → ElastiCache Redis. "Cache various DBs regardless of DynamoDB" → ElastiCache.
+Exam scenarios: "DynamoDB read responses are at the ms level and I want them at the μs level" → DAX. "I want to store session data quickly" → ElastiCache Redis. "I want to cache various databases, unrelated to DynamoDB" → ElastiCache.
 
-> 📚 **Case study**: Netflix uses DynamoDB for user watch history and recommendation data, places DAX in front to cache the repeated access patterns to same episode lists. According to Netflix internal presentation, 70%+ of peak-time DynamoDB reads are satisfied by DAX cache hits, significantly reducing DynamoDB provisioning costs.
+For patterns that read the same item repeatedly (for example, popular-list lookups), a cache in front of DynamoDB absorbs the read requests and reduces DynamoDB provisioning cost.
 
-## DynamoDB Streams — Real-time Streaming of Change History
+## DynamoDB Streams — Real-Time Streaming of the Change History
 
-DynamoDB Streams is a time-ordered change log recording all item changes (INSERT, MODIFY, REMOVE) in order.
+DynamoDB Streams is a time-ordered change log that records every item change (INSERT, MODIFY, REMOVE) in a table, in order.
 
-**Streams internal structure**:
-- One Stream shard per table partition
-- Event order guaranteed within partition key
-- 24-hour retention (fixed, unchangeable)
-- Consumed by Lambda or KCL (Kinesis Client Library)
+**Internal structure of Streams**:
+- One Stream shard exists per table partition
+- Event order is guaranteed per partition key
+- Retained for 24 hours (fixed, cannot be changed)
+- Consumed with Lambda or the KCL (Kinesis Client Library)
 
-**4 Stream view types**:
+**The four stream view types**:
 
 ```
-KEYS_ONLY:          Only PK and SK of changed items
-NEW_IMAGE:          Full item after change
-OLD_IMAGE:          Full item before change
-NEW_AND_OLD_IMAGES: Both before and after (audit logs)
+KEYS_ONLY:          records only the PK and SK of the changed item
+NEW_IMAGE:          the whole item after the change
+OLD_IMAGE:          the whole item before the change
+NEW_AND_OLD_IMAGES: both before and after the change (for audit logs)
 ```
 
-**Lambda + Streams integration method**:
+**How Lambda and Streams integrate**:
 
-Lambda polls Streams via **Event Source Mapping (ESM)**. Lambda periodically checks Streams, not Streams calling Lambda directly.
+Lambda polls Streams through an **Event Source Mapping (ESM)**. It is Lambda that periodically checks Streams; Streams does not invoke Lambda directly.
 
 ```python
-# Lambda handler (process DynamoDB Streams events)
+# Lambda function handler (processing DynamoDB Streams events)
 def handler(event, context):
     for record in event['Records']:
         event_name = record['eventName']  # INSERT, MODIFY, REMOVE
         
         if event_name == 'INSERT':
             new_item = record['dynamodb']['NewImage']
-            # Process new item
+            # process the new item
             
         elif event_name == 'MODIFY':
             old_item = record['dynamodb']['OldImage']
             new_item = record['dynamodb']['NewImage']
-            # Process before/after comparison
+            # compare before/after
             
         elif event_name == 'REMOVE':
             old_item = record['dynamodb']['OldImage']
-            # Process deleted item
+            # process the deleted item
 ```
 
-| ESM Setting | Description |
+| ESM setting | Description |
 |---------|------|
-| BatchSize | Records to process per invocation (max 10,000) |
-| BisectBatchOnFunctionError | Split batch in half on error, retry separately |
-| DestinationConfig | Send failed records to SQS DLQ or SNS |
-| MaximumRetryAttempts | Maximum retry attempts |
-| ParallelizationFactor | Parallel Lambdas per shard (default 1, max 10) |
+| BatchSize | Number of records to process at once (max 10,000) |
+| BisectBatchOnFunctionError | On error, split the batch in half and retry |
+| DestinationConfig | Send failed records to an SQS DLQ or SNS |
+| MaximumRetryAttempts | Maximum number of retries |
+| ParallelizationFactor | Number of parallel Lambdas per shard (default 1, max 10) |
 
-**One Lambda per shard**: By default, one Stream shard is processed sequentially by one Lambda instance. Increasing `ParallelizationFactor` allows one shard processed by multiple Lambdas in parallel, but partition key-level order guarantee becomes complex.
+**One Lambda per shard**: by default, one Stream shard is processed in order by one Lambda instance. Raising `ParallelizationFactor` lets several Lambdas process one shard in parallel, but then ordering guarantees per partition key become more complicated.
 
-## Kinesis Data Streams for DynamoDB — Overcome 24-hour Limit
+## Kinesis Data Streams for DynamoDB — Overcoming the 24-Hour Limit
 
-DynamoDB Streams' only major limitation: **24-hour retention**. If 1-year change history is needed, must use Kinesis Data Streams instead.
+The only big drawback of DynamoDB Streams is the **24-hour retention** limit. If you need a year of change history, you must use Kinesis Data Streams rather than DynamoDB Streams.
 
-Connecting DynamoDB table directly to Kinesis Data Streams flows all changes into Kinesis stream. Kinesis supports up to **365-day** retention.
+If you connect a DynamoDB table directly to Kinesis Data Streams, all changes flow into the Kinesis stream. Kinesis can retain up to **365 days**.
 
 ```
 DynamoDB Table
-    ↓ (Direct connection, no code)
+    ↓ (direct connection, no extra code)
 Kinesis Data Stream
-    ↓ (Max 365-day retention)
+    ↓ (up to 365 days retention)
     ├── Lambda (real-time processing)
-    ├── Kinesis Firehose → S3 (long-term storage)
-    └── Kinesis Analytics (real-time analysis)
+    ├── Kinesis Firehose → S3 (long-term retention)
+    └── Kinesis Analytics (real-time analytics)
 ```
 
-Exam scenario: "Must retain DynamoDB change history 1+ year" → Kinesis Data Streams for DynamoDB.
+Exam scenario: "DynamoDB change history must be retained for more than a year" → Kinesis Data Streams for DynamoDB.
 
 ## Global Tables — Multi-Region Active-Active
 
-Global Tables creates replicas of DynamoDB table across regions where read/write is possible in each region (Active-Active pattern).
+Global Tables is an Active-Active pattern that creates replicas of a DynamoDB table in multiple Regions so that reads/writes are possible in each Region.
 
 ```
 ap-northeast-2 table ←→ us-east-1 table ←→ eu-west-1 table
-(Write in Seoul)        (Write in Virginia)  (Write in Ireland)
-        ↕ Async replication (Streams-based)
-All regions eventually consistent synchronization
+(write in Seoul)         (write in Virginia)   (write in Ireland)
+        ↕ asynchronous replication (Streams-based)
+Synchronized to all Regions with eventual consistency
 ```
 
-Global Tables requirements: ① DynamoDB Streams enabled mandatory, ② On-demand or equal provisioning capacity.
+Global Tables requirements: ① DynamoDB Streams must be enabled, ② on-demand or identical provisioned capacity.
 
-Conflict resolution: Simultaneous modification of same item in two regions resolved via **Last Writer Wins** method. Latest timestamp write becomes final value.
+Conflict resolution: if the same item is modified in two Regions at the same time, it is resolved with **Last Writer Wins**. The write with the most recent timestamp becomes the final value.
 
-> ⚠️ **Trap**: Requesting Strongly Consistent read in Global Tables only guarantees consistency in current region's local replica. If other region's write hasn't replicated yet, even local Strongly Consistent read doesn't include other region's latest data.
+If you request a strongly consistent read in Global Tables, strong consistency is guaranteed only on the local replica in the current Region. If a write from another Region hasn't been replicated yet, even a local strongly consistent read does not include the other Region's latest data.
 
-## PITR (Point-In-Time Recovery) — 35-day Rollback Window
+## PITR (Point-In-Time Recovery) — The 35-Day Rollback Window
 
-PITR restores DynamoDB table to any point within last 35 days.
+PITR is a backup feature that can restore a DynamoDB table to any point in the past 35 days.
 
 ```
-Activation: Enable per table
-Restore: Choose specific time in seconds within last 35 days
-Target: Restore to new table (doesn't overwrite existing)
-Cost: Per GB of stored data additional charge
+Enable: turn on PITR per table
+Restore: choose a specific point in time, to the second, within the last 35 days
+Target: restores to a new table (does not overwrite the existing table)
+Cost: additional charge per GB stored
 ```
 
-PITR differs from On-Demand Backup. On-Demand Backup creates manual snapshot at specific time, retained indefinitely. PITR is automatic but only restores within 35-day window.
+PITR is different from On-Demand Backup. On-Demand Backup manually creates a snapshot at a specific point in time and retains it indefinitely. PITR is automatic but can restore only within the 35-day window.
 
-Exam scenario: "Accidentally deleted large data, want yesterday's state" → PITR. "Regulations require 5-year backup retention" → On-Demand Backup + S3 Export.
+Exam scenarios: "I accidentally deleted a large amount of data and want to restore to yesterday's state" → PITR. "Regulations require retaining backups for 5 years" → On-Demand Backup + S3 Export.
 
-## How Table Capacity Is Split Across Partitions
+## How Table Capacity Gets Split Into Partitions
 
-However precisely you calculate RCU/WCU, the reason you still run into throttling is that **the capacity you set on a table is divided and distributed across partitions**. The number printed on the bill is per table, but the thing that actually serves requests is each individual partition.
+No matter how exactly you do the RCU/WCU calculation, you still run into throttling because **the capacity you set on the table is divided among the partitions**. The number on the bill is per table, but what actually serves requests is each individual partition.
 
 ```
 Table: provisioned 4,000 RCU / 4,000 WCU
-        ↓ DynamoDB divides it across partitions internally
-   ┌─────────────┬─────────────┬─────────────┬─────────────┐
+        ↓ DynamoDB splits it among partitions internally
+   ┌──────────┬──────────┬──────────┬──────────┐
    │ Partition A │ Partition B │ Partition C │ Partition D │
-   │  ~1000 RCU  │  ~1000 RCU  │  ~1000 RCU  │  ~1000 RCU  │
-   └─────────────┴─────────────┴─────────────┴─────────────┘
+   │ ~1000RCU │ ~1000RCU │ ~1000RCU │ ~1000RCU │
+   └──────────┴──────────┴──────────┴──────────┘
         ▲
-        └─ What if requests pile up only here?
-           Even if only 900 of the table's total 4,000 RCU is in use,
+        └─ What if requests pile onto only this one?
+           Even if only 900 of the table's 4,000 RCU are in use,
            ProvisionedThroughputExceededException occurs on Partition A alone
 
-   Physical limit of a single partition: about 3,000 RCU · 1,000 WCU · 10GB
+   Physical limit of one partition: about 3,000 RCU · 1,000 WCU · 10GB
 ```
 
-There are two cushioning mechanisms you need to know here.
+There are two buffers you need to know here.
 
-- **Burst Capacity**: DynamoDB saves up capacity left unused during the last **5 minutes (up to 300 seconds)** and spends it on momentary spikes. Short blips get absorbed by this. However, it is a savings pool, so you cannot keep drawing on it, and it is not a resource AWS guarantees.
-- **Adaptive Capacity**: When load concentrates on a specific partition, DynamoDB shifts spare capacity from other partitions to it. It works automatically, but **it also hits its limit when the skew is extreme**.
+- **Burst Capacity**: it saves up the capacity left unused over the last **up to 300 seconds (5 minutes)** and spends it on momentary spikes. Short spikes get past with this. But since it is savings you can't keep using it, and it isn't a resource AWS guarantees.
+- **Adaptive Capacity**: when load piles onto a particular partition, DynamoDB shifts spare capacity from other partitions toward it. It works automatically, but **if the skew is extreme, this too hits its limit**.
 
-> ⚠️ **Trap**: The reflex of "raise capacity when throttling occurs" is the most expensive wrong answer. If skew is the cause, doubling capacity does not increase the share assigned to that one partition by the same amount, and only the bill doubles. **If `ThrottledRequests` shows up in CloudWatch even though consumed capacity is far below provisioned capacity, that is not a capacity problem but a key design problem.** The prescription then is (1) raise the cardinality of the partition key, (2) scatter the load artificially with write sharding, or (3) absorb hot items in front with DAX or ElastiCache.
+> ⚠️ **Pitfall**: The reflex "if throttling happens, raise the capacity" is the most expensive wrong answer. If skew is the cause, doubling the capacity doesn't increase the share assigned to one partition by that much, and only the bill doubles. **If `ThrottledRequests` shows up in CloudWatch even though consumed capacity is well below provisioned capacity, it is not a capacity problem but a key design problem.** The prescription then is (1) raise the partition key's cardinality, (2) spread it out artificially with write sharding, or (3) absorb the hot items up front with DAX or ElastiCache.
 
 ```bash
 # See the table's capacity mode, indexes, and size at a glance
 aws dynamodb describe-table --table-name Orders \
   --query 'Table.{Mode:BillingModeSummary.BillingMode,Items:ItemCount,SizeBytes:TableSizeBytes,GSI:GlobalSecondaryIndexes[].IndexName}'
 
-# Switch to on-demand (limited to once per 24 hours — a number the exam asks about)
+# Switch to on-demand (limited to once per 24 hours — a number the exam asks)
 aws dynamodb update-table --table-name Orders --billing-mode PAY_PER_REQUEST
 
-# Switch back to provisioned and specify GSI capacity too (if you omit the GSI, the GSI becomes the bottleneck)
+# Switch back to provisioned and specify the GSI capacity too (if you omit the GSI, the GSI becomes the bottleneck)
 aws dynamodb update-table --table-name Orders \
   --billing-mode PROVISIONED \
   --provisioned-throughput ReadCapacityUnits=2000,WriteCapacityUnits=2000 \
@@ -290,18 +290,18 @@ aws cloudwatch get-metric-statistics --namespace AWS/DynamoDB \
   --period 300 --statistics Sum
 ```
 
-## Batch APIs and Partial Failure — Where Data Is Silently Lost
+## Batch APIs and Partial Failure — Where Data Is Lost Silently
 
-DynamoDB's batch APIs are not "all succeed or all fail". They are structured to **process only some items and hand the rest back**, and code that ignores this return value is what causes data loss in practice.
+DynamoDB's batch APIs are not "all succeed or all fail." They are structured so that **only some are processed and the rest are returned**, and code that ignores this return value causes data loss in practice.
 
-| API | Per call | Nature | Failure handling |
+| API | At a time | Nature | Failure handling |
 |-----|--------|------|----------|
-| `GetItem` | 1 item | Exactly one item by key | Exception |
-| `BatchGetItem` | **Up to 100 items · 16MB** | Parallel reads across multiple tables | **Returns `UnprocessedKeys`** |
-| `BatchWriteItem` | **Up to 25 items · 16MB** | Put/Delete only (**no Update**) | **Returns `UnprocessedItems`** |
-| `TransactWriteItems` | Up to 100 items · 4MB | All succeed or all fail | Exception (with cancellation reasons), **2x WCU** |
-| `Query` | 1MB page | Range read by key condition | `LastEvaluatedKey` |
-| `Scan` | 1MB page | Sweep the whole table | `LastEvaluatedKey` |
+| `GetItem` | 1 item | Exactly one by key | Exception |
+| `BatchGetItem` | **Up to 100 · 16MB** | Parallel lookup across several tables | **Returns `UnprocessedKeys`** |
+| `BatchWriteItem` | **Up to 25 · 16MB** | Put/Delete only (**no Update**) | **Returns `UnprocessedItems`** |
+| `TransactWriteItems` | Up to 100 · 4MB | All succeed or all fail | Exception (with cancellation reasons), **2x WCU** |
+| `Query` | 1MB page | Range lookup by key condition | `LastEvaluatedKey` |
+| `Scan` | 1MB page | Full sweep | `LastEvaluatedKey` |
 
 ```python
 import time, random
@@ -322,81 +322,81 @@ def batch_write_all(dynamodb, table_name: str, items: list) -> None:
                 attempt += 1
                 if attempt > 8:
                     raise RuntimeError(f"batch write gave up: {len(request[table_name])} items left")
-                # Exponential backoff + jitter: keeps retries from piling up at once and being throttled again
+                # Exponential backoff + jitter: keeps retries from piling up at once and getting throttled again
                 time.sleep(min(2 ** attempt * 0.05, 5) * (0.5 + random.random()))
 ```
 
-A non-empty `UnprocessedItems` is **not an error but the normal expression of throttling**. Because no exception is thrown, code that only wraps the call in `try/except` drops items without any warning. This is exactly the number-one cause of the report "I did a batch upload but a few records are missing".
+A non-empty `UnprocessedItems` is **not an error but the normal expression of throttling**. Since no exception is thrown, code with only a `try/except` leaks items without any warning. This is exactly the number-one cause of the report "I batch-uploaded but a few records are missing."
 
-| Error/signal | Meaning | Remedy |
+| Error/signal | Meaning | Prescription |
 |----------|-----|------|
 | `ProvisionedThroughputExceededException` | Capacity exceeded | Retry with exponential backoff, check capacity and key design |
-| `UnprocessedItems` / `UnprocessedKeys` (non-empty) | Partial throttling | **Must retry** (not an exception) |
-| `ConditionalCheckFailedException` | Condition not met | Re-read and retry (an intended signal) |
-| `TransactionCanceledException` | Transaction cancelled | Check which item caused it via `CancellationReasons` |
+| `UnprocessedItems` / `UnprocessedKeys` (non-empty) | Partial throttle | **You must retry** (not an exception) |
+| `ConditionalCheckFailedException` | Condition not met | Re-read and retry (a designed signal) |
+| `TransactionCanceledException` | Transaction canceled | Check which item tripped it with `CancellationReasons` |
 | `ValidationException` | Item over 400KB, missing key, reserved word | Check the request structure |
-| `ItemCollectionSizeLimitExceededException` | LSI item collection exceeds 10GB | Redesign with a GSI instead of an LSI |
-| `IteratorAge` metric rising | Streams consumption is falling behind | Check parallelism, batch size, function performance |
+| `ItemCollectionSizeLimitExceededException` | LSI item collection over 10GB | Redesign with a GSI instead of an LSI |
+| `IteratorAge` metric rising | Streams consumption is falling behind | Check parallelization, batch size, function performance |
 
-The reason to mix **jitter (random wobble)** into exponential backoff is to break **synchronized retries (thundering herd)**. If hundreds of throttled clients retry at exactly the same interval, load gathers again at that moment, throttling occurs again, and this oscillation continues. Adding randomness to the wait time spreads the retries along the time axis so the system can recover on its own. The AWS SDK has this strategy built in by default, so you only need to care about it when writing your own retry loop — which is also why an option like "turn off the SDK's default retries and write your own" rarely shows up on the exam.
+The reason to mix **jitter (random wobble)** into exponential backoff is to break **synchronized retries (thundering herd)**. If hundreds of clients that hit a throttle retry at exactly the same interval, the load gathers again at that moment, throttling happens again, and this oscillation continues. Adding randomness to the wait time scatters retries across the time axis so the system can get out on its own. The AWS SDK has this strategy built in by default, so you only need to care when writing your own retry loop — which is also why an option like "turn off the SDK's default retries and write your own" rarely shows up on the exam.
 
-## The Moment DAX Serves a Stale Value
+## The Moment DAX Gives a Stale Value
 
-DAX's Write-Through updates the cache "**only when the write goes through DAX**". If you miss this premise, you will run into stale data of unknown cause.
+DAX's Write-Through updates the cache "**only when the write went through DAX**." Miss this premise and you run into stale data of unknown cause.
 
 ```
-[Normal path]                        [Path where the cache falls behind]
-App → DAX → DynamoDB                 Other service → DynamoDB (bypassing DAX)
-      └ cache updated ✅                     └ DAX does not know about this change ❌
-                                              The new value appears only after the TTL (default 5 minutes)
+[Normal path]                          [Path where the cache falls behind]
+App → DAX → DynamoDB                  Another service → DynamoDB (bypassing DAX)
+      └ cache updated ✅                         └ DAX doesn't know about this change ❌
+                                              New value only after the TTL (default 5 min) passes
 
-  e.g.) Modifying the table directly from a batch job, Lambda, or the console
-     → An app using DAX sees the old value for up to the TTL
+  e.g.) a batch job, Lambda, or the console modifies the table directly
+     → an app using DAX sees the old value for up to the TTL
 ```
 
-There are three remedies for this situation.
+There are three prescriptions for this situation.
 
 - Unify the path so that **all writes go through DAX**.
-- For reads where freshness is mandatory, request `ConsistentRead: true` to bypass the cache (at the cost of giving up DAX's performance benefit).
-- Reduce the TTL to a level the business can tolerate.
+- For reads that absolutely need freshness, request with `ConsistentRead: true` to bypass the cache (giving up DAX's performance gain in return).
+- Shorten the TTL to a level the business can tolerate.
 
-Either way, the expectation that "attaching DAX automatically makes data always fresh" does not hold.
+Either way, the expectation "I attached DAX, so it's automatically always up to date" does not hold.
 
-The reason DAX insists on its **own SDK** is that the client needs to know the cluster topology. The DAX SDK receives the cluster's node list, distributes reads across the read replicas, sends writes to the primary, and refreshes the list when a node is replaced. The API signatures are the same as DynamoDB's so there are almost no code changes, but the **connection layer is a completely different thing**. That is why DAX is accessible only inside a VPC (ENIs are attached to the cluster nodes), and to use it from Lambda, that Lambda must also be placed in the same VPC — a considerable share of "I attached DAX and now Lambda times out" cases are this missing VPC configuration.
+The reason DAX insists on its **own SDK** is that the client needs to know the cluster topology. The DAX SDK receives the cluster's node list, spreads reads across the read replicas, sends writes to the primary, and updates the list when a node is replaced. The API signatures are the same as DynamoDB's so there is almost no code change, but **the connection layer is a completely different thing**. That is why DAX is accessible only inside a VPC (an ENI is attached to the cluster nodes), and to use it from Lambda, that Lambda must also be placed in the same VPC — a good share of "I attached DAX but Lambda times out" is this missing VPC configuration.
 
-## Where Streams Consumption Gets Stuck: The Poison Pill Message
+## Where Streams Consumption Gets Stuck: The Poison Pill
 
-The most painful failure in the Streams and Lambda combination is **shard blocking**. To guarantee ordering, a failed batch cannot be skipped, so if one record keeps failing, every record behind it in that shard stops.
+The most painful failure in the Streams + Lambda combination is **shard blocking**. To guarantee order, a failed batch can't be skipped, so if one record keeps failing, every record behind it on that shard stops.
 
 ```
 Shard 1: [R1][R2][R3 (always fails)][R4][R5][R6] ...
                     ▲
-                    └ Keeps retrying here → R4 and later are never processed
+                    └ keeps retrying here → everything after R4 is never processed
                       CloudWatch's IteratorAge keeps rising = the signal of this state
 ```
 
-Practically all of the event source mapping settings are knobs for dealing with this problem.
+The event source mapping's settings are, in effect, all handles for dealing with this problem.
 
 | Setting | What it does | When to use |
 |------|--------|----------|
-| `BisectBatchOnFunctionError` | Splits a failed batch in half and retries | To narrow down which record in the batch is the problem |
-| `MaximumRetryAttempts` | Cap on the number of retries | Prevents the shard from being blocked by infinite retries |
+| `BisectBatchOnFunctionError` | Splits the failed batch in half and retries | To narrow down which record in the batch is the problem |
+| `MaximumRetryAttempts` | Upper limit on retries | Prevents the shard from being blocked by endless retries |
 | `MaximumRecordAgeInSeconds` | Discards records that are too old | Real-time processing where backlogged data becomes meaningless |
-| `DestinationConfig` (failure destination) | Sends info on abandoned batches to SQS/SNS | Isolates them for a human to investigate later |
-| `ParallelizationFactor` | Up to 10 Lambdas per shard | Raises throughput but complicates ordering guarantees |
-| `BatchSize` | Number of records passed at a time | Balances throughput against the blast radius of a failure |
+| `DestinationConfig` (failure destination) | Sends info on the abandoned batch to SQS/SNS | Isolate it for a human to investigate later |
+| `ParallelizationFactor` | Up to 10 Lambdas per shard | Throughput rises but ordering guarantees get more complicated |
+| `BatchSize` | Number of records passed at once | Balance between throughput and failure blast radius |
 
-As a hypothetical case, a pipeline that updated a search index from an orders table's Streams stalled because a product name containing Unicode emoji made the indexing library throw an exception. The function kept failing on that record, and because ordering had to be preserved, tens of thousands of records behind it waited en masse, leaving search results frozen in their old state for several hours. The only signal in the metrics was the monotonic rise of `IteratorAge` — because the error rate was low (only the same single record failed) and the invocation count also looked normal. The prescription afterwards is textbook: **set the point of giving up with `MaximumRetryAttempts`, isolate failed batches into SQS with `DestinationConfig`, and set an alarm on `IteratorAge`.** The handler was also changed to wrap individual records in `try/except` so it can tell "unprocessable data" apart from "transient failure". If you must pick a single metric to alarm on in stream processing, the answer is `IteratorAge`.
+As a hypothetical case, a pipeline that was updating a search index from an orders table's Streams stalled when the indexing library threw an exception because of a product name containing a Unicode emoji. The function kept failing on that record, and while tens of thousands of records behind it waited wholesale to preserve order, the search results froze in their old state for several hours. The only signal in the metrics was the monotonic rise of `IteratorAge` — because the error rate was low (only the same single record failing) and the invocation count also looked normal. The prescription afterward is textbook: **set the point of giving up with `MaximumRetryAttempts`, isolate failed batches into SQS with `DestinationConfig`, and set an alarm on `IteratorAge`.** And the handler was changed to wrap individual records in `try/except` to distinguish "unprocessable data" from "transient failure." If you must pick just one metric to alarm on in stream processing, the answer is `IteratorAge`.
 
-Today's core — RCU/WCU mathematics appears almost every exam as calculation problems. Don't memorize formulas but understand the principle: "reads are 4KB-based, writes are 1KB-based, ceil for rounding up". DAX is a transparent cache reducing DynamoDB reads to μs, Streams is a change log preserving 24 hours of all changes.
+Today's key point — RCU/WCU math is tested as calculation problems. Rather than memorizing the formulas, solve them with the principle "reads are based on 4KB, writes on 1KB, round up with ceil." DAX is a transparent cache that cuts DynamoDB reads to μs, and Streams is a change log that retains every change for 24 hours.
 
-## Summary
+## Wrap-Up
 
-Most DynamoDB costs and failures are born in **the gap between "the capacity I configured" and "the partition that actually receives the load"**. The calculation ends with three words — 4KB for reads, 1KB for writes, round up — but for that calculation to hold, traffic must be spread evenly across partitions. DAX is a cache that absorbs that gap in front, but it cannot see writes that bypassed DAX; Streams keeps every change in order for 24 hours, but a single failed record can block a shard. All three topics deal with the same shape of problem — **"the average is fine, but one point blows up"** — and that is exactly what the exam asks about.
+Most DynamoDB costs and failures are born in **the gap between "the capacity I configured" and "the partition that actually takes the load."** The calculation ends in three words — reads 4KB, writes 1KB, round up — but for that calculation to hold, traffic must be spread evenly across partitions. DAX is a cache that absorbs that gap up front, yet it can't see writes that bypassed DAX, and Streams leaves every change in order for 24 hours, yet a single failed record can block a shard. All three topics deal with the same shape of problem — **"the average is fine but one spot blows up"** — and that is exactly the spot the exam asks about.
 
 ## 📝 Practice Questions
 
-**Question 1.** You read a 7 KB item from DynamoDB with strong consistency 30 times per second. What is the required provisioned RCU?
+**Question 1.** In DynamoDB, a 7KB item is read 30 times per second with strong consistency. What provisioned RCU is needed?
 
 A) 30 RCU
 B) 60 RCU
@@ -404,11 +404,11 @@ C) 90 RCU
 D) 120 RCU
 
 **Answer: B**
-Explanation: Strongly consistent RCU = ceil(item size / 4 KB) × 1 × requests per second. ceil(7/4) = ceil(1.75) = 2. 2 × 1 × 30 = 60 RCU. With eventual consistency it would have been 30 RCU (half). With transactional reads it would have been 120 RCU (double). If the item size were 8 KB, ceil(8/4)=2 would be the same, but at 9 KB, ceil(9/4)=3 would make it 90 RCU.
+Explanation: Strongly consistent RCU = ceil(item size / 4KB) × 1 × requests per second. ceil(7/4) = ceil(1.75) = 2. 2 × 1 × 30 = 60 RCU. With eventual consistency it would have been 30 RCU (half). With transactional reads it would have been 120 RCU (double). If the item had been 8KB, ceil(8/4)=2 is the same, but at 9KB, ceil(9/4)=3, giving 90 RCU.
 
 ---
 
-**Question 2.** You write a 3.5 KB item to DynamoDB with transactional writes 20 times per second. What is the required WCU?
+**Question 2.** In DynamoDB, a 3.5KB item is written with transactional writes 20 times per second. What WCU is needed?
 
 A) 20 WCU
 B) 80 WCU
@@ -416,7 +416,7 @@ C) 140 WCU
 D) 160 WCU
 
 **Answer: D**
-Explanation: Transactional write WCU = ceil(item size / 1 KB) × 2 × requests per second. ceil(3.5/1) = 4. 4 × 2 × 20 = 160 WCU. For a standard write it would have been ceil(3.5/1)×1×20 = 80 WCU.
+Explanation: A transactional write consumes twice the WCUs of a standard write. Required WCU = ceil(item size / 1KB) × 2 × requests per second = ceil(3.5) × 2 × 20 = 4 × 2 × 20 = 160 WCU. With standard writes it would be 4 × 1 × 20 = 80 WCU, so 80 WCU (option B) is the trap of missing the 2× transactional cost, and 140 WCU (option C) cannot be produced by any calculation.
 
 ---
 
@@ -428,7 +428,7 @@ C) An error occurs (DAX does not support strong consistency)
 D) It is automatically converted to eventual consistency and returned from the cache
 
 **Answer: B**
-Explanation: DAX does not serve strongly consistent read requests from its cache. Reads with `ConsistentRead: true` pass through DAX and are queried directly against DynamoDB. This is because the cache cannot guarantee the latest data — a read made before a recent write is reflected in the cache could return stale data. The drawback is that when strong consistency is required, you do not get DAX's performance benefit.
+Explanation: DAX does not serve strongly consistent read requests from the cache. A read set with `ConsistentRead: true` passes through DAX and is queried directly against DynamoDB. This is because the cache can't guarantee the latest data — if you read before a recent write is reflected in the cache, it could return stale data. The downside is that when strong consistency is needed, you don't get DAX's performance benefit.
 
 ---
 
@@ -437,33 +437,33 @@ Explanation: DAX does not serve strongly consistent read requests from its cache
 A) The order of all events is guaranteed at the whole-table level
 B) Event order is guaranteed per partition key
 C) There is no ordering guarantee at all
-D) The order in which Lambda processes events is unrelated to the DynamoDB event order
+D) The order Lambda processes in is unrelated to the DynamoDB event order
 
 **Answer: B**
-Explanation: DynamoDB Streams guarantees event order per partition key. Changes to the same partition key (the same item) are written to the Stream shard in the order they occurred, and Lambda processes them in that order. However, the order between events for different partition keys is not guaranteed. There is no global ordering guarantee at the whole-table level. This is why, when processing data through Streams, state must be managed per partition key.
+Explanation: DynamoDB Streams guarantees event order per partition key. Changes to the same partition key (the same item) are recorded in the Stream shard in the order they occurred, and Lambda processes them in that order. But the order between events for different partition keys is not guaranteed. There is no global ordering guarantee at the whole-table level. This is why, in data processing through Streams, state must be managed per partition key.
 
 ---
 
 **Question 5.** You need to retain and analyze DynamoDB change history for 2 years. What is the most suitable architecture?
 
-A) Store directly to S3 with DynamoDB Streams + Lambda
-B) DynamoDB Kinesis Data Streams integration -> Kinesis Firehose -> S3
+A) DynamoDB Streams + Lambda storing directly to S3
+B) DynamoDB Kinesis Data Streams integration → Kinesis Firehose → S3
 C) Retain 35 days of backups with DynamoDB PITR
-D) Manually create a DynamoDB On-Demand Backup every day
+D) Create a DynamoDB On-Demand Backup manually every day
 
 **Answer: B**
-Explanation: DynamoDB Streams retains data for only 24 hours, so it is unsuitable for 2-year retention. Kinesis Data Streams can retain up to 365 days, which is still not enough for 2 years. However, storing permanently in S3 through Kinesis Firehose enables retention of 2 years or more. Connect the DynamoDB table directly to Kinesis Data Streams, and Kinesis Firehose stores the data to S3 in batches. PITR is limited to 35 days, and On-Demand Backup is not suitable for analysis.
+Explanation: DynamoDB Streams retains only 24 hours, so it is unsuitable for 2-year retention. Kinesis Data Streams can retain up to 365 days, but that isn't enough for 2 years. However, if you store permanently to S3 through Kinesis Firehose, retention of 2 years or more is possible. Connect the DynamoDB table directly to Kinesis Data Streams, and Kinesis Firehose stores to S3 in batches. PITR has a 35-day limit, and On-Demand Backup is not suitable for analysis.
 
 ---
 
-**Question 6.** Right after switching a DynamoDB table to on-demand mode, traffic suddenly increases 20-fold. What happens?
+**Question 6.** Right after switching a DynamoDB table to on-demand mode, traffic suddenly increases 20x. What happens?
 
 A) On-demand scales infinitely, so it is handled without any problem
-B) Throttling occurs — on-demand can immediately accommodate only up to 2x the previous peak
+B) Throttling occurs — on-demand can respond immediately only up to 2x the previous peak
 C) It automatically switches to provisioned mode
-D) It is handled without errors, but you are billed 20 times as much
+D) It is handled without errors but billed 20x the cost
 
 **Answer: B**
-Explanation: On-demand mode is not "infinite scaling". It immediately accommodates only up to 2x the previous traffic peak it has handled. For a new table, or one that had low traffic for a long time, it starts from the minimum, so throttling occurs on a sudden traffic spike. To prevent this, either (1) handle sufficient traffic in provisioned mode and then switch to on-demand, or (2) scale gradually using Auto Scaling in provisioned mode.
+Explanation: On-demand mode is not "infinite scaling." It responds immediately only up to 2x the traffic peak previously handled. If the table is new or had low traffic for a long time, it starts from the minimum, so throttling occurs in a sudden traffic surge. To prevent this, either ① handle enough traffic in provisioned mode and then switch to on-demand, or ② scale gradually with Auto Scaling in provisioned mode.
 
 ---

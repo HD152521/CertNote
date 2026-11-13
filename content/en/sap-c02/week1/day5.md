@@ -217,11 +217,11 @@ Explanation: The ALB handles OIDC/Cognito authentication directly and passes the
 
 A) RDS Multi-AZ (failover within a single region via synchronous standby)
 B) RDS Cross-Region Read Replica + manual promote
-C) Aurora Global Database (RPO < 1 second, RTO ~1 minute)
+C) Aurora Global Database (replication lag typically under 1 second, RTO in the order of minutes)
 D) Continuous replication to an instance in another region via DMS
 
 **Answer: C**
-Explanation: Aurora Global Database delivers RPO < 1 second, RTO ~1 minute (managed failover). It uses storage-level async replication across regions, but latency is very low. RDS Cross-Region Read Replica (B) has RPO of seconds to tens of seconds and RTO of minutes to tens of minutes (manual promote required). A is the same region, so not DR. D is a migration tool. Trade-off: Aurora Global costs 30%+ more than RDS — an excessive choice for single-region workloads.
+Explanation: Aurora Global Database typically has replication lag under 1 second and an RTO in the order of minutes (managed failover). It uses storage-level async replication across regions, but latency is very low. RDS Cross-Region Read Replica (B) has RPO of seconds to tens of seconds and RTO of minutes to tens of minutes (manual promote required). A is the same region, so not DR. D is a migration tool. Trade-off: Aurora Global costs 30%+ more than RDS — an excessive choice for single-region workloads.
 
 ---
 

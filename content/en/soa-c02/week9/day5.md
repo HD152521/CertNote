@@ -1,4 +1,4 @@
-﻿# Day 5 - Week 9 Comprehensive Review: How Keywords Point to Answers
+# Day 5 - Week 9 Comprehensive Review: How Keywords Point to Answers
 
 Over the past week, we've surveyed the full terrain of security and encryption—from KMS key isolation through GuardDuty, Inspector, Macie, and Security Hub's detection divisions. On the exam, problems in this domain almost always follow the pattern: **"one or two keywords in the scenario point to the answer."** If you see "decryption across regions," think Multi-Region Key. If "automatic rotation" appears, think Secrets Manager. If "detect threats without agents," think GuardDuty. This article solidifies that keyword-to-answer mapping in one sweep.
 

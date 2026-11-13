@@ -1,4 +1,4 @@
-﻿# Day 5 - Week 8 Summary: ML Solution Monitoring and Maintenance Review
+# Day 5 - Week 8 Summary: ML Solution Monitoring and Maintenance Review
 
 ## 📌 Key Takeaways
 

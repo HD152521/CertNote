@@ -1,4 +1,4 @@
-﻿# Day 3 - Site-to-Site VPN and Client VPN: Everything About IPsec Tunnels
+# Day 3 - Site-to-Site VPN and Client VPN: Everything About IPsec Tunnels
 
 VPN, which creates encrypted tunnels over the internet, has been core to enterprise networking since the late 1990s. When AWS launched Site-to-Site VPN in 2011, most enterprises were already familiar with IPsec-based VPN. However, AWS VPN is more than just an IP tunnel. Combined with TGW, ECMP scales bandwidth linearly; integrated with Global Accelerator, it guarantees low latency from anywhere globally; and BGP automatically reflects on-premises routing changes. Today we'll cover Site-to-Site VPN's internal operation from IPsec fundamentals through bandwidth scaling with ECMP, Accelerated VPN, and Client VPN authentication flows—all to SAP-C02 depth.
 

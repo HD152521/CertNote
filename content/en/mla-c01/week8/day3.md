@@ -1,4 +1,4 @@
-﻿# Day 3 - Operational Monitoring: CloudWatch Metrics/Alarms, Endpoint Latency/Errors, Logging
+# Day 3 - Operational Monitoring: CloudWatch Metrics/Alarms, Endpoint Latency/Errors, Logging
 
 ## 📌 Key Takeaways
 

@@ -1,4 +1,4 @@
-﻿# Day 2 - Compute Optimizer·Rightsizing — Internal Workings of ML-Based Recommendations, Tool Comparison, Automation Patterns
+# Day 2 - Compute Optimizer·Rightsizing — Internal Workings of ML-Based Recommendations, Tool Comparison, Automation Patterns
 
 Cost optimization has two parallel paths. One is "buying cheaper" (commitments·Spot, covered yesterday with SP·RI), the other is "using only what you need" (rightsizing). The latter is more fundamental — no matter how good a commitment discount you buy, if an m5.4xlarge is consistently using only 5% CPU, that''s the same as buying an m5.large at 8x the price. Moreover, commitment discounts and rightsizing compound multiplicatively: applying a 72% commitment discount to an 8x over-provisioned instance is still vastly inferior to first reducing that 8x to 1x. Industry surveys like AWS''s FinOps whitepaper and Flexera''s State of the Cloud reach the same conclusion every year — over 30% of enterprise cloud spending is wasted, and the #1 cause is over-provisioning. Rightsizing delivers immediate impact without any commitments, making it the fastest lever available.
 

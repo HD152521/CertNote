@@ -7794,7 +7794,7 @@
         "choices": 4
       },
       "2": {
-        "answer": "C",
+        "answer": "D",
         "choices": 4
       },
       "3": {
@@ -8250,7 +8250,7 @@
         "choices": 4
       },
       "6": {
-        "answer": "A,",
+        "answer": "A, B, C, D",
         "choices": 5
       },
       "7": {
@@ -25662,15 +25662,15 @@
         "choices": 4
       },
       "3": {
-        "answer": "C",
+        "answer": "D",
         "choices": 4
       },
       "4": {
-        "answer": "B",
+        "answer": "C",
         "choices": 4
       },
       "5": {
-        "answer": "C",
+        "answer": "A",
         "choices": 4
       }
     }
@@ -26118,8 +26118,8 @@
     }
   },
   "content/en/dea-c01/week9/day2.md": {
-    "count": 4,
-    "rawStems": 4,
+    "count": 5,
+    "rawStems": 5,
     "byNumber": {
       "1": {
         "answer": "D",
@@ -26135,13 +26135,17 @@
       },
       "4": {
         "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/dea-c01/week9/day3.md": {
-    "count": 4,
-    "rawStems": 4,
+    "count": 5,
+    "rawStems": 5,
     "byNumber": {
       "1": {
         "answer": "C",
@@ -26158,12 +26162,16 @@
       "4": {
         "answer": "A",
         "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
       }
     }
   },
   "content/en/dea-c01/week9/day4.md": {
-    "count": 4,
-    "rawStems": 4,
+    "count": 5,
+    "rawStems": 5,
     "byNumber": {
       "1": {
         "answer": "D",
@@ -26179,6 +26187,10 @@
       },
       "4": {
         "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
         "choices": 4
       }
     }
@@ -26346,9 +26358,58 @@
     }
   },
   "content/en/dop-c02/week10/day5.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week11/day1.md": {
     "count": 7,
@@ -26587,7 +26648,7 @@
         "choices": 4
       },
       "3": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "4": {
@@ -26595,7 +26656,7 @@
         "choices": 4
       },
       "5": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "6": {
@@ -26609,8 +26670,8 @@
     }
   },
   "content/en/dop-c02/week12/day3.md": {
-    "count": 6,
-    "rawStems": 6,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -26621,7 +26682,7 @@
         "choices": 4
       },
       "3": {
-        "answer": "B, D",
+        "answer": "B",
         "choices": 4
       },
       "4": {
@@ -26629,18 +26690,22 @@
         "choices": 4
       },
       "5": {
-        "answer": "A",
+        "answer": "B",
         "choices": 4
       },
       "6": {
-        "answer": "C",
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/dop-c02/week12/day4.md": {
-    "count": 6,
-    "rawStems": 6,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -26651,11 +26716,11 @@
         "choices": 4
       },
       "3": {
-        "answer": "E",
-        "choices": 5
+        "answer": "B",
+        "choices": 4
       },
       "4": {
-        "answer": "D",
+        "answer": "B",
         "choices": 4
       },
       "5": {
@@ -26663,17 +26728,21 @@
         "choices": 4
       },
       "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/dop-c02/week12/day5.md": {
-    "count": 6,
-    "rawStems": 6,
+    "count": 12,
+    "rawStems": 12,
     "byNumber": {
       "1": {
-        "answer": "A",
+        "answer": "B",
         "choices": 4
       },
       "2": {
@@ -26681,7 +26750,7 @@
         "choices": 4
       },
       "3": {
-        "answer": "D",
+        "answer": "B",
         "choices": 4
       },
       "4": {
@@ -26689,11 +26758,35 @@
         "choices": 4
       },
       "5": {
-        "answer": "D",
+        "answer": "B",
         "choices": 4
       },
       "6": {
-        "answer": "A",
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
         "choices": 4
       }
     }
@@ -26923,9 +27016,38 @@
     }
   },
   "content/en/dop-c02/week14/day2.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week14/day3.md": {
     "count": 7,
@@ -27186,34 +27308,448 @@
     }
   },
   "content/en/dop-c02/week15/day5.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "C",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week16/day1.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week16/day2.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week16/day3.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week16/day4.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 50,
+    "rawStems": 50,
+    "byNumber": {
+      "1": {
+        "answer": "A",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "A",
+        "choices": 4
+      },
+      "13": {
+        "answer": "B",
+        "choices": 4
+      },
+      "14": {
+        "answer": "B",
+        "choices": 4
+      },
+      "15": {
+        "answer": "B",
+        "choices": 4
+      },
+      "16": {
+        "answer": "B",
+        "choices": 4
+      },
+      "17": {
+        "answer": "B",
+        "choices": 4
+      },
+      "18": {
+        "answer": "B",
+        "choices": 4
+      },
+      "19": {
+        "answer": "B",
+        "choices": 4
+      },
+      "20": {
+        "answer": "B",
+        "choices": 4
+      },
+      "21": {
+        "answer": "B",
+        "choices": 4
+      },
+      "22": {
+        "answer": "B",
+        "choices": 4
+      },
+      "23": {
+        "answer": "B",
+        "choices": 4
+      },
+      "24": {
+        "answer": "B",
+        "choices": 4
+      },
+      "25": {
+        "answer": "B",
+        "choices": 4
+      },
+      "26": {
+        "answer": "B",
+        "choices": 4
+      },
+      "27": {
+        "answer": "B",
+        "choices": 4
+      },
+      "28": {
+        "answer": "B",
+        "choices": 4
+      },
+      "29": {
+        "answer": "B",
+        "choices": 4
+      },
+      "30": {
+        "answer": "B",
+        "choices": 4
+      },
+      "31": {
+        "answer": "B",
+        "choices": 4
+      },
+      "32": {
+        "answer": "B",
+        "choices": 4
+      },
+      "33": {
+        "answer": "B",
+        "choices": 4
+      },
+      "34": {
+        "answer": "B",
+        "choices": 4
+      },
+      "35": {
+        "answer": "B",
+        "choices": 4
+      },
+      "36": {
+        "answer": "B",
+        "choices": 4
+      },
+      "37": {
+        "answer": "B",
+        "choices": 4
+      },
+      "38": {
+        "answer": "B",
+        "choices": 4
+      },
+      "39": {
+        "answer": "B",
+        "choices": 4
+      },
+      "40": {
+        "answer": "B",
+        "choices": 4
+      },
+      "41": {
+        "answer": "B",
+        "choices": 4
+      },
+      "42": {
+        "answer": "B",
+        "choices": 4
+      },
+      "43": {
+        "answer": "B",
+        "choices": 4
+      },
+      "44": {
+        "answer": "B",
+        "choices": 4
+      },
+      "45": {
+        "answer": "B",
+        "choices": 4
+      },
+      "46": {
+        "answer": "B",
+        "choices": 4
+      },
+      "47": {
+        "answer": "B",
+        "choices": 4
+      },
+      "48": {
+        "answer": "B",
+        "choices": 4
+      },
+      "49": {
+        "answer": "B",
+        "choices": 4
+      },
+      "50": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week16/day5.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 19,
+    "rawStems": 19,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      },
+      "13": {
+        "answer": "B",
+        "choices": 4
+      },
+      "14": {
+        "answer": "B",
+        "choices": 4
+      },
+      "15": {
+        "answer": "B",
+        "choices": 4
+      },
+      "16": {
+        "answer": "B",
+        "choices": 4
+      },
+      "17": {
+        "answer": "B",
+        "choices": 4
+      },
+      "18": {
+        "answer": "B",
+        "choices": 4
+      },
+      "19": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week1/day1.md": {
     "count": 8,
@@ -28082,9 +28618,58 @@
     }
   },
   "content/en/dop-c02/week5/day5.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "A",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "C",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week6/day1.md": {
     "count": 7,
@@ -28155,14 +28740,34 @@
     }
   },
   "content/en/dop-c02/week6/day3.md": {
-    "count": 2,
-    "rawStems": 2,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
         "choices": 4
       },
       "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }
@@ -28204,30 +28809,118 @@
   },
   "content/en/dop-c02/week6/day5.md": {
     "count": 0,
-    "rawStems": 1,
+    "rawStems": 0,
     "byNumber": {}
   },
   "content/en/dop-c02/week7/day1.md": {
-    "count": 3,
-    "rawStems": 3,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
-        "answer": "B",
-        "choices": 4
-      },
-      "2": {
         "answer": "A",
         "choices": 4
       },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
       "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/dop-c02/week7/day2.md": {
-    "count": 3,
-    "rawStems": 3,
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/dop-c02/week7/day3.md": {
+    "count": 8,
+    "rawStems": 8,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/dop-c02/week7/day4.md": {
+    "count": 8,
+    "rawStems": 8,
     "byNumber": {
       "1": {
         "answer": "A",
@@ -28240,49 +28933,82 @@
       "3": {
         "answer": "B",
         "choices": 4
-      }
-    }
-  },
-  "content/en/dop-c02/week7/day3.md": {
-    "count": 3,
-    "rawStems": 3,
-    "byNumber": {
-      "1": {
+      },
+      "4": {
         "answer": "B",
         "choices": 4
       },
-      "2": {
+      "5": {
         "answer": "B",
         "choices": 4
       },
-      "3": {
-        "answer": "C",
-        "choices": 4
-      }
-    }
-  },
-  "content/en/dop-c02/week7/day4.md": {
-    "count": 3,
-    "rawStems": 3,
-    "byNumber": {
-      "1": {
-        "answer": "C",
-        "choices": 4
-      },
-      "2": {
+      "6": {
         "answer": "B",
         "choices": 4
       },
-      "3": {
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
         "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/dop-c02/week7/day5.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "A",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "A",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/dop-c02/week8/day1.md": {
     "count": 7,
@@ -28421,8 +29147,8 @@
     }
   },
   "content/en/dop-c02/week8/day5.md": {
-    "count": 3,
-    "rawStems": 8,
+    "count": 12,
+    "rawStems": 12,
     "byNumber": {
       "1": {
         "answer": "C",
@@ -28434,6 +29160,42 @@
       },
       "3": {
         "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "C",
         "choices": 4
       }
     }
@@ -28511,11 +29273,11 @@
     "rawStems": 7,
     "byNumber": {
       "1": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "2": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "3": {
@@ -28523,7 +29285,7 @@
         "choices": 4
       },
       "4": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "5": {
@@ -28595,7 +29357,7 @@
         "choices": 4
       },
       "5": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "6": {
@@ -28819,19 +29581,19 @@
     }
   },
   "content/en/dva-c02/week11/day1.md": {
-    "count": 5,
-    "rawStems": 5,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
         "choices": 4
       },
       "2": {
-        "answer": "C",
+        "answer": "A",
         "choices": 4
       },
       "3": {
-        "answer": "B",
+        "answer": "C",
         "choices": 4
       },
       "4": {
@@ -28839,92 +29601,22 @@
         "choices": 4
       },
       "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/dva-c02/week11/day2.md": {
-    "count": 5,
-    "rawStems": 5,
-    "byNumber": {
-      "1": {
-        "answer": "B",
-        "choices": 4
-      },
-      "2": {
-        "answer": "B",
-        "choices": 4
-      },
-      "3": {
-        "answer": "B",
-        "choices": 4
-      },
-      "4": {
-        "answer": "B",
-        "choices": 4
-      },
-      "5": {
-        "answer": "B",
-        "choices": 4
-      }
-    }
-  },
-  "content/en/dva-c02/week11/day3.md": {
-    "count": 5,
-    "rawStems": 5,
-    "byNumber": {
-      "1": {
-        "answer": "B",
-        "choices": 4
-      },
-      "2": {
-        "answer": "B",
-        "choices": 4
-      },
-      "3": {
-        "answer": "B",
-        "choices": 4
-      },
-      "4": {
-        "answer": "B",
-        "choices": 4
-      },
-      "5": {
-        "answer": "B",
-        "choices": 4
-      }
-    }
-  },
-  "content/en/dva-c02/week11/day4.md": {
-    "count": 5,
-    "rawStems": 5,
-    "byNumber": {
-      "1": {
-        "answer": "B",
-        "choices": 4
-      },
-      "2": {
-        "answer": "C",
-        "choices": 4
-      },
-      "3": {
-        "answer": "C",
-        "choices": 4
-      },
-      "4": {
-        "answer": "B",
-        "choices": 4
-      },
-      "5": {
-        "answer": "B",
-        "choices": 4
-      }
-    }
-  },
-  "content/en/dva-c02/week11/day5.md": {
-    "count": 15,
-    "rawStems": 15,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -28951,7 +29643,109 @@
         "choices": 4
       },
       "7": {
-        "answer": "C",
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/dva-c02/week11/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/dva-c02/week11/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/dva-c02/week11/day5.md": {
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
         "choices": 4
       },
       "8": {
@@ -28959,31 +29753,19 @@
         "choices": 4
       },
       "9": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "10": {
-        "answer": "D",
+        "answer": "B",
         "choices": 4
       },
       "11": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "12": {
         "answer": "B",
-        "choices": 4
-      },
-      "13": {
-        "answer": "B",
-        "choices": 4
-      },
-      "14": {
-        "answer": "B",
-        "choices": 4
-      },
-      "15": {
-        "answer": "C",
         "choices": 4
       }
     }
@@ -30282,7 +31064,7 @@
     "rawStems": 7,
     "byNumber": {
       "1": {
-        "answer": "B",
+        "answer": "C",
         "choices": 4
       },
       "2": {
@@ -30290,7 +31072,7 @@
         "choices": 4
       },
       "3": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "4": {
@@ -30298,7 +31080,7 @@
         "choices": 4
       },
       "5": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "6": {
@@ -30468,19 +31250,19 @@
     "rawStems": 7,
     "byNumber": {
       "1": {
-        "answer": "B",
-        "choices": 4
-      },
-      "2": {
-        "answer": "B",
-        "choices": 4
-      },
-      "3": {
         "answer": "C",
         "choices": 4
       },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "D",
+        "choices": 4
+      },
       "4": {
-        "answer": "B",
+        "answer": "C",
         "choices": 4
       },
       "5": {
@@ -30492,7 +31274,7 @@
         "choices": 4
       },
       "7": {
-        "answer": "B",
+        "answer": "C",
         "choices": 4
       }
     }
@@ -30532,8 +31314,8 @@
     }
   },
   "content/en/dva-c02/week7/day3.md": {
-    "count": 7,
-    "rawStems": 7,
+    "count": 6,
+    "rawStems": 6,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -30558,16 +31340,12 @@
       "6": {
         "answer": "D",
         "choices": 4
-      },
-      "7": {
-        "answer": "B",
-        "choices": 4
       }
     }
   },
   "content/en/dva-c02/week7/day4.md": {
-    "count": 6,
-    "rawStems": 6,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "C",
@@ -30587,6 +31365,10 @@
       },
       "5": {
         "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
         "choices": 4
       },
       "7": {
@@ -30616,7 +31398,7 @@
         "choices": 4
       },
       "5": {
-        "answer": "B",
+        "answer": "C",
         "choices": 4
       },
       "6": {
@@ -30696,11 +31478,11 @@
         "choices": 4
       },
       "3": {
-        "answer": "B",
+        "answer": "A",
         "choices": 4
       },
       "4": {
-        "answer": "D",
+        "answer": "C",
         "choices": 4
       },
       "5": {
@@ -30810,7 +31592,7 @@
         "choices": 4
       },
       "6": {
-        "answer": "A,",
+        "answer": "A, B, C, D",
         "choices": 5
       },
       "7": {
@@ -30822,7 +31604,7 @@
         "choices": 4
       },
       "9": {
-        "answer": "B",
+        "answer": "A",
         "choices": 4
       },
       "10": {
@@ -31030,18 +31812,60 @@
     }
   },
   "content/en/mla-c01/week10/day1.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/mla-c01/week10/day2.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/mla-c01/week10/day3.md": {
     "count": 8,
-    "rawStems": 9,
+    "rawStems": 8,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -31079,7 +31903,7 @@
   },
   "content/en/mla-c01/week10/day4.md": {
     "count": 5,
-    "rawStems": 6,
+    "rawStems": 5,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -31105,7 +31929,7 @@
   },
   "content/en/mla-c01/week10/day5.md": {
     "count": 5,
-    "rawStems": 6,
+    "rawStems": 5,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -31406,7 +32230,7 @@
         "choices": 4
       },
       "4": {
-        "answer": "C",
+        "answer": "B",
         "choices": 4
       },
       "5": {
@@ -32118,8 +32942,8 @@
     }
   },
   "content/en/mla-c01/week8/day4.md": {
-    "count": 2,
-    "rawStems": 2,
+    "count": 5,
+    "rawStems": 5,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -32127,6 +32951,18 @@
       },
       "2": {
         "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
         "choices": 4
       }
     }
@@ -32158,34 +32994,160 @@
     }
   },
   "content/en/mla-c01/week9/day1.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
   },
   "content/en/mla-c01/week9/day2.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/mla-c01/week9/day3.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
   },
   "content/en/mla-c01/week9/day4.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
   },
   "content/en/mla-c01/week9/day5.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
   },
   "content/en/mls-c01/week10/day1.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/mls-c01/week10/day2.md": {
     "count": 5,
@@ -33604,9 +34566,30 @@
     }
   },
   "content/en/mls-c01/week9/day1.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "D",
+        "choices": 4
+      }
+    }
   },
   "content/en/mls-c01/week9/day2.md": {
     "count": 5,
@@ -33635,14 +34618,56 @@
     }
   },
   "content/en/mls-c01/week9/day3.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "D",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
   },
   "content/en/mls-c01/week9/day4.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 5,
+    "rawStems": 5,
+    "byNumber": {
+      "1": {
+        "answer": "D",
+        "choices": 4
+      },
+      "2": {
+        "answer": "A",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      }
+    }
   },
   "content/en/mls-c01/week9/day5.md": {
     "count": 5,
@@ -36083,7 +37108,7 @@
         "choices": 4
       },
       "11": {
-        "answer": "A",
+        "answer": "B",
         "choices": 4
       },
       "12": {
@@ -36279,10 +37304,34 @@
     }
   },
   "content/en/sap-c02/week12/day1.md": {
-    "count": 1,
-    "rawStems": 1,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "C",
         "choices": 4
       }
@@ -36323,29 +37372,126 @@
     }
   },
   "content/en/sap-c02/week12/day3.md": {
-    "count": 1,
-    "rawStems": 1,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "A",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/sap-c02/week12/day4.md": {
-    "count": 1,
-    "rawStems": 1,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }
     }
   },
   "content/en/sap-c02/week12/day5.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "C",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/sap-c02/week13/day1.md": {
     "count": 6,
@@ -36616,13 +37762,228 @@
     }
   },
   "content/en/sap-c02/week14/day4.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/sap-c02/week14/day5.md": {
-    "count": 10,
-    "rawStems": 10,
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "A",
+        "choices": 4
+      },
+      "11": {
+        "answer": "D",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sap-c02/week15/day1.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "C",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sap-c02/week15/day2.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sap-c02/week15/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sap-c02/week15/day4.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/sap-c02/week15/day5.md": {
+    "count": 12,
+    "rawStems": 12,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -36663,17 +38024,20 @@
       "10": {
         "answer": "B",
         "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
       }
     }
   },
-  "content/en/sap-c02/week15/day1.md": {
-    "count": 0,
-    "rawStems": 7,
-    "byNumber": {}
-  },
-  "content/en/sap-c02/week15/day2.md": {
-    "count": 6,
-    "rawStems": 6,
+  "content/en/sap-c02/week16/day1.md": {
+    "count": 8,
+    "rawStems": 8,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -36698,48 +38062,180 @@
       "6": {
         "answer": "B",
         "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
       }
     }
   },
-  "content/en/sap-c02/week15/day3.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
-  },
-  "content/en/sap-c02/week15/day4.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
-  },
-  "content/en/sap-c02/week15/day5.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
-  },
-  "content/en/sap-c02/week16/day1.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
-  },
   "content/en/sap-c02/week16/day2.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/sap-c02/week16/day3.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
+    "count": 8,
+    "rawStems": 8,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "A",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "A",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/sap-c02/week16/day4.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
+    "count": 8,
+    "rawStems": 8,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/sap-c02/week16/day5.md": {
-    "count": 0,
-    "rawStems": 6,
-    "byNumber": {}
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/sap-c02/week1/day1.md": {
     "count": 7,
@@ -37456,8 +38952,8 @@
     }
   },
   "content/en/sap-c02/week4/day5.md": {
-    "count": 6,
-    "rawStems": 6,
+    "count": 12,
+    "rawStems": 12,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -37480,6 +38976,30 @@
         "choices": 4
       },
       "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
         "answer": "B",
         "choices": 4
       }
@@ -37584,8 +39104,8 @@
     }
   },
   "content/en/sap-c02/week5/day4.md": {
-    "count": 6,
-    "rawStems": 6,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -37604,6 +39124,10 @@
         "choices": 4
       },
       "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
         "answer": "B",
         "choices": 4
       },
@@ -38234,8 +39758,8 @@
     }
   },
   "content/en/sap-c02/week9/day1.md": {
-    "count": 4,
-    "rawStems": 4,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -38250,6 +39774,18 @@
         "choices": 4
       },
       "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }
@@ -38762,14 +40298,88 @@
     }
   },
   "content/en/scs-c03/week12/day4.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 10,
+    "rawStems": 10,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/scs-c03/week12/day5.md": {
-    "count": 0,
-    "rawStems": 1,
-    "byNumber": {}
+    "count": 8,
+    "rawStems": 8,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/scs-c03/week1/day1.md": {
     "count": 5,
@@ -40194,49 +41804,550 @@
     }
   },
   "content/en/soa-c02/week11/day2.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week11/day3.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 6,
+    "rawStems": 6,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week11/day4.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week11/day5.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 12,
+    "rawStems": 12,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "C",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week12/day1.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week12/day2.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week12/day3.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week12/day4.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 50,
+    "rawStems": 50,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "C",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "B",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      },
+      "13": {
+        "answer": "A",
+        "choices": 4
+      },
+      "14": {
+        "answer": "B",
+        "choices": 4
+      },
+      "15": {
+        "answer": "B",
+        "choices": 4
+      },
+      "16": {
+        "answer": "B",
+        "choices": 4
+      },
+      "17": {
+        "answer": "B",
+        "choices": 4
+      },
+      "18": {
+        "answer": "B",
+        "choices": 4
+      },
+      "19": {
+        "answer": "B",
+        "choices": 4
+      },
+      "20": {
+        "answer": "B",
+        "choices": 4
+      },
+      "21": {
+        "answer": "C",
+        "choices": 4
+      },
+      "22": {
+        "answer": "B",
+        "choices": 4
+      },
+      "23": {
+        "answer": "B",
+        "choices": 4
+      },
+      "24": {
+        "answer": "B",
+        "choices": 4
+      },
+      "25": {
+        "answer": "B",
+        "choices": 4
+      },
+      "26": {
+        "answer": "B",
+        "choices": 4
+      },
+      "27": {
+        "answer": "A",
+        "choices": 4
+      },
+      "28": {
+        "answer": "C",
+        "choices": 4
+      },
+      "29": {
+        "answer": "B",
+        "choices": 4
+      },
+      "30": {
+        "answer": "B",
+        "choices": 4
+      },
+      "31": {
+        "answer": "B",
+        "choices": 4
+      },
+      "32": {
+        "answer": "B",
+        "choices": 4
+      },
+      "33": {
+        "answer": "B",
+        "choices": 4
+      },
+      "34": {
+        "answer": "A",
+        "choices": 4
+      },
+      "35": {
+        "answer": "B",
+        "choices": 4
+      },
+      "36": {
+        "answer": "B",
+        "choices": 4
+      },
+      "37": {
+        "answer": "B",
+        "choices": 4
+      },
+      "38": {
+        "answer": "B",
+        "choices": 4
+      },
+      "39": {
+        "answer": "B",
+        "choices": 4
+      },
+      "40": {
+        "answer": "B",
+        "choices": 4
+      },
+      "41": {
+        "answer": "B",
+        "choices": 4
+      },
+      "42": {
+        "answer": "B",
+        "choices": 4
+      },
+      "43": {
+        "answer": "A",
+        "choices": 4
+      },
+      "44": {
+        "answer": "B",
+        "choices": 4
+      },
+      "45": {
+        "answer": "B",
+        "choices": 4
+      },
+      "46": {
+        "answer": "B",
+        "choices": 4
+      },
+      "47": {
+        "answer": "B",
+        "choices": 4
+      },
+      "48": {
+        "answer": "B",
+        "choices": 4
+      },
+      "49": {
+        "answer": "B",
+        "choices": 4
+      },
+      "50": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week12/day5.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 20,
+    "rawStems": 20,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "C",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "C",
+        "choices": 4
+      },
+      "7": {
+        "answer": "C",
+        "choices": 4
+      },
+      "8": {
+        "answer": "B",
+        "choices": 4
+      },
+      "9": {
+        "answer": "B",
+        "choices": 4
+      },
+      "10": {
+        "answer": "B",
+        "choices": 4
+      },
+      "11": {
+        "answer": "C",
+        "choices": 4
+      },
+      "12": {
+        "answer": "B",
+        "choices": 4
+      },
+      "13": {
+        "answer": "B",
+        "choices": 4
+      },
+      "14": {
+        "answer": "B",
+        "choices": 4
+      },
+      "15": {
+        "answer": "B",
+        "choices": 4
+      },
+      "16": {
+        "answer": "B",
+        "choices": 4
+      },
+      "17": {
+        "answer": "B",
+        "choices": 4
+      },
+      "18": {
+        "answer": "B",
+        "choices": 4
+      },
+      "19": {
+        "answer": "B",
+        "choices": 4
+      },
+      "20": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week1/day1.md": {
     "count": 6,
@@ -40986,7 +43097,7 @@
   },
   "content/en/soa-c02/week5/day2.md": {
     "count": 7,
-    "rawStems": 8,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -41019,9 +43130,38 @@
     }
   },
   "content/en/soa-c02/week5/day3.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week5/day4.md": {
     "count": 6,
@@ -41476,9 +43616,38 @@
     }
   },
   "content/en/soa-c02/week8/day1.md": {
-    "count": 0,
-    "rawStems": 0,
-    "byNumber": {}
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "C",
+        "choices": 4
+      },
+      "2": {
+        "answer": "D",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
   },
   "content/en/soa-c02/week8/day2.md": {
     "count": 7,
@@ -41645,8 +43814,8 @@
     }
   },
   "content/en/soa-c02/week9/day1.md": {
-    "count": 5,
-    "rawStems": 5,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -41667,26 +43836,20 @@
       "5": {
         "answer": "C",
         "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
       }
     }
   },
   "content/en/soa-c02/week9/day2.md": {
-    "count": 2,
-    "rawStems": 2,
-    "byNumber": {
-      "1": {
-        "answer": "B",
-        "choices": 4
-      },
-      "2": {
-        "answer": "B",
-        "choices": 4
-      }
-    }
-  },
-  "content/en/soa-c02/week9/day3.md": {
-    "count": 3,
-    "rawStems": 3,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
         "answer": "B",
@@ -41699,14 +43862,88 @@
       "3": {
         "answer": "B",
         "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
+      }
+    }
+  },
+  "content/en/soa-c02/week9/day3.md": {
+    "count": 7,
+    "rawStems": 7,
+    "byNumber": {
+      "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "A",
+        "choices": 4
+      },
+      "7": {
+        "answer": "B",
+        "choices": 4
       }
     }
   },
   "content/en/soa-c02/week9/day4.md": {
-    "count": 1,
-    "rawStems": 1,
+    "count": 7,
+    "rawStems": 7,
     "byNumber": {
       "1": {
+        "answer": "B",
+        "choices": 4
+      },
+      "2": {
+        "answer": "B",
+        "choices": 4
+      },
+      "3": {
+        "answer": "B",
+        "choices": 4
+      },
+      "4": {
+        "answer": "B",
+        "choices": 4
+      },
+      "5": {
+        "answer": "B",
+        "choices": 4
+      },
+      "6": {
+        "answer": "B",
+        "choices": 4
+      },
+      "7": {
         "answer": "B",
         "choices": 4
       }

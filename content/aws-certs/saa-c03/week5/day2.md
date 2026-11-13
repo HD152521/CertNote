@@ -67,33 +67,33 @@ Aurora 클러스터에는 여러 종류의 엔드포인트가 있으며, 각각 
 
 ## Aurora Global Database — 리전을 넘는 실시간 복제
 
-Aurora Global Database는 단일 Aurora 클러스터를 여러 리전으로 확장하는 기능이다. 1개 Primary 리전과 최대 5개 Secondary 리전으로 구성된다.
+Aurora Global Database는 단일 Aurora 클러스터를 여러 리전으로 확장하는 기능이다. 1개 Primary 리전과 최대 10개 Secondary 리전으로 구성된다.
 
 복제는 Aurora 스토리지 레이어에서 직접 이루어진다. DB 엔진 레벨(binlog 등)이 아닌 스토리지 레이어 복제이기 때문에 DB 인스턴스의 CPU를 사용하지 않고, 복제 지연이 매우 짧다. 일반적으로 **1초 미만의 복제 지연(RPO < 1초)**이 달성된다.
 
-Secondary 리전에서는 읽기 전용으로 사용할 수 있다. 만약 Primary 리전이 재해로 완전히 다운되면, Secondary 리전을 새 Primary로 Promote하는 데 **1분 이내**의 RTO가 달성된다.
+Secondary 리전에서는 읽기 전용으로 사용할 수 있다. 만약 Primary 리전이 재해로 완전히 다운되면, Secondary 리전을 새 Primary로 Promote하는 데 걸리는 RTO는 문서상 **수 분(minutes) 수준**이다.
 
 | 항목 | Aurora Global DB | RDS Cross-Region Read Replica |
 |------|-----------------|-------------------------------|
 | 복제 위치 | 스토리지 레이어 | DB 엔진 레이어(binlog/WAL) |
 | 복제 지연 | < 1초 | 수 초 ~ 수십 초 |
-| Secondary 리전 수 | 최대 5개 | 최대 5개(MySQL), 여러 개(PG) |
-| 페일오버 시간 | 1분 이내 | 수 분 ~ 수십 분 (수동 Promote) |
+| Secondary 리전 수 | 최대 10개 | 엔진별 상이 (예: MySQL·PostgreSQL은 소스당 최대 15개 읽기 복제본) |
+| 페일오버 시간 | 수 분 수준 (managed failover) | 수 분 ~ 수십 분 (수동 Promote) |
 | Secondary 읽기 | 가능 | 가능 |
 | 비용 | 높음 | 보통 |
 | 엔진 | Aurora MySQL / Aurora PG | MySQL / PG / MariaDB / Oracle 등 |
 
-Aurora Global Database의 Planned Failover와 Unplanned Failover는 다르다. **Planned Failover(Managed Planned Failover)**는 유지보수나 리전 마이그레이션을 위해 사용하며, Secondary를 새 Primary로 먼저 승격한 다음 원래 Primary를 Secondary로 강등한다. 이 과정에서 데이터 손실(RPO)이 거의 0이다. **Unplanned Failover**는 Primary 리전 장애 시 Secondary를 수동으로 Promote하는 것으로, 복제 Lag에 해당하는 데이터가 손실될 수 있다(보통 수백 ms ~ 1초 이내).
+Aurora Global Database의 Planned Failover와 Unplanned Failover는 다르다. **Planned Failover(Managed Planned Failover)**는 유지보수나 리전 마이그레이션을 위해 사용하며, Secondary를 새 Primary로 먼저 승격한 다음 원래 Primary를 Secondary로 강등한다. 이 과정에서 데이터 손실(RPO)이 거의 0이다. **Unplanned Failover**는 Primary 리전 장애 시 Secondary를 수동으로 Promote하는 것으로, 복제 Lag에 해당하는 데이터가 손실될 수 있다(RPO는 보통 수 초 단위).
 
 **사례**: 삼성전자의 B2B SaaS 플랫폼 SmartThings는 전 세계 수억 개의 IoT 디바이스 이벤트를 처리한다. 국내 AWS 고객 사례 세션(AWS Summit Seoul)에서 SmartThings 팀은 Aurora Global Database를 통해 미국, 유럽, 아시아 사용자들이 가장 가까운 리전의 Aurora Secondary에서 디바이스 상태를 읽어가는 구조를 설명했다. 복제 지연이 1초 미만이기 때문에 전 세계 사용자가 거의 동일한 최신 상태를 볼 수 있다.
 
 ## Aurora Serverless v2 — 자동 스케일링의 의미
 
-Aurora Serverless v2는 기존 Serverless v1의 완전한 재설계 버전이다. v1은 용량이 0으로 줄어들고 다시 올라오는 데 30~60초가 걸려서 실용적인 사용이 어려웠다. v2는 설계 자체를 바꿨다.
+Aurora Serverless v2는 기존 Serverless v1의 완전한 재설계 버전이다. v1은 현재 deprecated 상태다. v2는 설계 자체를 바꿨다.
 
-Aurora Serverless v2는 **0.5 ACU(Aurora Capacity Unit)부터 256 ACU까지** 스케일링한다. 1 ACU는 대략 2GB RAM에 해당하므로, 최대 512GB RAM까지 자동 스케일링이 가능하다. 스케일링 속도는 수 초 단위 — v1의 분 단위와 비교하면 혁신적이다.
+Aurora Serverless v2는 **최소 0.5 ACU(Aurora Capacity Unit)부터 최대 256 ACU(Aurora PostgreSQL은 플랫폼 버전에 따라 384 ACU)까지** 스케일링한다. 1 ACU는 대략 2GB RAM에 해당하므로, 최대 512GB RAM까지 자동 스케일링이 가능하다. 스케일링은 최소 0.5 ACU 단위의 세밀한 증분으로 진행되며, 진행 중인 DB 작업을 중단시키지 않는다.
 
-v2의 또 다른 특징: 0 ACU로 완전히 꺼지지 않는다. 최소 0.5 ACU를 항상 유지한다. "자동 일시 정지" 기능이 별도로 있지만(개발/테스트 환경용), 프로덕션에서는 보통 최소값을 설정해서 콜드 스타트를 방지한다.
+v2의 또 다른 특징: 최소 0.5 ACU를 유지하는 것이 기본이다. 최신 엔진 버전에서는 최소를 0 ACU로 두고 "자동 일시 정지"를 쓸 수 있지만(개발/테스트 환경용), 재개에 보통 약 15초(24시간 넘게 멈춰 있었다면 30초 이상)가 걸리므로 프로덕션에서는 보통 최소값을 설정해서 이 지연을 방지한다.
 
 적합한 사용 사례:
 - 트래픽이 불규칙하게 급증하는 SaaS 서비스 (월초 청구 집중, 이벤트 기간 폭증)
@@ -130,7 +130,7 @@ Aurora는 RDS MySQL/PostgreSQL보다 약 20% 비싸다. 이 추가 비용이 정
 
 **Aurora가 더 적합한 경우:**
 - 페일오버가 30초 이내여야 하는 고가용성 요구사항
-- 5개 이상의 Read Replica가 필요한 대규모 읽기 트래픽
+- 많은 수의 Read Replica가 필요한 대규모 읽기 트래픽 (Aurora는 클러스터당 최대 15개)
 - 글로벌 서비스에서 리전 간 < 1초 복제가 필요한 경우 (Aurora Global DB)
 - 트래픽이 급변하는 서비스 (Aurora Serverless v2)
 - 수십 TB 이상의 데이터를 무한 스케일링하고 싶은 경우 (Aurora Storage 자동 확장)
@@ -144,11 +144,11 @@ Aurora는 RDS MySQL/PostgreSQL보다 약 20% 비싸다. 이 추가 비용이 정
 |------|---------------------|------------------------|
 | 스토리지 | 인스턴스당 EBS | 공유 분산 (6 카피, 3 AZ) |
 | 최대 스토리지 | 64TB (gp3), 16TB (gp2) | 최대 128TB |
-| 최대 Read Replica | 5개 | 15개 |
-| 복제 지연 | 비동기 (수 초) | 수십 ms (공유 스토리지) |
+| 최대 Read Replica | 소스당 15개 (MySQL·MariaDB·PostgreSQL·SQL Server) | 15개 |
+| 복제 지연 | 비동기 (수 초) | 보통 100ms보다 훨씬 짧음 (공유 스토리지) |
 | 페일오버 시간 | 60-120초 | 30초 이내 |
 | Global 복제 | Cross-Region Replica (비동기) | Global DB (스토리지 레벨, < 1초) |
-| Serverless | 없음 | v2 (0.5-256 ACU, 초 단위 스케일) |
+| Serverless | 없음 | v2 (0.5-256 ACU, 세밀한 단위로 빠른 스케일) |
 | Backtrack | 없음 | MySQL 호환만 (72시간) |
 | Fast Clone | 없음 | 있음 (COW) |
 | 비용 | 기준 | 약 20% 높음 |
@@ -214,9 +214,9 @@ aws rds create-db-instance \
 
 ## 정리
 
-Aurora는 관계형 DB의 외관을 유지하면서 내부 스토리지 아키텍처를 완전히 재설계한 서비스다. 6 카피 분산 스토리지와 4/6 Quorum 쓰기가 AZ 하나의 완전 손실에도 데이터를 보호하고, 컴퓨팅-스토리지 분리가 빠른 페일오버와 쉬운 Reader 추가를 가능하게 한다. Aurora Global Database는 스토리지 레이어 복제로 1초 미만의 리전 간 지연을 달성하고, Serverless v2는 수 초 만에 용량을 조정한다.
+Aurora는 관계형 DB의 외관을 유지하면서 내부 스토리지 아키텍처를 완전히 재설계한 서비스다. 6 카피 분산 스토리지와 4/6 Quorum 쓰기가 AZ 하나의 완전 손실에도 데이터를 보호하고, 컴퓨팅-스토리지 분리가 빠른 페일오버와 쉬운 Reader 추가를 가능하게 한다. Aurora Global Database는 스토리지 레이어 복제로 1초 미만의 리전 간 지연을 달성하고, Serverless v2는 세밀한 증분으로 용량을 빠르게 조정한다.
 
-시험 관점에서: "5개 이상 Read Replica", "30초 이내 페일오버", "리전 간 < 1초 복제", "변동 트래픽 자동 스케일링"이 보이면 Aurora 계열이 정답이다. "Backtrack"은 Aurora MySQL만, "PostgreSQL은 PITR"만이 가능하다는 점에 유의한다.
+시험 관점에서: "많은 수의 Read Replica", "30초 이내 페일오버", "리전 간 < 1초 복제", "변동 트래픽 자동 스케일링"이 보이면 Aurora 계열이 정답이다. "Backtrack"은 Aurora MySQL만, "PostgreSQL은 PITR"만이 가능하다는 점에 유의한다.
 
 다음 날은 스키마가 없는 세계, DynamoDB를 다룬다. 파티션 키가 왜 그렇게 중요한지, Hot Partition이 어떻게 시스템을 죽이는지, 그리고 1 RCU = 4KB가 무엇을 의미하는지를 볼 것이다.
 
@@ -232,7 +232,7 @@ C) us-east-1에 RDS MySQL을 두고 각 리전에 Cross-Region Read Replica를 �
 D) DynamoDB Global Tables를 사용한다
 
 **정답: B**
-해설: Aurora Global Database는 스토리지 레이어 복제로 1초 미만의 리전 간 복제 지연을 달성한다. 최대 5개 Secondary 리전을 지원하므로 3개 리전 구성은 충분하다. A는 데이터 일관성 보장이 어렵다. C는 RDS Cross-Region Read Replica의 복제 지연이 수 초~수십 초로 Aurora Global DB보다 길다. D는 NoSQL이므로 관계형 스키마가 필요한 금융 서비스에 부적합할 수 있다.
+해설: Aurora Global Database는 스토리지 레이어 복제로 1초 미만의 리전 간 복제 지연을 달성한다. 최대 10개 Secondary 리전을 지원하므로 3개 리전 구성은 충분하다. A는 데이터 일관성 보장이 어렵다. C는 RDS Cross-Region Read Replica의 복제 지연이 수 초~수십 초로 Aurora Global DB보다 길다. D는 NoSQL이므로 관계형 스키마가 필요한 금융 서비스에 부적합할 수 있다.
 
 ---
 
@@ -252,11 +252,11 @@ D) PITR로 삭제 시점 직전으로 새 클러스터를 생성한다 (15-20분
 
 A) Aurora MySQL Provisioned (db.r6g.large 고정)
 B) Aurora Serverless v1 (최소 0 ACU로 완전 일시 정지 가능)
-C) Aurora Serverless v2 (최소 0.5 ACU, 초 단위 스케일링)
+C) Aurora Serverless v2 (최소 0.5 ACU, 세밀한 단위로 빠른 스케일링)
 D) Aurora MySQL + Auto Scaling Read Replica
 
 **정답: C**
-해설: Aurora Serverless v2는 0.5~256 ACU 범위에서 수 초 단위로 자동 스케일링해서 트래픽 변동에 빠르게 대응한다. v1은 스케일링이 느리고(분 단위) 스케일링 중 연결이 끊어지는 문제가 있어서 프로덕션에 적합하지 않다. A는 고정 용량으로 낭비나 부족이 발생할 수 있다. D는 읽기 확장은 되지만 쓰기 용량은 자동 조절이 안 된다.
+해설: Aurora Serverless v2는 0.5~256 ACU 범위에서 세밀한 증분으로 자동 스케일링해서 트래픽 변동에 빠르게 대응하며, 스케일링이 진행 중인 DB 작업을 중단시키지 않는다. v1은 deprecated 상태라 새 워크로드에 적합하지 않다. A는 고정 용량으로 낭비나 부족이 발생할 수 있다. D는 읽기 확장은 되지만 쓰기 용량은 자동 조절이 안 된다.
 
 ---
 

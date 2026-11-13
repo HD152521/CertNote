@@ -1,61 +1,79 @@
-# Day 1 - ML Lifecycle Overview: One Complete Cycle from Data to Operations
+# Day 1 - ML Lifecycle Overview: One Full Cycle from Data to Operations
 
-A machine learning (ML) model is not "build once and done." A good model, like a living product, **is born, learns, is evaluated, goes into the world, and continues to be monitored**. This entire flow is called the ML Lifecycle. The AIF-C01 exam does not expect you to code models directly. Instead, it requires you to clearly understand "what stages does the journey from data to operations involve, and what is each stage responsible for?"
+## 📌 Key Takeaways
 
-Today we organize the six stages of the ML lifecycle—Data Collection → Data Preparation → Model Training → Model Evaluation → Deployment → Monitoring—into one circular diagram.
+- The ML lifecycle has six stages: **data collection → data preparation → model training → model evaluation → deployment → monitoring**.
+- It is not a straight line but a **circle**. Deployment is not the end: monitoring leads back to retraining.
+- The stage people skip most easily is **data preparation**. You must not train right after collecting data.
+- Evaluation is only meaningful when done on **data that was not used for training and that the model has never seen**.
+- The reason for the cycle is **data drift**: over time the data distribution changes and the model goes stale.
 
 ## Why Call It a "Lifecycle"?
 
-Software development typically follows a relatively linear flow: "requirements → design → implementation → deployment." ML, however, is different. ML's output (a model) **learns patterns from data**, so when data changes, the model becomes outdated. That's why it's not a straight line that ends after one pass, but rather a **loop that continuously repeats**.
+- AIF-C01 does not expect you to code a model yourself. It asks **"which stages are there, and what is each stage responsible for?"**
+- Ordinary software development: a relatively **linear** flow of `requirements → design → implementation → deployment`.
+- ML: the output (the model) **learns patterns from data**, so when the data changes the model goes stale → a **loop** that keeps turning.
 
-> 💡 **Related Theory**: The core reason the ML lifecycle has a circular structure is "Data Drift." The distribution of data in the world changes over time (e.g., last year's shopping patterns ≠ this year's shopping patterns). A model built from training data becomes misaligned with reality over time, making continuous cycles of data collection and retraining necessary.
+> 💡 **Related theory**: The key reason the ML lifecycle is circular is "data drift." The distribution of real-world data changes over time (for example, last year's shopping patterns ≠ this year's shopping patterns). A model built from the data available at training time gradually drifts away from reality, so you need a cycle of collecting data again and retraining.
 
-## Six Stages at a Glance
+## The Six Stages at a Glance
 
-| Stage | One-Line Definition | Key Question |
-|-------|---------------------|--------------|
-| Data Collection | Gather raw data suited to the problem | "What data do we need?" |
-| Data Preparation | Clean the data and transform it into a learnable form | "Is the data clean and usable?" |
+| Stage | One-line definition | Key question |
+|------|-----------|----------|
+| Data Collection | Gather raw data that fits the problem | "What data do we need?" |
+| Data Preparation | Clean the data and turn it into a form that can be learned from | "Is the data clean and usable?" |
 | Model Training | The algorithm learns patterns from the data | "Did the model learn the patterns well?" |
-| Model Evaluation | Measure whether the model really predicts well | "Does it generalize to unseen data?" |
-| Deployment | Export the model so it can be used in real services | "Can users actually use it?" |
-| Monitoring | Watch whether model performance degrades during operation | "Is it still working well?" |
+| Model Evaluation | Measure whether the model really predicts well | "Does it do well on data it has never seen?" |
+| Deployment | Release the model so it can be used in a real service | "Can users actually use it?" |
+| Monitoring | Watch whether model performance degrades in production | "Is it still working well?" |
 
-The order in this table is worth memorizing. When the exam asks "Can we just train the model right after collecting data?", you should recognize that **the middle 'preparation' stage is missing**.
+- This **order is worth memorizing**. When a question asks "Can we just train right after collecting the data?", you should notice that **the 'preparation' stage in the middle is missing**.
 
-## Diving Into Each Stage
+## Walking Through Each Stage
 
 ### 1. Data Collection — The Starting Point of Everything
 
-A model cannot create what it has never seen. A model that has never seen a single cat photo cannot recognize cats. So the first stage is **gathering data suited to the problem**. Data comes from various sources: databases, logs, sensors, external APIs, user input, and more.
+- A model cannot produce something it has never seen. A model that has never seen a single cat photo cannot recognize a cat.
+- The first stage is **collecting data that fits the problem**.
+- Sources: databases, logs, sensors, external APIs, user input, and so on.
 
-> 📚 **Example**: To build a model that filters spam emails, you must first gather a large amount of "emails classified as spam" and "legitimate emails." If you don't collect both types sufficiently, nothing in the subsequent stages will be meaningful.
+To build a model that filters spam, you first need to collect lots of "emails classified as spam" and lots of "normal emails." If you cannot collect enough of both kinds, none of the later stages mean anything.
 
-### 2. Data Preparation — The Most Time-Consuming Stage
+### 2. Data Preparation — The Stage That Takes the Most Time
 
-Real-world data is messy. Values might be missing, duplicated, in various formats, or contain typos. In the data preparation stage, we **clean** it, fill in missing values, standardize formats, and transform it into numerical forms the model can understand. Additionally, at this stage we **split the data into training, validation, and test sets** (covered in detail on Day 2).
+- Real-world data is messy: missing values, duplicates, inconsistent formats, typos.
+- What happens here: **cleaning** → filling in missing values → unifying formats → **converting to numeric form** that the model can understand.
+- At this stage the data is also **split into training, validation, and test sets** (covered in detail on Day 2).
 
-> 💡 **Related Theory**: It's said that 70-80% of ML project time in practice is spent on this data preparation. The adage "Garbage In, Garbage Out" drives home the essence of ML—no matter how good the algorithm, you cannot build a good model with bad data.
+They say most of the time in an ML project goes into data preparation. As the maxim "Garbage In, Garbage Out" puts it, even the best algorithm cannot build a good model from bad data.
 
-### 3. Model Training — The Stage of Learning Patterns
+### 3. Model Training — The Stage Where Patterns Are Learned
 
-When we feed prepared data into an algorithm, the algorithm **finds patterns (rules) in the data by itself**. This is "training." For example, a house price prediction model learns from data that "the wider the area and the closer to the station, the more expensive." After training, we have a "trained model" in our hands.
+- When you feed the prepared data to an algorithm, the algorithm **finds patterns (rules) on its own**. That is training.
+- Example: a house-price prediction model learns from the data that "the larger the area and the closer to the station, the more expensive."
+- Output: a **trained model**.
 
-### 4. Model Evaluation — Measuring True Performance
+### 4. Model Evaluation — Measuring Real Ability
 
-It's natural that the model fits well on training data (we've already seen it). What really matters is **whether it also performs well on unseen data**. So we measure the model's performance using "test data" that was not used in training. This is where metrics like accuracy come in (Day 3's topic).
+- Doing well on the training data is a given (the model has already seen it).
+- What matters is **whether it does well on data it sees for the first time** → measure with **test data** that was not used for training.
+- Metrics such as accuracy appear at this stage (the topic of Day 3).
 
-> ⚠️ **Pitfall**: Saying "the model is 99% accurate on training data, so it's good" is risky. A model that merely memorizes training data might perform terribly on new data (overfitting). Evaluation is meaningful only if it's done **on unseen data**.
+> ⚠️ **Trap**: Judging "99% accuracy on the training data, so it's a good model" is dangerous. A model that has simply memorized the training data can be terrible on new data (overfitting). Evaluation is only meaningful when done on **data the model has never seen**.
 
-### 5. Deployment — Taking the Model to the World
+### 5. Deployment — Releasing the Model to the World
 
-The model that passes evaluation is connected to a real service. When users upload a photo in an app, the model classifies it; when they view products in a mall, the model recommends them. Deployment is the stage of "making the model callable and uploading it to the production environment."
+- Connect the model that passed evaluation to a real service.
+- Examples: a user uploads a photo in an app and the model classifies it; a user browses a product in a shop and the model recommends items.
+- Definition: the stage where you **make the model callable and put it into the production environment**.
 
-### 6. Monitoring — Not an Ending, but a New Beginning
+### 6. Monitoring — Not the End but a New Beginning
 
-Deployment is not the end. A model in operation can degrade in performance over time (the data drift we saw earlier). The monitoring stage **watches to ensure the model is still working well** and raises an alert if performance drops. Then we go back to stage 1 (data collection) and retrain with new data—this is how the loop closes.
+- A model in production can lose performance over time (data drift).
+- What happens here: **watch whether the model is still working well**, and raise an alarm when performance drops.
+- Then you go back to stage 1 (data collection) and retrain on new data → the circle closes.
 
-## Seeing the Complete Circular Flow
+## Seeing It as One Cycle
 
 ```
    ┌──────────────────────────────────────────────┐
@@ -66,79 +84,89 @@ Deployment is not the end. A model in operation can degrade in performance over 
                                                      ▼
                               [Monitoring] ◄──────── [Deployment]
                                   │
-                                  └─ Return to Data Collection upon performance degradation
+                                  └─ On detecting performance degradation, back to data collection
 ```
 
-The key insight is that **this flow does not proceed in only one direction**. If evaluation shows poor performance, we go back to data preparation or training. If monitoring discovers a problem, we return to the beginning. ML is inherently iterative and circular.
+- The key point is that **this flow does not run in one direction only**.
+- If evaluation shows poor performance → go back to data preparation or training.
+- If monitoring finds a problem → go back to the beginning.
+- ML is inherently **iterative and cyclical**.
 
-> 🎯 **Scenario**: "The click-through rate of a recommendation model deployed 6 months ago is steadily declining. What should we do?" → This is a situation where monitoring has detected performance degradation. The correct answer is to recollect recent data and retrain the model—completing another cycle of the lifecycle.
+> 🎯 **Scenario**: "The click-through rate of a recommendation model deployed 6 months ago keeps dropping. What should you do?" → This is a case where monitoring has detected performance degradation. The correct answer is to collect the latest data again and retrain the model, in other words to go around the lifecycle once more.
 
-## Wrapping Up
+Tomorrow we take a deep look at "data" itself, the fuel of this lifecycle. We will cover the difference between structured and unstructured data, why data is split into three sets, and why data quality determines everything.
 
-The ML lifecycle we examined today is a **circular loop** of six stages. It starts with data collection, goes through preparation, training, and evaluation, then deploys, monitors, and returns to the beginning if performance drops. The most commonly skipped stage is "data preparation," and the most frequently misunderstood point is "evaluation must be done on unseen data." Remember that ML is a circle, not a straight line—deployment is not the end.
+## 📖 Glossary
 
-Tomorrow we dive deeper into "data" itself, the fuel of this lifecycle. We'll cover the difference between structured and unstructured data, why we split data into sets, and why data quality determines everything.
-
----
+- **ML lifecycle**: The repeating loop in which you collect data, build and deploy a model, monitor it, and then return to the data.
+- **Data drift**: The phenomenon where the nature of real data changes over time, so a model trained on old data fits less and less.
+- **Data cleaning**: Fixing missing values, duplicates, typos, and inconsistent formats to make the data usable.
+- **Training**: The process of feeding data to an algorithm so that it finds the rules inside the data on its own.
+- **Trained model**: The output of training that is now ready to be used for predictions.
+- **Test data**: Data that is held back and never used for training. It is used to measure the model's real ability.
+- **Overfitting**: A state in which the model has memorized the training data, so it does well on that data but poorly on new data.
+- **Deployment**: Putting the model you built into a form that can be called from a real service.
+- **Monitoring**: Continuously watching whether the production model still predicts well, and alerting when it gets worse.
+- **Garbage In, Garbage Out**: Bad data in means bad results out. A maxim that stresses the importance of data quality.
 
 ## 📝 Practice Questions
 
-**Question 1.** In the ML lifecycle, which step must be performed right after collecting data and before training a model?
+**Question 1.** In the ML lifecycle, which stage must you go through right after collecting data and before training the model?
 
-A) Model Deployment  
-B) Data Preparation (cleaning and transformation)  
+A) Model deployment  
+B) Data preparation (cleaning and transformation)  
 C) Monitoring  
-D) Model Evaluation  
+D) Model evaluation  
 
 **Answer: B**  
-Explanation: Current raw data is messy due to missing values, duplicates, and format inconsistencies, so the data preparation stage of cleaning and transforming it into a learnable form must be completed before training. Deployment and monitoring are stages after training and evaluation, and evaluation occurs after training, so neither is the stage immediately before training.
+Explanation: Real-world raw data is messy, with missing values, duplicates, and inconsistent formats, so before training you must go through the data preparation stage, which cleans the data and shapes it into a form that can be learned from. Deployment and monitoring come after training and evaluation, and evaluation is performed after training, so it is not the stage right before training.
 
 ---
 
-**Question 2.** What is the main reason the ML lifecycle is viewed as a repeating cycle rather than a one-way straight line?
+**Question 2.** What is the main reason the ML lifecycle is seen as a cycle rather than a straight line that ends in one direction?
 
-A) Once a model is deployed, it remains accurate forever  
-B) Because data distribution changes over time (drift), causing the model to become outdated, making retraining necessary  
-C) Because new algorithms are invented each time  
+A) Once a model is deployed, it stays accurate forever  
+B) Over time the data distribution changes (drift) and the model goes stale, so retraining is needed  
+C) Because algorithms are reinvented every time  
 D) Because the deployment stage takes the longest  
 
 **Answer: B**  
-Explanation: The distribution of data in the world changes over time (data drift), and models built from training data become increasingly misaligned with reality. That's why when monitoring detects performance degradation, we need to recollect data and retrain in a circular process. A models do not remain accurate forever, so A is incorrect. C and D are unrelated to the fundamental reason for the circular nature.
+Explanation: The distribution of real-world data changes over time (data drift), and a model built from the data available at training time gradually drifts away from reality. That is why, when monitoring detects performance degradation, a cycle of collecting data again and retraining is needed. A is wrong because a model does not stay accurate forever, and C and D have nothing to do with the fundamental reason for the cycle.
 
 ---
 
 **Question 3.** Which data is most appropriate to use when measuring performance in the model evaluation stage?
 
-A) Data used in training  
-B) Unseen data that was not used in training  
+A) The data used for training  
+B) Data that was not used for training and that the model is seeing for the first time  
 C) Raw data that has not been cleaned yet  
-D) Data collected only after deployment  
+D) Only data collected after deployment  
 
 **Answer: B**  
-Explanation: It's natural that a model fits well on training data (since we've already seen it), so true performance must be measured on unseen data that was not used in training. Evaluating only on training data makes it impossible to distinguish between memorization and true generalization. Raw uncleaned data is unsuitable for evaluation, and evaluation is performed before deployment.
+Explanation: Since it is a given that the model does well on its training data (it has already seen it), real ability must be measured on data that was not used for training and that the model sees for the first time. If you evaluate only on training data, you cannot tell whether the model memorized the answers or truly generalized. Uncleaned raw data is unsuitable for evaluation, and evaluation is performed before deployment.
 
 ---
 
-**Question 4.** Which stage of the ML lifecycle does the adage "Garbage In, Garbage Out" emphasize?
+**Question 4.** Which stage of the ML lifecycle does the maxim "Garbage In, Garbage Out" emphasize?
 
 A) Deployment  
 B) Monitoring  
-C) Data Collection and Preparation (data quality)  
-D) Model Evaluation  
+C) Data collection and preparation (data quality)  
+D) Model evaluation  
 
 **Answer: C**  
-Explanation: This adage means that no matter how good the algorithm, poor input data quality results in poor output (model). It emphasizes the importance of the stages of collecting and cleaning data. Deployment, monitoring, and evaluation are stages after data quality is established, so they are not direct targets of this adage.
+Explanation: The maxim means that if the quality of the input data is poor, the result (the model) will be poor no matter how good the algorithm is, so it stresses the importance of the stages that collect and clean the data. Deployment, monitoring, and evaluation come after data quality has been secured, so they are not the direct target of this maxim.
 
 ---
 
-**Question 5.** The accuracy of a model deployed six months ago is gradually declining in production. From the ML lifecycle perspective, what is the most appropriate response?
+**Question 5.** The accuracy of a model deployed 6 months ago keeps dropping in production. From the ML lifecycle perspective, what is the most appropriate response?
 
 A) Immediately discard the model and stop using ML  
-B) Take no action; the model will recover automatically over time  
-C) Because this is performance degradation detected by monitoring, collect recent data and retrain  
-D) Simply re-check the accuracy on training data  
+B) Do nothing; the model will recover on its own over time  
+C) This is performance degradation detected by monitoring, so collect the latest data and retrain  
+D) Only re-check the accuracy on the training data  
 
 **Answer: C**  
-Explanation: Performance degradation during operation is a signal that the monitoring stage should catch, and data drift is likely the cause. Therefore, the correct approach is to complete another cycle of the lifecycle by collecting recent data and retraining. Since the model does not recover automatically, B is incorrect. Training data accuracy is irrelevant to the current operational problem, so D is also inappropriate.
+Explanation: Performance degradation in production is the signal that the monitoring stage is meant to catch, and data drift is the likely cause. The standard approach is therefore to go around the lifecycle once more: collect the latest data and retrain. B is wrong because a model does not recover on its own, and D is also inappropriate because accuracy on the training data has nothing to do with the current production problem.
 
 ---

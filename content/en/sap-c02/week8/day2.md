@@ -1,4 +1,4 @@
-﻿# Day 2 - Step Functions: State Model of Distributed Workflows and Saga Pattern
+# Day 2 - Step Functions: State Model of Distributed Workflows and Saga Pattern
 
 When you first create one or two Lambda functions and use them, eventually the question arises: "I want to chain them in order, compensate on failure, and wait for external approval." Initially you might try to have one Lambda function call another. However, from that moment on, function chain timeout (15 minutes), visibility issues when failure occurs (not knowing which stage it stopped at), and maintenance problems from scattered retry and compensation logic all arise at once.
 

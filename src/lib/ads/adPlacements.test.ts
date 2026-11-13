@@ -80,10 +80,10 @@ describe('shouldShowDayAds — day 페이지에 광고 슬롯을 둘지', () => 
     expect(shouldShowDayAds({ category: 'aws', week: 12, locked: false })).toBe(true);
   });
 
-  test('영어판은 색인 대상인 1주차에만 둔다(2주차 이상은 noindex)', () => {
+  test('영어판도 전 주차에 둔다(번역이 끝나 모두 색인 대상이다)', () => {
     expect(shouldShowDayAds({ category: 'en', week: 1, locked: false })).toBe(true);
-    expect(shouldShowDayAds({ category: 'en', week: 2, locked: false })).toBe(false);
-    expect(shouldShowDayAds({ category: 'en', week: 9, locked: false })).toBe(false);
+    expect(shouldShowDayAds({ category: 'en', week: 2, locked: false })).toBe(true);
+    expect(shouldShowDayAds({ category: 'en', week: 9, locked: false })).toBe(true);
   });
 
   test('잠긴(미리보기만 보이는) 화면에는 두지 않는다', () => {

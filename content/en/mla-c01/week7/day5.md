@@ -1,4 +1,4 @@
-﻿# Day 5 - Week 7 Synthesis: MLOps Review
+# Day 5 - Week 7 Synthesis: MLOps Review
 
 ## 📌 Key Takeaways
 

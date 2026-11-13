@@ -2,7 +2,7 @@
 
 데이터베이스의 DR은 다른 모든 계층의 DR과 결이 다르다. 웹 서버는 죽으면 다시 띄우면 그만이지만, **데이터는 한 번 잃으면 영원히 사라진다**. 그래서 데이터 계층의 복제 방식은 곧 시스템의 RPO를 결정하는 가장 근본적인 설계 결정이며, 여기엔 빛의 속도와 분산 합의(consensus)라는 물리·이론적 한계가 그대로 작용한다. AWS는 RDS·Aurora·DynamoDB라는 세 갈래로 이 문제를 풀었고, 각각이 택한 트레이드오프가 시험의 핵심이다.
 
-SAP-C02에서 이 영역은 단순 암기("Aurora Global은 5개 리전")가 아니라, **각 옵션이 동기/비동기 중 무엇을 택했고, 그래서 RPO·RTO·일관성·쓰기 가능 리전이 어떻게 갈리는지**를 묻는다. 오늘은 RDS Multi-AZ의 동기 복제 내부, Aurora의 혁신적 스토리지 분리 아키텍처, 그리고 DynamoDB Global Tables의 Active-Active 충돌 해결까지 내부 동작 수준에서 분해한다.
+SAP-C02에서 이 영역은 단순 암기("Aurora Global은 최대 10개 Secondary 리전")가 아니라, **각 옵션이 동기/비동기 중 무엇을 택했고, 그래서 RPO·RTO·일관성·쓰기 가능 리전이 어떻게 갈리는지**를 묻는다. 오늘은 RDS Multi-AZ의 동기 복제 내부, Aurora의 혁신적 스토리지 분리 아키텍처, 그리고 DynamoDB Global Tables의 Active-Active 충돌 해결까지 내부 동작 수준에서 분해한다.
 
 ## 동기 vs 비동기 — RPO를 가르는 근본 축
 
@@ -40,13 +40,13 @@ Aurora가 RDS와 근본적으로 다른 점은 **컴퓨트(DB 인스턴스)와 �
 | 옵션 | 구성 | 핵심 특성 |
 |------|------|----------|
 | **Aurora Multi-AZ** | 1 Writer + 최대 15 Readers | 데이터는 3 AZ에 6 사본 |
-| **Aurora Global Database** | 1 Primary Region + 최대 5 Secondary | RPO < 1초, RTO < 1분 |
+| **Aurora Global Database** | 1 Primary Region + 최대 10 Secondary | 복제 지연 보통 1초 미만, RTO 수 분 단위 |
 
 Aurora 스토리지 분리의 천재성은 **복제 대상이 "데이터베이스 페이지"가 아니라 "redo log 레코드"**라는 점이다. 전통 DB는 변경된 데이터 페이지를 통째로 standby에 보내지만, Aurora는 훨씬 작은 redo log만 스토리지 노드로 보내고 스토리지가 자체적으로 페이지를 재구성한다. 네트워크 전송량이 극적으로 줄어 6개 사본을 유지하면서도 빠르다. 또 쓰기는 **6개 중 4개(쿼럼)** 사본이 확인하면 성공으로 처리(4/6 write quorum), 읽기는 6개 중 3개로 충족(3/6 read quorum)한다 — 한 AZ 전체(사본 2개)가 죽어도 쓰기가 4/6 쿼럼을 채울 수 있어 가용성이 유지된다. 이 쿼럼 설계 덕에 Aurora는 인스턴스 장애 시 standby 승격 없이 다른 인스턴스가 같은 스토리지를 즉시 바라봐 페일오버가 빠르다. 시험에서 "Aurora 6 사본·3 AZ", "quorum 기반 내구성"이 배경 지식으로 깔린다.
 
 Aurora의 4/6 쓰기·3/6 읽기 쿼럼은 분산 시스템의 **정족수(quorum) 합의** 원리다. W + R > N(여기선 4 + 3 > 6)을 만족하면 읽기가 항상 최신 쓰기를 본다는 정리에 기반한다. 이는 Dynamo 논문(Amazon, 2007)이 정립한 sloppy quorum 사상의 연장선이며, 동일한 정족수 사고가 ZooKeeper·etcd·Cassandra 등 거의 모든 분산 데이터 시스템의 근간이다. AWS가 N=6, W=4, R=3을 택한 이유는 "1개 AZ 손실 + 1개 노드 손실"까지 견디면서도 쓰기 지연을 최소화하는 균형점이기 때문이다.
 
-Aurora Global Database는 이 스토리지 계층을 **리전 간 비동기 복제**로 확장한다. Primary 리전이 secondary로 storage-level 복제를 수행하며, 일반적으로 RPO < 1초·cross-region 페일오버 RTO < 1분을 달성한다. Secondary는 read-only지만(최대 5개 리전, 리전당 최대 16 readers로 글로벌 읽기 확장), **write forwarding**을 켜면 secondary로 온 쓰기를 primary로 자동 전달할 수 있다(지연 대가).
+Aurora Global Database는 이 스토리지 계층을 **리전 간 비동기 복제**로 확장한다. Primary 리전이 secondary로 storage-level 복제를 수행하며, 복제 지연이 보통 1초 미만이며 cross-region 페일오버 RTO는 수 분 단위다. Secondary는 read-only지만(최대 10개 Secondary 리전, 리전당 최대 16 readers로 글로벌 읽기 확장), **write forwarding**을 켜면 secondary로 온 쓰기를 primary로 자동 전달할 수 있다(지연 대가).
 
 > ⚠️ **함정**: "Aurora Global = Active-Active"로 오해하면 틀린다. Aurora Global은 본질적으로 **single-writer**다 — primary 리전 한 곳만 쓰기를 받고 secondary는 read-only다. write forwarding을 켜도 실제 쓰기는 primary로 forward되어 처리되므로 진정한 multi-master가 아니다. "양 리전 동시 쓰기(true Active-Active)"가 필요하면 DynamoDB Global Tables다. 시험에서 "글로벌 SQL + RPO 1초"는 Aurora Global, "양 리전 쓰기 + Active-Active"는 DDB Global Tables로 정확히 갈린다.
 
@@ -60,7 +60,7 @@ Active-Active multi-master의 충돌 해결은 분산 시스템의 가장 어려
 
 2017년 GitLab의 데이터베이스 사고는 복제·백업의 중요성을 역으로 보여준 유명한 사례다. 한 엔지니어가 장애 대응 중 잘못된 서버에서 production 디렉터리를 삭제했고, 설정된 5가지 백업·복제 메커니즘이 모두 제대로 작동하지 않아 6시간치 데이터를 영구 손실했다. 교훈은 "복제·백업은 정기적으로 복원 테스트를 해야 진짜 작동한다"는 것이다. DynamoDB Global Tables나 Aurora Global 같은 관리형 복제는 이런 사람의 실수와 미검증 백업 문제를 구조적으로 줄여준다 — AWS가 복제·페일오버를 관리하므로 "복제가 조용히 멈춰 있었다"는 사고가 발생하기 어렵다. 시험에서 "운영 부담 최소 + 멀티 리전 DR"이 보이면 관리형 글로벌 DB가 직답이다.
 
-Amazon이 2012년 발표한 **Dynamo 논문**은 단순한 제품 발표가 아니라 분산 데이터베이스 역사의 분기점이었다. 2004년 크리스마스 쇼핑 시즌, Amazon의 관계형 DB가 피크 트래픽에 무릎을 꿇으며 장바구니 서비스가 멈춘 사건이 직접적 계기였다. 엔지니어들은 "강한 일관성보다 항상 쓸 수 있는 가용성(always-writeable)이 장바구니에 더 중요하다"는 결론에 도달했고, eventual consistency·정족수·hinted handoff를 채택한 Dynamo를 만들었다. 이 논문이 Cassandra·Riak·Voldemort 등 수많은 NoSQL의 청사진이 됐고, 오늘의 관리형 DynamoDB Global Tables가 그 직계 후손이다. 시험에서 "가용성을 일관성보다 우선(always-writeable)"이 보이면 DynamoDB 계열이 배경 사상이다.
+Amazon이 2007년 발표한 **Dynamo 논문**은 단순한 제품 발표가 아니라 분산 데이터베이스 역사의 분기점이었다. 논문은 기본 키로만 읽고 쓰는 장바구니 같은 서비스에는 관계형 DB가 "이상적이지 않은(far from ideal)" 해법이라고 설명한다. 엔지니어들은 "강한 일관성보다 항상 쓸 수 있는 가용성(always-writeable)이 장바구니에 더 중요하다"는 결론에 도달했고, eventual consistency·정족수·hinted handoff를 채택한 Dynamo를 만들었다. 이 논문이 Cassandra·Riak·Voldemort 등 수많은 NoSQL의 청사진이 됐고, 오늘의 관리형 DynamoDB Global Tables가 그 직계 후손이다. 시험에서 "가용성을 일관성보다 우선(always-writeable)"이 보이면 DynamoDB 계열이 배경 사상이다.
 
 ## 기타 데이터 계층의 멀티 리전
 
@@ -77,7 +77,7 @@ Amazon이 2012년 발표한 **Dynamo 논문**은 단순한 제품 발표가 아�
 
 데이터 계층 DR의 모든 선택은 **동기(AZ 간·RPO 0)·비동기(리전 간·RPO>0)** 축으로 환원되며, 그 뿌리는 PACELC의 지연-일관성 트레이드오프다. RDS Multi-AZ Cluster는 semi-synchronous 쿼럼으로 35초 페일오버와 readable standby를 제공하고, Aurora는 컴퓨트·스토리지를 분리해 redo log만 복제하는 4/6 쿼럼 분산 스토리지로 빠른 페일오버를 달성하며, Global Database로 리전 간 비동기 복제(RPO<1초·single-writer)를 확장한다. DynamoDB Global Tables만이 진정한 multi-master Active-Active이며, Last Writer Wins로 충돌을 해결한다.
 
-SAP 시험 매핑: (1) "RDS 페일오버 30초대 + standby read" → **Multi-AZ Cluster**, (2) "글로벌 SQL + RPO 1초·RTO 1분" → **Aurora Global Database**, (3) "양 리전 동시 쓰기·Active-Active" → **DynamoDB Global Tables**, (4) "DDB 충돌 시 동작" → **Last Writer Wins**, (5) "Aurora secondary 최대 5리전·read-only", (6) "Redis 멀티 리전 복제(single-writer)" → **Global Datastore**, (7) "S3 다중 리전 단일 엔드포인트" → **MRAP**, (8) "Read Replica는 자동 페일오버 없음(수동 promote)". 다음 day는 14주차 DR·복원력 전체를 산업별 종합 시나리오로 통합 복습한다.
+SAP 시험 매핑: (1) "RDS 페일오버 30초대 + standby read" → **Multi-AZ Cluster**, (2) "글로벌 SQL + RPO 1초·RTO 1분" → **Aurora Global Database**, (3) "양 리전 동시 쓰기·Active-Active" → **DynamoDB Global Tables**, (4) "DDB 충돌 시 동작" → **Last Writer Wins**, (5) "Aurora secondary 최대 10리전·read-only", (6) "Redis 멀티 리전 복제(single-writer)" → **Global Datastore**, (7) "S3 다중 리전 단일 엔드포인트" → **MRAP**, (8) "Read Replica는 자동 페일오버 없음(수동 promote)". 다음 day는 14주차 DR·복원력 전체를 산업별 종합 시나리오로 통합 복습한다.
 
 ---
 
@@ -111,7 +111,7 @@ D) RDS Cross-Region Read Replica
 
 **정답: B**
 
-해설: Aurora Global Database는 storage-level 비동기 복제로 최대 5개 secondary 리전을 두고 일반적으로 RPO < 1초·RTO < 1분을 보장하는 관리형 글로벌 SQL DB다. A는 단일 리전 내 고가용성만 제공하고, C(DDB)는 SQL이 아니라 NoSQL이며, D(Read Replica)는 일관성·failover 보장이 약하고 RTO/RPO SLA를 명시하지 않는다. 함정: "글로벌 SQL + RPO 1초"는 Aurora Global의 직답이며, NoSQL 요구가 아닌 한 DDB로 답이 가지 않는다.
+해설: Aurora Global Database는 storage-level 비동기 복제로 최대 10개 secondary 리전을 두고 복제 지연이 보통 1초 미만이며 RTO가 수 분 단위인 관리형 글로벌 SQL DB다. A는 단일 리전 내 고가용성만 제공하고, C(DDB)는 SQL이 아니라 NoSQL이며, D(Read Replica)는 일관성·failover 보장이 약하고 RTO/RPO SLA를 명시하지 않는다. 함정: "글로벌 SQL + RPO 1초"는 Aurora Global의 직답이며, NoSQL 요구가 아닌 한 DDB로 답이 가지 않는다.
 
 ---
 

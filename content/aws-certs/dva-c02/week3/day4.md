@@ -316,6 +316,7 @@ def lambda_handler(event, context):
 **동기 호출에서 429를 받는 클라이언트:**
 ```python
 import boto3
+import random
 import time
 from botocore.exceptions import ClientError
 

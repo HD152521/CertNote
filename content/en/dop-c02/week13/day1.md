@@ -62,7 +62,7 @@ When Aurora Writer dies, one of the live Readers promotes to Writer based on tie
 | **Backtrack** (MySQL) | Rewind cluster to specific point-in-time | Without S3 backup, up to 72-hour window, in-place |
 | **Cluster Volume auto-expand** | Auto-scale to 128TB in 10GB increments | No pre-provisioning needed |
 | **Aurora Serverless v2** | Scale 0.5 ACU units continuously | Auto-adjust with traffic |
-| **Global Database** | 1 Primary + up to 5 Secondary regions | Async <1s lag (Day 2) |
+| **Global Database** | 1 Primary + up to 10 Secondary regions | Async <1s lag (Day 2) |
 
 > ⚠️ **Pitfall**: Backtrack differs from backup (snapshot restore). Backtrack **rewinds the cluster in-place to past time** (no new cluster created), works only for MySQL-compatible, and rewinds only changes after activation. "Oops, DELETE — rewind 5 minutes" = Backtrack (fast), but "restore one deleted table" or "state 30 days ago" = PITR (point-in-time recovery, snapshot+logs). Mixing them is an exam trap.
 
@@ -91,7 +91,7 @@ ElastiCache for Redis (now including Valkey) HA operates at **replication group*
 | RDS Multi-AZ | 60–120s | Standby promotion + DNS flip |
 | RDS Multi-AZ DB Cluster | <35s | Pre-running Readable Standby promotion |
 | Aurora (single region) | <30s | Shared storage, no copy needed; Reader promote |
-| Aurora Global (region failover) | <1min | Secondary promote to standalone (Day 2) |
+| Aurora Global (region failover) | In the order of minutes | Secondary promote to standalone (Day 2) |
 | ElastiCache Redis Multi-AZ | <60s | Replica promotion |
 | DynamoDB | ~0 | Inherently distributed, no single-node concept |
 

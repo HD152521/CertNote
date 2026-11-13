@@ -99,7 +99,7 @@ interface DayAdContext {
 
 /**
  * day 페이지에 광고 슬롯을 둘지. DayView 는 두 라우트와 영어판이 공유하므로 여기서 가른다.
- * 색인에 내보내지 않는 문서(영어판 2주차 이상 — 번역 전이라 noindex)와 본문이 잘린 잠금 화면에는
+ * 색인에 내보내지 않는 문서(유료 주차)와 본문이 잘린 잠금 화면에는
  * 두지 않는다. 색인 판정의 단일 출처(isIndexableDay)를 그대로 따라 엇갈림이 없다.
  */
 export function shouldShowDayAds({ category, week, locked }: DayAdContext): boolean {

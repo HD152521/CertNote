@@ -277,11 +277,11 @@ D) OpenID Connect
 **10.** Aurora Global Database를 사용할 때 재해 복구(DR) 목표는?
 
 A) RPO < 5분, RTO < 1시간  
-B) RPO < 1초, RTO < 1분  
+B) RPO 수 초, RTO 수 분  
 C) RPO < 1시간, RTO < 4시간  
 D) RPO = 0, RTO = 0  
 
-**정답: B** - Aurora 글로벌 데이터베이스는 1초 미만의 복제 지연(RPO)과 1분 미만의 Failover 시간(RTO)을 제공한다.
+**정답: B** - Aurora 글로벌 데이터베이스는 일반적으로 1초 미만의 복제 지연과 수 초 수준의 RPO, 수 분 단위의 Failover 시간(RTO)을 제공한다.
 
 ---
 

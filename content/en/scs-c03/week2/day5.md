@@ -1,4 +1,4 @@
-﻿# Day 5 - Week 2 Integration: Multi-Account IAM Governance Scenario
+# Day 5 - Week 2 Integration: Multi-Account IAM Governance Scenario
 
 Over the four days of Week 2, we built the four pillars of IAM. Day 1's **policy evaluation logic** (the intersection of six layers, and explicit deny taking priority), Day 2's **Permission Boundary** (the ceiling on an individual's permissions and safe delegation), Day 3's **SCP** (guardrails for an entire account), and Day 4's **federation and ABAC** (temporary credentials and tag-based scaling). Today we see how these four are not isolated pieces of knowledge but **one governance machine** with interlocking parts.
 

@@ -17,7 +17,7 @@ Every decision this week ultimately sits on three axes.
 | Comparison | Left | Right | Deciding criterion |
 |------|------|--------|-------------|
 | Multi-AZ vs. Multi-Region | HA (synchronous, RPO 0) | DR (asynchronous) | Blast radius (AZ or region) |
-| Aurora Global vs. Cross-Region RR | Single writer, promotion ~1 min | Asynchronous read replica | Promotion speed, dedicated replication infrastructure |
+| Aurora Global vs. Cross-Region RR | Single writer, promotion in minutes | Asynchronous read replica | Promotion speed, dedicated replication infrastructure |
 | DynamoDB Global Tables vs. Aurora Global | Multi-region simultaneous writes (AP) | Single-region writes (consistency) | Number of writable regions |
 | Pilot Light vs. Warm Standby | App OFF, DB replicating | Scaled-down full stack ON | Compute readiness |
 | DMS vs. MGN | DB data (CDC) | Whole server (block) | Unit being moved |
@@ -49,7 +49,7 @@ Every decision this week ultimately sits on three axes.
   ┌─ Region B (DR, Warm Standby) ──────────────┐
   │  ALB(always on) → ECS(scaled down,         │
   │                   scale up on failure)      │
-  │  Aurora Global Reader (~1 min promotion    │
+  │  Aurora Global Reader (minutes to promote  │
   │                        on failure)          │
   └────────────────────────────────────────────┘
 

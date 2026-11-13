@@ -1,4 +1,4 @@
-﻿# Day 2 - IAM Operator's Manual: Users, Groups, Roles, Policy Evaluation Algorithm
+# Day 2 - IAM Operator's Manual: Users, Groups, Roles, Policy Evaluation Algorithm
 
 S3 403, Lambda InvalidPermission, ECR pull denied, SSM SessionManager AccessDenied, RDS Connect Failed. These errors floating through the operator's Slack channel daily share one thing in common: they're all outcomes of IAM policy evaluation. For operators, IAM isn't a "permission system" so much as **"a decision engine that determines half of all incidents that happen every day."** It's the single component that decides who, what, where, and under which conditions can do things—and when it goes wrong, permissions become either too broad (data leaks, like Capital One) or too narrow (deployments block on Friday nights—very common).
 

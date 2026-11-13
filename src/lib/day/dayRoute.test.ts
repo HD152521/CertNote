@@ -13,23 +13,19 @@ async function generateMetadata({ params }: { params: Promise<DayRouteParams & {
 // 배경: noindex day에서 generateMetadata가 { robots: 'noindex, nofollow' }만 반환하면 alternates를
 // 지정하지 않은 셈이 되어 루트 레이아웃(src/app/layout.tsx)의 canonical('/')·languages(ko/en/x-default
 // 전부 '/')를 그대로 상속한다. 그 결과 "noindex인데 canonical은 홈"이라는 Google이 금지하는 충돌
-// 신호가 나갔다. 구독제 보류 이후 noindex로 남는 건 번역이 덜 된 영어판 Week2+뿐이다.
-describe('generateMetadata — noindex day(영어판 week2+)', () => {
+// 신호가 나갔다. 영어판 번역이 끝나 지금은 유료 주차만 noindex 대상이다(isIndexableDay).
+describe('generateMetadata — 영어판 week2+ day 페이지(번역 완료, 전 주차 공개)', () => {
   const params = Promise.resolve({ category: 'en', slug: 'saa-c03', week: 'week2', day: 'day1' });
 
-  test('robots는 noindex, nofollow를 유지한다', async () => {
+  test('robots가 없고(색인 허용) 자기참조 canonical을 갖는다', async () => {
     const meta = await generateMetadata({ params });
-    expect(meta.robots).toBe('noindex, nofollow');
-  });
-
-  test('canonical이 홈이 아니라 자기 자신의 URL이다', async () => {
-    const meta = await generateMetadata({ params });
+    expect(meta.robots).toBeUndefined();
     expect(meta.alternates?.canonical).toBe('/en/saa-c03/week2/day1');
   });
 
-  test('루트 레이아웃에서 상속된 languages(홈을 가리키는 hreflang)가 남지 않는다', async () => {
+  test('한국어 짝과 hreflang 으로 서로 묶인다', async () => {
     const meta = await generateMetadata({ params });
-    expect(meta.alternates?.languages).toBeUndefined();
+    expect(meta.alternates?.languages).toMatchObject({ en: '/en/saa-c03/week2/day1', ko: '/aws/saa-c03/week2/day1' });
   });
 });
 
@@ -45,9 +41,9 @@ describe('generateMetadata — 한국어 week2+ day 페이지(전 주차 공개)
     expect(meta.alternates?.canonical).toBe('/aws/saa-c03/week2/day1');
   });
 
-  test('영어판 짝이 noindex라 hreflang을 걸지 않는다(noindex를 가리키면 클러스터 무효화)', async () => {
+  test('영어판 짝이 색인 대상이라 hreflang 으로 묶인다', async () => {
     const meta = await generateMetadata({ params });
-    expect(meta.alternates?.languages).toBeUndefined();
+    expect(meta.alternates?.languages).toMatchObject({ ko: '/aws/saa-c03/week2/day1', en: '/en/saa-c03/week2/day1' });
   });
 });
 

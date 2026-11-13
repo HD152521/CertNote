@@ -116,8 +116,8 @@ Multi-AZ Cluster는 2022년 출시. 기존 Multi-AZ Instance가 "1 primary + 1 s
 
 ### Aurora Global Database
 
-- 최대 5개 리전, secondary는 read-only
-- 일반적으로 RPO < 1초, RTO < 1분
+- 최대 10개 Secondary 리전, secondary는 read-only
+- 복제 지연 보통 1초 미만, RTO 수 분 단위
 - "Managed Planned Failover" 또는 "Unplanned Failover"
 - 데이터는 3 AZ에 6 사본, 4/6 쓰기·3/6 읽기 쿼럼으로 1개 AZ 손실에도 가용
 
@@ -177,7 +177,7 @@ D) Read Replica
 
 **정답: B**
 
-해설: Aurora Global은 최대 5개 리전, RPO < 1초, RTO < 1분 보장. RDS Multi-AZ는 단일 리전 내 가용성만 제공하고, Read Replica는 일관성이 약하며 자동 failover SLA가 없다. DMS는 마이그레이션·복제 도구이지 글로벌 DB 솔루션이 아니다. "글로벌 SQL + RPO 1초"는 Aurora Global의 직답이다.
+해설: Aurora Global은 최대 10개 Secondary 리전을 지원하며 복제 지연은 보통 1초 미만, RTO는 수 분 단위다. RDS Multi-AZ는 단일 리전 내 가용성만 제공하고, Read Replica는 일관성이 약하며 자동 failover SLA가 없다. DMS는 마이그레이션·복제 도구이지 글로벌 DB 솔루션이 아니다. "글로벌 SQL + RPO 1초"는 Aurora Global의 직답이다.
 
 ---
 

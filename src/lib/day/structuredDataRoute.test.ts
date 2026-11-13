@@ -108,12 +108,12 @@ describe('buildDayStructuredData — week2+', () => {
     expect(result.breadcrumbLd).not.toBeNull();
   });
 
-  test('영어판 week2+는 noindex라 둘 다 null이다(noindex 페이지에 JSON-LD를 넣지 않는다 — Step4 4-2)', async () => {
+  test('영어판 week2+도 색인 대상이라 Article·BreadcrumbList를 만든다', async () => {
     const content = await getDay('en', 'saa-c03', 2, 1);
     if (!content) throw new Error('fixture content missing');
     const result = await buildDayStructuredData('en', 'saa-c03', 2, 1, 'en', content);
 
-    expect(result.articleLd).toBeNull();
-    expect(result.breadcrumbLd).toBeNull();
+    expect(result.articleLd).toMatchObject({ inLanguage: 'en', isAccessibleForFree: true });
+    expect(result.breadcrumbLd).not.toBeNull();
   });
 });

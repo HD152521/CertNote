@@ -1,58 +1,44 @@
-# Day 5 - Week 3 Comprehensive Review: Wiring EC2, Storage, ELB, and ASG into a Single Architecture
+# Day 5 - Week 3 Comprehensive Review: Connecting EC2, Storage, ELB, and ASG into One Architecture
 
-This week covered the core of AWS's compute and storage layers. EC2 instance families and purchase options (Day 1), the storage-selection principles behind EBS, Instance Store, EFS, and FSx (Day 2), the load-balancing tier of ALB, NLB, and GLB (Day 3), and ASG scaling policies and operational techniques (Day 4). These four are not independent services — they're the parts that make up a single architectural pattern.
+This week we covered the core of AWS's compute and storage layers. EC2 instance families and purchase options (Day 11), the principles of choosing among EBS, Instance Store, EFS, and FSx (Day 12), the ALB, NLB, and GLB load-balancing tiers (Day 13), and ASG scaling policies and operating techniques (Day 14). These four aren't independent services; they're the parts that make up a single architecture pattern.
 
-The goal of this review isn't to memorize each one in isolation, but to build the ability to judge "which combination is optimal given the requirements." The SAA exam asks about trade-off judgment, not single-service trivia.
+The goal of this review isn't to memorize each one separately but to build the ability to judge "which combination is optimal for the given requirements." The SAA exam asks not about single-service knowledge but about trade-off judgment.
 
-## How This Week's Core Concepts Link Together
+## The Links Connecting This Week's Core Concepts
 
-How do these four areas connect into one whole?
+How do these four areas connect into one?
 
-Once you pick an EC2 instance (family and purchase option), you decide what storage to attach to it (EBS / Instance Store / a shared file system). To spread traffic across multiple instances, you put an ELB in front (ALB / NLB / GLB). And what automatically adjusts the instance count in response to traffic is the ASG.
+When you choose an EC2 instance (family and purchase option), you then decide what storage to attach to it (EBS/Instance Store/shared file system). To distribute traffic across multiple instances, you put an ELB in front (ALB/NLB/GLB). And what automatically adjusts the number of instances according to traffic is the ASG.
 
-```
-[ Week 3 concept-linkage structure ]
-
-Requirements analysis
-    ↓
-┌─────────────────────────────────────────────────────┐
-│ Workload characteristics → instance family (Day 1)  │
-│ Cost/commitment → purchase option (Day 1)           │
-│ Data durability/sharing → storage type (Day 2)      │
-│ Traffic type → ELB type (Day 3)                     │
-│ Load-variation pattern → scaling policy (Day 4)     │
-└─────────────────────────────────────────────────────┘
-    ↓
-Choose the optimal architecture
-```
+![The decision path in which each axis of the requirements leads to choices of instance, storage, ELB, and scaling](/diagrams/week3-decision-map.svg)
 
 ## Key Comparison Tables: At a Glance
 
 ### Instance Family Selection Criteria
 
-| Bottleneck Resource | Family | Representative Workloads | Watch Out For |
+| Bottleneck resource | Family | Representative workload | Caveat |
 |----------|--------|-------------|--------|
 | CPU-intensive | C | Encoding, ML inference, batch | Graviton (c7g) is 25% cheaper |
-| General-purpose | M | App servers, cache | The first choice |
-| Memory | R | In-memory DB, SAP | Large RAM is the point |
-| Memory (extreme) | X | SAP HANA, multiple TB | Very high cost |
+| General purpose | M | App servers, caches | First choice |
+| Memory | R | In-memory DB, SAP | Large RAM is the key |
+| Memory (extreme) | X | SAP HANA, several TB | Very high cost |
 | Local NVMe | I | NoSQL, Kafka brokers | Consider data loss |
 | GPU training | P | LLM pre-training | H100/A100 |
 | GPU inference | G | ML inference, rendering | A10G |
 | Variable load | T | Dev, microservices | Watch T Unlimited cost |
-| ARM savings | *g suffix | Open-source stacks broadly | Verify commercial SW compatibility |
+| ARM savings | *g suffix | Open-source stacks in general | Check commercial SW compatibility |
 
 ### Purchase Option Trade-offs
 
-| Option | Commitment | Max Savings | Use When |
+| Option | Commitment | Max savings | Usage conditions |
 |------|------|---------|---------|
 | On-Demand | None | 0% | Short-term, unpredictable |
-| Compute SP | 1/3 yr | ~66% | Family/region/OS can change |
-| EC2 Instance SP | 1/3 yr | ~72% | Family fixed, size free |
-| Standard RI | 1/3 yr | ~72% | Type fixed |
-| Spot | Immediate | ~90% | Stateless, interruption-tolerant |
-| Dedicated Host | 1/3 yr | - | BYOL licensing |
-| Capacity Reservation | None | 0% | Capacity assurance only |
+| Compute SP | 1/3 years | ~66% | Family, Region, and OS can change |
+| EC2 Instance SP | 1/3 years | ~72% | Family fixed, size free |
+| Standard RI | 1/3 years | ~72% | Type fixed |
+| Spot | Immediate | ~90% | Stateless, interruption tolerated |
+| Dedicated Host | 1/3 years | - | BYOL licensing |
+| Capacity Reservation | None | 0% | Reserves capacity only |
 
 ### Storage Decision Tree
 
@@ -61,11 +47,11 @@ Just one EC2?
     └─ Need persistence?
         ├─ NO: Instance Store (NVMe, top performance)
         └─ YES: EBS
-               ├─ Default: gp3 (IOPS/throughput independent, 20% cheaper than gp2)
+               ├─ Default: gp3 (IOPS/Throughput independent, 20% cheaper than gp2)
                ├─ High-performance OLTP: io2 (up to 64K IOPS)
-               └─ Mission-critical: io2 Block Express (up to 256K IOPS)
+               └─ Mission critical: io2 Block Express (up to 256K IOPS)
 
-Shared across multiple EC2?
+Shared by multiple EC2s?
     ├─ Linux NFS: EFS (auto-scaling, Multi-AZ)
     ├─ Windows SMB + AD: FSx for Windows
     ├─ HPC/ML parallel + S3 integration: FSx for Lustre
@@ -74,59 +60,59 @@ Shared across multiple EC2?
 Object storage / HTTP API: S3
 ```
 
-### Choosing Among the Three ELBs
+### ELB 3 Types Selection Criteria
 
-| Keyword | Answer | Why |
+| Keyword | Answer | Reason |
 |--------|------|------|
 | HTTP path/host/header routing | ALB | L7 content-based |
 | WAF integration | ALB | WAF attaches to ALB |
-| gRPC, HTTP/2 | ALB | NLB is TCP-only |
-| WebSocket sessions | ALB | Sticky-session support |
+| gRPC, HTTP/2 | ALB | NLB is TCP only |
+| WebSocket sessions | ALB | Supports sticky |
 | UDP, game servers | NLB | L4 UDP support |
 | Static IP, EIP, partner whitelist | NLB | EIP per AZ |
 | Ultra-low latency (μs) | NLB | L4 processing |
 | Custom TCP protocol | NLB | Not HTTP |
 | NGFW/IPS/DPI chaining | GLB | GENEVE L3 |
-| Security-appliance Auto Scaling | GLB | Appliance management |
+| Auto Scaling of security appliances | GLB | Appliance management |
 
 ### ASG Scaling Policy Comparison
 
-| Policy | How It Works | When to Use |
+| Policy | How it works | Usage scenario |
 |------|---------|-------------|
-| Target Tracking | Auto-tracks a target value (PI control) | Recommended, most situations |
-| Predictive | ML-driven pre-scaling | Periodic patterns |
+| Target Tracking | Automatically tracks a target value (PI control) | Recommended, most situations |
+| Predictive | Pre-scales using ML | Periodic patterns |
 | Scheduled | Time-based pre-configuration | Predictable patterns |
-| Step | Step-wise scaling amounts | When fine-grained control is needed |
+| Step | Step-wise scaling size | When fine-grained control is needed |
 | Simple | Simple +/- N | Legacy, avoid |
 
-## Seven Frequently Tested Traps
+## 7 Traps
 
-**Trap 1. Using Instance Store for a database**
-The exam dangles "the fastest storage" as bait and offers an answer that puts a database on Instance Store. Instance Store loses its data when the instance is stopped or terminated, so you must never use it for a DB. That said, it's usable as the node disk for a distributed DB that guarantees durability through replication — like Cassandra or MongoDB.
+**Trap 1. Using Instance Store for a DB**
+The exam uses "the fastest storage" as bait to present answers that use Instance Store for a database. Instance Store data disappears when the instance stops or terminates, so it must never be used for a DB. However, it can be used as the node disk of a distributed DB such as Cassandra or MongoDB that guarantees durability through replication.
 
 **Trap 2. Using EFS for a Windows AD file share**
 EFS is NFSv4.1-based and Linux-only. If you need Windows Active Directory integration, the SMB protocol, or NTFS ACLs, it's FSx for Windows File Server.
 
-**Trap 3. Assuming a gp2 volume is already at max IOPS**
-gp2 IOPS scale with size (1GB = 3 IOPS). A 100GB gp2 tops out at 300 IOPS. If you need more IOPS, switch to gp3 and provision IOPS independently. The gp3 switch is instant with no downtime.
+**Trap 3. The illusion that a gp2 volume already has the max IOPS**
+gp2's IOPS are proportional to size (1GB = 3 IOPS). A 100GB gp2 has a max of 300 IOPS. If you need more IOPS, convert to gp3 and provision IOPS independently. Converting to gp3 is possible immediately with no downtime.
 
 **Trap 4. Expecting a static IP from an ALB**
-An ALB only has a DNS name, and its IP changes. Registering an ALB IP in a partner firewall whitelist is impossible. NLB + EIP is the answer. Global Accelerator also provides two static Anycast IPs, but unless the question explicitly mentions Global Accelerator, NLB + EIP is the simpler answer.
+An ALB has only a DNS name and its IPs change. Registering an ALB IP in a partner's firewall whitelist is impossible. NLB + EIP is the answer. Global Accelerator also provides 2 static Anycast IPs, but unless the question mentions Global Accelerator, NLB + EIP is the simpler answer.
 
 **Trap 5. Detecting app failures with only the ASG's EC2 health check**
-The EC2 health check only looks at physical/OS state. Even if the app crashes, EC2 stays in the Running state, so it won't be replaced. When operating behind an ALB, you must enable the ELB Health Check type on the ASG.
+The EC2 health check looks only at physical/OS status. Even if the app crashes, EC2 stays in Running state, so it isn't replaced. When operating behind an ALB, you must enable the ELB Health Check type on the ASG.
 
-**Trap 6. Using Spot instances for a stateful workload**
-Even if "maximum savings" is in the requirements, Spot is a wrong answer for stateful workloads (DB master, session server, license server). It can disappear at any time after the 2-minute notice. Spot is the right answer only for stateless work (batch, big data, ML training with checkpoints).
+**Trap 6. Using Spot instances for Stateful workloads**
+Even if "maximum savings" is in the requirements, Spot is the wrong answer for Stateful workloads (DB master, session servers, license servers). This is because they can disappear at any time after a 2-minute notice. Spot is the correct answer only for Stateless workloads (batch, big data, ML training checkpoints).
 
-**Trap 7. Assuming NLB Cross-Zone is ON by default**
-ALB has Cross-Zone ON by default (no extra charge), but NLB and GLB default to OFF. On an NLB, if the target count is uneven across AZs, traffic distribution skews. Enabling Cross-Zone incurs additional data-transfer charges.
+**Trap 7. The illusion that NLB Cross-Zone is ON by default**
+For ALB, Cross-Zone is ON by default (no additional cost), but for NLB and GLB it's OFF by default. If the number of targets per AZ is uneven on an NLB, traffic distribution becomes skewed. Enabling Cross-Zone incurs additional data transfer cost.
 
-## Inter-Service Interaction Patterns
+## Interaction Patterns Between Services
 
-In real architectures, these services operate in combination. You have to understand the representative patterns to solve scenario questions.
+In real architectures these services work in combination. You need to understand the representative patterns to solve scenario questions.
 
-**Pattern A: Standard three-tier web service**
+**Pattern A: Standard 3-tier web service**
 ```
 Internet → ALB (Multi-AZ, HTTPS, WAF)
               ↓ Host/Path routing
@@ -135,7 +121,7 @@ Internet → ALB (Multi-AZ, HTTPS, WAF)
          EBS gp3 (application data)
          EFS (shared config, uploaded files)
               ↓
-         RDS Multi-AZ (reads go to Read Replica)
+         RDS Multi-AZ (reads via Read Replica)
 ```
 
 **Pattern B: ML training platform**
@@ -160,7 +146,7 @@ Partner → NLB (EIP whitelist)
 **Pattern D: Enterprise security chain**
 ```
 Internet → Transit Gateway → GLB → Palo Alto NGFW (ASG)
-                                       ↓ (inspection passed)
+                                       ↓ (passes inspection)
                                 ALB → EC2 ASG → RDS
 ```
 
@@ -172,64 +158,64 @@ EC2 c7g.metal (Cluster Placement Group)
     └─ Instance Store (temporary scratch)
 ```
 
-## Cost-Optimization Patterns
+## Cost Optimization Pattern Summary
 
-When "cost optimization" shows up in a scenario, analyze it with this framework.
+When "cost optimization" appears in a scenario, analyze it with this framework.
 
 ```
 1. Classify the workload
-   - Stateless + interruption-tolerant → Spot (up to 90% savings)
+   - Stateless + interruption tolerated → Spot (up to 90% savings)
    - Predictable baseline load → Compute SP or RI
-   - Short-term / unpredictable → On-Demand
+   - Short-term/unpredictable → On-Demand
 
-2. Right-size the instance
-   - Check whether Graviton (ARM) is viable (25% savings)
-   - Pick the family from actual CPU/memory utilization
+2. Instance right-sizing
+   - Check whether Graviton (ARM) is possible (25% savings)
+   - Pick the family based on actual CPU/memory utilization
 
-3. Optimize storage
-   - gp2 → gp3 switch (20% savings)
-   - EFS IA Lifecycle Policy (auto-tier long-untouched files)
+3. Storage optimization
+   - Convert gp2 → gp3 (20% savings)
+   - EFS IA Lifecycle Policy (automatic tiering of long-unaccessed files)
    - S3 Intelligent-Tiering or Glacier
 
-4. Optimize usage patterns
-   - Schedule nightly dev/test ASG shutdown
-   - Analyze CloudWatch real-usage data before applying Reserved Instances
+4. Usage pattern optimization
+   - Scheduled shutdown of nighttime dev/test ASGs
+   - Analyze actual CloudWatch usage data before applying Reserved Instances
 ```
 
-## Resilience (Reliability) Design Patterns
+## Reliability Design Patterns
 
-When a scenario says "keep the service up even during a single-AZ failure":
+When "keep the service running even if one AZ fails" appears in a scenario:
 
 ```
-Essential checklist:
+Required checklist:
 □ ALB: Multi-AZ subnets (at least 2 AZs)
-□ ASG: Min=2 or more, subnets registered across multiple AZs
+□ ASG: Min=2 or more, register multiple AZ subnets
 □ RDS: Multi-AZ deployment (synchronous replication)
 □ ElastiCache: Redis Cluster Mode Enabled (Multi-AZ)
 □ EFS: Multi-AZ mount targets
-□ S3: Multi-AZ durability by default (no extra config needed)
+□ S3: Multi-AZ durability by default (no separate setup needed)
 ```
 
-When it says "keep the service up even during a full-region failure":
+When "keep the service running even if an entire Region fails" appears:
 ```
-Additionally required:
+Additional requirements:
 □ Route 53 Health Check + Failover records
 □ RDS Cross-Region Read Replica (manual promote)
   or Aurora Global Database (RPO < 1 second)
 □ S3 Cross-Region Replication
-□ CloudFront (edge cache buffers origin failure)
-□ A standby ASG + EC2 stack in a second region
+□ CloudFront (edge cache buffers origin failures)
+□ ASG + EC2 standby stack in a second Region
 ```
 
 ---
 
 ## 📝 Scenario Practice Questions
 
-**Question 1.** A global e-commerce platform runs in the AWS Seoul region. Design an architecture that satisfies all of the following requirements.
-- Traffic is 5× normal on weekdays from 08:00 to 18:00
-- No service interruption during a single-AZ failure
+**Question 1.** A global e-commerce platform runs in the AWS Seoul Region. Design an architecture that satisfies all of the following requirements.
+- Traffic is 5 times normal from 8:00 to 18:00 Monday through Friday
+- No service interruption on a single AZ failure
 - Guarantee baseline capacity while minimizing cost
-- Must defend against SQL injection attacks
+- Need to defend against SQL Injection attacks
 
 A) On-Demand EC2 + ALB (Single-AZ) + RDS Single-AZ + Shield Standard
 B) Spot EC2 ASG (Multi-AZ) + ALB (WAF) + RDS Multi-AZ + Scheduled Scaling + Compute SP (baseline load)
@@ -237,11 +223,11 @@ C) RI 3y (all EC2) + NLB (Multi-AZ) + RDS Multi-AZ + Target Tracking
 D) Dedicated Host EC2 + ALB (WAF) + RDS Multi-AZ + Manual Scaling
 
 **Answer: B**
-Explanation: The weekday pattern is pre-scaled with Scheduled Scaling, the baseline load runs on Compute SP (committed savings), and the peak overage is handled by Spot. ALB + WAF defends against SQL injection. Multi-AZ ASG + RDS Multi-AZ covers a single-AZ failure. A is Single-AZ, so it fails at failure handling. C can't apply WAF to an NLB. D's Manual Scaling is inefficient in both cost and elasticity.
+Explanation: The Monday-Friday pattern is pre-scaled with Scheduled Scaling, baseline load is covered by Compute SP (commitment savings), and the portion above peak is handled with Spot. ALB + WAF defends against SQL Injection. Multi-AZ ASG + RDS Multi-AZ handle a single AZ failure. A fails to handle failures because it's Single-AZ. C can't apply WAF to an NLB. D's Manual Scaling is inefficient in both cost and elasticity.
 
 ---
 
-**Question 2.** A company is migrating from on-premises NetApp ONTAP storage to AWS. Both Linux and Windows servers must access the same file system, and the plan is to migrate gradually while syncing from on-premises via SnapMirror. After the migration completes, it must also support both NFS and SMB. Which service fits?
+**Question 2.** A company is migrating from on-premises NetApp ONTAP storage to AWS. Both Linux and Windows servers must access the same file system, and it plans to migrate gradually while synchronizing with SnapMirror from on-premises. Also, after the migration is complete, both NFS and SMB must be supported. Which service is suitable?
 
 A) EFS (NFSv4.1-based)
 B) FSx for Windows File Server (SMB-based)
@@ -249,11 +235,11 @@ C) FSx for NetApp ONTAP
 D) FSx for OpenZFS
 
 **Answer: C**
-Explanation: FSx for NetApp ONTAP supports NFS, SMB, and iSCSI multi-protocol access simultaneously. It can replicate with on-premises NetApp via SnapMirror, so gradual migration is natural. NetApp-native features like WAFL-based snapshots, thin provisioning, and deduplication are also usable as-is. EFS supports only NFS, FSx for Windows only SMB, and OpenZFS only NFS.
+Explanation: FSx for NetApp ONTAP simultaneously supports NFS, SMB, and iSCSI multi-protocol. SnapMirror replication with on-premises NetApp is possible, so gradual migration is natural. NetApp's native features such as WAFL file system-based snapshots, thin provisioning, and deduplication are also usable as-is. EFS supports only NFS, FSx Windows only SMB, and OpenZFS only NFS.
 
 ---
 
-**Question 3.** A financial trading company is migrating a new order system to AWS. Requirements: (1) minimize network latency (μs scale), (2) partner systems must register a static IP in their firewall whitelist, (3) use the FIX protocol (a TCP-based custom protocol), (4) MPI communication between order-processing servers. What is the most suitable architecture?
+**Question 3.** A financial trading company is moving its new order system to AWS. Requirements: (1) minimize network latency (μs level), (2) a static IP must be registered in the whitelist on the partner system's firewall, (3) use the FIX protocol (a TCP-based custom protocol), (4) MPI communication between order-processing servers. What is the most suitable architecture?
 
 A) ALB (Multi-AZ) + EC2 ASG (Spread Placement Group)
 B) NLB (EIP) + EC2 Cluster Placement Group (EFA) + Nitro instances
@@ -261,114 +247,114 @@ C) Global Accelerator + ALB + EC2 ASG
 D) GLB + NLB + EC2 ASG
 
 **Answer: B**
-Explanation: FIX protocol (custom TCP) + partner static IP → NLB + EIP. Low-latency MPI communication between servers → Cluster Placement Group + EFA (OS-bypass networking). Nitro instances offload I/O overhead to hardware, minimizing latency. An ALB only routes HTTP/HTTPS and is incompatible with the FIX protocol. Spread is for isolation, the opposite of low-latency MPI.
+Explanation: FIX protocol (TCP custom) + partner static IP → NLB + EIP. Low-latency MPI communication between servers → Cluster Placement Group + EFA (OS-bypass networking). Nitro instances offload I/O overhead to hardware to minimize latency. ALB routes only HTTP/HTTPS and isn't compatible with the FIX protocol. Spread is for isolation, which is the opposite of low-latency MPI.
 
 ---
 
-**Question 4.** A startup is launching a new SaaS product. Traffic is very low at first, but could surge tenfold on success. It must handle a surge that could happen anytime within a year with no service interruption, while minimizing cost. Long term, it plans to run for 3+ years.
+**Question 4.** A startup is launching a new SaaS product. Traffic is very low at first, but if it succeeds it could surge by dozens of times. It must handle a surge that could occur at any time within 1 year without service interruption, while minimizing cost. It's planned to operate for 3 years or more in the long term.
 
-A) Reserved Instance 3-year + Multi-AZ ASG
+A) Reserved Instance 3 years + Multi-AZ ASG
 B) On-Demand only + Manual Scaling
-C) Compute Savings Plans 3-year (baseline) + Spot (peak handling) + Target Tracking ASG
+C) Compute Savings Plans 3 years (baseline) + Spot (peak handling) + Target Tracking ASG
 D) Spot 100% + Target Tracking ASG + Multi-AZ
 
 **Answer: C**
-Explanation: Although the plan is 3 years, the initial traffic pattern is uncertain, so Compute SP (free to change family and region) fits better than an RI. The baseline load runs on Compute SP for savings, and the surge window is handled by Spot. A Target Tracking ASG adjusts scale automatically. Spot 100% suits only stateless workloads, and a SaaS service may carry session state. B is inefficient in both cost and elasticity.
+Explanation: It's planned to run for 3 years, but the initial traffic pattern is uncertain, so Compute SP (free to change family and Region) is more suitable than RI. Baseline load is saved with Compute SP, and surge periods are handled with Spot. A Target Tracking ASG adjusts scale automatically. Spot 100% suits only Stateless workloads, and a SaaS service may have session state. B is inefficient in both cost and elasticity.
 
 ---
 
-**Question 5.** A company runs a PostgreSQL database on EC2 using an EBS gp2 volume (200GB). The DBA analyzes it and finds average IOPS usage of 800 and a peak of 2,000, exceeding gp2's maximum of 600 IOPS (200GB × 3), causing performance degradation. What is the most cost-effective solution?
+**Question 5.** A company runs a PostgreSQL database on EC2 using an EBS gp2 volume (200GB). The DBA's analysis shows average IOPS usage of 800 and a peak of 2,000, exceeding gp2's maximum IOPS of 600 (200GB × 3), causing performance degradation. What is the most cost-effective solution?
 
 A) Expand the gp2 volume to 1,000GB
-B) Switch gp2 to io2 (provision 2,000 IOPS)
-C) Switch to gp3 and set IOPS to 3,000
+B) Convert gp2 to io2 (provision 2,000 IOPS)
+C) Convert to gp3 and set IOPS to 3,000
 D) Add a second gp2 volume to the instance and configure RAID 0
 
 **Answer: C**
-Explanation: gp3 lets you set up to 16,000 IOPS independently of size, and it's 20% cheaper than gp2. Since the peak needs 2,000 IOPS, setting 3,000 IOPS is plenty. A (expanding gp2) forces you to buy an unnecessarily large volume just to reach 1,000GB × 3 = 3,000 IOPS. io2 is for mission-critical environments that need 64K IOPS and is far more expensive than gp3. RAID 0 carries high complexity and management overhead.
+Explanation: gp3 lets you independently set up to 16,000 IOPS regardless of size, and it's 20% cheaper than gp2. Since you need 2,000 IOPS at peak, setting 3,000 IOPS is sufficient. A (expanding gp2) requires buying an unnecessarily large volume to get 1,000GB × 3 = 3,000 IOPS. io2 is for mission-critical environments needing 64K IOPS and is far more expensive than gp3. RAID 0 has high complexity and management overhead.
 
 ---
 
-**Question 6.** A web server running under an Auto Scaling Group needs the following each time it launches a new instance: fetch DB connection info from Parameter Store, generate a config file and start the app, then warm up the Redis cache. This whole process takes 4 minutes. If ALB traffic arrives before the 4 minutes complete, errors occur. What is the most appropriate configuration?
+**Question 6.** For a web server run by an Auto Scaling Group, every time a new instance starts the following tasks are needed: fetch DB connection info from Parameter Store, create the config file and start the app, and warm up the Redis cache. This whole process takes 4 minutes. If ALB traffic arrives before the 4 minutes are complete, errors occur. What is the most appropriate setting?
 
 A) Health Check Grace Period = 0, Slow Start = 240 seconds
 B) Health Check Grace Period = 240 seconds, ALB Target Group Slow Start = 120 seconds
-C) Lifecycle Hook (Pending:Wait) + complete-lifecycle-action call + Slow Start = 120 seconds
+C) Lifecycle Hook (Pending:Wait) + call complete-lifecycle-action + Slow Start = 120 seconds
 D) Add a 4-minute sleep to the User Data script
 
 **Answer: C**
-Explanation: A Lifecycle Hook Pending:Wait completes the 4-minute initialization, then calls `complete-lifecycle-action SUCCESS` to transition to InService. Up to this stage, any ALB health-check failure is shielded by the Grace Period. After transitioning to InService, Slow Start (120 seconds) admits gradual traffic to stabilize. Setting only the Health Check Grace Period to 240 seconds risks the ALB suddenly sending a lot of traffic once that time elapses. A User Data sleep is an anti-pattern that wastes resources.
+Explanation: Use a Lifecycle Hook Pending:Wait to complete the 4 minutes of initialization, then call `complete-lifecycle-action SUCCESS` to transition to InService. Even if ALB health check failures occur up to this stage, the Grace Period protects it. After transitioning to InService, it receives traffic gradually through Slow Start (120 seconds) and stabilizes. If you only set the Health Check Grace Period to 240 seconds, the ALB health check may suddenly send a lot of traffic after that time passes. A User Data sleep is an anti-pattern that wastes resources.
 
 ---
 
-**Question 7.** A company is migrating on-premises physical servers to AWS. Among the migration targets are SQL Server Enterprise licenses (billed per socket) and Oracle DB (billed per CPU core). To use these licenses in AWS via BYOL, what is needed?
+**Question 7.** A company is moving on-premises physical servers to AWS. Among the migration targets are a SQL Server Enterprise license (billed per socket) and Oracle DB (billed per CPU core). To use the licenses on AWS as BYOL?
 
 A) EC2 Dedicated Instance
 B) EC2 Dedicated Host
 C) EC2 Spot instance (the cheap option)
-D) EC2 On-Demand (a general shared host)
+D) EC2 On-Demand (regular shared host)
 
 **Answer: B**
-Explanation: SQL Server socket billing and Oracle core billing both compute the license against the number of physical CPU sockets/cores. A Dedicated Host occupies a specific physical server, and AWS exposes that server's socket count and core count. A Dedicated Instance isolates the physical host within the same account but doesn't reveal which physical server it is, so it can't be used for license counting. On a shared host (general On-Demand), the physical core count is unknown, so BYOL licensing can't be applied.
+Explanation: SQL Server socket billing and Oracle core billing both calculate licenses based on the number of physical CPU sockets/cores. A Dedicated Host occupies a specific physical server, and AWS exposes that server's socket and core counts. A Dedicated Instance isolates the physical host within the same account but doesn't show which physical server it is, so it can't be used for license counting. On a shared host (regular On-Demand), you can't know the number of physical cores, so applying a BYOL license is not possible.
 
 ---
 
-**Question 8.** A video-streaming service runs a pipeline that processes user-uploaded videos. The video-encoding jobs are CPU-intensive and take 30-120 minutes. If an encoding job is interrupted, it can restart from the last checkpoint (saved to S3 every 10 minutes). To run reliably while minimizing cost as much as possible, what should you use?
+**Question 8.** A video streaming service runs a pipeline that processes user-uploaded videos. The video encoding jobs are CPU-intensive and take 30-120 minutes. If an encoding job is interrupted, it can restart from the last checkpoint (saved to S3 every 10 minutes). To operate reliably while cutting cost as much as possible?
 
 A) c6i.8xlarge On-Demand EC2 + SQS message queue
 B) c7g.8xlarge Spot EC2 + SQS + EventBridge Spot interruption handler
-C) c6i.8xlarge RI 1-year + SQS
+C) c6i.8xlarge RI 1 year + SQS
 D) Fargate Spot (vCPU = 8) + SQS
 
 **Answer: B**
-Explanation: Video encoding is CPU-intensive (C family). c7g is Graviton3 ARM, 25% cheaper than c6i (x86). Since there are checkpoints, Spot interruptions are tolerable. Use EventBridge to catch the `EC2 Spot Instance Interruption Warning` event and re-enqueue the SQS message so another Spot instance picks up where it left off. SQS acts as the work queue, distributing jobs across multiple encoding instances. An RI is inefficient unless 30-120-minute jobs keep the instance always on.
+Explanation: Video encoding is CPU-intensive (C family). c7g is Graviton3 ARM and 25% cheaper than c6i (x86). Because there are checkpoints, Spot interruption can be tolerated. If you detect the `EC2 Spot Instance Interruption Warning` event with EventBridge and requeue the SQS message, another Spot instance continues the processing. SQS acts as the job queue and distributes jobs across multiple encoding instances. RI is inefficient unless the structure has 30-120 minute jobs running around the clock.
 
 ---
 
-**Question 9.** Which configuration combination maximizes availability during Spot instance interruptions in an ASG?
+**Question 9.** Which of the following is the combination of settings that maximizes availability on a Spot instance interruption in an ASG?
 
 A) `lowest-price` Spot strategy + a single instance type
 B) `capacity-optimized` Spot strategy + multiple instance types + Capacity Rebalancing enabled
 C) `diversified` Spot strategy + a single AZ
-D) `lowest-price` Spot strategy + On-Demand 100% baseline
+D) `lowest-price` Spot strategy + 100% On-Demand base
 
 **Answer: B**
-Explanation: `capacity-optimized` picks the Spot pool with the most spare capacity in AWS right now, minimizing interruption probability. Allowing multiple instance types means that if Spot pressure hits one type, the others cover it. Capacity Rebalancing launches a replacement instance in advance upon an interruption warning to maintain the count. `lowest-price` can pile onto the cheapest pool, concentrating interruptions. A single AZ risks a total outage during an AZ failure or a Spot shortage in that AZ.
+Explanation: `capacity-optimized` picks the Spot pool with the most spare capacity currently in AWS to minimize the interruption probability. Allowing multiple instance types means that if Spot pressure hits any one type, the other types cover it. Capacity Rebalancing starts replacement instances in advance on an interruption warning to maintain the count. `lowest-price` can concentrate on the cheapest pool, concentrating interruptions. A single AZ risks total downtime on an AZ failure or a Spot shortage in that AZ.
 
 ---
 
-**Question 10.** A company runs a 10TB data analysis every Sunday at 2:00 AM. The analysis needs large RAM (256GB), and results are stored in S3. The analysis job cannot be interrupted, and the instance can be terminated after it completes. What is the most cost-effective approach?
+**Question 10.** A company runs a 10TB-scale data analysis every Sunday at 2 a.m. The analysis needs a large amount of RAM (256GB), and the results are stored in S3. The analysis job can't be interrupted, and the instance can be terminated after completion. What is the most cost-effective method?
 
-A) r6i.16xlarge (256GB RAM) On-Demand, started/stopped manually each week
+A) r6i.16xlarge (256GB RAM) On-Demand, manual start/stop every week
 B) r6i.16xlarge Spot + checkpoints, Scheduled Scaling
-C) r7g.16xlarge On-Demand, auto start/stop via Scheduled Scaling
-D) r6i.16xlarge Reserved Instance 1-year + Scheduled Scaling
+C) r7g.16xlarge On-Demand, automatic start/stop with Scheduled Scaling
+D) r6i.16xlarge Reserved Instance 1 year + Scheduled Scaling
 
 **Answer: C**
-Explanation: Since the analysis job can't be interrupted, Spot is unsuitable. r7g is Graviton3 ARM, about 25% cheaper than r6i (Intel x86). With Scheduled Scaling, raise Desired to 1 every Sunday at 2:00 AM and drop it to 0 after completion (since an ASG can't go to 0, set Min=0 or terminate via EventBridge + Lambda), paying only for the hours used. A 1-year RI wastes the remaining hours in a pattern used only a few hours per week (2.4% utilization at 4 hours per week). As for Graviton compatibility, Python/Java-based analysis tools are mostly fine.
+Explanation: Since the analysis job can't be interrupted, Spot is unsuitable. r7g is Graviton3 ARM and about 25% cheaper than r6i (Intel x86). If you raise Desired to 1 every Sunday at 2 a.m. with Scheduled Scaling and reduce it to 0 after completion (set Min=0 for the ASG, or terminate via EventBridge + Lambda), you pay only for the hours used. A 1-year RI wastes the remaining time in a pattern that uses only a few hours per week (utilization of 2.4% at 4 hours per week). Graviton compatibility is mostly not a problem if the analysis tools are Python/Java-based.
 
 ---
 
-**Question 11.** In a multi-account environment, two teams want to place resources in the same `ap-northeast-2a` AZ to leverage VPC peering without Cross-AZ costs. But there's a concern that the actual physical AZ may differ. How should this be verified?
+**Question 11.** In a multi-account environment, two teams want to place resources in the same `ap-northeast-2a` AZ to use VPC peering without Cross-AZ cost. However, there's a concern that the actual physical AZs may differ. How should they verify?
 
-A) If the AZ name (`ap-northeast-2a`) matches, it's the same physical AZ
-B) If the AZ ID (a format like `apne2-az1`) matches, it's the same physical AZ
+A) If the AZ names (`ap-northeast-2a`) are the same, it's the same physical AZ
+B) If the AZ IDs (in a format like `apne2-az1`) are the same, it's the same physical AZ
 C) If both accounts use the same subnet CIDR, it's the same AZ
-D) It can only be verified by contacting AWS Support
+D) It can be verified only by contacting AWS Support
 
 **Answer: B**
-Explanation: AWS intentionally shuffles the mapping between AZ names and actual physical AZs per account. Account A's `ap-northeast-2a` and account B's `ap-northeast-2a` may be different physical AZs. The AZ ID (e.g., `apne2-az1`) points to the same physical AZ across all accounts. You should run `aws ec2 describe-availability-zones --query 'AvailabilityZones[*].[ZoneName,ZoneId]'` via the CLI and compare the AZ IDs. If the AZ ID matches, it's the same physical AZ, so peering traffic incurs no Cross-AZ charge.
+Explanation: AWS deliberately shuffles the mapping between AZ names and actual physical AZs per account. Account A's `ap-northeast-2a` and account B's `ap-northeast-2a` may be different physical AZs. An AZ ID (e.g., `apne2-az1`) points to the same physical AZ in every account. You need to run `aws ec2 describe-availability-zones --query 'AvailabilityZones[*].[ZoneName,ZoneId]'` in the CLI and compare the AZ IDs. If the AZ IDs are the same, it's the same physical AZ, so no Cross-AZ charges are applied to the peering traffic.
 
 ---
 
-**Question 12.** From the following, select all the representative patterns of a wrong choice on the SAA exam.
+**Question 12.** Select all of the following that are representative patterns of wrong choices on the SAA exam.
 
 A) Using a Spot instance for a DB master server
 B) Using EFS for a Windows AD file share
 C) Using NLB + EIP for a partner API that needs a static IP
-D) Using a Cluster Placement Group + EFA for an HPC MPI cluster
-E) Switching gp2 to gp3 to optimize IOPS and cost simultaneously
-F) On new-instance launch, transitioning to InService after a Lifecycle Hook completes initialization
+D) Using Cluster Placement Group + EFA for an HPC MPI cluster
+E) Converting gp2 to gp3 to optimize IOPS and cost simultaneously
+F) Moving to InService after initialization completes via a Lifecycle Hook when launching a new instance
 
 **Answer: A, B (wrong choices)**
-Explanation: A - Spot is unsuitable for stateful workloads (DB master). If the instance disappears after the 2-minute notice, DB data and sessions are lost. B - EFS is NFSv4.1 Linux-only. Windows AD integration, SMB, and NTFS ACLs require FSx for Windows File Server. C, D, E, and F are all correct choices.
+Explanation: A - Spot is unsuitable for Stateful workloads (DB master). If the instance disappears after a 2-minute notice, DB data and sessions are lost. B - EFS is NFSv4.1 and Linux-only. For Windows AD integration, SMB, and NTFS ACLs, you need FSx for Windows File Server. C, D, E, and F are all correct choices.

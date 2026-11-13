@@ -1,71 +1,71 @@
-# Day 2 - CodeDeploy: Making the Most Dangerous Moment, Deployment, Safe
+# Day 2 - CodeDeploy: Making the Riskiest Moment, Deployment, Safe
 
-When is the most dangerous moment in a running service? Traffic spike? Database failure? Statistics consistently show the answer across Google's SRE book and Microsoft Azure DevOps retrospectives is **"immediately after deployment."** Over 70% of incidents occur within minutes to hours after a new version enters production. The reason is simple — the fact that deployment is complete means "a change that was invisible until now has suddenly been exposed to users."
+When is the riskiest moment for a service in operation? A traffic surge? A database failure? Google's SRE book explains that about 70% of service outages come from changes to a running system. So the riskiest moment is **"right after a deployment."** The reason is simple: the very fact that a deployment has finished means "changes that were invisible until now have all been exposed to users at once."
 
-CodeDeploy is a tool that makes that dangerous moment safe. "Don't change everything at once; change little by little, validate as you go, and be able to immediately roll back if problems occur." DVA-C02 exam features CodeDeploy heavily with 3-5 questions almost every session, and within that, **differences by deployment target (EC2 vs Lambda vs ECS)**, **distinction between Blue/Green vs Canary vs Linear**, and **lifecycle hook order in appspec.yml** are consistent high-frequency topics.
+CodeDeploy is the tool that makes that risky moment safe. It carries out a deployment so that "you don't change everything at once, but little by little, verifying as you go, and able to revert immediately if a problem occurs." CodeDeploy is a major area on the DVA-C02 exam. In particular you need to know **the differences by deployment target (EC2 vs Lambda vs ECS)**, **the distinction between Blue/Green, Canary, and Linear**, and **the order of the lifecycle hooks in appspec.yml**.
 
-## CodeDeploy's Design Philosophy: View Deployment as "Orchestration"
+## CodeDeploy's Design Philosophy: Treating Deployment as "Orchestration"
 
-The problem CodeDeploy solves is not "copy files to server" but "safely coordinate state transitions across multiple nodes." This distinction matters. Simple file copying ends with `rsync` or `scp`, but production deployment involves 7+ sequenced steps: ① redirect traffic briefly ② stop existing process ③ receive new files ④ install dependencies ⑤ start process ⑥ health check ⑦ restore traffic. If any single step fails, later steps cannot proceed, and across multiple instances, all must progress in consistent order.
+The problem CodeDeploy tries to solve is not "copy files to a server" but "safely coordinate the state transitions that happen across multiple nodes." This difference matters. Simple file copying ends with `rsync` or `scp`, but a production deployment is an ordered job of seven or more steps: ① briefly take traffic out, ② stop the existing process, ③ fetch the new files, ④ install dependencies, ⑤ start the process, ⑥ run a health check, ⑦ put traffic back in. If even one step fails, you must not move on to the next, and the steps must proceed in a consistent order across multiple instances.
 
-> 💡 **Related theory**: This kind of "stepwise state transition across multiple nodes" is called a **distributed state machine** in distributed systems theory. CodeDeploy models each deployment as one state machine — each instance has states `Pending → InProgress → Succeeded/Failed`, and lifecycle hooks are triggers for each state transition. Google's Borg/Kubernetes Deployment controller and HashiCorp's Nomad all follow the same pattern. CodeDeploy's differentiation is treating "user-defined script execution at each hook" as a first-class citizen.
+CodeDeploy models each deployment as a state machine. Each instance has the states `Pending → InProgress → Succeeded/Failed`, and lifecycle hooks become the trigger of each state transition. What sets CodeDeploy apart is that it treats "running user-defined scripts at each hook" as a first-class citizen.
 
-> 🔍 **Going deeper**: CodeDeploy Agent polls the CodeDeploy control plane every 1 minute ("any new deployments?"). It's short polling, not HTTP long-polling, for three reasons: ① simpler agent implementation ② load balancing AWS servers ③ recovery during brief network outages. The downside is "average 30-second delay from deployment start command to actual start." When "why doesn't CodeDeploy start immediately?" appears on exam, this polling model is the answer.
+The CodeDeploy Agent polls the CodeDeploy control plane from the EC2 instance every minute ("Is there a new deployment?"). This is a short-polling model rather than HTTP long-polling, for the reasons of ① simplicity of the agent implementation, ② spreading the load on AWS servers, and ③ resilience to temporary network disconnections. The downside is "an average 30-second delay from the deployment start command to the actual start." The answer to the question "Why doesn't CodeDeploy start immediately?" is this polling model.
 
-## Three Deployment Target Types: Essential Differences
+## The Fundamental Difference Between the Three Deployment Targets
 
-CodeDeploy supports three targets — EC2/on-premises, Lambda, ECS — with completely different internal operations. Though sharing the "CodeDeploy" name, they are essentially three separate services.
+CodeDeploy supports three targets, EC2/on-premises, Lambda, and ECS, and their internal behavior is completely different. They use the same name "CodeDeploy," but they are actually closer to three separate services.
 
-| Dimension | EC2/On-Premises | Lambda | ECS |
-|-----------|---------|--------|-----|
-| Agent Required | ✅ CodeDeploy Agent | ❌ (Lambda alias) | ❌ (ECS service handles) |
-| Deployment Unit | Files + scripts | Function version + alias weighting | Task definition revision |
-| Deployment Strategy | In-Place / Blue-Green | Canary / Linear / AllAtOnce | Blue-Green only |
-| Traffic Switching Mechanism | ALB Target Group swap (B/G) or none (In-Place) | Lambda alias routing-config | ALB Target Group swap |
-| appspec Format | YAML (files + hooks) | YAML/JSON (Resources + Hooks) | JSON (TaskDefinition + LoadBalancerInfo) |
-| Rollback Mechanism | Redeploy previous revision | Alias weighting restore | Reconnect previous target group |
+| Dimension | EC2/On-premises | Lambda | ECS |
+|------|---------------|--------|-----|
+| Agent required | ✅ CodeDeploy Agent | ❌ (uses Lambda's own aliases) | ❌ (handled by the ECS service) |
+| Deployment unit | Files + scripts | Function version + alias weights | Task definition revision |
+| Deployment strategy | In-Place / Blue/Green | Canary / Linear / AllAtOnce | Blue/Green only |
+| Traffic shifting mechanism | ALB Target Group swap (B/G) or no change (In-Place) | Lambda alias routing-config | ALB Target Group swap |
+| appspec format | YAML (files + hooks sections) | YAML/JSON (Resources + Hooks sections) | JSON (TaskDefinition + LoadBalancerInfo) |
+| Rollback mechanism | Redeploy the previous revision | Restore the alias weights | Reconnect the previous target group |
 
-> ⚠️ **Trap**: The question "how to use In-Place deployment with ECS via CodeDeploy?" is a trap. **ECS supports only Blue-Green with CodeDeploy**. ECS's own rolling update capability is a separate mechanism that ECS service handles directly without CodeDeploy. On exam, "CodeDeploy with ECS Blue-Green" is correct, but "CodeDeploy with ECS In-Place" doesn't exist.
+> ⚠️ **Trap**: A question like "How do you use an In-Place deployment on ECS?" is a trap. **With CodeDeploy, ECS supports only Blue/Green.** ECS's own rolling update feature does not use CodeDeploy; it is a separate mechanism that the ECS service performs directly. If "ECS Blue/Green with CodeDeploy" appears on the exam it is a correct answer, but "ECS In-Place with CodeDeploy" does not exist.
 
-## EC2 Deployment Lifecycle: How Exactly 10 Steps Flow
+## The EC2 Deployment Lifecycle: Exactly How Do the 10 Steps Flow?
 
-The core of EC2 deployment is the lifecycle hooks. CodeDeploy Agent executes each step sequentially, and if any user-defined script at a step fails, the entire deployment fails.
+The core of an EC2 deployment is the lifecycle hooks. The CodeDeploy Agent runs each step in order, and if a user-defined script fails in any step, the entire deployment is marked as failed.
 
 ```
-In-Place Deployment (7 steps)
+In-Place deployment (7 steps)
 ====================
-1. ApplicationStop        [user script]   Stop existing app
-2. DownloadBundle         [agent]         Download revision from S3/GitHub
-3. BeforeInstall          [user script]   Pre-install work (backup, etc.)
-4. Install                [agent]         Copy files from appspec.yml
-5. AfterInstall           [user script]   Post-install work (permissions, config)
-6. ApplicationStart       [user script]   Start app
+1. ApplicationStop        [user script]   Stop the existing app
+2. DownloadBundle         [agent]         Download the revision from S3/GitHub
+3. BeforeInstall          [user script]   Pre-install work (backups, etc.)
+4. Install                [agent]         Copy the files section of appspec.yml
+5. AfterInstall           [user script]   Post-install work (permissions, configuration)
+6. ApplicationStart       [user script]   Start the app
 7. ValidateService        [user script]   Health check
 
-Blue-Green Deployment (additional steps)
+Blue/Green deployment (additional steps)
 ==========================
 Blue instance: 1~7 + BeforeBlockTraffic → BlockTraffic → AfterBlockTraffic
 Green instance: 1~7 + BeforeAllowTraffic → AllowTraffic → AfterAllowTraffic
 ```
 
-> 🔍 **Going deeper**: `DownloadBundle` and `Install` are non-customizable agent-internal steps. Without knowing this, questions like "why couldn't I pre-fetch files in BeforeInstall?" come up often. The bundle is packaged as zip/tar and agent unpacks it to `/opt/codedeploy-agent/deployment-root/<deployment-group-id>/<deployment-id>/deployment-archive`. BeforeInstall can access the unpacked directory, but that's before copying to destination (e.g., `/var/www/html`).
+`DownloadBundle` and `Install` are internal agent steps that cannot be customized by the user. If you don't know this, it's easy to misunderstand, thinking "I tried to fetch the files in advance in BeforeInstall but it didn't work." The bundle is packaged as zip/tar, and the agent unpacks it to `/opt/codedeploy-agent/deployment-root/<deployment-group-id>/<deployment-id>/deployment-archive`. BeforeInstall can access that unpacked directory, but it is the state just before files are copied to the destination (for example `/var/www/html`).
 
-> 💡 **Related theory**: This lifecycle model traces to systemd unit's ExecStartPre/ExecStart/ExecStartPost pattern or Docker's entrypoint/healthcheck pattern. The thought of "explicitly separating service start/stop/validation into hooks" flowing from Init system era (SysV init → systemd) into cloud deployment tools. Kubernetes's readiness/liveness probe does exactly the same work as ValidateService.
+ValidateService plays the same role as Kubernetes' readiness/liveness probe.
 
 ```yaml
 version: 0.0
 os: linux
 
 files:
-  - source: build/         # Path within unpacked directory
+  - source: build/         # Path inside the unpacked directory
     destination: /var/www/myapp
   - source: nginx.conf
     destination: /etc/nginx/conf.d/myapp.conf
 
 file_exists_behavior: OVERWRITE   # DISALLOW | OVERWRITE | RETAIN
-                                  # DISALLOW: fail if file exists (safe)
+                                  # DISALLOW: fail if an existing file is present (safe)
                                   # OVERWRITE: overwrite unconditionally
-                                  # RETAIN: keep existing, copy new only
+                                  # RETAIN: keep existing files, copy only new ones
 
 permissions:
   - object: /var/www/myapp
@@ -100,64 +100,62 @@ hooks:
       timeout: 30
 ```
 
-> ⚠️ **Trap**: The `ApplicationStop` hook runs **the script from the previous revision**. That is, v1 → v2 deployment: ApplicationStop runs the script that was in v1. A new script added in v2 first runs as ApplicationStop in the **next** deployment. This is a frequent source of confusion and appears once per exam.
+The `ApplicationStop` hook runs the **script from the previous revision**. That is, when deploying v1 → v2, the ApplicationStop script that was in v1 runs. Some people don't know this and say, "I added a new feature in ApplicationStop but it didn't run," but a script added in this deployment is first run as ApplicationStop at **the next deployment**. This is a subtle behavior that appears on the exam.
 
-## Deployment Configuration: Is AllAtOnce Really Dangerous?
+## Deployment Configurations: Is AllAtOnce Really Dangerous?
 
-CodeDeploy's "Deployment Configuration" determines how many instances deploy simultaneously.
+CodeDeploy's "Deployment Configuration" determines how many instances are deployed to at the same time.
 
-| Configuration | Simultaneous Deploy | "Success" Criteria | Exam Keyword |
-|--------|----------|-------------|-------------|
-| `CodeDeployDefault.AllAtOnce` | All instances | 1+ success | "Fastest deployment" |
-| `CodeDeployDefault.HalfAtATime` | 50% | 50%+ healthy | "Balanced" |
-| `CodeDeployDefault.OneAtATime` | 1 instance | All success | "Safest progressive" |
-| Custom: `Min Healthy Hosts = 75%` | Deploy 25% simultaneously | 75%+ healthy | Large fleet gradual |
+| Configuration | Concurrent deployment | "Success" criterion | Exam keyword |
+|------|----------|-------------|-------------|
+| `CodeDeployDefault.AllAtOnce` | All instances | Deployment success if at least 1 succeeds | "Fastest deployment" |
+| `CodeDeployDefault.HalfAtATime` | 50% | At least 50% healthy | "Balanced" |
+| `CodeDeployDefault.OneAtATime` | 1 | All instances succeed | "Safest gradual" |
+| Custom: `Min Healthy Hosts = 75%` | Only 25% deploy concurrently | At least 75% healthy | Gradual for large fleets |
 
-> 🔍 **Going deeper**: AllAtOnce's "1 success means deployment success" contradicts intuition. The reason is CodeDeploy's philosophy: "deployment status" and "service availability" are separate. The deployment itself is done, and having even 1 instance receive the new version means the intended work is complete — whether the service remains available is a separate question answered by CloudWatch Alarm. This separation rarely appears on exam directly but is a trap during operations.
+AllAtOnce's definition that "the deployment itself is a success even if only one succeeds" goes against intuition. The reason is CodeDeploy's philosophy that "deployment status" and "service availability" are separate. The deployment itself is finished, and if even one instance in the fleet received the new version, the intended job is complete. Whether the service is available as a result is a separate matter, which you must judge with CloudWatch Alarms. This becomes a trap in operations.
 
-> 📚 **Case study**: Netflix uses "Rolling Red/Black" pattern in its own Spinnaker deployment tool, which is essentially CodeDeploy's OneAtATime + strict ValidateService: one instance gets new version → 1-5 minutes of traffic → observe metrics → succeed, go to next; fail, rollback immediately. The same effect can be created with CodeDeploy's OneAtATime + CloudWatch Alarm + Auto Rollback combination.
+Netflix uses a "Rolling Red/Black" pattern in its own deployment tool Spinnaker, which is essentially the same as a pattern that verifies CodeDeploy's OneAtATime + ValidateService very strictly. Deploy the new version to one instance → let it receive traffic for 1-5 minutes while watching metrics → if healthy, move to the next instance, and if unhealthy, roll back immediately. You can produce almost the same effect with CodeDeploy's combination of OneAtATime + CloudWatch Alarm + Auto Rollback.
 
-## Blue-Green: The Luxury of Running Two Complete Environments
+## Blue/Green: The Luxury of Spinning Up Two Whole Environments
 
-In-Place deployment replaces files on the same instance. Fast, cheap, but rollback is hard — previous files already gone. Blue-Green **boots an entirely new ASG** and deploys v2 on new instances, then ALB Target Group swaps to new ASG. If something goes wrong, swap back to the original ASG — done.
+An In-Place deployment replaces the files on the same instance. It is fast and costs nothing extra, but rollback is hard because the previous files are already gone. Blue/Green **spins up a whole new ASG**, deploys v2 to the new instances, and swaps the ALB Target Group to the new ASG. If something goes wrong, you just swap back to the original ASG and you're done.
 
 ```
 [ALB] ──── Production Listener (port 80)
    │           │
    │           ├── Target Group "blue"  ← ASG-blue (v1, 3 instances)
    │           │
-   │           └── Target Group "green" ← ASG-green (v2, 3 instances) [NEW]
+   │           └── Target Group "green" ← ASG-green (v2, 3 instances) [new]
    │
-   └── [During deployment, Listener Rule switches to green]
+   └── [As the deployment proceeds, the Listener Rule switches to green]
 ```
 
-Blue-Green trade-offs:
+The trade-offs of Blue/Green:
 
 | Item | Value |
-|------|-------|
-| Infrastructure Cost | 2x during validation period |
-| Rollback Time | Seconds (Target Group swap only) |
-| Deployment Time vs In-Place | Slightly longer (ASG provisioning + warmup) |
-| Stateful Workload Suitability | Low (instances change, EBS data lost) |
+|------|-----|
+| Infrastructure cost | 2x during the validation period |
+| Rollback time | A few seconds (just a Target Group swap) |
+| Deployment time vs In-Place | Slightly longer (ASG provisioning + Warmup) |
+| Suitability for stateful workloads | Low (instances change, so EBS data is lost) |
 
-> ⚠️ **Trap**: "What happens to the original (Blue) ASG after Blue-Green deployment?" appears on exam. Two options: ① **Terminate immediately** ② **Wait N minutes then terminate**. The latter keeps Blue alive briefly for fast rollback insurance, usually 5 minutes to 1 hour.
+"What happens to the original (Blue) ASG after a Blue/Green deployment?" appears on the exam. There are two options: ① **terminate immediately** (Terminate original instances immediately) or ② **terminate after a specified time** (Wait N minutes then terminate). The latter acts as a safety net: keeping Blue alive briefly even after the swap allows a fast rollback. It is usually set somewhere between 5 minutes and 1 hour.
 
-> 💡 **Related theory**: "Blue-Green" terminology was established in Jez Humble and David Farley's 2010 book *Continuous Delivery*. Before that the same pattern existed under various names (Red-Black, A-B switch), but using neutral colors meant neither side was "the old one" — just a label. CodeDeploy, Spinnaker, Argo Rollouts, Flagger all use the same terminology.
+## Lambda Deployment: Slicing Traffic with the Alias routing-config
 
-## Lambda Deployment: Traffic Sliced via Alias's routing-config
-
-Lambda works completely differently from EC2. Rather than copying files, **publish a new function version and adjust traffic percentage via alias's routing-config**.
+Lambda is a completely different mechanism from EC2. It doesn't copy files anywhere; it **publishes a new version of the function and adjusts the traffic ratio with the alias routing-config**.
 
 ```python
-# Lambda alias traffic splitting (Boto3)
+# Lambda alias traffic split (Boto3)
 import boto3
 lambda_client = boto3.client('lambda')
 
-# Set alias 'live' so v1 gets 90%, v2 gets 10%
+# Configure alias 'live' so v1 receives 90% and v2 receives 10%
 lambda_client.update_alias(
     FunctionName='my-function',
     Name='live',
-    FunctionVersion='1',                # Base version
+    FunctionVersion='1',                # Primary version
     RoutingConfig={
         'AdditionalVersionWeights': {
             '2': 0.1                    # v2 gets 10%
@@ -166,23 +164,21 @@ lambda_client.update_alias(
 )
 ```
 
-CodeDeploy's Lambda deployment automates this update_alias call on a predefined schedule. 9 pre-defined configurations that appear every exam:
+CodeDeploy's Lambda deployment automates this update_alias call on a predefined schedule. There are 9 predefined configurations.
 
-| Configuration | First Shift | Wait Until Second | Full Shift Complete |
+| Configuration | First shift percentage | Wait until the second shift | Full shift point |
 |---------------|-------------|---------------------|---------------|
 | `LambdaAllAtOnce` | 100% | - | Immediately |
-| `LambdaCanary10Percent5Minutes` | 10% | 5 min | After 5 min |
-| `LambdaCanary10Percent10Minutes` | 10% | 10 min | After 10 min |
-| `LambdaCanary10Percent15Minutes` | 10% | 15 min | After 15 min |
-| `LambdaCanary10Percent30Minutes` | 10% | 30 min | After 30 min |
-| `LambdaLinear10PercentEvery1Minute` | 10% | +10% every 1 min | After 10 min |
-| `LambdaLinear10PercentEvery2Minutes` | 10% | +10% every 2 min | After 20 min |
-| `LambdaLinear10PercentEvery3Minutes` | 10% | +10% every 3 min | After 30 min |
-| `LambdaLinear10PercentEvery10Minutes` | 10% | +10% every 10 min | After 100 min |
+| `LambdaCanary10Percent5Minutes` | 10% | 5 minutes | After 5 minutes |
+| `LambdaCanary10Percent10Minutes` | 10% | 10 minutes | After 10 minutes |
+| `LambdaCanary10Percent15Minutes` | 10% | 15 minutes | After 15 minutes |
+| `LambdaCanary10Percent30Minutes` | 10% | 30 minutes | After 30 minutes |
+| `LambdaLinear10PercentEvery1Minute` | 10% | +10% every 1 minute | After 10 minutes |
+| `LambdaLinear10PercentEvery2Minutes` | 10% | +10% every 2 minutes | After 20 minutes |
+| `LambdaLinear10PercentEvery3Minutes` | 10% | +10% every 3 minutes | After 30 minutes |
+| `LambdaLinear10PercentEvery10Minutes` | 10% | +10% every 10 minutes | After 100 minutes |
 
-> 🔍 **Going deeper**: **Canary vs Linear difference** is exam core. Canary is "hold 10% at N minutes for monitoring, then jump to 90% in one move" — 2-stage transition. Linear is "10%, 20%, 30%..." incrementing evenly every N minutes. Canary is fast with concentrated risk; Linear is gradual. Canary suits quick validation → full deploy; Linear suits A/B testing.
-
-> 💡 **Related theory**: "Canary" terminology comes from 19-20th century miners carrying canaries into coal mines to detect toxic gas leaks — canaries were more sensitive than humans and died first, signaling danger. In software, canary release means "expose new version to subset of users, detect problems early before full rollout." Netflix documented this in detail in 2014 *Netflix Tech Blog*, making it industry standard.
+**The difference between Canary and Linear** is the heart of the exam. Canary is a two-step shift: "hold 10% for N minutes and watch, then go to 90% all at once." You monitor for problems at the first 10%, then go to the whole with one big decision. Linear increases evenly every N minutes: "10%, 20%, 30%, ...". Canary is fast but carries the risk of concentrating on one side, whereas Linear is slow and gradual. Linear suits cases that need A/B testing, and Canary suits cases that need quick validation followed by a full deployment.
 
 ```yaml
 # Lambda appspec.yml
@@ -197,15 +193,15 @@ Resources:
         TargetVersion: 2
 
 Hooks:
-  - BeforeAllowTraffic: pre-traffic-validation-fn      # Validation before receiving traffic
-  - AfterAllowTraffic: post-traffic-validation-fn      # Validation after shift complete
+  - BeforeAllowTraffic: pre-traffic-validation-fn      # Validate before receiving traffic
+  - AfterAllowTraffic: post-traffic-validation-fn      # Validate after the shift completes
 ```
 
-Hooks must call `PutLifecycleEventHookExecutionStatus` API at the end to report Succeeded/Failed. Without it, deployment hangs until timeout (default 1 hour).
+The Lambda function called from a hook must call the `PutLifecycleEventHookExecutionStatus` API at the end to report Succeeded/Failed. If it doesn't, the deployment stays stuck until the timeout (default 1 hour).
 
 ```python
 def lambda_handler(event, context):
-    # event contains deploymentId and lifecycleEventHookExecutionId
+    # The event contains deploymentId and lifecycleEventHookExecutionId
     deployment_id = event['DeploymentId']
     hook_execution_id = event['LifecycleEventHookExecutionId']
 
@@ -220,21 +216,21 @@ def lambda_handler(event, context):
     )
 ```
 
-> ⚠️ **Trap**: If BeforeAllowTraffic hook fails, new version traffic goes immediately to 0% (instant rollback). If AfterAllowTraffic hook fails, the shift is already complete but automatically rolls back to previous version — both hooks are auto-rollback triggers. When "Lambda deployment validation failure" appears on exam, consider both hooks and auto-rollback together.
+If the BeforeAllowTraffic hook fails, it rolls back immediately with 0% of traffic on the new version. If the AfterAllowTraffic hook fails, it automatically rolls back to the previous version even though the shift has already finished. In other words, both hooks become automatic rollback triggers. If "behavior when validation fails during a Lambda deployment" appears on the exam, look at these two hooks and automatic rollback together.
 
-## CloudWatch Alarm Based Auto-Rollback
+## Automatic Rollback Based on CloudWatch Alarms
 
-If error rate spikes during or after deployment, automatic rollback is desired. CodeDeploy integrates with CloudWatch Alarm.
+If the error rate spikes during or right after a deployment, you want to roll back automatically. CodeDeploy is integrated with CloudWatch Alarms.
 
 ```yaml
-# DeploymentGroup config (CloudFormation excerpt)
+# DeploymentGroup settings (CloudFormation excerpt)
 DeploymentGroup:
   AutoRollbackConfiguration:
     Enabled: true
     Events:
-      - DEPLOYMENT_FAILURE        # Deployment itself fails
-      - DEPLOYMENT_STOP_ON_ALARM  # Alarm triggers stop
-      - DEPLOYMENT_STOP_ON_REQUEST # User manual stop
+      - DEPLOYMENT_FAILURE        # The deployment itself failed
+      - DEPLOYMENT_STOP_ON_ALARM  # Stopped because an alarm fired
+      - DEPLOYMENT_STOP_ON_REQUEST # Manual stop by the user
   AlarmConfiguration:
     Enabled: true
     Alarms:
@@ -243,32 +239,39 @@ DeploymentGroup:
     IgnorePollAlarmFailure: false
 ```
 
-> 🔍 **Going deeper**: `IgnorePollAlarmFailure` at `false` means deployment fail-stops if CloudWatch alarm status cannot be queried. Conservative for safety but blocks deployment during CloudWatch downtime. At `true`, deployment continues if alarm check fails — availability first. Neither is universally correct; both are valid based on operational policy.
+If `IgnorePollAlarmFailure` is `false`, the deployment fail-stops when the alarm status can't be retrieved from CloudWatch. It is conservative from a safety standpoint, but deployments get blocked during a temporary CloudWatch outage. If set to `true`, the deployment simply proceeds when the alarm lookup fails, which favors availability. Neither is the right answer; it depends on the operational policy.
 
-## ECS Blue-Green: Swap Target Group Entirely
+## ECS Blue/Green: Swapping the Whole Target Group
 
-ECS with CodeDeploy is always Blue-Green. Mechanism resembles EC2 Blue-Green but **task definition revision** is the unit, not instances.
+With CodeDeploy, ECS supports only Blue/Green. The principle is similar to EC2 Blue/Green, but the unit is not an instance but the **Task definition revision**.
 
 ```
 [ALB Production Listener:80]
        │
-       ├── Target Group "blue"  ← ECS Service's Blue Tasks (revision N)
+       ├── Target Group "blue"  ← Blue Tasks of the ECS Service (revision N)
        │
-       └── Target Group "green" ← ECS Service's Green Tasks (revision N+1) [NEW]
+       └── Target Group "green" ← Green Tasks of the ECS Service (revision N+1) [new]
 
-[ALB Test Listener:8080]    ← Separate Listener for validating Green during deploy
+[ALB Test Listener:8080]    ← A separate Listener for validating Green during the deployment
        │
        └── Target Group "green"
 ```
 
-Deployment flow:
+The deployment flow:
 
-1. CodeDeploy starts tasks with new task definition on ECS service (Green)
-2. All Green tasks reach healthy state, then Production listener shifts to Green
-3. (Optional) Blue tasks stay alive N minutes (fast rollback insurance)
-4. After time passes, terminate Blue tasks
+1. CodeDeploy launches tasks (Green) in the ECS service with the new task definition
+2. Once all Green tasks are healthy, the Production listener is switched to Green
+3. (Optional) Keep the Blue tasks alive for a specified time (a safety net for fast rollback)
+4. After the time elapses, terminate the Blue tasks
 
-> ⚠️ **Trap**: For ECS Blue-Green, ① **2 ALB Target Groups** required ② Production + (optional) Test Listener configuration ③ ECS service `deploymentController.type` must be `CODE_DEPLOY` ④ appspec.json specifies task definition + load balancer info. Missing any one causes deployment start itself to fail. When "ECS Blue-Green prerequisites" appears on exam, all 4 are required answers.
+To use ECS Blue/Green you need four things.
+
+- **2** ALB Target Groups
+- A Production Listener and (optionally) a Test Listener configured
+- The ECS service's `deploymentController.type` set to `CODE_DEPLOY`
+- An appspec.json file specifying the task definition + load balancer info
+
+If even one is missing, the deployment fails to start at all. If "prerequisites for ECS Blue/Green" appears on the exam, all four of these are the answer.
 
 ```json
 {
@@ -301,19 +304,17 @@ Deployment flow:
 ## Comparison with Other Deployment Tools
 
 | Dimension | CodeDeploy | Spinnaker | Argo Rollouts | Octopus Deploy |
-|-----------|-----------|-----------|---------------|----------------|
+|------|-----------|-----------|---------------|----------------|
 | Hosting | AWS managed | self-hosted | Kubernetes-native | self-hosted/SaaS |
-| Targets | EC2/Lambda/ECS | Multicloud + K8s | K8s only | Multi + .NET strong |
-| Canary | Lambda native, EC2 via fleet partial | Rich (auto analysis) | Rich (Prometheus integration) | Limited |
-| Learning Curve | Low | Very high | Medium | Low |
-| IAM Integration | Native | OIDC possible | K8s ServiceAccount | External integration |
-
-> 📚 **Case study**: In 2017, GitLab publicly shared the db1.cluster.gitlab.com incident where a database operator accidentally deleted production backup with wrong command. GitLab subsequently added the "5-person rule" (5 people review) on all production changes, but more fundamentally added safety gates to the deployment tool itself. CodeDeploy's ValidateService and BeforeAllowTraffic hooks automate this kind of safety gate — rather than people validating each time, a validation script must automatically pass before proceeding.
+| Targets | EC2/Lambda/ECS | Multi-cloud + K8s | K8s only | Multi + strong with .NET |
+| Canary | Native only for Lambda, partial fleet deployment for EC2 | Rich (automated analysis) | Rich (Prometheus integration) | Limited |
+| Learning curve | Low | Very high | Medium | Low |
+| IAM integration | Native | OIDC possible | K8s ServiceAccount | External integration |
 
 ## CodeDeploy Agent Operations Tips
 
 ```bash
-# Amazon Linux 2 installation
+# Install on Amazon Linux 2
 sudo yum install -y ruby wget
 wget https://aws-codedeploy-${REGION}.s3.${REGION}.amazonaws.com/latest/install
 chmod +x ./install
@@ -324,40 +325,40 @@ sudo systemctl enable codedeploy-agent
 sudo systemctl start codedeploy-agent
 sudo systemctl status codedeploy-agent
 
-# Log locations (debugging essential)
+# Log locations (essential for debugging)
 tail -f /var/log/aws/codedeploy-agent/codedeploy-agent.log
 tail -f /opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log
 
-# All hook logs for specific deployment
+# All hook logs for a specific deployment
 ls /opt/codedeploy-agent/deployment-root/<deployment-group-id>/<deployment-id>/logs/
 ```
 
-> 🔍 **Going deeper**: Agent is written in Ruby. Reason: in 2014 at launch, many AWS operational tools were Ruby-based (OpsWorks' Chef also Ruby). Recent discussion on Go/Rust rewrites exists but hasn't happened due to compatibility. Ruby dependency requirement is occasionally a trap — missing Ruby in minimal container image causes agent install failure.
+The agent is written in Ruby, so Ruby must be installed for it to work. If a minimal container image has no Ruby, the agent installation fails.
 
-## Wrapping Up
+## Summary
 
-CodeDeploy's essence is "break deployment's dangerous moment into small steps, embed validation and rollback mechanisms at each step." On EC2 via lifecycle hooks, on Lambda via alias weighting, on ECS via task definition swap — the same philosophy implemented differently across three targets.
+The essence of CodeDeploy is "breaking the risky moment of deployment into several small steps and embedding validation and rollback mechanisms in each step." It implements the same philosophy in different ways: with lifecycle hooks on EC2, with alias weights on Lambda, and with a task definition swap on ECS.
 
-Next article covers the orchestrator flowing all these steps automatically — **CodePipeline**. How to manage source change detection through build, test, approval, and deployment in code, including multi-region and multi-account pipeline patterns.
+In the next post we look at the orchestrator that flows all these steps automatically: **CodePipeline**. We cover how to manage the entire flow, from detecting source changes through build, test, approval, and deployment, as code, and we touch on multi-Region and multi-account pipeline patterns.
 
 ---
 
 ## 📝 Practice Questions
 
-**Question 1.** What are the mandatory prerequisites to use CodeDeploy with EC2 instances?
+**Question 1.** Which of the following are all the required prerequisites for using CodeDeploy with EC2?
 
-A) CodeDeploy Agent installation on EC2
-B) Grant S3 download permission to EC2 instance profile
+A) Install the CodeDeploy Agent on EC2
+B) Grant S3 download permission to the EC2 instance profile
 C) Pre-create 2 ALB Target Groups
-D) Create CodeDeploy service role
+D) Create a CodeDeploy service role
 
 **Answer: A, B, D**
 
-Explanation: A) Agent is essential for EC2 deployment — without it, polling itself doesn't happen. B) Must download bundle from S3, so instance needs S3 read permission (IAM instance profile + `s3:GetObject`). D) CodeDeploy service role is essential for CodeDeploy to manipulate user EC2/ASG/ALB. C) 2 Target Groups are **Blue-Green only** — In-Place needs just 1. On exam, "EC2 deployment prerequisites" typically A+D, while "Blue-Green extra prerequisites" adds C.
+Explanation: A) The Agent is a prerequisite for EC2 deployment. Without it, polling itself doesn't happen. B) Since the bundle is downloaded from S3, the instance needs S3 read permission (IAM instance profile + `s3:GetObject`). D) The CodeDeploy service role is required for CodeDeploy to operate the EC2/ASG/ALB in the user's account. C) Two Target Groups are needed only for **Blue-Green**, and **In-Place** needs only one. On the exam, "required conditions for EC2 deployment" is usually A+D, and "additional conditions for Blue-Green" is C.
 
 ---
 
-**Question 2.** When transitioning Lambda function to new version, you want to **send only 10% traffic for 10 minutes then switch remaining in one move**. Best deployment configuration?
+**Question 2.** You are switching a Lambda function to a new version and want to **send only 10% of traffic for the first 10 minutes and then shift the rest all at once**. Which deployment configuration fits?
 
 A) `LambdaLinear10PercentEvery1Minute`
 B) `LambdaCanary10Percent10Minutes`
@@ -366,63 +367,63 @@ D) `LambdaAllAtOnce`
 
 **Answer: B**
 
-Explanation: Canary pattern is "hold N% for M minutes, then jump to 100% once" — 2-stage shift. Problem asks "10% for 10 minutes then switch rest in one move" matching `LambdaCanary10Percent10Minutes` exactly. A) Linear shifts +10% every 1 min, gradual increase ≠ "switch in one move"; B) 5 min is wrong time condition; D) AllAtOnce jumps immediately to 100%. Canary vs Linear distinction is exam core.
+Explanation: The Canary pattern is a two-step shift: "hold the first N% for M minutes and watch, then go to 100% all at once." The condition in the question is "10% for 10 minutes," so it is `LambdaCanary10Percent10Minutes`. A) Linear increases evenly by +10% every minute and reaches 100% after 10 minutes, but that is gradual growth rather than "shifting the rest all at once." C) It holds for only 5 minutes, so the time condition doesn't match. D) AllAtOnce goes to 100% immediately with no gradual shift. The distinction between Canary and Linear is the heart of the exam.
 
 ---
 
-**Question 3.** Which of the following is the **most appropriate statement about EC2 ApplicationStop**?
+**Question 3.** Among the lifecycle hooks in appspec.yml, which one **always runs even if the new version fails**? (For EC2 In-Place)
 
-A) It runs the newest revision's script
-B) It runs the previous revision's script
-C) It's skipped if previous phases succeed
-D) It can only use shell scripts, not other languages
-
-**Answer: B**
-
-Explanation: ApplicationStop runs **the script from the previous revision** — the earliest phase regardless of how new revision other phases fail. If ApplicationStop itself fails, that instance deployment is marked failed but subsequent phases not affected. B/C/D are all downstream and skipped if earlier phases fail. When "ApplicationStop's specialness" appears on exam, "previous revision's script runs" is the answer.
-
----
-
-**Question 4.** What is NOT a mandatory prerequisite for ECS Blue-Green deployment with CodeDeploy?
-
-A) Set ECS service's deploymentController.type to CODE_DEPLOY
-B) Pre-create 2 ALB Target Groups (Production + Test)
-C) Specify TaskDefinition and LoadBalancerInfo in appspec.json
-D) Install CodeDeploy Agent in ECS container
-
-**Answer: D**
-
-Explanation: ECS **doesn't require CodeDeploy Agent** — ECS service handles task definition swap and target group transition, CodeDeploy orchestrates. Agent is EC2/on-premises only. A) Switching deployment controller to CODE_DEPLOY lets CodeDeploy manipulate ECS service. B) Blue-Green by definition requires two environments. C) appspec.json carries CodeDeploy-ECS connection info. "ECS + Agent" answer is almost always a trap on exam.
-
----
-
-**Question 5.** If CloudWatch Alarm `ErrorRate > 5%` fires during EC2 fleet (100 instances) In-Place deployment, what's needed for auto-rollback?
-
-A) Add alarm to DeploymentGroup's AlarmConfiguration + include DEPLOYMENT_STOP_ON_ALARM in AutoRollbackConfiguration.Events
-B) Register CodeDeploy stop API directly in CloudWatch Alarm action
-C) Write Lambda to call stop on alarm
-D) Change ASG health check type to ELB
+A) ApplicationStop
+B) AfterInstall
+C) ValidateService
+D) ApplicationStart
 
 **Answer: A**
 
-Explanation: CodeDeploy auto-rollback requires both settings active. ① AlarmConfiguration registers alarms for CodeDeploy to poll ② AutoRollbackConfiguration.Events with `DEPLOYMENT_STOP_ON_ALARM` triggers auto-rollback on alarm. B) CloudWatch Alarm doesn't support CodeDeploy API directly. C) Possible but inefficient with race condition risk. D) Unrelated. "Deployment + alarm → auto-rollback" is a classic exam scenario — both settings together is the answer.
+Explanation: The key is that ApplicationStop runs the **script from the previous revision**. Even if any step of the new revision fails, ApplicationStop has already run before it (it is the very first step). Also, if ApplicationStop fails, that instance's deployment is marked as failed, but the other steps are not affected. B/C/D are all later steps and are skipped if an earlier step fails. If "the special nature of ApplicationStop" appears on the exam, "runs the previous revision's script" is the answer.
 
 ---
 
-**Question 6.** CodeDeploy Blue-Green deployment after swap, if original ASG is set to **terminate 5 minutes later**, what's the purpose?
+**Question 4.** You want to configure a Blue-Green deployment with CodeDeploy for an ECS service. Which is NOT a required prerequisite?
 
-A) New ASG warmup time
-B) Fast rollback safety net (original ASG stays live for instant swap reversal if needed)
-C) DNS TTL expiry wait
-D) Cost optimization cooldown
+A) 2 ALB Target Groups
+B) Set the ECS service's deploymentController.type to CODE_DEPLOY
+C) Install the CodeDeploy Agent on the ECS containers
+D) Specify the TaskDefinition and LoadBalancerInfo in appspec.json
+
+**Answer: C**
+
+Explanation: ECS **does not need the CodeDeploy Agent**. The ECS service handles the task definition change and the target group switch, and CodeDeploy takes charge of that orchestration. The Agent is needed only for EC2/on-premises deployments. A) Blue-Green by definition needs two environments (target groups). B) You must change the deployment controller to CODE_DEPLOY for CodeDeploy to operate the ECS service (the default is ECS rolling). D) appspec.json holds the information by which CodeDeploy connects ECS and the ALB. "Install the Agent on ECS" is always a wrong answer.
+
+---
+
+**Question 5.** During an In-Place deployment to an EC2 fleet of 100 instances, the CloudWatch Alarm `ErrorRate > 5%` fires. What setting is required for automatic rollback to work?
+
+A) Include DEPLOYMENT_STOP_ON_ALARM in the DeploymentGroup's AutoRollbackConfiguration.Events
+B) Create a Lambda function to stop manually when the alarm fires
+C) Change the ASG's termination policy
+D) Add alarm permissions to the S3 bucket policy
+
+**Answer: A**
+
+Explanation: CodeDeploy stops the deployment when a CloudWatch Alarm registered in AlarmConfiguration goes into the ALARM state, and if `DEPLOYMENT_STOP_ON_ALARM` is in AutoRollbackConfiguration.Events, it automatically rolls back to the previous revision. Both settings must be enabled for real automatic rollback. B) A manual Lambda is not automatic. C) The ASG termination policy is the priority for terminating instances and is unrelated to this question. D) S3 permissions are irrelevant. If "alarm during deployment → automatic rollback" appears on the exam, this combination of two settings is the answer.
+
+---
+
+**Question 6.** You configured the original ASG to be **terminated after 5 minutes** following a CodeDeploy Blue-Green deployment. What is the meaning of those 5 minutes?
+
+A) The time for the new ASG to warm up
+B) A safety net for fast rollback (the original ASG is alive, so just swapping back returns immediately)
+C) The time to wait for the DNS TTL to expire
+D) A cooldown for instance cost optimization
 
 **Answer: B**
 
-Explanation: Keeping original ASG alive after swap is **fast rollback insurance** — within 5 minutes, if problems detected, ALB listener rule can switch back, instant EC2 restoration without re-provisioning. After 5 minutes, original instances terminate; thereafter rollback requires spinning up new instances. A) Warmup before swap. C) ALB handles DNS internally. D) ASG cooldown is scale policy term, unrelated. When "Blue-Green termination wait time" appears on exam, it's the rollback insurance explanation.
+Explanation: The option of keeping the original ASG for a period after the swap completes in a Blue-Green deployment acts as a **fast rollback safety net**. If a problem is found within 5 minutes, you can return immediately without reprovisioning instances, simply by pointing the ALB listener rule back to the original target group. After 5 minutes the original instances are terminated, and from then on rolling back requires launching new instances. A) Warmup happens before the swap. C) The ALB handles DNS TTL on its own. D) Cooldown is an ASG scaling policy term and is unrelated. On the exam, the meaning of "Blue-Green termination wait time" is the answer.
 
 ---
 
-**Question 7.** Which of the following is NOT a supported CodeDeploy deployment target?
+**Question 7.** Which of the following is **not** a CodeDeploy deployment target?
 
 A) Amazon EC2 Auto Scaling Group
 B) AWS Lambda function
@@ -431,4 +432,6 @@ D) Amazon RDS DB instance
 
 **Answer: D**
 
-Explanation: CodeDeploy's official targets are EC2/on-premises (including ASG), Lambda, ECS — three only. RDS is a database service with different deployment concept; schema migration uses separate tools (Flyway/Liquibase) or RDS's own blue/green deployment (added 2022, separate from CodeDeploy). A/B/C are explicit support. When "CodeDeploy target NOT in scope" appears on exam, data services like RDS/DynamoDB/S3 are almost always the wrong answer.
+Explanation: CodeDeploy's official deployment targets are only three: EC2/on-premises (including ASGs), Lambda, and ECS. RDS is a database service with a different notion of deployment, and schema migrations use separate tools like Flyway/Liquibase or RDS's own blue/green deployment feature (added in 2022, unrelated to CodeDeploy). A is a form of EC2. B and C are explicitly supported. When "not a CodeDeploy target" appears on the exam, a data service like RDS/DynamoDB/S3 almost always shows up as the wrong answer.
+
+---

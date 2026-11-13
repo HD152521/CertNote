@@ -163,7 +163,7 @@ C) DMS CDC for real-time synchronization + cutover
 D) S3 snapshot backup + restore
 
 **Answer: B**
-Explanation: Aurora Global Database achieves RPO < 1 second through storage-level replication, and promoting Secondary to Primary takes < 1 minute during failure. A has RPO of seconds to tens of seconds, not guaranteeing 1 second, with longer RTO. C is unsuitable for DR (migration tool). D fails RPO/RTO requirements.
+Explanation: Aurora Global Database achieves RPO < 1 second through storage-level replication, and promoting Secondary to Primary typically takes a few minutes during failure. A has RPO of seconds to tens of seconds, not guaranteeing 1 second, with longer RTO. C is unsuitable for DR (migration tool). D fails RPO/RTO requirements.
 
 ---
 

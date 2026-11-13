@@ -198,7 +198,7 @@ D) Cross-Region Read Replica 수동 승격
 
 **정답: B**
 
-해설: "글로벌 SQL + RPO<1s + RTO 분 단위 + 보조 리전 읽기 분담"은 Aurora Global Database다 — 스토리지 비동기 복제로 RPO 1초 미만, 보조 리전 읽기 레플리카가 부하를 분담하다 재해 시 1분 내 승격한다. A(Multi-AZ)는 리전 장애에 무력하다. C는 NoSQL이라 "SQL"에 안 맞는다. D(수동 승격)는 복제 지연·수동 승격으로 RTO를 못 맞춘다. 함정: "글로벌 SQL + RPO 초 + 빠른 승격"은 Aurora Global Database.
+해설: "글로벌 SQL + RPO<1s + RTO 분 단위 + 보조 리전 읽기 분담"은 Aurora Global Database다 — 스토리지 비동기 복제로 RPO 1초 미만, 보조 리전 읽기 레플리카가 부하를 분담하다 재해 시 수 분 내 승격한다. A(Multi-AZ)는 리전 장애에 무력하다. C는 NoSQL이라 "SQL"에 안 맞는다. D(수동 승격)는 복제 지연·수동 승격으로 RTO를 못 맞춘다. 함정: "글로벌 SQL + RPO 초 + 빠른 승격"은 Aurora Global Database.
 
 ---
 

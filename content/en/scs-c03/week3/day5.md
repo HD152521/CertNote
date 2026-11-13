@@ -1,4 +1,4 @@
-﻿# Day 5 - Week 3 Integration: Network Isolation and Traffic Control as One
+# Day 5 - Week 3 Integration: Network Isolation and Traffic Control as One
 
 This week started from the fact that the network is security's first line of defense. If IAM handles "who can do what," the network decides the question that comes before it: "who can even reach where in the first place." What can't be reached can't be attacked. The four topics we covered this week — VPC design, SG/NACL, Flow Logs, and private connectivity — are not separate subjects. They are one defense system seen from four angles.
 

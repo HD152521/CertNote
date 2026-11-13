@@ -21,7 +21,7 @@ DR 전략을 구현하는 도구들은 각각 **다른 계층(데이터/라우�
 
 | 도구 | 책임 계층 | RPO/특성 | 대표 단서 |
 |------|------|------|------|
-| Aurora Global Database | 관계형 DB | RPO <1초, RTO ~1분, 최대 5~10 리전 | "RTO 1분 RPO 1초 SQL DB" |
+| Aurora Global Database | 관계형 DB | 복제 지연 보통 1초 미만, RTO 수 분 단위, 최대 10개 Secondary 리전 | "RTO 1분 RPO 1초 SQL DB" |
 | DynamoDB Global Tables | 키-값 DB | Active-Active, LWW 충돌 해소 | "두 리전 동시 쓰기 키-값" |
 | S3 CRR / RTC | 객체 스토리지 | CRR 비동기, RTC 15분 SLA | "S3 객체 15분 내 복제 보장" |
 | Route 53 | DNS 라우팅 | Failover/Latency/Weighted + Health Check | "DNS 기반 페일오버" |
@@ -111,7 +111,7 @@ D) DynamoDB Streams — SQL을 지원한다
 
 **정답: B**
 
-해설: Aurora Global Database는 전용 복제 인프라로 리전 간 RPO를 보통 1초 미만으로 유지하고 RTO ~1분의 페일오버를 제공한다. RPO가 정확히 0이 아닌 이유는 CAP 정리의 현실 — 리전 간 동기 복제는 왕복 레이턴시를 모든 쓰기에 부과하므로, Aurora Global은 비동기 복제를 쓰고 그 지연을 1초 미만으로 최적화한다. RDS Multi-AZ(A)는 단일 리전(멀티 리전 DR 아님), Cross-Region RR(C)은 Aurora Global보다 RPO/RTO가 나쁘고, DynamoDB(D)는 키-값으로 SQL이 아니다.
+해설: Aurora Global Database는 전용 복제 인프라로 리전 간 RPO를 보통 1초 미만으로 유지하고 RTO가 수 분 단위인 페일오버를 제공한다. RPO가 정확히 0이 아닌 이유는 CAP 정리의 현실 — 리전 간 동기 복제는 왕복 레이턴시를 모든 쓰기에 부과하므로, Aurora Global은 비동기 복제를 쓰고 그 지연을 1초 미만으로 최적화한다. RDS Multi-AZ(A)는 단일 리전(멀티 리전 DR 아님), Cross-Region RR(C)은 Aurora Global보다 RPO/RTO가 나쁘고, DynamoDB(D)는 키-값으로 SQL이 아니다.
 
 ---
 

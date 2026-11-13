@@ -163,7 +163,7 @@ C) DMS CDC로 실시간 동기 + 컷오버
 D) S3 스냅샷 백업 + 복원
 
 **정답: B**
-해설: Aurora Global Database는 스토리지 레벨 복제로 RPO < 1초를 달성하고, 장애 시 Secondary를 Primary로 Promote하는 데 < 1분이 걸린다. A는 RPO가 수초~수십 초로 1초를 보장하지 못하고 RTO가 길다. C는 DMS가 DR 솔루션으로 부적합하다(마이그레이션 도구). D는 RPO/RTO 요건 불충족.
+해설: Aurora Global Database는 스토리지 레벨 복제로 RPO < 1초를 달성하고, 장애 시 Secondary를 Primary로 Promote하는 데 보통 몇 분이 걸린다. A는 RPO가 수초~수십 초로 1초를 보장하지 못하고 RTO가 길다. C는 DMS가 DR 솔루션으로 부적합하다(마이그레이션 도구). D는 RPO/RTO 요건 불충족.
 
 ---
 

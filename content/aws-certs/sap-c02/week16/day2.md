@@ -30,8 +30,8 @@ ECS vs EKS의 선택은 **"표준 락인 vs 운영 단순성"**의 trade-off다.
 |------|-----|------------|
 | RDB 표준 | RDS | Multi-AZ 동기 복제, 6엔진 |
 | RDB 확장·글로벌 DR | Aurora / Aurora Global | 스토리지 분리, 6-way 복제, RPO<1s |
-| 서버리스 RDB | Aurora Serverless v2 | ACU 단위 초당 스케일 |
-| Key-Value 초고TPS | DynamoDB | 무제한 수평 확장, 単자리 ms |
+| 서버리스 RDB | Aurora Serverless v2 | ACU 단위 세밀한 증분 스케일 |
+| Key-Value 초고TPS | DynamoDB | 무제한 수평 확장, 한 자리 ms |
 | 문서(Mongo 호환) | DocumentDB | MongoDB API |
 | 그래프 | Neptune | Gremlin·SPARQL, 관계 탐색 |
 | 시계열 | Timestream | IoT·메트릭, 자동 티어링 |
@@ -98,7 +98,7 @@ Kinesis vs SQS의 본질 차이는 **"소비 후 삭제 vs 보존 후 재생"**�
 | "한 서비스 장애가 타 서비스 영향 X" | SNS → 다중 SQS fan-out | 큐 버퍼 격리 |
 | "글로벌 SQL·RPO<1s" | Aurora Global Database | 스토리지 비동기 복제 |
 | "글로벌 양쪽 쓰기 NoSQL" | DynamoDB Global Tables | 멀티 리전 Active-Active |
-| "트래픽 0일 때 비용 0 RDB" | Aurora Serverless v2 | ACU 초당 스케일 |
+| "트래픽 0일 때 비용 0 RDB" | Aurora Serverless v2 | ACU 세밀한 증분 스케일 |
 | "수십만 TPS Key-Value·단자리 ms" | DynamoDB On-Demand | 무제한 수평 확장 |
 | "DynamoDB 일부 키만 스로틀" | 파티션 키 재설계·write sharding | 핫 파티션 |
 | "실시간 검색·로그 분석" | OpenSearch | 역색인 |
@@ -191,7 +191,7 @@ D) Redshift
 
 **정답: B**
 
-해설: "업무 시간만 부하 + 사용량 비례 비용 + 자동 확장 + 관계형"은 Aurora Serverless v2의 정확한 사용처다. ACU(Aurora Capacity Unit) 단위로 초 단위 스케일링하며, 부하가 낮으면 ACU를 줄여 비용을 절감하고 급증 시 즉시 확장한다(v2는 v1과 달리 0으로 완전 정지하진 않지만 최소 ACU를 0.5까지 낮춤). A(고정 인스턴스)는 야간·주말에도 풀 비용이 든다. C(DynamoDB)는 NoSQL이라 관계형 워크로드(조인·복잡 쿼리)에 부적합할 수 있다. D(Redshift)는 분석 웨어하우스로 OLTP 백오피스에 부적합하다. 함정: "관계형 + 사용량 비례 + 자동 확장"은 Aurora Serverless v2.
+해설: "업무 시간만 부하 + 사용량 비례 비용 + 자동 확장 + 관계형"은 Aurora Serverless v2의 정확한 사용처다. ACU(Aurora Capacity Unit) 단위의 세밀한 증분으로 스케일링하며, 부하가 낮으면 ACU를 줄여 비용을 절감하고 급증 시 즉시 확장한다(최소 ACU는 0.5까지, 최신 버전은 자동 일시정지로 0 ACU까지 낮출 수 있음). A(고정 인스턴스)는 야간·주말에도 풀 비용이 든다. C(DynamoDB)는 NoSQL이라 관계형 워크로드(조인·복잡 쿼리)에 부적합할 수 있다. D(Redshift)는 분석 웨어하우스로 OLTP 백오피스에 부적합하다. 함정: "관계형 + 사용량 비례 + 자동 확장"은 Aurora Serverless v2.
 
 ---
 
@@ -223,7 +223,7 @@ D) Cross-Region Read Replica 수동 승격
 
 **정답: B**
 
-해설: "글로벌 SQL + RPO<1s + RTO 분 단위 + 보조 리전 읽기 분담"은 Aurora Global Database의 정확한 사용처다. 스토리지 계층 비동기 복제로 일반적으로 RPO 1초 미만을 달성하고, 보조 리전은 읽기 전용 레플리카로 부하를 분담하다 재해 시 1분 내로 승격(promote)된다. A(Multi-AZ)는 단일 리전 내 AZ 장애만 견디고 리전 장애엔 무력하다. C는 NoSQL이라 "SQL" 요구에 안 맞는다. D(수동 승격 Read Replica)는 복제 지연이 크고 승격이 수동·느려 RTO를 못 맞춘다(Aurora Global은 전용 복제 인프라로 훨씬 빠름). 함정: "글로벌 SQL + RPO 초 단위 + 빠른 승격"은 Aurora Global Database.
+해설: "글로벌 SQL + RPO<1s + RTO 분 단위 + 보조 리전 읽기 분담"은 Aurora Global Database의 정확한 사용처다. 스토리지 계층 비동기 복제로 일반적으로 RPO 1초 미만을 달성하고, 보조 리전은 읽기 전용 레플리카로 부하를 분담하다 재해 시 수 분 내로 승격(promote)된다. A(Multi-AZ)는 단일 리전 내 AZ 장애만 견디고 리전 장애엔 무력하다. C는 NoSQL이라 "SQL" 요구에 안 맞는다. D(수동 승격 Read Replica)는 복제 지연이 크고 승격이 수동·느려 RTO를 못 맞춘다(Aurora Global은 전용 복제 인프라로 훨씬 빠름). 함정: "글로벌 SQL + RPO 초 단위 + 빠른 승격"은 Aurora Global Database.
 
 ---
 

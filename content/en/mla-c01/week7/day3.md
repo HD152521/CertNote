@@ -1,4 +1,4 @@
-﻿# Day 3 - CI/CD for ML: SageMaker Projects, CodePipeline/CodeBuild Integration, Automated Deployment
+# Day 3 - CI/CD for ML: SageMaker Projects, CodePipeline/CodeBuild Integration, Automated Deployment
 
 ## 📌 Key Takeaways
 

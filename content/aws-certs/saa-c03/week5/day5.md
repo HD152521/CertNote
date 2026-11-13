@@ -28,7 +28,7 @@ Aurora의 차별점은 공유 분산 스토리지다. 6 카피, 3 AZ, 4/6 Quorum
 
 - **페일오버 30초 이내**: 스토리지는 계속 살아 있으므로 새 Writer 인스턴스를 스토리지에 연결하기만 하면 된다. RDS처럼 Standby가 Redo Log를 적용하는 시간이 필요 없다.
 - **Read Replica 최대 15개**: 모든 Reader가 공유 스토리지를 읽으므로 Replica당 별도 EBS가 없다. 추가 스토리지 비용 없이 Reader를 늘릴 수 있다.
-- **Replication Lag 수십 ms**: 공유 스토리지라서 "복제" 자체가 없다. Reader가 공유 스토리지에서 읽는 것이므로 Writer와 거의 동시에 같은 데이터를 본다.
+- **Replication Lag 보통 100ms보다 훨씬 짧음**: 공유 스토리지라서 "복제" 자체가 없다. Reader가 공유 스토리지에서 읽는 것이므로 Writer와 거의 동시에 같은 데이터를 본다.
 
 Aurora Global Database는 스토리지 레이어에서 리전 간 복제를 해서 < 1초 지연을 달성한다. RDS Cross-Region Read Replica는 DB 엔진 레이어(binlog/WAL)에서 복제하므로 지연이 더 길다.
 
@@ -103,7 +103,7 @@ ElastiCache Redis, Memcached, DAX, MemoryDB가 각각 다른 문제를 푼다.
 - 손실 허용 가능하고 캐시로 사용 → ElastiCache Redis
 
 **Aurora Global Database vs RDS Cross-Region Read Replica**:
-- < 1초 복제 지연, 스토리지 레이어 복제, 1분 이내 페일오버 → Aurora Global DB
+- < 1초 복제 지연, 스토리지 레이어 복제, 수 분 수준의 managed failover → Aurora Global DB
 - 범용 엔진(MySQL, PG, Oracle 등), 수 초 지연 허용 → RDS Cross-Region RR
 
 **DynamoDB Global Tables vs Aurora Global DB**:
@@ -166,7 +166,7 @@ CloudWatch Logs → Firehose → OpenSearch (실시간 로그 분석)
 
 SAA-C03는 비용 최적화 Pillar(20%)도 다룬다. 데이터베이스 선택에서 비용 관점:
 
-**RDS vs Aurora**: Aurora가 약 20% 비싸다. "같은 MySQL/PostgreSQL 워크로드에서 Aurora가 정당화되는 시나리오"는 페일오버 요구사항이 30초 이내, 15개 이상 Reader 필요, 글로벌 복제 필요, 변동 트래픽일 때다.
+**RDS vs Aurora**: Aurora가 약 20% 비싸다. "같은 MySQL/PostgreSQL 워크로드에서 Aurora가 정당화되는 시나리오"는 페일오버 요구사항이 30초 이내, 다수의 Reader 필요(Aurora는 클러스터당 최대 15개), 글로벌 복제 필요, 변동 트래픽일 때다.
 
 **On-Demand vs Provisioned**: DynamoDB On-Demand는 안정적 트래픽에서 Provisioned보다 최대 4배 비싸다. 트래픽 예측이 가능한 워크로드는 Provisioned + Auto Scaling이 비용 효율적이다.
 
@@ -186,7 +186,7 @@ SAA-C03는 비용 최적화 Pillar(20%)도 다룬다. 데이터베이스 선택�
 |--------|-----|-----|---------|
 | RDS Multi-AZ | ~0 (동기) | 60-120초 | 자동 DNS Failover |
 | Aurora Multi-AZ | ~0 (공유 스토리지) | 30초 이내 | Reader → Writer 승격 |
-| Aurora Global DB | < 1초 | < 1분 | 수동/자동 Promote |
+| Aurora Global DB | < 1초 | 수 분 수준 | 수동/자동 Promote |
 | DynamoDB (단일 리전) | ~0 (PITR) | ~수분 | 새 테이블 복구 |
 | DynamoDB Global Tables | ~1초 | ~0 (다른 리전 이미 서빙) | 엔드포인트 전환 |
 | ElastiCache Redis Multi-AZ | 수 초 (비동기) | 수 초 (자동 Failover) | Read Replica 승격 |
@@ -205,7 +205,7 @@ D) DynamoDB On-Demand로 마이그레이션 (자동 용량)
 
 **정답: B**
 
-해설: 트래픽 폭증에 자동으로 대응하려면 컴퓨팅 용량이 자동으로 스케일링되어야 한다. Aurora Serverless v2는 수 초 단위로 0.5~256 ACU까지 자동 스케일링하며 PostgreSQL 호환이라 마이그레이션이 쉽다. A는 HA는 해결하지만 용량 부족 문제를 해결하지 못한다. C는 읽기는 분산하지만 쓰기 용량을 늘리지 못하고, 5개 Replica를 사전에 만들어야 해서 갑작스러운 폭증에 대응이 느리다. D는 마이그레이션 기간이 필요하고 즉각 적용 불가.
+해설: 트래픽 폭증에 자동으로 대응하려면 컴퓨팅 용량이 자동으로 스케일링되어야 한다. Aurora Serverless v2는 0.5~256 ACU 범위에서 세밀한 증분으로 자동 스케일링하며 PostgreSQL 호환이라 마이그레이션이 쉽다. A는 HA는 해결하지만 용량 부족 문제를 해결하지 못한다. C는 읽기는 분산하지만 쓰기 용량을 늘리지 못하고, 5개 Replica를 사전에 만들어야 해서 갑작스러운 폭증에 대응이 느리다. D는 마이그레이션 기간이 필요하고 즉각 적용 불가.
 
 ---
 

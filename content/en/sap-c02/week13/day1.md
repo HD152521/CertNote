@@ -1,4 +1,4 @@
-﻿# Day 1 - Well-Architected Framework Overview — The Origins of 6 Pillars, Internal Operations of WA Tool, and Design Philosophy of Lens
+# Day 1 - Well-Architected Framework Overview — The Origins of 6 Pillars, Internal Operations of WA Tool, and Design Philosophy of Lens
 
 When a new architect opens the AWS console for the first time, they become paralyzed by over 200 services. Thousands of decisions stack up — "Should I use RDS or Aurora, should I enable Multi-AZ, is this IAM policy secure enough" — eventually forming one architecture. The problem is that these decisions often remain **tacit knowledge**, not passed down to other teams or projects. The Well-Architected Framework (hereafter WA) is AWS's result of conducting tens of thousands of customer architecture reviews since 2012, **formalizing that tacit knowledge into 6 pillars and standard questionnaires as explicit knowledge**.
 

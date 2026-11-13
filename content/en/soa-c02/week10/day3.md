@@ -61,15 +61,15 @@ Multiple endpoints exist for this architecture. **Cluster Endpoint** always poin
 
 ## Aurora Global Database—Surviving Region Failure in Under 1 Minute
 
-Cross-Region Read Replica provides region DR but with instance-level async replication, large lag and sluggish failover. **Aurora Global Database** solves this via storage-layer replication. With 1 Primary Region + up to 5 Secondary Regions, Primary changes flow via **dedicated replication infra** to Secondary regions' storage. Since storage replicates across regions (not instances), achieves **RPO < 1 second, RTO < 1 minute**.
+Cross-Region Read Replica provides region DR but with instance-level async replication, large lag and sluggish failover. **Aurora Global Database** solves this via storage-layer replication. With 1 Primary Region + up to 10 Secondary Regions, Primary changes flow via **dedicated replication infra** to Secondary regions' storage. Since storage replicates across regions (not instances), typically achieves **RPO of seconds, RTO of minutes**.
 
-Secondary regions are read-only, seeing latest data with tens-of-ms lag—providing fast reads to globe-local region users. Whole Primary region fails and **promote** Secondary in under 60 seconds to new Primary. Faster than RDS Cross-Region RR's manual promote, far less data loss.
+Secondary regions are read-only, seeing latest data with tens-of-ms lag—providing fast reads to globe-local region users. Whole Primary region fails and **promote** Secondary within minutes to new Primary. Faster than RDS Cross-Region RR's manual promote, far less data loss.
 
 | Tool | Scope | Replication Unit | RPO/RTO | Main Use |
 |------|-------|------------------|---------|----------|
 | Multi-AZ | Same-region AZ | Sync, instance | RPO 0 / RTO 1~2min | HA |
 | Cross-Region Read Replica | Cross-region | Async, instance | RPO minutes / RTO manual | Read+DR(RDS) |
-| Aurora Global Database | Cross-region | Async, storage | RPO<1s / RTO<1min | Global read+DR(Aurora) |
+| Aurora Global Database | Cross-region | Async, storage | RPO seconds / RTO minutes | Global read+DR(Aurora) |
 
 > 📚 **Case Study**: December 2021, major AWS us-east-1 region outage disabled many services. Single-region dependent (Multi-AZ only) workloads went down together, but Aurora Global Database or Cross-Region replica-holders could promote Secondary for recovery. This taught industry "Multi-AZ is for AZ failure, not region failure." us-east-1 is AWS's largest/oldest region with parts of global control plane here, so this region outage caused wide impact multiple times. Omit region-level DR from design and no matter how dense you pack Multi-AZ, you're bound to single region's fate.
 
@@ -93,7 +93,7 @@ Serverless like Lambda meeting RDS triggers unique problem. Lambda's concurrent 
 
 All RDS availability tools diverge along one axis: sync vs async. Multi-AZ gets RPO=0 availability via sync replication at cost of same-region-only and Standby read-unable. Read Replica gets fast read scale and Cross-Region DR via async at cost of replication lag. Aurora pushes replication to storage layer, easing both tradeoffs; Global Database does region DR in 1 minute.
 
-Five key takeaways for operators: ① Multi-AZ = HA (sync, RPO 0, same region, Standby no-read, auto failover). ② Read Replica = read scale (async, separate endpoint, Cross-Region yes, promote for DR). ③ Region DR = Cross-Region RR or Aurora Global DB (RPO<1s, RTO<1min). ④ Aurora splits compute/storage + 6-way/3AZ quorum; Reader shares storage so lag small. ⑤ Lambda + RDS needs RDS Proxy to stop Connection Storm—upsizing is wrong.
+Five key takeaways for operators: ① Multi-AZ = HA (sync, RPO 0, same region, Standby no-read, auto failover). ② Read Replica = read scale (async, separate endpoint, Cross-Region yes, promote for DR). ③ Region DR = Cross-Region RR or Aurora Global DB (RPO seconds, RTO minutes). ④ Aurora splits compute/storage + 6-way/3AZ quorum; Reader shares storage so lag small. ⑤ Lambda + RDS needs RDS Proxy to stop Connection Storm—upsizing is wrong.
 
 In the next article, we'll transcend databases, exploring S3 Replication, Storage Gateway, and Elastic Disaster Recovery that replicate/failover files, objects, and on-premises workloads across regions and to AWS.
 
@@ -136,20 +136,20 @@ D) Manual Snapshot
 
 **Answer: B**
 
-Explanation: Multi-AZ survives only AZ failures within the same Region; because replication is synchronous, latency would grow across Regions, so it is kept within one Region. To prepare for a full Region outage, you keep an asynchronously replicated copy in another Region (a Cross-Region Read Replica) or an Aurora Global Database, and promote the Secondary when the Primary Region fails. Aurora Global DB provides the fastest Region-level DR, with RPO under 1 second and RTO under 1 minute.
+Explanation: Multi-AZ survives only AZ failures within the same Region; because replication is synchronous, latency would grow across Regions, so it is kept within one Region. To prepare for a full Region outage, you keep an asynchronously replicated copy in another Region (a Cross-Region Read Replica) or an Aurora Global Database, and promote the Secondary when the Primary Region fails. Aurora Global DB provides the fastest Region-level DR, with RPO of seconds and RTO of minutes.
 
 ---
 
 **Question 4.** You need to serve fast reads from Regions close to global users (Asia, US, Europe) and also need Region-level DR. Which tool is most suitable?
 
 A) RDS Multi-AZ
-B) Aurora Global Database: 1 Primary plus up to 5 Secondary Regions, storage-layer replication, RPO under 1 second and RTO under 1 minute
+B) Aurora Global Database: 1 Primary plus up to 10 Secondary Regions, storage-layer replication, RPO of seconds and RTO of minutes
 C) Multiple Read Replicas in a single Region
 D) DynamoDB Multi-AZ
 
 **Answer: B**
 
-Explanation: Aurora Global Database replicates changes from the Primary Region to the storage of up to 5 Secondary Regions over dedicated infrastructure, serving reads with tens of milliseconds of latency from the Region closest to each user while also providing Region DR (promotion within 60 seconds). Because replication happens at the storage layer, latency and RTO are lower than with instance-level replication (RDS Cross-Region RR). It is the standard answer for global reads plus Region DR.
+Explanation: Aurora Global Database replicates changes from the Primary Region to the storage of up to 10 Secondary Regions over dedicated infrastructure, serving reads with tens of milliseconds of latency from the Region closest to each user while also providing Region DR (managed-failover RTO on the order of minutes). Because replication happens at the storage layer, latency and RTO are lower than with instance-level replication (RDS Cross-Region RR). It is the standard answer for global reads plus Region DR.
 
 ---
 

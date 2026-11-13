@@ -1,4 +1,4 @@
-﻿# Day 3 - VPC Flow Logs and Traffic Visibility: Reading a Breach from the Logs
+# Day 3 - VPC Flow Logs and Traffic Visibility: Reading a Breach from the Logs
 
 Security groups and NACLs block traffic. But they cannot answer questions like "what traffic is flowing right now?", "who tried to access our DB?", or "is the connection that was just blocked legitimate or an attack?" Controls only block; they cannot see. Seeing, that is, visibility, is a separate capability.
 

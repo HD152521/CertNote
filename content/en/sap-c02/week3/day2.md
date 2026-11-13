@@ -1,4 +1,4 @@
-﻿# Day 2 - Direct Connect Architecture and Redundancy: Physics of Dedicated Lines
+# Day 2 - Direct Connect Architecture and Redundancy: Physics of Dedicated Lines
 
 There are two main ways to connect an on-premises data center with AWS. VPN, which creates an encrypted tunnel over the internet, and Direct Connect, which establishes a physically dedicated circuit. While the concept is straightforward, properly designing Direct Connect in AWS requires deep understanding of BGP routing control, VIF type selection, redundancy topology, and failover mechanisms. SAP-C02 Direct Connect questions don't ask for simple feature recall but rather "which VIF, which redundancy, and which BGP manipulation is the correct answer for this scenario?" Today we'll cover the full stack—from DX physical layer to BGP priority manipulation.
 

@@ -236,7 +236,7 @@ A) RDS Cross-Region Read Replica  B) Aurora Global Database  C) DynamoDB Streams
 
 **정답: B**
 
-해설: Aurora Global Database는 RPO 보통 1초 미만, RTO ~1분의 멀티 리전 DR을 제공한다. Cross-Region RR(A)은 RPO/RTO가 더 나쁘고, DynamoDB(C)는 키-값(SQL 아님), S3 CRR(D)은 객체 스토리지다.
+해설: Aurora Global Database는 RPO 보통 1초 미만, RTO 수 분 단위의 멀티 리전 DR을 제공한다. Cross-Region RR(A)은 RPO/RTO가 더 나쁘고, DynamoDB(C)는 키-값(SQL 아님), S3 CRR(D)은 객체 스토리지다.
 
 ---
 

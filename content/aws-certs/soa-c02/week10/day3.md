@@ -61,15 +61,15 @@ Aurora의 quorum 복제는 분산 합의 이론의 **quorum 시스템**을 그�
 
 ## Aurora Global Database — 리전 장애를 1분 안에 넘기는 구조
 
-Cross-Region Read Replica가 리전 DR을 주지만, RDS의 인스턴스 단위 비동기 복제라 지연이 크고 페일오버가 굼뜨다. **Aurora Global Database**는 이걸 스토리지 계층 복제로 다시 푼다. 1개 Primary Region + 최대 5개 Secondary Region 구조에서, Primary의 변경이 **전용 복제 인프라**를 통해 Secondary 리전의 스토리지로 전송된다. 인스턴스가 아니라 스토리지가 리전을 넘어 복제되므로 **RPO < 1초, RTO < 1분**을 달성한다.
+Cross-Region Read Replica가 리전 DR을 주지만, RDS의 인스턴스 단위 비동기 복제라 지연이 크고 페일오버가 굼뜨다. **Aurora Global Database**는 이걸 스토리지 계층 복제로 다시 푼다. 1개 Primary Region + 최대 10개 Secondary Region 구조에서, Primary의 변경이 **전용 복제 인프라**를 통해 Secondary 리전의 스토리지로 전송된다. 인스턴스가 아니라 스토리지가 리전을 넘어 복제되므로 일반적으로 **RPO 수 초, RTO 수 분**을 달성한다.
 
-Secondary 리전은 읽기 전용이며 수십 ms 지연으로 최신 데이터를 본다 — 글로벌 사용자에게 가까운 리전에서 빠른 읽기를 제공한다. Primary 리전 전체가 장애 나면 Secondary를 **promote**해 60초 이내에 새 Primary로 전환한다. RDS Cross-Region RR의 수동 promote보다 빠르고, 데이터 손실도 훨씬 작다.
+Secondary 리전은 읽기 전용이며 수십 ms 지연으로 최신 데이터를 본다 — 글로벌 사용자에게 가까운 리전에서 빠른 읽기를 제공한다. Primary 리전 전체가 장애 나면 Secondary를 **promote**해 수 분 안에 새 Primary로 전환한다. RDS Cross-Region RR의 수동 promote보다 빠르고, 데이터 손실도 훨씬 작다.
 
 | 도구 | 범위 | 복제 단위 | RPO/RTO | 주 용도 |
 |------|------|-----------|---------|---------|
 | Multi-AZ | 같은 리전 AZ 간 | 동기, 인스턴스 | RPO 0 / RTO 1~2분 | HA |
 | Cross-Region Read Replica | 리전 간 | 비동기, 인스턴스 | RPO 분 / RTO 수동 | 읽기+DR(RDS) |
-| Aurora Global Database | 리전 간 | 비동기, 스토리지 | RPO<1초 / RTO<1분 | 글로벌 읽기+DR(Aurora) |
+| Aurora Global Database | 리전 간 | 비동기, 스토리지 | RPO 수 초 / RTO 수 분 | 글로벌 읽기+DR(Aurora) |
 
 2021년 12월 AWS us-east-1 리전에서 대규모 장애가 발생해 수많은 서비스가 중단됐다. 이때 단일 리전에만 의존하던(Multi-AZ만 쓰던) 워크로드는 함께 멈췄지만, Aurora Global Database나 Cross-Region 복제로 다른 리전에 사본을 둔 곳은 Secondary를 promote해 복구할 수 있었다. 이 사건은 "Multi-AZ는 AZ 장애용이지 리전 장애용이 아니다"라는 교훈을 업계에 각인시켰다. us-east-1은 AWS에서 가장 크고 오래된 리전이라 글로벌 컨트롤 플레인 일부가 여기 의존하기도 해, 이 리전 장애는 여러 차례 광범위한 영향을 미쳤다. 리전 단위 DR을 설계에 넣지 않으면, 아무리 Multi-AZ를 촘촘히 깔아도 리전 하나의 운명에 묶인다.
 
@@ -93,7 +93,7 @@ Lambda 같은 서버리스가 RDS를 만나면 고유한 문제가 터진다. La
 
 RDS의 가용성 도구들은 전부 동기/비동기라는 하나의 축에서 갈라진다. Multi-AZ는 동기 복제로 RPO=0 가용성을 얻는 대신 같은 리전에 묶이고 Standby는 읽기를 못 받는다. Read Replica는 비동기 복제로 빠른 읽기 확장과 Cross-Region DR을 얻는 대신 복제 지연을 감수한다. Aurora는 복제를 스토리지 계층으로 내려 둘의 트레이드오프를 완화하고, Global Database로 리전 DR을 1분 안에 끝낸다.
 
-운영자가 기억할 다섯 가지는 이렇다. ① Multi-AZ = HA(동기, RPO 0, 같은 리전, Standby 읽기 불가, 자동 페일오버). ② Read Replica = 읽기 확장(비동기, 별도 endpoint, Cross-Region 가능, promote로 DR). ③ 리전 DR = Cross-Region RR 또는 Aurora Global DB(RPO<1초, RTO<1분). ④ Aurora는 컴퓨트/스토리지 분리 + 6벌/3AZ quorum, Reader는 공유 스토리지라 지연이 작다. ⑤ Lambda + RDS는 RDS Proxy로 Connection Storm 방어 — 인스턴스 키우기는 오답.
+운영자가 기억할 다섯 가지는 이렇다. ① Multi-AZ = HA(동기, RPO 0, 같은 리전, Standby 읽기 불가, 자동 페일오버). ② Read Replica = 읽기 확장(비동기, 별도 endpoint, Cross-Region 가능, promote로 DR). ③ 리전 DR = Cross-Region RR 또는 Aurora Global DB(RPO 수 초, RTO 수 분). ④ Aurora는 컴퓨트/스토리지 분리 + 6벌/3AZ quorum, Reader는 공유 스토리지라 지연이 작다. ⑤ Lambda + RDS는 RDS Proxy로 Connection Storm 방어 — 인스턴스 키우기는 오답.
 
 다음 글에선 데이터베이스를 넘어, 파일·객체·온프레미스 워크로드를 다른 리전과 AWS로 복제·페일오버하는 S3 Replication, Storage Gateway, Elastic Disaster Recovery를 다룬다.
 
@@ -136,20 +136,20 @@ D) Manual Snapshot
 
 **정답: B**
 
-해설: Multi-AZ는 같은 리전 내 AZ 장애만 견딘다 — 동기 복제라 리전을 넘으면 지연이 커져 같은 리전에만 둔다. 리전 전체 장애에 대비하려면 다른 리전에 비동기 복제 사본(Cross-Region Read Replica)이나 Aurora Global Database를 두고, Primary 리전 장애 시 Secondary를 promote해야 한다. Aurora Global DB는 RPO<1초, RTO<1분으로 가장 빠른 리전 DR을 제공한다.
+해설: Multi-AZ는 같은 리전 내 AZ 장애만 견딘다 — 동기 복제라 리전을 넘으면 지연이 커져 같은 리전에만 둔다. 리전 전체 장애에 대비하려면 다른 리전에 비동기 복제 사본(Cross-Region Read Replica)이나 Aurora Global Database를 두고, Primary 리전 장애 시 Secondary를 promote해야 한다. Aurora Global DB는 RPO 수 초, RTO 수 분으로 가장 빠른 리전 DR을 제공한다.
 
 ---
 
 **문제 4.** 글로벌 사용자(아시아·미국·유럽)에게 가까운 리전에서 빠른 읽기를 제공하면서 리전 단위 DR도 필요하다. 가장 적합한 도구는?
 
 A) RDS Multi-AZ
-B) Aurora Global Database — 1 Primary + 최대 5 Secondary 리전, 스토리지 계층 복제로 RPO<1초·RTO<1분
+B) Aurora Global Database — 1 Primary + 최대 10 Secondary 리전, 스토리지 계층 복제로 RPO 수 초·RTO 수 분
 C) 단일 리전 Read Replica 여러 개
 D) DynamoDB Multi-AZ
 
 **정답: B**
 
-해설: Aurora Global Database는 Primary 리전의 변경을 전용 인프라로 최대 5개 Secondary 리전 스토리지에 복제해, 각 지역 사용자에게 가까운 리전에서 수십 ms 지연으로 읽기를 제공하고 동시에 리전 DR(promote 60초 이내)을 제공한다. 스토리지 계층 복제라 인스턴스 단위 복제(RDS Cross-Region RR)보다 지연과 RTO가 작다. 글로벌 읽기 + 리전 DR의 표준 답이다.
+해설: Aurora Global Database는 Primary 리전의 변경을 전용 인프라로 최대 10개 Secondary 리전 스토리지에 복제해, 각 지역 사용자에게 가까운 리전에서 수십 ms 지연으로 읽기를 제공하고 동시에 리전 DR(managed failover RTO는 수 분 수준)을 제공한다. 스토리지 계층 복제라 인스턴스 단위 복제(RDS Cross-Region RR)보다 지연과 RTO가 작다. 글로벌 읽기 + 리전 DR의 표준 답이다.
 
 ---
 

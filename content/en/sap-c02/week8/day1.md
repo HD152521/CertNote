@@ -1,4 +1,4 @@
-﻿# Day 1 - Lambda Advanced: Concurrency, Cold Starts, and SnapStart's Internal Operations
+# Day 1 - Lambda Advanced: Concurrency, Cold Starts, and SnapStart's Internal Operations
 
 When you first launch a Lambda function, everything feels magical. You upload code as a zip or point to a container image, and someone else automatically spins it up and scales it. But the moment traffic suddenly surges 10x in production, questions emerge: "Why did my response time jump from 50ms yesterday to 5 seconds today?" The answer is almost always one of three things: concurrency limits, cold starts, or VPC ENI exhaustion.
 

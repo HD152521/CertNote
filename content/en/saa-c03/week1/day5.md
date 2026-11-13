@@ -1,8 +1,8 @@
-# Day 5 - Week 1 Wrap-Up: Fundamentals and IAM Hardened Through Scenarios
+# Day 5 - Week 1 Review: Fundamentals and IAM, Hardened Through Scenarios
 
-Over the week, we swept from global infrastructure to multi-account governance. Even if you feel you know it all in your head, the SAA-C03 exam always transforms it into one-line scenarios. From the single sentence "data cannot leave headquarters," Outposts must come to mind; from "minimizing global latency for a TCP game server," Global Accelerator must pop out instantly. The exam isn't trying to filter out people who memorized keywords — it's trying to select people who can quickly judge "what is the essence of this scenario."
+Over one week we covered everything from global infrastructure to multi-account governance. Even if you feel like you know it all in your head, the SAA-C03 exam always asks by twisting it into a one-line scenario. From the single sentence "data can't leave headquarters," Outposts should come to mind, and from "minimize global latency for a TCP game server," Global Accelerator should pop out immediately. The exam isn't trying to filter out people who didn't memorize keywords; it's trying to select people who can quickly judge "what is the essence of this scenario."
 
-This article revisits Week 1 while etching the scenario keyword → solution mapping into your head. Not rote memorization — we'll trace "why that answer" one more time. The scenario mapping is also an area where reading it through once more the day before the exam clearly raises your passing margin. And in practice, this mapping becomes "the ability to review someone else's design before an incident happens" — every incident we saw in Week 1 (Capital One, us-east-1, the Tokyo AZ, SolarWinds, Travis CI) ultimately happened when someone confused the same mapping.
+This article is the time to review Week 1 and etch the scenario keyword → solution mapping into your head. It isn't simple memorization; we'll re-examine "why that's the answer" once more. Scenario mapping is also an area where reading it through once more the day before the exam clearly raises your odds of passing. And in practice, this mapping becomes the "ability to review a design someone else built before an incident happens" — every incident we saw in Week 1 (Capital One, us-east-1, the Tokyo AZ, SolarWinds, Travis CI) ultimately happened when someone confused the same mapping.
 
 ## Redrawing the Week 1 Picture
 
@@ -13,7 +13,7 @@ This article revisits Week 1 while etching the scenario keyword → solution map
        │                 │             └── DC
        │                 └── AZ ── DC
        ├── Edge Location (600+) ── CloudFront / R53 / GA / WAF
-       ├── Local Zone (30+) ── mini region
+       ├── Local Zone (30+) ── mini Region
        ├── Wavelength ── 5G edge
        └── Outposts ── customer DC
 
@@ -36,57 +36,55 @@ This article revisits Week 1 while etching the scenario keyword → solution map
    └─── StackSets (bulk deployment)
 ```
 
-These three areas are Week 1's conclusion, and it's accurate to see every service from Week 2 through Week 12 as layered on top of these three planes. Networking runs on top of AZs, security on top of IAM, and multi-account patterns on top of Organizations. And the intersection of these three planes — "who can do what to a resource in which AZ of which region of which account" — ultimately becomes the coordinate system of every SAA scenario.
+These three areas are the conclusion of Week 1, and it's accurate to say that every service from Week 2 to Week 12 sits on top of these three planes. Networking operates on top of AZs, security on top of IAM, and multi-account patterns on top of Organizations. And the intersection of these three planes — "who can do what to a resource in which Region and which AZ of which account" — ultimately becomes the coordinate system for every SAA scenario.
 
-> 💡 **Related theory**: This 3-layer model is actually a mapping of the classic 3 axes of distributed systems security — *Where* (location), *Who* (identity), *What* (resource) — onto cloud operations. In addition to the security triad NIST defined in 1985 (Confidentiality / Integrity / Availability), the three areas codified by NIST SP 800-53 in 2003 — Access Control (AC), Audit & Accountability (AU), and System and Communications Protection (SC) — match almost one-to-one. AC is implemented by IAM, AU by CloudTrail/Config, and SC by VPC/network controls.
+This 3-layer model is actually a mapping of the classic 3 axes of distributed-system security — *Where* (location), *Who* (identity), *What* (resource) — onto cloud operations. In addition to the three security elements NIST defined in 1985 (Confidentiality / Integrity / Availability), the three areas codified by NIST SP 800-53 in 2003 — Access Control (AC), Audit & Accountability (AU), and System and Communications Protection (SC) — match almost one-to-one. AC is implemented by IAM, AU by CloudTrail/Config, and SC by VPC/network controls.
 
-> 🔍 **Going deeper**: These 3 layers are reflected as-is in AWS's actual permission evaluation engines. AWS Zelkova (IAM formal verification) and Tiros (network formal verification) convert IAM/SCP policies and VPC routing, respectively, into SMT constraints to solve "is this request reachable." The 2018 USENIX Security paper "Semantic-based Automated Reasoning for AWS Access Policies" is Zelkova's foundation, and "Reachability Analysis for AWS-based Networks," published the same year, is Tiros's. Access Analyzer, Reachability Analyzer, and IAM Access Advisor all run on top of these.
+These 3 layers are also reflected as-is in AWS's actual permission evaluation engine. AWS Zelkova (formal verification of IAM) and Tiros (formal verification of networks) convert IAM/SCP policies and VPC routing into SMT constraints respectively to solve "is this request reachable." The 2018 USENIX Security paper "Semantic-based Automated Reasoning for AWS Access Policies" is the basis of Zelkova, and "Reachability Analysis for AWS-based Networks," presented the same year, is the basis of Tiros. Access Analyzer, Reachability Analyzer, and IAM Access Advisor all run on top of this.
 
 ## Scenario Keyword Mapping
 
-| Scenario Keyword | Answer Candidate | Reason |
+| Scenario keyword | Candidate answer | Reason |
 |---------------|----------|------|
-| "Keep data inside headquarters" + "use AWS APIs" | Outposts | AWS hardware inside customer DC |
-| "5G", "autonomous driving", "AR/VR" | Wavelength | Telecom edge |
-| "Post-production VFX", "users in cities like LA/Miami" | Local Zones | City-level mini regions |
+| "Keep data inside HQ" + "use AWS APIs" | Outposts | AWS hardware inside the customer DC |
+| "5G", "autonomous driving", "AR/VR" | Wavelength | Carrier edge |
+| "Post-production VFX", "users in LA/Miami" | Local Zones | City-level mini Region |
 | "TCP/UDP", "gaming", "VoIP" | Global Accelerator | L4 acceleration |
-| "HTTP static content caching" | CloudFront | L7 cache |
+| "HTTP static content caching" | CloudFront | L7 caching |
 | "DNS failover" | Route 53 | DNS routing |
 | "Multi-account", "Okta SSO" | IAM Identity Center | SAML/SCIM federation |
-| "Deploying to AWS from GitHub Actions" | OIDC federation | Short-lived tokens |
+| "Deploy to AWS from GitHub Actions" | OIDC federation | Short-lived tokens |
 | "External SaaS monitoring" | Cross-Account Role + External ID | Confused Deputy defense |
-| "Developers create Roles but broad permissions forbidden" | Permissions Boundary | Permission ceiling |
-| "Block a specific region across all accounts" | SCP | Account permission ceiling |
-| "Auto-apply baseline to new accounts" | Control Tower + StackSets | Automated Landing Zone |
+| "Developers create Roles but broad permissions are forbidden" | Permissions Boundary | Permission ceiling |
+| "Block a specific Region in all accounts" | SCP | Account permission ceiling |
+| "Automatically apply a baseline to new accounts" | Control Tower + StackSets | Automated Landing Zone |
 | "Share a VPC across multiple accounts" | AWS RAM | Resource sharing |
 | "Safe way for EC2 to access S3" | Instance Profile + IAM Role | Prevents key exposure |
 | "Enforce MFA" | Policy Condition `aws:MultiFactorAuthPresent` | IAM enforcement |
-| "Service stays up even if one AZ dies" | Multi-AZ ASG + ELB | HA pattern |
-| "1-second RPO even if a region dies" | Aurora Global Database | DR pattern |
-| "Data sovereignty + Korean FSS regulation" | Outposts / domestic region | Data location constraint |
+| "Service stays up if one AZ dies" | Multi-AZ ASG + ELB | HA pattern |
+| "1-second RPO even if a Region dies" | Aurora Global Database | DR pattern |
+| "Data sovereignty + Korean FSS regulation" | Outposts / domestic Region | Data location restriction |
 | "Grant AWS permissions while keeping the existing IdP" | IAM Identity Center + SAML | External IdP federation |
-| "Lambda accessing S3 in another account" | Cross-Account Role + Resource Policy | Both sides must Allow |
+| "Lambda accesses another account's S3" | Cross-Account Role + Resource Policy | Allow needed on both sides |
 | "AWS permissions for Active Directory users" | AD Trust + IAM Identity Center | Enterprise standard |
-| "Time-limited permissions for temporary staff" | Session Tag + Permissions Boundary | Auto-expiry + ceiling |
+| "Time-limited permissions for temporary staff" | Session Tag + Permissions Boundary | Automatic expiry + ceiling |
 | "Block unintended public exposure of S3 buckets" | Block Public Access (account + bucket, 4 settings) | Data leak prevention |
 
-This table reads through in 30 minutes the day before the exam, and after reviewing the same mapping 5+ times, candidate answers surface from the first line of a scenario in the exam room. The keyword → solution mapping best illustrates the SAA's nature as a "pattern recognition exam."
+This table can be read through in 30 minutes the day before the exam, and if you review the same mapping 5 or more times, candidate answers will come to mind from just the first line of a scenario in the exam room. The keyword → solution mapping best shows the "pattern-recognition exam" nature of SAA.
 
-> 💡 **Related theory**: This pattern-mapping approach is exactly the *Recognition-Primed Decision Making* (RPD, Gary Klein 1989) model from cognitive psychology. It's the mode of thinking where ER doctors, firefighters, and chess masters don't "compute every option like a novice," but go straight to "this situation is pattern X, so solution Y." AWS SAA, too, is ultimately an exam of classifying roughly 200 scenario patterns. Viewed through System 1 (intuition) and System 2 (analysis) from Daniel Kahneman's *Thinking, Fast and Slow* (2011), the most efficient flow for the SAA exam is patternizing System 1 to narrow candidates quickly, then verifying with System 2.
+> ⚠️ **Trap**: There are also many cases where the same keyword leads to different answers. Is "encryption" KMS or CloudHSM? For single-company use it's KMS; for FIPS 140-2 Level 3 regulation (FedRAMP High, some financial) it's CloudHSM. Is "DR" Multi-AZ or Cross-Region? AZ-level isolation is Multi-AZ; Region-level isolation is Cross-Region. Don't look only at keywords; look together at "what is the threat model of this scenario."
 
-> ⚠️ **Pitfall**: The same keyword often leads to different answers. Is "encryption" KMS or CloudHSM? Single-company use means KMS; FIPS 140-2 Level 3 regulation (FedRAMP High, some finance) means CloudHSM. Is "DR" Multi-AZ or Cross-Region? AZ-level isolation is Multi-AZ; region-level isolation is Cross-Region. Don't look at the keyword alone — also ask "what is this scenario's threat model."
+## CAP/PACELC and Mapping AWS Services
 
-## CAP/PACELC and the AWS Service Mapping
+SAA doesn't ask about this directly, but it's decisive for interpreting scenarios. If you don't know the trade-offs of distributed systems, you can't answer questions like "why can't this option give strong consistency." And this mapping is also used directly in practice when debugging "why did our service's global consistency break."
 
-SAA doesn't ask this directly, but it's decisive for interpreting scenarios. Without knowing distributed-systems trade-offs, you can't answer questions like "why can't this option provide strong consistency." And this mapping is used directly in practice when debugging "why did our service's global consistency break."
-
-| Service | Consistency Model | Position |
+| Service | Consistency model | Position |
 |--------|------------|------|
 | DynamoDB (default) | Eventually Consistent | AP |
-| DynamoDB (strong) | Strong Consistent (single region) | CP |
+| DynamoDB (strong) | Strong Consistent (single Region) | CP |
 | DynamoDB Global Table | Multi-Master, Last-Writer-Wins | AP |
 | Aurora (single region) | Strong | CP |
-| Aurora Global DB | Async replication | AP (cross-region) |
+| Aurora Global DB | Async replication | AP (across Regions) |
 | RDS Multi-AZ | Sync replication | CP |
 | S3 | Strong read-after-write (since 2020.12) | CP |
 | EFS | Strong (close-to-open) | CP |
@@ -94,235 +92,224 @@ SAA doesn't ask this directly, but it's decisive for interpreting scenarios. Wit
 | FSx for Lustre | Strong (POSIX) | CP |
 | Neptune | Strong (single writer) | CP |
 
-> 💡 **Related theory**: The CAP theorem (Brewer 2000, Gilbert & Lynch 2002) says that under a network partition, you must choose between Consistency and Availability. PACELC (Abadi 2012) adds that "even without a partition, there's a trade-off of Latency vs Consistency." Almost every AWS global service leans PA/EL (availability under partition, latency otherwise). S3 gaining strong read-after-write consistency in December 2020 was a big event in distributed systems history. Before then, new objects were visible immediately but updates/deletes were eventual, making it a staple SAA trap. Now every S3 operation is strongly consistent — though object metadata caching layers (CloudFront, ALB origin) remain eventual.
+DynamoDB's strong consistency is offered as an option only within a single Region (`ConsistentRead=true`), and Global Tables are always eventual. Global Table conflict resolution is based on **Last-Writer-Wins** (LWW), so data can be lost on concurrent writes. So if you need multi-master global writes, use a DynamoDB Global Table, but first weigh whether "timestamp conflicts are acceptable for the business." If you need stricter consistency, you need CRDTs (Conflict-free Replicated Data Types) or consensus algorithms based on Paxos/Raft, and AWS partly provides this through Aurora's quorum-based replication (6-way write across 3 AZs, with 4/6 read and 3/6 write quorums). The Aurora paper *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases* (SIGMOD 2017) is the essence of this architecture.
 
-> 🔍 **Going deeper**: DynamoDB's strong consistency is offered only as an option within a single region (`ConsistentRead=true`), and Global Tables are always eventual. Global Table conflict resolution is **Last-Writer-Wins** (LWW) based, so concurrent writes carry data-loss potential. So if you need multi-master global writes, use DynamoDB Global Tables but first ask "is timestamp conflict acceptable for the business." If stricter consistency is needed, you need CRDTs (Conflict-free Replicated Data Types) or Paxos/Raft-based consensus algorithms, which AWS partially provides through Aurora's quorum-based replication (6-way write across 3 AZs, 4/6 read, 3/6 write quorum). The Aurora paper *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases* (SIGMOD 2017) is the essence of this architecture.
+**Case**: In 2015, GitHub had its data consistency broken for 24 hours by a partition incident in its own MySQL cluster. A network partition occurred between two data centers, and each side judged itself to be the primary and accepted writes, a split-brain incident. In the post-incident report, GitHub stated explicitly, "when partitioned, we choose CP and give up availability." Cases like this show that CAP's trade-off isn't abstract theory but a decision operators face every day. AWS made the same decision in RDS Multi-AZ, which is why availability drops for about 60 seconds during failover.
 
-> 📚 **Case study**: In 2015, GitHub had data consistency broken for 24 hours in a partition incident of its own MySQL cluster. A network partition occurred between two data centers, and both sides decided they were the primary and accepted writes — a split-brain event. In the post-mortem report, GitHub stated explicitly: "under a partition, we choose CP and give up availability." Such cases show CAP trade-offs are not abstract theory but decisions operators face daily. AWS made the same decision with RDS Multi-AZ, which is why availability drops for about 60 seconds during failover.
+> ⚠️ **Trap**: It's wrong to assume that "Aurora is strongly consistent, so the global DB is too." Aurora Global Database uses **storage-level async replication** (typically 1-second RPO) and the secondary Region is read-only. If you want global writes, you have to use a DynamoDB Global Table, but then you must accept the conflict risk of LWW. Also, viewing it as "ElastiCache Redis Cluster Mode is async replication but guarantees availability via multi-AZ failover" is partially wrong too — writes that haven't been acked can be lost during failover.
 
-> ⚠️ **Pitfall**: Assuming "Aurora is strongly consistent, so its global DB is too" is wrong. Aurora Global Database is **storage-level async replication** (typically 1-second RPO) and secondary regions are read-only. If you want global writes you must use DynamoDB Global Tables, but that means accepting LWW's conflict risk. Also, viewing "ElastiCache Redis Cluster Mode as async replication but availability guaranteed via multi-AZ failover" is partially wrong — writes not yet acked can be lost during failover.
+## Reviewing the Shared Responsibility Model
 
-## The Shared Responsibility Model, Reorganized
+![The shared responsibility boundary, where customer responsibility grows as you move from fully managed to IaaS](/diagrams/shared-responsibility-4tier.svg)
 
-```
-       Abstraction ↑                              AWS responsibility ↑
-┌─────────────────────────────────────┐
-│ S3, DynamoDB, Lambda (fully managed)│ only data classification & IAM are the customer's
-│ RDS, Fargate (PaaS)                 │ + network settings are the customer's
-│ ECS on EC2, EKS Self-Managed        │ + OS patching is the customer's
-│ EC2 + EBS (IaaS)                    │ OS & apps entirely the customer's
-└─────────────────────────────────────┘
-       Abstraction ↓                              Customer responsibility ↑
-```
+The higher the service abstraction, the higher the responsibility boundary moves. **Even so, data classification, IAM, and encryption key management are always the customer's** — that's the key point. This principle is shown most clearly by the Capital One incident — AWS had fulfilled its responsibility for its own infrastructure, and the incident came from a WAF misconfiguration (SSRF), IMDSv1, and excessive IAM permissions in the customer's area.
 
-As service abstraction rises, the responsibility boundary moves up. **Yet data classification, IAM, and encryption key management are always the customer's** — that's the key point. The Capital One incident shows this principle most clearly — AWS fulfilled its infrastructure responsibility, and the incident arose in the customer's domain: IMDSv1 and excessive IAM permissions.
+**Case**: In June 2022, a Toyota subsidiary had an incident in which an access key was exposed in a public GitHub repository for 5 years. About 300,000 customers' data was put at risk, and the cause was a developer pushing credentials along with the code. AWS's responsibility was 0% — everything happened in the customer's area of responsibility. The standard post-incident recommendations are ① IAM Role + IRSA/Instance Profile instead of IAM User, ② if you must issue an Access Key, temporary credentials from IAM Identity Center, and ③ blocking commits with a Git pre-commit hook (git-secrets, truffleHog). The same pattern of incident repeated at Uber (2016), Imperva (2019), and Codecov (2021).
 
-> 📚 **Case study**: In June 2022, a Toyota subsidiary had an access key exposed in a public GitHub repository for 5 years. About 300,000 customers' data was put at risk, and the cause was a developer pushing credentials along with the code. AWS's responsibility: 0% — everything happened in the customer's responsibility area. The standard post-incident recommendations: ① IAM Roles + IRSA/Instance Profiles instead of IAM Users, ② if Access Keys must be issued, temporary credentials via IAM Identity Center, ③ block commits with Git pre-commit hooks (git-secrets, truffleHog). The same pattern of incident repeated at Uber (2016), Imperva (2019), and Codecov (2021).
+The shared responsibility model differs subtly from service to service. For RDS, DB engine patching (minor versions) is AWS's, while major version upgrades are the customer's choice. For Lambda, runtime patching is AWS's, while migration after a runtime EOL is the customer's (Node 14 → 18, etc.). For ECS Fargate, the container OS and runtime are AWS's, while patching OS packages inside the image is the customer's. These subtle differences are used as exam traps. AWS Trusted Advisor and AWS Security Hub's Foundational Security Best Practices (FSBP) automatically check these responsibility boundaries.
 
-> 🔍 **Going deeper**: The shared responsibility model differs subtly per service. For RDS, DB engine patches (minor versions) are AWS; major version upgrades are the customer's choice. For Lambda, runtime patches are AWS; migration after a runtime's EOL is the customer's (Node 14 → 18, etc.). For ECS Fargate, the container OS and runtime are AWS; patching OS packages inside the image is the customer's. These subtle differences appear frequently as exam traps. AWS Trusted Advisor and AWS Security Hub's Foundational Security Best Practices (FSBP) automatically check these responsibility boundaries.
-
-## The Policy Evaluation Decision Tree
+## Policy Evaluation Decision Tree
 
 ```
 Request → SCP(Org) → Resource Policy → Identity Policy → Permissions Boundary → Session Policy
-   Explicit Deny at any stage → immediate DENY
-   All stages passed → ALLOW
+   Explicit Deny at any stage → DENY immediately
+   Pass all stages → ALLOW
    No Allow anywhere → DENY (default)
 ```
 
-Same account = union, cross-account = intersection, KMS = explicit delegation in the Key Policy required. These three lines are the entirety of IAM evaluation logic. If an interviewer asks "explain AWS IAM evaluation logic in under a minute," these three lines are the answer.
+Same account = union, cross-account = intersection, KMS = Key Policy must explicitly delegate. These three lines are the whole of IAM evaluation logic. If you're asked in an interview to "explain AWS IAM evaluation logic in 1 minute," these three lines are the answer.
 
-> ⚠️ **Pitfall**: "Just Allow in the Resource Policy and cross-account works" is the most common wrong answer. Within the same account that's true, but cross-account, the caller account's Identity Policy must also Allow. A staple exam trap. And KMS is a class of its own — unless the Key Policy explicitly delegates to IAM (the "Enable IAM User Permissions" statement), even an Allow in an IAM policy can't use the KMS key. That's because KMS follows the model that "the key owner is the final authority."
+**Trap**: An answer choice saying "if only the Resource Policy allows, Cross-Account works" is wrong. That's true for the same account, but cross-account also requires an Allow in the caller account's Identity Policy. Also, KMS is a special case — unless the Key Policy explicitly delegates to IAM (the "Enable IAM User Permissions" statement), you can't use the KMS key even if an IAM policy grants Allow. This is because KMS follows the model that "the key owner is the final authority."
 
-> 🔍 **Going deeper**: Policy evaluation is actually decided by the intersection of 6 policy types — SCP, Resource Policy, Identity Policy, Permissions Boundary, Session Policy, and VPC Endpoint Policy. The "Policy Evaluation Logic" flowchart in AWS's official documentation is the most accurate reference. Which policy types are "Allow required vs optional" differs per scenario. One-line summary: **an explicit Deny is always final; an Allow must pass every boundary**.
+Policy evaluation is actually decided by the intersection of 6 policy types — SCP, Resource Policy, Identity Policy, Permissions Boundary, Session Policy, and VPC Endpoint Policy. The "Policy Evaluation Logic" flowchart in the official AWS docs is the most accurate reference. Whether an "Allow is required vs optional" for each policy type differs by scenario. One-line summary: **an explicit Deny is always final, and an Allow must pass every boundary**.
 
-> 💡 **Related theory**: This model is a hybrid of security theory's *Mandatory Access Control* (MAC) and *Discretionary Access Control* (DAC). SCPs and Permissions Boundaries are MAC (limits enforced by a higher authority); Identity/Resource Policies are DAC (freely configured by the owner). It resembles the multilevel security concept of the US military security standard, the *Bell-LaPadula Model* (1973). The reason AWS can solve policy evaluation with an SMT solver is precisely that this model has a formally verifiable structure.
+This model is a mix of the security theory's *Mandatory Access Control* (MAC) and *Discretionary Access Control* (DAC). SCPs and Permissions Boundaries are MAC (limits enforced by a higher authority), and Identity/Resource Policies are DAC (set freely by the owner). It's similar to the multilevel security concept of the US military security standard *Bell-LaPadula Model* (1973). AWS solving policy evaluation with an SMT solver is also because this model has a structure that can be formally verified.
 
-## The Standard Multi-Account Topology
+## Standard Multi-Account Topology
 
 | Account | Role |
 |------|------|
 | Management | Org management, billing. No workloads |
-| Log Archive | Central storage of CloudTrail/Config. WORM |
+| Log Archive | Central storage for CloudTrail/Config. WORM |
 | Audit/Security | Delegated administrator for GuardDuty, Security Hub |
-| Networking | Central VPC + Transit Gateway, shared via RAM |
+| Networking | Central VPC + Transit Gateway, RAM sharing |
 | Shared Services | Common tools (CI/CD, Artifactory, etc.) |
 | Prod | Production workloads |
-| Staging | Pre-production validation |
+| Staging | Pre-production verification |
 | Dev | Development workloads |
-| Sandbox | Personal experimentation. Cost/region enforced via SCP |
+| Sandbox | Personal experiments. Cost and Region strictly limited via SCP |
 
-This topology is explicitly specified as the recommended form in the AWS Security Reference Architecture (SRA) document. It's accurate to assume every large enterprise customer uses a variation of it. Look at public presentations from Netflix, Capital One, Airbnb, Slack, and others, and nearly the same pattern repeats.
+This topology is specified as a recommended form in the AWS Security Reference Architecture (SRA) documentation. It's accurate to say that every large enterprise customer uses a variation of this. If you look at the public presentations from Netflix, Capital One, Airbnb, Slack, and others, almost the same pattern repeats.
 
-> 📚 **Case study**: In 2019, the Netflix Tech Blog published its multi-account strategy, revealing that while operating more than 1,000 AWS accounts, it standardized an "Account per Workload" pattern splitting accounts finely by workload, team, and environment. The reasons: ① blast radius limitation, ② cost/tag automation, ③ IAM permission simplification. Spotify, Lyft, and Stripe adopted the same pattern, and this is the real-world model behind the topology SRA recommends. As of 2023, large companies typically operate 100~5,000 accounts, with the AWS Organizations limit (10,000 accounts/Org) as the de facto ceiling.
+**Case**: In 2019, the Netflix Tech Blog revealed its multi-account strategy, saying that while operating more than 1,000 AWS accounts it had standardized an "Account per Workload" pattern that splits accounts finely by workload, team, and environment. The reasons are ① limiting blast radius, ② cost and tag automation, and ③ simplifying IAM permissions. Spotify, Lyft, and Stripe adopted the same pattern, and this is the real-world model of the topology that SRA recommends. As of 2023, large companies typically operate 100 to 5,000 accounts, and the AWS Organizations limit (10,000 accounts per Org) is effectively the ceiling.
 
-> 🔍 **Going deeper**: The practical core of multi-account operations is two automations. ① Account provisioning automation — with Control Tower's Account Factory or Account Factory for Terraform (AFT), new account creation → baseline application → permission grants → notifications get tied into a GitOps flow. ② Automatic baseline deployment — CloudFormation StackSets' `SERVICE_MANAGED + auto-deployment=Enabled` option automatically pushes the security baseline (GuardDuty, Config Rules, IAM Password Policy, S3 BPA, etc.) into new accounts. Without these two automations, operating 100 accounts is humanly impossible.
+The practical core of multi-account operations is two automations. ① Account provisioning automation — with Control Tower's Account Factory or Account Factory for Terraform (AFT), creating a new account → applying the baseline → granting permissions → notification are tied into a GitOps flow. ② Automatic baseline deployment — with the `SERVICE_MANAGED + auto-deployment=Enabled` option of CloudFormation StackSets, a security baseline (GuardDuty, Config Rules, IAM Password Policy, S3 BPA, etc.) is automatically applied to new accounts. Without these two automations, operating 100 accounts is impossible for humans.
 
-## Frequently Confused Key Comparisons
+## Key Comparisons That Are Often Confused
 
 | Item | A | B | Difference |
 |------|---|---|------|
-| Local Zones | City mini regions like LA/Miami | Wavelength: telecom 5G edge | LZ is regular internet, WL is mobile 5G |
+| Local Zones | City mini Regions such as LA/Miami | Wavelength: carrier 5G edge | LZ is the regular internet, WL is mobile 5G |
 | CloudFront | L7 HTTP cache | Global Accelerator: L4 acceleration | HTTP means CF, TCP/UDP means GA |
-| IAM User | Permanent credentials | IAM Identity Center: temporary SSO | Multi-account/external IdP means IC |
-| ZoneName | Shuffled per account | ZoneId: identical regardless of account | Multi-account sync uses ZoneId |
-| Permissions Boundary | Identity permission ceiling | SCP: account permission ceiling | Different unit of application |
-| Cross-Region Read Replica | Async, manual promote | Aurora Global DB: async + fast failover (~1 min) | RPO/RTO difference |
-| CloudFront Functions | Edge PoP, 1ms constraint | Lambda@Edge: Regional Edge, heavier | Location/runtime difference |
-| KMS | Multi-tenant HSM | CloudHSM: dedicated HSM, FIPS 140-2 L3 | Regulatory strength |
-| STS AssumeRole | Regular cross-account | AssumeRoleWithWebIdentity: OIDC | External IdP federation |
-| Resource Policy Allow | Same-account sufficient | Cross-account: both must Allow | Evaluation logic |
+| IAM User | Permanent credentials | IAM Identity Center: temporary SSO | Multi-account / external IdP means IC |
+| ZoneName | Shuffled per account | ZoneId: identical regardless of account | Use ZoneId for multi-account sync |
+| Permissions Boundary | Identity permission ceiling | SCP: account permission ceiling | Different scope of application |
+| Cross-Region Read Replica | Async, manual promote | Aurora Global DB: Async + fast failover (on the order of minutes) | RPO/RTO difference |
+| CloudFront Functions | Edge PoP, 1 ms limit | Lambda@Edge: Regional Edge, heavier | Location/runtime difference |
+| KMS | Multi-tenant HSM | CloudHSM: dedicated HSM, FIPS 140-2 L3 | Regulatory strictness |
+| STS AssumeRole | General cross-account | AssumeRoleWithWebIdentity: OIDC | External IdP federation |
+| Resource Policy Allow | Same-account is enough | Cross-account: Allow needed on both sides | Evaluation logic |
 
-> ⚠️ **Pitfall**: ZoneName vs ZoneId rarely appears on the exam, but in practice it's decisive in security/cost scenarios asking about "using the same AZ as another account." CloudFront vs Global Accelerator is an exam staple; whenever the keywords "TCP/UDP," "gaming," "VoIP," "MQTT," or "WebRTC signaling" appear, it's unconditionally GA. CloudFront Functions vs Lambda@Edge follows the same comparison axis: "sub-millisecond responses" means Functions, "full Node.js/Python runtime" means Lambda@Edge.
+**Trap**: ZoneName vs ZoneId doesn't often appear on the exam, but in practice it's decisive in security/cost scenarios asking about "using the same AZ as another account." CloudFront vs Global Accelerator is a pair frequently compared on the exam, and if you see the keywords "TCP/UDP," "gaming," "VoIP," "MQTT," or "WebRTC signaling," it's always GA. CloudFront Functions vs Lambda@Edge is along the same comparison axis: "sub-millisecond-scale response" means Functions, and "full Node.js/Python runtime" means Lambda@Edge.
 
-> 🔍 **Going deeper**: When AWS provides the same capability via multiple services, the trade-off axis always differs. KMS vs CloudHSM is **abstraction vs isolation**, ALB vs NLB is **L7 features vs L4 throughput**, SQS vs SNS vs EventBridge is **point-to-point vs fanout vs schema-routing**. The SAA exam always requires identifying "which axis is the trade-off being asked on." Master this way of thinking, and even an unfamiliar new service can be mapped onto the same axes to narrow candidate answers.
+When AWS offers the same functionality through several services, the trade-off axis is always different. KMS vs CloudHSM is **abstraction vs isolation**, ALB vs NLB is **L7 features vs L4 throughput**, and SQS vs SNS vs EventBridge is **point-to-point vs fanout vs schema-routing**. On the SAA exam you must always identify "along which axis the trade-off is being asked." Once you master this way of thinking, you can map even an unfamiliar new service onto the same axes and narrow down candidate answers.
 
-## Wrapping Up
+## Wrap-Up
 
-Week 1 was about lodging "the coordinate system of the AWS universe" in your head. The Region/AZ/Edge isolation model, IAM's policy evaluation, multi-account governance. These three form the backdrop for every topic of the remaining 11 weeks. Next week we layer **networking** (VPC, subnets, routing) on top. Don't try to grasp everything at once; build the habit of reopening this table and mapping every time you solve a scenario question, and by exam eve the keyword → solution mapping will be lodged as an automatic reflex. And that automatic reflex is the core competency not just for passing the SAA, but of a senior engineer who "can sketch 3 solution candidates within a 30-minute meeting" in real-world design.
+Week 1 was the time to etch "the coordinate system of the AWS universe" into your head. The isolation model of Region/AZ/Edge, IAM's policy evaluation, and multi-account governance. These three become the backdrop for every topic in the remaining 11 weeks. Next week we'll layer **networking** (VPC, subnets, routing) on top of them. Don't try to understand it all at once; if you build the habit of reopening this table each time you solve a scenario question and doing the mapping, the keyword → solution mapping will be set as an automatic reflex right before the exam. And that automatic reflex is not only about passing SAA but also the core competency of a senior engineer in real-world design who "can sketch 3 candidate solutions within a 30-minute meeting."
 
 ---
 
-## 📝 Practice Questions
+## 📝 Comprehensive Practice Questions
 
-**Question 1.** A global game company wants to provide consistent TCP-based game server response times to users worldwide. What is the most suitable solution?
+**Question 1.** A global gaming company wants to provide consistent TCP-based game server response times to users around the world. What is the most suitable solution?
 
-A) CloudFront + Lambda@Edge — caches HTTP content at 600+ edge PoPs and even runs Node.js logic, but being L7 HTTP/HTTPS-only it can't accelerate the game's raw TCP sessions
+A) CloudFront + Lambda@Edge — Caches HTTP content at about 600 edge PoPs and even runs Node.js logic, but being L7 HTTP/HTTPS only, it cannot accelerate the game's raw TCP sessions
 B) Global Accelerator
-C) Route 53 Latency Routing — returns DNS answers pointing clients to the lowest-latency regional endpoint, but is bound by TTL caching and the actual packets ride the public internet as-is with no backbone acceleration
-D) ElastiCache Global Datastore — merely a cache layer replicating Redis data across regions in under 1 second, unrelated to routing game server TCP traffic
+C) Route 53 Latency Routing — Answers DNS with the lowest-latency Region endpoint for the client, but is bound by TTL caching and the actual packets still travel the public internet, so there is no backbone acceleration
+D) ElastiCache Global Datastore — It's just a cache layer that replicates Redis data across Regions in under 1 second, unrelated to routing game server TCP traffic
 
 **Answer: B**
-Explanation: For TCP/UDP, it's unconditionally L4 acceleration — Global Accelerator. CloudFront is HTTP L7 only; Route 53 only varies DNS answers with no traffic acceleration; ElastiCache is a cache service and irrelevant. Global Accelerator provides 2 static BGP Anycast IPs, so routing changes independently of DNS TTLs, and by traversing the backbone, packet loss and jitter also decrease. Empirically, a 30-60% reduction in global users' p99 latency is common.
+Explanation: For TCP/UDP, it's always Global Accelerator, the L4 accelerator. CloudFront handles only HTTP L7, and Route 53 only gives different DNS answers without accelerating traffic. ElastiCache is a caching service and unrelated. Global Accelerator provides 2 static BGP Anycast IPs, so routing changes regardless of DNS TTL, and because traffic goes through the backbone network, packet loss and jitter also drop. In measured results, it's common for global users' p99 latency to drop by 30-60%.
 
 ---
 
-**Question 2.** A financial company must keep some data inside headquarters under Korean Financial Supervisory Service regulations while operating with AWS APIs. What is the most suitable solution?
+**Question 2.** A financial company must keep some data inside its headquarters under Korean Financial Supervisory Service regulations while still operating through AWS APIs. What is the most suitable solution?
 
-A) Direct Connect only — connects headquarters and an AWS region with a low-latency dedicated line, but the data itself ends up stored in the AWS region, failing the "keep inside headquarters" regulatory requirement
-B) Local Zones — AWS-operated mini facilities in major cities providing low latency, but as AWS data centers rather than the customer's building, they're unsuitable for data sovereignty requirements
+A) Direct Connect only — Connects HQ and the AWS Region over a dedicated line with low latency, but the data itself is still stored in the AWS Region, so it doesn't satisfy the "keep inside HQ" regulatory requirement
+B) Local Zones — AWS-operated mini facilities placed in major cities that provide low latency, but they're AWS data centers rather than the customer's building, so they're unsuitable for data sovereignty requirements
 C) Outposts
-D) Snowball Edge — a one-off device for moving petabyte-scale data offline or short-term edge computing, unsuitable as an always-on AWS API operations platform
+D) Snowball Edge — A one-off device for moving petabytes of data offline or for short-term edge computing, so it's unsuitable as a platform for continuously operating via AWS APIs
 
 **Answer: C**
-Explanation: AWS hardware inside the customer's data center + the same APIs. The correct answer for regulatory scenarios like the Electronic Financial Supervision Regulation and GDPR Schrems II. Local Zones are AWS-operated facilities, Direct Connect is a dedicated line, Snowball Edge is for one-off data migration. Outposts is used for the nearly unique scenario where "my building + AWS APIs" are needed simultaneously — otherwise Direct Connect often suffices. On cost, Outposts tends to run 1.5~2x EC2 on a 3-year commitment, so it's rarely used for non-regulatory reasons.
+Explanation: AWS hardware inside the customer's data center + the same APIs. It's the answer for regulatory scenarios like the Electronic Financial Supervision Regulation and GDPR Schrems II. Local Zones are AWS-operated facilities, Direct Connect is a dedicated line, and Snowball Edge is for one-off data transfers. Outposts is for nearly the only scenario that needs "my building + AWS APIs" at the same time — otherwise Direct Connect is often enough. On cost, Outposts is about 1.5 to 2 times more expensive than EC2 on a 3-year commitment, so it's rarely used for reasons other than regulation.
 
 ---
 
-**Question 3.** A company wants to block use of all regions except us-east-1 across 50 AWS accounts. What is the most efficient method?
+**Question 3.** A company wants to block use of all Regions other than us-east-1 across 50 AWS accounts. What is the most efficient method?
 
-A) Add IAM policies per account — you'd have to attach the same policy to every user and role in 50 accounts one by one, management explodes, and every new identity risks omission, making it unfit for governance
-B) Organizations SCP with an `aws:RequestedRegion` condition Deny
-C) CloudTrail alerts — only detects and alerts on region usage after the fact via logs; it can't block the API calls themselves, so it isn't preventive
-D) Create VPCs only in us-east-1 — even without a VPC, region-scoped global services and services like S3/DynamoDB can still be called in other regions, so the block is incomplete
+A) Add an IAM policy to each account — The same policy must be attached one by one to every user and role in 50 accounts, so management explodes and the risk of omissions grows with every new identity, making it unsuitable for governance
+B) An Organizations SCP with a Deny on the `aws:RequestedRegion` condition
+C) CloudTrail alerts — They only detect and alert on Region usage after the fact via logs and cannot block the API calls themselves, so they are not preventive blocking
+D) Create VPCs only in us-east-1 — Even without a VPC, Region-level global services or services like S3 and DynamoDB can still be called as-is in other Regions, so the blocking is incomplete
 
 **Answer: B**
-Explanation: Multi-account permission ceiling = SCP. An `aws:RequestedRegion` Deny is the standard pattern. But the Management account is exempt from SCPs — hence no production workloads there. Also handle the subtle trap that global services (IAM, CloudFront, Route 53) show `aws:RequestedRegion` as `us-east-1`, requiring exceptions. And after applying the SCP, existing resources remain and only new API calls are blocked, so cleaning up existing resources in other regions is a separate task.
+Explanation: The multi-account permission ceiling = SCP. A Deny on `aws:RequestedRegion` is the standard pattern. But SCPs don't apply to the Management account, so you shouldn't put operational workloads there. You also need to handle the subtle trap that global services (IAM, CloudFront, Route 53) show `aws:RequestedRegion` as `us-east-1`, so exceptions are needed. Also, after an SCP is applied, existing resources remain as they are and only new API calls are blocked, so cleaning up existing resources in other Regions requires separate work.
 
 ---
 
-**Question 4.** What is the most secure way for EC2 to access S3?
+**Question 4.** What is the safest way for EC2 to access S3?
 
-A) Store the Access Key in ~/.aws/credentials — long-lived credentials sit in plaintext on disk, are stolen outright if the instance is compromised, and add a manual key rotation burden, making it dangerous
-B) Attach an IAM Role via an Instance Profile + IMDSv2
-C) Use a root Access Key — the top-level credential with unlimited account-wide permissions; exposure spreads damage account-wide, and AWS recommends absolutely never using it
-D) Allow S3 Public Read — lets anyone read objects without authentication, leading directly to data leaks, a setting in the exact opposite direction of EC2 access control
+A) Store an Access Key in ~/.aws/credentials — A long-term credential remains in plaintext on disk, gets stolen as-is if the instance is compromised, and adds the burden of manual key rotation, which is risky
+B) Attach an IAM Role as an Instance Profile + IMDSv2
+C) Use the root Access Key — It's the top-level credential with unlimited permissions over the whole account, so exposure spreads damage across the entire account, and AWS also recommends never using it
+D) Allow S3 Public Read — Lets anyone read objects without authentication, which leads directly to data leaks and is the opposite direction of EC2 access control
 
 **Answer: B**
-Explanation: Instance Profile + IMDSv2. The SDK automatically refreshes temporary credentials and SSRF is defended too. A risks key leakage, C is absolutely forbidden, D is data exposure. Recall that the direct cause of the Capital One incident was IMDSv1, and it becomes clear "why IMDSv2 must be stated explicitly." The more complete defense is the combination of enforcing `HttpTokens=required` + `HttpPutResponseHopLimit=1` in the EC2 Launch Template and blocking IMDSv1 calls via SCP.
+Explanation: Instance Profile + IMDSv2. The SDK automatically refreshes temporary credentials, and it also defends against SSRF. A risks key leakage, C is an absolute taboo, and D exposes data. If you recall that the direct cause of the Capital One incident was IMDSv1, it becomes clear "why IMDSv2 must be written explicitly." An even more thorough defense is the combination of enforcing `HttpTokens=required` + `HttpPutResponseHopLimit=1` in the EC2 Launch Template and blocking IMDSv1 calls with an SCP.
 
 ---
 
-**Question 5.** To eliminate key rotation burden when GitHub Actions deploys to AWS?
+**Question 5.** How do you remove the burden of key rotation when GitHub Actions deploys to AWS?
 
-A) Store an IAM User Access Key as a Secret — keeping a long-lived key in GitHub Secrets works, but the periodic manual rotation burden remains, and if leaked via logs it's stolen outright, carrying the same risk as the Travis CI breach
-B) Short-lived Role credentials via OIDC federation
-C) Spin up EC2 with SSH keys — every deployment requires managing separate EC2 and SSH keys, complicating operations, and the key itself becomes another long-lived secret that doesn't eliminate rotation burden
-D) Root credentials — exposing unlimited account-wide permissions to CI, a head-on violation of least privilege and the worst possible choice
+A) Store an IAM User Access Key as a Secret — Keeping a long-term key in GitHub Secrets works, but the burden of regular manual rotation remains and it carries the same risk as the Travis CI breach, where keys were stolen as-is when exposed in logs
+B) Role short-lived credentials via OIDC federation
+C) Launch an EC2 and use an SSH key — You have to manage a separate EC2 and SSH key for each deployment, which complicates operations, and the key itself becomes yet another long-term secret, so it doesn't eliminate the rotation burden
+D) root credentials — This exposes unlimited account-wide permissions to CI, a head-on violation of the least-privilege principle and the worst choice
 
 **Answer: B**
-Explanation: GitHub OIDC → STS AssumeRoleWithWebIdentity → short-lived tokens. Restrict by `sub` claim in the Trust Policy to repo and branch. The Travis CI breach was the decisive impetus for OIDC standardization. The same pattern is being extended to GitLab, Bitbucket, Buildkite, and others, so it's fair to call it the standard across CI now. For hardening, the orthodox move is locking the trust policy's `token.actions.githubusercontent.com:sub` claim down to the branch, like `repo:org/repo:ref:refs/heads/main`.
+Explanation: GitHub OIDC → STS AssumeRoleWithWebIdentity → short-lived token. Limit the repo and branch with the `sub` claim in the Trust Policy. The Travis CI breach was the decisive trigger for standardizing OIDC. The same pattern is being extended to GitLab, Bitbucket, Buildkite, and others, so it's fair to say it's now the standard across CI. For stronger security, the standard practice is to lock the `token.actions.githubusercontent.com:sub` claim in the trust policy down to the branch, like `repo:org/repo:ref:refs/heads/main`.
 
 ---
 
 **Question 6.** A SaaS collects CloudWatch logs from our AWS. What is needed for Confused Deputy defense?
 
 A) Cross-Account Role + External ID condition
-B) Grant an Access Key to an IAM User — handing a long-lived Access Key to the SaaS carries heavy leak/rotation burden and does nothing to solve the Confused Deputy problem itself
-C) S3 Public Read — opens the log bucket to anyone, a data-leak configuration that is the exact opposite of safe delegated collection
-D) VPN connection — provides only a network-layer tunnel, unrelated to the identity delegation and permission boundary problem when the SaaS borrows our account's role
+B) Give the IAM User an Access Key — Hands a long-term Access Key to the SaaS, which carries a heavy key-leak and rotation burden and does nothing at all to solve the Confused Deputy problem itself
+C) S3 Public Read — Opens the log bucket publicly so anyone can read it, a data-leak configuration that is the opposite of safe delegated collection
+D) VPN connection — Provides only a network-layer tunnel and is unrelated to the identity delegation and permission-boundary issues when the SaaS assumes a role in our account
 
 **Answer: A**
-Explanation: The External ID is a pre-shared secret that blocks other SaaS customers from borrowing our Role even if they know its ARN. A mandatory requirement of Marketplace ISV certification. Adding `aws:SourceAccount` or `aws:SourceArn` conditions on top of the External ID is safer still. According to AWS's 2022 review of "Confused Deputy" patterns, many ISVs had applied only the External ID and omitted SourceArn, leaving them partially vulnerable.
+Explanation: The External ID is a pre-shared secret that prevents other SaaS customers from assuming our Role even if they know its ARN. It's a required condition for Marketplace ISV certification. In addition to the External ID, it's safer to also apply the `aws:SourceAccount` or `aws:SourceArn` condition. According to AWS's 2022 review of the "Confused Deputy" pattern, many ISVs applied only the External ID and omitted SourceArn, leaving them partially vulnerable.
 
 ---
 
-**Question 7.** A company provisions 10 new AWS accounts every week and wants the same security baseline applied. What is the most suitable method?
+**Question 7.** A company issues 10 new AWS accounts every week and wants to apply the same security baseline to each. What is the most suitable method?
 
-A) Operators configure manually each time — a human must hand-apply the baseline to 10 accounts weekly, omissions and drift are inevitable, and operations collapse as scale grows
+A) An operator configures manually each time — A person has to apply the baseline by hand to 10 accounts every week, so omissions and drift are unavoidable, and operations collapse as scale grows
 B) Control Tower Account Factory + StackSets auto-deployment
-C) Run CloudFormation manually in each account — templates are consistent, but a person must run stacks and set up cross-account roles per new account, missing automatic propagation
-D) Run Terraform Apply each time — IaC standardizes things, but without a separate pipeline tying in account creation/registration, a manual trigger is needed every time, falling short of full automation
+C) Run CloudFormation manually in each account — The template is consistent, but a person must run the stack and set up cross-account roles for every new account, so automatic propagation is missing
+D) Run Terraform Apply each time — IaC provides standardization, but unless new account creation and registration are tied into a separate pipeline, a manual trigger is needed each time, falling short of full automation
 
 **Answer: B**
-Explanation: Control Tower auto-generates the standard Landing Zone, and StackSets `SERVICE_MANAGED + auto-deployment Enabled` auto-deploys the baseline to new accounts. Consistency without operator intervention. Larger organizations tie in a GitOps flow with Account Factory for Terraform (AFT). AFT receives new account requests as PRs, and on merge, Terraform Cloud handles account creation, baseline application, and SSO permission grants automatically.
+Explanation: Control Tower automatically creates a standard Landing Zone, and StackSets `SERVICE_MANAGED + auto-deployment Enabled` automatically deploys the baseline to new accounts. Consistency is maintained without operator intervention. Larger organizations tie in a GitOps flow with Account Factory for Terraform (AFT). AFT receives new account requests as PRs, and once merged, Terraform Cloud automatically handles account creation, baseline application, and even SSO permission assignment.
 
 ---
 
-**Question 8.** A company wants to let junior developers freely create IAM Roles but prevent creating AdministratorAccess-grade Roles. What is the most appropriate method?
+**Question 8.** A company wants to give new developers permission to create IAM Roles freely but prevent them from creating AdministratorAccess-level Roles. What is the most appropriate method?
 
-A) After-the-fact detection with CloudTrail — logging Role creation allows retroactive tracing, but it can't prevent overly permissive Roles from being created in the first place, so it isn't preventive control
-B) Specify a Permissions Boundary as a mandatory attachment condition in the policy
-C) Revoke all of the junior's permissions — this strips the Role creation ability itself, directly violating the requirement of "create freely but with only a ceiling"
-D) Use only Organizations SCPs — an account/OU-level ceiling whose granularity is too coarse to enforce different limits per individual Role within the same account, so it's unsuitable
+A) Detect after the fact with CloudTrail — Role creation is logged so it can be traced afterward, but it can't prevent an over-permissioned Role from being created in the first place, so it's not a preventive control
+B) Explicitly state a Permissions Boundary as a mandatory attachment condition in the policy
+C) Revoke all of the new hires' permissions — This takes away the permission to create Roles itself, which directly violates the requirement to "let them create freely but only set a ceiling"
+D) Use only an Organizations SCP — It's a ceiling at the account/OU level, so the granularity is too coarse to enforce a different limit per individual Role within the same account, making it unsuitable
 
 **Answer: B**
-Explanation: Enforce the `iam:PermissionsBoundary` condition on `iam:CreateRole` calls. The created Role's effective permissions are limited to the intersection with the Boundary. SCPs are a larger unit (account/OU), unsuitable for setting different limits per individual Role within the same account. This is the standard pattern for "delegating authority while preventing the delegatee from expanding it," and the core of AWS's official *Delegated Administrator* model.
+Explanation: Enforce the `iam:PermissionsBoundary` condition on `iam:CreateRole` calls. The effective permissions of a created Role are limited to the intersection with the Boundary. SCPs are a larger unit (account/OU), so they're unsuitable for setting a different limit for each individual Role within the same account. This is the standard pattern for "delegating permissions while preventing the delegate from expanding them," and it's the core of the *Delegated Administrator* model in the official AWS guidance.
 
 ---
 
-**Question 9.** EC2 goes down in one AZ due to a cooling failure. If the ASG is already configured multi-AZ?
+**Question 9.** EC2 goes down due to a cooling failure in one AZ. If the ASG is already configured as multi-AZ?
 
-A) All services down — a multi-AZ ASG replenishes instances in surviving AZs, so the premise that one AZ failure takes everything down contradicts HA design itself
-B) The ASG automatically replenishes instances in other AZs; service continues
-C) RDS Multi-AZ goes down too — RDS Multi-AZ has its standby in another AZ and fails over automatically within 30~60 seconds, so the claim that it goes down permanently alongside is wrong
-D) Manual failover required — ASG health checks and the ELB automatically replace unhealthy instances and redistribute, so no manual operator intervention is needed
+A) All services go down — The multi-AZ ASG replenishes instances in the surviving AZs, so the premise that a single AZ failure takes everything down itself contradicts HA design
+B) The ASG automatically replenishes instances in other AZs, and the service stays up
+C) RDS Multi-AZ also goes down — RDS Multi-AZ has its standby in another AZ and fails over automatically within 30 to 60 seconds, so saying it also goes down permanently is wrong
+D) Manual failover is required — ASG health checks and ELB automatically replace and redistribute unhealthy instances, so no manual operator intervention is needed
 
 **Answer: B**
-Explanation: The exact scenario of the 2019 Tokyo region incident. The ASG drops instances failing health checks and adds new instances in surviving AZs. RDS Multi-AZ fails over automatically to the standby within 30-60 seconds. But if EBS/EFS is pinned to one AZ, that part dies with it, so it's safer to use the EFS Multi-AZ Standard class or move storage toward S3/DynamoDB. ALB also has cross-zone load balancing enabled by default, so traffic automatically redistributes to other AZs.
+Explanation: This is exactly the scenario of the 2019 Tokyo Region incident. The ASG drops instances that fail health checks and adds new instances in the surviving AZs. RDS Multi-AZ automatically fails over to the standby within 30-60 seconds. However, if EBS or EFS is tied to a single AZ, that part dies too, so it's safer to set EFS to the Multi-AZ Standard class or move storage to S3/DynamoDB. ALB also has cross-zone load balancing enabled by default, so traffic is automatically redistributed to other AZs.
 
 ---
 
 **Question 10.** Which of the following is NOT AWS's responsibility?
 
-A) Hypervisor security — the virtualization layer including Nitro is the "security of the cloud" domain AWS designs, patches, and isolates, so it's entirely AWS's responsibility
+A) Hypervisor security — The virtualization layer such as Nitro is designed, patched, and isolated by AWS, in the "security of the cloud" area, so it's entirely AWS's responsibility
 B) Guest OS patching (EC2)
-C) Physical facility security — physical infrastructure like data center access control, power, and cooling is a hallmark AWS responsibility area handled exclusively by AWS
-D) Inter-AZ network encryption — backbone traffic linking AZs within a region has been automatically encrypted between Nitro instances since 2018, an AWS responsibility requiring no customer action
+C) Physical facility security — Physical infrastructure such as data center access control, power, and cooling is a representative area of responsibility handled exclusively by AWS
+D) Inter-AZ network encryption — Backbone traffic connecting AZs within a Region has been automatically encrypted between Nitro instances since 2018, so AWS is responsible and no customer work is needed
 
 **Answer: B**
-Explanation: EC2's guest OS is the customer's responsibility. Because of the IaaS abstraction level, everything above the OS is the customer's. Switch to Fargate and OS patching moves to AWS's responsibility. Move the same workload to Lambda and AWS takes responsibility up through the runtime — as abstraction rises, the responsibility boundary moves up. Note that D's inter-AZ traffic encryption has been applied automatically between Nitro instances since 2018, requiring no additional customer action.
+Explanation: The EC2 guest OS is the customer's responsibility. Because of the IaaS abstraction level, everything above the OS is the customer's. If you switch to Fargate, OS patching also shifts to AWS. If you move the same workload to Lambda, AWS takes responsibility through the runtime — the higher the abstraction, the higher the responsibility boundary moves. For reference, the inter-AZ traffic encryption in D has been applied automatically between Nitro instances since 2018, and customers don't need to do any additional work.
 
 ---
 
-**Question 11.** A system requires sub-1ms RPO per transaction and operates in only one region. RDS should be?
+**Question 11.** A system requires an RPO under 1 ms per transaction and operates only within a single Region. For RDS?
 
-A) Single-AZ Standard — with only one instance in a single AZ, there's no replication at all; an AZ failure means data loss until backup restore, failing the 1ms RPO
+A) Single-AZ Standard — With only one instance in a single AZ there's no replication at all, so an AZ failure causes data loss until a backup is restored, and a 1 ms RPO can't be guaranteed
 B) Multi-AZ Synchronous Replication
-C) Cross-Region Read Replica — inter-region asynchronous replication has lag in the seconds range, far exceeding a 1ms RPO, and it's overkill given the same-region-only requirement
-D) Aurora Global Database — inter-region storage-level async replication (~1 second RPO) risks losing the secondary region's tail, and it's excessive for a single-region-only scenario
+C) Cross-Region Read Replica — It's asynchronous cross-Region replication, so replication lag stretches to seconds, the RPO far exceeds 1 ms, and it's also an excessive setup for the single-Region condition
+D) Aurora Global Database — It's storage-level asynchronous cross-Region replication (about 1-second RPO), so there's a risk of loss in the secondary Region, and it's overkill for a scenario that requires only a single Region
 
 **Answer: B**
-Explanation: Same-region synchronous replication gives RPO ≈ 0. Commit acks within the 1-2ms inter-AZ latency. C is async with an RPO in seconds; D is inter-region async. It's also worth knowing that the RDS Multi-AZ standby receives no read traffic (unlike Aurora) — if read distribution is needed, launch a separate Read Replica. Aurora does 6-way replication within the same region automatically at the storage layer, so there's no separate Multi-AZ toggle.
+Explanation: Same-Region synchronous replication gives RPO ≈ 0. The commit ack happens within the 1-2 ms latency between AZs. C is async so the RPO is in seconds, and D is async across Regions. It's also good to know that the RDS Multi-AZ standby doesn't receive read traffic (unlike Aurora) — if you need read distribution, you must launch a Read Replica separately. Aurora does 6-way replication within the same Region automatically at the storage layer, so there's no separate Multi-AZ toggle.
 
 ---
 
-**Question 12.** A company within Organizations wants to share the central Networking account's VPC subnets with 30 other workload accounts. What is the most suitable solution?
+**Question 12.** A company wants to share the VPC subnets of a central Networking account with 30 other workload accounts within Organizations. What is the most suitable solution?
 
-A) VPC Peering 30 times — a point-to-point connection between the central VPC and each of 30 accounts; it's not sharing subnets but connecting separate-CIDR VPCs, differing from the requirement and carrying non-transitive constraints
-B) Share subnets via AWS RAM
-C) Transit Gateway only — merely a routing hub between VPCs, with each account still operating an independent VPC, failing the requirement of "directly sharing the central VPC's subnets"
-D) Direct Connect — a dedicated-line service connecting on-premises and AWS, entirely unrelated to a cross-account VPC subnet sharing scenario
+A) VPC Peering 30 times — It connects the central VPC to 30 accounts point-to-point, which isn't sharing subnets but connecting separate-CIDR VPCs, so it differs from the requirement and also comes with the non-transitive constraint
+B) Share subnets with AWS RAM
+C) Transit Gateway only — It's merely a routing hub between VPCs and each account must still operate its own independent VPC, so it doesn't satisfy the requirement to "directly share the central VPC's subnets"
+D) Direct Connect — It's a dedicated-line service connecting on-premises and AWS, so it has nothing to do with the scenario of sharing VPC subnets across accounts
 
 **Answer: B**
-Explanation: Share subnets via RAM → the receiving accounts can create ENIs/EC2 but can't touch routing or NACLs. A clean separation of network design and workload operations. Peering is point-to-point; TGW is a routing hub, a complement. In real operations, the combination of RAM (subnet sharing) + Transit Gateway (inter-VPC routing hub) is used together most often. RAM applies only within the same Organization (enabling "Resource Sharing Outside Organization" allows external accounts too, but for security reasons it's almost never used).
+Explanation: Share the subnets with RAM → the receiving accounts can create ENIs/EC2 but can't touch routing or NACLs. A clean separation of network design from workload operations. Peering is point-to-point, and TGW is a routing hub, so they're complementary. In real operations, the most common setup is using RAM (subnet sharing) + Transit Gateway (inter-VPC routing hub) together. RAM only applies within the same Organization (enabling Resource Sharing Outside Organization allows external accounts too, but it's almost never used for security reasons).
