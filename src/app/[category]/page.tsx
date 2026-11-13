@@ -147,7 +147,7 @@ export default async function CategoryHubPage({ params }: PageProps) {
       {groups.map(({ level, items }) => (
         <section key={level} className="space-y-3">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold">{certLevelLabel(level, section)}</h2>
+            <h2 className="text-lg font-semibold">{certLevelLabel(level, section, lang)}</h2>
             <p className="text-sm text-fg-muted">{levelHint[level]}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

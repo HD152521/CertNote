@@ -56,10 +56,12 @@ describe('hreflang 상호 참조 — 자격증 허브(/aws/saa-c03 ↔ /en/saa-c
     expect(ko.alternates?.languages).toEqual({ ko: '/aws/saa-c03', en: '/en/saa-c03' });
   });
 
-  test('영어판이 없는 자격증(linux-master-1)은 깨진 hreflang을 만들지 않는다', async () => {
-    const meta = await generateCertMetadata({ params: Promise.resolve({ category: 'linux', slug: 'linux-master-1' }) });
-    expect(meta.alternates?.canonical).toBe('/linux/linux-master-1');
-    expect(meta.alternates?.languages).toBeUndefined();
+  test('영어판이 있는 리눅스마스터(linux-master-1)는 /linux ↔ /en 으로 상호 참조한다', async () => {
+    const ko = await generateCertMetadata({ params: Promise.resolve({ category: 'linux', slug: 'linux-master-1' }) });
+    const en = await generateCertMetadata({ params: Promise.resolve({ category: 'en', slug: 'linux-master-1' }) });
+    expect(ko.alternates?.canonical).toBe('/linux/linux-master-1');
+    expect(ko.alternates?.languages).toEqual(en.alternates?.languages);
+    expect(ko.alternates?.languages).toEqual({ ko: '/linux/linux-master-1', en: '/en/linux-master-1' });
   });
 });
 
@@ -79,10 +81,17 @@ describe('hreflang 상호 참조 — day 페이지(week1, 무료)', () => {
     });
   });
 
-  test('linux-master-1(영어판 없음)의 무료 주차는 hreflang을 선언하지 않는다', async () => {
-    const meta = await generateDayMetadata({
+  test('linux-master-1 의 무료 주차도 /linux ↔ /en 으로 상호 참조한다', async () => {
+    const ko = await generateDayMetadata({
       params: Promise.resolve({ category: 'linux', slug: 'linux-master-1', week: 'week1', day: 'day1' }),
     });
-    expect(meta.alternates?.languages).toBeUndefined();
+    const en = await generateDayMetadata({
+      params: Promise.resolve({ category: 'en', slug: 'linux-master-1', week: 'week1', day: 'day1' }),
+    });
+    expect(ko.alternates?.languages).toEqual(en.alternates?.languages);
+    expect(ko.alternates?.languages).toEqual({
+      ko: '/linux/linux-master-1/week1/day1',
+      en: '/en/linux-master-1/week1/day1',
+    });
   });
 });

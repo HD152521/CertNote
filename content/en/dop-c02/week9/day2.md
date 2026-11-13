@@ -175,7 +175,6 @@ In the next post we move on to AppConfig. If everything so far was about "enforc
 
 ## 📝 Practice Questions
 
-(All practice problems in Korean as required by rules)
 
 **Question 1.** An ASG launches and terminates instances constantly. A security agent must always be installed on every instance and must be automatically restored if anyone removes it. What is an approach other than AMI baking?
 

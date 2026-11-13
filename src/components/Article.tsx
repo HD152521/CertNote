@@ -47,20 +47,20 @@ function isSelfContained(sql: string): boolean {
   return used.every((t) => BASE_TABLES.has(t) || created.has(t) || ['SELECT', 'SET', 'DUAL', 'USER_TABLES', 'USER_CONSTRAINTS', 'USER_TAB_COLUMNS', 'USER_CONS_COLUMNS', 'USER_VIEWS'].includes(t));
 }
 
-const sqlComponents = {
+const sqlComponentsFor = (lang: 'ko' | 'en') => ({
   ...baseComponents,
   figure: ({ 'data-sql': sql, ...props }: FigureProps) =>
     sql && isRunnableSql(sql) && (/^\s*(?:--[^\n]*\n\s*)*(SELECT|WITH|\()/i.test(sql) || isSelfContained(sql)) ? (
-      <SqlRunBlock sql={sql}>
+      <SqlRunBlock sql={sql} lang={lang}>
         <figure {...props} />
       </SqlRunBlock>
     ) : (
       <figure {...props} />
     ),
-};
+});
 
 export function Article({ source, slug, week, day, lang = 'ko' }: ArticleProps) {
-  const mdxComponents = SQL_RUNNABLE_SLUGS.has(slug) ? sqlComponents : baseComponents;
+  const mdxComponents = SQL_RUNNABLE_SLUGS.has(slug) ? sqlComponentsFor(lang) : baseComponents;
   const { before, questions, after } = parseQuiz(source);
   if (questions.length === 0) {
     return (<div className="article"><MDXRemote source={source} options={mdxOptions} components={mdxComponents} /></div>);

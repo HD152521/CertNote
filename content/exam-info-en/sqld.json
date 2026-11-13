@@ -1,4 +1,13 @@
 {
+  "passingCriteria": "Total score of 60 or higher (automatic fail if any subject is below 40%)",
+  "phases": [
+    {
+      "name": "Written exam",
+      "questionCount": "50 questions (Subject 1: 10 · Subject 2: 40)",
+      "format": "Multiple choice, 2 points per question",
+      "eligibility": "No restrictions"
+    }
+  ],
   "difficulty": "Entry to intermediate · Even first-time SQL learners can prepare in 8 weeks",
   "prerequisites": "There are no eligibility requirements to take the exam.",
   "languages": [
