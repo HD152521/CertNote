@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { SUPPORTED_CATEGORIES } from '@/lib/category';
+import { EN_CATEGORY, SUPPORTED_CATEGORIES } from '@/lib/category';
 import { dynamicParams, generateStaticParams } from './page';
 
 // docs/SEO-indexing-fix-plan.md Step7-A-1 — 자격증 slug 소프트 404(/foo/bar류) 가드 테스트.
@@ -19,17 +19,19 @@ describe('[category]/[slug]/page — dynamicParams 가드', () => {
     ).toBe(false);
   });
 
-  test('generateStaticParams는 ko(aws-certs)·en 양쪽 카테고리의 slug를 모두 포함한다', async () => {
+  // en 은 일부러 뺀다 — /en/<slug> 는 (en) 루트 그룹의 app/(en)/en/[slug]/page.tsx(<html lang="en">)가
+  // 서빙한다. 여기서도 만들면 같은 경로가 (ko) 루트(lang="ko")로 이중 생성된다.
+  test('generateStaticParams는 한국어 섹션 카테고리의 slug를 모두 포함하고 en 은 포함하지 않는다', async () => {
     const params = await generateStaticParams();
     expect(params.length).toBeGreaterThan(0);
 
     const categoriesPresent = new Set(params.map((p) => p.category));
-    for (const category of SUPPORTED_CATEGORIES) {
+    expect(categoriesPresent).not.toContain(EN_CATEGORY);
+    for (const category of SUPPORTED_CATEGORIES.filter((c) => c !== EN_CATEGORY)) {
       expect(
         categoriesPresent,
         `${category}가 generateStaticParams에 없으면 dynamicParams=false 때문에 그 카테고리의 ` +
-          '모든 /<category>/<slug> 허브가 항상 404가 난다(en 허브도 이 라우트가 서빙 — ' +
-          'src/app/en/page.tsx는 /en 자체만 처리).',
+          '모든 /<category>/<slug> 허브가 항상 404가 난다.',
       ).toContain(category);
     }
   });

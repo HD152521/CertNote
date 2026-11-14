@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { SUPPORTED_CATEGORIES } from '@/lib/category';
+import { EN_CATEGORY, SUPPORTED_CATEGORIES } from '@/lib/category';
 import { dynamicParams, generateStaticParams } from './page';
 
 // docs/SEO-indexing-fix-plan.md Step6 — 소프트 404 수정 가드 테스트.
@@ -18,10 +18,13 @@ describe('[category]/page — dynamicParams 가드', () => {
     ).toBe(false);
   });
 
-  test('generateStaticParams는 SUPPORTED_CATEGORIES 전부를 포함한다 — 하나라도 빠지면 그 카테고리가 항상 404', async () => {
+  // en 은 일부러 뺀다 — /en 은 (en) 루트 그룹의 정적 라우트(app/(en)/en/page.tsx, <html lang="en">)가 서빙한다.
+  // 여기서도 만들면 같은 경로가 (ko) 루트(lang="ko")로 이중 생성된다.
+  test('generateStaticParams는 SUPPORTED_CATEGORIES 중 en 을 뺀 전부를 포함한다 — 하나라도 빠지면 그 카테고리가 항상 404', async () => {
     const params = await generateStaticParams();
     const categories = params.map((p) => p.category);
-    for (const category of SUPPORTED_CATEGORIES) {
+    expect(categories).not.toContain(EN_CATEGORY);
+    for (const category of SUPPORTED_CATEGORIES.filter((c) => c !== EN_CATEGORY)) {
       expect(categories, `${category}가 generateStaticParams에 없으면 dynamicParams=false 때문에 항상 404가 난다`).toContain(category);
     }
   });

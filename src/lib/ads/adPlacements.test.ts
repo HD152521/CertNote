@@ -117,6 +117,6 @@ describe('AdSlot 배치 위치', () => {
       }
     }
 
-    expect(importers.sort()).toEqual(['app/[category]/[slug]/page.tsx', 'components/day/DayView.tsx']);
+    expect(importers.sort()).toEqual(['app/(ko)/[category]/[slug]/page.tsx', 'components/day/DayView.tsx']);
   });
 });

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SITE_NAME } from '@/lib/site';
 import { infoAlternates } from '@/lib/infoAlternates';
-import { PrivacyContent } from '@/app/privacy/PrivacyContent';
+import { PrivacyContent } from '@/app/(ko)/privacy/PrivacyContent';
 
 const TITLE = 'Privacy Policy';
 const DESCRIPTION = `The personal information ${SITE_NAME} collects, why we use it, how long we keep it, and your rights.`;

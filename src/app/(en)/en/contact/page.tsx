@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { infoAlternates } from '@/lib/infoAlternates';
-import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
+import { CONTACT_EMAIL, OPERATOR_NAME_EN, SITE_NAME } from '@/lib/site';
 
 const TITLE = 'Contact';
 const DESCRIPTION = `How to reach ${SITE_NAME} for questions about the service, content error reports, and privacy or copyright requests.`;
@@ -19,7 +19,7 @@ export default function EnContactPage() {
     <LegalPage lang="en" title="Contact">
       <LegalSection title="Contact details">
         <p>
-          Operator: {OPERATOR_NAME} (Jugan Labs)
+          Operator: {OPERATOR_NAME_EN}
           <br />
           Email:{' '}
           <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-4 hover:text-fg">{CONTACT_EMAIL}</a>

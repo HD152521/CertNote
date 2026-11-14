@@ -4,6 +4,8 @@
 export const SITE_URL = (process.env.APP_URL ?? 'https://cert.juganlab.com').replace(/\/$/, '');
 export const SITE_NAME = 'CertNote';
 export const SITE_TAGLINE = 'AWS 자격증 · 클라우드 네이티브 학습';
+// 영어 페이지((en) 루트)의 기본 제목에 쓰는 영문 태그라인.
+export const SITE_TAGLINE_EN = 'AWS, SQLD & Linux Master certification study notes';
 
 // 마크다운 본문에서 검색 결과용 요약문(meta description)을 뽑는다.
 export function excerptOf(markdown: string, max = 155): string {
@@ -22,4 +24,6 @@ export function excerptOf(markdown: string, max = 155): string {
 
 // 운영 주체·문의처. 푸터·소개·문의·약관·개인정보처리방침이 공유한다.
 export const OPERATOR_NAME = '주간랩스';
+// 영어 페이지용 운영 주체 표기. 영어 정보 페이지·푸터는 한글 병기 없이 이 이름만 쓴다.
+export const OPERATOR_NAME_EN = 'Jugan Labs';
 export const CONTACT_EMAIL = 'wkdrndydtlr@gmail.com';

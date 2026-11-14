@@ -37,6 +37,17 @@
 Out of scope: 한국어 페이지의 동작 변경.
 인수 기준: `/en/*` 전체 HTML에서 `<html lang="en">`, 한국어 페이지는 `ko` 유지, hydration 경고 없음, 기존 `HtmlLangSync` 동작과 충돌하지 않는다.
 
+**Result (2026-11-15, 라우트 그룹 2개 = 루트 레이아웃 2개)**
+
+- 방식: `src/app/(ko)/**`(기존 전부)와 `src/app/(en)/en/**`가 각자 루트 레이아웃(`(ko)/layout.tsx`→`lang="ko"`, `(en)/layout.tsx`→`lang="en"`)을 가진다. 공통 뼈대는 `src/components/RootDocument.tsx`, 글꼴·metadata는 `src/lib/rootFonts.ts`·`rootMetadata.ts`. `src/app/layout.tsx`는 없다.
+- 요청 헤더 방식(headers())은 레이아웃이 동적 API를 읽어 전 페이지가 동적 렌더로 떨어지므로 채택하지 않았다(`next build` 라우트 표 전후 비교: ○/● → ƒ 전환 0건).
+- `/en/<slug>`는 이전에 `[category]/[slug]`(category=en)가 서빙했으나 그 라우트는 (ko) 그룹이라 `(en)/en/[slug]/page.tsx`(+`opengraph-image.tsx`) 어댑터를 추가하고, `[category]`·`[category]/[slug]`의 generateStaticParams에서 en을 뺐다(이중 생성 방지).
+- 트레이드오프: (ko)↔(en) 이동은 전체 페이지 로드(언어 전환 링크 한정). 404 응답(`global-not-found`)은 단일 전역 페이지라 `/en/없는경로`도 `lang="ko"`로 남는다(noindex). 파일이 한 단계 아래로 이동해 sitemap lastmod 근거 경로(`sitemap.ts`, `build-content-manifest.mjs`, `content-manifest.json` 키)를 함께 고쳤고, 파일 이동 직후 첫 매니페스트 재생성에서 해당 페이지 lastmod가 이동 커밋 시각으로 갱신될 수 있다.
+
+**Step 4 Result (2026-11-15)**
+
+푸터 운영자 표기는 영어에서 `Jugan Labs`(`OPERATOR_NAME_EN`), 한국어는 `주간랩스`. `/en/about`·`/en/contact`·`/en/terms`도 `OPERATOR_NAME_EN`만 쓴다. `/en/privacy` 본문의 `Jugan Labs (주간랩스)` 병기는 법적 식별용이라 그대로 둔다.
+
 ## Step 4 — 영어 페이지 푸터 브랜드명
 
 푸터의 "주간랩스"가 영어 페이지에도 한글로 남는다. 영어 경로에서는 영문 표기(예: Jugan Labs)로 바꾼다. 영어 정보 페이지의 운영자 표기와 맞춘다.

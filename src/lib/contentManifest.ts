@@ -17,22 +17,25 @@ interface ContentManifestFile {
 
 // 모듈 단위로 1회만 읽는다 — 매니페스트는 빌드 산출물(정적 커밋 파일)이라 요청마다 다시 읽을
 // 이유가 없다(콘텐츠 캐시와 동일한 이유, content.ts의 CONTENT_CACHE 주석 참고).
-let manifestFiles: Record<string, string> | undefined;
-let manifestLoaded = false;
+// 읽기 "결과"가 아니라 읽기 "프로미스"를 메모한다 — 플래그만 먼저 세우면 첫 읽기가 끝나기 전에 들어온
+// 동시 렌더가 아직 비어 있는 값(undefined)을 받아 dateModified 를 잃는다(빌드 중 일부 day 페이지 누락 실측).
+let manifestPromise: Promise<Record<string, string> | undefined> | undefined;
 
-async function loadManifestFiles(): Promise<Record<string, string> | undefined> {
-  if (manifestLoaded) return manifestFiles;
-  manifestLoaded = true;
+async function readManifestFiles(): Promise<Record<string, string> | undefined> {
   try {
     const raw = await fs.readFile(MANIFEST_PATH, 'utf8');
     const parsed = JSON.parse(raw) as ContentManifestFile;
-    manifestFiles = parsed.files;
+    return parsed.files;
   } catch {
     // 매니페스트가 아직 생성되지 않았거나(로컬 최초 클론) 손상된 경우. 조용히 undefined —
     // 호출부가 lastModified/dateModified를 생략하는 안전한 폴백으로 이어진다(가짜 날짜 금지).
-    manifestFiles = undefined;
+    return undefined;
   }
-  return manifestFiles;
+}
+
+function loadManifestFiles(): Promise<Record<string, string> | undefined> {
+  manifestPromise ??= readManifestFiles();
+  return manifestPromise;
 }
 
 /**

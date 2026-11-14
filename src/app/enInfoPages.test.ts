@@ -11,33 +11,34 @@ import { classifyPath } from '@/lib/proxyRouting';
 import { SITE_URL, OPERATOR_NAME } from '@/lib/site';
 import sitemap from './sitemap';
 
-import EnAboutPage, { metadata as enAboutMeta } from './en/about/page';
-import EnHowWeMakePage, { metadata as enHowMeta } from './en/about/how-we-make/page';
-import EnContactPage, { metadata as enContactMeta } from './en/contact/page';
-import EnTermsPage, { metadata as enTermsMeta } from './en/terms/page';
-import EnChangelogPage, { metadata as enChangelogMeta } from './en/changelog/page';
-import EnRoadmapHubPage, { metadata as enRoadmapMeta } from './en/roadmap/page';
-import EnRoadmapRolePage, { generateMetadata as enRoleMeta } from './en/roadmap/[role]/page';
-import { metadata as enPrivacyMeta } from './en/privacy/page';
-import { metadata as enLabMeta } from './en/lab/page';
-import { generateMetadata as enLabIdMeta } from './en/lab/[id]/page';
-import { metadata as koLabMeta } from './lab/page';
-import { generateMetadata as koLabIdMeta } from './lab/[id]/page';
+import EnAboutPage, { metadata as enAboutMeta } from './(en)/en/about/page';
+import EnHowWeMakePage, { metadata as enHowMeta } from './(en)/en/about/how-we-make/page';
+import EnContactPage, { metadata as enContactMeta } from './(en)/en/contact/page';
+import EnTermsPage, { metadata as enTermsMeta } from './(en)/en/terms/page';
+import EnChangelogPage, { metadata as enChangelogMeta } from './(en)/en/changelog/page';
+import EnRoadmapHubPage, { metadata as enRoadmapMeta } from './(en)/en/roadmap/page';
+import EnRoadmapRolePage, { generateMetadata as enRoleMeta } from './(en)/en/roadmap/[role]/page';
+import { metadata as enPrivacyMeta } from './(en)/en/privacy/page';
+import { metadata as enLabMeta } from './(en)/en/lab/page';
+import { generateMetadata as enLabIdMeta } from './(en)/en/lab/[id]/page';
+import { metadata as koLabMeta } from './(ko)/lab/page';
+import { generateMetadata as koLabIdMeta } from './(ko)/lab/[id]/page';
 import { LAB_CATALOG } from '@/lib/labCatalog';
 
-import { metadata as koAboutMeta } from './about/page';
-import { metadata as koHowMeta } from './about/how-we-make/page';
-import { metadata as koContactMeta } from './contact/page';
-import { metadata as koTermsMeta } from './terms/page';
-import { metadata as koChangelogMeta } from './changelog/page';
-import { metadata as koRoadmapMeta } from './roadmap/page';
-import { generateMetadata as koRoleMeta } from './roadmap/[role]/page';
-import { metadata as koPrivacyMeta } from './privacy/page';
+import { metadata as koAboutMeta } from './(ko)/about/page';
+import { metadata as koHowMeta } from './(ko)/about/how-we-make/page';
+import { metadata as koContactMeta } from './(ko)/contact/page';
+import { metadata as koTermsMeta } from './(ko)/terms/page';
+import { metadata as koChangelogMeta } from './(ko)/changelog/page';
+import { metadata as koRoadmapMeta } from './(ko)/roadmap/page';
+import { generateMetadata as koRoleMeta } from './(ko)/roadmap/[role]/page';
+import { metadata as koPrivacyMeta } from './(ko)/privacy/page';
 
 const HANGUL = /[ㄱ-ㆎ가-힣]/;
-// 운영자명은 허용된 한글.
-const stripAllowed = (s: string) => s.split(OPERATOR_NAME).join('');
-const hasHangul = (s: string) => HANGUL.test(stripAllowed(s));
+// 영어 페이지는 운영자도 영문(OPERATOR_NAME_EN)으로만 적는다 — 한글 0자. 단 개인정보처리방침 본문은 법적 식별을 위해
+// 한글 상호를 괄호로 병기하므로(privacyStrings.en) 그 한 가지만 허용 목록으로 걷어낸다.
+const hasHangul = (s: string) => HANGUL.test(s);
+const hasHangulExceptLegalName = (s: string) => HANGUL.test(s.split(OPERATOR_NAME).join(''));
 const metaText = (m: Metadata) => JSON.stringify({ title: m.title, description: m.description, og: m.openGraph });
 
 const EN_PAGES: Array<[string, () => Promise<string> | string, Metadata]> = [
@@ -49,7 +50,7 @@ const EN_PAGES: Array<[string, () => Promise<string> | string, Metadata]> = [
   ['/en/roadmap', async () => renderToStaticMarkup(await EnRoadmapHubPage()), enRoadmapMeta],
 ];
 
-describe('영어 정보 페이지 — 본문·메타데이터에 한글이 없다(주간랩스 제외)', () => {
+describe('영어 정보 페이지 — 본문·메타데이터에 한글이 없다(운영자명 포함)', () => {
   test.each(EN_PAGES)('%s', async (path, render, meta) => {
     const html = await render();
     expect(html.length).toBeGreaterThan(500);
@@ -68,7 +69,7 @@ describe('영어 정보 페이지 — 본문·메타데이터에 한글이 없�
 
   test('/en/privacy — 메타데이터와 영어 문구에 한글이 없다', () => {
     expect(hasHangul(metaText(enPrivacyMeta))).toBe(false);
-    expect(hasHangul(Object.values(privacyStrings.en).join('\n'))).toBe(false);
+    expect(hasHangulExceptLegalName(Object.values(privacyStrings.en).join('\n'))).toBe(false);
   });
 });
 

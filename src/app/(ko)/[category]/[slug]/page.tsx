@@ -20,6 +20,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
 import { AdSlot } from '@/components/ads/AdSlot';
 import { resolveAdPlacement } from '@/lib/ads/adPlacements';
+import { certOgImage } from '@/lib/ogImages';
 
 // 허브의 실습 바로가기: 섹션 → /lab 의 그룹 앵커(src/app/lab/page.tsx 의 id="lab-<kind>")와 버튼 문구.
 const LAB_KIND_OF_SECTION: Record<Section, string> = { aws: 'aws', linux: 'linux', data: 'sql', kubernetes: 'linux', terraform: 'aws' };
@@ -32,12 +33,13 @@ const LAB_LABEL_OF_SECTION: Record<Section, string> = {
 
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
 
-// ko(aws-certs)뿐 아니라 en도 포함해야 한다 — /en/<slug> 허브도 이 라우트가 서빙한다
-// (src/app/en/page.tsx는 /en 자체만 처리하는 별도 정적 라우트). 빠뜨리면 아래 dynamicParams=false와
-// 만나 /en/<slug> 전체가 즉시 404가 난다(실측으로 확인한 회귀 — 최초 구현 시 en을 빠뜨렸었음).
+// 한국어 섹션(aws·linux·data)만 만든다. /en/<slug> 허브는 (en) 루트 레이아웃 아래의
+// (en)/en/[slug]/page.tsx 가 이 파일의 구현을 category='en' 으로 호출해 서빙한다 — 서버 렌더되는
+// <html lang="en"> 을 위해 영어 페이지는 별도 루트 그룹에 있어야 하고, 여기서 en 을 또 만들면
+// 같은 경로가 (ko) 루트로 이중 생성된다.
 export async function generateStaticParams() {
   const out: { category: string; slug: string }[] = [];
-  for (const category of SUPPORTED_CATEGORIES) {
+  for (const category of SUPPORTED_CATEGORIES.filter((c) => c !== EN_CATEGORY)) {
     const certs = await listCerts(category).catch(() => []);
     for (const c of certs) out.push({ category, slug: c.slug });
   }
@@ -91,7 +93,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     alternates: { canonical: url, languages },
-    openGraph: { title, description, url, type: 'website' },
+    openGraph: { title, description, url, type: 'website', images: [certOgImage(category, slug)] },
   };
 }
 

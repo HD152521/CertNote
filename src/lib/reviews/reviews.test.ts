@@ -89,8 +89,8 @@ describe('reviewRobots — 후기 페이지 색인 게이트', () => {
 // 두 라우트가 같은 단일 출처를 쓰는지 소스 수준에서 고정한다.
 describe('후기 라우트가 색인 정책을 공유한다', () => {
   const routes = [
-    'src/app/[category]/reviews/page.tsx',
-    'src/app/[category]/reviews/[cert]/page.tsx',
+    'src/app/(ko)/[category]/reviews/page.tsx',
+    'src/app/(ko)/[category]/reviews/[cert]/page.tsx',
   ];
 
   test.each(routes)('%s 가 reviewRobots 를 쓴다', (rel) => {

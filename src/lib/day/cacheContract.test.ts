@@ -16,7 +16,7 @@ const HINT = `${DESIGN_DOC} 3장(페이월을 다시 켤 때)의 되돌림 절�
 const PAGE_IMPORT_TIMEOUT_MS = 180_000;
 
 // category 별 리터럴 폴더(src/lib/day/dayRoute.tsx 참고). 세 파일 모두 같은 계약을 지켜야 한다.
-const PAGE_PATHS = ['aws', 'linux', 'en'].map((c) => path.join(process.cwd(), 'src', 'app', c, '[slug]', '[week]', '[day]', 'page.tsx'));
+const PAGE_PATHS = ['aws', 'linux', 'en'].map((c) => path.join(process.cwd(), 'src', 'app', ...(c === 'en' ? ['(en)', 'en'] : ['(ko)', c]), '[slug]', '[week]', '[day]', 'page.tsx'));
 
 const STATIC_PARAMS_EXPORT = /export\s+(?:async\s+)?function\s+generateStaticParams\b|export\s+const\s+generateStaticParams\b/;
 const FORCE_DYNAMIC = /export\s+const\s+dynamic\s*=\s*['"]force-dynamic['"]/;

@@ -55,7 +55,7 @@ describe('day 렌더 계층 — next/headers import 금지', () => {
     const forbidden = [NEXT_HEADERS_IMPORT, /from\s+['"]@\/lib\/auth\/currentUser['"]/];
     for (const category of ['aws', 'linux', 'en']) {
       for (const sub of [['[week]', '[day]'], ['week1', '[day]']]) {
-        const file = path.join(process.cwd(), 'src', 'app', category, '[slug]', ...sub, 'page.tsx');
+        const file = path.join(process.cwd(), 'src', 'app', ...(category === 'en' ? ['(en)', 'en'] : ['(ko)', category]), '[slug]', ...sub, 'page.tsx');
         const content = await fs.readFile(file, 'utf8');
         for (const re of forbidden) {
           expect(re.test(content), `${file} 가 요청별 동적 API 를 import함 — 정적 캐시 라우트가 500 을 낸다`).toBe(false);
