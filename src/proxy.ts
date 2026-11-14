@@ -88,6 +88,8 @@ export const config = {
     // 임의 4세그먼트 경로(/:a/:b/:c/:d) — day 라우트가 받는 깊이. 어떤 철자든 분류를 거치게 한다
     // (근거: src/lib/proxyRouting.ts). _next/static·_next/image 에셋은 제외한다.
     '/:a((?!_next/static/|_next/image)[^/]+)/:b/:c/:d',
+    // 임의 category 의 후기 경로(/xx/reviews[/cert]) — 후기 라우트는 실제 섹션에만 있다(classifyPath 가 404 로 고정).
+    '/:a/reviews', '/:a/reviews/:b',
     // 대소문자 변형 접두사(/AWS·/Linux·/EN 과 하위). 대소문자 무시 호스트에서 소문자 페이지로 풀리는 것을 막는다.
     '/:category([aA][wW][sS])/:path*', '/:category([lL][iI][nN][uU][xX])/:path*', '/:category([eE][nN])/:path*', '/:category([dD][aA][tT][aA])/:path*',
   ],

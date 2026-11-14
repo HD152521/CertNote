@@ -185,11 +185,14 @@ export default async function CertIndexPage({ params }: PageProps) {
         )}
         {/* 이 브라우저에서 읽던 기록이 있을 때만 보인다(한국어 화면 전용 문구). */}
         {lang === 'ko' && <ResumeLink slug={slug} className="max-w-md" />}
-        <p>
-          <Link href={`/${category}/reviews/${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
-            {lang === 'en' ? `Read ${meta.code} pass reviews →` : `${meta.code} 합격 후기 보기 →`}
-          </Link>
-        </p>
+        {/* 후기는 한국어 전용(영어판엔 후기 라우트가 없다 — /en/reviews/* 는 404). */}
+        {lang === 'ko' && (
+          <p>
+            <Link href={`/${category}/reviews/${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
+              {meta.code} 합격 후기 보기 →
+            </Link>
+          </p>
+        )}
       </header>
       {upcoming && <UpcomingExamNotice code={meta.code} upcoming={upcoming} />}
       {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}

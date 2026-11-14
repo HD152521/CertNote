@@ -137,11 +137,14 @@ export default async function CategoryHubPage({ params }: PageProps) {
             ? 'AWS 자격증은 기초(Cloud Practitioner) → 어소시에이트(SAA·DVA·SOA) → 프로페셔널(SAP·DOP) → 전문분야 순서로 준비하는 것이 일반적입니다. 목표를 고르고 무료 Week 1부터 시작하세요.'
             : `${sectionName} 자격증을 레벨별로 정리했습니다. 목표를 고르고 Week 1부터 시작하세요.`}
         </p>
-        <p>
-          <Link href={`/${category}/reviews`} className="text-sm text-accent underline underline-offset-4 hover:text-fg">
-            {lang === 'en' ? `${sectionName} pass reviews →` : `${sectionName} 자격증 합격 후기 →`}
-          </Link>
-        </p>
+        {/* 후기는 한국어 전용(영어판엔 후기 라우트가 없다 — /en/reviews 는 404). */}
+        {lang === 'ko' && (
+          <p>
+            <Link href={`/${category}/reviews`} className="text-sm text-accent underline underline-offset-4 hover:text-fg">
+              {sectionName} 자격증 합격 후기 →
+            </Link>
+          </p>
+        )}
       </header>
 
       {groups.map(({ level, items }) => (

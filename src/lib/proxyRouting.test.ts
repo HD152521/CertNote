@@ -117,3 +117,18 @@ describe('classifyPath — 세그먼트 구조 판정', () => {
     expect(classifyPath('/a/b/c/d/e')).toBe('pass'); // 어떤 라우트도 받지 않는 깊이 — Next 라우팅이 진짜 404
   });
 });
+
+describe('classifyPath — 임의 category 의 후기 경로는 소프트 404 가 되지 않게 막는다', () => {
+  test('/xx/reviews, /xx/reviews/cert 는 not-found 이고 proxy 를 거친다', () => {
+    for (const p of ['/xx/reviews', '/xx/reviews/saa-c03', '/foo/reviews/a']) {
+      expect(classifyPath(p)).toBe('not-found');
+      expect(config.matcher.some((m: string) => pathToRegexp(m).test(p))).toBe(true);
+    }
+  });
+
+  test('실제 섹션 후기와 /en 은 content 로 간다(바뀌지 않는다)', () => {
+    for (const p of ['/aws/reviews', '/aws/reviews/saa-c03', '/linux/reviews', '/data/reviews', '/en/reviews']) {
+      expect(classifyPath(p)).toBe('content');
+    }
+  });
+});

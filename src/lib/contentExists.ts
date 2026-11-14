@@ -50,6 +50,9 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   // 페이지 내부 notFound()가 스트리밍 때문에 200으로 누수된다(day 라우트와 동일 메커니즘) —
   // 그래서 존재 여부를 여기(렌더 전)서 판정해 잘못된 cert는 진짜 404 마커로 리라이트한다.
   if (slug === 'reviews') {
+    // 후기는 한국어 섹션(/aws·/linux·/data) 전용이다. /en/reviews*·/aws-certs/reviews* 는 라우트가
+    // notFound() 를 내는데 스트리밍 때문에 200(소프트 404)으로 새므로 여기서 먼저 404 로 판정한다.
+    if (!isSection(category)) return false;
     if (segments.length === 2) return true; // /{section}/reviews 허브
     if (segments.length !== 3) return false; // 더 깊은 경로 없음
     // /{section}/reviews/{cert} — cert가 이 섹션에 실제로 존재해야 한다.

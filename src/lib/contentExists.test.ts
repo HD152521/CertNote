@@ -47,6 +47,14 @@ describe('contentPathExists', () => {
     expect(await contentPathExists('/aws/saa-c03')).toBe(true);
   });
 
+  test('후기 라우트는 한국어 섹션 전용: /en/reviews*·/aws-certs/reviews* 는 false(소프트 404 방지)', async () => {
+    expect(await contentPathExists('/en/reviews')).toBe(false);
+    expect(await contentPathExists('/en/reviews/saa-c03')).toBe(false);
+    expect(await contentPathExists('/aws-certs/reviews')).toBe(false);
+    expect(await contentPathExists('/aws/reviews')).toBe(true);
+    expect(await contentPathExists('/aws/reviews/saa-c03')).toBe(true);
+  });
+
   test('존재하는 slug + 존재하는 week/day(paid, 4세그먼트)는 true', async () => {
     expect(await contentPathExists('/aws-certs/saa-c03/week2/day1')).toBe(true);
   });
