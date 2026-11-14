@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
       { source: '/checkout', destination: '/', permanent: false },
       { source: '/checkout/:path*', destination: '/', permanent: false },
       { source: '/account/subscription', destination: '/account', permanent: false },
+      // ── 영어 URL 에는 카테고리 세그먼트가 없다(/en/<자격증>/weekN/dayM) ──────────────────
+      // 한국어 섹션 허브 주소를 그대로 /en/aws·/en/linux·/en/data 로 치는 유입을 영어 홈으로 보낸다(308).
+      // 사이트맵에는 넣지 않는다. 'aws'·'linux'·'data' 는 영어 자격증 슬러그가 아니라 /en/[slug] 와 충돌하지 않는다.
+      { source: '/en/aws', destination: '/en', permanent: true },
+      { source: '/en/linux', destination: '/en', permanent: true },
+      { source: '/en/data', destination: '/en', permanent: true },
       // ── 레거시 /aws-certs → 섹션 URL 통합(Phase1) ────────────────────────────
       // 콘텐츠는 물리 이동 없이 content/aws-certs/ 에 공존하되, 공개 URL만 섹션 세그먼트로 바꾼다.
       // 규칙 순서(첫 매치 승리)가 두 가지를 동시에 만족해야 한다:
