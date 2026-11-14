@@ -31,8 +31,8 @@ export const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 // next.config.ts에서 301되지만, 리다이렉트 전파 창 동안의 안전을 위해 남겨 둔다(항상 ko).
 // /pricing 은 영어판 URL이 없어 여기 없다 — 쿠키가 결정하고, HTML 소스는 한국어로 남아 그대로 색인된다.
 // 정보 페이지(/about·/roadmap·/changelog·/contact·/terms·/privacy)는 영어판(/en/...)이 있어 URL 이 언어를 정한다
-// (짝 표는 enEdition.ts 의 EN_INFO_PAIRS).
-const PUBLIC_KO_PREFIXES = ['/aws', '/linux', '/aws-certs', '/about', '/roadmap', '/changelog', '/contact', '/terms', '/privacy'] as const;
+// (짝 표는 enEdition.ts 의 EN_INFO_PAIRS). 실습(/lab·/lab/<id>)도 /en/lab 영어판이 있어 같다.
+const PUBLIC_KO_PREFIXES = ['/aws', '/linux', '/aws-certs', '/about', '/roadmap', '/changelog', '/contact', '/terms', '/privacy', '/lab'] as const;
 
 function isPublicKoPath(pathname: string): boolean {
   if (pathname === '/') return true;

@@ -1,6 +1,7 @@
 // SQL 실습장 과제와 채점. 쿼리 글자가 아니라 결과 집합으로 채점한다 — 같은 결과를 내는 다른 쿼리도 정답이다.
 // 모범 답안의 결과는 골든(scripts/sql-lab/cases.mjs 의 task-*)으로 실제 Oracle 과 대조한다.
 import raw from './tasks.json';
+import rawEn from './tasksEn.json';
 import { sampleDatabase as sampleDatabaseFresh } from './data';
 import { newSession, runSql, runSqlIn, runStatement, type StatementResult } from './run';
 import { display } from './values';
@@ -29,6 +30,11 @@ export interface SqlTaskSet {
 }
 
 export const SQL_TASK_SETS = raw as SqlTaskSet[];
+/** 영어 화면용 과제. id·순서·ordered·check 는 한국어판과 같고, 제목·지문·힌트·해설(과 모범 답안의 별칭·문자열 상수)만 영어다. */
+export const SQL_TASK_SETS_EN = rawEn as SqlTaskSet[];
+
+/** 화면 언어에 맞는 과제 묶음. 채점은 같은 언어판의 모범 답안으로 한다(영어판은 별칭·문자열 상수가 영어). */
+export const sqlTaskSetsFor = (lang: 'ko' | 'en' = 'ko'): SqlTaskSet[] => (lang === 'en' ? SQL_TASK_SETS_EN : SQL_TASK_SETS);
 
 export type Verdict = { ok: true } | { ok: false; reason: string };
 

@@ -1,7 +1,7 @@
 // 화면 쪽 실행기: 워커에 SQL 을 보내고, 정해진 시간 안에 답이 없으면 워커를 끝내 탭이 멈추지 않게 한다.
 // 워커를 못 쓰는 환경(아주 오래된 브라우저)에서는 같은 스레드에서 바로 실행한다.
 import { runSql } from '@/lib/sql-lab/run';
-import { SQL_TASK_SETS, runForTask } from '@/lib/sql-lab/tasks';
+import { sqlTaskSetsFor, runForTask } from '@/lib/sql-lab/tasks';
 import { display } from '@/lib/sql-lab/values';
 import type { WireResult, WorkerRequest, WorkerResponse } from './sqlWorker';
 
@@ -34,7 +34,7 @@ function runHere(src: string, task?: WorkerRequest['task']): RunOutput {
   const wire = (r: ReturnType<typeof runSql>[number]) =>
     (r.kind === 'rows' ? { ...r, rows: r.rows.map((row) => row.map((v) => (v === null ? null : display(v)))) } : r) as WireResult;
   if (task) {
-    const item = SQL_TASK_SETS.find((s) => s.id === task.setId)?.items.find((i) => i.id === task.itemId);
+    const item = sqlTaskSetsFor(task.lang).find((s) => s.id === task.setId)?.items.find((i) => i.id === task.itemId);
     if (item) {
       const out = runForTask(item, src);
       return { results: out.results.map(wire), verdict: out.verdict };

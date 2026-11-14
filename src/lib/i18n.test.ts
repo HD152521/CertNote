@@ -19,6 +19,8 @@ describe('resolveLanguage — indexed pages ignore the cookie', () => {
     ['/en', 'en'],
     ['/en/saa-c03', 'en'],
     ['/en/saa-c03/week1/day1', 'en'],
+    ['/en/lab', 'en'],
+    ['/en/lab/sql-select-basics', 'en'],
   ])('%s is always English', (path, expected) => {
     expect(resolveLanguage(path, 'ko')).toBe(expected);
     expect(resolveLanguage(path, 'en')).toBe(expected);
@@ -33,6 +35,8 @@ describe('resolveLanguage — indexed pages ignore the cookie', () => {
     ['/about'],
     ['/privacy'],
     ['/roadmap/developer'],
+    ['/lab'],
+    ['/lab/sql-select-basics'],
   ])('%s is always Korean', (path) => {
     expect(resolveLanguage(path, 'en')).toBe('ko');
     expect(resolveLanguage(path, 'ko')).toBe('ko');
@@ -75,7 +79,7 @@ describe('isLanguageCookieAuthoritative', () => {
   });
 
   test('false on pages whose language comes from the URL', () => {
-    for (const path of ['/', '/en', '/en/saa-c03', '/aws-certs/saa-c03']) {
+    for (const path of ['/', '/en', '/en/saa-c03', '/aws-certs/saa-c03', '/lab', '/lab/regions-azs', '/en/lab', '/en/lab/regions-azs']) {
       expect(isLanguageCookieAuthoritative(path)).toBe(false);
     }
   });

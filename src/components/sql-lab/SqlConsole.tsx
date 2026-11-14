@@ -34,7 +34,7 @@ export function SqlConsole({ initial, task, renderVerdict, label, rows = 4, lang
   const run = async () => {
     if (busy) return;
     setBusy(true);
-    const out = await runInWorker(src, task);
+    const out = await runInWorker(src, task && { ...task, lang });
     setBusy(false);
     if (out.timedOut) {
       setResults([{ kind: 'note', sql: src, message: s.timedOut }]);

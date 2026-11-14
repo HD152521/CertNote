@@ -6,6 +6,7 @@ import { getSourceFileMtime } from '@/lib/fileMtime';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
 import { LAB_CATALOG } from '@/lib/labCatalog';
+import { labHref, labHubHref } from '@/lib/labCatalogLang';
 import { EN_INFO_PAIRS } from '@/lib/enEdition';
 import { SITE_URL } from '@/lib/site';
 
@@ -155,8 +156,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     await getSourceFileMtime('src/lib/sql-lab/tasks.json'),
     await getSourceFileMtime('src/lib/cli-lab/labs.ts'),
   ]);
-  out.push(sitemapEntry(`${SITE_URL}/lab`, labLastMod, 'monthly', 0.7));
-  for (const lab of LAB_CATALOG) out.push(sitemapEntry(`${SITE_URL}/lab/${lab.id}`, labLastMod, 'monthly', 0.6));
+  // 영어판 실습(/en/lab·/en/lab/<id>)은 번역 파일의 시각도 반영한다. 한국어판은 한국어 원본만 본다.
+  const enLabLastMod = maxMtime([
+    labLastMod,
+    await getSourceFileMtime('src/lib/labCatalogEn.ts'),
+    await getSourceFileMtime('src/lib/shell-lab/labsEn.ts'),
+    await getSourceFileMtime('src/lib/shell-lab/drillsEn.ts'),
+    await getSourceFileMtime('src/lib/sql-lab/tasksEn.json'),
+    await getSourceFileMtime('src/lib/cli-lab/labsEn.ts'),
+  ]);
+  out.push(sitemapEntry(`${SITE_URL}${labHubHref('ko')}`, labLastMod, 'monthly', 0.7));
+  for (const lab of LAB_CATALOG) out.push(sitemapEntry(`${SITE_URL}${labHref(lab.id, 'ko')}`, labLastMod, 'monthly', 0.6));
+  out.push(sitemapEntry(`${SITE_URL}${labHubHref('en')}`, enLabLastMod, 'monthly', 0.7));
+  for (const lab of LAB_CATALOG) out.push(sitemapEntry(`${SITE_URL}${labHref(lab.id, 'en')}`, enLabLastMod, 'monthly', 0.6));
 
   // 영어판(전 주차 색인). 콘텐츠가 없으면 조용히 생략.
   const enCerts = await listCerts(EN_CATEGORY).catch(() => []);

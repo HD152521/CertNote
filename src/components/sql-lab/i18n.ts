@@ -78,7 +78,7 @@ const en: SqlStrings = {
   pickLabel: 'Choose the SQL to run',
   quizRunsOn: 'Runs against the EMP, DEPT and SALGRADE sample tables.',
   quizLabLead: '',
-  quizLabLink: '',
+  quizLabLink: 'For more practice, open the SQL practice lab.',
   quizLabTail: '',
 };
 
@@ -104,4 +104,80 @@ export function localizeHint(lang: SqlLang, hint: string | undefined): string | 
 export function tableNote(lang: SqlLang, name: string, fallback: string): string {
   if (lang !== 'en') return fallback;
   return en.tableNotes[name] ?? (hasHangul(fallback) ? '' : fallback);
+}
+
+/** 독립 실습장 페이지(SqlLab)의 화면 문구. ko 는 기존 문구 그대로. */
+export interface LabStrings {
+  labName: string;
+  oracleBadge: string;
+  pickTask: string;
+  taskOf: (index: number, total: number) => string;
+  taskAria: (index: number, done: boolean, title: string) => string;
+  taskInputLabel: (index: number) => string;
+  solvedTag: string;
+  solvedCount: (solved: number, total: number) => string;
+  hintPrefix: string;
+  verdictOk: string;
+  verdictPrefix: string;
+  showHint: string;
+  showAnswer: string;
+  nextTask: string;
+}
+
+const labKo: LabStrings = {
+  labName: 'SQL 실습장',
+  oracleBadge: 'Oracle 문법 · 실제 Oracle 결과와 대조',
+  pickTask: '과제 고르기',
+  taskOf: (i, total) => `과제 ${i} / ${total}`,
+  taskAria: (i, done, title) => `과제 ${i}${done ? ' 정답' : ''}: ${title}`,
+  taskInputLabel: (i) => `과제 ${i} SQL 입력`,
+  solvedTag: '정답',
+  solvedCount: (n, total) => `${n} / ${total} 과제 정답`,
+  hintPrefix: '힌트:',
+  verdictOk: '채점: 정답이에요. 모범 답안과 결과가 같아요.',
+  verdictPrefix: '채점:',
+  showHint: '힌트 보기',
+  showAnswer: '모범 답안 보기',
+  nextTask: '다음 과제',
+};
+
+const labEn: LabStrings = {
+  labName: 'SQL lab',
+  oracleBadge: 'Oracle syntax · checked against real Oracle results',
+  pickTask: 'Choose a task',
+  taskOf: (i, total) => `Task ${i} / ${total}`,
+  taskAria: (i, done, title) => `Task ${i}${done ? ' (correct)' : ''}: ${title}`,
+  taskInputLabel: (i) => `Task ${i} SQL input`,
+  solvedTag: 'Correct',
+  solvedCount: (n, total) => `${n} / ${total} ${total === 1 ? 'task' : 'tasks'} solved`,
+  hintPrefix: 'Hint:',
+  verdictOk: 'Grading: correct. Your result matches the model answer.',
+  verdictPrefix: 'Grading:',
+  showHint: 'Show hint',
+  showAnswer: 'Show answer',
+  nextTask: 'Next task',
+};
+
+export const labStrings = (lang: SqlLang = 'ko'): LabStrings => (lang === 'en' ? labEn : labKo);
+
+type VerdictRule = readonly [RegExp, (m: RegExpMatchArray) => string];
+const VERDICT_RULES: readonly VerdictRule[] = [
+  [/^(\S+) 오류가 났어요\./, (m) => `${m[1]} error. Read the error message, fix the statement and run it again.`],
+  [/^실습장이 실행하지 못한 문장이에요\./, () => 'The SQL lab could not execute this statement.'],
+  [/^마지막 문장이 SELECT 가 아니에요/, () => 'The last statement is not a SELECT. End with a SELECT that shows the result.'],
+  [/^모범 답안을 실행하지 못했어요/, () => 'Could not run the model answer (SQL lab error).'],
+  [/^열 개수가 달라요\. 기대 (\d+)개, 지금 (\d+)개\./, (m) => `The number of columns differs. Expected ${m[1]}, got ${m[2]}.`],
+  [/^행 수가 달라요\. 기대 (\d+)행, 지금 (\d+)행\./, (m) => `The number of rows differs. Expected ${m[1]}, got ${m[2]}.`],
+  [/^행 수는 맞지만 값이 다른 행이 있어요/, () => 'The row count matches, but some rows have different values. Recheck the conditions or the calculation.'],
+  [/^값은 모두 맞지만 순서가 달라요/, () => 'All values are right, but the order differs. Check your ORDER BY.'],
+];
+
+/** 채점기(src/lib/sql-lab/tasks.ts judge)가 만드는 한국어 사유의 영어 대응. ko 는 원문 그대로. */
+export function localizeVerdictReason(lang: SqlLang, reason: string): string {
+  if (lang !== 'en' || !hasHangul(reason)) return reason;
+  for (const [re, fn] of VERDICT_RULES) {
+    const m = reason.match(re);
+    if (m) return fn(m);
+  }
+  return en.unsupportedNote;
 }

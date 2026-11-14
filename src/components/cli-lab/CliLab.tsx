@@ -3,7 +3,10 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { TerminalSquare } from 'lucide-react';
 import { complete } from '@/lib/cli-lab/complete';
-import { LABS, resolveAnswer } from '@/lib/cli-lab/labs';
+import { resolveAnswer } from '@/lib/cli-lab/labs';
+import { cliLabsFor } from '@/lib/cli-lab/labsEn';
+import { useLanguage } from '@/lib/i18n-client';
+import { cliStrings } from './i18n';
 import { runCommand } from '@/lib/cli-lab/run';
 import { createInitialState, type SimState } from '@/lib/cli-lab/state';
 import { AccountStrip } from './AccountStrip';
@@ -12,10 +15,6 @@ import { LabTerminal, type LogEntry, type NewLogEntry } from './LabTerminal';
 
 // 노트 본문(.article) 안에 들어가도 본문 규칙(p·ul·pre·code 여백과 배경)에 휘말리지 않도록
 // 텍스트는 전부 div/span 으로 그린다.
-
-const BANNER =
-  'CertNote CLI 연습장 — 브라우저 안에서 도는 시뮬레이터예요. 실제 AWS 로 요청을 보내지 않아요.\n' +
-  'aws help 명령 목록 · Tab 자동 완성 · ↑↓ 이전 명령 · clear 화면 정리 · reset 처음부터';
 
 interface Progress {
   done: string[];
@@ -28,7 +27,10 @@ const EMPTY_PROGRESS: Progress = { done: [], commands: 0, errors: 0 };
 
 // 과제 정의에 판정 함수가 들어 있어 서버 컴포넌트에서 객체로 넘길 수 없다 — id 만 받고 여기서 찾는다.
 export function CliLab({ labId }: { labId: string }) {
-  const lab = LABS.find((l) => l.id === labId) ?? LABS[0];
+  const lang = useLanguage();
+  const t = cliStrings(lang);
+  const labs = cliLabsFor(lang);
+  const lab = labs.find((l) => l.id === labId) ?? labs[0];
   const nextId = useRef(1);
   const makeEntry = (entry: NewLogEntry): LogEntry => ({
     ...entry,
@@ -36,7 +38,7 @@ export function CliLab({ labId }: { labId: string }) {
   });
 
   const [sim, setSim] = useState<SimState>(() => createInitialState());
-  const [log, setLog] = useState<LogEntry[]>(() => [{ id: 0, kind: 'sys', text: BANNER }]);
+  const [log, setLog] = useState<LogEntry[]>(() => [{ id: 0, kind: 'sys', text: t.banner }]);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -54,7 +56,7 @@ export function CliLab({ labId }: { labId: string }) {
     setProgress(EMPTY_PROGRESS);
     setViewing(null);
     setReveal(null);
-    setLog([makeEntry({ kind: 'sys', text: BANNER })]);
+    setLog([makeEntry({ kind: 'sys', text: t.banner })]);
   };
 
   const execute = (line: string) => {
@@ -65,7 +67,7 @@ export function CliLab({ labId }: { labId: string }) {
     if (trimmed === 'clear') return setLog([]);
     if (trimmed === 'reset') return reset();
 
-    const result = runCommand(line, sim);
+    const result = runCommand(line, sim, lang);
     const entries: LogEntry[] = [makeEntry({ kind: 'cmd', text: line, exitCode: result.exitCode })];
     if (result.stdout) entries.push(makeEntry({ kind: 'out', text: result.stdout }));
     if (result.stderr) entries.push(makeEntry({ kind: 'err', text: result.stderr.replace(/^\n/, '') }));
@@ -76,7 +78,7 @@ export function CliLab({ labId }: { labId: string }) {
     );
     for (const s of passed) {
       const n = lab.steps.indexOf(s) + 1;
-      entries.push(makeEntry({ kind: 'pass', text: `STEP ${n} 통과 · ${s.title}` }));
+      entries.push(makeEntry({ kind: 'pass', text: t.stepPassed(n, s.title) }));
     }
 
     setSim(result.state);
@@ -148,7 +150,7 @@ export function CliLab({ labId }: { labId: string }) {
         </div>
         <div className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11.5px] text-fg-muted">
           <TerminalSquare className="h-3.5 w-3.5" aria-hidden />
-          시뮬레이터 · 실제 AWS 호출 없음
+          {t.simBadge}
         </div>
       </div>
 
@@ -174,7 +176,7 @@ export function CliLab({ labId }: { labId: string }) {
         accountId={sim.accountId}
         task={
           currentStep
-            ? { label: `STEP ${lab.steps.indexOf(currentStep) + 1} / ${lab.steps.length} · ${currentStep.title}`, text: currentStep.task }
+            ? { label: t.taskLabel(lab.steps.indexOf(currentStep) + 1, lab.steps.length, currentStep.title), text: currentStep.task }
             : undefined
         }
         log={log}

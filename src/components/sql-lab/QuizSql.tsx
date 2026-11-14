@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
+import { labHref } from '@/lib/labCatalogLang';
 import { SqlConsole } from './SqlConsole';
 import { sqlStrings, type SqlLang } from './i18n';
 
 // 퀴즈 해설 아래에 펼치는 작은 SQL 실습장. 문항의 SELECT 문을 골라 실행하고 고쳐 볼 수 있다.
 export default function QuizSql({ statements, lang = 'ko' }: { statements: string[]; lang?: SqlLang }) {
   const s = sqlStrings(lang);
-  const en = lang === 'en';
   const [pick, setPick] = useState(0);
   return (
     <div className="not-prose mt-3 space-y-2.5 rounded-lg border border-border bg-bg px-3 py-3">
@@ -34,15 +34,11 @@ export default function QuizSql({ statements, lang = 'ko' }: { statements: strin
       <SqlConsole key={pick} initial={`${statements[pick]};`} rows={2} lang={lang} />
       <div className="text-[12px] text-fg-faint">
         {s.quizRunsOn}
-        {!en && (
-          <>
-            {' '}
-            <Link href="/lab/sql-select-basics" className="underline underline-offset-2 hover:text-fg">
-              {s.quizLabLink}
-            </Link>
-            {s.quizLabTail}
-          </>
-        )}
+        {' '}
+        <Link href={labHref('sql-select-basics', lang)} className="underline underline-offset-2 hover:text-fg">
+          {s.quizLabLink}
+        </Link>
+        {s.quizLabTail}
       </div>
     </div>
   );
