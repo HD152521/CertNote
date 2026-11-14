@@ -418,7 +418,7 @@ def handler(event, context):
 
 ## 정리
 
-오늘 본 그림은 세 가지다. 첫째, **Serverless Framework**는 Node 플러그인 생태계가 강점이지만 v4부터 상업 라이선스라 신규 도입은 신중. 둘째, **CDK**는 코드로 모든 AWS 리소스를 추상화하며 `grant*` 메서드의 의도 기반 IAM과 L1/L2/L3 Construct 계층이 본질적 차별점. 셋째, **Lambda Container Image**는 10GB 한도로 ML/큰 의존성에 적합하지만 Layer/SnapStart 호환성 제약 있음.
+오늘 본 그림은 세 가지다. 첫째, **Serverless Framework**는 Node 플러그인 생태계가 강점이지만 v4부터 상업 라이선스라 신규 도입은 신중. 둘째, **CDK**는 코드로 모든 AWS 리소스를 추상화하며 `grant*` 메서드의 의도 기반 IAM과 L1/L2/L3 Construct 계층이 본질적 차별점. 셋째, **Lambda Container Image**는 10GB 한도로 ML/큰 의존성에 적합하지만 Layer 호환성 제약(SnapStart 지원 범위는 시점에 따라 달라짐) 있음.
 
 다음 글에서는 Step Functions와 EventBridge로 서버리스 워크플로를 오케스트레이션하는 패턴을 본다. Lambda 한 개로 모든 걸 해결하던 시절은 끝났고, 이제는 **함수 간의 협업 구조**가 더 중요한 시대다.
 
@@ -446,7 +446,7 @@ C) Container는 SnapStart 미지원 (Java도 zip만 가능)
 D) Container는 Provisioned Concurrency 미지원
 
 **정답: D**
-해설: D가 틀린 설명. Container Image Lambda는 PC를 지원한다(다만 PC 워밍 시간이 zip보다 길다). A/B/C는 모두 사실. zip 한도 250MB는 압축 해제 기준, Container 10GB는 압축 기준이라 실 사용 용량은 30~40배 차이. SnapStart는 2022 출시 시점부터 zip Java만 지원하고 2024년 말까지 Container 미지원 유지. Layer는 Container와 호환되지 않아 모든 의존성을 Dockerfile에 포함해야 한다.
+해설: D가 틀린 설명. Container Image Lambda는 PC를 지원한다(다만 PC 워밍 시간이 zip보다 길다). A/B/C는 모두 사실. zip 한도 250MB는 압축 해제 기준, Container 10GB는 압축 기준이라 실 사용 용량은 30~40배 차이. SnapStart는 2022 출시 시점부터 zip Java만 지원하고 2024년 말까지 Container 미지원 유지. Layer는 Container와 호환되지 않아 모든 의존성을 Dockerfile에 포함해야 한다. (현재는 Python·.NET·컨테이너 이미지도 지원 — 시점 주의)
 
 ---
 
@@ -482,7 +482,7 @@ C) Lambda Layer 자동 캐싱
 D) Container Image의 lazy load 가속
 
 **정답: B**
-해설: SnapStart(2022 re:Invent)는 Self/Smalltalk image-based persistence와 동일한 발상. Java init 단계가 길어 cold start의 주범이라 이를 사전 스냅샷으로 해결. uniqueness assumption(random seed, DB connection) 문제로 Runtime Hook을 통한 명시적 재초기화 필요. zip Java만(2024 말 기준), Python/Node/Container 미지원. A는 너무 광범위, C는 SnapStart와 무관, D는 Container 영역.
+해설: SnapStart(2022 re:Invent)는 Self/Smalltalk image-based persistence와 동일한 발상. Java init 단계가 길어 cold start의 주범이라 이를 사전 스냅샷으로 해결. uniqueness assumption(random seed, DB connection) 문제로 Runtime Hook을 통한 명시적 재초기화 필요. zip Java만(2024 말 기준), Python/Node/Container 미지원. A는 너무 광범위, C는 SnapStart와 무관, D는 Container 영역. (현재는 Python·.NET·컨테이너 이미지도 지원 — 시점 주의)
 
 ---
 
@@ -512,4 +512,4 @@ D) Lambda Layer 관리
 
 ## 📌 오늘의 요약
 
-오늘 다룬 세 IaC 대안의 핵심은 (1) Serverless Framework는 플러그인 생태계와 멀티 클라우드가 강점이지만 v4 라이선스 변화 신중, (2) CDK는 L1/L2/L3 Construct + grant 메서드 + Aspects로 SAM이 못 하는 모든 AWS 리소스 추상화 가능, (3) Lambda Container Image 10GB는 ML/대형 의존성에 적합하지만 Layer/SnapStart 호환성 제약, (4) Cold Start는 Provisioned Concurrency/SnapStart/ARM/패키지 최소화의 조합으로 완화, (5) CDK Pipelines의 self-mutating으로 GitOps IaC 실현 — 다섯 가지다.
+오늘 다룬 세 IaC 대안의 핵심은 (1) Serverless Framework는 플러그인 생태계와 멀티 클라우드가 강점이지만 v4 라이선스 변화 신중, (2) CDK는 L1/L2/L3 Construct + grant 메서드 + Aspects로 SAM이 못 하는 모든 AWS 리소스 추상화 가능, (3) Lambda Container Image 10GB는 ML/대형 의존성에 적합하지만 Layer 호환성 제약(SnapStart 지원 범위는 시점에 따라 달라짐), (4) Cold Start는 Provisioned Concurrency/SnapStart/ARM/패키지 최소화의 조합으로 완화, (5) CDK Pipelines의 self-mutating으로 GitOps IaC 실현 — 다섯 가지다.

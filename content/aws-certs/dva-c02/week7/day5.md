@@ -263,16 +263,16 @@ D) DynamoDB로 전체 마이그레이션 후 DAX 캐시 계층을 추가해 conn
 
 ---
 
-**문제 2.** 한 핀테크 회사가 다음을 모두 만족하는 RDS 구성을 원한다: ① RPO ≈ 0 ② standby에서 분석 쿼리 실행 가능 ③ 페일오버 시간 < 60초. 가장 적합한 옵션은?
+**문제 2.** 한 핀테크 회사가 다음을 모두 만족하는 Aurora가 아닌 RDS 구성을 원한다: ① RPO ≈ 0 ② standby에서 분석 쿼리 실행 가능 ③ 페일오버 시간 < 60초. 가장 적합한 옵션은?
 
 A) RDS Multi-AZ DB Instance Deployment(동기 standby 1개) + Read Replica 2개를 분석 쿼리용으로 분리
 B) RDS Multi-AZ DB Cluster Deployment (2022 신규)
 C) Aurora MySQL Multi-AZ
 D) RDS Single-AZ + 자동 백업 보존 7일 + 분석용 일일 스냅샷 복원
 
-**정답: B (또는 C도 가능)**
+**정답: B**
 
-해설: Multi-AZ DB Cluster Deployment(MySQL/PostgreSQL 한정, 2022 신규)는 1 writer + 2 readable standby 구조 + 동기 quorum 복제로 ① RPO≈0 ② standby에서 읽기 가능 ③ 페일오버 35초 이내를 동시에 만족한다. A) Standby는 일반 Multi-AZ Instance에서 읽기 불가 — Read Replica는 별개. C) Aurora Multi-AZ도 모두 만족하지만 엔진을 Aurora로 바꿔야 하는 큰 변경 — Cluster Deployment가 더 가까운 답. D) Single-AZ는 ①③ 모두 미충족.
+해설: Multi-AZ DB Cluster Deployment(MySQL/PostgreSQL 한정, 2022 신규)는 1 writer + 2 readable standby 구조 + 동기 quorum 복제로 ① RPO≈0 ② standby에서 읽기 가능 ③ 페일오버 35초 이내를 동시에 만족한다. A) Standby는 일반 Multi-AZ Instance에서 읽기 불가 — Read Replica는 별개. C) Aurora Multi-AZ는 요건 자체는 만족하지만 문제 조건(Aurora가 아닌 RDS)에 어긋난다 — Cluster Deployment가 정답. D) Single-AZ는 ①③ 모두 미충족.
 
 ---
 

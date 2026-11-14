@@ -52,5 +52,9 @@ export function classifyPath(pathname: string): PathDecision {
   // 그 외 모든 4세그먼트 경로(/foo/bar/baz/qux, /foo/bar/Week2/day1, /foo/bar/week1/x …)는 day 라우트에만
   // 걸릴 수 있는 깊이인데 category 가 콘텐츠 접두사가 아니므로 존재할 수 없다.
   if (segments.length === DAY_ROUTE_DEPTH) return 'not-found';
+  // /{임의}/reviews[/{cert}] — 후기 라우트([category]/reviews)는 실제 섹션(콘텐츠 접두사)에만 있다. 위에서 콘텐츠
+  // 접두사는 이미 'content' 로 갈렸으므로 여기 오는 건 임의 category 이고, 라우트가 렌더 중 notFound() 를 불러도
+  // 스트리밍 때문에 200 으로 나가는 소프트 404 가 된다 → 렌더 전에 진짜 404.
+  if (segments.length >= 2 && segments.length <= 3 && segments[1] === 'reviews') return 'not-found';
   return 'pass';
 }

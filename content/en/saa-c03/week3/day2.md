@@ -142,7 +142,7 @@ File sharing in Windows environments requires the SMB (Server Message Block) pro
 
 FSx for Windows runs real Windows Server as a managed service. It integrates with AWS Managed Active Directory or on-premises AD and supports Kerberos authentication, NTFS ACLs, Shadow Copies, and DFS Namespaces. It can also be used for SQL Server FCI (Failover Cluster Instance).
 
-With a Multi-AZ deployment, automatic failover completes within 30 seconds. Storage capacity can be chosen as SSD or HDD.
+With a Multi-AZ deployment, automatic failover typically completes in under 30 seconds. Storage capacity can be chosen as SSD or HDD.
 
 > ⚠️ **Trap**: If you see "Windows file server + Active Directory + SMB," don't choose EFS. EFS can be mounted from a Windows client through an NFS client, but it doesn't support AD integration, NTFS permissions, or SMB characteristics. The exam asks about this distinction.
 

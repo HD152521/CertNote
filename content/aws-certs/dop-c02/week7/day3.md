@@ -266,10 +266,10 @@ aws lambda update-function-configuration \
 
 | 항목 | 값 |
 |------|-----|
-| 지원 런타임 | Java 11/17/21, Python 3.12+, .NET 8+ (2024년 말 추가) |
-| 지원 패키지 | zip만 (Container Image 미지원) |
-| Java 비용 | 무료 |
-| Python/.NET 비용 | $0.0000015625/GB-s (스냅샷 cache) + 복원 시간 과금 |
+| 지원 런타임 | Java 11 이상, Python 3.12 이상, .NET 8 이상 (공식 문서 2026-11 기준) |
+| 지원 패키지 | zip과 Container Image 모두 (초기에는 zip만 지원) |
+| Java 비용 | 추가 비용 없음 (Java 관리형 런타임) |
+| Python/.NET 비용 | 스냅샷 캐시(버전당 최소 3시간) + 복원 횟수 과금. 단가는 Lambda 요금 페이지 참조 |
 | 호환 제약 | Provisioned Concurrency와 동시 사용 불가 |
 
 > SnapStart는 1980년대 Self/Smalltalk의 **image-based persistence**와 동일한 발상이다. 프로그램 실행 상태(메모리 페이지, CPU 레지스터)를 통째로 저장한 뒤 복원해 시작 시간을 건너뛴다. 현대에서는 VMware의 vMotion, Google의 zigzag(스냅샷 기반 cold boot), CRIU(Linux의 Checkpoint/Restore in Userspace)가 같은 패턴. SnapStart는 Firecracker MicroVM의 스냅샷 기능을 Lambda에 노출한 것.

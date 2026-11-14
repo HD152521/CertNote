@@ -177,7 +177,7 @@ Pattern 5: Full CI/CD
 | "ARM compatible + 40% savings" | **Graviton** |
 | "SSE-KMS cost rising" | **S3 Bucket Key** |
 | "DDB throttle + cost savings" | **DAX** + appropriate RCU |
-| "Free Lambda cold start" | **SnapStart** (Java/Python/.NET) |
+| "Free Lambda cold start" | **SnapStart** (no extra cost for Java) |
 | "API GW cost savings" | **HTTP API** |
 | "S3 accessed very rarely" | **Glacier Deep Archive** |
 | "Low EBS usage but keep the data" | **gp3** (20% lower than gp2) |

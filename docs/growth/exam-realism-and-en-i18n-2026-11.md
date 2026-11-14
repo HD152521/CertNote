@@ -45,7 +45,16 @@ PR #62~#70 에서 한 일을 한곳에 정리한다. 세부 근거는 각 PR 설
   고친 것: DynamoDB 트랜잭션 100개, Secrets Manager 64KB, Control Tower 2019, GuardDuty severity 1.0–10.0, IAM 평가 7단계, SnapStart 시점 표기(문제 2·5), Aurora 페일오버 "보통 60초 미만", SQS 가시성 타임아웃 부등호, Redis 해시 태그 보기, 침해 대응 체크리스트 순서, 100ms 지연 인용 출처, 소제목·중복 정답 줄.
   보류(근거 불충분): 정답이 둘로 읽히는 문제(dva week7/day1·day5, week13/day4, sap week1/day2, soa week4/day2, saa week3/day5·week4/day5 등), SnapStart 보기 자체, IAM 다이어그램 순서, Aurora Serverless v1 수치,
   saa week5/day2·day5 의 "30초" 시험 키워드·보기, en/saa-c03 week3/day2 의 Multi-AZ 30초, dop week7/day3·day5 등의 SnapStart Java 전용 서술.
-- 남은 일: 위 보류 항목 정리, 색인 감소 원인(GSC 캡처 필요).
+- 보류 항목 재검증(11-14, 공식 문서 대조):
+  - SnapStart 서술(dop week7/day3·day5): 고침. 공식 문서(lambda/latest/dg/snapstart.html, 2026-11-14 확인)는 "Java 11 and later, Python 3.12 and later, .NET 8 and later", ZIP·컨테이너 이미지 모두 지원, Provisioned Concurrency·EFS·512MB 초과 임시 스토리지 미지원, Java 관리형 런타임은 추가 비용 없음. 지원 런타임/패키지 표, 컨테이너 "SnapStart 불가" 서술 4곳, 근거 없는 단가($0.0000015625/GB-s)를 고침(한국어·영어 동시). dop week7/day2 는 이미 시점 표기("2024년 12월 기준")가 있어 유지.
+  - Aurora "30초"(saa week5 day1·day2·day5): 고침. Aurora 문서(AuroraUserGuide/Concepts.AuroraHighAvailability.html)는 "service is typically restored in less than 60 seconds, and often less than 30 seconds". "30초 이내" 단정을 "보통 60초 미만, 종종 30초 미만"으로 바꾸고 보기 C의 "30초 페일오버"는 "빠른 페일오버"로 바꿈(정답 글자 불변).
+  - en/saa-c03 week3/day2 "Multi-AZ 30초": 이 문장은 RDS가 아니라 FSx for Windows 이야기. FSx 문서(fsx/latest/WindowsGuide/high-availability-multiAZ.html)는 "typically completes in less than 30 seconds" 라서 "보통 30초 미만"으로만 다듬음(한국어 원문도 같이). RDS Multi-AZ 인스턴스는 공식 "typically 60–120 seconds"(Concepts.MultiAZ.Failover.html)이며 본문 표기와 일치.
+  - 정답이 둘로 읽히는 문제: dva week7/day1 문제6("A도 부분 정답" 꼬리표 삭제), dva week7/day5 문제2(문제문에 "Aurora가 아닌" 조건 추가, "또는 C도 가능" 삭제, 해설 보정)만 정리. 나머지는 보류 유지: dva week7/day1 문제7(B/C 중 C가 우월하다는 "가장 적합" 문제), dva week7/day5 문제3·7, week13/day4 문제6("B 또는 D"), sap week1/day2("C 또는 B"), soa week4/day2("B 또는 C"), saa week3/day5·week4/day5("A, B 모두") — 문제문 제약을 새로 지어내야 해서 공식 문서 근거만으로는 고칠 수 없음.
+  - Aurora Serverless v1 수치: 보류 유지. 공식 문서로 확인된 것은 종료일(2025-03-31, 문서 안내)뿐이며, "2배 단위 점프·분 단위 확장·일시정지 후 ~30초" 수치는 공식 문서 원문을 가져오지 못해 확인 불가.
+  - 따로 발견(미수정): saa week6/day1·day5, sap week8/day1·day5, dva week13/day1·day4 에 "SnapStart = Java(또는 Java/Python/.NET 무료)" 표기가 남아 있음(Java만 무료, Python/.NET 은 과금). dva week7/day5 문제2·10 등의 "동기 quorum 복제"는 공식 표현이 semisynchronous(Multi-AZ DB 클러스터 문서). 페일오버 "35초 이내"는 공식("typically under 35 seconds")과 일치.
+  - 위 "따로 발견" 항목 처리(11-14, 공식 문서 snapstart.html 대조): sap week8/day1·day5, dva week13/day1·day4, saa week6/day1, dva week3/day1·day3·day5 의 SnapStart 서술을 "Java 관리형 런타임 추가 비용 없음, Python/.NET 캐시·복원 요금, Java 11+/Python 3.12+/.NET 8+" 로 고침(가격 수치는 쓰지 않음). dva week3/day1 문제1: 정답 B 유지, 오답 A/C 해설을 정확한 근거로 다시 씀. 보기 D("PC와 동시 활성화 불가")는 공식 문서상 사실이라 정답이 둘이 되므로 "PC가 반드시 함께 구성되어야 한다"로 바꿈(키 불변). dop week7/day2 문제2·5 는 (2024년 말 기준) 표기를 유지하고 해설 끝에 "현재는 Python·.NET·컨테이너 이미지도 지원 — 시점 주의" 덧붙임.
+  - 검증: quizContract·enContentLanguage 시험 4건 통과, 손댄 9쌍 ko/en 문제 수·정답 글자 일치, 영어 파일 한글 0.
+- 남은 일: 위 보류 항목 중 미수정분, 색인 감소 원인(GSC 캡처 필요).
 - 보류: `<html lang>` 서버 반영(라우트 구조 변경이 커서 SEO 영향 대비 비용이 큼), `/lab` 영어화.
 
 ## 4. 사용자 쪽 일정(변동 없음)

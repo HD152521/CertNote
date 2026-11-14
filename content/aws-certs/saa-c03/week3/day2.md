@@ -142,7 +142,7 @@ AWS가 FSx 시리즈를 만든 이유는 단순하다. EFS는 NFSv4.1 기반 범
 
 FSx for Windows는 실제 Windows Server를 관리형으로 실행한다. AWS Managed Active Directory 또는 온프레미스 AD와 통합되어 Kerberos 인증, NTFS ACL, 쉐도우 복사본(Shadow Copies), DFS Namespaces를 지원한다. SQL Server FCI(Failover Cluster Instance)에도 쓸 수 있다.
 
-Multi-AZ 배포 시 자동 페일오버가 30초 이내에 이루어진다. 스토리지 용량은 SSD 또는 HDD로 선택 가능하다.
+Multi-AZ 배포 시 자동 페일오버가 보통 30초 미만에 완료된다. 스토리지 용량은 SSD 또는 HDD로 선택 가능하다.
 
 > ⚠️ **함정**: "Windows 파일 서버 + Active Directory + SMB"가 보이면 EFS를 선택하면 안 된다. EFS는 Windows 클라이언트에서 NFS 클라이언트를 통해 마운트할 수 있지만, AD 통합, NTFS 권한, SMB 특성은 지원하지 않는다. 시험에서 이 구분을 묻는다.
 

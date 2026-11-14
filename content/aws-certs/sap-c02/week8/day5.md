@@ -9,7 +9,7 @@ Week 8은 서버리스와 이벤트 기반 아키텍처가 어떻게 협력하�
 ### Lambda (Day 1)
 - **Firecracker micro VM** 위 실행, **Slot 풀**에서 워밍업, 콜드 스타트는 다운로드/런타임/Init/JIT 4단계
 - **동시성 3종**: 계정 한도(1,000) / Reserved(격리+상한) / Provisioned(따뜻함, 비용)
-- **SnapStart**(CRaC 기반): Java/Python/.NET, **무료**, init uniqueness 주의
+- **SnapStart**(CRaC 기반): Java/Python/.NET, **Java는 추가 비용 없음(Python/.NET은 캐시·복원 요금)**, init uniqueness 주의
 - **Hyperplane ENI**(2019~): VPC 통합 시 ENI 공유, **RDS Proxy**로 connection 폭증 해결
 - **비동기 재시도** 2회 + **Destinations**(SNS/SQS/EB/Lambda)
 - **Function URL** (API GW 우회), **Container Image 10GB** + lazy loading, **Graviton2 ARM 20%↓**
@@ -43,7 +43,7 @@ Week 8은 서버리스와 이벤트 기반 아키텍처가 어떻게 협력하�
 ## 결정 트리 — 시나리오 키워드 → 도구 매핑
 
 ```
-"콜드 스타트 + 비용 없이"            → SnapStart (Java/Python/.NET)
+"콜드 스타트 + 비용 없이"            → SnapStart (Java는 추가 비용 없음)
 "콜드 스타트 + 예측 가능 트래픽"      → Provisioned Concurrency + Auto Scaling
 "Lambda + DB connection too many"   → RDS Proxy
 "한 함수가 다른 함수 영향"           → Reserved Concurrency
@@ -109,7 +109,7 @@ C) SnapStart + init 코드의 UUID 생성·DB connection을 `Crac.Resource`의 `
 D) 메모리를 10GB로 증가시켜 CPU 비례 할당으로 JIT 컴파일·클래스 로딩을 가속
 
 **정답: C**
-해설: SnapStart는 무료이고 Java init 시간을 거의 0으로 줄임. 그러나 SnapStart는 init 시점의 메모리·디스크 상태를 그대로 복원하므로 UUID 같은 uniqueness state와 DB connection의 TCP 상태가 모든 복원본에 복사되어 충돌이 생긴다. `Crac.Resource.afterRestore`에서 재초기화해야 안전. B(SnapStart만)는 인스턴스 충돌·DB 오류 위험. A(PC)는 비용 발생(시간당 과금). D(메모리)는 콜드 스타트와 거의 무관하고 비용 증가. 함정: "SnapStart 활성화하면 다 해결"이라는 보기가 함정. uniqueness 재초기화가 필수. 추가: 2024년 SnapStart가 Python·.NET까지 확장.
+해설: Java 관리형 런타임의 SnapStart는 추가 비용이 없고 Java init 시간을 거의 0으로 줄임. 그러나 SnapStart는 init 시점의 메모리·디스크 상태를 그대로 복원하므로 UUID 같은 uniqueness state와 DB connection의 TCP 상태가 모든 복원본에 복사되어 충돌이 생긴다. `Crac.Resource.afterRestore`에서 재초기화해야 안전. B(SnapStart만)는 인스턴스 충돌·DB 오류 위험. A(PC)는 비용 발생(시간당 과금). D(메모리)는 콜드 스타트와 거의 무관하고 비용 증가. 함정: "SnapStart 활성화하면 다 해결"이라는 보기가 함정. uniqueness 재초기화가 필수. 추가: 2024년 SnapStart가 Python·.NET까지 확장.
 
 ---
 
@@ -259,7 +259,7 @@ D) DLQ에 즉시 보내기
 
 [Lambda]
  ├─ Concurrency 3종 (계정/Reserved/Provisioned)
- ├─ SnapStart (Java/Python/.NET, 무료)
+ ├─ SnapStart (Java 추가 비용 없음, Python/.NET 캐시·복원 요금)
  ├─ Hyperplane ENI (VPC), RDS Proxy로 connection
  ├─ Destinations (OnSuccess/OnFailure → SNS/SQS/EB/Lambda)
  ├─ Container Image 10GB (block-level lazy loading)

@@ -34,7 +34,7 @@ Read: needs 3 of 6 responses (3/6 Quorum)
       → even losing an entire AZ, secure 3 of the remaining 4 → OK
 ```
 
-The key benefit of this design: even if an Aurora instance (compute) fails, the storage stays perfectly alive. You just attach a new instance to the storage. Because the storage is already replicated, it can start immediately from the latest state without any "Redo Log replay." This is the fundamental reason Aurora failover is fast, within 30 seconds.
+The key benefit of this design: even if an Aurora instance (compute) fails, the storage stays perfectly alive. You just attach a new instance to the storage. Because the storage is already replicated, it can start immediately from the latest state without any "Redo Log replay." This is the fundamental reason Aurora failover is fast, typically under 60 seconds and often under 30.
 
 > 🔍 **Going deeper**: Communication between Aurora storage nodes transmits only the Redo Log, not entire data pages. The Writer instance sends changed data to the storage nodes in the form of Redo Log, and the storage nodes run the Redo themselves to update the data pages. Thanks to this "Log Applicator" design, network traffic decreases dramatically. This contrasts with traditional MySQL Multi-AZ, which replicates entire data blocks. In the SIGMOD 2017 paper, the Aurora team reported that this optimization reduced network I/O by 7.7×.
 
@@ -131,7 +131,7 @@ Backtrack: ◄──────────────────────
 Aurora costs about 20% more than RDS MySQL/PostgreSQL. There are scenarios where this extra cost is justified, and scenarios where it isn't.
 
 **Cases where Aurora is more suitable:**
-- High-availability requirements where failover must be within 30 seconds
+- High-availability requirements where failover must be fast (typically under 60 seconds, often under 30)
 - Large read traffic needing many Read Replicas (Aurora allows up to 15 per cluster)
 - Global services needing < 1 second cross-region replication (Aurora Global DB)
 - Services with rapidly fluctuating traffic (Aurora Serverless v2)
@@ -148,7 +148,7 @@ Aurora costs about 20% more than RDS MySQL/PostgreSQL. There are scenarios where
 | Max storage | 64TB (gp3), 16TB (gp2) | Up to 128TB |
 | Max Read Replicas | 15 per source (MySQL, MariaDB, PostgreSQL, SQL Server) | 15 |
 | Replication lag | Asynchronous (seconds) | Usually much less than 100 ms (shared storage) |
-| Failover time | 60-120s | Within 30s |
+| Failover time | 60-120s | Typically under 60s (often under 30s) |
 | Global replication | Cross-Region Replica (async) | Global DB (storage-level, < 1s) |
 | Serverless | None | v2 (0.5-256 ACU, fine-grained fast scaling) |
 | Backtrack | None | MySQL-compatible only (72 hours) |
@@ -218,7 +218,7 @@ aws rds create-db-instance \
 
 Aurora is a service that keeps the exterior of a relational DB while completely redesigning the internal storage architecture. Its 6-copy distributed storage and 4/6 Quorum write protect data even against the total loss of one AZ, and compute-storage separation enables fast failover and easy Reader additions. Aurora Global Database achieves sub-second cross-region lag through storage-layer replication, and Serverless v2 adjusts capacity quickly in fine-grained increments.
 
-From an exam perspective: when you see "many Read Replicas," "failover within 30 seconds," "< 1 second cross-region replication," or "auto-scaling for fluctuating traffic," the Aurora family is the answer. Be sure to remember that "Backtrack" is Aurora MySQL-only, and "PostgreSQL uses PITR" only.
+From an exam perspective: when you see "many Read Replicas," "fast failover (typically under 60 seconds)," "< 1 second cross-region replication," or "auto-scaling for fluctuating traffic," the Aurora family is the answer. Be sure to remember that "Backtrack" is Aurora MySQL-only, and "PostgreSQL uses PITR" only.
 
 Tomorrow we cover the schema-less world, DynamoDB. We'll see why the partition key matters so much, how a Hot Partition can kill a system, and what 1 RCU = 4KB really means.
 

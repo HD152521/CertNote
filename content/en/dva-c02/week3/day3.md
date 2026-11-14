@@ -258,7 +258,7 @@ Function code: pure business logic                                  → updated 
 
 Separating it this way shrinks the function code ZIP to tens of KB so deployment is fast, and the Lambda service caches the layers so they aren't re-downloaded on every function invocation.
 
-> ⚠️ **Trap**: If you hit the 250MB layer total limit, you have to switch to a **container image (up to 10GB)**. ML models of several GB are the representative case. Note, though, that with a container image you cannot use layers, and SnapStart also applies (only for Java runtime container images).
+> ⚠️ **Trap**: If you hit the 250MB layer total limit, you have to switch to a **container image (up to 10GB)**. ML models of several GB are the representative case. Note, though, that with a container image you cannot use layers, and SnapStart can also be used (supported runtimes only).
 
 ## Integrating Versions, Aliases, and Layers: A SAM Template Example
 

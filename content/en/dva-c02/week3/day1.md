@@ -65,7 +65,7 @@ Cold start latency can be divided into three segments.
 | Go 1.x | 50–150ms | 30–100ms |
 | .NET 8 | 300–800ms | 200–500ms |
 
-SnapStart implements the idea of **checkpointing** for Java. It draws on a Linux technology called CRIU (Checkpoint/Restore In Userspace), which takes a snapshot of a process's memory state and restores it later. Lambda SnapStart saves the fully initialized JVM state as a snapshot in S3 at the moment a version is published. On later invocations, the MicroVM restores that snapshot as is, so JVM boot and code INIT are skipped. However, things such as the current time, random seeds, and environment-specific credentials need to be re-initialized when the snapshot is restored. You can hook into this point with the `CRaC` (Coordinated Restore at Checkpoint) API.
+SnapStart implements the idea of **checkpointing** (supported on Java 11+, Python 3.12+, and .NET 8+; the description below uses Java). It draws on a Linux technology called CRIU (Checkpoint/Restore In Userspace), which takes a snapshot of a process's memory state and restores it later. Lambda SnapStart saves the fully initialized JVM state as a snapshot in S3 at the moment a version is published. On later invocations, the MicroVM restores that snapshot as is, so JVM boot and code INIT are skipped. However, things such as the current time, random seeds, and environment-specific credentials need to be re-initialized when the snapshot is restored. You can hook into this point with the `CRaC` (Coordinated Restore at Checkpoint) API.
 
 > ⚠️ **Trap**: SnapStart is **only activated when you publish a version**. It does not work on `$LATEST`. So it must be used together with a Lambda alias, and it is common to also set up CodeDeploy traffic shifting.
 
@@ -185,7 +185,7 @@ APM vendors such as Datadog, Dynatrace, and New Relic use Lambda Extensions. Pre
 | Maximum execution time | 15 minutes | 60 minutes (HTTP), 9 minutes (event) | 10 minutes (Consumption) |
 | Maximum memory | 10GB | 16GB | 14GB |
 | VPC integration | ✅ | ✅ | ✅ |
-| Snapshotting | SnapStart (Java) | None | None |
+| Snapshotting | SnapStart (Java, Python, .NET) | None | None |
 | Pricing model | Requests + GB-seconds | Requests + GHz-seconds | Requests + GB-seconds |
 
 gVisor is a container sandbox made by Google that inserts a kernel emulation layer written in Go between the app and the Linux kernel. Unlike Firecracker, which is a real MicroVM (hardware virtualization), gVisor intercepts syscalls, so the overhead is different. Because Firecracker uses KVM, it is closer to bare metal for CPU-intensive work, while gVisor's overhead can grow for I/O-intensive work with many system calls.
@@ -250,11 +250,11 @@ In the next article, we will dig into which events trigger this Lambda function,
 
 A) It is enabled by default on all runtimes  
 B) It creates a snapshot of the initialized JVM at the time a version is published, and it does not work on $LATEST  
-C) It incurs additional cost proportional to memory size  
-D) It cannot be enabled at the same time as Provisioned Concurrency  
+C) It incurs additional cost proportional to memory size, even on Java managed runtimes  
+D) Provisioned Concurrency must be configured alongside it  
 
 **Answer: B**  
-Explanation: SnapStart saves the JVM's initialized state as a snapshot at the time of version publishing (publish-version). It cannot be set on `$LATEST`, so you must invoke through a published version or an alias pointing to that version. A is wrong — only the Java runtime is supported, and it is disabled by default. C is wrong — SnapStart itself is free (only a negligible S3 cost for storing the snapshot). D is wrong — they can be used together.
+Explanation: SnapStart saves the JVM's initialized state as a snapshot at the time of version publishing (publish-version). It cannot be set on `$LATEST`, so you must invoke through a published version or an alias pointing to that version. A is wrong — it is not available on every runtime (only Java 11+, Python 3.12+, and .NET 8+), and it is disabled by default, so you must publish a version and enable SnapStart. C is wrong — there is no additional cost on Java managed runtimes (Python/.NET incur separate cache and restore charges). D is wrong — Provisioned Concurrency is not required; in fact SnapStart cannot be used together with Provisioned Concurrency.
 
 ---
 

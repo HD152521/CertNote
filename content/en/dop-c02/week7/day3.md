@@ -266,10 +266,10 @@ The effect is dramatic. The cold start of a Spring Boot Lambda drops from 5-10 s
 
 | Item | Value |
 |------|-----|
-| Supported runtimes | Java 11/17/21, Python 3.12+, .NET 8+ (added in late 2024) |
-| Supported packaging | zip only (Container Image not supported) |
-| Java cost | Free |
-| Python/.NET cost | $0.0000015625/GB-s (snapshot cache) + restore time billing |
+| Supported runtimes | Java 11 and later, Python 3.12 and later, .NET 8 and later (per official docs, 2026-11) |
+| Supported packaging | Both zip and Container Image (initially zip only) |
+| Java cost | No additional cost (Java managed runtimes) |
+| Python/.NET cost | Snapshot caching (minimum 3 hours per version) + per-restore charge. See the Lambda pricing page for rates |
 | Compatibility constraint | Cannot be used together with Provisioned Concurrency |
 
 > SnapStart is the same idea as the **image-based persistence** of Self/Smalltalk in the 1980s. It saves the entire program execution state (memory pages, CPU registers) and restores it to skip startup time. In modern times, VMware's vMotion, Google's zigzag (snapshot-based cold boot), and CRIU (Checkpoint/Restore in Userspace on Linux) follow the same pattern. SnapStart exposes Firecracker MicroVM's snapshot capability to Lambda.

@@ -418,7 +418,7 @@ The core value is that it automatically emits **EMF (Embedded Metric Format)**. 
 
 ## Summary
 
-There are three pictures from today. First, the **Serverless Framework** is strong in its Node plugin ecosystem, but because of the commercial license from v4, new adoption calls for caution. Second, **CDK** abstracts every AWS resource in code, and the intent-based IAM of `grant*` methods and the L1/L2/L3 Construct hierarchy are its essential differentiators. Third, **Lambda Container Image** is suited for ML and large dependencies with its 10GB limit, but has Layer/SnapStart compatibility constraints.
+There are three pictures from today. First, the **Serverless Framework** is strong in its Node plugin ecosystem, but because of the commercial license from v4, new adoption calls for caution. Second, **CDK** abstracts every AWS resource in code, and the intent-based IAM of `grant*` methods and the L1/L2/L3 Construct hierarchy are its essential differentiators. Third, **Lambda Container Image** is suited for ML and large dependencies with its 10GB limit, but has Layer compatibility constraints (SnapStart support scope changes over time).
 
 In the next article, we look at patterns for orchestrating serverless workflows with Step Functions and EventBridge. The days of solving everything with a single Lambda are over; now the **collaboration structure between functions** is what matters more.
 
@@ -446,7 +446,7 @@ C) Container does not support SnapStart (Java too is zip only)
 D) Container does not support Provisioned Concurrency
 
 **Answer: D**
-Explanation: D is the incorrect statement. Container Image Lambda supports PC (although the PC warm-up time is longer than for zip). A/B/C are all true. The zip limit of 250MB is measured unzipped and the Container 10GB is measured compressed, so the actual usable capacity differs by 30 to 40 times. SnapStart has supported only zip Java since its release in 2022 and continued to lack Container support through the end of 2024. Layers are not compatible with Container, so all dependencies must be included in the Dockerfile.
+Explanation: D is the incorrect statement. Container Image Lambda supports PC (although the PC warm-up time is longer than for zip). A/B/C are all true. The zip limit of 250MB is measured unzipped and the Container 10GB is measured compressed, so the actual usable capacity differs by 30 to 40 times. SnapStart has supported only zip Java since its release in 2022 and continued to lack Container support through the end of 2024. Layers are not compatible with Container, so all dependencies must be included in the Dockerfile. (Currently Python, .NET, and container images are also supported — mind the date.)
 
 ---
 
@@ -482,7 +482,7 @@ C) Automatic caching of Lambda Layers
 D) Accelerates lazy loading of Container Images
 
 **Answer: B**
-Explanation: SnapStart (2022 re:Invent) is the same idea as the image-based persistence of Self/Smalltalk. The Java init phase is long and the main culprit of cold start, so it is solved with a pre-taken snapshot. Because of the uniqueness assumption problem (random seeds, DB connections), explicit re-initialization via a Runtime Hook is required. Zip Java only (as of late 2024); Python/Node/Container are not supported. A is too broad, C has nothing to do with SnapStart, and D is Container territory.
+Explanation: SnapStart (2022 re:Invent) is the same idea as the image-based persistence of Self/Smalltalk. The Java init phase is long and the main culprit of cold start, so it is solved with a pre-taken snapshot. Because of the uniqueness assumption problem (random seeds, DB connections), explicit re-initialization via a Runtime Hook is required. Zip Java only (as of late 2024); Python/Node/Container are not supported. A is too broad, C has nothing to do with SnapStart, and D is Container territory. (Currently Python, .NET, and container images are also supported — mind the date.)
 
 ---
 
@@ -512,4 +512,4 @@ Explanation: Aspects are the IaC version of AOP (Aspect-Oriented Programming, Gr
 
 ## 📌 Today's Summary
 
-The key points of the three IaC alternatives covered today are five: (1) the Serverless Framework is strong in its plugin ecosystem and multi-cloud, but be cautious about the v4 license change; (2) CDK, with L1/L2/L3 Constructs + grant methods + Aspects, can abstract every AWS resource, which SAM cannot; (3) Lambda Container Image's 10GB suits ML and large dependencies, but has Layer/SnapStart compatibility constraints; (4) Cold Start is mitigated by a combination of Provisioned Concurrency/SnapStart/ARM/package minimization; (5) the self-mutating feature of CDK Pipelines realizes GitOps IaC.
+The key points of the three IaC alternatives covered today are five: (1) the Serverless Framework is strong in its plugin ecosystem and multi-cloud, but be cautious about the v4 license change; (2) CDK, with L1/L2/L3 Constructs + grant methods + Aspects, can abstract every AWS resource, which SAM cannot; (3) Lambda Container Image's 10GB suits ML and large dependencies, but has Layer compatibility constraints (SnapStart support scope changes over time); (4) Cold Start is mitigated by a combination of Provisioned Concurrency/SnapStart/ARM/package minimization; (5) the self-mutating feature of CDK Pipelines realizes GitOps IaC.

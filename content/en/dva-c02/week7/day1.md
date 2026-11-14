@@ -263,7 +263,7 @@ B) Use the Multi-AZ DB Cluster Deployment
 C) Migrate to Aurora
 D) Introduce RDS Proxy
 
-**Answer: B (A is also partially correct)**
+**Answer: B**
 Explanation: The key of the question is "reads on the standby." The Multi-AZ DB Cluster Deployment, introduced in 2022, has a structure of 2 readable standbys + 1 writer, so reads are possible on the standby itself (it uses synchronous quorum replication and maintains RPO≈0). A) A Read Replica is not a standby but a separate asynchronous replica, so strictly speaking it is not "standby reads" - though if the goal is read scaling, A is also valid. C) is an excessive change. D) provides only connection pooling and does not automatically split reads and writes (the application must separate endpoints). When the word "standby" is explicit in the exam, consider B first.
 
 ---
