@@ -4,16 +4,15 @@ import { useState } from 'react';
 import { TerminalSquare } from 'lucide-react';
 import { LabSteps } from '@/components/cli-lab/LabSteps';
 import { LabTerminal, type NewLogEntry } from '@/components/cli-lab/LabTerminal';
-import { SHELL_LABS, labInitialState } from '@/lib/shell-lab/labs';
+import { useLanguage } from '@/lib/i18n-client';
+import { labInitialState } from '@/lib/shell-lab/labs';
+import { shellLabsFor } from '@/lib/shell-lab/labsEn';
 import { prompt } from '@/lib/shell-lab/run';
 import { accountByUid, session } from '@/lib/shell-lab/state';
 import type { RunResult } from '@/lib/shell-lab/types';
+import { shellStrings } from './i18n';
 import { useShell } from './useShell';
 import { WorkdirStrip } from './WorkdirStrip';
-
-export const BANNER =
-  'CertNote 리눅스 셸 연습장 — 브라우저 안에서 도는 Rocky Linux 8.8 시뮬레이터예요. 실제 서버에 접속하지 않아요.\n' +
-  'help 지원 명령 · Tab 자동 완성 · ↑↓ 이전 명령 · clear 화면 정리 · reset 처음부터';
 
 interface Progress {
   done: string[];
@@ -26,7 +25,10 @@ const EMPTY_PROGRESS: Progress = { done: [], commands: 0, errors: 0 };
 
 // 과제 정의에 판정 함수가 들어 있어 서버 컴포넌트에서 객체로 넘길 수 없다 — id 만 받고 여기서 찾는다.
 export function ShellLab({ labId }: { labId: string }) {
-  const lab = SHELL_LABS.find((l) => l.id === labId) ?? SHELL_LABS[0];
+  const lang = useLanguage();
+  const str = shellStrings(lang);
+  const labs = shellLabsFor(lang);
+  const lab = labs.find((l) => l.id === labId) ?? labs[0];
   const [progress, setProgress] = useState<Progress>(EMPTY_PROGRESS);
   const [viewing, setViewing] = useState<string | null>(null);
   const [reveal, setReveal] = useState<'hint' | 'answer' | null>(null);
@@ -45,12 +47,12 @@ export function ShellLab({ labId }: { labId: string }) {
       setViewing(null);
       setReveal(null);
     }
-    return passed.map((s) => ({ kind: 'pass', text: `STEP ${lab.steps.indexOf(s) + 1} 통과 · ${s.title}` }));
+    return passed.map((s) => ({ kind: 'pass', text: str.stepPassed(lab.steps.indexOf(s) + 1, s.title) }));
   };
 
   const { sim, log, input, setInput, inputRef, onKeyDown, putInTerminal, reset } = useShell({
     initial: () => labInitialState(lab),
-    banner: BANNER,
+    banner: str.labBanner,
     onResult: judge,
     onReset: () => {
       setProgress(EMPTY_PROGRESS);
@@ -81,7 +83,7 @@ export function ShellLab({ labId }: { labId: string }) {
         </div>
         <div className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11.5px] text-fg-muted">
           <TerminalSquare className="h-3.5 w-3.5" aria-hidden />
-          Rocky Linux 8.8 시뮬레이터
+          {str.simulator}
         </div>
       </div>
 
@@ -112,11 +114,11 @@ export function ShellLab({ labId }: { labId: string }) {
         prompt={prompt(sim)}
         task={
           currentStep
-            ? { label: `STEP ${lab.steps.indexOf(currentStep) + 1} / ${lab.steps.length} · ${currentStep.title}`, text: currentStep.task }
+            ? { label: str.stepLabel(lab.steps.indexOf(currentStep) + 1, lab.steps.length, currentStep.title), text: currentStep.task }
             : undefined
         }
-        inputLabel="리눅스 명령 입력"
-        placeholder="ls -l 처럼 쳐 보세요 · Tab 자동 완성"
+        inputLabel={str.inputLabel}
+        placeholder={str.labPlaceholder}
         log={log}
         input={input}
         onInput={setInput}

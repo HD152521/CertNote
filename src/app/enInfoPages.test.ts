@@ -19,6 +19,11 @@ import EnChangelogPage, { metadata as enChangelogMeta } from './en/changelog/pag
 import EnRoadmapHubPage, { metadata as enRoadmapMeta } from './en/roadmap/page';
 import EnRoadmapRolePage, { generateMetadata as enRoleMeta } from './en/roadmap/[role]/page';
 import { metadata as enPrivacyMeta } from './en/privacy/page';
+import { metadata as enLabMeta } from './en/lab/page';
+import { generateMetadata as enLabIdMeta } from './en/lab/[id]/page';
+import { metadata as koLabMeta } from './lab/page';
+import { generateMetadata as koLabIdMeta } from './lab/[id]/page';
+import { LAB_CATALOG } from '@/lib/labCatalog';
 
 import { metadata as koAboutMeta } from './about/page';
 import { metadata as koHowMeta } from './about/how-we-make/page';
@@ -124,6 +129,48 @@ describe('SEO — 사이트맵과 hreflang', () => {
     expect(en.alternates?.canonical).toBe(`/en/roadmap/${slug}`);
     expect(ko.alternates?.languages).toEqual(en.alternates?.languages);
     expect(ko.alternates?.languages).toEqual({ ko: `/roadmap/${slug}`, en: `/en/roadmap/${slug}` });
+  });
+});
+
+describe('lab pages: sitemap, hreflang, proxy', () => {
+  test('/en/lab and the 17 /en/lab/<id> pages are in the sitemap without duplicates', { timeout: 30000 }, async () => {
+    const entries = await sitemap();
+    const urls = entries.map((e) => e.url);
+    expect(urls).toContain(`${SITE_URL}/en/lab`);
+    for (const l of LAB_CATALOG) {
+      expect(urls).toContain(`${SITE_URL}/lab/${l.id}`);
+      expect(urls).toContain(`${SITE_URL}/en/lab/${l.id}`);
+    }
+    expect(urls.filter((u) => u === `${SITE_URL}/en/lab` || u.startsWith(`${SITE_URL}/en/lab/`))).toHaveLength(1 + LAB_CATALOG.length);
+    expect(new Set(urls).size).toBe(urls.length);
+    // same priority rule as the Korean pages (hub 0.7, detail 0.6)
+    expect(entries.find((e) => e.url === `${SITE_URL}/en/lab`)?.priority).toBe(0.7);
+    expect(entries.find((e) => e.url === `${SITE_URL}/en/lab/${LAB_CATALOG[0].id}`)?.priority).toBe(0.6);
+  });
+
+  test('/lab and /en/lab hub share the same hreflang object', () => {
+    expect(koLabMeta.alternates?.canonical).toBe('/lab');
+    expect(enLabMeta.alternates?.canonical).toBe('/en/lab');
+    expect(koLabMeta.alternates?.languages).toEqual(enLabMeta.alternates?.languages);
+    expect(koLabMeta.alternates?.languages).toEqual({ ko: '/lab', en: '/en/lab' });
+  });
+
+  test.each(LAB_CATALOG.map((l) => [l.id]))('/lab/%s pairs with /en/lab/%s', async (id) => {
+    const params = Promise.resolve({ id });
+    const ko = await koLabIdMeta({ params });
+    const en = await enLabIdMeta({ params });
+    expect(ko.alternates?.canonical).toBe(`/lab/${id}`);
+    expect(en.alternates?.canonical).toBe(`/en/lab/${id}`);
+    expect(ko.alternates?.languages).toEqual(en.alternates?.languages);
+    expect(ko.alternates?.languages).toEqual({ ko: `/lab/${id}`, en: `/en/lab/${id}` });
+    expect(hasHangul(String(en.title) + String(en.description))).toBe(false);
+  });
+
+  test('proxy passes /en/lab[/<id>] and sends unknown ids to content validation', () => {
+    expect(classifyPath('/en/lab')).toBe('pass');
+    for (const l of LAB_CATALOG) expect(classifyPath(`/en/lab/${l.id}`)).toBe('pass');
+    expect(classifyPath('/en/lab/nope')).toBe('content');
+    expect(classifyPath('/lab')).toBe('pass');
   });
 });
 

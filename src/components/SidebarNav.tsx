@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { ChevronRight, ChevronDown, MessageSquareText, TerminalSquare } from 'lucide-react';
 import { linkDayHref, type CertTree, type NavCertMeta } from '@/lib/navTree';
 import { cn } from '@/lib/cn';
-import { LAB_CATALOG, LAB_GROUPS } from '@/lib/labCatalog';
+import { labCatalogFor, labGroupsFor, labHref, labHubHref } from '@/lib/labCatalogLang';
 
 // 전송 형식은 src/lib/navTree.ts 에 있다(HTML 크기 때문에 DayRef 를 그대로 넘기지 않는다).
 export type { CertTree };
@@ -44,7 +44,8 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
   ];
 
   // 현재 경로의 섹션·자격증(기본 펼침 대상).
-  const activeSection = isEn ? 'aws' : pathname.match(/^\/([^/]+)(?:\/|$)/)?.[1] ?? null;
+  const isEnLab = pathname === '/en/lab' || pathname.startsWith('/en/lab/');
+  const activeSection = isEnLab ? 'lab' : isEn ? 'aws' : pathname.match(/^\/([^/]+)(?:\/|$)/)?.[1] ?? null;
   const activeSlug = pathname.match(/^\/[^/]+\/([^/]+)/)?.[1] ?? null;
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
@@ -190,62 +191,60 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
         );
       })}
 
-      {/* 실습 카테고리: 자격증과 상관없이 브라우저 터미널 연습장을 모아 둔다(한국어 전용). */}
-      {!isEn && (
-        <div className="rounded-md">
-          <button
-            type="button"
-            onClick={() => setOpenSections((p) => ({ ...p, lab: !p.lab }))}
-            aria-expanded={openSections.lab ?? false}
-            className={cn(
-              'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-bg-subtle',
-              activeSection === 'lab' && 'text-fg',
-            )}
-          >
-            <span className="text-sm font-semibold tracking-tight">실습</span>
-            <ChevronDown className={cn('h-4 w-4 shrink-0 text-fg-faint transition-transform', !openSections.lab && '-rotate-90')} />
-          </button>
-          {openSections.lab && (
-            <div className="mt-1 space-y-2 pl-1">
-              <Link
-                href="/lab"
-                onClick={onNavigate}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-bg-subtle',
-                  pathname === '/lab' ? 'text-accent' : 'text-fg-muted hover:text-fg',
-                )}
-              >
-                <TerminalSquare className="h-3.5 w-3.5 shrink-0" /> 전체 실습
-              </Link>
-              {LAB_GROUPS.map((group) => (
-                <div key={group.kind}>
-                  <div className="px-2 pb-0.5 font-mono text-[11px] uppercase tracking-wider text-fg-faint">{group.title}</div>
-                  <ul>
-                    {LAB_CATALOG.filter((l) => l.kind === group.kind).map((lab) => {
-                      const href = `/lab/${lab.id}`;
-                      return (
-                        <li key={lab.id}>
-                          <Link
-                            href={href}
-                            onClick={onNavigate}
-                            title={lab.title}
-                            className={cn(
-                              'block truncate rounded-md px-2 py-1 text-[13px] transition hover:bg-bg-subtle',
-                              pathname === href ? 'text-accent' : 'text-fg-muted hover:text-fg',
-                            )}
-                          >
-                            {lab.title}
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
-            </div>
+      {/* 실습 카테고리: 자격증과 상관없이 브라우저 터미널 연습장을 모아 둔다(한국어 /lab · 영어 /en/lab). */}
+      <div className="rounded-md">
+        <button
+          type="button"
+          onClick={() => setOpenSections((p) => ({ ...p, lab: !p.lab }))}
+          aria-expanded={openSections.lab ?? false}
+          className={cn(
+            'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-bg-subtle',
+            activeSection === 'lab' && 'text-fg',
           )}
-        </div>
-      )}
+        >
+          <span className="text-sm font-semibold tracking-tight">{en ? 'Labs' : '실습'}</span>
+          <ChevronDown className={cn('h-4 w-4 shrink-0 text-fg-faint transition-transform', !openSections.lab && '-rotate-90')} />
+        </button>
+        {openSections.lab && (
+          <div className="mt-1 space-y-2 pl-1">
+            <Link
+              href={labHubHref(lang)}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-bg-subtle',
+                pathname === labHubHref(lang) ? 'text-accent' : 'text-fg-muted hover:text-fg',
+              )}
+            >
+              <TerminalSquare className="h-3.5 w-3.5 shrink-0" /> {en ? 'All labs' : '전체 실습'}
+            </Link>
+            {labGroupsFor(lang).map((group) => (
+              <div key={group.kind}>
+                <div className="px-2 pb-0.5 font-mono text-[11px] uppercase tracking-wider text-fg-faint">{group.title}</div>
+                <ul>
+                  {labCatalogFor(lang).filter((l) => l.kind === group.kind).map((lab) => {
+                    const href = labHref(lab.id, lang);
+                    return (
+                      <li key={lab.id}>
+                        <Link
+                          href={href}
+                          onClick={onNavigate}
+                          title={lab.title}
+                          className={cn(
+                            'block truncate rounded-md px-2 py-1 text-[13px] transition hover:bg-bg-subtle',
+                            pathname === href ? 'text-accent' : 'text-fg-muted hover:text-fg',
+                          )}
+                        >
+                          {lab.title}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </nav>
   );
 }

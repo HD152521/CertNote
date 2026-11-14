@@ -1,4 +1,5 @@
 import type { Section } from './category';
+import { LAB_CATALOG } from './labCatalog';
 
 // 영어판(content/en)이 있는 자격증 중 aws 섹션이 아닌 것. aws 섹션은 11개 트랙 모두 영어판이 있어
 // 목록 없이 통과시키고, 그 밖의 섹션은 여기에 슬러그 → 섹션으로 적는다.
@@ -39,19 +40,33 @@ export const EN_INFO_PAIRS: ReadonlyArray<{ ko: string; en: string }> = [
   ...EN_ROADMAP_ROLE_SLUGS.map((slug) => ({ ko: `/roadmap/${slug}`, en: `/en/roadmap/${slug}` })),
 ];
 
-/** 한국어 정보 페이지의 영어판 경로. 짝이 없으면 undefined. */
+// 실습 페이지(/lab, /lab/<id>)도 영어판(/en/lab, /en/lab/<id>)과 1:1 짝이다. id 는 labCatalog 가 정한다.
+const LAB_IDS: ReadonlySet<string> = new Set(LAB_CATALOG.map((l) => l.id));
+
+function labSuffix(path: string, root: '/lab' | '/en/lab'): string | undefined {
+  if (path === root) return '';
+  if (!path.startsWith(`${root}/`)) return undefined;
+  const id = path.slice(root.length + 1);
+  return LAB_IDS.has(id) ? `/${id}` : undefined;
+}
+
+/** 한국어 정보·실습 페이지의 영어판 경로. 짝이 없으면 undefined. */
 export function enInfoPathOf(koPath: string): string | undefined {
+  const lab = labSuffix(koPath, '/lab');
+  if (lab !== undefined) return `/en/lab${lab}`;
   return EN_INFO_PAIRS.find((p) => p.ko === koPath)?.en;
 }
 
-/** 영어 정보 페이지의 한국어판 경로. 짝이 없으면 undefined. */
+/** 영어 정보·실습 페이지의 한국어판 경로. 짝이 없으면 undefined. */
 export function koInfoPathOf(enPath: string): string | undefined {
+  const lab = labSuffix(enPath, '/en/lab');
+  if (lab !== undefined) return `/lab${lab}`;
   return EN_INFO_PAIRS.find((p) => p.en === enPath)?.ko;
 }
 
-/** 영어 정보 페이지 경로인가(프록시가 콘텐츠 존재 검증 대신 통과시킨다). */
+/** 영어 정보·실습 페이지 경로인가(프록시가 콘텐츠 존재 검증 대신 통과시킨다). */
 export function isEnInfoPath(pathname: string): boolean {
-  return EN_INFO_PAIRS.some((p) => p.en === pathname);
+  return koInfoPathOf(pathname) !== undefined;
 }
 
 /** 한국어 정보 페이지 경로를 화면 언어에 맞는 링크로 바꾼다. 영어판이 없으면 원래 경로. */

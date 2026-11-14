@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { useLanguage } from '@/lib/i18n-client';
+import { cliStrings } from './i18n';
 
 export type NewLogEntry =
   | { kind: 'cmd'; text: string; exitCode: number; prompt?: string }
@@ -63,7 +65,7 @@ function Prompt({ text }: { text?: string }) {
   );
 }
 
-function Entry({ entry }: { entry: LogEntry }) {
+function Entry({ entry, noteLabel }: { entry: LogEntry; noteLabel: string }) {
   switch (entry.kind) {
     case 'cmd':
       return (
@@ -86,7 +88,7 @@ function Entry({ entry }: { entry: LogEntry }) {
     case 'note':
       return (
         <div className="my-1.5 border-l-2 border-[#f2c66d] bg-[#f2c66d]/[0.07] py-1.5 pl-3 pr-2 font-sans text-[13px] leading-relaxed text-[#ecdcb4]">
-          <span className="mr-2 font-mono text-[11px] uppercase tracking-wider text-[#f2c66d]">연습장 안내</span>
+          <span className="mr-2 font-mono text-[11px] uppercase tracking-wider text-[#f2c66d]">{noteLabel}</span>
           {entry.text}
         </div>
       );
@@ -104,9 +106,9 @@ function Entry({ entry }: { entry: LogEntry }) {
 }
 
 export function LabTerminal({
-  cwd, headerRight, region, accountId, prompt, inputLabel = 'AWS CLI 명령 입력',
-  placeholder = 'aws 로 시작해 보세요 · Tab 자동 완성', task, compact = false, log, input, onInput, onKeyDown, inputRef,
+  cwd, headerRight, region, accountId, prompt, inputLabel, placeholder, task, compact = false, log, input, onInput, onKeyDown, inputRef,
 }: LabTerminalProps) {
+  const t = cliStrings(useLanguage());
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [fitHeight, setFitHeight] = useState<number | null>(null);
@@ -168,7 +170,7 @@ export function LabTerminal({
         style={fitHeight !== null ? { height: fitHeight } : undefined}
       >
         {log.map((entry) => (
-          <Entry key={entry.id} entry={entry} />
+          <Entry key={entry.id} entry={entry} noteLabel={t.termNote} />
         ))}
         <label className="flex items-center">
           <Prompt text={prompt} />
@@ -183,13 +185,13 @@ export function LabTerminal({
             autoCapitalize="off"
             autoComplete="off"
             autoCorrect="off"
-            aria-label={inputLabel}
+            aria-label={inputLabel ?? t.termInputLabel}
             // 16px 미만이면 iOS 가 입력 시 화면을 확대한다.
             className={cn(
               'min-w-0 flex-1 bg-transparent text-[16px] text-[#e7efeb] caret-[#5eead4] outline-none sm:text-[13px]',
               'placeholder:text-[#3d4f49]',
             )}
-            placeholder={log.some((e) => e.kind === 'cmd') ? '' : placeholder}
+            placeholder={log.some((e) => e.kind === 'cmd') ? '' : (placeholder ?? t.termPlaceholder)}
           />
         </label>
       </div>

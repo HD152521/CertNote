@@ -2,9 +2,12 @@
 
 import { useRef, useState, type KeyboardEvent } from 'react';
 import type { LogEntry, NewLogEntry } from '@/components/cli-lab/LabTerminal';
+import { useLanguage } from '@/lib/i18n-client';
 import { complete } from '@/lib/shell-lab/complete';
+import { translateShellMessageEn } from '@/lib/shell-lab/messagesEn';
 import { prompt, runLine } from '@/lib/shell-lab/run';
 import type { RunResult, ShellState } from '@/lib/shell-lab/types';
+import { shellStrings } from './i18n';
 
 interface UseShellOptions {
   initial: () => ShellState;
@@ -17,6 +20,10 @@ interface UseShellOptions {
 
 // 셸 연습장 터미널의 공통 동작: 실행, 기록, Tab 완성, ↑↓ 이전 명령, clear·reset, Ctrl+L·Ctrl+C.
 export function useShell({ initial, banner, onResult, onReset }: UseShellOptions) {
+  const lang = useLanguage();
+  const strings = shellStrings(lang);
+  // 시뮬레이터가 직접 찍는 한국어 안내는 영어 화면에서 표시할 때 바꾼다(실제 명령 출력은 원래 영어).
+  const localize = (text: string) => (lang === 'en' ? translateShellMessageEn(text) : text);
   const nextId = useRef(1);
   const makeEntry = (entry: NewLogEntry): LogEntry => ({ ...entry, id: nextId.current++ });
 
@@ -49,14 +56,14 @@ export function useShell({ initial, banner, onResult, onReset }: UseShellOptions
       setLog((prev) => [
         ...prev,
         makeEntry({ kind: 'cmd', text: line, exitCode: 1, prompt: prompt(sim) }),
-        makeEntry({ kind: 'note', text: '연습장이 이 명령을 처리하지 못했어요. 다른 방식으로 써 보거나 reset 으로 처음부터 시작하세요.' }),
+        makeEntry({ kind: 'note', text: strings.engineFailure }),
       ]);
       return;
     }
     const entries: LogEntry[] = [makeEntry({ kind: 'cmd', text: line, exitCode: result.exitCode, prompt: prompt(sim) })];
     if (result.stdout) entries.push(makeEntry({ kind: 'out', text: result.stdout.replace(/\n$/, '') }));
-    if (result.stderr) entries.push(makeEntry({ kind: 'err', text: result.stderr.replace(/\n$/, '') }));
-    if (result.note) entries.push(makeEntry({ kind: 'note', text: result.note }));
+    if (result.stderr) entries.push(makeEntry({ kind: 'err', text: localize(result.stderr.replace(/\n$/, '')) }));
+    if (result.note) entries.push(makeEntry({ kind: 'note', text: localize(result.note) }));
     for (const extra of onResult?.(result, trimmed) ?? []) entries.push(makeEntry(extra));
 
     setSim(result.state);

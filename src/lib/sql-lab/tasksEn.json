@@ -1,0 +1,384 @@
+[
+  {
+    "id": "sql-select-basics",
+    "code": "SQL S1",
+    "title": "Pick the rows you want with SELECT, functions and WHERE",
+    "items": [
+      {
+        "id": "annual",
+        "title": "Annual pay and aliases",
+        "prompt": "List the name (ENAME) and annual pay of every employee, ordered by employee number (EMPNO). Annual pay is SAL * 12 plus COMM; an employee with no COMM counts it as 0.",
+        "hint": "If COMM is NULL, the whole expression SAL * 12 + COMM becomes NULL. Convert it to 0 first with NVL.",
+        "answer": "SELECT ENAME, SAL * 12 + NVL(COMM, 0) AS ANNUAL_PAY FROM EMP ORDER BY EMPNO;",
+        "explain": "NULL in arithmetic makes the result NULL. Using COALESCE(COMM, 0) or a CASE instead of NVL(COMM, 0) is also correct as long as the result is the same.",
+        "ordered": true
+      },
+      {
+        "id": "distinct-job",
+        "title": "Distinct job list",
+        "prompt": "List the jobs (JOB) in the employee table without duplicates, in alphabetical order.",
+        "hint": "One keyword right after SELECT removes duplicate rows.",
+        "answer": "SELECT DISTINCT JOB FROM EMP ORDER BY JOB;",
+        "explain": "DISTINCT collapses rows whose whole SELECT list is identical. GROUP BY JOB gives the same result.",
+        "ordered": true
+      },
+      {
+        "id": "like-name",
+        "title": "Second letter of the name",
+        "prompt": "List the names of employees whose second letter is A, in name order.",
+        "hint": "In LIKE, _ matches exactly one character and % matches zero or more.",
+        "answer": "SELECT ENAME FROM EMP WHERE ENAME LIKE '_A%' ORDER BY ENAME;",
+        "explain": "'_A%' means any first character, A as the second, and anything after. SUBSTR(ENAME, 2, 1) = 'A' is also correct.",
+        "ordered": true
+      },
+      {
+        "id": "between-in",
+        "title": "Range and list conditions",
+        "prompt": "List the name and salary of employees whose salary (SAL) is between 1000 and 2000 inclusive and whose department number is 20 or 30, ordered by salary (then by name for ties).",
+        "hint": "BETWEEN includes both endpoints. Use IN for a list comparison.",
+        "answer": "SELECT ENAME, SAL FROM EMP WHERE SAL BETWEEN 1000 AND 2000 AND DEPTNO IN (20, 30) ORDER BY SAL, ENAME;",
+        "explain": "BETWEEN 1000 AND 2000 is the same as SAL >= 1000 AND SAL <= 2000. If you mixed AND and OR, check your parentheses: AND is evaluated before OR.",
+        "ordered": true
+      },
+      {
+        "id": "null-comm",
+        "title": "Finding NULL",
+        "prompt": "List, in name order, the names of employees in department 30 who have no commission (COMM is NULL).",
+        "hint": "= NULL is always UNKNOWN, so it never selects any row.",
+        "answer": "SELECT ENAME FROM EMP WHERE COMM IS NULL AND DEPTNO = 30 ORDER BY ENAME;",
+        "explain": "NULL can only be found with IS NULL. TURNER's COMM is 0, not NULL, so he is not in the result.",
+        "ordered": true
+      },
+      {
+        "id": "string-fn",
+        "title": "Combining string functions",
+        "prompt": "For employees in department 10, list the name with only its first letter capitalized (for example King) and the length of the name, in name order.",
+        "hint": "Use the function that capitalizes only the first letter and the function that counts characters.",
+        "answer": "SELECT INITCAP(ENAME), LENGTH(ENAME) FROM EMP WHERE DEPTNO = 10 ORDER BY ENAME;",
+        "explain": "INITCAP uppercases the first letter of each word and lowercases the rest. Sort by the original name (ENAME).",
+        "ordered": true
+      },
+      {
+        "id": "hire-year",
+        "title": "Extracting the year from a date",
+        "prompt": "List the name and hire date (HIREDATE) of employees hired in 1981, ordered by hire date (then by name for ties).",
+        "hint": "Extract the year with EXTRACT(YEAR FROM ...) or TO_CHAR(..., 'YYYY'). A date range with BETWEEN also works.",
+        "answer": "SELECT ENAME, HIREDATE FROM EMP WHERE EXTRACT(YEAR FROM HIREDATE) = 1981 ORDER BY HIREDATE, ENAME;",
+        "explain": "HIREDATE BETWEEN DATE '1981-01-01' AND DATE '1981-12-31' gives the same result. Watch the upper bound of BETWEEN when a date has a time part.",
+        "ordered": true
+      },
+      {
+        "id": "case-grade",
+        "title": "Bucketing with CASE",
+        "prompt": "For employees in department 20, list the name, salary and grade, ordered by salary from highest (then by name for ties). The grade is 'High' if the salary is 3000 or more, 'Mid' if it is 1500 or more, and 'Low' otherwise.",
+        "hint": "A searched CASE returns the value of the first WHEN that matches, from the top.",
+        "answer": "SELECT ENAME, SAL, CASE WHEN SAL >= 3000 THEN 'High' WHEN SAL >= 1500 THEN 'Mid' ELSE 'Low' END AS GRADE_LABEL FROM EMP WHERE DEPTNO = 20 ORDER BY SAL DESC, ENAME;",
+        "explain": "The order of the WHEN branches matters. If you wrote SAL >= 1500 first, an employee with 3000 would also become Mid.",
+        "ordered": true
+      }
+    ]
+  },
+  {
+    "id": "sql-group-join",
+    "code": "SQL S2",
+    "title": "Group and connect with GROUP BY, HAVING and joins",
+    "items": [
+      {
+        "id": "dept-avg",
+        "title": "Aggregates per department",
+        "prompt": "List the number of employees and the average salary (rounded to the nearest integer) for each department number, ordered by department number.",
+        "hint": "Only the columns in GROUP BY and aggregate functions may appear in SELECT.",
+        "answer": "SELECT DEPTNO, COUNT(*), ROUND(AVG(SAL)) FROM EMP GROUP BY DEPTNO ORDER BY DEPTNO;",
+        "explain": "Putting a column outside GROUP BY, such as ENAME, in SELECT raises ORA-00979.",
+        "ordered": true
+      },
+      {
+        "id": "having",
+        "title": "Conditions on groups",
+        "prompt": "List the department number and employee count of departments with 4 or more employees, ordered by department number.",
+        "hint": "A condition on groups goes in HAVING, not WHERE.",
+        "answer": "SELECT DEPTNO, COUNT(*) FROM EMP GROUP BY DEPTNO HAVING COUNT(*) >= 4 ORDER BY DEPTNO;",
+        "explain": "WHERE filters rows before grouping, so it cannot contain an aggregate function (ORA-00934).",
+        "ordered": true
+      },
+      {
+        "id": "avg-comm",
+        "title": "Aggregates and NULL",
+        "prompt": "Output two averages of the commission across all employees in a single row. The first is the average over only the employees who have a commission; the second treats missing commissions as 0 and divides by all 14 employees.",
+        "hint": "Aggregate functions ignore NULL.",
+        "answer": "SELECT AVG(COMM), AVG(NVL(COMM, 0)) FROM EMP;",
+        "explain": "AVG(COMM) divides by the 4 employees who have COMM and gives 550; AVG(NVL(COMM, 0)) divides by 14 and gives 157.142857. SUM(COMM) / COUNT(*) equals the second value too.",
+        "ordered": false
+      },
+      {
+        "id": "equi-join",
+        "title": "Adding the department name",
+        "prompt": "List the employee names and department names (DNAME) for departments located in DALLAS, ordered by employee name.",
+        "hint": "Join EMP and DEPT on DEPTNO. When both tables have a column with the same name, use an alias to say which one you mean.",
+        "answer": "SELECT E.ENAME, D.DNAME FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO WHERE D.LOC = 'DALLAS' ORDER BY E.ENAME;",
+        "explain": "The Oracle-style form (FROM EMP E, DEPT D WHERE E.DEPTNO = D.DEPTNO) gives the same result.",
+        "ordered": true
+      },
+      {
+        "id": "non-equi",
+        "title": "Joining to salary grades",
+        "prompt": "List the name, salary and grade of employees whose salary grade (SALGRADE.GRADE) is 4 or higher, ordered by grade from highest (then by name for ties).",
+        "hint": "Join to the grade whose range contains the salary, between LOSAL and HISAL (a join that is not =).",
+        "answer": "SELECT E.ENAME, E.SAL, S.GRADE FROM EMP E JOIN SALGRADE S ON E.SAL BETWEEN S.LOSAL AND S.HISAL WHERE S.GRADE >= 4 ORDER BY S.GRADE DESC, E.ENAME;",
+        "explain": "A non-equi join links rows with comparisons such as BETWEEN, > or < instead of =.",
+        "ordered": true
+      },
+      {
+        "id": "outer-join",
+        "title": "Showing departments with no employees",
+        "prompt": "List every department name and its number of employees, ordered by department name. A department with no employees must show 0.",
+        "hint": "Use an outer join to keep departments with no employees. COUNT(*) counts a NULL-filled row as 1.",
+        "answer": "SELECT D.DNAME, COUNT(E.EMPNO) FROM DEPT D LEFT JOIN EMP E ON D.DEPTNO = E.DEPTNO GROUP BY D.DNAME ORDER BY D.DNAME;",
+        "explain": "COUNT(*) would make OPERATIONS 1. Count a column from the employee side, such as COUNT(E.EMPNO), to get 0. In Oracle syntax this is WHERE E.DEPTNO(+) = D.DEPTNO.",
+        "ordered": true
+      },
+      {
+        "id": "self-join",
+        "title": "Adding the manager name",
+        "prompt": "List the name of every employee and the name of their manager, ordered by employee name. Keep KING, who has no manager, in the result.",
+        "hint": "Use EMP twice (employee side, manager side). Keeping KING requires an outer join.",
+        "answer": "SELECT E.ENAME, M.ENAME FROM EMP E LEFT JOIN EMP M ON E.MGR = M.EMPNO ORDER BY E.ENAME;",
+        "explain": "With an inner join, KING (whose MGR is NULL) drops out and you get 13 rows.",
+        "ordered": true
+      },
+      {
+        "id": "join-group",
+        "title": "Join, then group",
+        "prompt": "List the salary total per department name, ordered by total from largest. Departments with no employees may be omitted.",
+        "hint": "Join first, then group by department name.",
+        "answer": "SELECT D.DNAME, SUM(E.SAL) FROM EMP E JOIN DEPT D ON E.DEPTNO = D.DEPTNO GROUP BY D.DNAME ORDER BY SUM(E.SAL) DESC;",
+        "explain": "Sorting by position, as in ORDER BY 2 DESC, also works.",
+        "ordered": true
+      }
+    ]
+  },
+  {
+    "id": "sql-subquery-rollup",
+    "code": "SQL S3",
+    "title": "Ask and aggregate in one query with subqueries, set operators and ROLLUP",
+    "items": [
+      {
+        "id": "above-avg",
+        "title": "Earning more than the average",
+        "prompt": "List the name and salary of employees whose salary is above the average salary of all employees, ordered by salary from highest (then by name for ties).",
+        "hint": "The average is a single value, so compare against it with a single-row subquery.",
+        "answer": "SELECT ENAME, SAL FROM EMP WHERE SAL > (SELECT AVG(SAL) FROM EMP) ORDER BY SAL DESC, ENAME;",
+        "explain": "Writing WHERE SAL > AVG(SAL) puts an aggregate in WHERE and raises ORA-00934. Compute the average first in a subquery.",
+        "ordered": true
+      },
+      {
+        "id": "dept-max",
+        "title": "Top earner per department",
+        "prompt": "For each department, list the department number, name and salary of the employee with the highest salary in that department, ordered by department number (then by name for ties).",
+        "hint": "Compare the (department number, salary) pair with the list of per-department maximums, or use a correlated subquery to compare with your own department maximum.",
+        "answer": "SELECT DEPTNO, ENAME, SAL FROM EMP WHERE (DEPTNO, SAL) IN (SELECT DEPTNO, MAX(SAL) FROM EMP GROUP BY DEPTNO) ORDER BY DEPTNO, ENAME;",
+        "explain": "In department 20, SCOTT and FORD both earn 3000, so two rows come back. A correlated subquery such as WHERE SAL = (SELECT MAX(SAL) FROM EMP E2 WHERE E2.DEPTNO = E.DEPTNO) gives the same result.",
+        "ordered": true
+      },
+      {
+        "id": "no-emp-dept",
+        "title": "Departments with no employees",
+        "prompt": "List the number and name of departments that have no employees at all.",
+        "hint": "Use the negation of EXISTS, or a set difference between lists of department numbers.",
+        "answer": "SELECT DEPTNO, DNAME FROM DEPT D WHERE NOT EXISTS (SELECT 1 FROM EMP E WHERE E.DEPTNO = D.DEPTNO);",
+        "explain": "DEPTNO NOT IN (SELECT DEPTNO FROM EMP) gives the same result on this data. But if the subquery returns even one NULL, NOT IN returns no rows at all.",
+        "ordered": false
+      },
+      {
+        "id": "not-manager",
+        "title": "Employees with no subordinates",
+        "prompt": "List, in name order, the names of employees who are nobody's manager (MGR).",
+        "hint": "The MGR column contains a NULL (KING). Run NOT IN yourself and see what changes.",
+        "answer": "SELECT ENAME FROM EMP E WHERE NOT EXISTS (SELECT 1 FROM EMP M WHERE M.MGR = E.EMPNO) ORDER BY ENAME;",
+        "explain": "WHERE EMPNO NOT IN (SELECT MGR FROM EMP) returns 0 rows because MGR contains a NULL. Removing the NULL with NOT IN (SELECT MGR FROM EMP WHERE MGR IS NOT NULL) matches the answer.",
+        "ordered": true
+      },
+      {
+        "id": "union-jobs",
+        "title": "Combining jobs of two departments",
+        "prompt": "List, as a single list without duplicates and in alphabetical order, the jobs (JOB) found in department 10 and department 30.",
+        "hint": "Use the set operator that merges two SELECT results and removes duplicates.",
+        "answer": "SELECT JOB FROM EMP WHERE DEPTNO = 10 UNION SELECT JOB FROM EMP WHERE DEPTNO = 30 ORDER BY JOB;",
+        "explain": "UNION ALL would show CLERK and MANAGER twice. WHERE DEPTNO IN (10, 30) with DISTINCT gives the same result.",
+        "ordered": true
+      },
+      {
+        "id": "rollup-dept",
+        "title": "Department subtotals and grand total",
+        "prompt": "Show the salary total per department number and the grand total of all salaries in one result. Order by department number, with the grand total row last.",
+        "hint": "Use the GROUP BY extension that adds subtotal and grand-total rows. The department number of the grand total row is NULL.",
+        "answer": "SELECT DEPTNO, SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO) ORDER BY DEPTNO;",
+        "explain": "ROLLUP(DEPTNO) adds one grand-total row to the three department rows. NULL sorts last in ascending order, so the total comes last. GROUPING SETS(DEPTNO, ()) is equivalent.",
+        "ordered": true
+      },
+      {
+        "id": "rollup-label",
+        "title": "Labeling the subtotal row",
+        "prompt": "List the employee count per job and the total employee count. The first column is the job name, and the total row shows 'All'. Order by job, with the total row last.",
+        "hint": "Tell the subtotal row apart by checking whether GROUPING(JOB) is 1.",
+        "answer": "SELECT CASE GROUPING(JOB) WHEN 1 THEN 'All' ELSE JOB END, COUNT(*) FROM EMP GROUP BY ROLLUP(JOB) ORDER BY GROUPING(JOB), JOB;",
+        "explain": "NVL(JOB, 'All') gives the same result here, but if a JOB value were itself NULL it could not be told apart from the subtotal row. GROUPING separates the two.",
+        "ordered": true
+      }
+    ]
+  },
+  {
+    "id": "sql-window-hierarchy",
+    "code": "SQL S4",
+    "title": "Rank with window functions, Top-N and hierarchical queries, and unfold the tree",
+    "items": [
+      {
+        "id": "dense-rank",
+        "title": "Ranking without skipping ties",
+        "prompt": "List the name, salary and salary rank of every employee. The highest salary is rank 1, equal salaries share a rank, and the next rank is not skipped (1, 2, 2, 3 ...). Order by rank, then by name.",
+        "hint": "Pick one of the three ranking functions that differ in how they handle ties.",
+        "answer": "SELECT ENAME, SAL, DENSE_RANK() OVER (ORDER BY SAL DESC) AS RNK FROM EMP ORDER BY 3, ENAME;",
+        "explain": "RANK skips the rank after a tie (1, 2, 2, 4) and ROW_NUMBER gives different numbers even to ties. The one that does not skip is DENSE_RANK.",
+        "ordered": true
+      },
+      {
+        "id": "dept-top",
+        "title": "One top earner per department",
+        "prompt": "For each department, list the department number, name and salary of one employee with the highest salary, ordered by department number. If two employees tie, pick the one whose name comes first alphabetically.",
+        "hint": "Use a window function that numbers rows within each department inside an inline view, then keep only number 1 on the outside. A window function cannot be used directly in WHERE.",
+        "answer": "SELECT DEPTNO, ENAME, SAL FROM (SELECT DEPTNO, ENAME, SAL, ROW_NUMBER() OVER (PARTITION BY DEPTNO ORDER BY SAL DESC, ENAME) RN FROM EMP) WHERE RN = 1 ORDER BY DEPTNO;",
+        "explain": "In department 20, SCOTT and FORD both earn 3000, and the name tie-break leaves FORD. Writing WHERE ROW_NUMBER() OVER (...) = 1 raises ORA-30483.",
+        "ordered": true
+      },
+      {
+        "id": "running-total",
+        "title": "Running salary by hire order",
+        "prompt": "For employees in department 30, list the name, hire date, salary and the running total of salary in hire-date order, ordered by hire date (then by name for ties).",
+        "hint": "Adding OVER (ORDER BY ...) to SUM makes a running total. If several employees share a hire date, the default range (RANGE) adds the tied rows together.",
+        "answer": "SELECT ENAME, HIREDATE, SAL, SUM(SAL) OVER (ORDER BY HIREDATE, ENAME) AS RUNNING_SAL FROM EMP WHERE DEPTNO = 30 ORDER BY HIREDATE, ENAME;",
+        "explain": "ENAME is included in the sort key so there are no ties. ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW gives the same result.",
+        "ordered": true
+      },
+      {
+        "id": "prev-sal",
+        "title": "Salary gap to the previous employee",
+        "prompt": "Line up the employees of department 20 by salary ascending (then by name for ties) and list the name, the salary, the salary of the previous employee, and the difference (salary minus previous salary), in the same order. The first employee has no previous one, so the previous salary and difference are empty.",
+        "hint": "The function that fetches a value from the previous row is LAG.",
+        "answer": "SELECT ENAME, SAL, LAG(SAL) OVER (ORDER BY SAL, ENAME) AS PREV_SAL, SAL - LAG(SAL) OVER (ORDER BY SAL, ENAME) AS DIFF FROM EMP WHERE DEPTNO = 20 ORDER BY SAL, ENAME;",
+        "explain": "LAG(SAL) is NULL on the first row, and subtraction involving NULL is NULL too. With a default such as LAG(SAL, 1, 0), the first difference would be SAL itself, which changes the result.",
+        "ordered": true
+      },
+      {
+        "id": "top3-sal",
+        "title": "Top 3 salaries",
+        "prompt": "List the name and salary of the top 3 earners, highest first. Break ties by name.",
+        "hint": "Put the sorted result in an inline view and cut with ROWNUM outside, or use FETCH FIRST. If you sort and use ROWNUM in the same query, the rows are cut before sorting.",
+        "answer": "SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME FETCH FIRST 3 ROWS ONLY;",
+        "explain": "SELECT * FROM (SELECT ENAME, SAL FROM EMP ORDER BY SAL DESC, ENAME) WHERE ROWNUM <= 3 is equivalent. WHERE ROWNUM <= 3 ORDER BY SAL DESC picks any three rows first and then sorts them.",
+        "ordered": true
+      },
+      {
+        "id": "org-chart",
+        "title": "Unfolding the org chart",
+        "prompt": "Starting from KING, unfold the organization from manager to subordinate and list the hierarchy depth (LEVEL) and name. Employees under the same manager are sorted by name.",
+        "hint": "A parent's EMPNO is a child's MGR. Which side PRIOR is attached to sets the direction. Sorting among siblings uses ORDER SIBLINGS BY.",
+        "answer": "SELECT LEVEL, ENAME FROM EMP START WITH MGR IS NULL CONNECT BY PRIOR EMPNO = MGR ORDER SIBLINGS BY ENAME;",
+        "explain": "Writing PRIOR MGR = EMPNO walks the opposite way (subordinate to manager). Using ORDER BY ENAME breaks the tree shape and just mixes the rows into name order.",
+        "ordered": true
+      },
+      {
+        "id": "path-to-king",
+        "title": "SMITH reporting line",
+        "prompt": "Start at SMITH and walk up toward the managers, listing LEVEL and name (SMITH is LEVEL 1).",
+        "hint": "This time you climb from child to parent. The child MGR is the parent EMPNO.",
+        "answer": "SELECT LEVEL, ENAME FROM EMP START WITH ENAME = 'SMITH' CONNECT BY PRIOR MGR = EMPNO;",
+        "explain": "SMITH, FORD, JONES, KING: four levels. To see it on one line, also output SYS_CONNECT_BY_PATH(ENAME, '/').",
+        "ordered": true
+      }
+    ]
+  },
+  {
+    "id": "sql-pivot-dml",
+    "code": "SQL S5",
+    "title": "Reshape and change data with PIVOT, regular expressions, DML and transactions",
+    "items": [
+      {
+        "id": "pivot-job",
+        "title": "Jobs as rows, departments as columns",
+        "prompt": "For each job (JOB), list the salary totals of departments 10, 20 and 30 in one row. The columns are JOB, D10, D20, D30, in that order, sorted by job.",
+        "hint": "Pick only the columns to pass to PIVOT (JOB, DEPTNO, SAL) in an inline view. Any other column left in becomes part of the grouping key.",
+        "answer": "SELECT * FROM (SELECT JOB, DEPTNO, SAL FROM EMP) PIVOT (SUM(SAL) FOR DEPTNO IN (10 AS D10, 20 AS D20, 30 AS D30)) ORDER BY JOB;",
+        "explain": "A CASE + GROUP BY such as SUM(CASE WHEN DEPTNO = 10 THEN SAL END) gives the same result. A cell with no employees is NULL because it is a SUM.",
+        "ordered": true
+      },
+      {
+        "id": "regexp-vowels",
+        "title": "Names with two or more vowels",
+        "prompt": "List the name and the vowel count of employees whose name contains two or more vowels (A, E, I, O, U), in name order.",
+        "hint": "Use a regular expression to count the characters in the set [AEIOU].",
+        "answer": "SELECT ENAME, REGEXP_COUNT(ENAME, '[AEIOU]') AS VOWELS FROM EMP WHERE REGEXP_COUNT(ENAME, '[AEIOU]') >= 2 ORDER BY ENAME;",
+        "explain": "LENGTH(ENAME) - LENGTH(TRANSLATE(ENAME, 'XAEIOU', 'X')) also counts them, but REGEXP_COUNT is shorter.",
+        "ordered": true
+      },
+      {
+        "id": "regexp-mask",
+        "title": "Masking the middle of a name",
+        "prompt": "For employees in department 10, show the name with only the first and last letters kept and every middle letter replaced by * (for example KING becomes K**G), ordered by the original name.",
+        "hint": "Split the name into first letter, middle and last letter with SUBSTR, and build as many * as the middle length with RPAD. You can also replace the middle characters (.) with REGEXP_REPLACE.",
+        "answer": "SELECT SUBSTR(ENAME, 1, 1) || RPAD('*', LENGTH(ENAME) - 2, '*') || SUBSTR(ENAME, -1) AS MASKED FROM EMP WHERE DEPTNO = 10 ORDER BY ENAME;",
+        "explain": "Mixing regular expressions and string functions, such as SUBSTR(ENAME, 1, 1) || REGEXP_REPLACE(SUBSTR(ENAME, 2, LENGTH(ENAME) - 2), '.', '*') || SUBSTR(ENAME, -1), is correct as long as the result is the same.",
+        "ordered": true
+      },
+      {
+        "id": "insert-dept",
+        "title": "Adding a department",
+        "prompt": "Add the department with number 50, name 'IT' and location 'SEOUL' to DEPT. (It is graded on the whole DEPT table after the insert.)",
+        "hint": "If you give a value for every column in order, you can omit the column list.",
+        "answer": "INSERT INTO DEPT VALUES (50, 'IT', 'SEOUL');",
+        "explain": "Writing the column list, as in INSERT INTO DEPT (DEPTNO, DNAME, LOC) VALUES (50, 'IT', 'SEOUL'), is safer when the table structure changes.",
+        "ordered": true,
+        "check": "SELECT * FROM DEPT ORDER BY DEPTNO"
+      },
+      {
+        "id": "update-raise",
+        "title": "Raising salespeople pay",
+        "prompt": "Raise the salary of employees whose job is SALESMAN by 10%. (It is graded on the employee number and salary of employees in department 30.)",
+        "hint": "UPDATE ... SET SAL = SAL * 1.1 WHERE ...",
+        "answer": "UPDATE EMP SET SAL = SAL * 1.1 WHERE JOB = 'SALESMAN';",
+        "explain": "If you forget WHERE, every employee gets a raise. Running a SELECT with the same WHERE first to check the target rows prevents accidents.",
+        "ordered": true,
+        "check": "SELECT EMPNO, SAL FROM EMP WHERE DEPTNO = 30 ORDER BY EMPNO"
+      },
+      {
+        "id": "delete-dept",
+        "title": "Deleting a department and its employees",
+        "prompt": "Delete department 20 from DEPT. Because EMP.DEPTNO references DEPT, the employees of department 20 must be deleted first. (It is graded on the remaining department numbers and the employee count per department.)",
+        "hint": "Deleting the parent (DEPT) row first raises ORA-02292 (child record found).",
+        "answer": "DELETE FROM EMP WHERE DEPTNO = 20; DELETE FROM DEPT WHERE DEPTNO = 20;",
+        "explain": "If the foreign key had ON DELETE CASCADE, deleting only the parent would delete the children too. The FK_DEPTNO of EMP does not have that option.",
+        "ordered": true,
+        "check": "SELECT D.DEPTNO, COUNT(E.EMPNO) FROM DEPT D LEFT JOIN EMP E ON D.DEPTNO = E.DEPTNO GROUP BY D.DEPTNO ORDER BY D.DEPTNO"
+      },
+      {
+        "id": "savepoint",
+        "title": "Partial rollback with SAVEPOINT",
+        "prompt": "Insert (50, 'IT', 'SEOUL') into DEPT, create SAVEPOINT A, then insert (60, 'HR', 'BUSAN'). Then roll back so that only department 60 is cancelled. (It is graded on the whole DEPT table afterwards.)",
+        "hint": "A plain ROLLBACK cancels everything since the last COMMIT. There is a separate statement that rolls back only to a given point.",
+        "answer": "INSERT INTO DEPT VALUES (50, 'IT', 'SEOUL'); SAVEPOINT A; INSERT INTO DEPT VALUES (60, 'HR', 'BUSAN'); ROLLBACK TO A;",
+        "explain": "ROLLBACK TO A cancels only the changes after A and the transaction continues. Department 50 is not committed yet, so one more ROLLBACK would remove it too.",
+        "ordered": true,
+        "check": "SELECT * FROM DEPT ORDER BY DEPTNO"
+      },
+      {
+        "id": "create-table",
+        "title": "Creating a table with constraints",
+        "prompt": "Create a member table T_MEMBER. Its columns are ID (4-digit number, primary key), NAME (up to 10 characters, required) and GRADE (1 character, default 'B', only 'A', 'B' or 'C' allowed). After creating it, insert two rows: (1, 'KIM') and (2, 'LEE', 'A'). (It is graded on the contents of T_MEMBER.)",
+        "hint": "DEFAULT is used for a column whose value is omitted. Restrict the allowed values with CHECK (GRADE IN (...)).",
+        "answer": "CREATE TABLE T_MEMBER (ID NUMBER(4) PRIMARY KEY, NAME VARCHAR2(10) NOT NULL, GRADE CHAR(1) DEFAULT 'B' CHECK (GRADE IN ('A', 'B', 'C'))); INSERT INTO T_MEMBER (ID, NAME) VALUES (1, 'KIM'); INSERT INTO T_MEMBER VALUES (2, 'LEE', 'A');",
+        "explain": "The first row omits GRADE, so the default 'B' is used. Giving too few values without a column list, as in INSERT INTO T_MEMBER VALUES (1, 'KIM'), raises ORA-00947 (not enough values).",
+        "ordered": true,
+        "check": "SELECT * FROM T_MEMBER ORDER BY ID"
+      }
+    ]
+  }
+]

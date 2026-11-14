@@ -23,6 +23,9 @@ import { resolveAdPlacement } from '@/lib/ads/adPlacements';
 
 // 허브의 실습 바로가기: 섹션 → /lab 의 그룹 앵커(src/app/lab/page.tsx 의 id="lab-<kind>")와 버튼 문구.
 const LAB_KIND_OF_SECTION: Record<Section, string> = { aws: 'aws', linux: 'linux', data: 'sql', kubernetes: 'linux', terraform: 'aws' };
+const LAB_LABEL_OF_SECTION_EN: Record<Section, string> = {
+  aws: 'AWS CLI lab', linux: 'Linux shell lab', data: 'SQL lab (no install)', kubernetes: 'Labs', terraform: 'Labs',
+};
 const LAB_LABEL_OF_SECTION: Record<Section, string> = {
   aws: 'AWS CLI 실습', linux: '리눅스 셸 실습', data: 'SQL 실습장 (설치 없이)', kubernetes: '실습', terraform: '실습',
 };
@@ -99,6 +102,8 @@ export default async function CertIndexPage({ params }: PageProps) {
   const section = sectionOfCategory(category);
   let meta;
   try { meta = await getCertMeta(category, slug); } catch { notFound(); }
+  // 영어판(/en/<slug>)은 category 로는 항상 aws 라서 실습 링크는 자격증 자신의 섹션(meta.section)으로 고른다.
+  const labSection: Section = meta.section ?? section;
   const days = await getAllDays(category, slug);
   const byWeek = new Map<number, typeof days>();
   for (const d of days) {
@@ -163,19 +168,17 @@ export default async function CertIndexPage({ params }: PageProps) {
               {lang === 'en' ? 'Start with Week 1' : 'Week 1부터 시작'} <ArrowRight className="h-4 w-4" />
             </Link>
           )}
-          {/* 모의고사(/exam, 로그인 필요)와 실습장은 허브에서 닿는 링크가 없었다. 모의고사·실습이 한국어 전용이라 ko 에서만. */}
+          {/* 모의고사(/exam, 로그인 필요)는 한국어 전용이라 ko 에서만. 실습은 /lab ↔ /en/lab 로 두 언어 모두. */}
           {lang === 'ko' && mockExamCount > 0 && (
             <Link href={`/exam?cert=${slug}`} prefetch={false}
               className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition hover:border-border-strong">
               모의고사 {mockExamCount}문항 풀기 <ArrowRight className="h-4 w-4" />
             </Link>
           )}
-          {lang === 'ko' && (
-            <Link href={`/lab#lab-${LAB_KIND_OF_SECTION[section]}`}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition hover:border-border-strong">
-              {LAB_LABEL_OF_SECTION[section]} <ArrowRight className="h-4 w-4" />
-            </Link>
-          )}
+          <Link href={`${lang === 'en' ? '/en/lab' : '/lab'}#lab-${LAB_KIND_OF_SECTION[labSection]}`}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition hover:border-border-strong">
+            {(lang === 'en' ? LAB_LABEL_OF_SECTION_EN : LAB_LABEL_OF_SECTION)[labSection]} <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
         {lang === 'ko' && mockExamCount > 0 && (
           <p className="text-xs text-fg-faint">노트·실습은 로그인 없이 볼 수 있고, 모의고사와 오답 복습은 무료 가입 뒤에 쓸 수 있어요.</p>

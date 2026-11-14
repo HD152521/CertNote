@@ -4,6 +4,7 @@ import { search } from 'jmespath';
 import { formatOutput, OUTPUT_FORMATS, type OutputFormat } from './format';
 import { isKnownRegion } from './regions';
 import { tick, type SimState } from './state';
+import { translateRunResult, type CliLang } from './messagesEn';
 import { tokenize } from './tokenize';
 import type { ArgValue, CommandOutcome, CommandRecord, OperationSpec, RunResult, ServiceSpec } from './types';
 import { s3 } from './services/s3';
@@ -145,7 +146,7 @@ function runLocal(tokens: string[], state: SimState, record: CommandRecord): Run
   });
 }
 
-export function runCommand(line: string, before: SimState): RunResult {
+function runCommandKo(line: string, before: SimState): RunResult {
   const record: CommandRecord = { raw: line, args: {}, positionals: [], exitCode: 0 };
   const tk = tokenize(line);
   if (!tk.ok) return result(before, record, { stderr: `bash: ${tk.error}`, exitCode: 2 });
@@ -233,6 +234,11 @@ export function runCommand(line: string, before: SimState): RunResult {
 
   const outcome: CommandOutcome = op.run({ state, region, args: parsed.value.args, positionals: parsed.value.positionals });
   return finish(outcome, state, record, op, globals['--query'], output);
+}
+
+/** lang 'en' translates the simulator's own guidance; real-CLI-style output and grading are unchanged. */
+export function runCommand(line: string, before: SimState, lang: CliLang = 'ko'): RunResult {
+  return translateRunResult(runCommandKo(line, before), lang);
 }
 
 function finish(
