@@ -26,7 +26,7 @@ RDS Proxy는 두 문제를 각각 다른 방식으로 해결한다. Lambda처럼
 
 Aurora의 차별점은 공유 분산 스토리지다. 6 카피, 3 AZ, 4/6 Quorum 쓰기. 이 구조가 만드는 실질적 차이:
 
-- **페일오버 30초 이내**: 스토리지는 계속 살아 있으므로 새 Writer 인스턴스를 스토리지에 연결하기만 하면 된다. RDS처럼 Standby가 Redo Log를 적용하는 시간이 필요 없다.
+- **페일오버 보통 60초 미만(종종 30초 미만)**: 스토리지는 계속 살아 있으므로 새 Writer 인스턴스를 스토리지에 연결하기만 하면 된다. RDS처럼 Standby가 Redo Log를 적용하는 시간이 필요 없다.
 - **Read Replica 최대 15개**: 모든 Reader가 공유 스토리지를 읽으므로 Replica당 별도 EBS가 없다. 추가 스토리지 비용 없이 Reader를 늘릴 수 있다.
 - **Replication Lag 보통 100ms보다 훨씬 짧음**: 공유 스토리지라서 "복제" 자체가 없다. Reader가 공유 스토리지에서 읽는 것이므로 Writer와 거의 동시에 같은 데이터를 본다.
 
@@ -87,7 +87,7 @@ ElastiCache Redis, Memcached, DAX, MemoryDB가 각각 다른 문제를 푼다.
 - 시나리오에서 "가용성", "장애 자동 복구", "다운타임 최소화"가 보이면 Multi-AZ. "읽기 부하", "성능 향상", "지역별 읽기"가 보이면 Read Replica.
 
 **Aurora vs RDS**:
-- "15개 Replica", "30초 페일오버", "리전 간 <1초 복제", "변동 트래픽 자동 스케일" → Aurora
+- "15개 Replica", "빠른 페일오버(보통 60초 미만)", "리전 간 <1초 복제", "변동 트래픽 자동 스케일" → Aurora
 - "Oracle/SQL Server/MariaDB 엔진 필요", "비용 절감 최우선", "안정적 워크로드" → 일반 RDS
 
 **GSI vs LSI**:
@@ -166,7 +166,7 @@ CloudWatch Logs → Firehose → OpenSearch (실시간 로그 분석)
 
 SAA-C03는 비용 최적화 Pillar(20%)도 다룬다. 데이터베이스 선택에서 비용 관점:
 
-**RDS vs Aurora**: Aurora가 약 20% 비싸다. "같은 MySQL/PostgreSQL 워크로드에서 Aurora가 정당화되는 시나리오"는 페일오버 요구사항이 30초 이내, 다수의 Reader 필요(Aurora는 클러스터당 최대 15개), 글로벌 복제 필요, 변동 트래픽일 때다.
+**RDS vs Aurora**: Aurora가 약 20% 비싸다. "같은 MySQL/PostgreSQL 워크로드에서 Aurora가 정당화되는 시나리오"는 더 빠른 페일오버가 필요할 때(보통 60초 미만, 종종 30초 미만), 다수의 Reader 필요(Aurora는 클러스터당 최대 15개), 글로벌 복제 필요, 변동 트래픽일 때다.
 
 **On-Demand vs Provisioned**: DynamoDB On-Demand는 안정적 트래픽에서 Provisioned보다 최대 4배 비싸다. 트래픽 예측이 가능한 워크로드는 Provisioned + Auto Scaling이 비용 효율적이다.
 
@@ -185,7 +185,7 @@ SAA-C03는 비용 최적화 Pillar(20%)도 다룬다. 데이터베이스 선택�
 | 서비스 | RPO | RTO | 메커니즘 |
 |--------|-----|-----|---------|
 | RDS Multi-AZ | ~0 (동기) | 60-120초 | 자동 DNS Failover |
-| Aurora Multi-AZ | ~0 (공유 스토리지) | 30초 이내 | Reader → Writer 승격 |
+| Aurora Multi-AZ | ~0 (공유 스토리지) | 보통 60초 미만 | Reader → Writer 승격 |
 | Aurora Global DB | < 1초 | 수 분 수준 | 수동/자동 Promote |
 | DynamoDB (단일 리전) | ~0 (PITR) | ~수분 | 새 테이블 복구 |
 | DynamoDB Global Tables | ~1초 | ~0 (다른 리전 이미 서빙) | 엔드포인트 전환 |
@@ -291,12 +291,12 @@ D) PK: timestamp — 시간순 전체 메시지
 
 A) EC2에 PostgreSQL 직접 설치 후 cron으로 백업 자동화
 B) RDS PostgreSQL (Multi-AZ 활성화, 자동 백업 설정)
-C) Aurora PostgreSQL (공유 스토리지, 15개 Reader, 30초 페일오버, 자동 백업)
+C) Aurora PostgreSQL (공유 스토리지, 15개 Reader, 빠른 페일오버, 자동 백업)
 D) ECS Fargate에 PostgreSQL 컨테이너 실행
 
 **정답: C**
 
-해설: Aurora PostgreSQL은 RDS PostgreSQL보다 더 많은 운영 부담을 AWS가 담당한다. 스토리지 관리(자동 확장, 6 카피 관리), 더 빠른 페일오버(30초 vs 60-120초), 더 많은 Reader 지원, Fast Clone이 추가된다. RDS PostgreSQL(B)도 관리형이지만 Aurora가 더 높은 가용성과 스케일링 능력을 제공한다. A와 D는 운영 부담이 가장 크다.
+해설: Aurora PostgreSQL은 RDS PostgreSQL보다 더 많은 운영 부담을 AWS가 담당한다. 스토리지 관리(자동 확장, 6 카피 관리), 더 빠른 페일오버(보통 60초 미만 vs 60-120초), 더 많은 Reader 지원, Fast Clone이 추가된다. RDS PostgreSQL(B)도 관리형이지만 Aurora가 더 높은 가용성과 스케일링 능력을 제공한다. A와 D는 운영 부담이 가장 크다.
 
 ---
 

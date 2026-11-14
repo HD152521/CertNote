@@ -44,11 +44,11 @@ Lambda 함수가 처음 호출되거나 오랫동안 사용되지 않다가 다�
 - **초기화 코드 최적화**: 핸들러 외부 코드에서 불필요한 작업을 제거한다
 - **런타임 선택**: Go, Python, Node.js가 Java, .NET보다 콜드 스타트가 짧다
 - **Provisioned Concurrency**: 지정된 수의 인스턴스를 워밍업 상태로 유지
-- **Lambda SnapStart** (Java): 초기화 완료 시점의 메모리 스냅샷을 저장해서 콜드 스타트를 수백 ms로 단축
+- **Lambda SnapStart** (Java 11+, Python 3.12+, .NET 8+): 초기화 완료 시점의 메모리 스냅샷을 저장해서 콜드 스타트를 수백 ms로 단축
 
 **Firecracker MicroVM과 격리 보장** — Lambda의 Firecracker MicroVM은 AWS가 2018년 오픈 소스로 공개한 기술이다. QEMU/KVM 기반의 전통적 VM보다 훨씬 가볍고 빠르게(125ms 내 시작) 격리된 실행 환경을 만든다. Firecracker는 KVM 하이퍼바이저를 직접 사용하면서 필요한 디바이스 에뮬레이션을 최소화했다. Lambda 함수가 다른 함수의 메모리를 읽거나 프로세스를 종료할 수 없는 것이 이 격리 덕분이다. 2019년 AWS re:Invent에서 공개된 데이터에 따르면 AWS는 초당 수백만 개의 Firecracker MicroVM을 시작할 수 있다. Firecracker는 Rust로 작성됐으며 메모리 안전성과 최소 공격 표면을 중시하는 설계 철학을 갖고 있다.
 
-**Lambda SnapStart — 콜드 스타트의 근본적 해결** — Lambda SnapStart(Java용, 2022년 출시)는 콜드 스타트 문제를 근본적으로 다른 방식으로 해결한다. 함수가 배포될 때 초기화 단계(1-4번)를 실행하고, 그 시점의 메모리와 디스크 상태를 스냅샷으로 저장한다. 이후 콜드 스타트가 필요할 때 새로운 MicroVM에서 처음부터 초기화하는 대신, 저장된 스냅샷을 복원한다. Java의 3초 콜드 스타트를 수백 ms 수준으로 줄일 수 있다. 단, 스냅샷 복원 시 `UUID.randomUUID()`, 현재 시간, 난수 생성 등이 스냅샷 시점 값을 반환할 수 있어서 별도 복원 훅(restore hook `@SnapStartRestore`)으로 재초기화해야 한다.
+**Lambda SnapStart — 콜드 스타트의 근본적 해결** — Lambda SnapStart(2022년 Java용으로 출시, 이후 Python·.NET으로 확장)는 콜드 스타트 문제를 근본적으로 다른 방식으로 해결한다. 함수가 배포될 때 초기화 단계(1-4번)를 실행하고, 그 시점의 메모리와 디스크 상태를 스냅샷으로 저장한다. 이후 콜드 스타트가 필요할 때 새로운 MicroVM에서 처음부터 초기화하는 대신, 저장된 스냅샷을 복원한다. Java의 3초 콜드 스타트를 수백 ms 수준으로 줄일 수 있다. 단, 스냅샷 복원 시 `UUID.randomUUID()`, 현재 시간, 난수 생성 등이 스냅샷 시점 값을 반환할 수 있어서 별도 복원 훅(restore hook `@SnapStartRestore`)으로 재초기화해야 한다.
 
 ## 트리거 유형 — 동기, 비동기, 폴링의 차이
 
@@ -325,7 +325,7 @@ D) 메모리를 10,240MB로 늘린다
 
 **정답: B**
 
-해설: Provisioned Concurrency는 지정된 수의 Lambda 실행 환경을 항상 초기화된 상태로 유지해서 콜드 스타트를 제거한다. P99 100ms SLA를 만족하려면 99번째 백분위 요청도 콜드 스타트 없이 처리되어야 한다. A는 Python이 Java보다 콜드 스타트가 짧지만 완전히 제거할 수 없고, Java에서는 SnapStart도 유효한 옵션이다. C는 Reserved Concurrency는 동시성 한도를 예약하는 것이지 콜드 스타트를 없애지 않는다. D는 메모리 증가는 CPU도 비례해서 늘어나 실행 속도가 빨라질 수 있지만 콜드 스타트를 근본적으로 해결하지 못한다.
+해설: Provisioned Concurrency는 지정된 수의 Lambda 실행 환경을 항상 초기화된 상태로 유지해서 콜드 스타트를 제거한다. P99 100ms SLA를 만족하려면 99번째 백분위 요청도 콜드 스타트 없이 처리되어야 한다. A는 Python이 Java보다 콜드 스타트가 짧지만 완전히 제거할 수 없고, Java(및 Python 3.12+·.NET 8+)에서는 SnapStart도 유효한 옵션이다. C는 Reserved Concurrency는 동시성 한도를 예약하는 것이지 콜드 스타트를 없애지 않는다. D는 메모리 증가는 CPU도 비례해서 늘어나 실행 속도가 빨라질 수 있지만 콜드 스타트를 근본적으로 해결하지 못한다.
 
 ---
 

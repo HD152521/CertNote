@@ -39,7 +39,7 @@ update-alias --function-version 7  →  live가 V7 가리킴
 | 기법 | 적용 런타임 | 비용 | 효과 |
 |------|--------------|------|------|
 | Provisioned Concurrency | 모든 런타임 | 활성 시간 과금 | Cold start 0 (PC 용량 내) |
-| SnapStart | Java 11/17/21, Python 3.12+, .NET 8+ (zip만) | Java 무료, Py/.NET 유료 | Init 시간 90% 단축 |
+| SnapStart | Java 11 이상, Python 3.12 이상, .NET 8 이상 (zip·Container Image) | Java 무료, Py/.NET 유료 | Init 시간 90% 단축 |
 | Reserved Concurrency | 모든 | 무료 | 동시 한도 (cold start와 무관) |
 | ARM 아키텍처 | 호환 런타임 | 20% 저렴 | Init 10~20% 빠름 |
 
@@ -82,7 +82,7 @@ update-alias --function-version 7  →  live가 V7 가리킴
 | SAM | Serverless Framework | AWS 네이티브·OSS vs 멀티 클라우드·v4 상업 |
 | Standard SFn | Express SFn | 1년·exactly-once vs 5분·at-least-once |
 | Provisioned Concurrency | Reserved Concurrency | 워밍업·유료 vs 한도·무료 |
-| Lambda zip | Container Image | 250MB·Layer 가능 vs 10GB·Layer 불가·SnapStart 불가 |
+| Lambda zip | Container Image | 250MB·Layer 가능 vs 10GB·Layer 불가 |
 | `$LATEST` | Version 숫자 | 가변·PC 불가 vs 불변·PC 가능 |
 | Alias weighted | Version 100% | Canary 두 단계 vs All-at-once |
 | Inline Map | Distributed Map | 40 동시·부모 history 영향 vs 1만 동시·child execution |
@@ -107,7 +107,7 @@ update-alias --function-version 7  →  live가 V7 가리킴
 
 > **함정 5**: PC는 `$LATEST`에 설정 불가, Alias/Version에만. Canary 중 두 Version 모두 PC라 비용 2배 일시 상승.
 
-> **함정 6**: Container Image Lambda는 Layer 불가, SnapStart 불가. 모든 의존성을 Dockerfile에 포함.
+> **함정 6**: Container Image Lambda는 Layer 불가(SnapStart는 이제 지원). 모든 의존성을 Dockerfile에 포함.
 
 > **함정 7**: Alias weighted routing은 primary + 1 additional만. 3-way는 ALB target group이나 Route 53 weighted 필요.
 
@@ -197,7 +197,7 @@ C) S3에서 매번 런타임에 다운로드 (Cold start 10초+)
 D) EFS 마운트 (운영 복잡)
 
 **정답: B**
-해설: 2020년 12월 출시된 Lambda Container Image의 핵심 사용 사례. 10GB 한도 + 자체 OS 도구 포함 가능. ARM 빌드는 `docker buildx --platform linux/arm64`. CDK는 `lambda.DockerImageFunction.fromImageAsset()`. 단 Container는 Layer 사용 불가, SnapStart 미지원, cold start가 zip 대비 2~3배. A는 250MB×4=1GB라 부족, C는 cold start 폭증·다운로드 비용, D는 EFS 추가 비용·복잡도.
+해설: 2020년 12월 출시된 Lambda Container Image의 핵심 사용 사례. 10GB 한도 + 자체 OS 도구 포함 가능. ARM 빌드는 `docker buildx --platform linux/arm64`. CDK는 `lambda.DockerImageFunction.fromImageAsset()`. 단 Container는 Layer 사용 불가, cold start가 zip 대비 2~3배. A는 250MB×4=1GB라 부족, C는 cold start 폭증·다운로드 비용, D는 EFS 추가 비용·복잡도.
 
 ---
 
@@ -293,7 +293,7 @@ D) Step Functions 부적합 — 항상 Lambda 인라인이 빠름
 
 2. **Lambda Version은 불변 스냅샷, Alias는 가변 포인터**. Git commit/branch와 같은 발상. Weighted routing은 primary + 1 additional만 가능 — CodeDeploy Canary가 "한 번에 한 단계"인 구조적 이유.
 
-3. **Cold Start 완화**의 두 표준 — Provisioned Concurrency(워밍업·유료) vs SnapStart(Java/Python/.NET zip만·init 시간 90% 단축). Reserved Concurrency는 한도 설정이지 cold start와 무관.
+3. **Cold Start 완화**의 두 표준 — Provisioned Concurrency(워밍업·유료) vs SnapStart(Java/Python/.NET·init 시간 90% 단축). Reserved Concurrency는 한도 설정이지 cold start와 무관.
 
 4. **Step Functions**는 호출 빈도×실행 시간으로 Standard/Express 선택. AWS SDK Service Integration으로 200+ 서비스 Lambda 없이 호출. TaskToken으로 사람·외부 시스템 통합. Distributed Map으로 1만 동시 자식 워크플로.
 

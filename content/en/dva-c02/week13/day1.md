@@ -77,7 +77,7 @@ WebSocket: $connect, $disconnect, $default
 | "Lambda concurrency default limit?" | **1,000 / region** |
 | "Async retry count?" | **2 times** (1 min, 2 min) |
 | "Provisioned Concurrency targets?" | **Alias or Version** ($LATEST not allowed) |
-| "SnapStart supported runtimes?" | **Java, Python, .NET** |
+| "SnapStart supported runtimes?" | **Java 11+, Python 3.12+, .NET 8+** |
 | "AssumeRole max session?" | **12 hours** |
 | "Role Chaining max?" | **1 hour** |
 | "STS GetSessionToken max?" | **36 hours** |

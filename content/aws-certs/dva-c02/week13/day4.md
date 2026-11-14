@@ -177,7 +177,7 @@ CDK: 프로그래밍 언어 → CloudFormation 변환
 | "ARM 호환 + 40% 절감" | **Graviton** |
 | "SSE-KMS 비용 ↑" | **S3 Bucket Key** |
 | "DDB throttle + 비용 절감" | **DAX** + 적절한 RCU |
-| "Lambda 콜드 스타트 무료" | **SnapStart** (Java/Python/.NET) |
+| "Lambda 콜드 스타트 무료" | **SnapStart** (Java는 추가 비용 없음) |
 | "API GW 비용 절감" | **HTTP API** |
 | "S3 아주 가끔 접근" | **Glacier Deep Archive** |
 | "EBS 사용량 적은데 데이터 보존" | **gp3** (gp2보다 20% ↓) |

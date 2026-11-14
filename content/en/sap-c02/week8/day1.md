@@ -48,7 +48,7 @@ The largest component is **Init Code**. A Java Spring Boot function can lose 2~3
 
 > 💡 **Related Theory**: CRaC is an official OpenJDK project that standardizes checkpoint and restore of Java JVM process state. It's based on CRIU (Checkpoint/Restore In Userspace), a Linux kernel feature. SnapStart adopted CRaC, first for Java, then extended to Python and .NET in 2024. The core model follows a general distributed systems optimization pattern: **"initialize once, run infinitely."**
 
-> 🔍 **Deeper Dive**: SnapStart is free because AWS benefits from better compute efficiency. Executing init on every cold start costs more CPU, memory, and network than restoring a pre-built snapshot from page cache. However, a pitfall exists: the snapshot **copies memory and disk state identically**, so random seeds, unique IDs, and DB connection TCP states created during init are identical across all restorations. That's why SnapStart guidelines emphasize "don't generate uniqueness state during init," and provide Crac.Resource interface hooks for beforeCheckpoint/afterRestore.
+> 🔍 **Deeper Dive**: For Java managed runtimes SnapStart carries no additional cost because AWS benefits from better compute efficiency (Python and .NET incur snapshot cache and restore charges). Executing init on every cold start costs more CPU, memory, and network than restoring a pre-built snapshot from page cache. However, a pitfall exists: the snapshot **copies memory and disk state identically**, so random seeds, unique IDs, and DB connection TCP states created during init are identical across all restorations. That's why SnapStart guidelines emphasize "don't generate uniqueness state during init," and provide Crac.Resource interface hooks for beforeCheckpoint/afterRestore.
 
 > ⚠️ **Trap**: Enabling SnapStart breaks the stateless function assumption. For example, if init generates a UUID.randomUUID() as an instance ID for cache keys, all SnapStart restorations get the same ID, causing cache collisions. The exam doesn't ask directly, but it's a common real-world pitfall worth knowing.
 
@@ -151,7 +151,7 @@ C) Raise memory to 10 GB
 D) Switch to a Function URL
 
 **Answer: B**
-Explanation: "At no additional cost" is the key. Provisioned Concurrency (A) is billed hourly. SnapStart is free and supports Java/Python/.NET. Snapshot restore based on CRaC brings init time close to 0. However, if you create uniqueness state in init (random seeds, UUIDs, the TCP state of DB connections), it is replicated to every restored copy and causes collisions, so you must reinitialize it in beforeCheckpoint/afterRestore through the Crac.Resource interface. C increases cost, and D is unrelated to cold starts. Additional note: SnapStart applies only to published versions and does not apply to $LATEST.
+Explanation: "At no additional cost" is the key. Provisioned Concurrency (A) is billed hourly. SnapStart has no additional cost on Java managed runtimes (Python/.NET are also supported, but incur cache and restore charges). Snapshot restore based on CRaC brings init time close to 0. However, if you create uniqueness state in init (random seeds, UUIDs, the TCP state of DB connections), it is replicated to every restored copy and causes collisions, so you must reinitialize it in beforeCheckpoint/afterRestore through the Crac.Resource interface. C increases cost, and D is unrelated to cold starts. Additional note: SnapStart applies only to published versions and does not apply to $LATEST.
 
 ---
 
@@ -231,7 +231,7 @@ Explanation: Graviton2 (arm64) provides about a 20% price discount + 19% perform
 
 1. **Firecracker micro VM** isolation, warmed up from a slot pool → cold start decomposition (download/runtime/Init/JIT)
 2. **Three kinds of concurrency**: account limit (1,000 default) / Reserved (isolation + cap) / Provisioned (warm, incurs cost)
-3. **SnapStart** (CRaC-based) — Java/Python/.NET, free, watch init uniqueness
+3. **SnapStart** (CRaC-based) — Java (no extra cost)/Python/.NET (cache and restore charges), watch init uniqueness
 4. **Hyperplane ENI** (2019~) — ENIs are shared for VPC integration, **RDS Proxy** resolves connection surges
 5. **Asynchronous retries**: 2 automatic retries + rich routing with **Destinations** (SNS/SQS/EB/Lambda)
 6. **Function URL** — simple HTTPS that bypasses API GW, IAM authentication only

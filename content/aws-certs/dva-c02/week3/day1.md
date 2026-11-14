@@ -65,7 +65,7 @@ def lambda_handler(event, context):
 | Go 1.x | 50–150ms | 30–100ms |
 | .NET 8 | 300–800ms | 200–500ms |
 
-SnapStart는 Java에서 **체크포인팅(checkpointing)** 아이디어를 구현한 것이다. CRIU(Checkpoint/Restore In Userspace)라는 Linux 기술을 참고했는데, 프로세스의 메모리 상태를 스냅샷 찍어두고 나중에 복원하는 방식이다. Lambda SnapStart는 버전 발행 시점에 JVM이 완전히 초기화된 상태를 S3에 스냅샷으로 저장한다. 이후 호출 시 MicroVM이 그 스냅샷을 그대로 복원하므로 JVM 부팅과 코드 INIT을 건너뛴다. 단, 스냅샷 복원 시 현재 시간, 랜덤 시드, 환경별 자격증명 같은 것들은 재초기화가 필요하다. `CRaC`(Coordinated Restore at Checkpoint) API로 이 시점에 훅을 걸 수 있다.
+SnapStart는 **체크포인팅(checkpointing)** 아이디어를 구현한 것이다(Java 11+, Python 3.12+, .NET 8+ 지원, 아래 설명은 Java 기준). CRIU(Checkpoint/Restore In Userspace)라는 Linux 기술을 참고했는데, 프로세스의 메모리 상태를 스냅샷 찍어두고 나중에 복원하는 방식이다. Lambda SnapStart는 버전 발행 시점에 JVM이 완전히 초기화된 상태를 S3에 스냅샷으로 저장한다. 이후 호출 시 MicroVM이 그 스냅샷을 그대로 복원하므로 JVM 부팅과 코드 INIT을 건너뛴다. 단, 스냅샷 복원 시 현재 시간, 랜덤 시드, 환경별 자격증명 같은 것들은 재초기화가 필요하다. `CRaC`(Coordinated Restore at Checkpoint) API로 이 시점에 훅을 걸 수 있다.
 
 > ⚠️ **함정**: SnapStart는 **버전을 발행해야 활성화**된다. `$LATEST`에서는 동작하지 않는다. 따라서 Lambda 별칭과 함께 사용해야 하고, CodeDeploy 트래픽 시프트도 함께 설정하는 것이 일반적이다.
 
@@ -185,7 +185,7 @@ Datadog, Dynatrace, New Relic 같은 APM 벤더들이 Lambda Extension을 활용
 | 최대 실행 시간 | 15분 | 60분 (HTTP), 9분 (이벤트) | 10분 (Consumption) |
 | 최대 메모리 | 10GB | 16GB | 14GB |
 | VPC 연동 | ✅ | ✅ | ✅ |
-| Snapshotting | SnapStart (Java) | 없음 | 없음 |
+| Snapshotting | SnapStart (Java·Python·.NET) | 없음 | 없음 |
 | 가격 모델 | 요청 수 + GB-초 | 요청 수 + GHz-초 | 요청 수 + GB-초 |
 
 gVisor는 Google이 만든 컨테이너 샌드박스로, 앱과 Linux 커널 사이에 Go로 작성된 커널 에뮬레이션 레이어를 삽입한다. Firecracker가 실제 MicroVM(하드웨어 가상화)인 것과 달리, gVisor는 syscall 인터셉션이라 오버헤드가 다르다. Firecracker는 KVM을 사용하므로 CPU 집약적 작업에서 bare-metal에 더 가깝고, gVisor는 시스템 콜이 많은 I/O 집약적 작업에서 오버헤드가 커질 수 있다.
@@ -250,11 +250,11 @@ Lambda의 실행 모델은 Firecracker MicroVM이라는 독창적인 인프라 �
 
 A) 모든 런타임에서 기본 활성화된다  
 B) 버전 발행 시점에 JVM이 초기화된 스냅샷을 생성하며, $LATEST에서는 동작하지 않는다  
-C) 비용이 추가로 발생하며 메모리 크기에 비례한다  
-D) Provisioned Concurrency와 동시 활성화할 수 없다  
+C) Java 관리형 런타임에서도 비용이 추가로 발생하며 메모리 크기에 비례한다  
+D) Provisioned Concurrency가 반드시 함께 구성되어야 한다  
 
 **정답: B**  
-해설: SnapStart는 버전 발행(publish-version) 시점에 JVM 초기화 상태를 스냅샷으로 저장한다. `$LATEST`에는 설정할 수 없어 반드시 발행된 버전 또는 그 버전을 가리키는 별칭을 통해 호출해야 한다. A는 틀렸다 — Java 런타임만 지원하며 기본 비활성이다. C는 틀렸다 — SnapStart 자체는 무료다(스냅샷 저장 S3 비용만 미미하게 발생). D는 틀렸다 — 함께 사용할 수 있다.
+해설: SnapStart는 버전 발행(publish-version) 시점에 JVM 초기화 상태를 스냅샷으로 저장한다. `$LATEST`에는 설정할 수 없어 반드시 발행된 버전 또는 그 버전을 가리키는 별칭을 통해 호출해야 한다. A는 틀렸다 — 모든 런타임이 아니라 Java 11+·Python 3.12+·.NET 8+만 지원하며 기본 비활성이라, 버전을 게시하고 SnapStart를 활성화해야 한다. C는 틀렸다 — Java 관리형 런타임에서는 추가 비용이 없다(Python/.NET은 캐시·복원 요금이 별도 발생). D는 틀렸다 — PC는 필요하지 않으며, 오히려 SnapStart는 Provisioned Concurrency와 함께 쓸 수 없다.
 
 ---
 

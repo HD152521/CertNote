@@ -263,7 +263,7 @@ B) Multi-AZ DB Cluster Deployment를 사용한다
 C) Aurora로 마이그레이션한다
 D) RDS Proxy를 도입한다
 
-**정답: B (A도 부분 정답)**
+**정답: B**
 해설: 질문의 핵심은 "standby에서 읽기"다. 2022년 도입된 Multi-AZ DB Cluster Deployment는 2개의 readable standby + 1 writer 구조로 standby 자체에서 읽기 가능(synchronous quorum 복제 사용, RPO≈0 유지). A) Read Replica는 standby가 아니라 별도의 비동기 replica이므로 엄밀히 "standby 읽기"는 아님 — 다만 읽기 확장 목적이라면 A도 유효. C)는 과도한 변경. D)는 connection pooling만 제공하고 읽기/쓰기 분리는 자동으로 안 함(애플리케이션에서 endpoint 분리 필요). 시험에서 "standby" 단어가 명시되면 B를 우선 고려.
 
 ---

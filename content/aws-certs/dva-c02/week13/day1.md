@@ -77,7 +77,7 @@ WebSocket: $connect, $disconnect, $default
 | "Lambda 동시성 기본 한도?" | **1,000 / 리전** |
 | "비동기 재시도 횟수?" | **2회** (1분, 2분) |
 | "Provisioned Concurrency가 가리키는 것?" | **별칭 또는 버전** ($LATEST 불가) |
-| "SnapStart 지원 런타임?" | **Java, Python, .NET** |
+| "SnapStart 지원 런타임?" | **Java 11+, Python 3.12+, .NET 8+** |
 | "AssumeRole 최대 세션?" | **12시간** |
 | "Role Chaining 최대?" | **1시간** |
 | "STS GetSessionToken 최대?" | **36시간** |

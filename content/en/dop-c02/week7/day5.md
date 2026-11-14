@@ -39,7 +39,7 @@ update-alias --function-version 7  →  live points to V7
 | Technique | Applicable runtimes | Cost | Effect |
 |------|--------------|------|------|
 | Provisioned Concurrency | All runtimes | Billed for active time | Zero cold start (within PC capacity) |
-| SnapStart | Java 11/17/21, Python 3.12+, .NET 8+ (zip only) | Free for Java, paid for Py/.NET | Init time reduced by 90% |
+| SnapStart | Java 11 and later, Python 3.12 and later, .NET 8 and later (zip and Container Image) | Free for Java, paid for Py/.NET | Init time reduced by 90% |
 | Reserved Concurrency | All | Free | Concurrency limit (unrelated to cold start) |
 | ARM architecture | Compatible runtimes | 20% cheaper | Init 10-20% faster |
 
@@ -82,7 +82,7 @@ update-alias --function-version 7  →  live points to V7
 | SAM | Serverless Framework | AWS-native, OSS vs multi-cloud, v4 commercial |
 | Standard SFn | Express SFn | 1 year, exactly-once vs 5 minutes, at-least-once |
 | Provisioned Concurrency | Reserved Concurrency | Warm-up, paid vs limit, free |
-| Lambda zip | Container Image | 250MB, Layers possible vs 10GB, no Layers, no SnapStart |
+| Lambda zip | Container Image | 250MB, Layers possible vs 10GB, no Layers |
 | `$LATEST` | Version number | Mutable, no PC vs immutable, PC possible |
 | Alias weighted | Version 100% | Canary in two stages vs All-at-once |
 | Inline Map | Distributed Map | 40 concurrent, affects parent history vs 10K concurrent, child executions |
@@ -107,7 +107,7 @@ update-alias --function-version 7  →  live points to V7
 
 > **Pitfall 5**: PC cannot be set on `$LATEST`, only on an Alias/Version. During a Canary both Versions have PC, so cost temporarily doubles.
 
-> **Pitfall 6**: Container Image Lambda cannot use Layers or SnapStart. Include all dependencies in the Dockerfile.
+> **Pitfall 6**: Container Image Lambda cannot use Layers (SnapStart is now supported). Include all dependencies in the Dockerfile.
 
 > **Pitfall 7**: Alias weighted routing supports only primary + 1 additional. For 3-way you need an ALB target group or Route 53 weighted records.
 
@@ -197,7 +197,7 @@ C) Download from S3 at runtime every time (10+ seconds of cold start)
 D) Mount EFS (operationally complex)
 
 **Answer: B**
-Explanation: The core use case of Lambda Container Image, released in December 2020. 10GB limit + you can include your own OS tools. For ARM builds use `docker buildx --platform linux/arm64`. In CDK use `lambda.DockerImageFunction.fromImageAsset()`. However, Containers cannot use Layers, do not support SnapStart, and cold starts are 2-3 times longer than zip. A is insufficient since 250MB x 4 = 1GB, C causes a surge in cold start and download cost, and D adds EFS cost and complexity.
+Explanation: The core use case of Lambda Container Image, released in December 2020. 10GB limit + you can include your own OS tools. For ARM builds use `docker buildx --platform linux/arm64`. In CDK use `lambda.DockerImageFunction.fromImageAsset()`. However, Containers cannot use Layers, and cold starts are 2-3 times longer than zip. A is insufficient since 250MB x 4 = 1GB, C causes a surge in cold start and download cost, and D adds EFS cost and complexity.
 
 ---
 
@@ -293,7 +293,7 @@ Finally, let's recap the core of the five axes you learned this week.
 
 2. **A Lambda Version is an immutable snapshot, an Alias is a mutable pointer**. Same idea as Git commit/branch. Weighted routing is possible only with primary + 1 additional - the structural reason CodeDeploy Canary works "one step at a time."
 
-3. The two standards of **cold start mitigation** - Provisioned Concurrency (warm-up, paid) vs SnapStart (Java/Python/.NET zip only, init time reduced by 90%). Reserved Concurrency is a limit setting and unrelated to cold start.
+3. The two standards of **cold start mitigation** - Provisioned Concurrency (warm-up, paid) vs SnapStart (Java/Python/.NET, init time reduced by 90%). Reserved Concurrency is a limit setting and unrelated to cold start.
 
 4. **Step Functions**: choose Standard/Express by invocation frequency x execution time. AWS SDK Service Integration calls 200+ services without Lambda. TaskToken integrates humans and external systems. Distributed Map runs 10K concurrent child workflows.
 

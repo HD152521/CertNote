@@ -9,7 +9,7 @@ Today consolidates week 8 into 12 comprehensive scenarios. Each scenario asks no
 ### Lambda (Day 1)
 - **Firecracker micro VMs**, warmed in **Slot pool**, cold start is 4 stages: download/runtime/init/JIT
 - **3 concurrency types**: Account limit (1,000) / Reserved (isolation+ceiling) / Provisioned (warm, cost)
-- **SnapStart** (CRaC-based): Java/Python/.NET, **free**, watch init uniqueness
+- **SnapStart** (CRaC-based): Java/Python/.NET, **no extra cost for Java (cache and restore charges for Python/.NET)**, watch init uniqueness
 - **Hyperplane ENI** (2019~): VPC integration shares ENI, **RDS Proxy** solves connection surge
 - **Async retry** 2x + **Destinations** (SNS/SQS/EB/Lambda)
 - **Function URL** (bypass API GW), **Container Image 10GB** + lazy loading, **Graviton2 ARM 20%↓**
@@ -43,7 +43,7 @@ Today consolidates week 8 into 12 comprehensive scenarios. Each scenario asks no
 ## Decision Tree — Scenario Keywords → Tool Mapping
 
 ```
-"Cold start + zero cost"                    → SnapStart (Java/Python/.NET)
+"Cold start + zero cost"                    → SnapStart (Java: no extra cost)
 "Cold start + predictable traffic"          → Provisioned Concurrency + Auto Scaling
 "Lambda + DB connection too many"           → RDS Proxy
 "One function impacting others"             → Reserved Concurrency
@@ -109,7 +109,7 @@ C) SnapStart + move UUID generation and DB connection to `Crac.Resource.afterRes
 D) Increase memory to 10GB for CPU-proportional JIT/class loading speedup
 
 **Answer: C**
-Explanation: SnapStart is free and cuts Java init time to nearly zero. But SnapStart restores the exact memory and disk state captured at init, so uniqueness state such as a UUID and the TCP state of a DB connection are copied into every restored instance, causing collisions. Re-initializing in `Crac.Resource.afterRestore` is the safe approach. B (SnapStart alone) risks instance-ID collisions and DB errors. A (PC) incurs cost (billed hourly). D (memory) has almost no bearing on cold start and raises cost. Trap: the option claiming "just enable SnapStart and everything is solved" is the trap — re-initializing uniqueness state is mandatory. Note: in 2024 SnapStart expanded to Python and .NET.
+Explanation: On Java managed runtimes SnapStart has no additional cost and cuts Java init time to nearly zero. But SnapStart restores the exact memory and disk state captured at init, so uniqueness state such as a UUID and the TCP state of a DB connection are copied into every restored instance, causing collisions. Re-initializing in `Crac.Resource.afterRestore` is the safe approach. B (SnapStart alone) risks instance-ID collisions and DB errors. A (PC) incurs cost (billed hourly). D (memory) has almost no bearing on cold start and raises cost. Trap: the option claiming "just enable SnapStart and everything is solved" is the trap — re-initializing uniqueness state is mandatory. Note: in 2024 SnapStart expanded to Python and .NET.
 
 ---
 
@@ -259,7 +259,7 @@ Explanation: ReportBatchItemFailures is the Lambda ESM partial batch response fe
 
 [Lambda]
  ├─ Concurrency 3 types (account/Reserved/Provisioned)
- ├─ SnapStart (Java/Python/.NET, free)
+ ├─ SnapStart (no extra cost for Java; cache and restore charges for Python/.NET)
  ├─ Hyperplane ENI (VPC), RDS Proxy connection
  ├─ Destinations (OnSuccess/OnFailure → SNS/SQS/EB/Lambda)
  ├─ Container Image 10GB (block-level lazy loading)

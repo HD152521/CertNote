@@ -26,7 +26,7 @@ RDS Proxy solves two problems, each in a different way. It provides connection p
 
 Aurora's differentiator is shared distributed storage. 6 copies, 3 AZs, 4/6 Quorum writes. The practical differences this structure creates:
 
-- **Failover within 30 seconds**: The storage stays alive, so you only need to connect a new Writer instance to the storage. There's no need for time to let the Standby apply the Redo Log, as with RDS.
+- **Failover typically under 60 seconds (often under 30)**: The storage stays alive, so you only need to connect a new Writer instance to the storage. There's no need for time to let the Standby apply the Redo Log, as with RDS.
 - **Up to 15 Read Replicas**: All Readers read from the shared storage, so there's no separate EBS per Replica. You can add Readers with no additional storage cost.
 - **Replication Lag usually much less than 100 ms**: Because it's shared storage, there's no "replication" itself. The Readers read from the shared storage, so they see the same data almost simultaneously with the Writer.
 
@@ -87,7 +87,7 @@ Here we sort out, all at once, the pairs most frequently confused on the exam.
 - If the scenario shows "availability," "automatic failure recovery," "minimize downtime," it's Multi-AZ. If it shows "read load," "performance improvement," "regional reads," it's Read Replica.
 
 **Aurora vs RDS**:
-- "15 Replicas," "30-second failover," "< 1s cross-region replication," "auto-scaling for fluctuating traffic" → Aurora
+- "15 Replicas," "fast failover (typically under 60 seconds)," "< 1s cross-region replication," "auto-scaling for fluctuating traffic" → Aurora
 - "Oracle/SQL Server/MariaDB engine required," "cost savings top priority," "stable workload" → plain RDS
 
 **GSI vs LSI**:
@@ -166,7 +166,7 @@ The role of each service in this architecture:
 
 SAA-C03 also covers the Cost Optimization Pillar (20%). Cost perspectives in database selection:
 
-**RDS vs Aurora**: Aurora costs about 20% more. "Scenarios where Aurora is justified for the same MySQL/PostgreSQL workload" are when the failover requirement is within 30 seconds, many Readers are needed (Aurora allows up to 15 per cluster), global replication is needed, or traffic fluctuates.
+**RDS vs Aurora**: Aurora costs about 20% more. "Scenarios where Aurora is justified for the same MySQL/PostgreSQL workload" are when faster failover is required (typically under 60 seconds, often under 30), many Readers are needed (Aurora allows up to 15 per cluster), global replication is needed, or traffic fluctuates.
 
 **On-Demand vs Provisioned**: DynamoDB On-Demand is up to 4× more expensive than Provisioned for stable traffic. Workloads with predictable traffic are cost-efficient with Provisioned + Auto Scaling.
 
@@ -185,7 +185,7 @@ Here we organize how the Week 5 services play their roles in disaster recovery (
 | Service | RPO | RTO | Mechanism |
 |---------|-----|-----|-----------|
 | RDS Multi-AZ | ~0 (synchronous) | 60-120s | Automatic DNS Failover |
-| Aurora Multi-AZ | ~0 (shared storage) | Within 30s | Reader → Writer promotion |
+| Aurora Multi-AZ | ~0 (shared storage) | Typically under 60s | Reader → Writer promotion |
 | Aurora Global DB | < 1s | On the order of minutes | Manual/automatic Promote |
 | DynamoDB (single region) | ~0 (PITR) | ~minutes | New-table recovery |
 | DynamoDB Global Tables | ~1s | ~0 (other region already serving) | Endpoint switch |
@@ -291,12 +291,12 @@ Explanation: Using DynamoDB's composite primary key (PK + SK), you can efficient
 
 A) Install PostgreSQL directly on EC2 and automate backups with cron
 B) RDS PostgreSQL (enable Multi-AZ, configure automated backups)
-C) Aurora PostgreSQL (shared storage, 15 Readers, 30-second failover, automated backups)
+C) Aurora PostgreSQL (shared storage, 15 Readers, fast failover, automated backups)
 D) Run a PostgreSQL container on ECS Fargate
 
 **Answer: C**
 
-Explanation: Aurora PostgreSQL has AWS take on more operational burden than RDS PostgreSQL. It adds storage management (auto-expansion, 6-copy management), faster failover (30s vs 60-120s), support for more Readers, and Fast Clone. RDS PostgreSQL (B) is managed too, but Aurora provides higher availability and scaling capability. A and D have the largest operational burden.
+Explanation: Aurora PostgreSQL has AWS take on more operational burden than RDS PostgreSQL. It adds storage management (auto-expansion, 6-copy management), faster failover (typically under 60s vs 60-120s), support for more Readers, and Fast Clone. RDS PostgreSQL (B) is managed too, but Aurora provides higher availability and scaling capability. A and D have the largest operational burden.
 
 ---
 

@@ -53,7 +53,7 @@ When a failover occurs, two things happen. First, RDS promotes the Standby to th
 
 > 🔍 **Going deeper**: RDS Multi-AZ Cluster is a new option launched at the end of 2021. Unlike the traditional Multi-AZ (1 Primary + 1 Standby), it consists of 1 Writer + 2 Readable Standbys. The Readable Standbys can handle read traffic, so read performance improves over traditional Multi-AZ, and failover time is shortened to within 35 seconds. On the SAA-C03 exam, this Multi-AZ Cluster is sometimes tested as distinct from plain "Multi-AZ," so be careful. Unless the exam scenario explicitly states "readable standby" or "multi-az cluster," it's safest to assume the standard 1+1 structure.
 
-> 📚 **Case study**: In October 2013, Dropbox migrated from Amazon RDS to its own MySQL cluster (what it later called Edgestore). One of the reasons was that the connection-drop time during RDS Multi-AZ failover made it hard to meet their SLA. For financial-sector or global services like this, a 60-120 second RDS Multi-AZ failover can be at an unacceptable level, and in those cases you should move to Aurora (failover within 30 seconds) or Aurora Global Database.
+> 📚 **Case study**: In October 2013, Dropbox migrated from Amazon RDS to its own MySQL cluster (what it later called Edgestore). One of the reasons was that the connection-drop time during RDS Multi-AZ failover made it hard to meet their SLA. For financial-sector or global services like this, a 60-120 second RDS Multi-AZ failover can be at an unacceptable level, and in those cases you should move to Aurora (failover typically under 60 seconds, often under 30) or Aurora Global Database.
 
 ## Read Replica — The Possibilities and Limits Created by Asynchronous Replication
 

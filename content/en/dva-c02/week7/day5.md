@@ -263,16 +263,16 @@ Explanation: To satisfy all three requirements, (1) RDS Proxy for connection poo
 
 ---
 
-**Question 2.** A fintech company wants an RDS configuration that satisfies all of the following: (1) RPO ≈ 0, (2) analytics queries can run on the standby, (3) failover time < 60 seconds. Which option fits best?
+**Question 2.** A fintech company wants a non-Aurora RDS configuration that satisfies all of the following: (1) RPO ≈ 0, (2) analytics queries can run on the standby, (3) failover time < 60 seconds. Which option fits best?
 
 A) RDS Multi-AZ DB Instance Deployment (1 synchronous standby) + 2 separate Read Replicas for analytics queries
 B) RDS Multi-AZ DB Cluster Deployment (new in 2022)
 C) Aurora MySQL Multi-AZ
 D) RDS Single-AZ + 7-day automatic backup retention + restoring daily snapshots for analytics
 
-**Answer: B (or C is also possible)**
+**Answer: B**
 
-Explanation: Multi-AZ DB Cluster Deployment (MySQL/PostgreSQL only, new in 2022) has a 1 writer + 2 readable standby structure + synchronous quorum replication, simultaneously satisfying (1) RPO≈0, (2) reads from the standby, and (3) failover within 35 seconds. A) The standby in a regular Multi-AZ Instance can't be read from; Read Replicas are separate. C) Aurora Multi-AZ also satisfies everything but requires a big change of switching the engine to Aurora, so Cluster Deployment is the closer answer. D) Single-AZ fails both (1) and (3).
+Explanation: Multi-AZ DB Cluster Deployment (MySQL/PostgreSQL only, new in 2022) has a 1 writer + 2 readable standby structure + synchronous quorum replication, simultaneously satisfying (1) RPO≈0, (2) reads from the standby, and (3) failover within 35 seconds. A) The standby in a regular Multi-AZ Instance can't be read from; Read Replicas are separate. C) Aurora Multi-AZ meets the requirements themselves but violates the stated condition (non-Aurora RDS), so Cluster Deployment is the answer. D) Single-AZ fails both (1) and (3).
 
 ---
 

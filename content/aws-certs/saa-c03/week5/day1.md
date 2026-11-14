@@ -53,7 +53,7 @@ MySQL RDS Multi-AZ는 Amazon의 독점 복제 기술(MySQL의 binlog replication
 
 RDS Multi-AZ Cluster는 2021년 말 출시된 신규 옵션이다. 기존 Multi-AZ(1 Primary + 1 Standby)와 달리, 1 Writer + 2 Readable Standby로 구성된다. Readable Standby는 읽기 트래픽을 처리할 수 있어서 기존 Multi-AZ보다 읽기 성능이 개선되고, 페일오버 시간도 35초 이내로 단축된다. SAA-C03 시험에서는 이 Multi-AZ Cluster를 "Multi-AZ"와 구분해서 출제하는 경우가 있으니 주의해야 한다. 시험 지문에 "readable standby" 또는 "multi-az cluster"가 명시되지 않으면 일반 1+1 구조를 가정하는 것이 안전하다.
 
-**사례**: 2013년 10월, Dropbox는 Amazon RDS에서 자체 MySQL 클러스터(나중에 Edgestore라고 부른 것)로 마이그레이션했다. 이유 중 하나가 RDS Multi-AZ의 페일오버 동안 발생하는 연결 끊김 시간이 SLA를 맞추기 어려웠다는 것이었다. 이처럼 금융권이나 글로벌 서비스의 경우 RDS Multi-AZ의 60-120초 페일오버가 허용 불가한 수준일 수 있으며, 그런 경우 Aurora(페일오버 30초 이내)나 Aurora Global Database로 넘어가야 한다.
+**사례**: 2013년 10월, Dropbox는 Amazon RDS에서 자체 MySQL 클러스터(나중에 Edgestore라고 부른 것)로 마이그레이션했다. 이유 중 하나가 RDS Multi-AZ의 페일오버 동안 발생하는 연결 끊김 시간이 SLA를 맞추기 어려웠다는 것이었다. 이처럼 금융권이나 글로벌 서비스의 경우 RDS Multi-AZ의 60-120초 페일오버가 허용 불가한 수준일 수 있으며, 그런 경우 Aurora(페일오버 보통 60초 미만, 종종 30초 미만)나 Aurora Global Database로 넘어가야 한다.
 
 ## Read Replica — 비동기 복제가 만드는 가능성과 한계
 

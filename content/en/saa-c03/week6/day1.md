@@ -44,11 +44,11 @@ Techniques for minimizing cold starts:
 - **Optimize initialization code**: remove unnecessary work from the code outside the handler
 - **Runtime choice**: Go, Python, and Node.js have shorter cold starts than Java and .NET
 - **Provisioned Concurrency**: keep a specified number of instances in a warmed-up state
-- **Lambda SnapStart** (Java): save a memory snapshot at the point initialization completes, cutting the cold start down to a few hundred ms
+- **Lambda SnapStart** (Java 11+, Python 3.12+, .NET 8+): save a memory snapshot at the point initialization completes, cutting the cold start down to a few hundred ms
 
 > 💡 **Firecracker MicroVM and the isolation guarantee** — Lambda's Firecracker MicroVM is a technology AWS open-sourced in 2018. It creates isolated execution environments far more lightly and quickly (starting within 125ms) than traditional QEMU/KVM-based VMs. Firecracker uses the KVM hypervisor directly while minimizing the device emulation it needs. It's thanks to this isolation that a Lambda function cannot read another function's memory or kill its process. According to data disclosed at AWS re:Invent 2019, AWS can start millions of Firecracker MicroVMs per second. Firecracker is written in Rust and has a design philosophy that prizes memory safety and a minimal attack surface.
 
-> 🔍 **Lambda SnapStart — a fundamental fix for cold starts** — Lambda SnapStart (for Java, launched in 2022) solves the cold-start problem in a fundamentally different way. When the function is deployed, it runs the initialization phase (steps 1-4) and saves the memory and disk state at that point as a snapshot. Later, when a cold start is needed, instead of initializing from scratch on a new MicroVM, it restores the saved snapshot. This can cut Java's 3-second cold start down to a few hundred ms. However, on snapshot restore, things like `UUID.randomUUID()`, the current time, and random number generation may return the values captured at snapshot time, so they must be re-initialized via a separate restore hook (`@SnapStartRestore`).
+> 🔍 **Lambda SnapStart — a fundamental fix for cold starts** — Lambda SnapStart (launched for Java in 2022, later extended to Python and .NET) solves the cold-start problem in a fundamentally different way. When the function is deployed, it runs the initialization phase (steps 1-4) and saves the memory and disk state at that point as a snapshot. Later, when a cold start is needed, instead of initializing from scratch on a new MicroVM, it restores the saved snapshot. This can cut Java's 3-second cold start down to a few hundred ms. However, on snapshot restore, things like `UUID.randomUUID()`, the current time, and random number generation may return the values captured at snapshot time, so they must be re-initialized via a separate restore hook (`@SnapStartRestore`).
 
 ## Trigger Types — The Difference Between Synchronous, Asynchronous, and Polling
 
@@ -325,7 +325,7 @@ D) Increase memory to 10,240MB
 
 **Answer: B**
 
-Explanation: Provisioned Concurrency keeps a specified number of Lambda execution environments always in an initialized state, eliminating cold starts. To satisfy a P99 100ms SLA, even the 99th-percentile request must be handled with no cold start. For A, Python has a shorter cold start than Java but can't eliminate it entirely, and for Java, SnapStart is also a valid option. For C, Reserved Concurrency reserves a concurrency limit; it doesn't eliminate cold starts. For D, increasing memory also increases CPU proportionally so execution can be faster, but it doesn't fundamentally solve the cold start.
+Explanation: Provisioned Concurrency keeps a specified number of Lambda execution environments always in an initialized state, eliminating cold starts. To satisfy a P99 100ms SLA, even the 99th-percentile request must be handled with no cold start. For A, Python has a shorter cold start than Java but can't eliminate it entirely, and for Java (and Python 3.12+/.NET 8+), SnapStart is also a valid option. For C, Reserved Concurrency reserves a concurrency limit; it doesn't eliminate cold starts. For D, increasing memory also increases CPU proportionally so execution can be faster, but it doesn't fundamentally solve the cold start.
 
 ---
 

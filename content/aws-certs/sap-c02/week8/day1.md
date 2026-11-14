@@ -48,7 +48,7 @@ Reserved와 PC는 동시에 쓸 수 있다. 예를 들어 "이 함수는 Reserve
 
 CRaC는 OpenJDK의 공식 프로젝트로, Java JVM 프로세스의 상태를 체크포인트로 저장·복원하는 표준이다. CRIU(Checkpoint/Restore In Userspace)라는 Linux 커널 기능을 기반으로 한다. SnapStart는 CRaC를 채택해 Java에 먼저 적용했고, 2024년 Python·.NET로 확장됐다. 이 모델은 **"초기화는 한 번, 실행은 무한"**이라는 분산 시스템의 일반적 최적화 패턴을 따른다.
 
-SnapStart가 무료인 이유는 AWS 입장에서도 컴퓨팅 효율이 더 좋기 때문이다. 매 콜드 스타트마다 init을 실행하는 것보다, 한 번 만든 스냅샷을 page cache에서 복원하는 게 CPU·메모리·네트워크 모두 저렴하다. 다만 함정이 있다. 스냅샷은 **메모리·디스크 상태를 그대로 복사**하므로 init 단계에서 생성한 난수 시드, 고유 ID, DB connection의 TCP 상태가 모든 복원본에 동일하게 들어간다. 그래서 SnapStart 가이드는 "init에서 uniqueness state를 만들지 말 것"을 강조하고, `Crac.Resource` 인터페이스로 `beforeCheckpoint`/`afterRestore` 훅을 제공한다.
+Java 관리형 런타임에서 SnapStart에 추가 비용이 없는 이유는 AWS 입장에서도 컴퓨팅 효율이 더 좋기 때문이다. 매 콜드 스타트마다 init을 실행하는 것보다, 한 번 만든 스냅샷을 page cache에서 복원하는 게 CPU·메모리·네트워크 모두 저렴하다. 다만 함정이 있다. 스냅샷은 **메모리·디스크 상태를 그대로 복사**하므로 init 단계에서 생성한 난수 시드, 고유 ID, DB connection의 TCP 상태가 모든 복원본에 동일하게 들어간다. 그래서 SnapStart 가이드는 "init에서 uniqueness state를 만들지 말 것"을 강조하고, `Crac.Resource` 인터페이스로 `beforeCheckpoint`/`afterRestore` 훅을 제공한다.
 
 > ⚠️ **함정**: SnapStart로 활성화하면 함수 환경이 stateless라는 가정이 깨진다. 예를 들어 init에서 `UUID.randomUUID()`로 인스턴스 ID를 만들고 캐시 key로 쓰는 코드가 있다면, 모든 SnapStart 복원본이 같은 ID를 갖게 되어 캐시 충돌이 생긴다. 시험에서는 직접 묻지 않지만 실무에서 흔한 함정이라 알아두면 좋다.
 
@@ -151,7 +151,7 @@ C) 메모리를 10GB로 올림
 D) Function URL로 전환
 
 **정답: B**
-해설: "추가 비용 없이"가 핵심. Provisioned Concurrency(A)는 시간당 과금이 발생한다. SnapStart는 무료이고 Java/Python/.NET 모두 지원한다. CRaC 기반 스냅샷 복원으로 init 시간이 거의 0이 된다. 다만 init에서 uniqueness state(난수 시드, UUID, DB connection의 TCP 상태)를 만들면 모든 복원본에 복제되어 충돌이 생기므로 `Crac.Resource` 인터페이스로 `beforeCheckpoint`/`afterRestore`에서 재초기화해야 한다. C는 비용 증가, D는 콜드 스타트와 무관. 추가 학습: SnapStart는 publish된 버전에만 적용되고 $LATEST에는 적용 안 됨.
+해설: "추가 비용 없이"가 핵심. Provisioned Concurrency(A)는 시간당 과금이 발생한다. SnapStart는 Java 관리형 런타임에서 추가 비용이 없다(Python/.NET도 지원하지만 캐시·복원 요금이 발생한다). CRaC 기반 스냅샷 복원으로 init 시간이 거의 0이 된다. 다만 init에서 uniqueness state(난수 시드, UUID, DB connection의 TCP 상태)를 만들면 모든 복원본에 복제되어 충돌이 생기므로 `Crac.Resource` 인터페이스로 `beforeCheckpoint`/`afterRestore`에서 재초기화해야 한다. C는 비용 증가, D는 콜드 스타트와 무관. 추가 학습: SnapStart는 publish된 버전에만 적용되고 $LATEST에는 적용 안 됨.
 
 ---
 
@@ -231,7 +231,7 @@ D) Container Image로 전환
 
 1. **Firecracker micro VM**으로 격리, Slot 풀에서 워밍업 → 콜드 스타트 분해(다운로드/런타임/Init/JIT)
 2. **동시성 3종**: 계정 한도(1,000 기본) / Reserved(격리+상한) / Provisioned(따뜻함, 비용 발생)
-3. **SnapStart**(CRaC 기반) — Java/Python/.NET, 무료, init uniqueness 주의
+3. **SnapStart**(CRaC 기반) — Java(추가 비용 없음)/Python/.NET(캐시·복원 요금), init uniqueness 주의
 4. **Hyperplane ENI**(2019~) — VPC 통합 시 ENI 공유, **RDS Proxy**로 connection 폭증 해결
 5. **비동기 재시도** 2회 자동 + **Destinations**(SNS/SQS/EB/Lambda)로 풍부 라우팅
 6. **Function URL** — API GW 우회 단순 HTTPS, IAM 인증만

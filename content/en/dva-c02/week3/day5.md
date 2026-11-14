@@ -236,7 +236,7 @@ C) Set Provisioned Concurrency to 1,000 to always keep warm instances — it wor
 D) Switch the runtime from Java to Node.js to reduce boot time — cold start improves, but it requires a full code rewrite, a large-scale refactor  
 
 **Answer: B**  
-Explanation: SnapStart saves a snapshot of a Java function's JVM-initialized state at version publish, cutting cold starts by 90%+. It's free (only the S3 cost of storing the snapshot) and used together with versions/aliases. A speeds up CPU but doesn't greatly reduce JVM class loading time, cutting it from 3–5s to only about 1–2s. C is effective but 1,000 PC incurs enormous cost and is far more than actual traffic. D: swapping the runtime requires a large-scale refactor.
+Explanation: SnapStart saves a snapshot of a Java function's JVM-initialized state at version publish, cutting cold starts by 90%+. For a Java function there is no additional cost (Java managed runtimes), and it is used together with versions/aliases. A speeds up CPU but doesn't greatly reduce JVM class loading time, cutting it from 3–5s to only about 1–2s. C is effective but 1,000 PC incurs enormous cost and is far more than actual traffic. D: swapping the runtime requires a large-scale refactor.
 
 ---
 
