@@ -369,7 +369,19 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
           <Link href="/roadmap" className="font-medium text-accent hover:underline">
             자격증 로드맵
           </Link>
-          에서 확인하세요.
+          에서 확인하세요. 읽은 내용을 손으로 익히려면{' '}
+          <Link href="/lab" className="font-medium text-accent hover:underline">
+            실습
+          </Link>
+          을, 다른 분야는{' '}
+          <Link href="/linux" className="font-medium text-accent hover:underline">
+            리눅스마스터
+          </Link>
+          ·{' '}
+          <Link href="/data" className="font-medium text-accent hover:underline">
+            SQLD
+          </Link>{' '}
+          노트를 보세요.
         </p>
       </section>
       <JsonLd data={buildFaqPageLd(faq)} />

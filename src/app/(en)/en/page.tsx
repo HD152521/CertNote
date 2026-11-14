@@ -64,6 +64,21 @@ export default async function EnHomePage() {
       {certs.length === 0 && (
         <p className="text-sm text-fg-muted">English tracks are being prepared — check back soon.</p>
       )}
+      <section aria-labelledby="en-more-heading" className="space-y-2">
+        <h2 id="en-more-heading" className="text-lg font-semibold">More ways to study</h2>
+        <ul className="list-disc space-y-1 pl-5 text-sm text-fg-muted">
+          <li>
+            <Link href="/en/lab" className="text-accent underline underline-offset-4 hover:text-fg">Hands-on labs</Link> — practice Linux, SQL and AWS CLI commands in your browser.
+          </li>
+          <li>
+            <Link href="/en/roadmap" className="text-accent underline underline-offset-4 hover:text-fg">Certification roadmaps</Link> — which exam to take first for your role.
+          </li>
+          <li>
+            <Link href="/en/about" className="text-accent underline underline-offset-4 hover:text-fg">About CertNote</Link> and{' '}
+            <Link href="/en/about/how-we-make" className="text-accent underline underline-offset-4 hover:text-fg">how we make the notes</Link>.
+          </li>
+        </ul>
+      </section>
       <CertRequestForm lang="en" />
     </div>
   );
