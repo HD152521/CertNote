@@ -1,8 +1,8 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { enRootMetadata, koRootMetadata } from '@/lib/rootMetadata';
-import { DEFAULT_OG_IMAGE, certOgImage, certOgImagePath } from '@/lib/ogImages';
+import { DEFAULT_OG_IMAGE, certOgImage, certOgImagePath, withDefaultOgImage } from '@/lib/ogImages';
 import { dayRouteMetadata } from '@/lib/day/dayRoute';
 import { generateMetadata as hubMetadata } from '../app/(ko)/[category]/[slug]/page';
 
@@ -59,5 +59,30 @@ describe('OG 이미지 — 옛 URL 유지', () => {
     const meta = await dayRouteMetadata('aws', { slug: 'saa-c03', week: 'week1', day: 'day1' } as never);
     const image = (meta.openGraph?.images as string[])[0];
     expect(image).toBe('/aws/saa-c03/opengraph-image');
+  });
+
+  // 자기 openGraph 를 정의한 페이지는 루트의 기본 카드를 물려받지 못한다(Next 는 병합이 아니라 대체). 새 페이지가
+  // withDefaultOgImage 를 빠뜨리면 링크 미리보기 이미지가 조용히 사라지므로 소스를 훑어 막는다.
+  test('src/app 의 모든 `openGraph: {` 정의가 withDefaultOgImage 로 감싸졌거나 images 를 직접 가진다', () => {
+    const offenders: string[] = [];
+    for (const file of walk(APP).filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))) {
+      const src = readFileSync(file, 'utf8');
+      for (const m of src.matchAll(/openGraph:\s*(withDefaultOgImage\(\s*)?\{/g)) {
+        if (m[1]) continue;
+        let depth = 0;
+        let end = m.index! + m[0].length - 1;
+        for (; end < src.length; end += 1) {
+          if (src[end] === '{') depth += 1;
+          if (src[end] === '}' && --depth === 0) break;
+        }
+        if (!/images\s*:/.test(src.slice(m.index!, end))) offenders.push(file.replace(APP, 'src/app'));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  test('withDefaultOgImage: images 가 없으면 기본 카드를 넣고, 있으면 그대로 둔다', () => {
+    expect(withDefaultOgImage({ title: 'x' }).images).toEqual([DEFAULT_OG_IMAGE]);
+    expect(withDefaultOgImage({ title: 'x', images: ['/a'] }).images).toEqual(['/a']);
   });
 });

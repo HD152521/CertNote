@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = '문의';
 const DESCRIPTION = `${SITE_NAME} 이용 문의, 콘텐츠 오류 제보, 개인정보·저작권 관련 요청을 보내는 방법을 안내합니다.`;
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates('/contact'),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: '/contact', type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: '/contact', type: 'website' }),
 };
 
 export default function ContactPage() {

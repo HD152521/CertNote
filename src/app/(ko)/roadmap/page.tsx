@@ -6,6 +6,7 @@ import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { JsonLd } from '@/components/JsonLd';
 import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 // "어떤 직무를 노리느냐에 따라 어떤 자격증을 어떤 순서로 딸까"를 안내하는 정보 허브.
 // 검색 의도("aws 자격증 순서/추천/로드맵")에 정면으로 대응하는 색인 대상 페이지.
@@ -16,12 +17,12 @@ export const metadata: Metadata = {
   description:
     '솔루션스 아키텍트·개발자·DevOps·데이터·머신러닝·보안 등 목표 직무에 따라 AWS 자격증을 어떤 순서로 준비하면 되는지 정리한 로드맵. 각 단계의 이유와 로그인 없이 무료로 읽는 학습 노트로 바로 연결됩니다.',
   alternates: infoAlternates('/roadmap'),
-  openGraph: {
+  openGraph: withDefaultOgImage({
     title: 'AWS 자격증 순서 로드맵 — 직무별 공부 순서(DevOps·개발자·데이터·보안)',
     description: '목표 직무별로 AWS 자격증을 어떤 순서로 딸지 안내하는 로드맵.',
     url: '/roadmap',
     type: 'website',
-  },
+  }),
 };
 
 export default async function RoadmapHubPage() {

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = '이용약관';
 const DESCRIPTION = `${SITE_NAME} 서비스 이용 조건, 회원 계정, 콘텐츠 저작권, 책임의 한계를 안내합니다.`;
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates('/terms'),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: '/terms', type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: '/terms', type: 'website' }),
 };
 
 export default function TermsPage() {

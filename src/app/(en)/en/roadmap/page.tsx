@@ -7,6 +7,7 @@ import { infoAlternates } from '@/lib/infoAlternates';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { JsonLd } from '@/components/JsonLd';
 import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 // 영어판 직무별 로드맵 허브. 한국어판(/roadmap)과 같은 데이터(content/roadmaps.json)를 쓰고 글만 영어다.
 export const dynamic = 'error'; // 정적 생성 강제(한국어판과 동일).
@@ -20,12 +21,12 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: {
+  openGraph: withDefaultOgImage({
     title: TITLE,
     description: 'A roadmap showing which AWS certifications to earn, and in what order, for each target role.',
     url: PATH,
     type: 'website',
-  },
+  }),
 };
 
 export default async function EnRoadmapHubPage() {

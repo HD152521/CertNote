@@ -4,6 +4,7 @@ import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { CHANGELOG_KIND_LABELS_EN, getChangelog, groupChangelogByDate } from '@/lib/trust/changelog';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 // 영어판 수정 기록. 데이터는 한국어판과 같은 content/changelog.json 이고, 영어 요약(summaryEn)이 있는 항목만 싣는다.
 const TITLE = 'Changelog';
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 const LINK = 'underline underline-offset-4 hover:text-fg';

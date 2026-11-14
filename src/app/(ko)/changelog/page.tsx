@@ -4,6 +4,7 @@ import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { CHANGELOG_KIND_LABELS, getChangelog, groupChangelogByDate } from '@/lib/trust/changelog';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 // 수정 기록(docs/P4-trust-quality-plan.md Step 5b). 데이터는 content/changelog.json.
 const TITLE = '수정 기록';
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 const LINK = 'underline underline-offset-4 hover:text-fg';

@@ -10,6 +10,7 @@ import { infoAlternates } from '@/lib/infoAlternates';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { JsonLd } from '@/components/JsonLd';
 import { buildItemListLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 interface PageProps { params: Promise<{ role: string }>; }
 
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: en.seoTitle,
     description: en.description,
     alternates: infoAlternates(url),
-    openGraph: { title: en.seoTitle, description: en.description, url, type: 'website' },
+    openGraph: withDefaultOgImage({ title: en.seoTitle, description: en.description, url, type: 'website' }),
   };
 }
 

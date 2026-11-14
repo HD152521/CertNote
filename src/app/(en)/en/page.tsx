@@ -6,6 +6,7 @@ import { listCerts } from '@/lib/content';
 import { hreflangPair } from '@/lib/i18n';
 import { SITE_NAME } from '@/lib/site';
 import { CertRequestForm } from '@/components/userInput/CertRequestForm';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 // 영어판 홈. 무료 Week1 영어 트랙의 진입점 — 정적 라우트라 /en 이 [category]보다 우선 매칭된다.
 // 콘텐츠·역할 면에서 이 페이지의 한국어판은 홈(`/`, 마케팅 랜딩)이 아니라 aws 섹션 허브
@@ -19,12 +20,12 @@ export const metadata: Metadata = {
     canonical: `/${EN_CATEGORY}`,
     languages: hreflangPair('/aws', `/${EN_CATEGORY}`, { xDefault: true }),
   },
-  openGraph: {
+  openGraph: withDefaultOgImage({
     title: `${SITE_NAME} — Certification Study Notes`,
     description: 'Free study notes for 14 certification tracks (AWS, SQLD, Linux Master), fully in English.',
     url: `/${EN_CATEGORY}`,
     type: 'website',
-  },
+  }),
 };
 
 export default async function EnHomePage() {

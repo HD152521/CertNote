@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { SITE_NAME } from '@/lib/site';
 import { PricingContent } from './PricingContent';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = '요금제';
 const DESCRIPTION = `${SITE_NAME} 무료 플랜과 Pro 플랜 비교. 경쟁사보다 60% 저렴하고 한국어 + SRS 복습.`;
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/pricing' },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: '/pricing', type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: '/pricing', type: 'website' }),
 };
 
 export default function PricingPage() {
