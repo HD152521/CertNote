@@ -14,10 +14,11 @@ import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
 
 interface PageProps { params: Promise<{ category: string }>; }
 
-// 정적 생성 대상은 ko 카테고리(aws-certs)뿐. en 은 정적 라우트(app/en/page.tsx)가 우선 매칭해
-// 이 동적 라우트까지 내려오지 않는다(en도 목록에 넣어두는 이유는 아래 dynamicParams 주석 참고).
+// 정적 생성 대상은 ko 카테고리뿐. en 은 (en) 루트 그룹의 정적 라우트(app/(en)/en/page.tsx)가 우선
+// 매칭해 이 동적 라우트까지 내려오지 않는다. 여기서 en 을 만들면 /en 이 (ko) 루트(lang="ko")로
+// 이중 생성된다.
 export async function generateStaticParams() {
-  return SUPPORTED_CATEGORIES.map((category) => ({ category }));
+  return SUPPORTED_CATEGORIES.filter((category) => category !== EN_CATEGORY).map((category) => ({ category }));
 }
 
 // SUPPORTED_CATEGORIES는 코드 상수(src/lib/category.ts)라 콘텐츠 동기화만으로는 늘지 않는다 —

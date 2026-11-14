@@ -40,16 +40,16 @@ function sitemapEntry(
 // 영어 정보 페이지(/en/about 등)의 사이트맵 항목. 한국어 정적 페이지와 같은 방식 — lastModified 는 페이지 소스
 // (와 그 데이터)의 커밋 시각 매니페스트에서 도출하고, 모르면 생략한다. 짝 표는 enEdition.ts 의 EN_INFO_PAIRS.
 const EN_INFO_SOURCES: Record<string, { files: string[]; changeFrequency: 'yearly' | 'monthly'; priority: number }> = {
-  '/en/about': { files: ['src/app/en/about/page.tsx'], changeFrequency: 'yearly', priority: 0.4 },
-  '/en/about/how-we-make': { files: ['src/app/en/about/how-we-make/page.tsx'], changeFrequency: 'yearly', priority: 0.4 },
-  '/en/changelog': { files: ['src/app/en/changelog/page.tsx', 'content/changelog.json'], changeFrequency: 'monthly', priority: 0.4 },
-  '/en/contact': { files: ['src/app/en/contact/page.tsx'], changeFrequency: 'yearly', priority: 0.3 },
-  '/en/terms': { files: ['src/app/en/terms/page.tsx'], changeFrequency: 'yearly', priority: 0.3 },
-  '/en/privacy': { files: ['src/app/privacy/PrivacyContent.tsx', 'src/lib/strings/privacy.ts'], changeFrequency: 'yearly', priority: 0.3 },
+  '/en/about': { files: ['src/app/(en)/en/about/page.tsx'], changeFrequency: 'yearly', priority: 0.4 },
+  '/en/about/how-we-make': { files: ['src/app/(en)/en/about/how-we-make/page.tsx'], changeFrequency: 'yearly', priority: 0.4 },
+  '/en/changelog': { files: ['src/app/(en)/en/changelog/page.tsx', 'content/changelog.json'], changeFrequency: 'monthly', priority: 0.4 },
+  '/en/contact': { files: ['src/app/(en)/en/contact/page.tsx'], changeFrequency: 'yearly', priority: 0.3 },
+  '/en/terms': { files: ['src/app/(en)/en/terms/page.tsx'], changeFrequency: 'yearly', priority: 0.3 },
+  '/en/privacy': { files: ['src/app/(ko)/privacy/PrivacyContent.tsx', 'src/lib/strings/privacy.ts'], changeFrequency: 'yearly', priority: 0.3 },
 };
 const EN_ROADMAP_FILES = [
-  'src/app/en/roadmap/page.tsx',
-  'src/app/en/roadmap/[role]/page.tsx',
+  'src/app/(en)/en/roadmap/page.tsx',
+  'src/app/(en)/en/roadmap/[role]/page.tsx',
   'src/lib/enPages/roadmapEn.ts',
   'content/roadmaps.json',
 ];
@@ -89,21 +89,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       sections.flatMap(({ section, certs }) => certs.map((c) => getCertMetaMtime(section, c.slug))),
     )
   );
-  const homeLastMod = maxMtime([await getSourceFileMtime('src/app/page.tsx'), ...allCertMetaMtimes]);
+  const homeLastMod = maxMtime([await getSourceFileMtime('src/app/(ko)/page.tsx'), ...allCertMetaMtimes]);
 
   const out: MetadataRoute.Sitemap = [
     sitemapEntry(SITE_URL, homeLastMod, 'weekly', 1),
-    sitemapEntry(`${SITE_URL}/privacy`, await getSourceFileMtime('src/app/privacy/PrivacyContent.tsx'), 'yearly', 0.3),
-    sitemapEntry(`${SITE_URL}/about`, await getSourceFileMtime('src/app/about/page.tsx'), 'yearly', 0.4),
-    sitemapEntry(`${SITE_URL}/about/how-we-make`, await getSourceFileMtime('src/app/about/how-we-make/page.tsx'), 'yearly', 0.4),
+    sitemapEntry(`${SITE_URL}/privacy`, await getSourceFileMtime('src/app/(ko)/privacy/PrivacyContent.tsx'), 'yearly', 0.3),
+    sitemapEntry(`${SITE_URL}/about`, await getSourceFileMtime('src/app/(ko)/about/page.tsx'), 'yearly', 0.4),
+    sitemapEntry(`${SITE_URL}/about/how-we-make`, await getSourceFileMtime('src/app/(ko)/about/how-we-make/page.tsx'), 'yearly', 0.4),
     sitemapEntry(
       `${SITE_URL}/changelog`,
-      maxMtime([await getSourceFileMtime('src/app/changelog/page.tsx'), await getSourceFileMtime('content/changelog.json')]),
+      maxMtime([await getSourceFileMtime('src/app/(ko)/changelog/page.tsx'), await getSourceFileMtime('content/changelog.json')]),
       'monthly',
       0.4,
     ),
-    sitemapEntry(`${SITE_URL}/contact`, await getSourceFileMtime('src/app/contact/page.tsx'), 'yearly', 0.3),
-    sitemapEntry(`${SITE_URL}/terms`, await getSourceFileMtime('src/app/terms/page.tsx'), 'yearly', 0.3),
+    sitemapEntry(`${SITE_URL}/contact`, await getSourceFileMtime('src/app/(ko)/contact/page.tsx'), 'yearly', 0.3),
+    sitemapEntry(`${SITE_URL}/terms`, await getSourceFileMtime('src/app/(ko)/terms/page.tsx'), 'yearly', 0.3),
   ];
   out.push(...(await enInfoEntries()));
   for (const { section, certs } of sections) {
@@ -139,7 +139,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const roadmapRoles = await getRoadmapRoles().catch(() => []);
   if (roadmapRoles.length > 0) {
     const roadmapLastMod = maxMtime([
-      await getSourceFileMtime('src/app/roadmap/page.tsx'),
+      await getSourceFileMtime('src/app/(ko)/roadmap/page.tsx'),
       await getSourceFileMtime('content/roadmaps.json'),
     ]);
     out.push(sitemapEntry(`${SITE_URL}/roadmap`, roadmapLastMod, 'monthly', 0.7));

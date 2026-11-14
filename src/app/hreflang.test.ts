@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import { metadata as homeMetadata } from './page';
-import { metadata as enHomeMetadata } from './en/page';
-import { generateMetadata as generateCategoryMetadata } from './[category]/page';
-import { generateMetadata as generateCertMetadata } from './[category]/[slug]/page';
+import { metadata as homeMetadata } from './(ko)/page';
+import { metadata as enHomeMetadata } from './(en)/en/page';
+import { generateMetadata as generateCategoryMetadata } from './(ko)/[category]/page';
+import { generateMetadata as generateCertMetadata } from './(ko)/[category]/[slug]/page';
 import type { Metadata } from 'next';
 import { dayRouteMetadata } from '@/lib/day/dayRoute';
 

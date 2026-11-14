@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { infoAlternates } from '@/lib/infoAlternates';
-import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
+import { CONTACT_EMAIL, OPERATOR_NAME_EN, SITE_NAME } from '@/lib/site';
 
 const TITLE = 'Terms of Service';
 const DESCRIPTION = `The conditions for using ${SITE_NAME}, member accounts, copyright in the content, and limits of liability.`;
@@ -24,7 +24,7 @@ export default function EnTermsPage() {
     <LegalPage lang="en" title="Terms of Service" updated="2026-10-13">
       <LegalSection title="1. Purpose">
         <p>
-          These terms set out the conditions for using {SITE_NAME} (the &ldquo;Service&rdquo;), provided by {OPERATOR_NAME}{' '}
+          These terms set out the conditions for using {SITE_NAME} (the &ldquo;Service&rdquo;), provided by {OPERATOR_NAME_EN}{' '}
           (the &ldquo;Operator&rdquo;), and the rights and obligations of the Operator and users.
         </p>
       </LegalSection>

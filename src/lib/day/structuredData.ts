@@ -3,6 +3,7 @@ import type { Lang } from '@/lib/category';
 import { getDayMtime } from '@/lib/content';
 import type { DayContent } from '@/lib/content';
 import { excerptOf } from '@/lib/site';
+import { certOgImagePath } from '@/lib/ogImages';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
 import { dayHeadline } from '@/lib/day/dayTitle';
 import { buildDayArticleLd, buildBreadcrumbLd } from '@/lib/structuredData';
@@ -46,7 +47,7 @@ export async function buildDayStructuredData(
     category,
     slug,
     courseName: `${content.certMeta.code} ${content.certMeta.name}`,
-    imageUrl: `/${category}/${slug}/opengraph-image`,
+    imageUrl: certOgImagePath(category, slug),
   });
   const breadcrumbLd = buildBreadcrumbLd(
     lang === 'en'

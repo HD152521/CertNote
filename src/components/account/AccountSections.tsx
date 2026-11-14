@@ -2,7 +2,7 @@
 
 import { useLanguage, t } from '@/lib/i18n-client';
 import type { ProfileValues } from '@/components/account/ProfileSection';
-import type { CertOption } from '@/app/account/AccountPageClient';
+import type { CertOption } from '@/app/(ko)/account/AccountPageClient';
 import { ProfileTab } from './tabs/ProfileTab';
 import { BillingTab } from './tabs/BillingTab';
 import { SettingsTab } from './tabs/SettingsTab';

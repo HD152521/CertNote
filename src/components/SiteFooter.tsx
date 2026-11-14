@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n-client';
 import { infoHref } from '@/lib/enEdition';
-import { OPERATOR_NAME, SITE_NAME } from '@/lib/site';
+import { OPERATOR_NAME, OPERATOR_NAME_EN, SITE_NAME } from '@/lib/site';
 
 const LINKS = [
   { href: '/about', ko: '소개', en: 'About' },
@@ -20,7 +20,7 @@ export function SiteFooter() {
     <footer className="border-t border-border">
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 py-6 text-xs text-fg-muted sm:flex-row sm:items-center sm:justify-between lg:px-6">
         <p>
-          © {SITE_NAME} · {OPERATOR_NAME}
+          © {SITE_NAME} · {lang === 'en' ? OPERATOR_NAME_EN : OPERATOR_NAME}
         </p>
         <nav aria-label={lang === 'en' ? 'Site information' : '사이트 정보'}>
           <ul className="flex flex-wrap gap-x-4 gap-y-2">

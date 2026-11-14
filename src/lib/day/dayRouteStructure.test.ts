@@ -10,24 +10,27 @@ import { SUPPORTED_CATEGORIES } from '@/lib/category';
 // 같은 임의 경로가 매칭돼 캐시 키가 무한해진다. 리터럴 폴더면 지원 category 밖 경로는 라우터가 매칭하지 않아
 // 진짜 404 다. `[category]/[slug]/[week]` 또는 `[category]/[slug]/week1` 가 되살아나면 이 테스트가 실패한다.
 const APP = path.join(process.cwd(), 'src', 'app');
+// 라우트 그룹: 영어는 (en)/en, 나머지 카테고리는 (ko)/<category>. 두 그룹이 각자 루트 레이아웃(<html lang>)이다.
+const KO_APP = path.join(APP, '(ko)');
+const categoryDir = (c: string) => (c === 'en' ? path.join(APP, '(en)', 'en') : path.join(KO_APP, c));
 const exists = (p: string) => fs.access(p).then(() => true, () => false);
 
 describe('day 라우트 구조 — category 는 리터럴 폴더', () => {
   test.each(SUPPORTED_CATEGORIES.map((c) => [c]))('%s 에 [week]/[day] 와 week1/[day] 라우트가 있다', async (c) => {
-    expect(await exists(path.join(APP, c, '[slug]', '[week]', '[day]', 'page.tsx'))).toBe(true);
-    expect(await exists(path.join(APP, c, '[slug]', 'week1', '[day]', 'page.tsx'))).toBe(true);
+    expect(await exists(path.join(categoryDir(c), '[slug]', '[week]', '[day]', 'page.tsx'))).toBe(true);
+    expect(await exists(path.join(categoryDir(c), '[slug]', 'week1', '[day]', 'page.tsx'))).toBe(true);
   });
 
   test('동적 [category] 아래에 [week] / week1 day 라우트가 없다(임의 category 가 캐시되는 라우트에 도달하면 안 된다)', async () => {
     for (const dir of [['[category]', '[slug]', '[week]'], ['[category]', '[slug]', 'week1']]) {
-      expect(await exists(path.join(APP, ...dir)), `src/app/${dir.join('/')} 가 존재한다 — 구조 가드 위반`).toBe(false);
+      expect(await exists(path.join(KO_APP, ...dir)), `src/app/(ko)/${dir.join('/')} 가 존재한다 — 구조 가드 위반`).toBe(false);
     }
   });
 
   test('각 라우트 파일이 자기 category 만 shared 구현에 넘긴다', async () => {
     for (const c of SUPPORTED_CATEGORIES) {
       for (const sub of [['[week]', '[day]'], ['week1', '[day]']]) {
-        const src = await fs.readFile(path.join(APP, c, '[slug]', ...sub, 'page.tsx'), 'utf8');
+        const src = await fs.readFile(path.join(categoryDir(c), '[slug]', ...sub, 'page.tsx'), 'utf8');
         expect(src).toContain(`('${c}'`);
         const others = SUPPORTED_CATEGORIES.filter((x) => x !== c);
         for (const o of others) expect(src, `${c} 라우트가 ${o} 를 참조`).not.toContain(`('${o}'`);
@@ -42,10 +45,10 @@ describe('day 라우트 구조 — category 는 리터럴 폴더', () => {
       for (const e of await fs.readdir(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
         if (e.isDirectory()) await walk(full);
-        else if (e.name === 'page.tsx') found.push(path.relative(APP, full).split(path.sep).join('/'));
+        else if (e.name === 'page.tsx') found.push(path.relative(KO_APP, full).split(path.sep).join('/'));
       }
     }
-    await walk(path.join(APP, '[category]'));
+    await walk(path.join(KO_APP, '[category]'));
     expect(found.sort()).toEqual([
       '[category]/[slug]/page.tsx', // dynamicParams=false 허브
       '[category]/page.tsx', // dynamicParams=false 허브

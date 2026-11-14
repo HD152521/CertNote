@@ -1,7 +1,7 @@
 'use client';
 
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
-import { AccountForms } from '@/app/account/AccountForms';
+import { AccountForms } from '@/app/(ko)/account/AccountForms';
 
 interface SettingsTabProps {
   hasPassword: boolean;

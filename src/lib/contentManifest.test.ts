@@ -85,4 +85,19 @@ describe('getManifestMtime', () => {
 
     expect(fs.readFile).toHaveBeenCalledTimes(1);
   });
+
+  // 동시 렌더 경합 회귀: 플래그를 읽기 전에 세우면 첫 읽기가 끝나기 전의 호출이 undefined 를 받는다.
+  test('첫 읽기가 끝나기 전에 동시에 호출해도 모두 같은 값을 받는다(읽기는 1회)', async () => {
+    const { promises: fs } = await import('node:fs');
+    let release: (v: string) => void = () => {};
+    vi.mocked(fs.readFile).mockImplementation(() => new Promise<string>((r) => { release = r; }) as never);
+    const { getManifestMtime } = await import('./contentManifest');
+
+    const pending = Promise.all([getManifestMtime('a'), getManifestMtime('a'), getManifestMtime('a')]);
+    release(JSON.stringify({ version: 1, files: { a: '2026-01-01T00:00:00.000Z' } }));
+    const results = await pending;
+
+    expect(results.map((d) => d?.toISOString())).toEqual(Array(3).fill('2026-01-01T00:00:00.000Z'));
+    expect(fs.readFile).toHaveBeenCalledTimes(1);
+  });
 });

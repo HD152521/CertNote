@@ -8,12 +8,15 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { DEFAULT_OG_IMAGE } from '@/lib/ogImages';
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
   // 루트 레이아웃을 거치지 않아 metadataBase를 상속받지 못한다 — 여기서 직접 지정.
   metadataBase: new URL(SITE_URL),
   title: `페이지를 찾을 수 없음 | ${SITE_NAME}`,
+  // 예전에는 루트 파일 규칙 이미지(/opengraph-image)가 404 에도 붙었다 — 같은 카드를 명시한다.
+  openGraph: { images: [DEFAULT_OG_IMAGE] },
   description: `요청하신 페이지를 찾을 수 없습니다. ${SITE_NAME} — ${SITE_TAGLINE}`,
   // robots 필드를 여기서 다시 선언하지 않는다(Step7-A-2 회귀 수정). Next.js는 statusCode>400인
   // 모든 응답에 <meta name="robots" content="noindex"/>를 app-render.js의 NonIndex 컴포넌트로

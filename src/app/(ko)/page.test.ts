@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { metadata as homeMetadata } from './page';
+import { enRootMetadata, koRootMetadata } from '@/lib/rootMetadata';
 
 // SEO 색인 오류 회귀 테스트(docs/SEO-indexing-fix-plan.md Step 2).
 //
@@ -10,13 +11,12 @@ import { metadata as homeMetadata } from './page';
 // canonical/hreflang은 홈 페이지 자신이 소유해야 하고, 루트 레이아웃은 더 이상 alternates를
 // 지정하지 않아야 한다.
 //
-// layout.tsx는 next/font/google(Inter, JetBrains_Mono)을 로드해 vitest(node 환경)에서
-// 직접 import하면 폰트 로더가 실패한다. 대신 소스 텍스트로 `alternates` 재도입 여부를 감시한다.
+// 루트 metadata 는 src/lib/rootMetadata.ts 에 있다((ko)·(en) 두 루트 레이아웃이 공유). 레이아웃은
+// next/font 를 로드해 vitest(node 환경)에서 직접 import하면 폰트 로더가 실패하지만 rootMetadata 는
+// import 할 수 있다 — ko·en 두 기본 metadata 객체 모두 `alternates` 를 갖지 않는지 직접 본다.
 describe('layout — 루트 레이아웃은 더 이상 전역 alternates를 상속시키지 않는다', () => {
-  test('layout.tsx의 metadata 객체에 alternates 키가 없다', () => {
-    const source = readFileSync(join(__dirname, 'layout.tsx'), 'utf-8');
-    const metadataBlock = source.slice(source.indexOf('export const metadata'), source.indexOf('export const viewport'));
-    expect(metadataBlock).not.toMatch(/alternates\s*:/);
+  test.each([['ko', koRootMetadata], ['en', enRootMetadata]] as const)('%s 루트 metadata 에 alternates 키가 없다', (_lang, meta) => {
+    expect(meta).not.toHaveProperty('alternates');
   });
 });
 
@@ -38,7 +38,7 @@ describe('page — 홈의 canonical/hreflang', () => {
 // proxy 가 /home 으로 rewrite 해 따로 렌더한다(src/proxy.ts, src/app/home/page.tsx).
 describe('page — 홈은 정적 캐시 대상이다', () => {
   const FORBIDDEN = ['next/headers', '@/lib/auth/currentUser', '@/lib/db'];
-  const FILES = ['page.tsx', '../components/marketing/HomeLanding.tsx', '../components/marketing/Landing.tsx'];
+  const FILES = ['page.tsx', '../../components/marketing/HomeLanding.tsx', '../../components/marketing/Landing.tsx'];
 
   test.each(FILES)('%s 가 쿠키·세션·DB 모듈을 import 하지 않는다', (file) => {
     const source = readFileSync(join(__dirname, file), 'utf-8');

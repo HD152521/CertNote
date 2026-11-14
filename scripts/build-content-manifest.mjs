@@ -17,6 +17,7 @@ import { execFileSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildHistoryMap } from './manifestHistory.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -26,25 +27,25 @@ const OUTPUT = path.join(ROOT, 'src', 'data', 'content-manifest.json');
 // 사이트맵이 lastModified 근거로 쓰는, content/ 밖의 소스 파일(src/app/sitemap.ts 참고).
 // 로드맵(Phase2): 페이지 소스 + 데이터 파일 둘 다 lastmod 근거로 추적한다.
 const SOURCE_FILES = [
-  'src/app/page.tsx',
-  'src/app/pricing/page.tsx',
-  'src/app/privacy/PrivacyContent.tsx',
-  'src/app/about/page.tsx',
-  'src/app/about/how-we-make/page.tsx',
-  'src/app/contact/page.tsx',
-  'src/app/changelog/page.tsx',
+  'src/app/(ko)/page.tsx',
+  'src/app/(ko)/pricing/page.tsx',
+  'src/app/(ko)/privacy/PrivacyContent.tsx',
+  'src/app/(ko)/about/page.tsx',
+  'src/app/(ko)/about/how-we-make/page.tsx',
+  'src/app/(ko)/contact/page.tsx',
+  'src/app/(ko)/changelog/page.tsx',
   'content/changelog.json',
-  'src/app/terms/page.tsx',
-  'src/app/roadmap/page.tsx',
+  'src/app/(ko)/terms/page.tsx',
+  'src/app/(ko)/roadmap/page.tsx',
   'content/roadmaps.json',
   // 영어 정보 페이지(/en/about 등) — 사이트맵 lastModified 근거(src/app/sitemap.ts 의 EN_INFO_SOURCES).
-  'src/app/en/about/page.tsx',
-  'src/app/en/about/how-we-make/page.tsx',
-  'src/app/en/contact/page.tsx',
-  'src/app/en/terms/page.tsx',
-  'src/app/en/changelog/page.tsx',
-  'src/app/en/roadmap/page.tsx',
-  'src/app/en/roadmap/[role]/page.tsx',
+  'src/app/(en)/en/about/page.tsx',
+  'src/app/(en)/en/about/how-we-make/page.tsx',
+  'src/app/(en)/en/contact/page.tsx',
+  'src/app/(en)/en/terms/page.tsx',
+  'src/app/(en)/en/changelog/page.tsx',
+  'src/app/(en)/en/roadmap/page.tsx',
+  'src/app/(en)/en/roadmap/[role]/page.tsx',
   'src/lib/enPages/roadmapEn.ts',
   'src/lib/strings/privacy.ts',
   // 실습(/lab) — 내용이 코드에 있다
@@ -95,34 +96,17 @@ async function collectTargetFiles() {
   return [...contentFiles, ...sourceFiles].map((f) => toPosix(path.relative(ROOT, f)));
 }
 
-// git log를 파일마다 부르면(1300개+) 매우 느리다. --name-only로 전체 히스토리를 한 번만 훑어
-// "파일 → 그 파일이 등장하는 가장 최근 커밋의 커밋 시각" 맵을 만든다. git log는 최신 커밋부터
-// 출력하므로, 파일을 "처음" 만난 시점이 곧 최신 변경 시각이다(그 뒤 같은 파일이 다시 나와도 무시).
-const COMMIT_LINE_RE = /^[0-9a-f]{40} \d{4}-\d{2}-\d{2}T/;
-
+// git log를 파일마다 부르면(1300개+) 매우 느리다. --name-status -M 으로 전체 히스토리를 한 번만 훑어
+// "파일 → 그 파일이 등장하는 가장 최근 커밋의 커밋 시각" 맵을 만든다. 해석 로직(이름 변경 추적, 순수 이동은
+// 변경으로 안 침, (ko)/(en) 라우트 그룹 이동 동일시)은 manifestHistory.mjs 의 순수 함수다.
+// pathspec 에 'src' 전체를 넣는 이유: 이동된 파일의 옛 경로 이력도 로그에 있어야 따라갈 수 있다.
 function buildGitHistoryMap(targetFiles) {
-  const targetSet = new Set(targetFiles);
-  const pathspecs = ['content', ...SOURCE_FILES];
-  const raw = execFileSync('git', ['log', '--format=%H %cI', '--name-only', '--', ...pathspecs], {
-    cwd: ROOT,
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
-
-  const map = new Map();
-  let currentDate = null;
-  for (const line of raw.split('\n')) {
-    if (line === '') continue;
-    if (COMMIT_LINE_RE.test(line)) {
-      currentDate = line.slice(41); // "<40자 해시> " 다음이 ISO 날짜
-      continue;
-    }
-    const file = toPosix(line);
-    if (!targetSet.has(file)) continue; // 관심 없는 content 파일(index.json 등)은 무시
-    if (map.has(file)) continue; // 이미 더 최근 커밋에서 기록됨
-    if (currentDate) map.set(file, currentDate);
-  }
-  return map;
+  const raw = execFileSync(
+    'git',
+    ['-c', 'core.quotepath=false', 'log', '--format=%H %cI', '--name-status', '-M', '--', 'content', 'src'],
+    { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 },
+  );
+  return buildHistoryMap(raw, targetFiles);
 }
 
 async function main() {

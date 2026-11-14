@@ -3,6 +3,7 @@ import { EN_CATEGORY } from '@/lib/category';
 import { getDay } from '@/lib/content';
 import { hreflangPair } from '@/lib/i18n';
 import { excerptOf } from '@/lib/site';
+import { certOgImagePath } from '@/lib/ogImages';
 import { isIndexableDay } from '@/lib/day/indexPolicy';
 import { dayHeadline } from '@/lib/day/dayTitle';
 
@@ -53,7 +54,7 @@ export async function buildDayMetadata(category: string, slug: string, w: number
       description,
       url: content.href,
       type: 'article',
-      images: [`/${category}/${slug}/opengraph-image`],
+      images: [certOgImagePath(category, slug)],
     },
   };
 }

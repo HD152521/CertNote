@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { NonAffiliationNotice } from '@/components/legal/NonAffiliationNotice';
 import { infoAlternates } from '@/lib/infoAlternates';
-import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
+import { CONTACT_EMAIL, OPERATOR_NAME_EN, SITE_NAME } from '@/lib/site';
 
 const TITLE = 'About';
-const DESCRIPTION = `${SITE_NAME} is a set of study notes for AWS and Linux Master certifications, run by ${OPERATOR_NAME}. Here is what we offer and who runs it.`;
+const DESCRIPTION = `${SITE_NAME} is a set of study notes for AWS and Linux Master certifications, run by ${OPERATOR_NAME_EN}. Here is what we offer and who runs it.`;
 const PATH = '/en/about';
 
 export const metadata: Metadata = {
@@ -54,7 +54,7 @@ export default function EnAboutPage() {
 
       <LegalSection title="Who runs it">
         <p>
-          {SITE_NAME} is operated by {OPERATOR_NAME} (Jugan Labs). Please send questions and error reports through the{' '}
+          {SITE_NAME} is operated by {OPERATOR_NAME_EN}. Please send questions and error reports through the{' '}
           <Link href="/en/contact" className={LINK}>contact page</Link>.
         </p>
       </LegalSection>

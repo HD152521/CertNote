@@ -3,15 +3,53 @@ import { OG_ACCENT, OG_BACKGROUND, OgLogo } from '@/components/brand/OgLogo';
 import { certLevelLabel, langOfCategory, sectionOfCategory } from '@/lib/category';
 import { ogEnglishSafe } from '@/lib/ogText';
 import { getCertMeta } from '@/lib/content';
+import { OG_IMAGE_SIZE } from '@/lib/ogImages';
+
+// OG 카드 렌더러. 라우트 핸들러(/opengraph-image, /<category>/<slug>/opengraph-image)가 호출한다.
+// ImageResponse 기본 폰트는 한글 미지원 → 라틴 텍스트로만 구성한다.
+// meta.name은 영문이라 기본 폰트로 안전(한글은 폰트 임베딩 필요해 피한다).
+
+// 사이트 기본 OG 카드(카톡·트위터 등 링크 미리보기).
+export function renderHomeOgImage() {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: 72,
+          background: OG_BACKGROUND,
+          color: '#f3f5f9',
+          fontFamily: 'sans-serif',
+        }}
+      >
+        <OgLogo fontSize={36} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ fontSize: 76, fontWeight: 800, letterSpacing: -2, lineHeight: 1.1 }}>
+            AWS Certification
+          </div>
+          <div style={{ fontSize: 76, fontWeight: 800, letterSpacing: -2, lineHeight: 1.1, color: OG_ACCENT }}>
+            Study Notes
+          </div>
+          <div style={{ fontSize: 30, color: '#aeb9cf', marginTop: 8 }}>
+            SAA · DVA · SOA · SAP · DOP · SCS · MLA · MLS · DEA · CLF · AIF
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 26, color: '#8b98b3' }}>
+          <div>Daily notes · Quizzes · Mock exams · SRS review</div>
+          <div>cert.juganlab.com</div>
+        </div>
+      </div>
+    ),
+    OG_IMAGE_SIZE,
+  );
+}
 
 // 자격증별 OG 카드. 허브와 그 하위(week/day) 페이지의 링크 미리보기에 쓰인다.
-// meta.name은 영문이라 기본 폰트로 안전(한글은 폰트 임베딩 필요해 피한다).
-export const size = { width: 1200, height: 630 };
-export const contentType = 'image/png';
-export const alt = 'CertNote certification study track';
-
-export default async function OgImage({ params }: { params: Promise<{ category: string; slug: string }> }) {
-  const { category, slug } = await params;
+export async function renderCertOgImage(category: string, slug: string) {
   const lang = langOfCategory(category);
   let code = 'CertNote';
   let name = 'Certification Study Notes';
@@ -76,6 +114,6 @@ export default async function OgImage({ params }: { params: Promise<{ category: 
         </div>
       </div>
     ),
-    size,
+    OG_IMAGE_SIZE,
   );
 }

@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/lib/i18n-client';
 import { ProfileSection, type ProfileValues } from '@/components/account/ProfileSection';
-import type { CertOption } from '@/app/account/AccountPageClient';
+import type { CertOption } from '@/app/(ko)/account/AccountPageClient';
 
 interface ProfileTabProps {
   certs: CertOption[];

@@ -107,10 +107,10 @@ describe('sitemap', () => {
     expect(new Date(day1?.lastModified as string | Date).getTime()).toBe(new Date(expectedIso).getTime());
   });
 
-  test('홈의 lastModified가 매니페스트의 src/app/page.tsx ISO 시각과 정확히 일치한다(자격증 meta.json보다 최신인 경우)', { timeout: 30000 }, async () => {
+  test('홈의 lastModified가 매니페스트의 src/app/(ko)/page.tsx ISO 시각과 정확히 일치한다(자격증 meta.json보다 최신인 경우)', { timeout: 30000 }, async () => {
     const manifestRaw = await fs.readFile(path.join(process.cwd(), 'src', 'data', 'content-manifest.json'), 'utf8');
     const manifest = JSON.parse(manifestRaw) as { files: Record<string, string> };
-    const pageIso = manifest.files['src/app/page.tsx'];
+    const pageIso = manifest.files['src/app/(ko)/page.tsx'];
     expect(pageIso).toBeDefined();
 
     const entries = await sitemap();
