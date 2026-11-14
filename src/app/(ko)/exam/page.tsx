@@ -6,8 +6,15 @@ import { listCerts } from '@/lib/content';
 import { getDomainLabelsEn, getExamCertSlugs, getExamQuestionsByCert } from '@/lib/exam/examBank';
 import { ExamRunner } from '@/components/exam/ExamRunner';
 import type { Language } from '@/lib/i18n-client';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+// 로그인 뒤 앱 화면이라 언어는 쿠키(x-language)가 정한다. 영어면 탭 제목도 영어로.
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = (await headers()).get('x-language');
+  return { title: lang === 'en' ? 'Mock Exams' : '모의고사' };
+}
 
 interface ExamPageProps { searchParams: Promise<{ cert?: string | string[] }> }
 
