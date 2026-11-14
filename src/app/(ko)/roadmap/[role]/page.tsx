@@ -8,6 +8,7 @@ import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { JsonLd } from '@/components/JsonLd';
 import { buildItemListLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 interface PageProps { params: Promise<{ role: string }>; }
 
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description: role.description,
     alternates: infoAlternates(url),
-    openGraph: { title, description: role.description, url, type: 'website' },
+    openGraph: withDefaultOgImage({ title, description: role.description, url, type: 'website' }),
   };
 }
 

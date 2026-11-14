@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { SITE_NAME } from '@/lib/site';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { PrivacyContent } from '@/app/(ko)/privacy/PrivacyContent';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = 'Privacy Policy';
 const DESCRIPTION = `The personal information ${SITE_NAME} collects, why we use it, how long we keep it, and your rights.`;
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 export default function EnPrivacyPage() {

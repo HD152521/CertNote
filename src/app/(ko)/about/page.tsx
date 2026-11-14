@@ -4,6 +4,7 @@ import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { NonAffiliationNotice } from '@/components/legal/NonAffiliationNotice';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, OPERATOR_NAME, SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = '소개';
 const DESCRIPTION = `${SITE_NAME}는 ${OPERATOR_NAME}가 운영하는 AWS·리눅스 자격증 한국어 학습 노트입니다. 무엇을 제공하고 누가 운영하는지 안내합니다.`;
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates('/about'),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: '/about', type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: '/about', type: 'website' }),
 };
 
 export default function AboutPage() {

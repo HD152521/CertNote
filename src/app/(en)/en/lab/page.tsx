@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { LabHubView } from '@/components/lab/LabHubView';
 import { infoAlternates } from '@/lib/infoAlternates';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 export const dynamic = 'error'; // static generation only
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 export default function EnLabHubPage() {

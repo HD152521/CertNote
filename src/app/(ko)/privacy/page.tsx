@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { SITE_NAME } from '@/lib/site';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { PrivacyContent } from './PrivacyContent';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = '개인정보처리방침';
 const DESCRIPTION = `${SITE_NAME}가 수집하는 개인정보 항목과 이용 목적, 보관 기간, 이용자 권리를 안내합니다.`;
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates('/privacy'),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: '/privacy', type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: '/privacy', type: 'website' }),
 };
 
 export default function PrivacyPage() {

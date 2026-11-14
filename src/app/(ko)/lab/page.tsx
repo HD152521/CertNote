@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { LabHubView } from '@/components/lab/LabHubView';
 import { infoAlternates } from '@/lib/infoAlternates';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 // "실습" 카테고리 목록. 브라우저에서 도는 연습장(SQL·리눅스 셸·AWS CLI)을 모아 둔다.
 export const dynamic = 'error'; // 정적 생성 강제
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates('/lab'),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: '/lab', type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: '/lab', type: 'website' }),
 };
 
 export default function LabHubPage() {

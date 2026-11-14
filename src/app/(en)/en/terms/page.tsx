@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, OPERATOR_NAME_EN, SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = 'Terms of Service';
 const DESCRIPTION = `The conditions for using ${SITE_NAME}, member accounts, copyright in the content, and limits of liability.`;
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 // 이 문서는 한국어 이용약관(/terms)의 영어 안내본이다. 한국 법률에 따라 해석되는 원문과 의미를 바꾸지 않도록

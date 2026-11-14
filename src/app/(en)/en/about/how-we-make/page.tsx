@@ -4,6 +4,7 @@ import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { NonAffiliationNotice } from '@/components/legal/NonAffiliationNotice';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = 'How we make this';
 const DESCRIPTION = `How ${SITE_NAME} sets the exam scope, how notes and questions are produced, and how review and error reports are handled.`;
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 const LINK = 'underline underline-offset-4 hover:text-fg';

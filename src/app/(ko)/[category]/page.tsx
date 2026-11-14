@@ -11,6 +11,7 @@ import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { JsonLd } from '@/components/JsonLd';
 import { CertRequestForm } from '@/components/userInput/CertRequestForm';
 import { buildItemListLd, buildBreadcrumbLd } from '@/lib/structuredData';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 interface PageProps { params: Promise<{ category: string }>; }
 
@@ -62,7 +63,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: url,
       ...(section === 'aws' ? { languages: hreflangPair(url, `/${EN_CATEGORY}`, { xDefault: true }) } : {}),
     },
-    openGraph: { title, description, url, type: 'website' },
+    openGraph: withDefaultOgImage({ title, description, url, type: 'website' }),
   };
 }
 

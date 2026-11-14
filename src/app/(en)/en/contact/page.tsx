@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, OPERATOR_NAME_EN, SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 const TITLE = 'Contact';
 const DESCRIPTION = `How to reach ${SITE_NAME} for questions about the service, content error reports, and privacy or copyright requests.`;
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 export default function EnContactPage() {

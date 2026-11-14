@@ -4,6 +4,7 @@ import { LegalPage, LegalSection } from '@/components/legal/LegalPage';
 import { NonAffiliationNotice } from '@/components/legal/NonAffiliationNotice';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { CONTACT_EMAIL, SITE_NAME } from '@/lib/site';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 // 제작 방식 공개(docs/P4-trust-quality-plan.md Step 5a). 사실만 적는다 — 자격증 보유·전문가 경력처럼
 // 확인할 수 없는 주장이나 "가장 정확한" 같은 최상급 표현은 쓰지 않는다.
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: infoAlternates(PATH),
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' },
+  openGraph: withDefaultOgImage({ title: TITLE, description: DESCRIPTION, url: PATH, type: 'website' }),
 };
 
 const LINK = 'underline underline-offset-4 hover:text-fg';

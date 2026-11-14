@@ -3,6 +3,7 @@ import { LabDetailView } from '@/components/lab/LabDetailView';
 import { infoAlternates } from '@/lib/infoAlternates';
 import { LAB_CATALOG_EN } from '@/lib/labCatalogEn';
 import { labByIdFor, labGroupsFor } from '@/lib/labCatalogLang';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 export const dynamic = 'error';
 export const dynamicParams = false;
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title,
     description: lab.summary,
     alternates: infoAlternates(path),
-    openGraph: { title, description: lab.summary, url: path, type: 'article' },
+    openGraph: withDefaultOgImage({ title, description: lab.summary, url: path, type: 'article' }),
   };
 }
 

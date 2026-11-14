@@ -9,6 +9,7 @@ import { getCurrentUser } from '@/lib/auth/currentUser';
 import ReviewList from '@/components/reviews/ReviewList';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import { cn } from '@/lib/cn';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: { canonical: `/${category}/reviews` },
     ...reviewRobots(agg.count),
-    openGraph: { title, description, url: `/${category}/reviews`, type: 'website' },
+    openGraph: withDefaultOgImage({ title, description, url: `/${category}/reviews`, type: 'website' }),
   };
 }
 

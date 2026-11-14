@@ -11,6 +11,7 @@ import ReviewList from '@/components/reviews/ReviewList';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbLd, buildCourseReviewLd } from '@/lib/structuredData';
+import { withDefaultOgImage } from '@/lib/ogImages';
 
 interface PageProps { params: Promise<{ category: string; cert: string }>; }
 
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: { canonical: url },
     // 후기가 충분히 쌓이기 전엔 thin content라 noindex(작성은 계속 가능).
     ...reviewRobots(agg.count),
-    openGraph: { title, description, url, type: 'website' },
+    openGraph: withDefaultOgImage({ title, description, url, type: 'website' }),
   };
 }
 
