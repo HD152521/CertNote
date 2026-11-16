@@ -50,7 +50,8 @@ export function setLanguage(lang: Language): void {
  * the server snapshot renders Korean, then React swaps in the cookie value.
  */
 export function useLanguage(): Language {
-  const pathname = usePathname();
+  // 라우터 밖(서버 렌더 단위 테스트 등)에서는 null 이다 — 홈('/')으로 본다.
+  const pathname = usePathname() ?? '/';
   return useSyncExternalStore(
     subscribe,
     () => resolveLanguage(pathname, readLangCookie()),

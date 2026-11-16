@@ -5,6 +5,7 @@ import { EN_CATEGORY, certLevelLabel } from '@/lib/category';
 import { listCerts } from '@/lib/content';
 import { hreflangPair } from '@/lib/i18n';
 import { SITE_NAME } from '@/lib/site';
+import { SignupPrompt } from '@/components/marketing/SignupPrompt';
 import { CertRequestForm } from '@/components/userInput/CertRequestForm';
 import { withDefaultOgImage } from '@/lib/ogImages';
 
@@ -61,6 +62,7 @@ export default async function EnHomePage() {
           </Link>
         ))}
       </section>
+      <SignupPrompt placement="en_home" message="home" reserveSpace />
       {certs.length === 0 && (
         <p className="text-sm text-fg-muted">English tracks are being prepared — check back soon.</p>
       )}

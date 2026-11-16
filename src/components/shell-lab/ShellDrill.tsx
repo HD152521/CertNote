@@ -1,5 +1,6 @@
 'use client';
 
+import { SignupPrompt } from '@/components/marketing/SignupPrompt';
 import { useState } from 'react';
 import { ArrowRight, Check, RotateCcw, TerminalSquare } from 'lucide-react';
 import { LabTerminal, type NewLogEntry } from '@/components/cli-lab/LabTerminal';
@@ -193,6 +194,11 @@ export function ShellDrill({ drillId }: { drillId: string }) {
         onSolved={() => setSolved((s) => (s.includes(item.id) ? s : [...s, item.id]))}
         onNext={index + 1 < drill.items.length ? () => setIndex(index + 1) : undefined}
       />
+      {solved.length === drill.items.length && (
+        <div className="px-4 pb-4 sm:px-5">
+          <SignupPrompt placement="lab_done" message="labDone" />
+        </div>
+      )}
     </section>
   );
 }

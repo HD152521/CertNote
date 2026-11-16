@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { UserRound, X } from 'lucide-react';
 import { emitAuthChange, onAuthChange } from '@/lib/auth/authEvents';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { SignupCta } from '@/components/marketing/SignupCta';
+import { loadAuthUser } from '@/lib/auth/useAuthState';
 import { authHref } from '@/lib/auth/authLang';
 import { pick } from '@/lib/strings/dict';
 import { shellStrings } from '@/lib/strings/shell';
@@ -17,19 +19,11 @@ interface Me {
   plan: 'free' | 'pro';
 }
 
-const LINK_CLASS = 'px-2.5 py-1 text-xs rounded-md text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
+const LINK_CLASS = 'whitespace-nowrap px-2.5 py-1 text-xs rounded-md text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
 const MENU_ITEM = 'block w-full rounded-md px-2 py-1.5 text-left text-sm text-fg-muted hover:bg-bg-subtle hover:text-fg transition';
 
-// 현재 로그인 사용자. 비로그인이거나 조회에 실패하면 null.
-async function fetchMe(): Promise<Me | null> {
-  try {
-    const res = await fetch('/api/auth/me', { cache: 'no-store' });
-    const data = await res.json();
-    return data.user ?? null;
-  } catch {
-    return null;
-  }
-}
+// 현재 로그인 사용자. 비로그인이거나 조회에 실패하면 null. 결과는 가입 권유 카드와 공유한다(useAuthState).
+const fetchMe: (force: boolean) => Promise<Me | null> = loadAuthUser;
 
 export function AuthNav() {
   // undefined = 로딩 중, null = 비로그인, Me = 로그인
@@ -39,7 +33,9 @@ export function AuthNav() {
   const lang = useLanguage();
   const s = pick(shellStrings, lang);
 
-  const refresh = useCallback(() => fetchMe().then(setUser), []);
+  // 첫 마운트는 이미 받아 둔 값을 쓸 수 있지만(가입 권유 카드가 먼저 물었을 때), 이동·로그인·로그아웃 뒤에는 새로 묻는다.
+  const refresh = useCallback((force: boolean) => fetchMe(force).then(setUser), []);
+  const mounted = useRef(false);
 
   // 경로가 바뀌면 모바일 메뉴는 닫는다. effect 에서 닫으면 한 번 더 그리므로 렌더 중에 바로 맞춘다
   // (React 문서의 "prop 이 바뀔 때 state 조정" 방식).
@@ -50,8 +46,11 @@ export function AuthNav() {
   }
 
   // 마운트 + 경로 변경 시 재조회.
-  useEffect(() => { refresh(); }, [refresh, pathname]);
-  useEffect(() => onAuthChange(refresh), [refresh]);
+  useEffect(() => {
+    void refresh(mounted.current);
+    mounted.current = true;
+  }, [refresh, pathname]);
+  useEffect(() => onAuthChange(() => void refresh(true)), [refresh]);
 
   async function handleLogout() {
     try {
@@ -70,7 +69,18 @@ export function AuthNav() {
   if (user === undefined) return null;
 
   if (!user) {
-    return <Link href={authHref('login', lang, pathname)} className={LINK_CLASS}>{t(lang, 'login')}</Link>;
+    return (
+      <div className="flex items-center gap-1">
+        <Link href={authHref('login', lang, pathname)} className={LINK_CLASS}>{t(lang, 'login')}</Link>
+        {/* 영어 헤더는 640px 부근에서 이미 빠듯해 md(768px) 이상에서만 보인다. */}
+        <SignupCta
+          placement="header"
+          className="hidden whitespace-nowrap rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-fg transition hover:opacity-90 md:inline-block"
+        >
+          {t(lang, 'signup')}
+        </SignupCta>
+      </div>
+    );
   }
 
   const links = [

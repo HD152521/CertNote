@@ -1,5 +1,6 @@
 'use client';
 
+import { SignupPrompt } from '@/components/marketing/SignupPrompt';
 import { Check, Lightbulb, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useLanguage } from '@/lib/i18n-client';
@@ -87,6 +88,7 @@ export function LabSteps(props: LabStepsProps) {
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {t.restart}
             </button>
+            <SignupPrompt placement="lab_done" message="labDone" className="mt-4" />
           </div>
         ) : (
           shown && (
