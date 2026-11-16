@@ -9,13 +9,16 @@ import { EXPERIENCE_OPTIONS, OCCUPATION_OPTIONS, PURPOSE_OPTIONS } from '@/lib/p
 import type { CertOption } from '@/components/AuthForm';
 import { Select } from '@/components/ui/Select';
 import { infoHref } from '@/lib/enEdition';
-import { useLanguage, t } from '@/lib/i18n-client';
+import { t } from '@/lib/i18n-client';
+import { useAuthLanguage } from '@/lib/auth/useAuthLanguage';
+import { authErrorMessage, profileSelectOptions } from '@/lib/strings/auth';
+import { certOptionLabel } from '@/lib/certOptionLabel';
 import { pick } from '@/lib/strings/dict';
 import { accountStrings } from '@/lib/strings/account';
 
-const obOptional = (opts: readonly string[], noneLabel: string) => [
+const obOptional = (opts: readonly string[], noneLabel: string, lang: 'ko' | 'en') => [
   { value: '', label: noneLabel },
-  ...opts.map((o) => ({ value: o, label: o })),
+  ...profileSelectOptions(opts, lang),
 ];
 
 interface OnboardingProfileFormProps {
@@ -29,7 +32,7 @@ const INPUT_CLS =
 // 소셜 가입 직후 1회 표시되는 프로필 보완 폼. 일반 가입 폼과 같은 항목을 수집하되
 // 마찰을 줄이기 위해 선택 항목은 접고, '나중에 하기'로 건너뛸 수 있게 한다.
 export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileFormProps) {
-  const lang = useLanguage();
+  const lang = useAuthLanguage();
   const s = pick(accountStrings, lang);
   const router = useRouter();
   const params = useSearchParams();
@@ -59,7 +62,7 @@ export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileF
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         track('onboarding_profile_error', { error_code: data.error ?? `http_${res.status}` });
-        setError(data.message ?? s.saveFailedRetry);
+        setError(authErrorMessage(lang, data, s.saveFailedRetry));
         return;
       }
       track('onboarding_profile_completed');
@@ -92,7 +95,7 @@ export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileF
         <div className="space-y-1">
           <label htmlFor="ob-cert" className="text-sm text-fg-muted">{t(lang, 'targetCert')}</label>
           <Select id="ob-cert" value={targetCert} onChange={setTargetCert}
-            options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
+            options={certs.map((c) => ({ value: c.slug, label: certOptionLabel(c, lang) }))}
             placeholder={t(lang, 'selectOne')} ariaLabel={t(lang, 'targetCert')} />
         </div>
 
@@ -103,15 +106,15 @@ export function OnboardingProfileForm({ certs, initialName }: OnboardingProfileF
           <div className="space-y-4">
             <div className="space-y-1">
               <label htmlFor="ob-occ" className="text-sm text-fg-muted">{t(lang, 'occupation')}</label>
-              <Select id="ob-occ" value={occupation} onChange={setOccupation} options={obOptional(OCCUPATION_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'occupation')} />
+              <Select id="ob-occ" value={occupation} onChange={setOccupation} options={obOptional(OCCUPATION_OPTIONS, t(lang, 'doNotSelect'), lang)} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'occupation')} />
             </div>
             <div className="space-y-1">
               <label htmlFor="ob-pur" className="text-sm text-fg-muted">{t(lang, 'purpose')}</label>
-              <Select id="ob-pur" value={purpose} onChange={setPurpose} options={obOptional(PURPOSE_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'purpose')} />
+              <Select id="ob-pur" value={purpose} onChange={setPurpose} options={obOptional(PURPOSE_OPTIONS, t(lang, 'doNotSelect'), lang)} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'purpose')} />
             </div>
             <div className="space-y-1">
               <label htmlFor="ob-exp" className="text-sm text-fg-muted">{t(lang, 'experienceLevel')}</label>
-              <Select id="ob-exp" value={experienceLevel} onChange={setExperienceLevel} options={obOptional(EXPERIENCE_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'experienceLevel')} />
+              <Select id="ob-exp" value={experienceLevel} onChange={setExperienceLevel} options={obOptional(EXPERIENCE_OPTIONS, t(lang, 'doNotSelect'), lang)} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'experienceLevel')} />
             </div>
           </div>
         )}

@@ -3,7 +3,9 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { Sparkles, Send } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n-client';
+import { authHref } from '@/lib/auth/authLang';
 import { pick } from '@/lib/strings/dict';
 import { shellStrings } from '@/lib/strings/shell';
 import { classifyTutorFailure, tutorFailureMessage } from '@/lib/tutor/tutorClient';
@@ -23,6 +25,7 @@ interface Turn {
 // 비로그인은 가입 안내로, 미인증은 인증 메일 안내(+재발송)로 수렴한다.
 export function TutorPanel({ questionId, selected }: TutorPanelProps) {
   const language = useLanguage();
+  const pathname = usePathname();
   const s = pick(shellStrings, language);
   const [turns, setTurns] = useState<Turn[]>([]); // 합성 프롬프트 이후의 대화
   const [streaming, setStreaming] = useState('');
@@ -131,10 +134,10 @@ export function TutorPanel({ questionId, selected }: TutorPanelProps) {
         </p>
         <p className="mt-1 text-fg-muted">{s.tutorLoginBody}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Link href="/signup" className="inline-block rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg transition hover:opacity-90">
+          <Link href={authHref('signup', language, pathname)} className="inline-block rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg transition hover:opacity-90">
             {s.tutorSignup}
           </Link>
-          <Link href="/login" className="inline-block rounded-md border border-accent/40 px-3 py-1.5 text-sm font-medium text-accent transition hover:bg-accent/10">
+          <Link href={authHref('login', language, pathname)} className="inline-block rounded-md border border-accent/40 px-3 py-1.5 text-sm font-medium text-accent transition hover:bg-accent/10">
             {s.tutorLogin}
           </Link>
         </div>

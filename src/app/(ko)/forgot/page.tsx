@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { authErrorMessage } from '@/lib/strings/auth';
 
 export default function ForgotPage() {
   const lang = useLanguage();
@@ -22,7 +23,7 @@ export default function ForgotPage() {
         body: JSON.stringify({ email: email.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.message ?? t(lang, 'requestFailed'));
+      if (!res.ok) setError(authErrorMessage(lang, data, t(lang, 'requestFailed')));
       else setSent(true);
     } catch {
       setError(t(lang, 'networkError'));

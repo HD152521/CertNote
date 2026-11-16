@@ -6,12 +6,14 @@ import type { CertOption } from '@/components/AuthForm';
 import { Select } from '@/components/ui/Select';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { profileSelectOptions } from '@/lib/strings/auth';
+import { certOptionLabel } from '@/lib/certOptionLabel';
 import { pick } from '@/lib/strings/dict';
 import { accountStrings } from '@/lib/strings/account';
 
-const optional = (opts: readonly string[], noneLabel: string) => [
+const optional = (opts: readonly string[], noneLabel: string, lang: 'ko' | 'en') => [
   { value: '', label: noneLabel },
-  ...opts.map((o) => ({ value: o, label: o })),
+  ...profileSelectOptions(opts, lang),
 ];
 
 export interface ProfileValues {
@@ -83,19 +85,19 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
           <Select
             value={v.targetCert}
             onChange={(val) => set('targetCert', val)}
-            options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
+            options={certs.map((c) => ({ value: c.slug, label: certOptionLabel(c, lang) }))}
             placeholder={t(lang, 'selectOne')}
             ariaLabel={t(lang, 'targetCert')}
           />
         </Field>
         <Field label={t(lang, 'occupation')} optionalLabel={s.optionalTag}>
-          <Select value={v.occupation} onChange={(val) => set('occupation', val)} options={optional(OCCUPATION_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'occupation')} />
+          <Select value={v.occupation} onChange={(val) => set('occupation', val)} options={optional(OCCUPATION_OPTIONS, t(lang, 'doNotSelect'), lang)} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'occupation')} />
         </Field>
         <Field label={t(lang, 'purpose')} optionalLabel={s.optionalTag}>
-          <Select value={v.purpose} onChange={(val) => set('purpose', val)} options={optional(PURPOSE_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'purpose')} />
+          <Select value={v.purpose} onChange={(val) => set('purpose', val)} options={optional(PURPOSE_OPTIONS, t(lang, 'doNotSelect'), lang)} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'purpose')} />
         </Field>
         <Field label={t(lang, 'experienceLevel')} optionalLabel={s.optionalTag}>
-          <Select value={v.experienceLevel} onChange={(val) => set('experienceLevel', val)} options={optional(EXPERIENCE_OPTIONS, t(lang, 'doNotSelect'))} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'experienceLevel')} />
+          <Select value={v.experienceLevel} onChange={(val) => set('experienceLevel', val)} options={optional(EXPERIENCE_OPTIONS, t(lang, 'doNotSelect'), lang)} placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'experienceLevel')} />
         </Field>
       </Group>
 

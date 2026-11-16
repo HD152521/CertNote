@@ -11,7 +11,11 @@ import { track } from '@/lib/analytics';
 import { enablePush, isPushSupported } from '@/lib/push/client';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 import { infoHref } from '@/lib/enEdition';
-import { useLanguage, t } from '@/lib/i18n-client';
+import { t } from '@/lib/i18n-client';
+import { useAuthLanguage } from '@/lib/auth/useAuthLanguage';
+import { AUTH_LANG_PARAM } from '@/lib/auth/authLang';
+import { authErrorMessage, profileSelectOptions } from '@/lib/strings/auth';
+import { certOptionLabel } from '@/lib/certOptionLabel';
 import { Select } from '@/components/ui/Select';
 
 
@@ -21,6 +25,9 @@ export interface CertOption {
   slug: string;
   code: string;
   name: string;
+  // 영어 화면용 이름(없으면 name). 리눅스마스터·SQLD 처럼 한국어 이름만 있는 자격증이 영어 화면에 한글로 뜨지 않게.
+  codeEn?: string;
+  nameEn?: string;
 }
 
 interface AuthFormProps {
@@ -35,10 +42,16 @@ const INPUT_CLS =
   'w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-border-strong';
 
 export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormProps) {
-  const lang = useLanguage();
+  const lang = useAuthLanguage();
   const router = useRouter();
   const params = useSearchParams();
   const switchNext = params.get('next') ? safeNext(params.get('next'), '') : '';
+
+  // 로그인↔가입 전환에도 돌아갈 곳(next)과 영어 힌트(lang=en)를 잃지 않게 한다.
+  const switchQs = new URLSearchParams();
+  if (params.get(AUTH_LANG_PARAM) === 'en') switchQs.set(AUTH_LANG_PARAM, 'en');
+  if (switchNext) switchQs.set('next', switchNext);
+  const switchHref = `${mode === 'login' ? '/signup' : '/login'}${switchQs.size ? `?${switchQs.toString()}` : ''}`;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -91,7 +104,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
       if (!res.ok) {
         // 이탈 원인 분석용: 검증 실패인지(코드별) 단순 변심인지 구분한다.
         track(`${mode}_error`, { error_code: data.error ?? `http_${res.status}`, error_message: data.message });
-        setError(data.message ?? t(lang, 'somethingWentWrong'));
+        setError(authErrorMessage(lang, data, t(lang, 'somethingWentWrong')));
         return;
       }
       track(`${mode}_completed`);
@@ -196,7 +209,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
                 id="targetCert"
                 value={targetCert}
                 onChange={setTargetCert}
-                options={certs.map((c) => ({ value: c.slug, label: `${c.code} · ${c.name}` }))}
+                options={certs.map((c) => ({ value: c.slug, label: certOptionLabel(c, lang) }))}
                 placeholder={t(lang, 'selectOne')}
                 ariaLabel={t(lang, 'targetCert')}
               />
@@ -210,19 +223,19 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
                 <div className="space-y-1">
                   <label htmlFor="occupation" className="text-sm text-fg-muted">{t(lang, 'occupation')}</label>
                   <Select id="occupation" value={occupation} onChange={setOccupation}
-                    options={[{ value: '', label: t(lang, 'doNotSelect') }, ...OCCUPATION_OPTIONS.map((o) => ({ value: o, label: o }))]}
+                    options={[{ value: '', label: t(lang, 'doNotSelect') }, ...profileSelectOptions(OCCUPATION_OPTIONS, lang)]}
                     placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'occupation')} />
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="purpose" className="text-sm text-fg-muted">{t(lang, 'purpose')}</label>
                   <Select id="purpose" value={purpose} onChange={setPurpose}
-                    options={[{ value: '', label: t(lang, 'doNotSelect') }, ...PURPOSE_OPTIONS.map((o) => ({ value: o, label: o }))]}
+                    options={[{ value: '', label: t(lang, 'doNotSelect') }, ...profileSelectOptions(PURPOSE_OPTIONS, lang)]}
                     placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'purpose')} />
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="experienceLevel" className="text-sm text-fg-muted">{t(lang, 'experienceLevel')}</label>
                   <Select id="experienceLevel" value={experienceLevel} onChange={setExperienceLevel}
-                    options={[{ value: '', label: t(lang, 'doNotSelect') }, ...EXPERIENCE_OPTIONS.map((o) => ({ value: o, label: o }))]}
+                    options={[{ value: '', label: t(lang, 'doNotSelect') }, ...profileSelectOptions(EXPERIENCE_OPTIONS, lang)]}
                     placeholder={t(lang, 'doNotSelect')} ariaLabel={t(lang, 'experienceLevel')} />
                 </div>
               </div>
@@ -280,7 +293,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
       <p className="text-sm text-fg-muted">
         {t(lang, mode === 'login' ? 'dontHaveAccount' : 'alreadyHaveAccount')}{' '}
         {/* 로그인↔가입을 오가도 돌아갈 곳(?next=)을 잃지 않게 넘긴다. 처음 온 사람은 대개 가입으로 넘어간다. */}
-        <Link href={`${mode === 'login' ? '/signup' : '/login'}${switchNext ? `?next=${encodeURIComponent(switchNext)}` : ''}`} className="text-fg underline underline-offset-4">{t(lang, mode === 'login' ? 'signup' : 'login')}</Link>
+        <Link href={switchHref} className="text-fg underline underline-offset-4">{t(lang, mode === 'login' ? 'signup' : 'login')}</Link>
       </p>
     </div>
   );

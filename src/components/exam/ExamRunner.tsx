@@ -52,6 +52,19 @@ interface StartOptions { certSlug: string; domains: string[]; mode: Mode }
 
 const COUNT_OPTIONS = [10, 20, 40];
 
+// 서버 오류 메시지는 한국어다. 영어 모드에서는 코드로 영어 문구를 고른다.
+const START_ERRORS_EN: Record<string, string> = {
+  unauthorized: 'Please log in to take a mock exam.',
+  plan_required: 'Mock exams are available on the Pro plan.',
+  no_questions: 'No questions match this selection.',
+  rate_limited: 'Too many requests. Please try again in a moment.',
+};
+
+export function startErrorMessage(lang: string, data: { error?: string; message?: string }): string {
+  if (lang === 'en') return (data.error && START_ERRORS_EN[data.error]) || 'Failed to start exam.';
+  return data.message ?? '시험을 시작하지 못했습니다.';
+}
+
 function fmtTime(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
@@ -140,7 +153,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? (lang === 'en' ? 'Failed to start exam.' : '시험을 시작하지 못했습니다.'));
+        setError(startErrorMessage(lang, data));
         return;
       }
       setQuestions(data.questions as ExamQuestion[]);
@@ -495,7 +508,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
           return (
             <li key={`${it.questionId}-${i}`} className="rounded-lg border border-border bg-bg-elevated p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <Link href={`/${DEFAULT_CATEGORY}/${it.slug}`} className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">{it.slug} · {it.domainLabel ?? it.domain}</Link>
+                <Link href={lang === 'en' ? `/en/${it.slug}` : `/${DEFAULT_CATEGORY}/${it.slug}`} className="font-mono text-[11px] uppercase tracking-wider text-fg-faint hover:text-fg">{it.slug} · {it.domainLabel ?? it.domain}</Link>
                 <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-xs', it.correct ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger')}>{it.correct ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}</span>
               </div>
               <p className="mb-3 font-medium leading-relaxed text-fg whitespace-pre-wrap"><InlineMd text={it.prompt} /></p>

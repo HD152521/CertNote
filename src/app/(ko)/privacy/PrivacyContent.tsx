@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n-client';
+import { authHref } from '@/lib/auth/authLang';
 import { pick } from '@/lib/strings/dict';
 import { privacyStrings } from '@/lib/strings/privacy';
 import { CONTACT_EMAIL } from '@/lib/site';
@@ -79,7 +80,7 @@ export function PrivacyContent() {
       </Section>
 
       <p className="pt-4 text-sm">
-        <Link href="/signup" className="text-fg underline underline-offset-4">{s.backToSignup}</Link>
+        <Link href={authHref('signup', lang)} className="text-fg underline underline-offset-4">{s.backToSignup}</Link>
       </p>
     </div>
   );

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { authErrorMessage } from '@/lib/strings/auth';
 import { pick } from '@/lib/strings/dict';
 import { verifyStrings } from '@/lib/strings/verify';
 
@@ -35,7 +36,7 @@ function VerifyInner() {
           setState('success');
         } else {
           setState('error');
-          setMessage(data.message ?? t(lang, 'requestFailed'));
+          setMessage(authErrorMessage(lang, data, t(lang, 'requestFailed')));
         }
       } catch {
         setState('error');
