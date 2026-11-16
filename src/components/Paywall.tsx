@@ -3,16 +3,20 @@ import { Lock } from 'lucide-react';
 import { t, type Language } from '@/lib/i18n';
 import { pick } from '@/lib/strings/dict';
 import { chromeStrings } from '@/lib/strings/chrome';
+import { authHref } from '@/lib/auth/authLang';
+import { EnglishIntentLink } from '@/components/EnglishIntentLink';
 
 interface PaywallProps {
   // 비로그인이면 로그인 유도, 로그인 무료면 업그레이드 유도로 문구를 바꾼다.
   loggedIn: boolean;
   // 서버 컴포넌트라 훅을 못 쓴다. 언어는 카테고리를 아는 페이지가 내려준다.
   lang: Language;
+  // 로그인 뒤 돌아올 영어 페이지 경로(영어 화면에서만 쓰인다). 같은 출처 /en/... 만 반영된다.
+  returnTo?: string;
 }
 
 // 잠긴(유료) 콘텐츠 자리에 표시. 본문은 이 컴포넌트에 전달되지 않는다(미리보기는 페이지가 별도 렌더).
-export function Paywall({ loggedIn, lang }: PaywallProps) {
+export function Paywall({ loggedIn, lang, returnTo }: PaywallProps) {
   const s = pick(chromeStrings, lang);
   return (
     <div className="my-8 rounded-xl border border-border bg-bg-subtle p-8 text-center">
@@ -24,14 +28,19 @@ export function Paywall({ loggedIn, lang }: PaywallProps) {
         {s.paywallBody}
       </p>
       <div className="mt-5 flex items-center justify-center gap-3">
-        <Link
-          href="/pricing"
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90"
-        >
-          {s.paywallCta}
-        </Link>
+        {(() => {
+          const Cta = lang === 'en' ? EnglishIntentLink : Link;
+          return (
+            <Cta
+              href="/pricing"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90"
+            >
+              {s.paywallCta}
+            </Cta>
+          );
+        })()}
         {!loggedIn && (
-          <Link href="/login" className="rounded-md border border-border px-4 py-2 text-sm font-medium transition hover:border-border-strong">
+          <Link href={authHref('login', lang, returnTo)} className="rounded-md border border-border px-4 py-2 text-sm font-medium transition hover:border-border-strong">
             {t(lang, 'login')}
           </Link>
         )}

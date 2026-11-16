@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/lib/auth/currentUser';
-import { listCerts } from '@/lib/content';
-import { DEFAULT_CATEGORY } from '@/lib/category';
+import { listCertOptions } from '@/lib/certOptions';
 import { query } from '@/lib/db';
 import { OnboardingProfileForm } from '@/components/OnboardingProfileForm';
 
@@ -27,8 +26,7 @@ export default async function OnboardingProfilePage() {
   if (!me) redirect('/login');
   if (me.target_cert) redirect('/'); // 이미 등록된 사용자 — 온보딩 불필요.
 
-  const metas = await listCerts(DEFAULT_CATEGORY);
-  const certs = metas.map((m) => ({ slug: m.slug, code: m.code, name: m.name }));
+  const certs = await listCertOptions();
   return (
     <Suspense fallback={null}>
       <OnboardingProfileForm certs={certs} initialName={me.name ?? ''} />

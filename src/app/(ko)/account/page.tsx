@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/currentUser';
 import { query } from '@/lib/db';
-import { listCerts } from '@/lib/content';
+import { listCertOptions } from '@/lib/certOptions';
 import { getAccountAuthInfo } from '@/lib/auth/account';
-import { DEFAULT_CATEGORY } from '@/lib/category';
 import { AccountPageClient } from './AccountPageClient';
 import { type ProfileValues } from '@/components/account/ProfileSection';
 
@@ -33,7 +32,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const { tab } = await searchParams;
   if (tab === 'notebook') redirect('/notebook');
 
-  const [rows, metas, authInfo] = await Promise.all([
+  const [rows, certs, authInfo] = await Promise.all([
     query<ProfileRow>(
       `SELECT name, to_char(birthdate, 'YYYY-MM-DD') AS birthdate, occupation, target_cert, purpose, experience_level,
               plan,
@@ -44,14 +43,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
          FROM users WHERE id = $1`,
       [user.sub],
     ),
-    listCerts(DEFAULT_CATEGORY),
+    listCertOptions(),
     // has_password 는 여기서 직접 SELECT 하지 않는다 — 컬럼이 없는 DB 에서도 페이지가 뜨게
     // getAccountAuthInfo(SELECT * + 기본값)로 읽는다.
     getAccountAuthInfo(user.sub),
   ]);
 
   const row = rows[0];
-  const certs = metas.map((m) => ({ slug: m.slug, code: m.code, name: m.name }));
   const initial: ProfileValues = {
     name: row?.name ?? '',
     birthdate: row?.birthdate ?? '',

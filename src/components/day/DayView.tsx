@@ -99,7 +99,7 @@ export async function DayView({ category, slug, w, d, lang, content, locked, log
                 <Article source={previewOf(body)} slug={slug} week={w} day={d} lang={lang} />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg to-transparent" />
               </div>
-              <Paywall loggedIn={loggedIn} lang={lang} />
+              <Paywall loggedIn={loggedIn} lang={lang} returnTo={content.href} />
             </>
           ) : (
             <>

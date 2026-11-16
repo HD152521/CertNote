@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { WaitlistForm } from '@/components/marketing/WaitlistForm';
 import { useLanguage } from '@/lib/i18n-client';
+import { authHref } from '@/lib/auth/authLang';
 import { pick } from '@/lib/strings/dict';
 import { pricingStrings } from '@/lib/strings/pricing';
 
@@ -86,7 +87,7 @@ export function PricingContent() {
             ))}
           </ul>
           <Link
-            href="/signup"
+            href={authHref('signup', lang)}
             className="mt-8 rounded-lg border border-border px-4 py-3 text-center font-semibold transition hover:border-border-strong"
           >
             {s.freeCta}
@@ -167,7 +168,7 @@ export function PricingContent() {
         <h2 className="text-2xl font-bold">{s.ctaHeading}</h2>
         <p className="text-lg text-fg-muted">{s.ctaBody}</p>
         <Link
-          href="/signup"
+          href={authHref('signup', lang)}
           className="inline-block rounded-lg bg-accent px-6 py-3 font-semibold text-accent-fg transition hover:opacity-90"
         >
           {s.ctaButton}
@@ -175,7 +176,7 @@ export function PricingContent() {
       </div>
 
       <p className="text-center text-xs text-fg-faint">
-        {s.haveAccount} <Link href="/login" className="text-accent hover:underline">{s.loginLink}</Link>
+        {s.haveAccount} <Link href={authHref('login', lang)} className="text-accent hover:underline">{s.loginLink}</Link>
       </p>
     </div>
   );

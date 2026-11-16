@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { UserRound, X } from 'lucide-react';
 import { emitAuthChange, onAuthChange } from '@/lib/auth/authEvents';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { authHref } from '@/lib/auth/authLang';
 import { pick } from '@/lib/strings/dict';
 import { shellStrings } from '@/lib/strings/shell';
 
@@ -69,7 +70,7 @@ export function AuthNav() {
   if (user === undefined) return null;
 
   if (!user) {
-    return <Link href="/login" className={LINK_CLASS}>{t(lang, 'login')}</Link>;
+    return <Link href={authHref('login', lang, pathname)} className={LINK_CLASS}>{t(lang, 'login')}</Link>;
   }
 
   const links = [
