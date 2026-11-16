@@ -28,7 +28,7 @@ export function SiteFooter() {
   const en = lang === 'en';
   return (
     <footer className="border-t border-border">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 py-6 text-xs text-fg-muted sm:flex-row sm:items-start sm:justify-between lg:px-6">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 pb-20 pt-6 text-xs text-fg-muted sm:flex-row sm:items-start sm:justify-between sm:pb-6 lg:px-6">
         <p>
           © {SITE_NAME} · {en ? OPERATOR_NAME_EN : OPERATOR_NAME}
         </p>

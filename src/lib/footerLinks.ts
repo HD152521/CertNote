@@ -23,7 +23,7 @@ const INFO = [
 export function footerStudyLinks(lang: Language): FooterLink[] {
   if (lang === 'en') {
     return [
-      { href: `/${EN_CATEGORY}`, label: 'Certifications' },
+      { href: `/${EN_CATEGORY}`, label: 'All certifications' },
       { href: labHubHref('en'), label: 'Labs' },
       { href: infoHref('/roadmap', 'en'), label: 'Roadmap' },
     ];
