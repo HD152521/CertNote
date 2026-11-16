@@ -1,5 +1,6 @@
 import { Quiz } from './Quiz';
 import type { QuizQuestion } from '@/lib/parseQuiz';
+import { QuizSignupPrompt } from '@/components/marketing/QuizSignupPrompt';
 import { questionId } from '@/lib/questionId';
 
 interface QuizSectionProps {
@@ -27,6 +28,7 @@ export function QuizSection({ questions, slug, week, day, lang = 'ko' }: QuizSec
           <Quiz key={i} question={q} questionId={questionId(slug, week, day, i + 1)} slug={slug} lang={lang} />
         ))}
       </div>
+      <QuizSignupPrompt />
     </section>
   );
 }

@@ -8,6 +8,7 @@ import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { QuestionReport } from '@/components/userInput/QuestionReport';
 import { cn } from '@/lib/cn';
 import { InlineMd } from '@/components/InlineMd';
+import { announceQuizAnswered } from '@/lib/quiz/answeredEvent';
 import { QuizShellLink } from '@/components/shell-lab/QuizShellLink';
 
 interface QuizProps {
@@ -49,6 +50,7 @@ export function Quiz({ question, questionId, slug, lang = 'ko' }: QuizProps) {
       // 단일 정답: 즉시 채점(기존 UX 유지).
       setPicked([label]);
       setSubmitted(true);
+      announceQuizAnswered();
       if (questionId) recordAttempt(questionId, label);
       return;
     }
@@ -58,6 +60,7 @@ export function Quiz({ question, questionId, slug, lang = 'ko' }: QuizProps) {
   function submitMulti() {
     if (submitted || picked.length === 0) return;
     setSubmitted(true);
+    announceQuizAnswered();
     if (questionId) recordAttempt(questionId, [...picked].sort().join(','));
   }
 

@@ -1,3 +1,4 @@
+import { SignupPrompt } from '@/components/marketing/SignupPrompt';
 import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory, sectionLabel, sectionOfCategory, type Section } from '@/lib/category';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -196,6 +197,7 @@ export default async function CertIndexPage({ params }: PageProps) {
           </p>
         )}
       </header>
+      {lang === 'en' && <SignupPrompt placement="hub" message="home" reserveSpace />}
       {upcoming && <UpcomingExamNotice code={meta.code} upcoming={upcoming} />}
       {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}
       {examInfo && <ExamInfoCard info={examInfo} lang={lang} section={section} />}

@@ -107,6 +107,9 @@ html, body {
 .article ul.quiz-choices > li + li { margin-top: 0.5rem; }
 .article a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; transition: text-decoration-color 0.15s; }
 .article a:hover { text-decoration-color: var(--accent); }
+/* 가입 권유 버튼(SignupPrompt)은 .article 안에서도 버튼 글자색을 지킨다. 위 `.article a` 가 글자색을 본문색으로, 밑줄을 켜므로
+   (밝은 글자 + 민트 배경 대비 1.7:1) 더 구체적인 선택자로 되돌린다. 깨지면 globals.test.ts 가 잡는다. */
+.article a[data-signup-cta], .article a[data-signup-cta]:hover { color: var(--accent-fg); text-decoration: none; }
 .article strong { color: var(--fg); font-weight: 700; }
 .article em { font-style: italic; }
 .article blockquote { border-left: 2px solid var(--accent); padding-left: 1rem; margin: 1.25rem 0; color: var(--fg-muted); font-style: normal; }

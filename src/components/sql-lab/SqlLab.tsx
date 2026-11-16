@@ -1,5 +1,6 @@
 'use client';
 
+import { SignupPrompt } from '@/components/marketing/SignupPrompt';
 import { useState } from 'react';
 import { ArrowRight, Check, Database, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -174,6 +175,11 @@ export function SqlLab({ setId }: { setId: string }) {
         onSolved={() => setSolved((s) => (s.includes(item.id) ? s : [...s, item.id]))}
         onNext={index + 1 < set.items.length ? () => setIndex(index + 1) : undefined}
       />
+      {solved.length === set.items.length && (
+        <div className="px-4 pb-4 sm:px-5">
+          <SignupPrompt placement="lab_done" message="labDone" />
+        </div>
+      )}
     </section>
   );
 }

@@ -5,6 +5,7 @@ import type { CertMeta } from '@/lib/content';
 import { JsonLd } from '@/components/JsonLd';
 import { buildFaqPageLd, type FaqEntry } from '@/lib/structuredData';
 import { DAILY_STUDY_MINUTES } from '@/lib/studyTime';
+import { SignupCta } from '@/components/marketing/SignupCta';
 import { ResumeLink } from '@/components/resume/ResumeLink';
 
 interface WeekSpan {
@@ -179,12 +180,12 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
 
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center gap-3 pt-2">
-          <Link
-            href="/signup"
+          <SignupCta
+            placement="home_hero"
             className="rounded-lg bg-accent px-6 py-3 font-semibold text-accent-fg transition hover:opacity-90 flex items-center gap-2"
           >
             무료로 시작하기 <ArrowRight className="h-4 w-4" />
-          </Link>
+          </SignupCta>
           <Link
             href="/aws"
             className="rounded-lg border border-border px-6 py-3 font-semibold transition hover:border-border-strong"
