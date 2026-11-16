@@ -40,7 +40,7 @@ export function RootHtml({ lang, certs, children }: RootHtmlProps) {
         <PostHogProvider>
           <HtmlLangSync />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <AppShell certs={certs}>{children}</AppShell>
+            <AppShell certs={certs} lang={lang}>{children}</AppShell>
           </ThemeProvider>
           <ServiceWorkerRegister />
         </PostHogProvider>
