@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORY, SUPPORTED_CATEGORIES, isSection } from './category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSection } from './category';
 import { getAllDays, getCategoryIndex, getCertMeta } from './content';
 import { parseDaySegment } from './day/segment';
 
@@ -49,6 +49,12 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   // 섹션 하위의 후기 라우트(/{section}/reviews[/{cert}]) 검증. 이 라우트는 force-dynamic이라
   // 페이지 내부 notFound()가 스트리밍 때문에 200으로 누수된다(day 라우트와 동일 메커니즘) —
   // 그래서 존재 여부를 여기(렌더 전)서 판정해 잘못된 cert는 진짜 404 마커로 리라이트한다.
+  // 영어판 후기(/en/reviews[/{cert}]): AWS 후기를 영어 화면으로 보여 주는 noindex 페이지. cert 는 영어 인덱스 기준.
+  if (category === EN_CATEGORY && slug === 'reviews') {
+    if (segments.length === 2) return true;
+    if (segments.length !== 3) return false;
+    return certSlugExists(category, segments[2]);
+  }
   if (slug === 'reviews') {
     // 후기는 한국어 섹션(/aws·/linux·/data) 전용이다. /en/reviews*·/aws-certs/reviews* 는 라우트가
     // notFound() 를 내는데 스트리밍 때문에 200(소프트 404)으로 새므로 여기서 먼저 404 로 판정한다.
