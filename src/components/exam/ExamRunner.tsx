@@ -344,7 +344,9 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
     const fb = checked[q.questionId];
     const isLow = timeLeft !== null && timeLeft <= 60;
     return (
-      <div className="space-y-4">
+      // 이전/다음 줄이 문항 길이와 상관없이 같은 자리(화면 아래)에 오도록 본문을 최소 한 화면 높이로 깔고
+      // 버튼 묶음을 mt-auto + sticky 로 아래에 붙인다 — 위치가 문항마다 바뀌면 연타가 빈 곳에 들어간다.
+      <div className="flex min-h-[calc(100dvh-7rem)] flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm text-fg-muted tabular-nums">
             {idx + 1} / {questions.length} · {lang === 'en' ? 'Answered' : '답함'} {answeredCount}
@@ -425,6 +427,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
+        <div className="sticky bottom-0 z-10 mt-auto space-y-2 border-t border-border bg-bg/95 py-3 backdrop-blur">
         <div className="flex items-center justify-between gap-2">
           <button type="button" onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0}
             className="rounded-md border border-border px-3 py-2 text-sm text-fg-muted transition hover:text-fg disabled:opacity-40">
@@ -446,6 +449,7 @@ export function ExamRunner({ certs, initialCert = '' }: { certs: CertOption[]; i
           className="w-full rounded-md border border-border-strong px-3 py-2 text-sm text-fg-muted transition hover:text-fg disabled:opacity-50">
           {lang === 'en' ? 'Submit Now' : '지금 제출하기'}
         </button>
+        </div>
       </div>
     );
   }
