@@ -25,3 +25,10 @@ describe('enEdition — 영어판 자격증 목록', () => {
     expect(koSectionOfEnglishSlug('sqld')).toBe('data');
   });
 });
+
+describe('hasEnglishEdition — 자격증이 아닌 세그먼트', () => {
+  test('후기 허브(/aws/reviews)는 영어판 짝이 없다 — EN 토글이 404(/en/reviews)로 보내지 않게', () => {
+    expect(hasEnglishEdition('aws', 'reviews')).toBe(false);
+    expect(hasEnglishEdition('linux', 'reviews')).toBe(false);
+  });
+});
