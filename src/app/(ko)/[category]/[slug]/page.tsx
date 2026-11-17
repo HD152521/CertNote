@@ -191,9 +191,11 @@ export default async function CertIndexPage({ params }: PageProps) {
         {/* 후기는 한국어 전용(영어판엔 후기 라우트가 없다 — /en/reviews/* 는 404). */}
         {lang === 'ko' && (
           <p>
-            <Link href={`/${category}/reviews/${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
+            {/* 일반 <a> 로 전체 이동한다: 이 자격증 페이지([category]/[slug])에서 <Link> 로 후기([category]/reviews/[cert])에
+                클라이언트 이동하면 "페이지를 찾을 수 없습니다"가 렌더된다(직접 열기·새로고침·후기 허브에서 이동은 정상). */}
+            <a href={`/${category}/reviews/${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
               {meta.code} 합격 후기 보기 →
-            </Link>
+            </a>
           </p>
         )}
       </header>

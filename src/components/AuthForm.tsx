@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { BellRing } from 'lucide-react';
@@ -12,6 +12,7 @@ import { enablePush, isPushSupported } from '@/lib/push/client';
 import { OCCUPATION_OPTIONS, PURPOSE_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profileOptions';
 import { infoHref } from '@/lib/enEdition';
 import { t } from '@/lib/i18n-client';
+import { isInAppBrowser } from '@/lib/inAppBrowser';
 import { useAuthLanguage } from '@/lib/auth/useAuthLanguage';
 import { AUTH_LANG_PARAM } from '@/lib/auth/authLang';
 import { authErrorMessage, profileSelectOptions } from '@/lib/strings/auth';
@@ -53,6 +54,9 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
   if (switchNext) switchQs.set('next', switchNext);
   const switchHref = `${mode === 'login' ? '/signup' : '/login'}${switchQs.size ? `?${switchQs.toString()}` : ''}`;
 
+  // 앱 안 웹뷰에서는 구글 로그인이 막혀 끝나지 않는다 — 감지되면 외부 브라우저 안내를 보인다(서버 렌더와 맞추려 마운트 뒤에 판정).
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => { setInApp(isInAppBrowser(navigator.userAgent)); }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   // 구글 로그인 시작·콜백이 실패하면 /login?error=<code> 로 돌아온다(api/auth/google/*).
@@ -283,6 +287,13 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
             </svg>
             {t(lang, 'continueWithGoogle')}
           </a>
+          {inApp && (
+            <p role="note" className="rounded-md border border-border bg-bg-subtle px-3 py-2 text-xs leading-relaxed text-fg-muted">
+              {lang === 'en'
+                ? 'Google sign-in is blocked inside in-app browsers. Open this page in Chrome or Safari (menu → “Open in browser”), or sign in with email.'
+                : '앱 안 브라우저에서는 구글 로그인이 막혀 있어요. 메뉴의 “다른 브라우저로 열기”로 크롬·사파리에서 열거나, 이메일로 가입·로그인해 주세요.'}
+            </p>
+          )}
           <p className="text-center text-[11px] leading-relaxed text-fg-faint">
             {t(lang, 'googleContinueText')}{' '}
             <Link href={infoHref('/privacy', lang)} target="_blank" className="underline underline-offset-2 hover:text-fg">{t(lang, 'privacyPolicy')}</Link>

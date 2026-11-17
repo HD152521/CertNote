@@ -87,7 +87,7 @@ export function Select({ value, onChange, options, placeholder, disabled, classN
         onKeyDown={onKey}
         className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-fg outline-none transition focus:border-border-strong disabled:opacity-50"
       >
-        <span className={cn('truncate', !selected && 'text-fg-faint')}>{selected ? selected.label : placeholderText}</span>
+        <span className={cn('truncate', !selected && 'text-fg-muted')}>{selected ? selected.label : placeholderText}</span>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-fg-faint transition', open && 'rotate-180')} />
       </button>
 
