@@ -11,7 +11,11 @@ export const EN_EDITION_NON_AWS: Readonly<Record<string, Section>> = {
   'linux-master-2': 'linux',
 };
 
+// 섹션 아래에 자격증이 아니라 별도 라우트로 쓰는 세그먼트(/aws/reviews 후기 허브). 영어판 짝이 없다.
+const NON_CERT_SEGMENTS: readonly string[] = ['reviews'];
+
 export function hasEnglishEdition(section: Section, slug: string): boolean {
+  if (NON_CERT_SEGMENTS.includes(slug)) return false;
   return section === 'aws' || EN_EDITION_NON_AWS[slug] === section;
 }
 
