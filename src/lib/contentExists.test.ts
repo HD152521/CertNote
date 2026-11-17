@@ -48,8 +48,11 @@ describe('contentPathExists', () => {
   });
 
   test('후기 라우트는 한국어 섹션 전용: /en/reviews*·/aws-certs/reviews* 는 false(소프트 404 방지)', async () => {
-    expect(await contentPathExists('/en/reviews')).toBe(false);
-    expect(await contentPathExists('/en/reviews/saa-c03')).toBe(false);
+    // /en/reviews 는 영어판 후기(noindex) 페이지가 따로 있다 — 존재하지 않는 cert 만 false.
+    expect(await contentPathExists('/en/reviews')).toBe(true);
+    expect(await contentPathExists('/en/reviews/saa-c03')).toBe(true);
+    expect(await contentPathExists('/en/reviews/nope-c99')).toBe(false);
+    expect(await contentPathExists('/en/reviews/saa-c03/extra')).toBe(false);
     expect(await contentPathExists('/aws-certs/reviews')).toBe(false);
     expect(await contentPathExists('/aws/reviews')).toBe(true);
     expect(await contentPathExists('/aws/reviews/saa-c03')).toBe(true);

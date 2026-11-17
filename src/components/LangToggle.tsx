@@ -18,6 +18,11 @@ function counterpart(pathname: string, to: Language): string {
   // 정보 페이지(소개·로드맵·수정 기록·문의·약관·개인정보처리방침)는 한국어 ↔ 영어판이 1:1 짝이다.
   const infoTarget = to === 'en' ? enInfoPathOf(pathname) : koInfoPathOf(pathname);
   if (infoTarget) return infoTarget;
+  // 후기: 한국어 /aws/reviews[/{cert}] 와 영어 /en/reviews[/{cert}] 가 짝이다(영어판은 AWS 후기만 보여 준다).
+  const koReviews = pathname.match(/^\/aws\/reviews(?:\/([^/]+))?$/);
+  if (to === 'en' && koReviews) return koReviews[1] ? `/${EN_CATEGORY}/reviews/${koReviews[1]}` : `/${EN_CATEGORY}/reviews`;
+  const enReviews = pathname.match(new RegExp(`^/${EN_CATEGORY}/reviews(?:/([^/]+))?$`));
+  if (to === 'ko' && enReviews) return enReviews[1] ? `/aws/reviews/${enReviews[1]}` : '/aws/reviews';
   // ko 공개 경로는 섹션 세그먼트(/aws·/linux). 섹션을 캡처해 영어판 유무를 판정한다.
   const koMatch = pathname.match(/^\/(aws|linux|data)\/([^/]+)(?:\/week(\d+)\/day(\d+))?$/);
   const enMatch = pathname.match(new RegExp(`^/${EN_CATEGORY}(?:/([^/]+)(?:/week(\\d+)/day(\\d+))?)?$`));
