@@ -15,7 +15,7 @@
 | 파일 | 권한 | 필드 수 | 핵심 필드 | 짝 |
 |------|------|---------|-----------|-----|
 | /etc/passwd | 644 | 7 | UID(3) · GID(4) · 홈(6) · 셸(7) | shadow |
-| /etc/shadow | 400/640 | 9 | 해시(2) · LastChange(3) · Min(4) · Max(5) | passwd |
+| /etc/shadow | 000/400 | 9 | 해시(2) · LastChange(3) · Min(4) · Max(5) | passwd |
 | /etc/group | 644 | 4 | GID(3) · 보조멤버(4) | gshadow |
 | /etc/gshadow | 400 | 4 | 그룹암호(2) · 관리자(3) | group |
 

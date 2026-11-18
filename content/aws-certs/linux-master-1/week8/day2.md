@@ -86,7 +86,7 @@ nmcli는 "connection(설정 프로파일)"과 "device(물리 장치)"를 구분�
 
 ## 설정 파일 — /etc/sysconfig/network-scripts
 
-- Red Hat 계열의 전통적 영구 네트워크 설정은 **`/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`** 파일에 들어간다.
+- Red Hat 계열의 전통적 영구 네트워크 설정(RHEL 7/8·시험 기준)은 **`/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`** 파일에 들어간다. RHEL 9/Rocky 9의 기본은 keyfile이다(아래 참고).
 
 ```bash
 # /etc/sysconfig/network-scripts/ifcfg-eth0 예시 (정적 IP)
@@ -111,7 +111,7 @@ DNS2=8.8.4.4
 
 > ⚠️ **함정**: `ONBOOT=no`이면 IP 설정이 다 맞아도 부팅 시 인터페이스가 올라오지 않아 네트워크가 안 된다. "설정은 맞는데 부팅 후 연결 안 됨" 문제의 원인이 된다. Debian/Ubuntu 계열은 이 파일 대신 `/etc/network/interfaces`나 netplan(`/etc/netplan/*.yaml`)을 쓴다.
 
-`ifcfg-` 파일은 Red Hat이 오래 써 온 방식이고, 최신 RHEL은 내부적으로 NetworkManager의 키파일(`/etc/NetworkManager/system-connections/`)로 옮겨가고 있다. 시험은 여전히 전통적인 `ifcfg-eth0` 형식과 그 안의 항목 의미를 묻는다.
+`ifcfg-` 파일은 RHEL 7/8까지의 기본 방식이다. RHEL 9/Rocky 9부터는 NetworkManager의 키파일(`/etc/NetworkManager/system-connections/*.nmconnection`)이 기본이고 `network-scripts`(구 `network` 서비스)는 제거되어, ifcfg는 호환용으로만 읽힌다(`nmcli`는 두 버전 모두 동일). 시험은 여전히 전통적인 `ifcfg-eth0` 형식과 그 안의 항목 의미를 묻는다.
 
 ## 게이트웨이와 라우팅 — 외부로 나가는 길
 

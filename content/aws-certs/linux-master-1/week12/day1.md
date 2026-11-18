@@ -338,11 +338,11 @@ D) kill -HUP 1234
 A) ln -s orig link
 B) ln orig link
 C) ln -h orig link
-D) cp -l orig link
+D) cp orig link
 
 **정답: B**
 
-해설: 옵션 없는 `ln`은 하드 링크를 만들며, 원본과 같은 inode를 공유한다. 하드 링크는 다른 파일시스템·디렉터리에 만들 수 없다. `-s`는 심볼릭 링크 옵션이다.
+해설: 옵션 없는 `ln`은 하드 링크를 만들며, 원본과 같은 inode를 공유한다. 하드 링크는 다른 파일시스템에는 만들 수 없다. `-s`는 심볼릭 링크 옵션이고, `cp orig link`는 별도 inode의 복사본을 만든다.
 
 ---
 

@@ -189,13 +189,20 @@ docker build -t myapp:1.0 .                  # Dockerfile로 이미지 빌드
 - Dockerfile은 **이미지를 만드는 절차를 적은 텍스트 파일**이며, 각 지시어가 이미지의 한 **계층(layer)**이 된다.
 
 ```dockerfile
-FROM ubuntu:22.04                 # 베이스 이미지(반드시 첫 지시어)
-ENV APP_HOME=/app                 # 환경 변수
-WORKDIR /app                      # 작업 디렉터리(없으면 생성)
-COPY ./src /app                   # 호스트 파일을 이미지로 복사
-RUN apt-get update && apt-get install -y python3   # 빌드 시점에 실행
-EXPOSE 8080                       # 사용할 포트를 문서화
-CMD ["python3", "app.py"]         # 컨테이너 시작 시 실행할 기본 명령
+# 베이스 이미지(반드시 첫 지시어)
+FROM ubuntu:22.04
+# 환경 변수
+ENV APP_HOME=/app
+# 작업 디렉터리(없으면 생성)
+WORKDIR /app
+# 호스트 파일을 이미지로 복사
+COPY ./src /app
+# 빌드 시점에 실행
+RUN apt-get update && apt-get install -y python3
+# 사용할 포트를 문서화
+EXPOSE 8080
+# 컨테이너 시작 시 실행할 기본 명령
+CMD ["python3", "app.py"]
 ```
 
 | 지시어 | 역할 |

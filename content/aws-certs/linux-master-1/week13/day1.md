@@ -102,7 +102,7 @@ nmcli connection down myeth
 
 ## ifcfg-* 파일 직접 작성 (RHEL/CentOS 영구 설정)
 
-- `nmcli`가 결국 만들어 내는, 혹은 손으로 쓰는 파일이 `/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`다.
+- `nmcli`가 결국 만들어 내는, 혹은 손으로 쓰는 파일이 `/etc/sysconfig/network-scripts/ifcfg-<인터페이스>`다. (RHEL 7/8·시험 기준 — RHEL 9/Rocky 9는 keyfile `/etc/NetworkManager/system-connections/*.nmconnection`이 기본이며 `nmcli` 사용법은 동일하다.)
 - 작업형에서 **빈칸으로 출제**될 수 있으므로 지시어를 정확히 외워야 한다.
 
 ```bash

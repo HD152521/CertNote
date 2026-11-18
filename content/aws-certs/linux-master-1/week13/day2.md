@@ -168,7 +168,7 @@ ftpd_banner=Welcome        # 접속 배너
 /srv/data    192.168.1.0/24(rw,sync,no_subtree_check)
 ```
 
-- NFS `exports`의 최대 함정은 **클라이언트와 괄호 사이 공백 금지**다(공백이 있으면 모든 호스트에 기본 옵션이 열린다).
+- NFS `exports`의 최대 함정은 **클라이언트와 괄호 사이 공백 금지**다(공백이 있으면 해당 클라이언트에는 기본 옵션만, 괄호 안 옵션(`rw` 등)은 모든 호스트에 적용된다).
 - 주요 옵션은 `rw`/`ro`, `sync`/`async`, `root_squash`(기본·안전)/`no_root_squash`(위험)다.
 
 | 파일 | 핵심 지시어 |

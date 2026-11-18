@@ -191,11 +191,11 @@ find /tmp -name "*.tmp" -mtime +7 -exec rm {} \;
 | 조건 | 이름·크기·시간·소유자·권한 등 | 주로 **이름(경로)** |
 
 ```text
-$ touch /tmp/newfile.txt
+$ touch ~/newfile.txt
 $ locate newfile.txt
 $ sudo updatedb
 $ locate newfile.txt
-/tmp/newfile.txt
+/home/alice/newfile.txt
 ```
 
 - 방금 만든 파일이 `locate`에 안 잡히는 것은 고장이 아니다. 색인은 보통 **하루 한 번** 자동으로 갱신되며, 당장 반영하려면 root로 `updatedb`를 실행한다.

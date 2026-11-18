@@ -10,6 +10,8 @@
 
 ## TCP Wrapper: hosts.allow와 hosts.deny
 
+> ⚠️ **시험 범위 vs 현행**: TCP Wrapper(`hosts.allow`/`hosts.deny`)는 CentOS 6/7 시절의 시험 범위 개념이다. RHEL 8부터(Rocky 8/9 포함) `tcp_wrappers`/`libwrap`이 제거되어 sshd·vsftpd가 두 파일을 더는 참조하지 않으므로 **현행 Rocky에서는 효과가 없다**. 실무에서는 firewalld(rich rule)나 sshd의 `AllowUsers`·`Match` 설정을 쓴다.
+
 - TCP Wrapper는 `libwrap` 라이브러리(`tcpd`)를 통해 동작하는 호스트 기반 접근 제어 시스템이다.
 - 서비스가 연결 요청을 받으면, 실제 서비스로 넘기기 전에 두 파일을 검사해 그 출발지 호스트를 허용할지 결정한다.
 
