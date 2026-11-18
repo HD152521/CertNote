@@ -78,7 +78,7 @@
 | 빠른 비용 그래프·예측 | **Cost Explorer** | CUR은 원본 데이터 |
 | 예산 초과 자동 차단 | **Budgets Actions** | 알림만이면 Budgets/SNS |
 | ML 비용 급증 탐지 | **Cost Anomaly Detection** | Budgets는 고정 임계 |
-| 부서별 비용 분리 | **Cost Allocation Tags** | 활성화 시점부터 소급 없음 |
+| 부서별 비용 분리 | **Cost Allocation Tags** | 활성화 시점부터 소급 없음 (백필 요청 시 최대 12개월까지 가능) |
 | 멀티 계정 커스텀 청구 | **Billing Conductor** | 리셀러·내부 차지백 |
 
 > ⚠️ **함정**: 헷갈리기 쉬운 세 쌍을 다시 정리한다. ① **SP vs RI** — "RDS/Redshift/ElastiCache"가 보이면 시험 키워드상 RI, 나머지 EC2 컴퓨팅은 SP (2025.12 Database Savings Plans 출시로 현재는 DB용 SP도 있으나 Compute/EC2 SP는 DB에 불가). ② **Gateway vs Interface Endpoint** — S3/DDB면 무료 Gateway, 다른 서비스면 ENI 비용 드는 Interface. ③ **Cost Explorer vs CUR** — "Athena/세밀/SQL"이면 CUR, "빠른 그래프/예측"이면 Cost Explorer. 이 세 쌍의 경계를 정확히 알면 비용 문제의 상당수를 풀 수 있다.

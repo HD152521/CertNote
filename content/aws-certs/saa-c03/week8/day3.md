@@ -20,7 +20,7 @@
 | 사용자 저장 | 자체 디렉터리 보유 | 보유 안 함(외부 IdP의 ID를 매핑) |
 | 외부 IdP | SAML, OIDC, Google, Facebook | Cognito User Pool, Google, Facebook, Apple, SAML, OIDC, 개발자 인증 |
 | MFA | 지원 | 자체 MFA 없음 |
-| 가격 | MAU 기반 (월 50,000 MAU 무료) | 거의 무료 (STS 호출만 과금) |
+| 가격 | MAU 기반 (2024-11 새 요금제: Lite/Essentials 월 10,000 MAU 무료, 2024-11-22 이전 생성 Lite 풀은 50,000 MAU 유지; 시험 자료에는 "50,000 MAU"로 나옴) | 거의 무료 (STS 호출만 과금) |
 
 ```
 [ 가장 흔한 혼합 패턴 ]
@@ -151,7 +151,7 @@ PreTokenGeneration Lambda는 multi-tenant SaaS에서 핵심적이다. 사용자�
 
 ## Advanced Security와 적응형 인증
 
-User Pool의 Advanced Security Features(추가 비용)는 ML 기반 위협 탐지를 제공한다. 핵심 기능 세 가지가 있다.
+User Pool의 Advanced Security Features(추가 비용; 2024-11 새 요금제에서는 Plus 티어의 threat protection으로 포함되고 Lite/Essentials에서는 별도 add-on)는 ML 기반 위협 탐지를 제공한다. 핵심 기능 세 가지가 있다.
 
 - **Compromised Credentials Detection**: 사용자가 입력한 비밀번호가 알려진 유출 비밀번호 데이터베이스(Have I Been Pwned 류)에 있는지 확인. 일치하면 가입 차단 또는 강제 변경.
 - **Adaptive Authentication**: 로그인 시도의 위험도(IP 평판, 디바이스, 지역, 시간)를 ML로 평가해 risk score(Low/Medium/High)를 매김. 위험도에 따라 MFA를 자동 요구하거나 차단.
@@ -170,7 +170,7 @@ Cognito ML 모델
    └─ High → 로그인 차단 + 알림
 ```
 
-MFA 옵션도 세 가지를 지원한다 — SMS, TOTP(Google Authenticator 등), 그리고 2023년 추가된 **WebAuthn/Passkeys**(생체인증, 하드웨어 키). SMS MFA는 비용·SIM swap 공격 위험이 있어 TOTP 또는 WebAuthn이 권장된다.
+User Pool의 MFA 방식은 SMS 문자, 이메일, TOTP 인증 앱(Google Authenticator 등)이다(패스키(WebAuthn)는 비밀번호 로그인의 2차 요소로는 쓸 수 없고, 사용자 검증을 거친 패스키 로그인이 MFA 요건을 대신 충족한다). SMS MFA는 비용·SIM swap 공격 위험이 있어 TOTP 또는 패스키가 권장된다. (IAM 사용자·루트의 MFA는 패스키·보안키, 가상 MFA 앱, 하드웨어 TOTP 토큰이며 SMS MFA는 지원이 종료됐다.)
 
 > ⚠️ **함정**: "사용자 로그인 시 위험도 평가해 MFA 자동 요구" 시나리오에 GuardDuty를 고르는 실수가 많은데, GuardDuty는 AWS 계정/리소스 위협 탐지(VPC Flow, CloudTrail 분석)이지 사용자 로그인 위협 탐지가 아니다. 사용자 인증 위협 탐지는 Cognito Advanced Security다.
 
@@ -180,7 +180,7 @@ Cognito의 설계를 다른 identity 서비스와 나란히 놓으면 trade-off�
 
 | 서비스 | 모델 | AWS 통합 | 가격 | 운영 부담 |
 |--------|------|---------|------|----------|
-| **Cognito User Pool** | 사용자 디렉터리 + JWT | 깊음 (API GW/ALB/AppSync 통합) | MAU 기반 (50K 무료) | 낮음 |
+| **Cognito User Pool** | 사용자 디렉터리 + JWT | 깊음 (API GW/ALB/AppSync 통합) | MAU 기반 (신규 10K 무료, 구 요금제 50K) | 낮음 |
 | **Cognito Identity Pool** | STS Role 발급 | AWS 자격증명 직접 발급 | 거의 무료 | 낮음 |
 | **IAM Identity Center** | 직원 SSO + AWS 콘솔 | AWS 콘솔/CLI 전용 | 무료 (액티브 디렉터리 추가비) | 낮음 |
 | **Auth0 / Okta CIC** | identity SaaS | 외부 SaaS 통합 | MAU 기반 (Cognito보다 비쌈) | 매우 낮음 |
@@ -188,7 +188,7 @@ Cognito의 설계를 다른 identity 서비스와 나란히 놓으면 trade-off�
 | **자체 구현(Passport.js)** | 코드 직접 | 자유 | 인프라 비용만 | 매우 높음 |
 | **Keycloak (자체 운영)** | 오픈소스 OIDC/SAML | 유연 | 인프라 비용 | 높음 |
 
-Cognito의 강점은 AWS 생태계와의 통합(특히 API Gateway JWT Authorizer, AppSync Auth, ALB authentication)과 무료 tier(50K MAU)다. 약점은 Auth0/Okta 대비 UI 커스터마이징 자유도가 떨어지고, Hosted UI가 다소 투박하다는 점이다. 그래서 "최고급 사용자 경험"이 핵심인 SaaS는 Auth0/Okta로 가고, "AWS 생태계 안에서 빠르게 구축"이 우선이면 Cognito가 답이다.
+Cognito의 강점은 AWS 생태계와의 통합(특히 API Gateway JWT Authorizer, AppSync Auth, ALB authentication)과 무료 tier(현재 신규 풀은 월 10,000 MAU, 2024-11-22 이전 Lite 풀은 50,000 MAU)다. 약점은 Auth0/Okta 대비 UI 커스터마이징 자유도가 떨어지고, Hosted UI가 다소 투박하다는 점이다. 그래서 "최고급 사용자 경험"이 핵심인 SaaS는 Auth0/Okta로 가고, "AWS 생태계 안에서 빠르게 구축"이 우선이면 Cognito가 답이다.
 
 ## CLI로 직접 만져보기
 

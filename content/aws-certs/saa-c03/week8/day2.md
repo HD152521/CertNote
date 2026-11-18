@@ -80,7 +80,7 @@ Parameter Store가 가진 또 하나의 장점은 **계층형 네임스페이스
 
 > ⚠️ **함정**: "비밀번호를 SecureString으로 Parameter Store에 저장했으니 회전도 자동으로 된다"는 오해가 흔하다. SecureString은 KMS 암호화만 제공할 뿐 회전 기능은 없다. 회전이 필요하면 별도 Lambda를 만들어서 EventBridge cron으로 트리거해야 하는데, 이 과정에서 dual-credential pattern을 직접 구현해야 한다. 실수 한 번이면 다운타임이므로, 회전이 정말 필요한 비밀은 Secrets Manager로 가는 게 운영 부담이 훨씬 적다.
 
-Parameter Store와 Secrets Manager는 사실 일부 기능이 겹친다. 2018년 Secrets Manager 출시 이후 AWS는 한동안 두 서비스 모두 발전시키다가, 2020년부터 "비밀 = Secrets Manager, 구성 = Parameter Store"로 가이드를 명확히 했다. 그래서 Parameter Store에 Secrets Manager 비밀을 참조하는 기능(`{{resolve:secretsmanager:...}}`)이 추가됐고, 반대로 Secrets Manager는 RDS 외 다른 데이터베이스(자체 회전 Lambda)와 사용자 정의 회전을 지원하게 됐다. 결과적으로 두 서비스가 같은 시크릿을 두 곳에서 가리키는 패턴(Parameter Store 이름에 Secrets Manager ARN 저장)도 흔하다.
+Parameter Store와 Secrets Manager는 사실 일부 기능이 겹친다. 2018년 Secrets Manager 출시 이후 AWS는 한동안 두 서비스 모두 발전시키다가, 2020년부터 "비밀 = Secrets Manager, 구성 = Parameter Store"로 가이드를 명확히 했다. 그래서 Parameter Store에서 Secrets Manager 비밀을 `/aws/reference/secretsmanager/<비밀 이름>` 경로로 조회하는 기능(GetParameter·GetParameters 전용)이 추가됐고, 반대로 Secrets Manager는 RDS 외 다른 데이터베이스(자체 회전 Lambda)와 사용자 정의 회전을 지원하게 됐다. 결과적으로 두 서비스가 같은 시크릿을 두 곳에서 가리키는 패턴(Parameter Store 이름에 Secrets Manager ARN 저장)도 흔하다. (`{{resolve:secretsmanager:...}}`는 Parameter Store가 아니라 CloudFormation dynamic reference 문법이다.)
 
 ## Secrets Manager의 고급 기능: 멀티 리전 복제와 리소스 정책
 
@@ -113,25 +113,25 @@ Parameter Store와 Secrets Manager는 사실 일부 기능이 겹친다. 2018년
 
 ## CloudHSM: 컴플라이언스가 요구할 때만
 
-CloudHSM은 AWS가 운영하는 고객 전용 하드웨어 보안 모듈이다. KMS도 내부적으로 HSM 위에서 동작하지만 multi-tenant인 반면, CloudHSM은 **single-tenant** 로 한 고객의 워크로드만 그 HSM 클러스터에서 동작한다. FIPS 140-2 Level 3 인증을 고객 명의로 받으며, AWS 직원도 키 자료에 접근할 수 없는 게 가장 큰 특징이다.
+CloudHSM은 AWS가 운영하는 고객 전용 하드웨어 보안 모듈이다. KMS도 내부적으로 HSM 위에서 동작하지만 multi-tenant인 반면, CloudHSM은 **single-tenant** 로 한 고객의 워크로드만 그 HSM 클러스터에서 동작한다. 고객이 HSM 사용자와 키를 독점 제어하는 게 가장 큰 특징이다(KMS HSM도 FIPS 140-3 Level 3이라 FIPS 레벨은 구분 기준이 아니며, KMS도 AWS 직원이 평문 키에 접근할 수 없도록 설계돼 있으므로 "AWS 직원 접근 가능 여부"가 차이는 아니다).
 
 | 항목 | KMS CMK | CloudHSM |
 |------|---------|----------|
 | 테넌시 | Multi-tenant | Single-tenant |
-| FIPS 인증 | 140-2 Level 3 (AWS 명의) | 140-2 Level 3 (고객 명의) |
-| 키 제어 | AWS도 운영 권한 보유 | AWS 직원 접근 불가 |
-| AWS 서비스 통합 | 거의 모든 서비스 | KMS XKS 경유 또는 PKCS#11/JCE 직접 |
+| FIPS 인증 | 140-3 Level 3 | FIPS 140 Level 3 (레벨은 구분 기준 아님) |
+| 키 제어 | AWS 관리형 서비스(키 정책으로 접근 제어, 평문 키는 AWS 직원도 접근 불가) | 고객이 HSM 사용자·키를 독점 제어(single-tenant) |
+| AWS 서비스 통합 | 거의 모든 서비스 | KMS custom key store 경유 또는 PKCS#11/JCE 직접 |
 | 운영 부담 | 거의 없음 | 클러스터 관리·HA 직접 설계 |
 | 비용 | 키당 $1/월 + 호출 | HSM 인스턴스 시간당 $1.45 |
 | 사용처 | 대부분의 시나리오 | 강한 규제(금융·정부)·SSL offload·IBM HSM 마이그레이션 |
 
 CloudHSM의 운영 모델은 KMS와 완전히 다르다. CloudHSM 클러스터를 VPC 안에 생성하고, HSM 인스턴스를 여러 AZ에 분산 배치해 직접 고가용성을 설계해야 한다. 클라이언트 인증서를 관리하고, PKCS#11 / JCE / OpenSSL Dynamic Engine 같은 표준 인터페이스로 직접 통신한다. 비용도 인스턴스당 시간 단위로 부과되므로(2 AZ 운영 시 월 $2,000 이상), "꼭 필요한 경우"가 아니면 KMS가 절대적으로 유리하다.
 
-CloudHSM이 답인 시나리오는 보통 세 가지다. ① 규제가 "AWS 직원도 키에 접근할 수 없어야 한다"고 명시적으로 요구할 때 (일부 금융·정부·헬스케어). ② 기존 온프레미스 HSM(IBM 4768, Thales nShield)에서 클라우드로 마이그레이션할 때. ③ SSL/TLS 키를 HSM에서 사용해 웹 서버의 private key가 절대 메모리에 평문으로 노출되지 않게 해야 할 때. 그 외에는 KMS CMK + Customer Managed Key 정책으로 거의 모든 컴플라이언스 요구를 만족할 수 있다.
+CloudHSM이 답인 시나리오는 보통 세 가지다. ① 규제가 "고객이 단독으로 제어하는 전용(single-tenant) HSM"을 명시적으로 요구할 때 (일부 금융·정부·헬스케어). ② 기존 온프레미스 HSM(IBM 4768, Thales nShield)에서 클라우드로 마이그레이션할 때. ③ SSL/TLS 키를 HSM에서 사용해 웹 서버의 private key가 절대 메모리에 평문으로 노출되지 않게 해야 할 때. 그 외에는 KMS CMK + Customer Managed Key 정책으로 거의 모든 컴플라이언스 요구를 만족할 수 있다.
 
-FIPS 140-2 Level 1~4는 NIST가 정의한 암호 모듈 보안 등급이다. Level 1은 소프트웨어, Level 2는 변조 흔적 남는 하드웨어, Level 3은 변조 방지(tamper-resistant) 하드웨어 + 사용자 인증, Level 4는 변조 즉시 키 자료 소거. 대부분의 상업적 HSM은 Level 3이고, Level 4는 군용·국가 기밀급이다. PCI DSS 같은 카드 산업 규정은 Level 2 이상을 요구하고, 일부 정부 규정(예: 한국 ISMS-P 일부 요건)은 Level 3 이상을 요구한다. CloudHSM이 Level 3이라는 게 보통 충분한 이유다.
+FIPS 140 Level 1~4는 NIST가 정의한 암호 모듈 보안 등급이다. Level 1은 소프트웨어, Level 2는 변조 흔적 남는 하드웨어, Level 3은 변조 방지(tamper-resistant) 하드웨어 + 사용자 인증, Level 4는 변조 즉시 키 자료 소거. 대부분의 상업적 HSM은 Level 3이고, Level 4는 군용·국가 기밀급이다. PCI DSS 같은 카드 산업 규정은 Level 2 이상을 요구하고, 일부 정부 규정(예: 한국 ISMS-P 일부 요건)은 Level 3 이상을 요구한다. CloudHSM이 Level 3이라는 게 보통 충분한 이유다(다만 KMS HSM도 FIPS 140-3 Level 3이므로 KMS와의 선택 기준은 레벨이 아니라 단독 테넌시와 키 독점 제어다).
 
-2022년 출시된 **KMS External Key Store(XKS)** 는 KMS와 CloudHSM(또는 외부 KMIP 서버)을 연결하는 다리 역할을 한다. 키 자료는 외부 HSM에 있고 KMS는 프록시로 동작해서, 외부 HSM에 자기 키를 두면서도 KMS의 풍부한 서비스 통합(S3, EBS, RDS 등)을 그대로 쓸 수 있다. "키는 우리가 직접 관리한다" + "AWS 서비스는 그대로 쓰고 싶다"는 규제 요구에 답하는 패턴인데, 외부 HSM이 다운되면 KMS도 그 키로는 동작 못 한다는 위험이 있어 가용성 설계가 추가로 필요하다.
+2022년 출시된 **KMS External Key Store(XKS)** 는 KMS와 AWS 밖에 있는 고객 소유 HSM·키 관리자(XKS proxy 경유)를 연결하는 다리 역할을 한다. (CloudHSM 클러스터를 KMS에 연결하는 것은 XKS가 아니라 custom key store다.) 키 자료는 외부 HSM에 있고 KMS는 프록시로 동작해서, 외부 HSM에 자기 키를 두면서도 KMS의 풍부한 서비스 통합(S3, EBS, RDS 등)을 그대로 쓸 수 있다. "키는 우리가 직접 관리한다" + "AWS 서비스는 그대로 쓰고 싶다"는 규제 요구에 답하는 패턴인데, 외부 HSM이 다운되면 KMS도 그 키로는 동작 못 한다는 위험이 있어 가용성 설계가 추가로 필요하다.
 
 ## EC2·Lambda·ECS에서의 표준 사용 패턴
 
@@ -210,10 +210,9 @@ aws ssm get-parameters-by-path \
   --with-decryption
 
 # Parameter Store에서 Secrets Manager 참조
-aws ssm put-parameter \
-  --name /prod/app/db-secret-ref \
-  --value "{{resolve:secretsmanager:prod/rds/admin:SecretString:password}}" \
-  --type String
+aws ssm get-parameter \
+  --name /aws/reference/secretsmanager/prod/rds/admin \
+  --with-decryption
 
 # CloudHSM 클러스터 생성
 aws cloudhsmv2 create-cluster \
@@ -275,7 +274,7 @@ D) us-east-1 비밀을 매번 직접 조회
 
 ---
 
-**문제 4.** 한 금융 회사가 규제 요구로 "키 자료에 AWS 직원도 접근할 수 없어야 하며, FIPS 140-2 Level 3 인증을 회사 명의로 받아야 한다"는 요구를 받았다. 가장 적합한 서비스는?
+**문제 4.** 한 금융 회사가 규제 요구로 "키 자료를 고객 단독 통제의 single-tenant 전용 HSM에 두어야 한다"는 요구를 받았다. 가장 적합한 서비스는?
 
 A) KMS Customer Managed Key
 B) Secrets Manager
@@ -284,7 +283,7 @@ D) Parameter Store SecureString
 
 **정답: C**
 
-해설: CloudHSM은 single-tenant HSM이고 FIPS 140-2 Level 3 인증을 고객 명의로 받는다. AWS 직원도 키 자료에 접근할 수 없다는 게 KMS와의 결정적 차이다. KMS도 내부적으로 HSM 위에서 동작하지만 multi-tenant고 인증이 AWS 명의다. 일반적으로 이 정도 규제가 없으면 KMS CMK가 비용·운영 모두 유리하지만, 요구 사항이 명시적이면 CloudHSM이 답이다.
+해설: CloudHSM은 single-tenant HSM이다. 고객이 HSM과 키를 독점 제어하는 single-tenant라는 게 KMS와의 결정적 차이다(KMS도 AWS 직원이 평문 키에 접근할 수 없게 설계돼 있다). KMS도 내부적으로 HSM 위에서 동작하지만 multi-tenant다(KMS HSM도 FIPS 140-3 Level 3이라 레벨 자체는 차이가 아니다). 일반적으로 이 정도 규제가 없으면 KMS CMK가 비용·운영 모두 유리하지만, 요구 사항이 명시적이면 CloudHSM이 답이다.
 
 ---
 

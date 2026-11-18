@@ -109,7 +109,7 @@ Predictive Scaling(2021년 GA)은 과거 2주 동안의 메트릭 패턴을 ML�
 
 Predictive Scaling의 내부 모델은 **시계열 예측(Time Series Forecasting)** 알고리즘이다. AWS는 공개하지 않지만, 일간/주간 계절성(seasonality)과 추세(trend)를 분해하는 분해 모델(Decomposition Model)이나 Prophet(Facebook 오픈소스) 유사 모델로 추정된다. 중요한 것은 학습에 최소 24시간 데이터가 필요하고(과거 최대 14일을 분석하며, 2주치가 있으면 예측이 더 정확해진다), 새로운 서비스는 처음 2주 동안 예측이 정확하지 않다.
 
-**사례**: AWS re:Invent 2020에서 Amazon.com의 Prime Day 준비 사례가 공개됐다. Predictive Scaling을 사용해 과거 Prime Day 패턴을 학습시키고, 당일 트래픽 폭증 전 수십 분 전부터 자동으로 수천 대의 인스턴스를 추가했다. 리액티브 스케일링만 사용했을 때보다 응답 시간이 15% 향상됐다.
+**사례(가상 예시)**: 대형 세일처럼 예측 가능한 트래픽 폭증 상황을 가정해보자. Predictive Scaling이 과거 패턴을 학습해 폭증 수십 분 전부터 미리 인스턴스를 추가하면, 리액티브 스케일링만 사용할 때보다 응답 시간이 개선될 수 있다.
 
 ## Lifecycle Hooks: 인스턴스의 시작과 끝을 제어하다
 
@@ -151,7 +151,7 @@ EC2:Terminated
 
 Lifecycle Hook의 알림은 EventBridge, SNS, SQS로 보낼 수 있다. Lambda와 연결해서 자동으로 처리하는 패턴이 일반적이다.
 
-**사례**: Discord는 실시간 메시지 처리 서버에서 Lifecycle Hook을 활용한다. 서버가 종료될 때 Terminating:Wait 훅으로 현재 처리 중인 WebSocket 연결을 다른 서버로 마이그레이션하고, 연결이 모두 이동된 후 종료 신호를 보낸다. 이를 통해 사용자가 갑작스러운 연결 끊김 없이 서버 교체가 이루어진다.
+**사례(가상 예시)**: 실시간 메시지 처리 서버가 Lifecycle Hook을 활용한다고 가정해보자. 서버가 종료될 때 Terminating:Wait 훅으로 현재 처리 중인 WebSocket 연결을 다른 서버로 마이그레이션하고, 연결이 모두 이동된 후 종료 신호를 보낸다. 이를 통해 사용자가 갑작스러운 연결 끊김 없이 서버 교체가 이루어진다.
 
 ## Warm Pool: 스케일링 지연 시간의 혁명
 
@@ -214,7 +214,6 @@ Mixed Instances Policy는 하나의 ASG에서 여러 인스턴스 타입과 On-D
       "Overrides": [
         {"InstanceType": "c6i.xlarge"},
         {"InstanceType": "c6a.xlarge"},
-        {"InstanceType": "c7g.xlarge"},
         {"InstanceType": "m6i.xlarge"}
       ]
     },
@@ -227,7 +226,7 @@ Mixed Instances Policy는 하나의 ASG에서 여러 인스턴스 타입과 On-D
 }
 ```
 
-이 설정의 의미: 최소 2대는 On-Demand(기반 안정성), 나머지의 20%는 On-Demand, 80%는 Spot. Spot은 4개 인스턴스 타입 중에서 `capacity-optimized`(인터럽션 빈도 최소화) 전략으로 선택.
+이 설정의 의미: 최소 2대는 On-Demand(기반 안정성), 나머지의 20%는 On-Demand, 80%는 Spot. Spot은 3개 인스턴스 타입(모두 x86, 하나의 Launch Template AMI는 단일 아키텍처라 ARM c7g와는 섞을 수 없다) 중에서 `capacity-optimized`(인터럽션 빈도 최소화) 전략으로 선택.
 
 **Capacity Rebalancing**: Spot 인터럽션 경고가 오면 ASG가 자동으로 새로운 Spot 인스턴스를 먼저 시작하고, 인터럽션 대상 인스턴스를 종료한다. 인스턴스 수를 유지하면서 가용성을 보호한다.
 
@@ -423,11 +422,11 @@ D) EC2 Fleet으로 Spot만 사용하고 On-Demand는 별도 관리
 
 A) User Data에 종료 스크립트 작성
 B) ASG Termination Policy를 OldestInstance로 설정
-C) ASG Lifecycle Hook (Terminating:Wait) + EventBridge + Lambda
+C) ASG Lifecycle Hook (Terminating:Wait) + 인스턴스 내 Agent가 SQS 전송 후 완료 신호
 D) CloudWatch Events로 인스턴스 종료 감지 후 Lambda 호출
 
 **정답: C**
-해설: Lifecycle Hook의 `EC2_INSTANCE_TERMINATING` 이벤트는 인스턴스가 종료되기 전 `Terminating:Wait` 상태로 멈춰준다. 이 이벤트를 EventBridge로 받아 Lambda를 트리거하거나, SQS 큐로 알림을 보내 인스턴스 내 Agent가 처리한다. 인스턴스 내 Agent는 처리 중 주문을 SQS에 넣고 `complete-lifecycle-action SUCCESS`를 호출한다. 그러면 인스턴스가 종료된다. User Data의 종료 스크립트는 OS 종료 시 실행되지만 ASG 스케일인보다 늦게 실행될 수 있고 시간 제한이 있다.
+해설: Lifecycle Hook의 `EC2_INSTANCE_TERMINATING` 이벤트는 인스턴스가 종료되기 전 `Terminating:Wait` 상태로 멈춰준다. 이 알림을 EventBridge나 SQS로 받아 인스턴스 내 Agent가 처리한다(메모리 내 데이터는 인스턴스 안에서만 접근할 수 있어 Lambda 단독으로는 읽을 수 없다). 인스턴스 내 Agent는 처리 중 주문을 SQS에 넣고 `complete-lifecycle-action SUCCESS`를 호출한다. 그러면 인스턴스가 종료된다. User Data는 기본적으로 인스턴스 최초 부팅 시 한 번만 실행되므로 종료 시점 처리에는 쓸 수 없다.
 
 ---
 

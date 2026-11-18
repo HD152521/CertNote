@@ -10,9 +10,9 @@ EC2 초기에는 모든 스토리지가 인스턴스 스토어였다. 물리 서
 
 2008년 AWS는 EBS(Elastic Block Store)를 출시했다. 핵심 아이디어는 **블록 스토리지를 네트워크로 분리**한다는 것이었다. 인스턴스와 스토리지가 논리적으로 분리되면 인스턴스가 종료되어도 데이터가 살아있고, 한 인스턴스에서 분리해 다른 인스턴스에 재연결할 수 있다. 이것이 "Elastic"이라는 이름의 의미다.
 
-EBS의 물리적 구조는 같은 AZ 안의 별도 스토리지 서버들로 이루어진다. 볼륨의 데이터는 여러 스토리지 서버에 분산 저장되어 단일 서버 장애를 견딘다. EC2 인스턴스는 Nitro 카드를 통해 NVMe-over-TCP 프로토콜로 EBS에 접근한다.
+EBS의 물리적 구조는 같은 AZ 안의 별도 스토리지 서버들로 이루어진다. 볼륨의 데이터는 여러 스토리지 서버에 분산 저장되어 단일 서버 장애를 견딘다. EC2 인스턴스는 Nitro 카드를 통해 NVMe 인터페이스로 EBS에 접근한다(io2 Block Express는 SRD를 쓴다).
 
-EBS와 EC2 인스턴스 간 통신은 NVMe over TCP를 사용하지만, 이 경로가 Nitro 카드에 오프로드되어 인스턴스 CPU를 소비하지 않는다. 단, 이 네트워크 경로는 인스턴스의 전체 네트워크 대역폭을 공유하지 않고 별도 최적화된 통로를 쓴다. EBS 전용 대역폭(EBS-Optimized)이 이 경로를 보장한다. m6i.xlarge 기준 최대 4750 Mbps를 EBS에 할당할 수 있다.
+EBS와 EC2 인스턴스 간 통신은 NVMe 인터페이스를 사용하며, 이 경로가 Nitro 카드에 오프로드되어 인스턴스 CPU를 소비하지 않는다. 단, 이 네트워크 경로는 인스턴스의 전체 네트워크 대역폭을 공유하지 않고 별도 최적화된 통로를 쓴다. EBS 전용 대역폭(EBS-Optimized)이 이 경로를 보장한다. m6i.xlarge 기준 최대 4750 Mbps를 EBS에 할당할 수 있다.
 
 ## EBS 볼륨 타입: 설계 원리와 숫자의 의미
 
@@ -20,7 +20,7 @@ EBS와 EC2 인스턴스 간 통신은 NVMe over TCP를 사용하지만, 이 경�
 
 gp2는 2014년 출시된 1세대 SSD 타입으로, IOPS가 **볼륨 크기에 연동**된다. 1GB당 3 IOPS, 최대 16,000 IOPS. 처음에는 "더 큰 볼륨 = 더 빠름"이라는 단순한 모델이 합리적으로 보였다. 그러나 실제로는 IOPS가 필요해서 볼륨을 과도하게 크게 만들어야 하는 낭비가 발생했다. 5,000 IOPS가 필요하면 1,667GB를 사야 했다.
 
-gp3는 2020년 출시되었고 IOPS와 볼륨 크기를 **완전히 분리**했다. 모든 gp3 볼륨은 크기와 무관하게 기본 3,000 IOPS와 125 MB/s throughput을 제공한다. 추가로 IOPS는 최대 16,000, throughput은 최대 1,000 MB/s까지 독립적으로 프로비저닝할 수 있다. 그리고 **gp2보다 20% 저렴**하다.
+gp3는 2020년 출시되었고 IOPS와 볼륨 크기를 **완전히 분리**했다. 모든 gp3 볼륨은 크기와 무관하게 기본 3,000 IOPS와 125 MB/s throughput을 제공한다. 추가로 IOPS는 최대 80,000, throughput은 최대 2,000 MiB/s까지 독립적으로 프로비저닝할 수 있다. 그리고 **gp2보다 20% 저렴**하다.
 
 ```
 [ gp2 IOPS 모델 ]
@@ -28,7 +28,7 @@ gp3는 2020년 출시되었고 IOPS와 볼륨 크기를 **완전히 분리**했�
 → 5,000 IOPS 필요 시: 최소 1,667GB 구매 필요
 
 [ gp3 IOPS 모델 ]
-기본 3,000 IOPS + 추가 프로비저닝 (최대 16,000)
+기본 3,000 IOPS + 추가 프로비저닝 (최대 80,000)
 → 5,000 IOPS 필요 시: 10GB 볼륨에도 가능
 → gp2 대비 20% 저렴
 ```
@@ -37,14 +37,14 @@ gp3는 2020년 출시되었고 IOPS와 볼륨 크기를 **완전히 분리**했�
 
 ### io1/io2와 io2 Block Express: 언제 필요한가
 
-gp3의 최대 IOPS는 16,000이다. Oracle DB, MySQL, PostgreSQL의 OLTP 워크로드 중 대부분은 이 안에서 해결된다. 그러나 SAP HANA나 대형 금융 거래 시스템처럼 수십만 IOPS와 극단적으로 낮은 지연 시간(1ms 미만)가 필요하면 io2 Block Express가 필요하다.
+gp3의 최대 IOPS는 80,000이다. Oracle DB, MySQL, PostgreSQL의 OLTP 워크로드 중 대부분은 이 안에서 해결된다. 그러나 SAP HANA나 대형 금융 거래 시스템처럼 수십만 IOPS와 극단적으로 낮은 지연 시간(1ms 미만)가 필요하면 io2 Block Express가 필요하다.
 
 | 타입 | 최대 IOPS | 최대 Throughput | 최대 크기 | latency |
 |------|----------|----------------|----------|---------|
-| gp3 | 16,000 | 1,000 MB/s | 16 TB | 수 ms |
+| gp3 | 80,000 | 2,000 MiB/s | 64 TiB | 수 ms |
 | io1 | 64,000 | 1,000 MB/s | 16 TB | 1ms 미만 |
-| io2 | 64,000 | 1,000 MB/s | 16 TB | 1ms 미만 |
-| io2 Block Express | 256,000 | 4,000 MB/s | 64 TB | sub-ms |
+| io2 | 256,000 (Nitro 기준, 비Nitro는 32,000까지 달성) | 4,000 MB/s | 64 TB | 1ms 미만 |
+| io2 Block Express (2025-04-30부터 모든 io2가 이 아키텍처) | 256,000 | 4,000 MB/s | 64 TB | sub-ms |
 
 io2 Block Express의 256K IOPS는 어떻게 가능한가. 기존 EBS 스택은 Amazon EBS API 레이어를 통하지만, io2 Block Express는 AWS Nitro 하이퍼바이저와 직접 통합된 새로운 스토리지 서버 아키텍처를 사용한다. NVMe-over-Fabric 개념을 AWS 내부 네트워크에 적용해 지연 시간과 처리량을 획기적으로 높였다.
 
@@ -81,7 +81,7 @@ snap-003 복원 시: A(snap-001) + B'(snap-002) + C'(snap-003) + D(snap-001) + E
 
 **FSR(Fast Snapshot Restore)**은 스냅샷에서 볼륨을 복원할 때 첫 번째 읽기 성능 저하를 제거한다. 일반적으로 복원된 볼륨의 블록은 실제 접근이 있을 때 S3에서 백그라운드로 가져오는 "lazy restore" 방식이다. FSR은 이 pre-initialization을 미리 수행해두어 즉시 고성능을 낸다. 추가 비용이 발생한다.
 
-**사례**: 2020년 3월 코로나 초기 재택근무 전환으로 AWS 사용량이 폭증하면서, 많은 기업이 긴급하게 대규모 EBS 볼륨을 스냅샷에서 복원했다. FSR 없이 복원한 볼륨에서 처음 몇 시간 동안 정상 IOPS의 10-20%만 나오는 "스냅샷 성능 저하" 문제를 겪은 사례가 다수 보고됐다. 프로덕션 복원 시나리오에서 FSR은 비용이 추가되더라도 활성화하는 것이 권장된다.
+**사례(가상 예시)**: 대규모 EBS 볼륨을 급하게 스냅샷에서 복원해야 하는 상황을 가정해보자. FSR 없이 복원한 볼륨은 처음 한동안 정상보다 훨씬 낮은 성능을 보이는 "스냅샷 성능 저하"(지연 로딩) 문제를 겪을 수 있다. 프로덕션 복원 시나리오에서 FSR은 비용이 추가되더라도 활성화하는 것이 권장된다.
 
 **EBS Snapshot Archive**는 90일 이상 장기 보관이 필요한 스냅샷을 S3 Glacier로 티어링하는 기능이다. 비용이 75% 절감되지만 복원에 24~72시간이 걸린다. DR 목적으로 "1년에 한 번도 쓸까 말까"인 스냅샷에 적합하다.
 
@@ -148,7 +148,7 @@ Multi-AZ 배포 시 자동 페일오버가 보통 30초 미만에 완료된다. 
 
 ### FSx for Lustre: HPC와 ML의 병렬 파일 시스템
 
-Lustre는 1999년 Peter Braam이 설계한 고성능 병렬 파일 시스템이다(이름은 Linux + Cluster의 합성어). 세계 Top 500 슈퍼컴퓨터 중 다수가 Lustre를 사용한다. 미국 에너지부(DOE)의 Summit, Frontier 슈퍼컴퓨터도 Lustre다.
+Lustre는 1999년 Peter Braam이 설계한 고성능 병렬 파일 시스템이다(이름은 Linux + Cluster의 합성어). 세계 Top 500 슈퍼컴퓨터 중 다수가 Lustre를 사용한다. 미국 에너지부(DOE)의 Frontier 슈퍼컴퓨터(Orion 파일 시스템)도 Lustre를 쓴다(Summit은 IBM Spectrum Scale/GPFS).
 
 Lustre의 설계 원리는 **데이터를 여러 스토리지 서버(OST: Object Storage Target)에 스트라이핑**해서 집계 처리량을 선형으로 확장한다는 것이다. 1,000개 OST에 파일을 스트라이핑하면 1,000배의 처리량이 나온다. 메타데이터는 별도의 MDS(Metadata Server)가 관리한다.
 
@@ -238,11 +238,14 @@ aws fsx create-file-system \
   --file-system-type LUSTRE \
   --storage-capacity 1200 \
   --subnet-ids subnet-xxx \
-  --lustre-configuration \
-    DeploymentType=PERSISTENT_2,\
-    PerUnitStorageThroughput=250,\
-    ImportPath=s3://my-ml-data/training/,\
-    ExportPath=s3://my-ml-data/checkpoints/
+  --lustre-configuration DeploymentType=PERSISTENT_2,PerUnitStorageThroughput=250
+
+# PERSISTENT_2는 ImportPath/ExportPath 대신 Data Repository Association(DRA)으로 S3를 연결
+aws fsx create-data-repository-association \
+  --file-system-id fs-xxx \
+  --file-system-path /training \
+  --data-repository-path s3://my-ml-data/training/ \
+  --s3 'AutoImportPolicy={Events=[NEW,CHANGED,DELETED]},AutoExportPolicy={Events=[NEW,CHANGED,DELETED]}'
 
 # EBS 전체 암호화 기본값 설정 (계정·리전 수준)
 aws ec2 enable-ebs-encryption-by-default --region ap-northeast-2
@@ -266,7 +269,7 @@ C) io2로 전환한다
 D) Instance Store로 마이그레이션한다
 
 **정답: B**
-해설: gp2는 크기×3 IOPS 모델이라 1TB에서도 최대 3,000 IOPS다. gp3는 크기와 무관하게 IOPS를 최대 16,000까지 독립 설정하며, gp2보다 20% 저렴하다. io2는 불필요하게 비싸고 gp3로 충분히 해결된다. Instance Store는 영속성 보장이 안 된다. 정답은 B.
+해설: gp2는 크기×3 IOPS 모델이라 1TB에서도 최대 3,000 IOPS다. gp3는 크기와 무관하게 IOPS를 최대 80,000까지 독립 설정하며, gp2보다 20% 저렴하다. io2는 불필요하게 비싸고 gp3로 충분히 해결된다. Instance Store는 영속성 보장이 안 된다. 정답은 B.
 
 ---
 
@@ -297,12 +300,12 @@ D) FSx for OpenZFS
 **문제 4.** ML 학습 팀이 S3에 저장된 50TB 이미지 데이터셋으로 다수의 GPU 인스턴스에서 학습을 진행한다. 데이터 로딩이 GPU 활용률의 병목이 되고 있다. 어떤 스토리지 구성을 추가해야 하는가?
 
 A) EFS Max I/O 모드로 전환
-B) FSx for Lustre를 생성하고 S3 ImportPath로 연결
+B) FSx for Lustre를 생성하고 S3 데이터 리포지토리 연결
 C) EBS gp3 볼륨을 각 GPU 인스턴스에 붙여서 데이터 복사
 D) S3 Transfer Acceleration 활성화
 
 **정답: B**
-해설: FSx for Lustre는 S3 버킷을 ImportPath로 연결하면 S3 객체가 POSIX 파일처럼 보인다. 병렬 파일 시스템 구조로 수백 GB/s 처리량을 여러 GPU 인스턴스에 동시 제공한다. EFS Max I/O는 처리량이 있지만 Lustre보다 ML 학습 데이터 로딩에 훨씬 낮다. EBS는 인스턴스당 독립적이라 공유가 안 되고 초기 복사 시간이 소요된다. S3 Transfer Acceleration은 인터넷을 통한 S3 업로드 가속용이다.
+해설: FSx for Lustre는 S3 버킷을 데이터 리포지토리(DRA)로 연결하면 S3 객체가 POSIX 파일처럼 보인다. 병렬 파일 시스템 구조로 수백 GB/s 처리량을 여러 GPU 인스턴스에 동시 제공한다. EFS Max I/O는 처리량이 있지만 Lustre보다 ML 학습 데이터 로딩에 훨씬 낮다. EBS는 인스턴스당 독립적이라 공유가 안 되고 초기 복사 시간이 소요된다. S3 Transfer Acceleration은 인터넷을 통한 S3 업로드 가속용이다.
 
 ---
 

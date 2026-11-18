@@ -71,7 +71,11 @@ aws ec2 create-placement-group --group-name hpc-cluster --strategy cluster
 
 # FSx for Lustre + S3 연동 생성
 aws fsx create-file-system --file-system-type LUSTRE \
-  --storage-capacity 1200 --lustre-configuration ImportPath=s3://ml-data/
+  --storage-capacity 1200 --subnet-ids subnet-xxx \
+  --lustre-configuration DeploymentType=PERSISTENT_2,PerUnitStorageThroughput=250
+# PERSISTENT_2는 ImportPath 대신 Data Repository Association(DRA)으로 S3를 연결
+aws fsx create-data-repository-association --file-system-id fs-xxx \
+  --file-system-path /ml-data --data-repository-path s3://ml-data/
 
 # S3 Gateway Endpoint 생성 (NAT 우회, 무료)
 aws ec2 create-vpc-endpoint --vpc-id vpc-123 --service-name com.amazonaws.us-east-1.s3 \

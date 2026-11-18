@@ -105,11 +105,11 @@ Control Tower는 위에서 본 모든 걸 한 번에 자동으로 세팅해주�
 - 중앙 집중 Config (Audit 계정으로 집계)
 - IAM Identity Center 연동
 - Account Factory (셀프서비스 계정 발급)
-- **Guardrails**: 미리 정의된 SCP + Config Rule 묶음
+- **Controls**(구 Guardrails): 미리 정의된 SCP/RCP·Config Rule·CloudFormation Hook 묶음
 
-Guardrails는 두 종류다. **Preventive**(SCP 기반, 사전 차단)와 **Detective**(Config Rule 기반, 사후 감지). 예를 들어:
+Controls(시험·구 문서의 Guardrails)는 동작 기준으로 세 종류다. **Preventive**(SCP 등 기반, 사전 차단), **Detective**(Config Rule 기반, 사후 감지), **Proactive**(CloudFormation Hook 기반, 프로비저닝 전 검사). 예를 들어:
 
-| Guardrail | 종류 | 효과 |
+| Control(구 Guardrail) | 종류 | 효과 |
 |----------|------|------|
 | Disallow public read access to S3 buckets | Detective | Config가 위반 감지 |
 | Disallow changes to encryption configuration for S3 buckets | Preventive | SCP로 차단 |
@@ -123,9 +123,9 @@ Control Tower의 가치는 "이걸 직접 세팅하려면 며칠 걸리는 표�
 
 ## Account Factory와 Service Catalog
 
-Control Tower의 Account Factory는 새 AWS 계정을 표준 템플릿으로 생성한다. 내부적으로 Service Catalog 제품으로 노출되어, 개발팀이 셀프 서비스로 계정을 요청할 수 있다. 각 계정은 자동으로 OU에 배치되고, IAM Identity Center 권한이 연결되고, 베이스라인 가드레일이 적용된다.
+Control Tower의 Account Factory는 새 AWS 계정을 표준 템플릿으로 생성한다. 내부적으로 Service Catalog 제품으로 노출되어, 개발팀이 셀프 서비스로 계정을 요청할 수 있다. 각 계정은 자동으로 OU에 배치되고, IAM Identity Center 권한이 연결되고, 베이스라인 컨트롤(구 가드레일)이 적용된다.
 
-**사례**: 2021년 Capital One 계열사가 "1주일에 50개 계정 발급" 요청을 받았는데, Control Tower Account Factory를 도입해 30분 만에 자동화했다. 이전에는 운영자가 일일이 IAM Identity Center 권한 세트, CloudTrail, Config, GuardDuty를 설정해야 했고 계정당 2-3시간이 걸렸다. 자동화 도입 후 계정 발급 SLA가 "1주일"에서 "10분"으로 줄었고, 운영팀 인원이 다른 보안 업무로 전환됐다.
+**사례(가상 예시)**: 한 대기업 계열사가 "1주일에 50개 계정 발급" 요청을 받았는데, Control Tower Account Factory를 도입해 자동화했다. 이전에는 운영자가 일일이 IAM Identity Center 권한 세트, CloudTrail, Config, GuardDuty를 설정해야 했고 계정당 2-3시간이 걸렸다. 자동화 도입 후 계정 발급 SLA가 "1주일"에서 "10분"으로 줄었고, 운영팀 인원이 다른 보안 업무로 전환됐다.
 
 Account Factory for Terraform(AFT)이라는 확장이 2021년 출시됐다. 이는 Control Tower의 Account Factory를 Terraform 모듈로 호출 가능하게 해서, GitOps 방식으로 계정 생성·삭제를 PR 리뷰 흐름에 묶는다. 대형 조직에서 "계정 발급을 코드 리뷰로 통제"하는 게 표준 패턴이 되고 있다.
 
@@ -153,7 +153,7 @@ Organizations에 가입하면 자동으로 통합 결제(Consolidated Billing)�
 1. **볼륨 할인**: S3·CloudFront 같은 사용량 기반 서비스가 전체 계정 사용량을 합산해 더 큰 할인 tier 진입.
 2. **Reserved Instance/Savings Plan 공유**: 한 계정에서 산 RI/SP가 다른 계정 EC2에도 자동 적용(설정에 따라).
 3. **Cost & Usage Report 통합**: 전체 계정 비용을 한 곳에서 분석.
-4. **무료 한도 합산**: 새 계정의 12개월 무료 한도가 부모 계정 한도에 합쳐짐(주의 — 무료 한도가 중복되지 않음).
+4. **무료 한도 합산**: 새 계정의 무료 한도가 부모 계정 한도에 합쳐짐(2025-07-15 이전 가입 계정의 12개월 무료 한도 기준. 이후 신규 가입은 크레딧 기반 6개월 Free plan이다)(주의 — 무료 한도가 중복되지 않음).
 
 Consolidated Billing은 클라우드의 "공유 자원 풀" 모델을 IAM 경계와 분리시킨다. 같은 회사 계정들은 IAM은 완전히 격리되지만 비용은 풀로 묶여 규모의 경제를 누린다. 이는 NIST 클라우드 정의(SP 800-145)에서 말하는 "resource pooling"의 변종이다. 더 흥미로운 건 RI/SP 공유 정책 — Organizations 콘솔에서 "RI Sharing"을 끄면 각 계정이 독립적으로 RI를 운영하게 되어, "팀별 비용 책임"을 강하게 분리하고 싶을 때 쓴다.
 

@@ -70,7 +70,7 @@ AWS가 AZ를 계정별로 다른 물리 AZ에 매핑하는 이유는 **트래픽
 
 CloudFront와 Global Accelerator가 자주 헷갈리는데, 본질적으로 동작 레이어가 다르다. CloudFront는 **OSI L7(HTTP 의미를 알고 캐싱)**, Global Accelerator는 **OSI L4(TCP/UDP 패킷 자체를 가속)**. 그래서 게임 서버, MQTT, VoIP, WebRTC 시그널링 같은 비-HTTP 트래픽이 보이면 거의 무조건 Global Accelerator다.
 
-CloudFront Functions와 Lambda@Edge는 둘 다 엣지에서 동작하지만 위치가 다르다. **CloudFront Functions**는 600+ 엣지 PoP에서 직접 실행되고 100μs 미만의 콜드 스타트로 응답하지만, 메모리 2MB·실행 시간 1ms 제약이 있다. **Lambda@Edge**는 13개의 Regional Edge Cache에서 실행되며 Node.js·Python 런타임 전체를 쓸 수 있지만 콜드 스타트가 수십 ms 단위다. 이 둘의 차이는 "엣지에서 어디까지 무거운 로직을 돌릴 수 있는가"의 trade-off를 보여준다.
+CloudFront Functions와 Lambda@Edge는 둘 다 엣지에서 동작하지만 위치가 다르다. **CloudFront Functions**는 750+ 엣지 PoP(임베디드 PoP 1,140+ 별도)에서 직접 실행되고 100μs 미만의 콜드 스타트로 응답하지만, 메모리 2MB·실행 시간 1ms 제약이 있다. **Lambda@Edge**는 13개의 Regional Edge Cache에서 실행되며 Node.js·Python 런타임 전체를 쓸 수 있지만 콜드 스타트가 수십 ms 단위다. 이 둘의 차이는 "엣지에서 어디까지 무거운 로직을 돌릴 수 있는가"의 trade-off를 보여준다.
 
 Global Accelerator가 제공하는 정적 Anycast IP는 BGP Anycast 기반이다. 같은 IP를 여러 엣지에서 광고하면, 클라이언트의 ISP는 BGP의 best-path 알고리즘(AS_PATH 길이, local preference 등)에 따라 가장 가까운 엣지로 라우팅한다. 이 구조 덕분에 DNS TTL을 기다릴 필요 없이 **수 초 안에 트래픽 재라우팅**이 가능하다. Route 53 기반 페일오버는 DNS 캐시 TTL 때문에 분 단위가 걸리는 것과 대비된다.
 

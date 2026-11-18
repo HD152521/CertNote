@@ -164,7 +164,7 @@ VPC Lambda 비용 고려사항:
 
 **Hyperplane ENI와 콜드 스타트 개선** — 과거 Lambda + VPC 구성에서 콜드 스타트가 극단적으로 길었던 이유는 각 함수 인스턴스마다 ENI를 새로 생성했기 때문이다. ENI 생성이 수 초가 걸렸다. 2019년 AWS는 "Hyperplane ENI"를 도입해서 이 문제를 해결했다. Hyperplane ENI는 VPC 연결 Lambda 함수들이 공유하는 ENI 풀 방식으로, 콜드 스타트 시 새 ENI를 생성할 필요가 없어졌다. 현재 VPC Lambda의 콜드 스타트는 비 VPC Lambda와 거의 차이가 없다. Hyperplane은 AWS의 내부 네트워크 가상화 시스템으로, VPC 피어링, Transit Gateway, PrivateLink 등도 이 위에 구축됐다.
 
-**Coinbase Lambda 성능 분석 사례** — 2021년 Coinbase는 Lambda 기반 백엔드 아키텍처의 성능 분석 블로그를 공개했다. 암호화폐 거래 플랫폼에서 API 지연이 P99 수준에서 예측 불가능한 문제가 발생했고, 분석 결과 Lambda 콜드 스타트가 주요 원인이었다. Provisioned Concurrency를 적용한 결과 P99 지연이 75% 감소했다고 보고했다. 특히 Java 기반 Lambda에서 SnapStart와 Provisioned Concurrency를 함께 적용하는 것이 효과적이었다. Coinbase는 더불어 `arm64` 아키텍처로 전환해서 동일 비용 대비 성능을 20% 추가 향상시켰다.
+**Lambda 콜드 스타트 대응(일반 시나리오)** — 거래·결제 API처럼 P99 지연이 중요한 서비스에서 Lambda 콜드 스타트가 예측 불가능한 지연의 주요 원인일 수 있다. 이 경우 Provisioned Concurrency로 초기화된 실행 환경을 미리 확보하고, Java 같은 런타임에서는 SnapStart(2022-11 출시)를 함께 검토하며, `arm64`(Graviton) 아키텍처로 전환해 가격 대비 성능을 높일 수 있다.
 
 ## Lambda Destinations — DLQ보다 더 유연한 오류 처리
 
@@ -202,7 +202,7 @@ Lambda의 주요 사양 한도는 시험에서 묻기 때문에 암기가 필요
 | 항목 | 한도 |
 |------|------|
 | 최대 실행 시간 | 15분 |
-| 메모리 | 128MB ~ 10,240MB (64MB 단위) |
+| 메모리 | 128MB ~ 10,240MB (1MB 단위) |
 | /tmp 스토리지 | 512MB ~ 10,240MB |
 | 최대 패키지 크기 (ZIP, 업로드) | 50MB |
 | 최대 패키지 크기 (unzipped) | 250MB |
@@ -210,7 +210,7 @@ Lambda의 주요 사양 한도는 시험에서 묻기 때문에 암기가 필요
 | 계정당 동시성 (기본) | 1000 (증가 가능) |
 | 환경 변수 | 최대 4KB |
 | 최대 페이로드 (동기) | 6MB (요청) / 6MB (응답) |
-| 최대 페이로드 (비동기) | 256KB |
+| 최대 페이로드 (비동기) | 1MB (2025-10~, 이전 256KB) |
 | 최대 레이어 수 | 5개 |
 | 최대 레이어 크기 (unzipped) | 250MB (함수 + 모든 레이어 합계) |
 

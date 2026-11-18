@@ -51,11 +51,11 @@ Standard는 각 상태 전환이 "exactly-once" 의미론을 보장한다. 결�
       "approvalUrl.$": "States.Format('https://app.example.com/approve?token={}', $$.Task.Token)"
     }
   },
-  "HeartbeatSeconds": 86400,
+  "TimeoutSeconds": 86400,
   "Next": "ApprovedState",
   "Catch": [
     {
-      "ErrorEquals": ["States.HeartbeatTimeout"],
+      "ErrorEquals": ["States.Timeout"],
       "Next": "ApprovalExpiredState"
     }
   ]
@@ -64,7 +64,7 @@ Standard는 각 상태 전환이 "exactly-once" 의미론을 보장한다. 결�
 
 승인자가 SQS 메시지를 받아 확인 후 `SendTaskSuccess(taskToken)` 또는 `SendTaskFailure(taskToken)`를 호출하면 워크플로가 재개된다.
 
-**Intuit TurboTax Step Functions 사례** — 2021년 Intuit(TurboTax, QuickBooks)는 세금 신고 처리 워크플로를 Step Functions Standard로 구현한 사례를 AWS re:Invent에서 발표했다. 세금 신고 프로세스는 데이터 검증 → 계산 → 정부 기관 제출 → 확인 대기(최대 수 시간) → 결과 통보의 단계를 가진다. 특히 정부 기관 확인 대기 단계에서 waitForTaskToken을 사용해서 실제로 정부 응답이 올 때까지 무상태로 대기했다. 이 패턴으로 월 수백만 건의 세금 신고를 처리한다. 과거에는 Lambda 안에서 폴링 루프로 구현했지만, Step Functions + waitForTaskToken으로 전환하면서 비용이 90% 절감됐다고 발표했다.
+**외부 응답 대기 패턴(일반 시나리오)** — 세금 신고처럼 데이터 검증 → 계산 → 정부 기관 제출 → 확인 대기(최대 수 시간) → 결과 통보 단계를 가진 프로세스에서는 확인 대기 단계에 waitForTaskToken을 사용해 응답이 올 때까지 무상태로 대기할 수 있다. 과거 Lambda 안의 폴링 루프로 구현하던 방식보다 Step Functions + waitForTaskToken이 대기 중 비용 면에서 유리하다.
 
 ### 에러 처리 — Retry와 Catch
 
@@ -127,7 +127,8 @@ Distributed Map은 S3의 수백만 개 객체를 병렬로 처리하거나, 대�
   },
   "MaxConcurrency": 1000,
   "ToleratedFailurePercentage": 10,
-  "Iterator": {
+  "ItemProcessor": {
+    "ProcessorConfig": {"Mode": "DISTRIBUTED", "ExecutionType": "STANDARD"},
     "StartAt": "ProcessFile",
     "States": {
       "ProcessFile": {
@@ -370,10 +371,19 @@ aws appsync create-data-source \
   --service-role-arn arn:aws:iam::111:role/appsync-ddb-role \
   --dynamodb-config tableName=Orders,awsRegion=ap-northeast-2
 
-# AppSync 캐싱 활성화 (per-resolver TTL)
-aws appsync update-graphql-api \
+# AppSync 캐시 인스턴스 생성 (리졸버별 캐싱 모드)
+aws appsync create-api-cache \
   --api-id api-id \
-  --caching-config ttl=300,cachingKeys="\$context.arguments.id"
+  --api-caching-behavior PER_RESOLVER_CACHING \
+  --ttl 300 \
+  --type SMALL
+
+# 특정 리졸버에 캐싱 적용 (TTL 1~3,600초, cachingKeys는 $context.arguments/source/identity 항목)
+aws appsync update-resolver \
+  --api-id api-id \
+  --type-name Query \
+  --field-name getOrder \
+  --caching-config 'ttl=300,cachingKeys=$context.arguments.id'
 
 # AppSync API Key 생성 (개발/테스트용)
 aws appsync create-api-key \

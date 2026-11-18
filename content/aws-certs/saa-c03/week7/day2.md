@@ -8,18 +8,18 @@ Day 1에서 본 SQS는 "두 컴포넌트를 시간적으로 떼어내되 메시�
 
 SNS의 모델은 단순하다. **Topic**이 indirection point, **Subscription**이 그 토픽을 듣는 엔드포인트, **Publish**가 토픽에 메시지를 던지는 행위다. 한 번 publish하면 SNS가 그 토픽의 모든 구독을 fan-out해서 각자에게 push한다. push가 핵심인데, 이게 SQS의 pull(컨슈머가 ReceiveMessage를 부름)과 정반대 모델이고, 두 시스템의 설계 선택을 가르는 분기점이다.
 
-구독 가능한 프로토콜은 시간이 지나며 계속 늘었다. 2010년 출시 당시엔 HTTP/HTTPS, Email, SQS, SMS가 전부였지만 지금은 Lambda(2015), Mobile Push(APNS·FCM·Baidu, 2010-2013), Kinesis Data Firehose(2021), EventBridge Pipes(2022)까지 추가됐다. 이게 SNS의 진짜 가치 — 한 번 publish하면 이메일도 가고, 모바일 푸시도 가고, 큐에도 들어가고, 데이터 웨어하우스에도 적재된다. 생산자는 이 다양성을 전혀 신경 쓸 필요가 없다.
+구독 가능한 프로토콜은 시간이 지나며 계속 늘었다. 2010년 출시 당시엔 HTTP/HTTPS, Email, SQS, SMS가 전부였지만 지금은 Lambda(2015), Mobile Push(APNS·FCM·Baidu, 2010-2013), Amazon Data Firehose(구 Kinesis Data Firehose, 2021), EventBridge Pipes(2022)까지 추가됐다. 이게 SNS의 진짜 가치 — 한 번 publish하면 이메일도 가고, 모바일 푸시도 가고, 큐에도 들어가고, 데이터 웨어하우스에도 적재된다. 생산자는 이 다양성을 전혀 신경 쓸 필요가 없다.
 
 | 항목 | SNS Standard | SNS FIFO |
 |------|-------------|----------|
-| 처리량 | region당 수만 TPS, 사실상 무제한 | 토픽당 300 TPS (배치 시 3,000) |
+| 처리량 | region당 수만 TPS, 사실상 무제한 | 토픽당 기본 3,000 msg/s (2023년 11월 이전엔 300 TPS), 메시지 그룹당 300 msg/s |
 | 순서 | Best-effort | Strict per MessageGroupId |
 | 중복 | At-least-once delivery | 5분 dedup window |
-| 구독 가능 | SQS, Lambda, Email, SMS, HTTP, Mobile Push, Firehose, EventBridge | **SQS FIFO, Lambda (2023+)** 만 |
-| 메시지 크기 | 256KB (Extended Library로 더 가능) | 256KB |
+| 구독 가능 | SQS, Lambda, Email, SMS, HTTP, Mobile Push, Firehose, EventBridge | **SQS FIFO, SQS Standard(2023년 9월~)** 만 (Lambda는 SQS를 거쳐서만) |
+| 메시지 크기 | 256KB 기본값 (토픽의 MaximumMessageSize 설정으로 최대 1 MiB, 2026년 9월 발표 — 설정 시 SQS·Lambda·Firehose 구독만 가능; 그 이상은 Extended Library) | 256KB 기본값 |
 | 출시 | 2010년 4월 | 2020년 10월 |
 
-표준 SNS는 SQS Standard와 비슷한 at-least-once + best-effort ordering이고, FIFO는 SQS FIFO와 짝이 되도록 2020년에 뒤늦게 출시됐다. SNS FIFO가 SQS FIFO만 구독으로 받을 수 있다는 점이 시험 함정인데, 이메일이나 HTTP는 본질적으로 순서·중복 보장이 불가능한 채널이라(이메일은 SMTP relay가 재정렬할 수 있고, HTTP는 4xx/5xx로 재시도) FIFO 의미가 깨지기 때문이다.
+표준 SNS는 SQS Standard와 비슷한 at-least-once + best-effort ordering이고, FIFO는 SQS FIFO와 짝이 되도록 2020년에 뒤늦게 출시됐다. SNS FIFO가 SQS 큐(FIFO, 2023년 9월부터는 Standard도)만 구독으로 받을 수 있다는 점이 시험 함정인데, 이메일이나 HTTP는 본질적으로 순서·중복 보장이 불가능한 채널이라(이메일은 SMTP relay가 재정렬할 수 있고, HTTP는 4xx/5xx로 재시도) FIFO 의미가 깨지기 때문이다.
 
 Pub/Sub와 Message Queue의 차이는 1996년 Gregor Hohpe와 Bobby Woolf의 *Enterprise Integration Patterns*에서 명확히 정리됐다. **Point-to-Point Channel**(큐)은 한 메시지 = 한 컨슈머, **Publish-Subscribe Channel**(토픽)은 한 메시지 = N 컨슈머. SNS+SQS의 fanout 패턴은 이 책에 나오는 "Publish-Subscribe Channel + Message Endpoint"의 정확한 매니지드 구현이다. 이 패턴은 Kafka의 consumer group, Google Pub/Sub의 subscription, Azure Service Bus의 topic+subscription에 모두 같은 형태로 존재한다.
 
@@ -100,11 +100,11 @@ Day 1에서 SQS FIFO의 300 msg/s 제한이 "MessageGroupId 단위 단일 파티
 SNS FIFO의 진짜 가치는 "여러 구독자가 같은 순서로 같은 메시지를 받는다"는 것이다. 만약 fanout 없이 각 컨슈머가 별도로 SQS FIFO에 send했다면 컨슈머마다 미세하게 다른 순서를 볼 수 있는데, SNS FIFO를 거치면 모든 구독자가 동일한 발행 순서를 본다. 분산 시스템에서 "global ordering as seen by all subscribers"는 비싸기로 유명한 보장이고, Kafka도 partition 안에서만 보장한다.
 
 다만 제약이 만만치 않다.
-- 구독 가능: SQS FIFO + Lambda(2023년 추가). 이메일·HTTP·Mobile Push 불가.
-- 처리량: 토픽당 300 TPS(배치 시 3,000). High Throughput FIFO는 아직 SQS만 지원.
+- 구독 가능: SQS FIFO + SQS Standard(2023년 9월 추가). Lambda는 SQS 큐를 거쳐서만 연결하고, 이메일·SMS·HTTP(S)·Mobile Push는 구독 불가.
+- 처리량: 토픽당 기본 3,000 msg/s(2023년 11월 이전엔 300 TPS), 메시지 그룹당 300 msg/s.
 - 가격: 표준 SNS의 ~10배 정도 단가.
 
-분산 시스템에서 "total order broadcast"(모든 노드가 같은 순서로 메시지를 봄)는 합의(consensus)와 등가라는 게 1996년 Tushar Chandra와 Sam Toueg의 유명한 정리다. Paxos/Raft 같은 합의 알고리즘으로 구현 가능하지만 latency와 처리량을 희생한다. SNS FIFO + SQS FIFO 조합이 처리량 300 TPS에 묶이는 것도 이 fundamental 비용을 우회할 방법이 없기 때문이다. exactly-once + total order가 필요하면 "정말로 필요한가, MessageGroupId로 partition할 방법은 없나"를 먼저 물어봐야 한다.
+분산 시스템에서 "total order broadcast"(모든 노드가 같은 순서로 메시지를 봄)는 합의(consensus)와 등가라는 게 1996년 Tushar Chandra와 Sam Toueg의 유명한 정리다. Paxos/Raft 같은 합의 알고리즘으로 구현 가능하지만 latency와 처리량을 희생한다. SNS FIFO도 메시지 그룹 단위로는 300 msg/s에 묶이는 것도 이 fundamental 비용을 우회할 방법이 없기 때문이다. exactly-once + total order가 필요하면 "정말로 필요한가, MessageGroupId로 partition할 방법은 없나"를 먼저 물어봐야 한다.
 
 ## 다른 Pub/Sub 시스템과의 비교
 
@@ -255,7 +255,7 @@ D) 불가능. FIFO 토픽은 SQS FIFO만 발행 가능하므로 이메일 알림
 
 **정답: B**
 
-해설: SNS FIFO는 SQS FIFO와 Lambda(2023+)만 구독 가능. 이메일·HTTP·Mobile Push는 본질적으로 순서·중복 보장이 깨지는 채널이라 SNS FIFO 의미가 사라지므로 지원 안 한다. 이메일 알림이 필요하면 별도 SNS Standard 토픽을 만들어 publisher가 두 토픽에 dual publish하거나, SQS FIFO 구독에서 Lambda가 받아 SES로 이메일 전송하는 패턴. A는 잘못된 정보, C는 SNS FIFO의 dedup이 이메일에 적용되지도 않음, D는 우회 패턴이 존재하므로 과한 결론.
+해설: SNS FIFO는 SQS 큐(FIFO, 2023년 9월부터 Standard도)만 구독 가능하고 Lambda는 SQS를 거쳐 연결한다. 이메일·SMS·HTTP(S)·Mobile Push는 본질적으로 순서·중복 보장이 깨지는 채널이라 SNS FIFO 의미가 사라지므로 지원 안 한다. 이메일 알림이 필요하면 별도 SNS Standard 토픽을 만들어 publisher가 두 토픽에 dual publish하거나, SQS FIFO 구독에서 Lambda가 받아 SES로 이메일 전송하는 패턴. A는 잘못된 정보, C는 SNS FIFO의 dedup이 이메일에 적용되지도 않음, D는 우회 패턴이 존재하므로 과한 결론.
 
 ---
 

@@ -30,7 +30,7 @@ HTTP API에서 불가능한 기능:
 - API Key + Usage Plan (REST만)
 - 응답 캐싱 (REST만)
 - 요청/응답 변환 (REST만)
-- AWS 서비스 직접 통합 (REST만)
+- AWS 서비스 임의 직접 통합 + VTL 매핑 (REST만. HTTP API는 EventBridge·SQS·Kinesis·Step Functions·AppConfig 등 일부 서비스만 first-class 통합 지원)
 
 ### WebSocket API
 
@@ -63,7 +63,7 @@ WebSocket:    클라이언트 ←──────── 영구 연결 (connect
 | JWT Authorizer | Cognito만 (Lambda로 나머지) | O (모든 OIDC) | X |
 | 요청/응답 변환 | O (VTL) | X | X |
 | AWS 서비스 직접 통합 | O | X | X |
-| VPC Link 지원 | NLB만 | NLB/ALB | X |
+| VPC Link 지원 | NLB (2025-11~ 내부 ALB도 가능) | NLB/ALB | X |
 | mTLS | O | O | X |
 
 **API Gateway의 패턴 이론: Gateway 패턴과 Facade 패턴** — API Gateway의 역할은 소프트웨어 아키텍처에서 "Gateway" 또는 "Facade" 패턴과 일치한다. Gang of Four(GoF)의 디자인 패턴 중 Facade는 복잡한 서브시스템 앞에 단순화된 인터페이스를 제공한다. API Gateway는 여러 마이크로서비스(Lambda, ECS 서비스, EC2 앱)를 단일 진입점으로 통합하고, 인증/스로틀링/모니터링이라는 교차 관심사를 중앙에서 처리한다. Chris Richardson이 정의한 마이크로서비스 패턴에서 API Gateway는 "Backend for Frontend(BFF)" 패턴의 구현체이기도 하다 — 모바일 앱, 웹, 파트너용으로 각각 다른 BFF를 API Gateway 레벨에서 분리할 수 있다.
@@ -145,7 +145,7 @@ REST API에서 응답 캐싱을 활성화하면 API Gateway가 응답을 TTL 동
 
 외부 인터넷에 노출하지 않고 VPC 내부에서만 사용하는 API가 필요할 때 Private API를 사용한다. Interface VPC Endpoint를 통해서만 접근 가능하다.
 
-VPC Link는 API Gateway가 VPC 내부의 백엔드 서비스를 호출하는 연결이다. 인터넷을 거치지 않고 AWS 프라이빗 네트워크를 통해 VPC 안의 NLB(REST API), ALB 또는 NLB(HTTP API)를 통해 ECS, EC2, 자체 서버 등을 호출한다.
+VPC Link는 API Gateway가 VPC 내부의 백엔드 서비스를 호출하는 연결이다. 인터넷을 거치지 않고 AWS 프라이빗 네트워크를 통해 VPC 안의 NLB(REST API. 2025-11부터 내부 ALB도 직접 연결 가능), ALB 또는 NLB(HTTP API)를 통해 ECS, EC2, 자체 서버 등을 호출한다.
 
 ```
 [REST API + VPC Link (NLB)]
@@ -160,7 +160,7 @@ Lambda (same VPC) → Interface Endpoint → Private API GW → Lambda
 EC2 (same VPC)    → Interface Endpoint → Private API GW → ECS
 ```
 
-**삼성 SmartThings API Gateway 사례** — 2022년 삼성전자 SmartThings 팀은 API Gateway 활용 사례를 AWS Summit에서 공유했다. 수억 개의 IoT 디바이스가 연결된 플랫폼에서 REST API는 파트너 관리용(API Key + Usage Plan), HTTP API는 디바이스-클라우드 통신용(저비용, JWT 인증), WebSocket API는 실시간 상태 업데이트용으로 세 가지를 목적에 따라 분리해서 사용했다. 각 API 타입의 특성을 정확히 활용한 이 분리로 전체 API 비용을 40% 절감했다고 발표했다. 이 사례는 "HTTP API를 기본으로 선택하고 필요할 때만 REST API"라는 설계 원칙의 실제 효과를 보여준다.
+**API 타입 분리 사례(일반 시나리오)** — 수많은 IoT 디바이스가 연결된 플랫폼에서는 REST API는 파트너 관리용(API Key + Usage Plan), HTTP API는 디바이스-클라우드 통신용(저비용, JWT 인증), WebSocket API는 실시간 상태 업데이트용으로 목적에 따라 분리해 사용할 수 있다. 각 API 타입의 특성을 정확히 활용하면 비용을 줄일 수 있으며, 이는 "HTTP API를 기본으로 선택하고 필요할 때만 REST API"라는 설계 원칙으로 이어진다.
 
 다른 클라우드와의 비교:
 

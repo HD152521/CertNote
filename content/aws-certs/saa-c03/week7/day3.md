@@ -183,21 +183,21 @@ Pipes는 사실상 AWS 버전의 **Apache Kafka Connect**나 **Confluent ksqlDB*
 
 **사례(가상)**: 2023년 한 핀테크 회사가 "Kinesis Stream → Lambda(파싱+필터+enrich) → Step Functions"라는 파이프라인을 Lambda 코드 500줄로 운영했는데, Pipes로 옮긴 뒤 코드가 0줄이 되고 운영 사고가 70% 줄었다는 사례를 공개했다. Lambda 콜드 스타트·동시성 관리·에러 처리 같은 문제가 모두 Pipes의 매니지드 레이어로 흡수됐기 때문. 다만 Pipes는 source-target이 1:1이고 fanout이 안 되므로 fanout이 필요하면 여전히 SNS나 bus를 거쳐야 한다.
 
-## EventBridge Scheduler: 1초 단위 정밀도, 1억 스케줄 규모
+## EventBridge Scheduler: 60초 정밀도, 대규모(기본 1,000만) 스케줄
 
 2022년 11월 출시된 **EventBridge Scheduler**는 기존 EventBridge Rule의 schedule 기능을 분리·확장한 별도 서비스다. 기능 차이가 꽤 큰데 시험에서는 둘을 구분해서 물어본다.
 
 | 항목 | EventBridge Rule Schedule | EventBridge Scheduler |
 |------|---------------------------|----------------------|
-| 정밀도 | 분 단위 (cron/rate) | 초 단위 (cron/rate/one-time) |
-| 최대 스케줄 수 | account당 ~300개 | 1억 개 |
-| 시간대 | UTC 고정 | 270+ 시간대 지원 |
+| 정밀도 | 분 단위 (cron/rate) | 60초 정밀도 (cron/rate/one-time, 분 단위 지정) |
+| 최대 스케줄 수 | account당 ~300개 | 리전당 기본 1,000만 개 (상향 시 수십억) |
+| 시간대 | UTC 고정 | IANA 시간대 지원 |
 | Flexible time window | 없음 | ±15분 등 분산 실행 가능 |
 | 일회성 스케줄 | 없음 | `at(2026-12-31T23:59:00)` 지원 |
-| Target | EventBridge target들 | 270+ AWS API 직접 호출 |
+| Target | EventBridge target들 | 270+ 서비스·6,000+ API 작업 직접 호출 |
 | 가격 | 무료 (rule 부분) | 호출당 과금 ($1 / 100만 호출) |
 
-Scheduler의 진짜 가치는 **1억 스케줄까지 확장**과 **270+ AWS API 직접 호출**이다. 예를 들어 "각 고객의 구독 만료일에 정확히 알림을 보낸다"는 시나리오 — 고객이 100만 명이면 스케줄 100만 개가 필요하고, 이걸 EventBridge Rule로는 불가능하지만 Scheduler로는 가능하다. Universal Target 덕에 Lambda를 거치지 않고 SES SendEmail 같은 API를 직접 부를 수 있다.
+Scheduler의 진짜 가치는 **대규모 스케줄 확장(기본 1,000만 개, 상향 가능)**과 **270+ 서비스·6,000+ API 작업 직접 호출**이다. 예를 들어 "각 고객의 구독 만료일에 정확히 알림을 보낸다"는 시나리오 — 고객이 100만 명이면 스케줄 100만 개가 필요하고, 이걸 EventBridge Rule로는 불가능하지만 Scheduler로는 가능하다. Universal Target 덕에 Lambda를 거치지 않고 SES SendEmail 같은 API를 직접 부를 수 있다.
 
 > ⚠️ **함정**: Scheduler가 새로 나왔다고 EventBridge Rule schedule을 쓰지 말라는 건 아니다. 단순한 cron 작업(매일 새벽 3시 청소 Lambda) 수십 개라면 Rule이 무료라 비용이 0이지만, Scheduler는 호출당 과금이다. 한 번에 수만 건 발화되는 시나리오에서는 비용 차이가 의미 있을 수 있다. "대규모 + 정밀도 + 시간대 필요" = Scheduler, "단순 cron + 소수" = Rule.
 
@@ -231,7 +231,7 @@ Schema Registry는 OpenAPI 3.0 또는 JSONSchema Draft 4 형식으로 스키마�
 
 | 시스템 | 강점 | 약점 | 적합한 시나리오 |
 |--------|------|------|---------------|
-| **EventBridge** | AWS·SaaS·Custom 통합, 풍부한 rule, archive, scheduler | 처리량 한계(account당 PutEvents 10K TPS 기본), latency 0.5-1s | 이벤트 라우팅 허브, 자동화 |
+| **EventBridge** | AWS·SaaS·Custom 통합, 풍부한 rule, archive, scheduler | 처리량 한계(PutEvents 기본 quota는 region별 상이, us-east-1 등은 10K TPS), latency 0.5-1s | 이벤트 라우팅 허브, 자동화 |
 | **SNS** | 매우 높은 TPS, push-only, 매우 낮은 비용 | rule 패턴 단순, archive는 FIFO만, 단일 방향 fanout | 단순 fanout, 알림 |
 | **Kinesis Data Streams** | 매우 높은 처리량, replay, 순서 보장 | 운영 복잡, 컨슈머 직접 구현 | 스트림 처리, 분석 |
 | **Apache Kafka (MSK)** | 무제한 보존, 복잡한 stream processing | 운영 부담 매우 큼 | event sourcing, log aggregation |
@@ -239,7 +239,7 @@ Schema Registry는 OpenAPI 3.0 또는 JSONSchema Draft 4 형식으로 스키마�
 | **Azure Event Grid** | EventBridge와 유사 | Azure 한정 | Azure 환경 |
 | **Apache Camel / Spring Integration** | 매우 풍부한 통합 패턴 | 자체 운영 | 온프레 통합 |
 
-EventBridge의 가장 큰 약점은 **처리량**이다. account당 PutEvents 기본 quota가 10K TPS(region별로 다름), 한 rule당 target 5개 제한. 대규모 트래픽이 필요하면 SNS나 Kinesis로 가야 한다. 또한 **latency**가 SNS보다 살짝 높다(보통 500ms~1s) — 실시간성이 중요한 경우엔 SNS가 낫다.
+EventBridge의 가장 큰 약점은 **처리량**이다. PutEvents 기본 quota가 region별로 다르다(us-east-1·us-west-2·eu-west-1은 10K TPS, 그 외 400~2,400 TPS), 한 rule당 target 5개 제한. 대규모 트래픽이 필요하면 SNS나 Kinesis로 가야 한다. 또한 **latency**가 SNS보다 살짝 높다(보통 500ms~1s) — 실시간성이 중요한 경우엔 SNS가 낫다.
 
 반대로 EventBridge가 가장 강한 영역은 **SaaS 통합 + 다양한 AWS target + Scheduler**다. Zendesk나 Auth0 이벤트를 받아 Lambda·Step Functions·Slack을 트리거하는 식의 "통합 자동화" 시나리오는 다른 어떤 서비스로도 이만큼 쉽지 않다.
 
@@ -259,7 +259,7 @@ EventBridge의 가장 큰 약점은 **처리량**이다. account당 PutEvents �
 
 중앙 보안 계정
   └─ Hub Bus
-       └─ Rule: GuardDuty Finding → SecurityHub
+       └─ Rule: GuardDuty Finding → SNS(알림) 또는 Lambda
        └─ Rule: Config Compliance → ServiceNow
        └─ Rule: CloudTrail anomaly → Slack
 ```
@@ -310,7 +310,7 @@ D) AWS Batch + Job Queue
 
 **정답: B**
 
-해설: EventBridge Scheduler는 270+ 시간대 지원과 270+ AWS API Universal Target을 가지므로 RDS CreateDBSnapshot을 Lambda 없이 직접 호출 가능. 기존 EventBridge Rule schedule은 UTC 고정이라 KST 변환을 직접 해야 하지만 Scheduler는 시간대 명시 가능. A는 코드 작성 필요 + Lambda 자체 cron은 안티패턴. C는 EC2 운영 부담. D는 Batch는 컴퓨팅 큐 모델이지 단순 시간 트리거 도구가 아니다.
+해설: EventBridge Scheduler는 IANA 시간대 지원과 270+ 서비스·6,000+ API 작업 Universal Target을 가지므로 RDS CreateDBSnapshot을 Lambda 없이 직접 호출 가능. 기존 EventBridge Rule schedule은 UTC 고정이라 KST 변환을 직접 해야 하지만 Scheduler는 시간대 명시 가능. A는 코드 작성 필요 + Lambda 자체 cron은 안티패턴. C는 EC2 운영 부담. D는 Batch는 컴퓨팅 큐 모델이지 단순 시간 트리거 도구가 아니다.
 
 ---
 
@@ -353,16 +353,16 @@ D) 불가능. 이벤트는 일회성
 
 ---
 
-**문제 6.** 한 회사 조직에서 200개 워크로드 계정의 GuardDuty Finding을 중앙 보안 계정의 SecurityHub로 보내야 한다. 가장 단순한 아키텍처는?
+**문제 6.** 한 회사 조직에서 200개 워크로드 계정의 GuardDuty Finding을 중앙 보안 계정으로 모아 알림(SNS)을 보내야 한다. (Security Hub 연동은 네이티브 통합을 쓰는 별개 문제라고 가정) 가장 단순한 아키텍처는?
 
-A) 각 계정 Lambda → 중앙 계정 SQS → SecurityHub
-B) 각 계정 EventBridge Default Bus에 rule → 중앙 계정 EventBridge Bus를 target으로 cross-account forwarding → 중앙 rule이 SecurityHub로
+A) 각 계정 Lambda → 중앙 계정 SQS → 알림 처리
+B) 각 계정 EventBridge Default Bus에 rule → 중앙 계정 EventBridge Bus를 target으로 cross-account forwarding → 중앙 rule이 SNS 토픽으로
 C) 각 계정 SNS → 중앙 계정 SQS → Lambda
 D) AWS Config로만 처리
 
 **정답: B**
 
-해설: GuardDuty Finding은 자동으로 각 계정의 Default Bus에 발행된다. 각 계정 rule이 이벤트를 중앙 보안 계정 bus로 forwarding하고, 중앙 bus의 rule이 SecurityHub Import target으로 보낸다. 모두 EventBridge 설정만으로 코드 0. A는 Lambda 200개 운영. C는 SNS 200개 + 중앙 처리 코드. D는 Config는 리소스 설정 변경 추적용이지 Finding 라우팅이 아님.
+해설: GuardDuty Finding은 자동으로 각 계정의 Default Bus에 발행된다. 각 계정 rule이 이벤트를 중앙 보안 계정 bus로 forwarding하고, 중앙 bus의 rule이 SNS 토픽 target으로 보낸다. 모두 EventBridge 설정만으로 코드 0. (참고: Security Hub는 EventBridge rule target 목록에 없으며, GuardDuty→Security Hub는 네이티브 통합 + 위임 관리자 집계가 표준이다.) A는 Lambda 200개 운영. C는 SNS 200개 + 중앙 처리 코드. D는 Config는 리소스 설정 변경 추적용이지 Finding 라우팅이 아님.
 
 ---
 

@@ -59,7 +59,7 @@ Client ─HTTPS─→ ALB ─HTTPS(re-encrypt)─→ EC2 Target
 
 **gRPC 지원**: ALB는 HTTP/2와 gRPC 프로토콜을 지원한다. 마이크로서비스 간 gRPC 통신을 ALB가 L7에서 라우팅할 수 있다. NLB는 gRPC를 TCP 스트림으로만 보므로 L7 라우팅이 불가능하다.
 
-**사례**: Netflix의 Zuul API Gateway는 초기에 자체 운영하는 Java 프로세스였다가, 점차 ALB와 결합한 아키텍처로 진화했다. ALB의 Weighted Target Group을 이용해 서비스 버전 간 A/B 트래픽 분리를 관리하고, Lambda@Edge나 ALB Lambda 타겟을 통해 서버리스 엣지 로직을 구현했다. (Netflix Tech Blog, 2019)
+**사례(가상 예시)**: API 게이트웨이 계층을 자체 운영하는 Java 프로세스에서 ALB 중심 구조로 옮기는 경우를 가정해보자. ALB의 Weighted Target Group으로 서비스 버전 간 A/B 트래픽을 분리하고, ALB Lambda 타겟으로 서버리스 로직을 붙일 수 있다.
 
 ## NLB: 왜 L4인데 L7보다 빠른가
 
@@ -256,7 +256,7 @@ aws elbv2 create-load-balancer \
 # NLB에 EIP 할당
 aws elbv2 set-subnets \
   --load-balancer-arn arn:...nlb \
-  --subnets \
+  --subnet-mappings \
     SubnetId=subnet-a,AllocationId=eipalloc-111 \
     SubnetId=subnet-b,AllocationId=eipalloc-222
 

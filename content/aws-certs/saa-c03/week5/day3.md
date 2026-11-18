@@ -156,7 +156,7 @@ Lambda (이벤트 소스 매핑)
 
 **Event Sourcing 아키텍처 패턴** — DynamoDB Streams는 Event Sourcing 패턴의 자연스러운 기반이 된다. Event Sourcing은 Martin Fowler가 정의한 패턴으로, 상태 변경을 직접 저장하는 대신 그 상태를 만든 이벤트 시퀀스를 저장하는 방식이다. DynamoDB 테이블은 현재 상태를 저장하고, Streams는 모든 변경 이벤트의 불변 로그 역할을 한다. Lambda ESM(Event Source Mapping)은 이 이벤트를 소비해서 읽기 전용 프로젝션(ElastiCache, OpenSearch, 집계 테이블)을 유지한다. Greg Young이 제안한 CQRS(Command Query Responsibility Segregation)와 결합하면 높은 확장성과 감사 추적(Audit Trail)을 동시에 달성할 수 있다.
 
-**Amazon Prime Day 사례** — 2021년 Amazon Prime Day 동안 DynamoDB는 초당 8900만 건 이상의 요청을 처리했다고 AWS가 발표했다. 이 중 DynamoDB Streams와 Lambda를 통해 실시간 재고 업데이트, 주문 상태 알림, 사기 탐지 이벤트 처리가 이루어졌다. Streams의 샤드 구조가 동일 항목의 이벤트 순서를 보장하기 때문에, 재고 수량 감소 이벤트가 항상 증가 이벤트 이후에 처리되는 것이 보장됐다. 재고가 음수가 되는 버그를 방지하는 핵심 보장이다.
+**Amazon Prime Day 사례** — 2021년 Amazon Prime Day 동안 DynamoDB는 초당 8,900만 건 이상의 요청을 처리했다고 AWS가 발표했다. 한편 Streams의 샤드 구조는 동일 항목의 이벤트 순서를 보장하므로, 재고 수량 갱신처럼 순서에 의존하는 처리를 Streams와 Lambda로 구성할 때 이 보장을 활용할 수 있다.
 
 ## Global Tables — 멀티 리전 Active-Active
 
@@ -204,7 +204,7 @@ DAX가 적합한 경우와 그렇지 않은 경우:
 
 **Write-Through 캐시 전략과 캐시 무효화** — DAX의 캐시 전략은 Write-Through다. 쓰기 시점에 캐시(DAX)와 데이터베이스(DynamoDB) 모두를 동기적으로 업데이트한다. 이 전략은 캐시와 DB 간 불일치를 최소화하지만, 쓰기 지연이 캐시 없는 경우보다 약간 늘어날 수 있다. 반대로 Cache-Aside(Lazy Loading)는 읽기 시점에 캐시 미스가 발생했을 때만 DB에서 읽어와 캐시에 저장하는 전략으로, DAX에서는 기본적으로 지원되지 않는다. Phil Karlton의 유명한 말 "캐시 무효화와 이름 짓기는 컴퓨터 과학에서 가장 어려운 두 가지 문제" — DAX의 Write-Through는 이 문제를 자동으로 처리하도록 설계됐다. 단, TTL(기본 5분)이 지난 항목은 다음 읽기 시 캐시 미스가 발생한다.
 
-**Duolingo DAX 도입 사례** — Duolingo(언어 학습 앱)는 2019년 사용자 스트릭(연속 학습일) 카운터와 리더보드 데이터를 DynamoDB에서 DAX로 캐싱하도록 전환했다. 수천만 사용자가 매일 수십억 번 읽는 이 데이터는 DynamoDB 단독으로는 RCU 비용이 천문학적이었다. DAX 도입 후 DynamoDB에 대한 실제 읽기가 95% 이상 감소했고, 읽기 지연이 밀리초에서 마이크로초로 줄어들었다. 리더보드 페이지 로딩 속도가 눈에 띄게 빨라졌고, 비용은 80% 이상 절감됐다.
+**DAX 도입 효과(일반 시나리오)** — 사용자 스트릭(연속 학습일) 카운터나 리더보드처럼 읽기가 압도적으로 많은 핫 데이터를 DAX로 캐싱하면, DynamoDB에 대한 실제 읽기가 크게 줄어 RCU 비용이 감소하고 읽기 지연이 밀리초에서 마이크로초 수준으로 낮아진다.
 
 ## PITR과 백업 — DynamoDB의 복구 옵션
 
@@ -231,7 +231,7 @@ DAX가 적합한 경우와 그렇지 않은 경우:
 | 트랜잭션 | O (100 항목 한도) | O | O |
 | 인메모리 캐시 | DAX | Memorystore | Azure Cache for Redis |
 
-**Lyft의 Cassandra → DynamoDB 마이그레이션** — 2022년 Lyft는 Cassandra에서 DynamoDB로 전환한 경험을 공유했다. 주요 이유는 운영 부담 감소와 Global Tables를 통한 멀티 리전 HA였다. 마이그레이션 과정에서 가장 큰 도전은 파티션 키 재설계였다 — Cassandra에서 분산이 잘 됐던 키 전략이 DynamoDB에서는 Hot Partition을 만들어서 처음부터 다시 설계해야 했다. 또한 Cassandra의 튜너블 일관성(QUORUM, LOCAL_QUORUM 등)에 의존하던 코드가 DynamoDB의 이분법적 일관성(강한/결과적)으로 대체되었다. 이 사례는 "NoSQL 마이그레이션은 데이터 이동이 아니라 모델 재설계"라는 교훈을 준다.
+**Cassandra → DynamoDB 마이그레이션(일반 시나리오)** — Cassandra에서 DynamoDB로 전환하는 주요 이유는 운영 부담 감소와 Global Tables를 통한 멀티 리전 HA였다. 마이그레이션 과정에서 가장 큰 도전은 파티션 키 재설계였다 — Cassandra에서 분산이 잘 됐던 키 전략이 DynamoDB에서는 Hot Partition을 만들어서 처음부터 다시 설계해야 했다. 또한 Cassandra의 튜너블 일관성(QUORUM, LOCAL_QUORUM 등)에 의존하던 코드가 DynamoDB의 이분법적 일관성(강한/결과적)으로 대체되었다. 이 사례는 "NoSQL 마이그레이션은 데이터 이동이 아니라 모델 재설계"라는 교훈을 준다.
 
 ## CLI로 DynamoDB 핵심 작업 실습
 
@@ -243,7 +243,6 @@ aws dynamodb create-table \
     AttributeName=userId,AttributeType=S \
     AttributeName=orderId,AttributeType=S \
     AttributeName=orderDate,AttributeType=S \
-    AttributeName=status,AttributeType=S \
   --key-schema \
     AttributeName=userId,KeyType=HASH \
     AttributeName=orderId,KeyType=RANGE \
@@ -370,7 +369,7 @@ D) 완전히 다른 파티션 키와 정렬 키로 정의할 수 있으며, 언�
 
 ---
 
-**문제 3.** 1 RCU로 처리할 수 있는 작업은?
+**문제 3.** 정확히 1 RCU를 소비하는 작업은?
 
 A) 8KB 항목의 강한 일관성 읽기 1회
 B) 4KB 항목의 강한 일관성 읽기 1회
@@ -379,7 +378,7 @@ D) 2KB 항목의 강한 일관성 읽기 2회
 
 **정답: B**
 
-해설: 1 RCU = 최대 4KB 항목의 강한 일관성 읽기 1회. 또는 4KB 항목의 결과적 일관성 읽기 2회. A는 8KB이므로 2 RCU 필요. C는 4KB 결과적 일관성 1회는 0.5 RCU(=1 RCU로 2회 처리 가능). D는 2KB 항목의 강한 일관성 읽기는 1회당 1 RCU(올림), 2회면 2 RCU 필요.
+해설: 1 RCU = 최대 4KB 항목의 강한 일관성 읽기 1회. 또는 4KB 항목의 결과적 일관성 읽기 2회. A는 8KB이므로 2 RCU 필요. C는 4KB 결과적 일관성 1회는 0.5 RCU(1 RCU를 소비하지 않음). D는 2KB 항목의 강한 일관성 읽기는 1회당 1 RCU(올림), 2회면 2 RCU 필요.
 
 ---
 

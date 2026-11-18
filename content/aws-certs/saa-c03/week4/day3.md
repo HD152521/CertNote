@@ -2,26 +2,26 @@
 
 S3 보안 사고는 주로 설정 실수에서 시작된다. 2017년부터 2023년까지 수십 건의 대규모 데이터 유출이 "잘못 설정된 S3 버킷"으로 인해 발생했다. 미국 군 기밀 문서, 대형 항공사 고객 데이터, 수백만 명의 의료 기록이 Public으로 열린 S3 버킷에서 노출됐다. 이 중 많은 경우 버킷 정책에 Allow를 주면서 Block Public Access를 끈 것이 원인이었다.
 
-이 글에서는 S3 접근 제어의 5개 계층이 어떻게 평가되는지 내부 로직을 따라가고, 각 암호화 방식의 키 관리 구조와 실제 차이를 다룬다. 또한 VPC Endpoint 정책으로 데이터 유출을 방지하는 패턴과, 멀티 테넌트 환경에서 S3 Access Points를 활용하는 방법까지 다룬다.
+이 글에서는 S3 접근 제어의 여러 계층(평가 요소)이 어떻게 함께 평가되는지 내부 로직을 따라가고, 각 암호화 방식의 키 관리 구조와 실제 차이를 다룬다. 또한 VPC Endpoint 정책으로 데이터 유출을 방지하는 패턴과, 멀티 테넌트 환경에서 S3 Access Points를 활용하는 방법까지 다룬다.
 
 ## S3 접근 제어의 역사: 왜 이렇게 복잡한가
 
 S3가 처음 출시됐을 때(2006년), 접근 제어는 ACL(Access Control List) 하나뿐이었다. S3 버킷과 객체에 누가 접근할 수 있는지를 XML로 정의했다. 이것이 AWS 최초의 접근 제어 메커니즘이었다.
 
-2008년 IAM(Identity and Access Management)이 출시되면서 사용자와 그룹에 정책을 부여하는 방식이 추가됐다. S3는 이제 IAM 정책도 지원하기 시작했다. 그러나 IAM 정책은 누가(identity) 무엇을 할 수 있는지를 정의하고, ACL은 특정 버킷/객체에 누구의 접근을 허용하는지를 정의했다. 둘을 함께 쓰다 보니 규칙이 충돌하거나 복잡해졌다.
+2011년 IAM(Identity and Access Management)이 정식 출시되면서 사용자와 그룹에 정책을 부여하는 방식이 추가됐다. S3는 이제 IAM 정책도 지원하기 시작했다. 그러나 IAM 정책은 누가(identity) 무엇을 할 수 있는지를 정의하고, ACL은 특정 버킷/객체에 누구의 접근을 허용하는지를 정의했다. 둘을 함께 쓰다 보니 규칙이 충돌하거나 복잡해졌다.
 
-2012년 버킷 정책(Bucket Policy)이 추가됐다. JSON 기반 리소스 정책으로 더 세밀한 조건(IP, VPC, 암호화 여부 등)을 설정할 수 있었다.
+버킷 정책(Bucket Policy)은 IAM보다 앞선 2010년에 추가됐다. JSON 기반 리소스 정책으로 더 세밀한 조건(IP, VPC, 암호화 여부 등)을 설정할 수 있었다.
 
 그리고 수천 개의 퍼블릭 버킷 노출 사고 이후, 2018년 AWS는 **Block Public Access(BPA)**를 출시했다. "아무리 정책이나 ACL에 Public Allow가 있어도 이 스위치를 켜면 강제로 차단"하는 최후 안전장치였다.
 
-이것이 현재 S3 접근 제어가 5개 계층으로 이루어진 역사적 이유다.
+이것이 현재 S3 접근 제어가 여러 계층으로 이루어진 역사적 이유다.
 
 ## 접근 평가 계층: 순서대로 이해하기
 
-S3 요청이 들어오면 AWS는 다음 순서로 접근 허용 여부를 평가한다.
+S3 요청이 들어오면 AWS는 아래 요소들을 함께 종합해 접근 허용 여부를 결정한다(번호는 이해를 돕는 나열이며 엄밀한 실행 순서가 아니다).
 
 ```
-[ S3 접근 평가 계층 (평가 순서) ]
+[ S3 접근 평가 요소 (이해용 나열) ]
 
 1. Block Public Access (BPA)
    → Public ACL/정책 차단. Deny면 즉시 거부.
@@ -45,7 +45,7 @@ S3 요청이 들어오면 AWS는 다음 순서로 접근 허용 여부를 평가
    → KMS 키에 접근 권한이 있는지
 ```
 
-핵심 평가 원칙: **어느 계층이든 명시적 Deny가 있으면 즉시 거부**. 모든 계층에서 Allow(또는 묵시적 Allow)가 확인되어야 최종 허용.
+핵심 평가 원칙: **어느 계층이든 명시적 Deny가 있으면 즉시 거부**. Deny가 없을 때, 같은 계정에서는 IAM 정책 또는 리소스 기반 정책(버킷 정책 등) 중 하나의 Allow면 충분하다. SCP·Permissions Boundary·VPC Endpoint 정책은 Allow를 부여하지 않고 허용 범위의 상한만 정한다.
 
 교차 계정 접근의 경우 두 계층이 모두 필요하다. 계정 A의 EC2가 계정 B의 S3 버킷에 접근하려면, 계정 A의 IAM 역할이 s3:GetObject를 허용하고, 계정 B의 버킷 정책이 계정 A의 역할을 신뢰해야 한다. 어느 하나만 있으면 안 된다.
 
@@ -66,7 +66,7 @@ BPA는 4개의 독립적인 스위치로 이루어진다.
 
 BPA를 계정 수준(AWS 계정 전체)에서 활성화하면, 계정 내 모든 버킷에 적용된다. 개별 버킷에서 BPA를 비활성화하더라도 계정 수준 BPA가 있으면 차단된다. 계층 관계다.
 
-**사례**: 2019년 Capital One 데이터 유출 사고 이후, AWS는 AWS Config 규칙 `s3-bucket-public-access-prohibited`을 제공해 BPA가 비활성화된 버킷을 자동 감지한다. AWS Security Hub의 "S3 controls" 표준에도 이 검사가 포함된다. 많은 기업이 AWS Organizations SCP로 `s3:PutBucketPublicAccessBlock`의 특정 설정을 강제해서 BPA가 절대 비활성화되지 못하게 한다.
+**사례**: S3 퍼블릭 노출 사고가 반복되면서, AWS는 AWS Config 관리형 규칙 `s3-bucket-level-public-access-prohibited`, `s3-bucket-public-read-prohibited` 등을 제공해 BPA가 비활성화되었거나 공개 읽기가 가능한 버킷을 자동 감지한다. AWS Security Hub의 "S3 controls" 표준에도 이 검사가 포함된다. 많은 기업이 AWS Organizations SCP로 `s3:PutBucketPublicAccessBlock`의 특정 설정을 강제해서 BPA가 절대 비활성화되지 못하게 한다.
 
 ## S3 암호화: 4종의 키 관리 구조
 
@@ -130,6 +130,8 @@ S3가 제공된 키로 데이터 암호화 후, 키를 즉시 폐기(저장 안 
 
 SSE-C는 AWS가 키를 보관하지 않는다. 고객이 직접 키를 관리하고, 요청 시마다 헤더에 포함해야 한다. 키를 잃으면 데이터를 영구 잃는다. HTTPS 필수(평문 전송 불가).
 
+> 참고(현재 가용성): 2026-04부터 AWS는 신규 버킷(및 SSE-C 암호화 객체가 없는 계정의 기존 버킷)에서 SSE-C를 기본 차단한다(중동(바레인)·중동(UAE) 2개 리전은 예외). SSE-C로 업로드하면 403 AccessDenied가 반환되며, 필요하면 `PutBucketEncryption`으로 명시적으로 허용해야 한다. 시험(SAA-C03)에서는 여전히 'SSE-C = 고객 제공 키' 개념이 출제된다.
+
 규제 환경에서 "암호화 키가 AWS 인프라에 존재해서는 안 된다"는 요건을 충족하지만 키 관리 부담이 크다. 현업에서는 자체 HSM(Hardware Security Module)이나 키 관리 시스템과 통합해 쓴다.
 
 ### CSE: 클라이언트 측 암호화
@@ -178,7 +180,7 @@ S3 버킷 (data-lake)
         VPC 제한: vpc-analytics
 ```
 
-Access Points의 특수 타입인 **Multi-Region Access Points**는 여러 리전의 버킷을 하나의 글로벌 엔드포인트로 제공한다. Route 53 Anycast 기반으로 가장 가까운 리전의 버킷으로 라우팅된다.
+Access Points의 특수 타입인 **Multi-Region Access Points**는 여러 리전의 버킷을 하나의 글로벌 엔드포인트로 제공한다. AWS Global Accelerator 기반으로 가장 가까운 리전의 버킷으로 라우팅된다.
 
 ## VPC Endpoint와 S3: 데이터 유출 방지
 

@@ -53,9 +53,9 @@ Internet
 
 핵심 포인트:
 
-1. **NAT GW는 퍼블릭 서브넷에 위치**한다(자기 자신이 IGW 경로가 필요).
+1. **NAT GW는 퍼블릭 서브넷에 위치**한다(자기 자신이 IGW 경로가 필요. zonal NAT GW 기준이며 Regional NAT GW는 퍼블릭 서브넷이 필요 없다).
 2. **EIP가 붙는다**(외부에서 보는 source IP).
-3. **AZ 단위**다 — 한 NAT GW는 한 AZ에만 있다. HA를 원하면 AZ마다 만들어야 한다.
+3. **AZ 단위(zonal)**다 — 기존 방식의 NAT GW는 한 AZ에만 있다. HA를 원하면 AZ마다 만들어야 한다. (2025-11부터 여러 AZ로 자동 확장되는 Regional NAT GW 옵션이 추가됐지만, SAA-C03 시험의 정답 패턴은 여전히 AZ별 zonal NAT GW다.)
 4. **stateful**이라 inbound 응답은 자동 통과, 새 inbound 요청은 차단.
 
 ### NAT Gateway vs NAT Instance
@@ -72,7 +72,7 @@ Internet
 
 시험에서는 거의 항상 **NAT Gateway가 정답**이다. NAT Instance는 레거시. 2024년 기준 AWS도 NAT Instance를 더 이상 권장하지 않는다.
 
-> ⚠️ **함정**: NAT GW는 **AZ 단위**다. AZ 한 곳에만 NAT GW를 두고 다른 AZ 프라이빗 서브넷의 라우팅을 거기로 보내면, 그 AZ가 죽을 때 다른 AZ까지 outbound가 막힌다. 게다가 cross-AZ traffic에 GB당 비용이 더 든다. 표준 패턴: **AZ마다 NAT GW 1개, 각 AZ 프라이빗 서브넷은 같은 AZ NAT GW로 라우팅**. 이 점이 함정이다. 그래서 "Multi-AZ NAT GW"가 답인 시나리오를 잘 보면 비용보다 가용성을 묻는 경우다. 비용 최적화 시나리오에서는 반대로 "단일 NAT GW로 비용 절감"이 답이 되기도 하니, 시나리오의 무게중심(비용 vs 가용성)을 잘 보고 골라야 한다.
+> ⚠️ **함정**: (zonal) NAT GW는 **AZ 단위**다. AZ 한 곳에만 NAT GW를 두고 다른 AZ 프라이빗 서브넷의 라우팅을 거기로 보내면, 그 AZ가 죽을 때 다른 AZ까지 outbound가 막힌다. 게다가 cross-AZ traffic에 GB당 비용이 더 든다. 표준 패턴: **AZ마다 NAT GW 1개, 각 AZ 프라이빗 서브넷은 같은 AZ NAT GW로 라우팅**. 이 점이 함정이다. 그래서 "Multi-AZ NAT GW"가 답인 시나리오를 잘 보면 비용보다 가용성을 묻는 경우다. 비용 최적화 시나리오에서는 반대로 "단일 NAT GW로 비용 절감"이 답이 되기도 하니, 시나리오의 무게중심(비용 vs 가용성)을 잘 보고 골라야 한다.
 
 **사례(가상)**: 2021년 한 SaaS 회사가 단일 AZ NAT GW에 모든 Private 트래픽을 보내다 그 AZ에 장애가 나서 전체 outbound가 30분간 죽었다. 후속 조치로 AZ별 NAT GW + per-AZ 라우팅 테이블로 분리했다. 비용은 약 2배 늘었지만 RTO가 0이 됐다. 일반적으로 단일 AZ 절약은 사고 한 번이면 다 무너진다. 다른 사례로 2022년 한 게임 회사가 "Spot Instance + NAT GW 한 개" 조합으로 비용을 극단 절감하다가 Spot interruption + AZ 일시 throttling이 겹쳐 outbound 폭주가 발생한 일도 있다. 가장 극적인 사례는 2017년 GitLab.com의 단일 AZ 의존으로 인한 데이터베이스 실수 → 6시간 다운 사건으로, "단일 AZ 의존 = 시한폭탄"이라는 명제가 산업 표준이 된 결정적 트리거였다.
 
@@ -128,7 +128,7 @@ Session Manager의 outbound-only 모델은 **Zero Trust Network Access(ZTNA)** �
 
 Session Manager는 KMS 암호화·VPC Endpoint·Run As(특정 OS 사용자로 실행)·세션 기록 등 기능이 풍부하다. 특히 VPC Endpoint를 통해 SSM에 접속하면 인스턴스가 IGW나 NAT GW 없이도 SSM 세션을 받을 수 있다 — 완전 격리된 프라이빗 서브넷에서도 운영자 접근이 가능해진다. 이 패턴이 SAA에 나오는 "외부 인터넷 없이 EC2 접근" 시나리오의 답이다. 더 깊은 구현 디테일: SSM Agent는 WebSocket 기반 양방향 채널을 SSM 엔드포인트와 유지하고, 운영자 세션은 그 위에 다중화된다. 모든 트래픽이 TLS 1.2+로 암호화되고, 세션 로그는 CloudWatch Logs/S3에 KMS 암호화로 저장된다. 컴플라이언스 감사(PCI-DSS, SOC 2, HIPAA)가 요구하는 *세션 녹화 및 감사 추적성*이 자동으로 충족된다.
 
-**함정**: Session Manager가 작동하려면 인스턴스의 SSM Agent가 SSM 엔드포인트에 *outbound HTTPS*로 닿을 수 있어야 한다. 완전 격리된 프라이빗 서브넷에서는 ssm/ssmmessages/ec2messages 3개의 Interface Endpoint를 만들어야 한다. 이 3개를 빠뜨리면 Session Manager가 작동하지 않는다 — 시험에서 확인하는 디테일이다.
+**함정**: Session Manager가 작동하려면 인스턴스의 SSM Agent가 SSM 엔드포인트에 *outbound HTTPS*로 닿을 수 있어야 한다. 완전 격리된 프라이빗 서브넷에서는 ssm/ssmmessages/ec2messages 3개의 Interface Endpoint를 만드는 것이 문서상 기본 구성이다. 다만 SSM Agent 3.3.40.0 이후에는 ssmmessages를 우선 쓰고 ec2messages는 대체 경로라, 최신 에이전트에서 핵심은 ssm + ssmmessages다. 시험에서는 3개 세트를 정답으로 확인한다.
 
 ## EC2 Instance Connect
 
@@ -181,7 +181,7 @@ C) NAT Instance를 ASG로 운영
 D) EIP를 여러 개 부여
 
 **정답: A**
-해설: NAT GW는 AZ scoped. 한 AZ 죽으면 그 NAT 죽음. AZ별 NAT + per-AZ 라우팅이 표준. 비용은 늘지만 사고 한 번보다 싸다. 또 cross-AZ 트래픽 비용도 줄어든다 — 같은 AZ NAT 라우팅이 비용·가용성 둘 다 잡는다. NAT GW 시간당 비용 + cross-AZ 데이터 전송비를 합쳐서 계산하면, 단일 AZ NAT가 무조건 싸지 않은 경우가 많다.
+해설: (zonal) NAT GW는 AZ scoped(Regional NAT GW는 2025-11에 추가된 별도 옵션이고, 시험 정답 기준은 AZ별 zonal NAT). 한 AZ 죽으면 그 NAT 죽음. AZ별 NAT + per-AZ 라우팅이 표준. 비용은 늘지만 사고 한 번보다 싸다. 또 cross-AZ 트래픽 비용도 줄어든다 — 같은 AZ NAT 라우팅이 비용·가용성 둘 다 잡는다. NAT GW 시간당 비용 + cross-AZ 데이터 전송비를 합쳐서 계산하면, 단일 AZ NAT가 무조건 싸지 않은 경우가 많다.
 
 ---
 

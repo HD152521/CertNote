@@ -6,7 +6,7 @@
 
 ## KMS 키의 4가지 분류와 각각이 답하는 질문
 
-KMS의 키를 "AWS Owned / AWS Managed / Customer Managed / CloudHSM" 네 가지로 가르는 분류는 단순한 옵션 나열이 아니라, "키 통제권을 누가 얼마나 가질지"라는 스펙트럼의 네 지점을 정의한 것이다. 왼쪽 끝(Owned)은 AWS가 모든 걸 결정하고 사용자는 신경 쓸 필요가 없는 대신 통제권도 0이고, 오른쪽 끝(CloudHSM)은 사용자가 FIPS 140-2 Level 3 인증을 받은 전용 HSM을 직접 운영하는 대신 운영 부담이 매우 크다.
+KMS의 키를 "AWS Owned / AWS Managed / Customer Managed / CloudHSM" 네 가지로 가르는 분류는 단순한 옵션 나열이 아니라, "키 통제권을 누가 얼마나 가질지"라는 스펙트럼의 네 지점을 정의한 것이다. 왼쪽 끝(Owned)은 AWS가 모든 걸 결정하고 사용자는 신경 쓸 필요가 없는 대신 통제권도 0이고, 오른쪽 끝(CloudHSM)은 사용자가 FIPS 140 Level 3 인증을 받은 전용 HSM을 직접 운영하는 대신 운영 부담이 매우 크다.
 
 | 분류 | 누가 만드나 | 누가 정책 작성하나 | 비용 | 회전 | 대표 사용처 |
 |------|------------|------------------|------|------|-------------|
@@ -19,7 +19,7 @@ KMS의 키를 "AWS Owned / AWS Managed / Customer Managed / CloudHSM" 네 가지
 
 키 통제권의 스펙트럼은 NIST SP 800-57의 키 관리 라이프사이클(생성·배포·사용·교체·폐기)을 누가 책임지느냐의 문제다. AWS Owned는 5단계 전체를 AWS가, Customer Managed는 정책·교체·폐기를 고객이, CloudHSM은 생성부터 폐기까지 전부 고객이 책임진다. 컴플라이언스 감사관이 "키 생성 이벤트의 감사 추적"을 요구하면 AWS Owned/Managed는 답할 수 없고 CMK 이상부터만 CloudTrail에 명확히 남는다.
 
-KMS 자체도 내부적으로 HSM 위에서 동작한다. 정확히는 AWS가 운영하는 **multi-tenant FIPS 140-2 Level 3** HSM 클러스터다(공식 화이트페이퍼 "AWS KMS Cryptographic Details" 참조). 즉 KMS CMK도 결국 HSM 안에 보관되며, 키 자료(key material)는 절대 HSM 밖으로 나오지 않는다. CloudHSM과의 차이는 multi-tenant냐 single-tenant냐, 그리고 컴플라이언스 인증을 AWS 명의로 받느냐 고객 명의로 받느냐다. 그래서 "내 키가 다른 고객과 같은 HSM에 있으면 안 된다"는 규제 요구가 없다면 CloudHSM이 굳이 필요하지 않다.
+KMS 자체도 내부적으로 HSM 위에서 동작한다. 정확히는 AWS가 운영하는 **multi-tenant FIPS 140-3 Level 3** HSM 클러스터다(공식 화이트페이퍼 "AWS KMS Cryptographic Details" 참조). 즉 KMS CMK도 결국 HSM 안에 보관되며, 키 자료(key material)는 절대 HSM 밖으로 나오지 않는다. CloudHSM과의 차이는 FIPS 레벨이 아니라 multi-tenant냐 single-tenant냐, 그리고 HSM과 키를 고객이 독점 제어하느냐다. 그래서 "내 키가 다른 고객과 같은 HSM에 있으면 안 된다"는 규제 요구가 없다면 CloudHSM이 굳이 필요하지 않다.
 
 ## 봉투 암호화: 왜 거의 모든 AWS 서비스가 이걸 쓰나
 
@@ -103,7 +103,7 @@ Grant는 "임시 위임"이다. 예를 들어 RDS가 암호화된 인스턴스�
 | Customer Managed (Asymmetric) | 불가 | - | 별칭 갱신 |
 | 외부 키(imported) | 불가 | - | 새 키 import |
 
-**90~2,560일 커스텀 회전 주기** 는 2022년 11월 출시된 비교적 새로운 기능이다. 그 전엔 1년 고정이었는데, PCI DSS 같은 일부 규정이 "90일마다 회전"을 요구해서 추가됐다. 시험 문제에 "자동 회전 주기"라는 표현이 보이면 보통 "1년"이 정답이지만, 최신 시험에서는 "90일~2,560일 사이 커스텀"이 정답인 경우도 등장한다.
+**90~2,560일 커스텀 회전 주기** 는 2024년 4월(온디맨드 회전과 함께) 출시된 비교적 새로운 기능이다. 그 전엔 1년 고정이었는데, PCI DSS 같은 일부 규정이 "90일마다 회전"을 요구해서 추가됐다. 시험 문제에 "자동 회전 주기"라는 표현이 보이면 보통 "1년"이 정답이지만, 최신 시험에서는 "90일~2,560일 사이 커스텀"이 정답인 경우도 등장한다.
 
 비대칭 키는 자동 회전이 불가능한 이유가 있다. 비대칭 키 회전은 공개키가 바뀐다는 뜻이고, 그러면 기존에 그 공개키로 서명을 검증하던 모든 시스템이 동시에 새 공개키로 교체돼야 한다. 이건 분산 시스템에서 사실상 불가능하므로 KMS는 비대칭 키 회전을 자동화하지 않고, 사용자가 새 키를 만들고 alias만 바꿔서 점진적으로 전환하는 패턴을 권장한다.
 
@@ -284,7 +284,7 @@ D) S3 Bucket Keys 활성화
 
 ---
 
-**문제 6.** 한 핀테크 회사가 컴플라이언스 감사로 "키 생성·삭제·정책 변경의 모든 이벤트가 5초 내 SecOps에 알림"을 요구받았다. KMS는 모든 API를 CloudTrail에 기록한다. 가장 적합한 자동화 패턴은?
+**문제 6.** 한 핀테크 회사가 컴플라이언스 감사로 "키 생성·삭제·정책 변경의 모든 이벤트가 거의 실시간으로 SecOps에 알림"을 요구받았다. KMS는 모든 API를 CloudTrail에 기록한다. 가장 적합한 자동화 패턴은?
 
 A) CloudTrail → S3 → 일별 배치 분석
 B) CloudTrail → EventBridge rule (CreateKey/ScheduleKeyDeletion/PutKeyPolicy 등) → SNS → SecOps
@@ -293,7 +293,7 @@ D) Config rule로만 검사
 
 **정답: B**
 
-해설: CloudTrail 이벤트는 거의 실시간으로 EventBridge로 전달되고, EventBridge rule이 특정 KMS API 이벤트를 패턴 매칭해서 SNS/Lambda/Slack/PagerDuty 같은 대상으로 즉시 발송할 수 있다. 5초 내 알림이라는 요구를 만족하는 표준 패턴이다. A는 지연이 너무 크고, C는 자동화가 아니라 수동, D는 상태 점검은 가능하지만 이벤트 기반 알림은 아니다.
+해설: CloudTrail 이벤트는 EventBridge로 자동 전달되고(CloudTrail 전달 자체에는 평균 수 분의 지연이 있어 초 단위 보장은 아니다), EventBridge rule이 특정 KMS API 이벤트를 패턴 매칭해서 SNS/Lambda/Slack/PagerDuty 같은 대상으로 즉시 발송할 수 있다. "거의 실시간 알림" 요구를 만족하는 표준 패턴이다. A는 지연이 너무 크고, C는 자동화가 아니라 수동, D는 상태 점검은 가능하지만 이벤트 기반 알림은 아니다.
 
 ---
 

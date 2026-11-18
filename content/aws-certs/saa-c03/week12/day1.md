@@ -8,7 +8,7 @@ SAA 시험에서 보안 도메인(영역 1)은 전체의 30%로 가장 큰 비�
 
 ## IAM 정책 평가는 "명시적 거부가 모든 것을 이긴다"는 단 하나의 규칙으로 시작한다
 
-IAM이 어떤 요청을 허용할지 결정하는 과정은 직관과 다르게 동작한다. 많은 사람이 "Allow가 하나라도 있으면 허용"이라고 생각하지만, 실제 알고리즘은 더 엄격하다. AWS는 요청 하나가 들어오면 **① 명시적 Deny가 있는가 → 있으면 즉시 차단**, ② SCP(조직 가드레일)가 허용하는가, ③ Resource 정책·Permission Boundary·Session 정책의 교집합 안에 있는가, ④ Identity 정책에 명시적 Allow가 있는가를 순서대로 평가한다. 이 중 **명시적 Deny는 그 어떤 Allow보다 우선**한다 — 한 정책이 Allow하고 다른 정책이 Deny하면 결과는 무조건 Deny다. 기본값은 "암묵적 거부(implicit deny)"이고, Allow가 없으면 자동으로 막힌다.
+IAM이 어떤 요청을 허용할지 결정하는 과정은 직관과 다르게 동작한다. 많은 사람이 "Allow가 하나라도 있으면 허용"이라고 생각하지만, 실제 알고리즘은 더 엄격하다. AWS는 요청 하나가 들어오면 **① 명시적 Deny가 있는가 → 있으면 즉시 차단**, ② SCP(조직 가드레일)가 허용하는가, ③ Resource 정책이나 Identity 정책에 Allow가 있는가(같은 계정 안에서는 둘 중 하나만 Allow해도 되는 합집합), ④ 그 Allow가 Permission Boundary·Session 정책의 범위(교집합) 안에 있는가를 순서대로 평가한다. 이 중 **명시적 Deny는 그 어떤 Allow보다 우선**한다 — 한 정책이 Allow하고 다른 정책이 Deny하면 결과는 무조건 Deny다. 기본값은 "암묵적 거부(implicit deny)"이고, Allow가 없으면 자동으로 막힌다.
 
 이 평가 순서를 이해하면 도메인 1의 자격·권한 키워드가 한 줄로 정렬된다. **IAM**은 사용자·역할·정책의 본체다. **SCP**(Service Control Policy)는 조직 전체에 씌우는 천장으로, SCP가 막으면 계정 관리자가 Allow를 줘도 소용없다(가드레일). **Permission Boundary**는 개별 사용자/역할의 천장으로, 위임받은 관리자가 자기 권한 이상을 부여하지 못하게 막는 안전장치다. **STS**는 임시 자격증명을 발급하는 엔진이고, 그 위에 직원 SSO용 **IAM Identity Center**, 앱 사용자 로그인용 **Cognito User Pool**(JWT 발급), 그 사용자를 AWS 리소스 접근 가능한 임시 역할로 바꾸는 **Cognito Identity Pool**이 올라간다.
 
@@ -20,7 +20,7 @@ EC2가 S3에 접근할 때 액세스 키를 코드에 박지 않는 내부 원�
 
 암호화 키워드가 헷갈리는 이유는 KMS·CloudHSM·Secrets Manager·Parameter Store가 비슷해 보이기 때문이다. 그러나 이들은 **봉투 암호화(envelope encryption)**라는 한 구조 안에서 각자 다른 층을 맡는다. 봉투 암호화란 실제 데이터는 빠른 대칭키(DEK, Data Encryption Key)로 암호화하고, 그 DEK 자체를 다시 마스터키(CMK/KEK)로 암호화해 데이터 옆에 보관하는 방식이다. 데이터를 풀 때는 KMS에 "이 암호화된 DEK를 풀어 달라"고 요청하고, 받은 평문 DEK로 데이터를 복호화한 뒤 즉시 메모리에서 지운다. 이렇게 하면 대용량 데이터를 KMS로 직접 암호화하는 비효율(KMS는 4KB까지만 직접 처리)을 피하면서도, 마스터키는 KMS 밖으로 절대 나오지 않는 안전성을 얻는다.
 
-이 구조에서 각 서비스의 자리가 정해진다. **KMS CMK**는 마스터키를 관리하는 멀티테넌트 서비스다. **CloudHSM**은 FIPS 140-2 Level 3 인증을 받은 전용(single-tenant) 하드웨어 보안 모듈로, 규제상 키를 고객 전용 하드웨어에 둬야 할 때 쓴다. **Secrets Manager**는 DB 비밀번호·API 키를 저장하고 **자동 회전**(Lambda로 주기적 교체)까지 해 주는 게 차별점이다. **Parameter Store**는 구성값과 SecureString을 저장하지만 자동 회전 기능이 없어 더 단순·저렴하다. S3 쪽에서는 **SSE-S3**(AWS 관리 키)와 **SSE-KMS**(고객 KMS 키, 키 정책으로 통제)가 갈리고, KMS 호출 비용이 부담되면 **S3 Bucket Keys**로 호출량을 줄인다.
+이 구조에서 각 서비스의 자리가 정해진다. **KMS CMK**는 마스터키를 관리하는 멀티테넌트 서비스다. **CloudHSM**은 FIPS 140 Level 3 인증을 받은 전용(single-tenant) 하드웨어 보안 모듈로(KMS HSM도 FIPS 140-3 Level 3이라 구분 기준은 레벨이 아니라 단독 테넌시와 키 독점 제어), 규제상 키를 고객 전용 하드웨어에 둬야 할 때 쓴다. **Secrets Manager**는 DB 비밀번호·API 키를 저장하고 **자동 회전**(Lambda로 주기적 교체)까지 해 주는 게 차별점이다. **Parameter Store**는 구성값과 SecureString을 저장하지만 자동 회전 기능이 없어 더 단순·저렴하다. S3 쪽에서는 **SSE-S3**(AWS 관리 키)와 **SSE-KMS**(고객 KMS 키, 키 정책으로 통제)가 갈리고, KMS 호출 비용이 부담되면 **S3 Bucket Keys**로 호출량을 줄인다.
 
 봉투 암호화는 암호학의 **키 계층(key hierarchy)** 원리를 클라우드에 적용한 것이다. 모든 데이터를 하나의 마스터키로 직접 암호화하면 그 키 노출 시 전부 위험하고, 키 회전 시 모든 데이터를 재암호화해야 한다. 반면 DEK를 데이터마다 분리하면 마스터키 회전 시 DEK를 다시 감싸기만 하면 되고(데이터 재암호화 불필요), 마스터키는 HSM/KMS 안에서만 사용돼 노출면이 극소화된다. 대칭키(AES-256, 빠름)로 데이터를, 더 안전하게 보관되는 키로 그 키를 보호하는 이 패턴은 TLS의 세션 키 교환, 디스크 암호화(LUKS) 등 보안 시스템 전반에서 반복되는 보편 설계다.
 
@@ -108,7 +108,7 @@ D) 버킷 정책이 있으면 그것이 최종 결정한다
 
 **정답: B**
 
-해설: IAM 정책 평가에서 **명시적 Deny는 그 어떤 Allow보다 우선**하며, SCP는 조직 전체에 씌우는 가드레일(천장)이라 계정 내 Identity 정책이 Allow를 줘도 SCP가 Deny하면 무조건 차단된다. 평가 순서는 명시적 Deny → SCP 허용 여부 → Boundary/Resource/Session 교집합 → Identity Allow다. A는 평가 순서를 거꾸로 본 오답, C는 IAM에 그런 충돌 승인 메커니즘이 없으며, D는 버킷 정책도 명시적 Deny나 SCP를 이기지 못한다. 핵심 신호: "SCP가 Deny" = 그 위 모든 Allow 무효.
+해설: IAM 정책 평가에서 **명시적 Deny는 그 어떤 Allow보다 우선**하며, SCP는 조직 전체에 씌우는 가드레일(천장)이라 계정 내 Identity 정책이 Allow를 줘도 SCP가 Deny하면 무조건 차단된다. 평가 순서는 명시적 Deny → SCP 허용 여부 → Resource/Identity 정책의 Allow(같은 계정이면 합집합) → Boundary/Session 범위 확인이다. A는 평가 순서를 거꾸로 본 오답, C는 IAM에 그런 충돌 승인 메커니즘이 없으며, D는 버킷 정책도 명시적 Deny나 SCP를 이기지 못한다. 핵심 신호: "SCP가 Deny" = 그 위 모든 Allow 무효.
 
 ---
 
@@ -164,13 +164,13 @@ D) NACL이 트래픽을 막아서
 
 ---
 
-**문제 6.** 한 회사가 규제로 인해 암호화 키를 자사 전용 하드웨어에서 FIPS 140-2 Level 3 인증 환경으로 관리해야 한다. 적절한 서비스는?
+**문제 6.** 한 회사가 규제로 인해 암호화 키를 자사 전용(single-tenant) HSM에서 고객이 단독 통제하며 FIPS 140 Level 3 환경으로 관리해야 한다. 적절한 서비스는?
 
 A) KMS CMK B) CloudHSM C) Secrets Manager D) Parameter Store
 
 **정답: B**
 
-해설: **CloudHSM**은 FIPS 140-2 Level 3 인증을 받은 **단독(single-tenant) 전용 하드웨어 보안 모듈**로, 키를 고객 전용 하드웨어에 격리해야 하는 규제 요구에 쓴다. KMS(A)는 편리하지만 멀티테넌트 관리형이라 "전용 HSM·FIPS L3" 요구를 직접 만족하지 못한다(KMS도 HSM 기반이나 공유 모델). Secrets Manager(C)·Parameter Store(D)는 키 저장·비밀 관리 서비스지 HSM이 아니다. "전용 HSM / FIPS Level 3 / 키를 내 하드웨어에" = CloudHSM이 정답 신호다.
+해설: **CloudHSM**은 FIPS 140 Level 3 인증을 받은 **단독(single-tenant) 전용 하드웨어 보안 모듈**로, 키를 고객 전용 하드웨어에 격리해야 하는 규제 요구에 쓴다. KMS(A)는 편리하지만 멀티테넌트 관리형이라 "전용 HSM·고객 단독 통제" 요구를 직접 만족하지 못한다(KMS HSM도 FIPS 140-3 Level 3이라 레벨이 아니라 공유 모델이 차이다). Secrets Manager(C)·Parameter Store(D)는 키 저장·비밀 관리 서비스지 HSM이 아니다. "전용 HSM / 단독 테넌시·고객 단독 통제 / 키를 내 하드웨어에" = CloudHSM이 정답 신호다.
 
 ---
 

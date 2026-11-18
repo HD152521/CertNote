@@ -78,7 +78,7 @@ S3 출시부터 2020년 11월까지, S3는 **최종 일관성(Eventually Consist
 
 **MFA Delete**: 버전 관리 활성화·비활성화와 영구 삭제(버전 ID를 명시한 DELETE)에 MFA를 요구한다. 랜섬웨어 공격이나 실수로 인한 데이터 삭제를 방지하는 최후 방어선이다.
 
-> ⚠️ **함정**: 버전 관리는 활성화(Enabled) 후 비활성화(Disabled) 불가, 오직 정지(Suspended)만 가능하다. 정지 상태에서는 신규 객체에 버전 ID가 부여되지 않지만, 기존 버전들은 유지된다. 버전 관리를 완전히 끄고 싶으면 새 버킷을 만들어야 한다.
+> ⚠️ **함정**: 버전 관리는 활성화(Enabled) 후 비활성화(Disabled) 불가, 오직 정지(Suspended)만 가능하다. 정지 상태에서는 신규 객체가 버전 ID `null`로 저장되고(같은 키에 다시 PUT하면 기존 null 버전을 덮어쓴다), 기존 버전들은 유지된다. 버전 관리를 완전히 끄고 싶으면 새 버킷을 만들어야 한다.
 
 ## Object Lock: WORM 스토리지
 
@@ -175,6 +175,8 @@ Transfer Acceleration은 S3 버킷으로의 업로드 경로에 CloudFront 엣�
 
 S3 Object Lambda는 `GetObject` 요청을 가로채서 Lambda로 데이터를 변환한 후 클라이언트에 반환한다. 실시간 데이터 변환이 필요하지만 원본 데이터를 변경하고 싶지 않을 때 유용하다.
 
+> 참고(현재 가용성): S3 Object Lambda는 2025-11-07부로 기존 고객과 일부 APN 파트너에게만 제공된다(신규 고객 불가, 유지보수 모드). 시험(SAA-C03)에서는 '객체 접근 시 변환' 키워드로 여전히 등장한다.
+
 패턴: 
 - PII(개인 식별 정보) 마스킹: CSV 파일의 주민번호 열을 `****`로 대체해서 반환
 - 이미지 리사이징: 원본 고해상도 이미지를 클라이언트 요청 크기로 동적 변환
@@ -184,11 +186,9 @@ S3 Object Lambda는 `GetObject` 요청을 가로채서 Lambda로 데이터를 �
 [ S3 Object Lambda 흐름 ]
 
 클라이언트 → S3 Object Lambda Access Point
-                     ↓ (GetObject 가로챔)
-              Lambda 함수 (변환 처리)
-                     ↓ (WriteGetObjectResponse)
-              S3 원본 버킷 (실제 데이터)
-                     ↓ (변환된 결과)
+                     ↓ (GetObject 가로챔, Lambda 호출)
+              Lambda 함수 ← (원본 객체를 S3에서 가져옴, 지원 액세스 포인트/S3 원본 버킷)
+                     ↓ (변환 처리 후 WriteGetObjectResponse 호출)
 클라이언트 ← (변환된 데이터)
 ```
 

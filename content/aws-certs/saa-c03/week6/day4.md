@@ -24,7 +24,7 @@ Lambda의 Firecracker MicroVM은 이 중간 지점이다. 커널을 공유하지
 
 Amazon Elastic Container Registry(ECR)는 Docker 이미지와 OCI 아티팩트를 저장하는 완전 관리형 레지스트리다. DockerHub의 AWS 버전이지만, IAM을 통한 접근 제어, KMS 암호화, VPC 엔드포인트, Cross-Region 복제 등 엔터프라이즈 기능이 통합된다.
 
-**Image Scanning**: 이미지 push 시 자동으로 CVE 취약점을 스캔. Basic Scanning(무료)은 오픈소스 Clair 엔진 사용. Enhanced Scanning은 Amazon Inspector v2와 통합해 더 광범위한 취약점 데이터베이스(CVE, CIS 벤치마크)를 활용한다. CICD 파이프라인에서 취약점이 발견되면 배포 게이트를 구성해 차단할 수 있다.
+**Image Scanning**: 이미지 push 시 자동으로 CVE 취약점을 스캔. Basic Scanning(무료)은 AWS 네이티브 기술과 CVE 데이터베이스로 OS 취약점을 스캔한다(과거에는 오픈소스 Clair 사용). Enhanced Scanning은 Amazon Inspector와 통합해 OS와 프로그래밍 언어 패키지 취약점을 지속적으로 스캔한다. CICD 파이프라인에서 취약점이 발견되면 배포 게이트를 구성해 차단할 수 있다.
 
 **Lifecycle Policy**: 오래된 이미지를 자동으로 삭제. "최근 10개 tagged 이미지만 유지", "90일 이상 된 untagged 이미지 삭제" 같은 규칙으로 스토리지 비용을 관리한다.
 
@@ -75,7 +75,7 @@ Amazon Elastic Container Service(ECS)는 AWS가 2014년 출시한 자체 컨테�
 
 Fargate의 격리 강점: 각 Fargate 태스크는 별도의 경량 VM(Firecracker) 위에서 실행된다. 여러 태스크가 같은 호스트 커널을 공유하지 않아 보안 격리가 EC2 Launch Type보다 강하다. 규제 산업(금융, 의료)에서 Fargate를 선호하는 이유다.
 
-**사례 — Airbnb Fargate 전환**: Airbnb는 CI/CD 빌드 파이프라인을 Fargate로 전환하면서 유휴 EC2 노드 관리 비용을 제거했다. 빌드 수요에 따라 수초 내에 Fargate 태스크가 시작되고, 빌드 완료 후 자동 종료되어 실제 사용 시간만 과금된다. EC2 기반 빌드 팜 대비 인프라 관리 시간을 주당 수십 시간 절감했다고 밝혔다. Fargate Spot을 빌드 워커에 적용해 비용을 추가 70% 절감한 것도 주목할 만한 점이다.
+**사례(일반 시나리오) — CI/CD 빌드 파이프라인의 Fargate 전환**: 빌드 파이프라인을 Fargate로 옮기면 유휴 EC2 노드 관리 비용이 사라진다. 빌드 수요에 따라 수초 내에 Fargate 태스크가 시작되고, 빌드 완료 후 자동 종료되어 실제 사용 시간만 과금된다. 빌드 워커에 Fargate Spot을 적용하면 비용을 추가로 줄일 수 있다.
 
 ## 네트워킹 모드 — awsvpc가 표준인 이유
 
@@ -205,7 +205,7 @@ spec:
 
 Fargate Profiles는 특정 Kubernetes Namespace와 Label Selector와 매칭되는 Pod를 Fargate로 실행한다. DaemonSet, HostNetwork Pod, Stateful workload(PersistentVolume 일부)는 Fargate 미지원.
 
-**사례 — Shopify의 EKS + Karpenter**: Shopify는 블랙프라이데이 트래픽 폭증을 처리하기 위해 EKS에 Karpenter(오픈소스 node autoscaler)를 도입했다. 기존 Cluster Autoscaler 대비 노드 프로비저닝 속도가 3배 빠르고, 실시간으로 필요한 인스턴스 타입(Spot 포함)을 선택해 30% 비용 절감을 달성했다. 트래픽 피크 시 수백 개의 노드가 수분 내에 추가되고, 피크 이후 자동으로 축소된다. Karpenter는 2023년 CNCF에 기부됐다.
+**사례(일반 시나리오) — EKS + Karpenter**: 트래픽 폭증에 대응하기 위해 EKS에 Karpenter(오픈소스 node autoscaler, AWS가 개발해 2023년 CNCF에 기부)를 도입할 수 있다. 기존 Cluster Autoscaler보다 노드 프로비저닝이 빠르고, 필요한 인스턴스 타입(Spot 포함)을 실시간으로 선택해 비용을 줄이며, 피크 이후 자동으로 축소된다.
 
 ## 배포 전략 — Rolling, Blue/Green, Canary
 
@@ -241,7 +241,7 @@ Fargate Profiles는 특정 Kubernetes Namespace와 Label Selector와 매칭되�
 
 GCP GKE Autopilot은 노드 관리가 필요 없다는 점에서 AWS Fargate + EKS와 가장 가깝다. 2023년 기준 GKE 컨트롤 플레인이 Zone 클러스터는 무료라는 점이 EKS 대비 비용 우위다.
 
-**사례 — Netflix EKS 마이그레이션**: Netflix는 2018년부터 단계적으로 ECS에서 EKS로 마이그레이션을 진행했다. 수천 개의 마이크로서비스가 동작하는 환경에서 Kubernetes의 CRD(Custom Resource Definition)와 Operator 패턴을 활용해 Netflix 특유의 배포 요구사항(자동 카나리, 지역별 배포, 카오스 엔지니어링 훅)을 추상화했다. Spinnaker(Netflix 오픈소스 CD 플랫폼)와 EKS의 통합이 핵심이었다. 현재 Netflix의 수십만 컨테이너가 EKS 위에서 운영된다.
+**사례(일반 시나리오) — 대규모 마이크로서비스의 EKS 운영**: 수천 개의 마이크로서비스가 동작하는 환경에서는 Kubernetes의 CRD(Custom Resource Definition)와 Operator 패턴으로 자동 카나리, 지역별 배포, 카오스 엔지니어링 훅 같은 조직 특유의 배포 요구사항을 추상화할 수 있다. Spinnaker 같은 CD 플랫폼과 EKS의 통합이 핵심이 된다.
 
 ## CLI로 ECS Fargate 서비스 배포
 
@@ -265,7 +265,7 @@ docker push 111122223333.dkr.ecr.ap-northeast-2.amazonaws.com/prod/my-app:latest
 aws ecr describe-image-scan-findings \
   --repository-name prod/my-app \
   --image-id imageTag=latest \
-  --query 'imageScanFindings.findings[?severity==`CRITICAL`]'
+  --query 'imageScanFindings.enhancedFindings[?severity==`CRITICAL`]'
 
 # ECS 클러스터 생성 (Fargate + Fargate Spot 혼합)
 aws ecs create-cluster \

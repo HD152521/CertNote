@@ -45,7 +45,7 @@ Kinesis는 다르다. 메시지는 보관 기간(기본 24시간, 최대 365일)
 
 이 차이는 분산 시스템에서 **immutable log 패턴**의 가치와 직결된다. Jay Kreps의 "*The Log: What every software engineer should know about real-time data's unifying abstraction*"(2013, LinkedIn Engineering)이 정리한 핵심이다. 데이터를 가변 상태(mutable state)가 아니라 변하지 않는 이벤트의 시퀀스로 보면, 새로운 소비자가 생겼을 때 처음부터 다시 재생해서 동일한 상태를 재구성할 수 있다. Event Sourcing 패턴, CDC(Change Data Capture), Lambda Architecture(batch + streaming) 모두 이 가정 위에서 동작한다. SQS는 가변 상태(메시지를 가져가면 사라짐)이고 Kinesis는 불변 로그라는 점이 두 서비스를 완전히 다른 도구로 만든다.
 
-**사례**: Netflix는 2016년 이후 Keystone Pipeline에서 하루 1조 건 이상의 이벤트를 Kinesis 기반으로 처리한다. "왜 SQS가 아닌 Kinesis인가"의 답이 곧 이 축이다 — A/B 테스트, 추천 모델 학습, 실시간 대시보드 등 같은 이벤트를 여러 소비자가 다른 목적으로 사용하기 때문. SQS는 한 소비자가 가져가면 끝이라 같은 데이터를 여러 시스템이 분석하려면 fanout(SNS→SQS) 패턴이 필요한데, 새 소비자가 생기면 그 시점부터의 이벤트만 받을 수 있다(이전 이벤트 재생 불가). Kinesis는 보관 기간 안이면 새 소비자도 처음부터 재생 가능. [Netflix Tech Blog 참고](https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a).
+**일반론**: 대규모 이벤트 파이프라인(예: Netflix의 Keystone은 Kafka 같은 로그형 스트림 기반으로 알려져 있다)이 큐가 아닌 로그를 택하는 이유가 곧 이 축이다 — A/B 테스트, 추천 모델 학습, 실시간 대시보드 등 같은 이벤트를 여러 소비자가 다른 목적으로 사용하기 때문. SQS는 한 소비자가 가져가면 끝이라 같은 데이터를 여러 시스템이 분석하려면 fanout(SNS→SQS) 패턴이 필요한데, 새 소비자가 생기면 그 시점부터의 이벤트만 받을 수 있다(이전 이벤트 재생 불가). Kinesis는 보관 기간 안이면 새 소비자도 처음부터 재생 가능.
 
 ## 셋째 축: "이벤트 모양으로 라우팅해야 하나"
 
@@ -95,12 +95,12 @@ Two Generals' Problem(1975)이 증명한 것 — 두 노드 간 안정적인 합
 | 서비스 | 처리량 |
 |---|---|
 | **SQS Standard** | 무제한 (사실상) |
-| **SQS FIFO** | 300 TPS / 그룹 (배치 시 3,000), High Throughput FIFO는 그룹 분산으로 수만 |
+| **SQS FIFO** | 큐(파티션)당 API 액션별 300 TPS (배치 시 3,000 msg/s), High Throughput FIFO는 리전별 2,400~70,000 TPS(배치 시 최대 70만 msg/s) |
 | **SNS Standard** | 무제한 (지역별 publish quota 있음) |
-| **SNS FIFO** | 300 TPS / 그룹 |
-| **EventBridge** | default bus 400 TPS PutEvents, increase 가능 |
+| **SNS FIFO** | 토픽당 기본 3,000 msg/s (메시지 그룹당 300 msg/s) |
+| **EventBridge** | PutEvents 리전별 상이 (us-east-1·us-west-2·eu-west-1 10,000 TPS, 그 외 400~2,400 TPS), increase 가능 |
 | **Kinesis Data Streams** | shard당 in 1MB/s 또는 1,000 record/s, out 2MB/s (Enhanced Fan-Out은 소비자별 2MB/s) |
-| **Kinesis Firehose** | 자동 스케일 (관리형) |
+| **Amazon Data Firehose** (구 Kinesis Firehose) | 자동 스케일 (관리형) |
 
 > ⚠️ **함정**: Kinesis "shard"를 SQS와 같은 큐로 오해하지 말 것. shard는 partition key 해시로 결정되며, 한 partition key는 항상 같은 shard로 간다(순서 보장의 기반). hot partition key가 있으면 그 shard가 한도(in 1MB/s)에 막혀서 throttling이 일어나는데, 다른 shard는 한가해도 도움이 안 된다. 시험 시나리오에 "특정 키만 처리량이 막힌다"가 나오면 partition key 설계 문제 답.
 
@@ -241,16 +241,16 @@ D) Firehose 타겟으로 모든 이벤트를 S3에 적재하고 장애 시 Lambd
 
 ---
 
-**문제 10.** 한 회사가 글로벌하게 분산된 모바일 앱에서 푸시 알림을 보내야 한다 (iOS APNs, Android FCM, 웹 푸시). 최소한의 운영 부담으로 어떻게?
+**문제 10.** 한 회사가 글로벌하게 분산된 모바일 앱에서 푸시 알림을 보내야 한다 (iOS APNs, Android FCM, Windows WNS). 최소한의 운영 부담으로 어떻게?
 
-A) Lambda가 APNs·FCM·웹 푸시 SDK를 각각 호출하고 인증서·토큰 만료를 직접 관리
+A) Lambda가 APNs·FCM·WNS SDK를 각각 호출하고 인증서·토큰 만료를 직접 관리
 B) SNS Mobile Push (Platform Application + Endpoint)
 C) EventBridge rule이 디바이스 플랫폼별로 매칭해 각 푸시 서비스 API 타겟으로 라우팅
 D) Kinesis Data Streams → Lambda 소비자가 디바이스 토큰을 읽어 각 푸시 채널로 전송
 
 **정답: B**
 
-해설: SNS Mobile Push는 이런 시나리오를 위해 설계된 매니지드 서비스. APNs, FCM, ADM(Amazon), Baidu, MPNS, WNS 등의 푸시 서비스를 Platform Application 추상화로 통합하고, 디바이스 토큰을 Endpoint로 등록해서 SNS publish 한 번이면 적절한 채널로 라우팅된다. 인증서 관리·재시도·전송 보고서까지 매니지드. (A) Lambda 직접은 OS별 SDK·인증·만료 토큰 처리를 모두 직접 구현. (C)(D) 모두 푸시 서비스 통합이 자체 솔루션이 아니므로 추가 코드 필요.
+해설: SNS Mobile Push는 이런 시나리오를 위해 설계된 매니지드 서비스. APNs, FCM, ADM(Amazon), Baidu, WNS 등의 푸시 서비스를 Platform Application 추상화로 통합하고, 디바이스 토큰을 Endpoint로 등록해서 SNS publish 한 번이면 적절한 채널로 라우팅된다. 인증서 관리·재시도·전송 보고서까지 매니지드. (A) Lambda 직접은 OS별 SDK·인증·만료 토큰 처리를 모두 직접 구현. (C)(D) 모두 푸시 서비스 통합이 자체 솔루션이 아니므로 추가 코드 필요.
 
 ---
 
