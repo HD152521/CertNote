@@ -18,7 +18,6 @@ REST API에서만 가능한 기능들:
 - **요청/응답 변환(Mapping Templates)**: VTL(Velocity Template Language)로 요청/응답 형식 변환
 - **AWS 서비스 직접 통합**: Lambda 없이 DynamoDB, Kinesis, SQS 등을 직접 호출
 - **Private Endpoint**: Interface Endpoint를 통한 VPC 내부 전용 API
-- **클라이언트 인증서 상호 TLS**: 상호 TLS(mTLS) 지원
 
 ### HTTP API
 
@@ -32,7 +31,6 @@ HTTP API에서 불가능한 기능:
 - 응답 캐싱 (REST만)
 - 요청/응답 변환 (REST만)
 - AWS 서비스 직접 통합 (REST만)
-- mTLS (REST만)
 
 ### WebSocket API
 

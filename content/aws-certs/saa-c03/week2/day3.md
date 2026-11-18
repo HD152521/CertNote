@@ -239,13 +239,13 @@ D) IGW가 없다
 
 **문제 7.** VPC Flow Logs로 잡히지 않는 것은?
 
-A) AWS DNS 서버(169.254.169.253)로의 쿼리
+A) 인스턴스가 자체 운영하는 DNS 서버로 보내는 쿼리
 B) ARP 같은 L2 트래픽
-C) DHCP 서버와의 통신
+C) 서브넷 간 TCP 트래픽
 D) 모두 잡힌다
 
 **정답: B**
-해설: Flow Logs는 L3+(IP 이상)만 캡처. ARP, L2 멀티캐스트, 169.254.169.254 메타데이터 일부 패킷은 안 잡힌다. DNS 쿼리는 별도 Route 53 Resolver Query Logs로 캡처. DHCP는 UDP 67/68이라 잡히긴 하지만 EC2는 부팅 시에만 발생하므로 거의 보이지 않는다.
+해설: Flow Logs는 L3+(IP 이상)만 캡처하므로 ARP 같은 L2 트래픽은 안 잡힌다. 그 밖에 Amazon DNS 서버로의 쿼리(자체 DNS 서버로의 트래픽은 기록됨), DHCP, 169.254.169.254 메타데이터, 169.254.169.123 Time Sync도 기록되지 않는다. A와 C는 일반 IP 트래픽이라 기록된다. Amazon DNS 쿼리는 별도로 Route 53 Resolver Query Logs로 본다.
 
 ---
 

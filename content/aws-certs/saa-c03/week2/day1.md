@@ -94,7 +94,7 @@ VPC 라우팅은 BGP가 아니다. **정적 라우팅(Static)** 이 기본이고
 
 **사례(가상)**: 2020년 한 SaaS 회사가 Single-AZ NAT Gateway만 두고 운영하다가 그 AZ가 장애를 만나 모든 프라이빗 서브넷의 outbound가 막혔다. ALB는 살아있었지만 백엔드가 외부 API(Stripe, Twilio)에 못 닿아 결제가 30분간 실패. 사후 조치로 AZ별 NAT GW + AZ별 라우팅 테이블을 표준화했다. 이 패턴이 시험에서 "NAT 고가용성"의 정답이다. 또 2021년 Fastly CDN 장애로 글로벌 인터넷의 큰 부분이 1시간 영향받은 사건은 BGP가 아닌 *VCL 설정 파일의 한 줄*이 원인이었는데, "라우팅·설정의 결정성"이 양날의 검이라는 걸 다시 보여준다.
 
-**함정**: `local` 경로는 삭제 불가이고 우선순위가 *항상 최고*다. 즉 VPC CIDR 안의 IP는 다른 어떤 target으로도 우회할 수 없다. 그래서 같은 VPC 안에 있지만 격리하고 싶은 워크로드는 별도 VPC로 쪼개거나 SG/NACL로 차단해야 한다. 같은 이유로 PrivateLink endpoint도 VPC CIDR 안의 IP를 가지면 라우팅이 꼬일 수 있어, AWS가 endpoint 생성 시 충돌 검사를 한다.
+**함정**: `local` 경로는 삭제 불가다. VPC CIDR 안의 IP를 다른 target으로 보내려면 서브넷 CIDR 전체와 일치하는 더 구체적인 경로를 어플라이언스(GWLB endpoint, NAT GW, Network Firewall endpoint, ENI) target으로 두는 방법이 문서에 안내돼 있고(허용 target 목록에 peering은 없다), peering 등 일반 target으로는 우회할 수 없다. 그래서 같은 VPC 안에 있지만 격리하고 싶은 워크로드는 별도 VPC로 쪼개거나 SG/NACL로 차단해야 한다. 같은 이유로 PrivateLink endpoint도 VPC CIDR 안의 IP를 가지면 라우팅이 꼬일 수 있어, AWS가 endpoint 생성 시 충돌 검사를 한다.
 
 ## 기본 VPC vs 직접 만든 VPC
 
@@ -102,7 +102,7 @@ VPC 라우팅은 BGP가 아니다. **정적 라우팅(Static)** 이 기본이고
 
 실무 표준은 **직접 만든 VPC**를 쓰는 것이다. 기본 VPC를 삭제하거나 SCP로 사용을 금지하는 조직도 많다. Control Tower의 가드레일 중 하나가 "Disallow internet access through the default VPC"인 것도 같은 이유다.
 
-**함정**: 시험에서 "default VPC와 custom VPC의 차이"가 나온다. 핵심: default VPC는 모든 서브넷이 Public, custom VPC는 명시 설정 전에는 모두 Private 격리. 또 default VPC는 한 번 삭제하면 콘솔에서 다시 못 만들고 AWS Support에 요청해야 한다. AWS CLI로도 못 재생성하고, `aws ec2 create-default-vpc`는 한정된 조건에서만 동작한다.
+**함정**: 시험에서 "default VPC와 custom VPC의 차이"가 나온다. 핵심: default VPC는 모든 서브넷이 Public, custom VPC는 명시 설정 전에는 모두 Private 격리. 또 default VPC는 삭제해도 콘솔(Actions > Create default VPC)이나 `aws ec2 create-default-vpc`로 새로 만들 수 있다. 다만 이전 default VPC를 복원하는 것은 아니고, 서브넷 CIDR이 이전과 다른 AZ에 매핑될 수 있다.
 
 **사례(가상)**: 2019년 한 스타트업이 기본 VPC에서 운영하던 API 서버의 SG에서 실수로 `0.0.0.0/0`로 22 포트를 열었다가 5분 만에 스캐닝 봇에 감지되어 brute-force SSH 공격을 받았다. 운영 환경 첫 30분 안에 사건이 터졌고, 사후 분석에서 "기본 VPC를 쓰지 말았어야 했다"가 결론. 같은 사고가 GCP·Azure에서도 default VPC/VNet에서 반복적으로 발생한다.
 
@@ -216,7 +216,7 @@ C) 서브넷은 하나의 AZ에 묶인다
 D) 같은 VPC 안 서브넷끼리는 라우팅이 안 된다
 
 **정답: C**
-해설: 서브넷=AZ가 격리 기본 단위. VPC는 리전 단위. 같은 VPC 내 서브넷은 자동 라우팅(`local`). 이 `local` 경로는 삭제 불가다 — VPC 내부 격리는 SG/NACL로만 가능. 그래서 "같은 VPC 안에서 두 서브넷을 완전히 격리"하는 건 라우팅으로는 불가능하고 SG/NACL 또는 별도 VPC 분리가 필요하다.
+해설: 서브넷=AZ가 격리 기본 단위. VPC는 리전 단위. 같은 VPC 내 서브넷은 자동 라우팅(`local`). 이 `local` 경로는 삭제 불가다 — VPC 내부 격리는 SG/NACL로 한다. 그래서 "같은 VPC 안에서 두 서브넷을 완전히 격리"하는 건 라우팅으로는 불가능하고 SG/NACL 또는 별도 VPC 분리가 필요하다.
 
 ---
 
@@ -228,7 +228,7 @@ C) 드롭된다
 D) IGW로 간다
 
 **정답: A**
-해설: 함정 문제다. 이론적으로 LPM에 따르면 `/24`가 이겨야 하지만, **VPC 내부 CIDR(`local`)는 항상 우선**이다. `10.0.5.0/24`가 VPC CIDR(`10.0.0.0/16`) 안에 있으면 `local`이 이긴다. 그래서 같은 VPC 안의 IP를 다른 target으로 우회할 수 없다. 이게 바로 "같은 VPC 안 격리는 라우팅이 아니라 SG/NACL로"인 이유. 만약 `pcx-abc`의 destination이 VPC CIDR 밖이라면 그제야 LPM이 적용된다.
+해설: 함정 문제다. LPM으로는 `/24`가 이길 것 같지만, VPC CIDR 안의 대상에 대해 local보다 구체적인 경로를 둘 수 있는 target은 문서상 어플라이언스류(GWLB endpoint, NAT GW, Network Firewall endpoint, ENI)로 안내돼 있고 peering connection은 그 목록에 없으므로 `10.0.5.0/24 → pcx` 경로는 VPC 내부 트래픽을 우회시키지 못하고 `local`로 처리된다. 이게 "같은 VPC 안 격리는 라우팅이 아니라 SG/NACL로"인 이유. 만약 `pcx-abc`의 destination이 VPC CIDR 밖이라면 그제야 LPM이 적용된다.
 
 ---
 

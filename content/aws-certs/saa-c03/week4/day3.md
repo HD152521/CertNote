@@ -417,13 +417,13 @@ D) KMS 키를 삭제하고 새 키를 매주 생성
 
 ---
 
-**문제 7.** 다음 중 S3 접근 평가에서 "명시적 Deny"가 발생하는 경우를 모두 고르시오.
+**문제 7.** 다음 중 S3 접근 평가에서 "명시적 Deny"가 발생하는 경우를 모두 고르시오. (3개)
 
 A) SCP에서 s3:DeleteObject를 Deny
 B) 버킷 정책에 aws:SecureTransport=false 요청을 Deny
 C) IAM 정책에 s3:PutObject가 없음(Allow가 없음)
 D) Block Public Access가 활성화된 버킷에 Public ACL로 접근
-E) VPC Endpoint 정책에서 특정 버킷만 허용하고 다른 버킷에 접근
+E) VPC Endpoint 정책에 특정 버킷에 대한 Deny 문이 있고, 해당 버킷에 접근
 
-**정답: A, B, D, E**
-해설: A - SCP의 Deny는 조직 전체에 적용되는 명시적 Deny. B - 버킷 정책의 Deny 문. D - BPA가 Public ACL을 강제 차단하므로 명시적 Deny 효과. E - VPC Endpoint 정책에서 허용되지 않은 버킷은 Deny 처리. C는 "명시적 Deny"가 아니라 "묵시적 Deny(Allow 부재)"다. IAM 정책에 Allow가 없다고 해서 명시적 Deny는 아니며, 다른 계층(버킷 정책)에서 Allow가 있으면 접근 가능할 수 있다. 단, 교차 계정 접근에서는 양쪽 모두 Allow가 필요하다.
+**정답: A, B, E**
+해설: A - SCP의 Deny는 조직 전체에 적용되는 명시적 Deny. B - 버킷 정책의 Deny 문. E - VPC Endpoint 정책의 Deny 문은 명시적 Deny(정책에서 허용하지 않은 버킷을 막는 것은 Deny 문이 아니라 묵시적 Deny다). C는 "명시적 Deny"가 아니라 "묵시적 Deny(Allow 부재)"다. D의 Block Public Access는 정책 평가의 Deny 문이 아니라 Public ACL/정책을 무시·차단하는 별도의 보호 설정이므로 명시적 Deny 문이 아니다. IAM 정책에 Allow가 없다고 해서 명시적 Deny는 아니며, 다른 계층(버킷 정책)에서 Allow가 있으면 접근 가능할 수 있다. 단, 교차 계정 접근에서는 양쪽 모두 Allow가 필요하다.

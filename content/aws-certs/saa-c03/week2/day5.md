@@ -111,7 +111,7 @@ SG의 stateful은 *connection tracking*(conntrack)을 통해 구현된다. Linux
 7. **Default NACL은 모두 허용, Custom NACL은 모두 거부가 기본**. Fail-secure 설계.
 8. **Endpoint Policy로 exfiltration 방어**. IAM 정책만으로는 부족. `aws:PrincipalOrgID` 조건이 가장 강력.
 9. **Session Manager는 SSM/SSMmessages/EC2messages 3개 endpoint 필요**(완전 격리 환경). 빠뜨리면 작동 안 함.
-10. **VPC `local` route는 항상 우선**. LPM보다도 위. 같은 VPC 내 격리는 SG/NACL로만.
+10. **VPC `local` route는 삭제 불가**. 더 구체적인 경로는 어플라이언스(GWLB endpoint, NAT GW, ENI 등) target으로만 가능. 같은 VPC 내 격리는 SG/NACL로.
 11. **Cross-AZ 데이터 전송은 양방향 GB당 과금**. Multi-AZ HA의 숨은 비용이고 Week 10에서 자세히 다룬다.
 12. **NAT GW의 connection idle timeout은 350초 고정**. 더 긴 connection은 keepalive 필요. RDS·DB connection pool과 함께 자주 문제가 된다.
 

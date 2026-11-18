@@ -29,7 +29,7 @@
 | 최대 실행 시간 | 15분 |
 | 최대 메모리 | 10,240 MB (10 GB) |
 | 최대 동시 실행 (리전) | 기본 1,000 (증가 가능) |
-| Burst Concurrency | 500-3,000/분 (리전별 상이) |
+| 스케일링 속도 | 함수당 10초마다 +1,000 실행 환경 |
 | 배포 패키지 (ZIP) | 50 MB (압축), 250 MB (압축 해제) |
 | 배포 패키지 (Container) | 최대 10 GB |
 | 환경 변수 | 4 KB |
@@ -57,7 +57,7 @@
 | Mapping Templates (VTL) | O | X | X |
 | AWS 서비스 직접 통합 | O (DDB, SNS, SQS 등) | X | X |
 | Response Caching | O | X | X |
-| mTLS 클라이언트 인증 | O | X | X |
+| mTLS 클라이언트 인증 | O | O | X |
 | WebSocket 실시간 | X | X | O |
 | 최적 용도 | 엔터프라이즈 API, 파트너 통합 | 내부 마이크로서비스, 모바일 백엔드 | 채팅, 게임, 실시간 대시보드 |
 
@@ -190,7 +190,7 @@ EventBridge (스케줄 / 이벤트)
 |--------|---------|----------------|
 | Lambda | 자동 (다중 AZ 실행) | 동시성 한도 모니터링, DLQ 설정 |
 | API Gateway | 자동 (리전 내 HA) | 멀티 리전: Route 53 + 각 리전 API GW |
-| Step Functions | 자동 (서비스 수준 HA) | Standard: 실행 기록 1yr 보존, Express: CloudWatch 로그 보관 |
+| Step Functions | 자동 (서비스 수준 HA) | Standard: 실행 기록 종료 후 90일 보존, Express: CloudWatch 로그 보관 |
 | AppSync | 자동 (리전 내 HA) | 멀티 리전: Global DynamoDB Table 연동 |
 | ECS Fargate | 다중 AZ 서브넷 설정 | ALB + 최소 2 AZ에 태스크 분산, Fargate Spot + On-Demand 혼합 |
 | EKS | 컨트롤 플레인 AWS 관리 HA | 멀티 AZ 노드 그룹, etcd 자동 백업 |

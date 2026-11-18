@@ -114,7 +114,7 @@ D) S3 Transfer Acceleration
 
 **정답: B**
 
-해설: 저대역폭에서 200TB 온라인 전송은 수개월이 걸리므로 오프라인 물리 장비가 답이다 — Snowball Edge Storage Optimized는 약 80TB/대라 200TB는 여러 대 클러스터로 처리한다. DataSync(A)·Transfer Acceleration(D)은 네트워크를 타므로 회선이 병목이면 무의미하고, DMS(C)는 DB 마이그레이션 도구다. 회선 속도×데이터량으로 전송 시간을 가늠해 손익분기점을 넘으면 Snow라는 Day 4 판단이 핵심이다.
+해설: 저대역폭에서 200TB 온라인 전송은 수개월이 걸리므로 오프라인 물리 장비가 답이다 — Snowball Edge Storage Optimized는 약 80TB/대라 200TB는 여러 대 클러스터로 처리하는 것이 시험 정답 키워드다(현재 Snowball Edge는 2025-11-07부터 기존 고객 전용이며, 신규 고객은 DataSync·Data Transfer Terminal·파트너 솔루션을 안내받는다). DataSync(A)·Transfer Acceleration(D)은 네트워크를 타므로 회선이 병목이면 무의미하고, DMS(C)는 DB 마이그레이션 도구다. 회선 속도×데이터량으로 전송 시간을 가늠해 손익분기점을 넘으면 Snow라는 Day 4 판단이 핵심이다.
 
 ---
 

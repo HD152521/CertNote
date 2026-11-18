@@ -237,7 +237,7 @@ Fargate Profiles는 특정 Kubernetes Namespace와 Label Selector와 매칭되�
 | 컨트롤 플레인 비용 | EKS $0.10/hr | GKE 무료 (Zone) | AKS 무료 |
 | 이미지 레지스트리 | ECR | Artifact Registry | ACR (Azure Container Registry) |
 | IAM 통합 | Task Role / IRSA | Workload Identity | Managed Identity (Pod) |
-| 서비스 메시 | AWS App Mesh / Istio | Cloud Service Mesh / Istio | KEDA + Dapr |
+| 서비스 메시 | ECS Service Connect / Istio (App Mesh는 2026-09-30 지원 종료) | Cloud Service Mesh / Istio | KEDA + Dapr |
 
 GCP GKE Autopilot은 노드 관리가 필요 없다는 점에서 AWS Fargate + EKS와 가장 가깝다. 2023년 기준 GKE 컨트롤 플레인이 Zone 클러스터는 무료라는 점이 EKS 대비 비용 우위다.
 

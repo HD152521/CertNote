@@ -67,9 +67,9 @@ Circuit Breaker 패턴(Netflix Hystrix, 2012)과 DLQ는 다른 레벨의 실패 
 
 Long Polling은 `ReceiveMessage` 호출 시 `WaitTimeSeconds`(0-20초)를 지정하면, SQS가 그 시간 동안 메시지가 들어올 때까지 응답을 보류한다. 빈 큐에서 100ms마다 폴링하던 짓이 사라지고, 메시지가 들어오는 순간 즉시 응답이 오므로 latency도 줄어든다. AWS 공식 권장은 항상 20초 long polling이고, short polling은 "1초 이내 응답이 꼭 필요한 특수 케이스"에만 쓴다.
 
-배치 API(`SendMessageBatch`, `DeleteMessageBatch`)는 한 번에 10개 메시지를 처리하는 옵션이다. 256KB 페이로드 제한은 배치 전체에 적용되므로 메시지가 작을수록 효과가 크다. 10배 호출이 1배가 되니 비용이 1/10로 줄어든다.
+배치 API(`SendMessageBatch`, `DeleteMessageBatch`)는 한 번에 10개 메시지를 처리하는 옵션이다. 메시지 크기 제한(현재 1 MiB)은 배치 전체에 적용되므로 메시지가 작을수록 효과가 크다. 10배 호출이 1배가 되니 비용이 1/10로 줄어든다.
 
-256KB라는 메시지 크기 제한은 처음 보면 작아 보이지만, "메시지 큐는 큰 데이터를 옮기는 도구가 아니라 작은 시그널을 전달하는 도구"라는 AWS의 의도가 담겨 있다. 실제로 큰 파일을 보내야 하면 **SQS Extended Client Library**를 쓴다. 클라이언트가 페이로드를 S3에 업로드하고 SQS 메시지에는 S3 객체 reference만 넣는 패턴이다. 이걸 직접 구현해도 되지만 라이브러리가 download/cleanup까지 다 해준다.
+메시지 크기 제한(현재 최대 1 MiB = 1,048,576바이트, 과거 256KB였고 시험 문항·옛 자료에는 "256KB"로 나올 수 있다)은 처음 보면 작아 보이지만, "메시지 큐는 큰 데이터를 옮기는 도구가 아니라 작은 시그널을 전달하는 도구"라는 AWS의 의도가 담겨 있다. 실제로 큰 파일을 보내야 하면 **SQS Extended Client Library**를 쓴다. 클라이언트가 페이로드를 S3에 업로드하고 SQS 메시지에는 S3 객체 reference만 넣는 패턴이다. 이걸 직접 구현해도 되지만 라이브러리가 download/cleanup까지 다 해준다.
 
 Extended Client 패턴은 큐뿐 아니라 Kafka 진영에도 같은 이름(KIP-405)으로 존재하는 표준 기법이다. 메시징 시스템의 비용 모델이 "메시지 수 + 메시지 크기"인 반면 객체 스토리지(S3)는 GB·요청당 매우 저렴하므로, 큰 페이로드를 객체 스토리지로 우회시키는 게 거의 항상 경제적이다. 다만 트레이드오프가 있다: 컨슈머가 S3 GET까지 해야 하므로 latency가 늘고, S3 권한과 SQS 권한 두 가지를 IAM에서 관리해야 한다.
 
@@ -163,7 +163,7 @@ aws cloudwatch get-metric-statistics --namespace AWS/SQS \
 
 ## 정리
 
-SQS는 분산 시스템의 가장 오래된 문제 — "두 컴포넌트를 시간적으로 분리하면서도 신뢰성 있게 메시지를 주고받기" — 에 대한 AWS의 답이다. 표준 큐는 무제한 처리량과 at-least-once를, FIFO 큐는 엄격한 순서와 exactly-once-processing을 택했다. 가시성 타임아웃은 분산 lock 없이 "한 메시지 = 한 컨슈머"를 보장하는 leasing 메커니즘이고, DLQ는 poison message 격리, Long Polling은 비용·지연 최적화, Extended Client는 256KB 한계를 우회하는 표준 패턴이다.
+SQS는 분산 시스템의 가장 오래된 문제 — "두 컴포넌트를 시간적으로 분리하면서도 신뢰성 있게 메시지를 주고받기" — 에 대한 AWS의 답이다. 표준 큐는 무제한 처리량과 at-least-once를, FIFO 큐는 엄격한 순서와 exactly-once-processing을 택했다. 가시성 타임아웃은 분산 lock 없이 "한 메시지 = 한 컨슈머"를 보장하는 leasing 메커니즘이고, DLQ는 poison message 격리, Long Polling은 비용·지연 최적화, Extended Client는 메시지 크기 한계(1 MiB, 과거 256KB)를 우회하는 표준 패턴이다.
 
 다음 글에서는 SQS가 답하지 못하는 "같은 이벤트를 N개 컨슈머가 각자 처리"라는 시나리오에 대한 답, SNS와 fanout 패턴을 본다. SQS + SNS 조합은 AWS에서 가장 자주 보이는 디커플링 아키텍처이고, 이 둘의 분업을 이해하면 EventBridge와 Kinesis로의 확장도 자연스럽게 따라온다.
 
@@ -219,15 +219,15 @@ D) CloudWatch Events로 메시지 도착 트리거
 
 ---
 
-**문제 5.** 한 시스템이 평균 500KB의 PDF 첨부 파일을 큐로 전달해야 한다. SQS의 256KB 제한을 어떻게 해결하는가?
+**문제 5.** 한 시스템이 평균 2MB의 PDF 첨부 파일을 큐로 전달해야 한다. SQS의 메시지 크기 제한(1 MiB)을 어떻게 해결하는가?
 
-A) 메시지를 256KB 청크로 분할해 여러 메시지로 전송
+A) 메시지를 1 MiB 미만 청크로 분할해 여러 메시지로 전송
 B) S3에 파일 업로드 후 SQS 메시지에는 S3 객체 참조만 포함 (Extended Client Library)
-C) FIFO 큐로 변경하면 1MB까지 가능
+C) FIFO 큐로 변경하면 10MB까지 가능
 D) Kinesis Data Streams로 전환
 
 **정답: B**
-해설: SQS Extended Client Library는 페이로드를 자동으로 S3에 업로드하고 메시지에는 S3 reference만 넣는다. 컨슈머 측 라이브러리가 자동으로 S3에서 다운로드하고 처리 후 cleanup까지 한다. Kafka 진영의 KIP-405와 같은 표준 패턴이다. A는 메시지 순서·일관성 보장이 깨지고 컨슈머 측 재조립이 복잡하다. C는 잘못된 정보로, FIFO도 256KB는 동일. D는 Kinesis도 레코드당 1MB 제한이 있고 SQS의 큐 모델을 대체하지도 못한다. 다만 Kinesis로 옮기는 게 옳은 시나리오(여러 컨슈머가 같은 데이터 독립 처리)도 있는데 그건 Day 4에서 다룬다.
+해설: SQS Extended Client Library는 페이로드를 자동으로 S3에 업로드하고 메시지에는 S3 reference만 넣는다. 컨슈머 측 라이브러리가 자동으로 S3에서 다운로드하고 처리 후 cleanup까지 한다. Kafka 진영의 KIP-405와 같은 표준 패턴이다. A는 메시지 순서·일관성 보장이 깨지고 컨슈머 측 재조립이 복잡하다. C는 잘못된 정보로, FIFO도 메시지 크기 한도(1 MiB)는 동일. D는 SQS의 큐 모델을 스트림으로 대체하는 워크로드 미스매치다. 다만 Kinesis로 옮기는 게 옳은 시나리오(여러 컨슈머가 같은 데이터 독립 처리)도 있는데 그건 Day 4에서 다룬다.
 
 ---
 

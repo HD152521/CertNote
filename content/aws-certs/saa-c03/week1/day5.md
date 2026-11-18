@@ -92,7 +92,7 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 | FSx for Lustre | Strong (POSIX) | CP |
 | Neptune | Strong (single writer) | CP |
 
-DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공되고(`ConsistentRead=true`), Global Table은 항상 eventual이다. Global Table의 충돌 해결은 **Last-Writer-Wins**(LWW) 기반이라 동시 쓰기 시 데이터 손실 가능성이 있다. 그래서 멀티 마스터 글로벌 쓰기가 필요하면 DynamoDB Global Table을 쓰되 "타임스탬프 충돌이 비즈니스적으로 허용 가능한가"를 먼저 따져야 한다. 더 엄격한 일관성이 필요하면 CRDT(Conflict-free Replicated Data Type)나 Paxos/Raft 기반 합의 알고리즘이 필요한데, AWS는 이를 Aurora의 quorum-based replication(6-way write across 3 AZ, 4/6 read, 3/6 write 쿼럼)으로 일부 제공한다. Aurora 논문 *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases*(SIGMOD 2017)가 이 아키텍처의 정수다.
+DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공되고(`ConsistentRead=true`), Global Table은 항상 eventual이다. Global Table의 충돌 해결은 **Last-Writer-Wins**(LWW) 기반이라 동시 쓰기 시 데이터 손실 가능성이 있다. 그래서 멀티 마스터 글로벌 쓰기가 필요하면 DynamoDB Global Table을 쓰되 "타임스탬프 충돌이 비즈니스적으로 허용 가능한가"를 먼저 따져야 한다. 더 엄격한 일관성이 필요하면 CRDT(Conflict-free Replicated Data Type)나 Paxos/Raft 기반 합의 알고리즘이 필요한데, AWS는 이를 Aurora의 quorum-based replication(6-way write across 3 AZ, 4/6 write, 3/6 read 쿼럼)으로 일부 제공한다. Aurora 논문 *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases*(SIGMOD 2017)가 이 아키텍처의 정수다.
 
 **사례**: 2015년 GitHub은 자체 MySQL 클러스터 분할 사고로 24시간 동안 데이터 일관성이 깨졌다. 두 데이터센터 간 네트워크 분할이 발생했고, 양쪽 모두 자신이 primary라고 판단해 쓰기를 받아버린 split-brain 사건이다. 사후 분석 보고서에서 GitHub은 "분할 시 우리는 CP를 선택하고 가용성을 포기한다"고 명시했다. 이런 사례는 CAP의 trade-off가 추상적 이론이 아니라 매일 운영자가 마주하는 결정임을 보여준다. AWS는 RDS Multi-AZ에서 같은 결정을 내렸고, 그래서 페일오버 동안 60초 정도 가용성이 끊긴다.
 
