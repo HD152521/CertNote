@@ -232,7 +232,7 @@ BLAKE              30 ETC
 CLARK              10 ACCOUNTING
 ```
 
-- 인자 수가 짝수로 끝나면(마지막에 기본값이 없으면) 해당 없는 행은 NULL 이다. 위에서 `'ETC'` 를 빼면 BLAKE 는 NULL 이 된다.
+- 검색값·결과 쌍 뒤에 기본값이 없으면(식을 포함한 전체 인자 수가 홀수면) 해당 없는 행은 NULL 이다. 위에서 `'ETC'` 를 빼면 BLAKE 는 NULL 이 된다.
 - 비교는 **같은지(=)** 만 한다. `SAL >= 3000` 같은 범위 조건은 DECODE 로 바로 못 쓰고 searched CASE 를 쓴다.
 - DECODE 는 Oracle 함수다. SQL Server 에는 없고 CASE 를 쓴다.
 
