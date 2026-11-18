@@ -168,13 +168,14 @@ tail -f /var/log/nginx/error.log
 - 성능 튜닝의 핵심 지시어는 다음과 같다.
 
 ```nginx
+worker_processes auto;
+worker_rlimit_nofile 65535;   # 워커당 열 수 있는 파일 디스크립터 한계 (main 컨텍스트 — http { } 안에 넣으면 nginx -t 실패)
+
 http {
     sendfile on;              # 커널이 직접 파일 전송(복사 줄임)
     tcp_nopush on;            # 패킷을 모아 전송(효율↑)
     keepalive_timeout 65;     # 연결 재사용 유지 시간
     gzip on;                  # 응답 압축으로 전송량 감소
-
-    worker_rlimit_nofile 65535;   # 워커당 열 수 있는 파일 디스크립터 한계
 }
 ```
 

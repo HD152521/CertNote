@@ -100,6 +100,7 @@ $ ls -ld /project
 drwxrws---. 2 root dev 6 Sep  3 09:00 /project      ← 그룹 자리가 s
 $ id -gn
 alice
+$ umask 022                    ← Rocky 일반 사용자 기본은 002 라서, 022 로 맞춘 경우다
 $ touch /project/plan.txt
 $ mkdir /project/docs
 $ ls -l /project

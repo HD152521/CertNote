@@ -36,7 +36,7 @@
 | `grep` | 패턴 검색 | `grep -rn "error" /var/log` |
 | `awk` | 필드 처리 | `awk '{print $1}' file` |
 | `sed` | 스트림 편집 | `sed 's/old/new/g' file` |
-| `sort`/`uniq` | 정렬·중복 | `sort file | uniq -c` |
+| `sort`/`uniq` | 정렬·중복 | `sort file \| uniq -c` |
 | `wc` | 개수 세기 | `wc -l file` |
 
 **find 옵션 집중**: `-name`(이름), `-type f/d`(파일/디렉터리), `-mtime +7`(7일 초과 수정), `-size +100M`(크기), `-perm`(권한), `-exec ... {} \;`(실행). 실기에서 `-exec rm {} \;` 형태를 쓴다.
@@ -65,7 +65,7 @@ mount /dev/sdb1 /data # 임시 마운트
 | 주기 작업 등록 | `crontab -e` |
 | cron 형식 | `분 시 일 월 요일 명령` |
 | 일회성 예약 | `at 시간` |
-| 프로세스 확인 | `ps -ef | grep 이름` |
+| 프로세스 확인 | `ps -ef \| grep 이름` |
 | 강제 종료 | `kill -9 PID` |
 | 이름으로 종료 | `killall 프로세스명` |
 
@@ -79,7 +79,7 @@ mount /dev/sdb1 /data # 임시 마운트
 
 | 서비스 | 설정 파일 | 핵심 항목 |
 |--------|-----------|-----------|
-| 네트워크 | `/etc/sysconfig/network-scripts/ifcfg-*` | IPADDR, NETMASK, GATEWAY |
+| 네트워크 | `/etc/sysconfig/network-scripts/ifcfg-*` (RHEL 9는 `/etc/NetworkManager/system-connections/`) | IPADDR, NETMASK, GATEWAY |
 | DNS 클라이언트 | `/etc/resolv.conf` | nameserver |
 | 호스트명 | `/etc/hostname` | 호스트명 |
 | SSH | `/etc/ssh/sshd_config` | Port, PermitRootLogin |
@@ -176,7 +176,7 @@ mount /dev/sdb1 /data # 임시 마운트
 
 | 기호 | 의미 |
 |------|------|
-| `|` | 앞 출력 → 뒤 입력 |
+| `\|` | 앞 출력 → 뒤 입력 |
 | `>` | 출력 덮어쓰기 |
 | `>>` | 출력 이어붙이기 |
 | `2>` | 표준 에러 리다이렉트 |
@@ -193,12 +193,12 @@ mount /dev/sdb1 /data # 임시 마운트
 
 | 상황 | 대응 |
 |------|------|
-| root 비밀번호 분실 | GRUB에서 `rescue`/single 모드 진입 후 `passwd` |
+| root 비밀번호 분실 | GRUB 커널 라인에 `rd.break` 추가 → `mount -o remount,rw /sysroot` → `chroot /sysroot` → `passwd` → `touch /.autorelabel` |
 | fstab 오류로 부팅 실패 | 응급 모드에서 fstab 수정 |
 | 서비스 시작 실패 | `systemctl status`·`journalctl -xe`로 원인 추적 |
 | 디스크 꽉 참 | `du`로 큰 파일 찾아 정리, 로그 로테이트 |
 
-**단일 사용자 모드**: GRUB 메뉴에서 커널 라인에 `single` 또는 `rd.break`를 추가해 진입하면 root 권한으로 복구 작업이 가능하다. 비밀번호 복구의 표준 절차.
+**단일 사용자 모드**: GRUB 메뉴에서 커널 라인에 `single`(또는 `rescue`)을 추가해 진입하는 복구 모드다. 다만 RHEL/Rocky 7 이상에서는 이 모드도 root 암호를 요구(sulogin)하므로 **암호를 알 때만** 쓸 수 있다. 암호를 잃었다면 커널 라인에 `rd.break`를 추가해 initramfs 셸로 들어가 `mount -o remount,rw /sysroot` → `chroot /sysroot` → `passwd` → `touch /.autorelabel`(SELinux 재라벨) 순서로 복구하는 것이 표준 절차다. (구형 시험 문항에서는 `single` 모드 진입 후 `passwd`로 풀이하기도 한다.)
 
 철자와 옵션을 손으로 반복 연습해야 한다. 아래 모의로 점검한다.
 
@@ -216,7 +216,7 @@ mount /dev/sdb1 /data # 임시 마운트
 - **특수 권한 자리** : chmod 네 자리 중 맨 앞. SetUID 4, SetGID 2, Sticky 1을 더해 쓴다(`/tmp`는 1777).
 - **exports 공백 함정** : 클라이언트와 괄호 사이를 띄우면 모든 호스트에 권한이 열리는 NFS 문법 함정.
 - **파이프(`|`)** : 앞 명령의 출력을 뒤 명령의 입력으로 넘기는 연결. 필터를 이어 붙이는 사고가 실기의 핵심이다.
-- **단일 사용자 모드** : GRUB에서 `single`·`rd.break`로 진입하는 복구 모드. root 비밀번호 재설정의 표준 절차다.
+- **단일 사용자 모드** : GRUB에서 `single`로 진입하는 복구 모드(RHEL 7+는 root 암호 필요). 암호 분실 시에는 `rd.break` → `chroot /sysroot` → `passwd` → `touch /.autorelabel`이 표준 절차다.
 
 ## 📝 연습 문제
 

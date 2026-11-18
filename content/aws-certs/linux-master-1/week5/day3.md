@@ -49,7 +49,7 @@ resize2fs /dev/myvg/mylv           # ext4 파일시스템을 LV 크기에 맞춤
 # xfs라면:
 xfs_growfs /mnt/data               # (마운트포인트 지정, 온라인 확장)
 
-# 두 단계를 한 번에 (ext만, -r = resize fs까지):
+# 두 단계를 한 번에 (-r = fsadm으로 파일시스템까지 resize, ext·xfs 지원):
 lvextend -r -L +5G /dev/myvg/mylv
 ```
 

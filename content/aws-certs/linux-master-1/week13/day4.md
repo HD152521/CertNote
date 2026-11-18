@@ -221,6 +221,8 @@ logrotate -f /etc/logrotate.d/myapp   # 강제 즉시 순환
 
 ## TCP Wrapper — 서비스 단위 접근 제어
 
+> ⚠️ **시험 범위 vs 현행**: TCP Wrapper(`hosts.allow`/`hosts.deny`)는 CentOS 6/7 시절의 시험 범위 개념이다. RHEL 8부터(Rocky 8/9 포함) `tcp_wrappers`/`libwrap`이 제거되어 sshd·vsftpd가 두 파일을 더는 참조하지 않으므로 **현행 Rocky에서는 효과가 없다**. 실무에서는 firewalld(rich rule)나 sshd의 `AllowUsers`·`Match` 설정을 쓴다.
+
 - 방화벽보다 상위 계층에서, libwrap을 쓰는 서비스(sshd, vsftpd 등)는 두 파일로 접근을 통제한다.
 
 ```text

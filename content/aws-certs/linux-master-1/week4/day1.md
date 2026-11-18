@@ -50,7 +50,7 @@ GECOS라는 이름은 1970년대 General Electric Comprehensive Operating System
 ## /etc/shadow — 암호 해시와 수명(aging) 정책
 
 - `/etc/shadow`는 passwd에서 떼어낸 **암호의 비밀 금고**다.
-- 권한은 `400` 또는 `640`(root 또는 shadow 그룹만 읽기)으로 엄격히 막혀 있다.
+- 권한은 `000` 또는 `400`(RHEL 기본은 000, root만 접근)으로 엄격히 막혀 있다.
 - 한 줄은 **9개 필드**다. 여기가 실기 단답의 최대 격전지다.
 
 ```bash
@@ -158,7 +158,7 @@ sudo getent gshadow developers
 | 파일 | 권한 | 필드 수 | 핵심 내용 | 짝 |
 |------|------|---------|-----------|-----|
 | /etc/passwd | 644 | 7 | UID·GID·홈·셸 | shadow |
-| /etc/shadow | 400/640 | 9 | 해시·암호 수명 | passwd |
+| /etc/shadow | 000/400 | 9 | 해시·암호 수명 | passwd |
 | /etc/group | 644 | 4 | GID·보조멤버 | gshadow |
 | /etc/gshadow | 400 | 4 | 그룹암호·관리자 | group |
 

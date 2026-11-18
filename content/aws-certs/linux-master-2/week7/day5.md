@@ -233,7 +233,7 @@ D) 우분투
 A) tar -zxvf file.tar.gz  
 B) tar -zcvf file.tar.gz  
 C) tar -jxvf file.tar.gz  
-D) tar -xvf file.tar.gz  
+D) tar -tzvf file.tar.gz  
 
 **정답: A**  
 해설: `-x`는 아카이브를 푸는 옵션이고 `-z`는 gzip 압축을 처리하는 옵션이므로 둘을 함께 써야 한다. `-c`는 반대로 새 아카이브를 만드는 옵션이며 `-j`는 bzip2 압축에 사용한다.

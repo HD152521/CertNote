@@ -151,7 +151,7 @@
 
 | 파일 | 용도 |
 |------|------|
-| `ifcfg-eth0` | 인터페이스별 IP·게이트웨이 |
+| `ifcfg-eth0` | 인터페이스별 IP·게이트웨이(RHEL 7/8·시험 기준, RHEL 9는 keyfile) |
 | `/etc/sysconfig/network` | 전역 네트워크 설정 |
 | `/etc/hostname` | 호스트명 |
 | `/etc/hosts` | 정적 이름 해석 |
@@ -167,7 +167,7 @@
 | 개념 | 설명 |
 |------|------|
 | 방화벽 | iptables/firewalld로 트래픽 통제 |
-| TCP Wrapper | `hosts.allow`/`hosts.deny` 접근 제어 |
+| TCP Wrapper | `hosts.allow`/`hosts.deny` 접근 제어(시험 개념, RHEL 8+는 미지원) |
 | 포트 스캔 | nmap 등으로 열린 포트 탐색(공격 정찰) |
 | IDS/IPS | 침입 탐지/차단 시스템 |
 

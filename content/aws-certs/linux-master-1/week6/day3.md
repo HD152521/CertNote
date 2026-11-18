@@ -116,15 +116,19 @@ systemctl is-active sshd      # 동작 중이면 active 출력
 ```ini
 [Unit]
 Description=My Web Service
-After=network.target          # network.target 이후에 시작
+# network.target 이후에 시작
+After=network.target
 
 [Service]
-ExecStart=/usr/bin/myapp      # 시작 명령
-Restart=on-failure            # 실패 시 자동 재시작
+# 시작 명령
+ExecStart=/usr/bin/myapp
+# 실패 시 자동 재시작
+Restart=on-failure
 User=myuser
 
 [Install]
-WantedBy=multi-user.target    # enable 시 어느 target에 연결할지
+# enable 시 어느 target에 연결할지
+WantedBy=multi-user.target
 ```
 
 - unit 파일을 새로 만들거나 고친 뒤에는 **systemd가 변경을 인식하도록 다시 읽혀야** 한다.
