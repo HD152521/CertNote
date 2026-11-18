@@ -43,7 +43,7 @@
 
 Redis(Remote Dictionary Server)는 2009년 Salvatore Sanfilippo가 이탈리아에서 개발한 오픈 소스 인메모리 데이터 구조 서버다. "캐시"라고 부르지만 그 안에는 String, List, Set, Sorted Set(ZSet), Hash, Bitmap, HyperLogLog, Stream, Geospatial Index라는 풍부한 데이터 구조가 있다. 이 다양성이 Redis를 단순 캐시를 넘어 세션 스토어, 리더보드, 실시간 카운터, Pub/Sub 브로커, 작업 큐로 만든다.
 
-ElastiCache Redis는 이 Redis를 관리형으로 제공한다. 운영자가 Redis 바이너리 설치, AOF/RDB 설정, Cluster Mode 구성, 복제 설정을 직접 할 필요 없이, AWS 콘솔과 CLI로 제어한다. ElastiCache Redis는 Redis 7.x까지 지원하며, Redis Cluster 모드와 Redis Sentinel 모드 모두 지원한다.
+ElastiCache Redis는 이 Redis를 관리형으로 제공한다. 운영자가 Redis 바이너리 설치, 백업(RDB 스냅샷) 설정, Cluster Mode 구성, 복제 설정을 직접 할 필요 없이, AWS 콘솔과 CLI로 제어한다. ElastiCache Redis는 Redis 7.x까지 지원하며, Redis Cluster 모드와 Redis Sentinel 모드 모두 지원한다.
 
 **Redis 데이터 구조와 사용 사례:**
 
@@ -69,7 +69,9 @@ Redis는 인메모리지만 데이터를 디스크에 영속화하는 두 가지
 - `fsync=everysec`: 초당 1회 동기화(RPO ≈ 1초, 권장)
 - `fsync=no`: OS에 맡김(RPO 불확실, 최고 성능)
 
-ElastiCache Redis에서 영속성을 위해 두 가지를 함께 쓸 수 있다(RDB로 주기적 스냅샷 + AOF로 명령 기록). 그러나 ElastiCache는 멀티 AZ 복제가 있어서 영속성 자체보다는 "백업/복구"와 "HA" 관점에서 설정을 선택한다.
+> ⚠️ **ElastiCache의 AOF**: ElastiCache for Redis는 Redis 2.8.22부터 AOF를 지원하지 않는다. 위 AOF 설명은 오픈소스 Redis 기준의 일반 개념이며, ElastiCache에서 영속성이 필요하면 RDB 기반 백업(스냅샷)을 쓰고, 내구성이 중요하면 MemoryDB를 사용한다.
+
+ElastiCache Redis에서는 RDB 기반 백업/스냅샷만 사용할 수 있다. 또 ElastiCache는 멀티 AZ 복제가 있어서 영속성 자체보다는 "백업/복구"와 "HA" 관점에서 설정을 선택한다.
 
 **Redis 단일 스레드 모델과 원자성** — Redis 6.0(2020)부터 Redis는 Multi-threaded I/O를 도입했다. 이전까지 Redis는 단일 스레드로 명령을 처리해서 CPU 코어를 하나밖에 사용하지 못했다. Redis 6.0에서는 네트워크 I/O는 멀티스레드로 처리하고, 명령 실행은 여전히 단일 스레드로 유지해서 원자성(Atomicity)을 보장한다. Redis의 단일 스레드 명령 처리가 만들어내는 원자성 덕분에 `INCR` 명령은 Race Condition 없이 카운터 증가를 보장한다. ElastiCache Redis는 이 버전을 지원한다. 성능 병목이 CPU 단독이라면 Cluster Mode를 통한 샤딩이 더 효과적이다.
 
@@ -113,7 +115,7 @@ ElastiCache Memcached가 적합한 경우:
 | 항목 | ElastiCache Redis | ElastiCache Memcached |
 |------|-----------------|----------------------|
 | 데이터 구조 | String/List/Set/ZSet/Hash/Stream/Geo 등 | String만 |
-| 영속성 | RDB/AOF 옵션 | 없음 |
+| 영속성 | RDB 스냅샷 백업(AOF 미지원) | 없음 |
 | 복제 / HA | Multi-AZ + 자동 페일오버 | 없음 |
 | 클러스터 | Cluster Mode (샤딩, 16384 슬롯) | 단순 해시 분산 (클라이언트 측) |
 | Pub/Sub | 지원 | 미지원 |
@@ -145,7 +147,7 @@ Primary ─비동기─► Replica          Writer ─동기─► Multi-AZ 트�
 - 세션 데이터처럼 빠른 접근이 중요하지만 손실되면 안 되는 경우
 - 리더보드, 실시간 카운터처럼 높은 쓰기 처리량 + 내구성이 모두 필요할 때
 
-**MemoryDB WAL 메커니즘** — MemoryDB의 내구성 보장 메커니즘은 전통적 RDBMS의 WAL(Write-Ahead Logging)과 유사하다. 쓰기가 들어오면 먼저 트랜잭션 로그에 기록하고(복수의 AZ에 동기적으로), 그 다음 메모리에 적용한다. 장애 시 트랜잭션 로그를 재실행해서 메모리 상태를 복구한다. Redis의 기존 AOF(fsync=always)와 다른 점은 MemoryDB의 로그가 Multi-AZ에 분산 저장되어 AZ 하나가 완전히 손실돼도 데이터가 보존된다는 것이다. ElastiCache Redis에서 AOF를 활성화해도 AOF 파일 자체가 단일 AZ 내 디스크에만 존재하므로 AZ 장애 시 복구 불가능하다.
+**MemoryDB WAL 메커니즘** — MemoryDB의 내구성 보장 메커니즘은 전통적 RDBMS의 WAL(Write-Ahead Logging)과 유사하다. 쓰기가 들어오면 먼저 트랜잭션 로그에 기록하고(복수의 AZ에 동기적으로), 그 다음 메모리에 적용한다. 장애 시 트랜잭션 로그를 재실행해서 메모리 상태를 복구한다. Redis의 기존 AOF(fsync=always)와 다른 점은 MemoryDB의 로그가 Multi-AZ에 분산 저장되어 AZ 하나가 완전히 손실돼도 데이터가 보존된다는 것이다. ElastiCache Redis는 AOF 자체를 지원하지 않으며, 스냅샷(RDB) 백업만으로는 마지막 백업 이후의 쓰기가 손실될 수 있다.
 
 > ⚠️ **ElastiCache Redis vs MemoryDB 선택 기준** — 시험 함정: "Redis API를 사용하고 고가용성이 필요하면 MemoryDB를 선택한다"는 식의 단순화를 피해야 한다. ElastiCache Redis Multi-AZ도 고가용성을 제공한다. 차이는 **내구성 보장 수준**이다. 캐시 데이터 손실이 허용되고(DB에서 다시 채울 수 있으면) → ElastiCache Redis. 데이터 손실이 절대 허용되지 않고 Redis가 데이터의 진실 소스여야 하면 → MemoryDB. 비용: MemoryDB가 ElastiCache Redis보다 약 2-3배 비싸다.
 
@@ -223,7 +225,7 @@ EC2/ECS → CloudWatch Logs
 
 **Keyspaces**: Apache Cassandra와 호환되는 관리형 서비스. 키워드: "Cassandra 마이그레이션", "CQL(Cassandra Query Language)", "Wide-Column 스토어". Cassandra의 분산 Wide-Column 모델을 완전 관리형으로 운영. 노드 관리 불필요.
 
-**QLDB(Quantum Ledger Database)**: 변경 불가능한(Immutable) 원장 DB. 모든 변경 이력이 암호학적으로 검증 가능한 로그로 기록된다. 키워드: "변경 이력 감사", "금융 원장", "공급망 추적", "불변 로그". 블록체인과 다른 점은 QLDB는 중앙화된 서비스(AWS가 운영)이고 신뢰 주체가 AWS다.
+**QLDB(Quantum Ledger Database)** (⚠️ 2025-07-31 지원 종료, AWS는 Aurora PostgreSQL로의 마이그레이션을 권고 — 구 시험 범위 개념 참고용): 변경 불가능한(Immutable) 원장 DB. 모든 변경 이력이 암호학적으로 검증 가능한 로그로 기록된다. 키워드: "변경 이력 감사", "금융 원장", "공급망 추적", "불변 로그". 블록체인과 다른 점은 QLDB는 중앙화된 서비스(AWS가 운영)이고 신뢰 주체가 AWS다.
 
 | 서비스 | 핵심 키워드 | 기술 모델 | 피해야 할 혼동 |
 |--------|------------|----------|------------|
@@ -231,7 +233,7 @@ EC2/ECS → CloudWatch Logs
 | Neptune | 소셜 그래프, 추천, 관계 탐색 | Graph DB (Gremlin/SPARQL) | 관계형 DB와 혼동 금지 |
 | Timestream | IoT, 시계열, 메트릭 | Time-Series | DynamoDB TTL로 시계열 구현 ≠ Timestream |
 | Keyspaces | Cassandra, CQL, Wide-Column | Wide-Column Store | DynamoDB와 다른 쿼리 모델 |
-| QLDB | 불변 원장, 감사 로그 | Ledger (Immutable) | 블록체인(탈중앙화)과 다름 |
+| QLDB (2025-07-31 지원 종료) | 불변 원장, 감사 로그 | Ledger (Immutable) | 블록체인(탈중앙화)과 다름 |
 
 다른 클라우드와의 비교:
 
@@ -243,7 +245,7 @@ EC2/ECS → CloudWatch Logs
 | OpenSearch | Cloud Search / BigQuery | Azure Cognitive Search | 전문 검색 |
 | Neptune | - | Azure Cosmos DB (Gremlin) | 그래프 DB |
 | Timestream | BigQuery (시계열 쿼리) | Azure Time Series Insights | 시계열 |
-| QLDB | - | Azure Confidential Ledger | 불변 원장 |
+| QLDB (지원 종료) | - | Azure Confidential Ledger | 불변 원장 |
 
 > ⚠️ **ElastiCache Redis를 메시지 큐로 쓸 수 있는가** — 기술적으로 가능하다. Redis의 List와 Pub/Sub을 큐처럼 쓸 수 있다. 그러나 SQS처럼 메시지 보존 보장, Dead Letter Queue, 가시성 타임아웃, Fan-out, At-Least-Once 전달 보증 같은 기능이 없다. Redis 5.0에서 도입된 Streams 자료 구조는 Kafka와 비슷한 소비자 그룹 기반 메시지 처리를 지원하지만, SQS/SNS의 무한 확장성과 완전 관리형 특성을 따라가지 못한다. 시험에서 "내구성 있는 메시지 전달"이 필요하면 SQS, "실시간 분산 스트리밍"이면 Kinesis, "일반 캐시/세션"이면 ElastiCache Redis다.
 
@@ -402,11 +404,11 @@ D) OpenSearch (관계 문서 인덱싱)
 A) ElastiCache Redis (Multi-AZ)
 B) ElastiCache Redis (Cluster Mode Enabled)
 C) MemoryDB for Redis
-D) ElastiCache Redis (AOF 활성화)
+D) ElastiCache Redis (AOF 활성화 시도 — ElastiCache는 AOF를 지원하지 않음)
 
 **정답: C**
 
-해설: ElastiCache Redis는 Multi-AZ 복제가 비동기이므로 Primary 장애 시 최근 쓰기가 손실될 수 있다. AOF를 활성화해도 비동기 복제의 본질적 한계는 남는다. MemoryDB for Redis는 Multi-AZ 트랜잭션 로그로 모든 쓰기를 여러 AZ에 동기적으로 영속화하므로 데이터 손실이 없다. Redis API를 그대로 사용할 수 있어서 코드 변경도 최소화된다. "절대 손실 없음"이라는 키워드가 MemoryDB를 가리킨다.
+해설: ElastiCache Redis는 Multi-AZ 복제가 비동기이므로 Primary 장애 시 최근 쓰기가 손실될 수 있다. ElastiCache는 AOF를 지원하지 않으므로 D는 구성 자체가 불가능하며, 스냅샷 백업을 해도 비동기 복제의 본질적 한계는 남는다. MemoryDB for Redis는 Multi-AZ 트랜잭션 로그로 모든 쓰기를 여러 AZ에 동기적으로 영속화하므로 데이터 손실이 없다. Redis API를 그대로 사용할 수 있어서 코드 변경도 최소화된다. "절대 손실 없음"이라는 키워드가 MemoryDB를 가리킨다.
 
 ---
 

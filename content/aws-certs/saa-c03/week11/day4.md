@@ -28,12 +28,14 @@ CDC가 "원본 DB에 부하를 거의 주지 않으면서" 변경을 잡아내�
 
 **Snow Family**는 **네트워크가 부족하거나 없을 때**의 오프라인 전송 도구다. AWS가 물리 장비를 보내 주면 거기에 데이터를 담아 AWS로 반송하면, AWS가 데이터센터에서 S3로 적재한다.
 
+> 📌 **현재 가용성 vs 시험 키워드**: Snowcone은 2024-11-12 단종, Snowmobile은 2024년 신규 주문 중단, Snowball Edge는 2025-11-07부터 기존 고객 전용이며 신규 고객에게는 DataSync·AWS Data Transfer Terminal·파트너 솔루션(엣지는 Outposts)이 안내된다. 아래 장비명은 SAA-C03 시험에서 묻는 키워드로 남아 있으므로 구분해 기억한다.
+
 | 장비 | 용량 | 특징 |
 |------|------|------|
-| **Snowcone** | 약 8TB | 가장 작고 가벼움, 엣지·소량 |
-| **Snowball Edge Storage Optimized** | 약 80TB | 페타급은 여러 대 클러스터 |
+| **Snowcone** | 약 8TB | 가장 작고 가벼움, 엣지·소량 (현재 단종) |
+| **Snowball Edge Storage Optimized** | 약 80TB | 페타급은 여러 대 클러스터 (현재 신규 고객 제한) |
 | **Snowball Edge Compute Optimized** | 컴퓨팅(EC2/GPU) 포함 | 연결 끊긴 엣지에서 처리까지 |
-| **Snowmobile** | 최대 100PB(트럭) | 엑사바이트급 데이터센터 통째 이전 |
+| **Snowmobile** | 최대 100PB(트럭) | 엑사바이트급 데이터센터 통째 이전 (현재 신규 주문 불가) |
 
 > ⚠️ **함정**: Snow vs DataSync는 **네트워크 가용성과 데이터량**으로 갈린다. "10TB + 네트워크 충분(예: 고대역폭 전용선)"이면 DataSync로 며칠 내 온라인 전송이 낫고, "10TB + 네트워크 부족/없음(원격지·저대역폭)"이면 Snowball이 답이다. 단순히 데이터가 크다고 무조건 Snow가 아니다 — Direct Connect 같은 고대역폭이 있으면 큰 데이터도 DataSync가 빠를 수 있다. 시나리오에서 **회선 속도와 데이터량을 곱해 전송 시간을 가늠**하는 게 핵심이고, "시간 안에 못 보낸다"가 보이면 Snow다.
 
@@ -54,7 +56,7 @@ Snowball Edge는 단순 저장 상자가 아니다 — **Compute Optimized** 모
 | DB 마이그레이션 | DMS + SCT | Azure Database Migration Service | Database Migration Service |
 | 서버 lift-and-shift | MGN | Azure Migrate | Migrate to Virtual Machines |
 | 온라인 파일 전송 | DataSync | Azure File Sync / AzCopy | Storage Transfer Service |
-| 오프라인 대용량 | Snowball / Snowmobile | Azure Data Box / Data Box Heavy | Transfer Appliance |
+| 오프라인 대용량 | Snowball / Snowmobile (신규 고객 제한·종료, 시험 키워드) | Azure Data Box / Data Box Heavy | Transfer Appliance |
 
 세 클라우드 모두 **"네트워크 대역폭의 물리 법칙"이라는 같은 문제**를 같은 방식으로 푼다 — 온라인 전송 도구와 오프라인 물리 장비(Data Box, Transfer Appliance)를 짝으로 제공한다. 이는 마이그레이션의 핵심 제약이 클라우드 종류가 아니라 물리(빛의 속도, 회선 용량)에서 온다는 방증이다. CDC 기반 무중단 DB 마이그레이션, 블록 복제 기반 서버 lift-and-shift도 세 클라우드가 거의 동일한 패턴을 쓴다 — 도구 이름만 다를 뿐 풀어야 할 제약은 같다.
 
@@ -119,7 +121,7 @@ D) S3 Multipart Upload
 
 **정답: C**
 
-해설: 저대역폭에서 100TB를 온라인 전송하면 수개월이 걸리므로, 물리 장비에 담아 보내는 오프라인 전송(Snowball Edge Storage Optimized, 약 80TB/대, 페타급은 클러스터)이 답이다. DataSync(A)·Multipart Upload(D)는 네트워크를 타므로 회선이 병목이면 무의미하고, DMS(B)는 DB 마이그레이션 도구로 파일 대량 전송이 아니다. "큰 데이터 + 네트워크 부족/수개월 소요" = Snow. 회선 속도×데이터량으로 전송 시간을 가늠하는 게 핵심 판단이다.
+해설: 저대역폭에서 100TB를 온라인 전송하면 수개월이 걸리므로, 물리 장비에 담아 보내는 오프라인 전송(Snowball Edge Storage Optimized, 약 80TB/대, 페타급은 클러스터)이 시험 정답 키워드다(현재는 Snowball Edge가 기존 고객 전용이라 신규 고객은 DataSync·Data Transfer Terminal·파트너 솔루션을 안내받는다). DataSync(A)·Multipart Upload(D)는 네트워크를 타므로 회선이 병목이면 무의미하고, DMS(B)는 DB 마이그레이션 도구로 파일 대량 전송이 아니다. "큰 데이터 + 네트워크 부족/수개월 소요" = Snow. 회선 속도×데이터량으로 전송 시간을 가늠하는 게 핵심 판단이다.
 
 ---
 
@@ -164,14 +166,14 @@ D) MGN은 오프라인, DRS는 온라인
 
 **문제 6.** 한 팀이 인터넷이 닿지 않는 선박에서 센서 데이터를 **현장에서 전처리**한 뒤 나중에 AWS로 반송하려 한다. 적절한 장비는?
 
-A) Snowcone(저장 전용)
+A) Snowcone(저장 전용, 현재 단종)
 B) Snowball Edge Compute Optimized
 C) DataSync
 D) Storage Gateway
 
 **정답: B**
 
-해설: Snowball Edge Compute Optimized는 내부에 EC2·Lambda·GPU를 품어 연결이 끊긴 환경에서 데이터를 처리(추론·전처리)까지 한 뒤 결과를 AWS로 반송하는 엣지 컴퓨팅 시나리오에 맞는다. Snowcone(A)은 작고 저장 위주라 무거운 현장 처리에는 한계가 있고, DataSync(C)·Storage Gateway(D)는 네트워크 연결을 전제로 하므로 "인터넷 없는 선박"에 부적합하다. "연결 끊긴 엣지 + 현장 처리" = Snowball Edge Compute.
+해설: Snowball Edge Compute Optimized는 내부에 EC2·Lambda·GPU를 품어 연결이 끊긴 환경에서 데이터를 처리(추론·전처리)까지 한 뒤 결과를 AWS로 반송하는 엣지 컴퓨팅 시나리오에 맞는 시험 정답 키워드다(현재 Snowball Edge는 기존 고객 전용이며 신규 엣지 요구는 Outposts 등이 안내된다). Snowcone(A)은 작고 저장 위주라 무거운 현장 처리에는 한계가 있고, DataSync(C)·Storage Gateway(D)는 네트워크 연결을 전제로 하므로 "인터넷 없는 선박"에 부적합하다. "연결 끊긴 엣지 + 현장 처리" = Snowball Edge Compute.
 
 ---
 

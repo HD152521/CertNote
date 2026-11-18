@@ -14,7 +14,7 @@ AWS는 이걸 두 단계로 완화했다. 먼저 **Convertible RI**(2016)를 내
 
 Savings Plans에는 두 종류가 있고 이 차이가 시험에서 구분된다. **Compute Savings Plan**은 최대 유연성(~66% 할인) — 인스턴스 패밀리·리전·OS·Tenancy를 모두 자유롭게 바꿔도 할인이 따라온다. 심지어 Fargate와 Lambda까지 커버한다. **EC2 Instance Savings Plan**은 특정 패밀리(예: m5)와 리전에 고정하는 대신 더 높은 할인(~72%)을 준다 — 패밀리 안에서 크기(large↔xlarge)와 OS는 자유롭다. 즉 "유연성을 포기한 만큼 더 깎아준다"는 교환이다.
 
-> ⚠️ **함정**: RI/RDS의 관계를 정확히 알아야 한다. RDS·Redshift·ElastiCache·OpenSearch는 **Savings Plans가 적용되지 않는다** — 이 서비스들은 여전히 Reserved Instance로만 약정한다. 그래서 "RDS 비용을 1년 약정으로 줄여라"의 정답은 SP가 아니라 RI다. SP는 EC2/Fargate/Lambda라는 "컴퓨팅 실행 계층"만 커버하고, 매니지드 DB의 예약은 별도 RI 체계로 남아 있다. 신규 EC2 컴퓨팅은 거의 SP가 정답이지만 "RDS"라는 단어가 보이면 반사적으로 RI를 떠올려야 한다.
+> ⚠️ **함정**: RI/RDS의 관계를 정확히 알아야 한다. RDS·Redshift·ElastiCache·OpenSearch에는 **(Compute/EC2) Savings Plans가 적용되지 않는다** — 시험에서는 이 서비스들을 Reserved Instance로 약정하는 것이 정답 키워드다. (현재 가용성: 2025년 12월 **Database Savings Plans**(RDS·Aurora·DynamoDB·ElastiCache 등, 1년 약정, 최대 약 35%)가 출시되어 현재는 DB도 SP 약정이 가능하다. 다만 Compute/EC2 Savings Plans는 DB에 적용되지 않고, SAA-C03 시험 문항의 키워드는 여전히 "RDS/Redshift 꾸준히 = RI"다.) 그래서 "RDS 비용을 1년 약정으로 줄여라"의 정답은 SP가 아니라 RI다. SP는 EC2/Fargate/Lambda라는 "컴퓨팅 실행 계층"만 커버하고, 매니지드 DB의 예약은 시험 기준으로 별도 RI 체계다. 신규 EC2 컴퓨팅은 거의 SP가 정답이지만 "RDS"라는 단어가 보이면 반사적으로 RI를 떠올려야 한다.
 
 할인 적용 순서도 알아두면 좋다. AWS 빌링 엔진은 매시간 사용량에 할인을 적용할 때 **RI → EC2 Instance SP → Compute SP → On-Demand** 순으로 가장 구체적인 약정부터 소진시킨다. 구체적인 약정일수록 적용 범위가 좁아 "낭비될 위험"이 크므로 먼저 채우는 것이다. 이 우선순위 때문에 RI와 SP를 섞어 보유하면 RI가 먼저 소진되고 남은 사용량을 SP가 받는다.
 
@@ -101,7 +101,7 @@ curl -s http://169.254.169.254/latest/meta-data/spot/instance-action
 
 ## 정리
 
-EC2 컴퓨팅 비용 최적화는 약정·시장·소유권·크기의 네 축으로 정리된다. ① **Savings Plans**는 "인스턴스가 아니라 시간당 지출"을 약정하는 선도계약형 할인이고, Compute SP(최대 유연·~66%)와 EC2 SP(패밀리 고정·~72%)로 나뉘며, RDS·Redshift·ElastiCache는 여전히 RI다. ② **Spot**은 AWS 유휴 용량을 90% 싸게 빌리되 2분 예고로 회수되며, IMDS 신호 감지·다양화·capacity-optimized 할당·Capacity Rebalancing으로 인터럽션을 길들이고, 내결함성 워크로드에만 쓴다. ③ **Graviton**은 ARM/RISC의 전력 효율과 AWS 수직 통합으로 40% 가성비를 내되 아키텍처 호환성을 확인해야 한다. ④ **Compute Optimizer**는 ML로 과대 프로비저닝을 잡고, Trusted Advisor의 규칙 기반 낭비 탐지와 보완 관계다. 프로덕션은 이들을 SP 베이스라인 + Spot 변동 + On-Demand 스파이크의 포트폴리오로 결합한다.
+EC2 컴퓨팅 비용 최적화는 약정·시장·소유권·크기의 네 축으로 정리된다. ① **Savings Plans**는 "인스턴스가 아니라 시간당 지출"을 약정하는 선도계약형 할인이고, Compute SP(최대 유연·~66%)와 EC2 SP(패밀리 고정·~72%)로 나뉘며, 시험 키워드로 RDS·Redshift·ElastiCache는 RI다(2025.12 Database Savings Plans 출시, Compute/EC2 SP는 DB 불가). ② **Spot**은 AWS 유휴 용량을 90% 싸게 빌리되 2분 예고로 회수되며, IMDS 신호 감지·다양화·capacity-optimized 할당·Capacity Rebalancing으로 인터럽션을 길들이고, 내결함성 워크로드에만 쓴다. ③ **Graviton**은 ARM/RISC의 전력 효율과 AWS 수직 통합으로 40% 가성비를 내되 아키텍처 호환성을 확인해야 한다. ④ **Compute Optimizer**는 ML로 과대 프로비저닝을 잡고, Trusted Advisor의 규칙 기반 낭비 탐지와 보완 관계다. 프로덕션은 이들을 SP 베이스라인 + Spot 변동 + On-Demand 스파이크의 포트폴리오로 결합한다.
 
 다음 글에서는 컴퓨팅에서 스토리지로 넘어가, S3 스토리지 클래스와 Lifecycle·Intelligent-Tiering이 "접근 패턴을 모르는 데이터"의 비용을 어떻게 자동으로 최적화하는지 — 그리고 최소 보관 기간이라는 숨은 함정을 본다.
 
@@ -144,7 +144,7 @@ D) Spot Instances
 
 **정답: C**
 
-해설: Savings Plans는 EC2·Fargate·Lambda라는 컴퓨팅 실행 계층만 커버하며, RDS·Redshift·ElastiCache·OpenSearch는 여전히 Reserved Instance로만 약정한다. 따라서 정답은 RDS RI다. A·B는 SP가 RDS에 적용되지 않으므로 오답이고, D는 RDS가 Spot을 지원하지 않을뿐더러 데이터베이스를 회수 가능한 인스턴스에 올리는 것 자체가 부적절하다. "RDS"라는 단어가 보이면 SP가 아니라 RI를 떠올려야 한다.
+해설: Compute/EC2 Savings Plans는 EC2·Fargate·Lambda라는 컴퓨팅 실행 계층만 커버하며, 시험에서 RDS·Redshift·ElastiCache·OpenSearch의 약정 할인은 Reserved Instance가 정답 키워드다. 따라서 정답은 RDS RI다. A·B는 Compute/EC2 SP가 RDS에 적용되지 않으므로 오답이고, D는 RDS가 Spot을 지원하지 않을뿐더러 데이터베이스를 회수 가능한 인스턴스에 올리는 것 자체가 부적절하다. "RDS"라는 단어가 보이면 SP가 아니라 RI를 떠올려야 한다. (참고: 2025년 12월 Database Savings Plans가 출시되어 현재는 DB용 SP도 존재하지만 Compute/EC2 SP와는 별개 상품이다.)
 
 ---
 
@@ -202,4 +202,4 @@ D) 전부 Spot으로 운영
 
 ## 📌 핵심 요약
 
-컴퓨팅 비용은 약정(SP/RI)·시장(Spot)·소유권(Dedicated)·크기(right-sizing) 네 축으로 갈린다. Savings Plans는 인스턴스가 아닌 시간당 지출을 약정하는 선도계약형 할인이고 Compute SP(유연)와 EC2 SP(고정·더 깊은 할인)로 나뉘며, RDS·Redshift·ElastiCache는 RI로 남는다. Spot은 유휴 용량을 90% 싸게 빌리되 2분 예고로 회수되므로 내결함성 워크로드에 capacity-optimized·다양화·Capacity Rebalancing과 함께 쓴다. Graviton은 ARM 효율로 40% 가성비를 내고, Compute Optimizer는 과대 프로비저닝을 ML로 잡는다. 시험은 워크로드의 안정성·내결함성·약정 가능성을 가격 모델에 매핑하는 능력을 반복해서 묻는다.
+컴퓨팅 비용은 약정(SP/RI)·시장(Spot)·소유권(Dedicated)·크기(right-sizing) 네 축으로 갈린다. Savings Plans는 인스턴스가 아닌 시간당 지출을 약정하는 선도계약형 할인이고 Compute SP(유연)와 EC2 SP(고정·더 깊은 할인)로 나뉘며, RDS·Redshift·ElastiCache는 시험 키워드상 RI다(2025.12 Database Savings Plans 출시, Compute/EC2 SP는 DB 불가). Spot은 유휴 용량을 90% 싸게 빌리되 2분 예고로 회수되므로 내결함성 워크로드에 capacity-optimized·다양화·Capacity Rebalancing과 함께 쓴다. Graviton은 ARM 효율로 40% 가성비를 내고, Compute Optimizer는 과대 프로비저닝을 ML로 잡는다. 시험은 워크로드의 안정성·내결함성·약정 가능성을 가격 모델에 매핑하는 능력을 반복해서 묻는다.

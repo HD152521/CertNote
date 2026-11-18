@@ -10,7 +10,7 @@ SAA 시험에서 비용 최적화(도메인 4)는 전체의 20%를 차지한다.
 
 청구서에서 가장 큰 비중을 차지하는 건 거의 언제나 컴퓨팅(EC2/Lambda/컨테이너)이다. 그래서 컴퓨팅 절감의 선택지를 정확히 구분하는 게 도메인 4의 절반이다. 핵심 질문은 두 가지다 — **(1) 이 워크로드가 1년/3년을 꾸준히 돌 것인가(약정 가능?)**, 그리고 **(2) 갑자기 꺼져도 되는가(중단 허용?)**. 이 두 축의 조합이 정답을 결정한다.
 
-꾸준히 도는 워크로드라면 **약정 할인**을 쓴다. **Savings Plans**는 "시간당 일정 금액($/h)을 1년 또는 3년간 쓰겠다"는 약정으로 최대 72%를 깎는다. 그중 **Compute Savings Plan**은 인스턴스 패밀리·리전·OS·테넌시를 가리지 않고(심지어 Fargate·Lambda까지) 유연하게 적용돼 할인율은 낮고, **EC2 Instance Savings Plan**은 특정 패밀리·리전에 묶이는 대신 할인율이 가장 높다. **Reserved Instance(RI)**는 더 오래된 약정 모델로, EC2뿐 아니라 **RDS·Redshift·ElastiCache·OpenSearch처럼 Savings Plans가 적용되지 않는 서비스**의 약정 할인 수단으로 여전히 핵심이다 — 이 점이 시험에서 구분된다.
+꾸준히 도는 워크로드라면 **약정 할인**을 쓴다. **Savings Plans**는 "시간당 일정 금액($/h)을 1년 또는 3년간 쓰겠다"는 약정으로 최대 72%를 깎는다. 그중 **Compute Savings Plan**은 인스턴스 패밀리·리전·OS·테넌시를 가리지 않고(심지어 Fargate·Lambda까지) 유연하게 적용돼 할인율은 낮고, **EC2 Instance Savings Plan**은 특정 패밀리·리전에 묶이는 대신 할인율이 가장 높다. **Reserved Instance(RI)**는 더 오래된 약정 모델로, EC2뿐 아니라 **RDS·Redshift·ElastiCache·OpenSearch처럼 Compute/EC2 Savings Plans가 적용되지 않는 서비스**의 약정 할인 수단으로 여전히 핵심이다 — 이 점이 시험에서 구분된다. (현재 가용성: 2025년 12월 Database Savings Plans가 출시되어 RDS·Aurora·DynamoDB·ElastiCache 등은 DB용 SP도 가능하다.)
 
 중단을 허용하는 워크로드(stateless 배치, fault-tolerant 처리)라면 **Spot Instance**가 압도적이다. 남는 EC2 용량을 최대 90% 싸게 빌리되, AWS가 2분 경고 후 회수할 수 있다. 여기에 인스턴스 자체를 더 싸고 빠르게 만드는 축으로 **Graviton**(AWS 자체 설계 ARM 프로세서)이 있어 동급 x86 대비 약 20% 더 저렴하면서 전력 효율이 높고, **right-sizing**은 **Compute Optimizer**가 실측 사용률을 ML로 분석해 과대 프로비저닝된 인스턴스를 찾아 준다.
 
@@ -18,7 +18,7 @@ Spot Instance가 "남는 용량을 싸게"라는 단순 설명 뒤에는 **2차 
 
 **사례**: Pinterest는 2010년대 중반 EC2 비용이 폭증하자 워크로드의 상당 부분을 Spot으로 옮겨 컴퓨팅 비용을 크게 줄인 대표적 사례로 자주 인용된다. 핵심은 단순히 Spot을 켠 게 아니라, **작업을 체크포인트 가능하게(중단 후 재개 가능하게) 재설계**하고 여러 인스턴스 타입에 걸쳐 분산해 한 타입의 Spot이 회수돼도 전체가 멈추지 않게 만든 것이다. 여기서 시험의 교훈이 나온다 — Spot의 90% 할인은 공짜가 아니라 "아키텍처가 중단을 견디도록 설계됐을 때만" 받을 수 있는 할인이다. 그래서 SAA는 Spot을 "fault-tolerant" "stateless" "체크포인트" 같은 신호어와 함께 출제하고, "DB 같은 stateful 워크로드에 Spot"은 오답으로 둔다.
 
-> ⚠️ **함정**: Savings Plans와 RI를 "그냥 할인"으로 뭉뚱그리면 두 가지에서 틀린다. 첫째, **Compute SP는 환불/취소가 불가능**한 약정이다("이미 약정했으니 무를 수 없다"). 둘째, **RDS·Redshift·ElastiCache는 Savings Plans가 적용되지 않아 반드시 RI**여야 한다 — "RDS를 24/7 돌리는데 가장 싸게"라는 문제에서 "Compute SP"를 고르면 함정에 빠진다. 정답은 RDS Reserved Instance다. 또 하나, Compute Optimizer는 켜야(opt-in) 권고가 나오는 서비스라, "right-sizing 권고를 받으려면?"의 답은 "Compute Optimizer 활성화"다.
+> ⚠️ **함정**: Savings Plans와 RI를 "그냥 할인"으로 뭉뚱그리면 두 가지에서 틀린다. 첫째, **Compute SP는 환불/취소가 불가능**한 약정이다("이미 약정했으니 무를 수 없다"). 둘째, **RDS·Redshift·ElastiCache는 Compute SP가 적용되지 않아 시험에서는 RI**가 정답이다(Database Savings Plans는 2025.12 출시된 별개 상품) — "RDS를 24/7 돌리는데 가장 싸게"라는 문제에서 "Compute SP"를 고르면 함정에 빠진다. 정답은 RDS Reserved Instance다. 또 하나, Compute Optimizer는 켜야(opt-in) 권고가 나오는 서비스라, "right-sizing 권고를 받으려면?"의 답은 "Compute Optimizer 활성화"다.
 
 ## 스토리지 비용은 "접근 빈도와 최소 보관 기간"이라는 시간 축으로 계층화된다
 
@@ -95,7 +95,7 @@ aws compute-optimizer update-enrollment-status --status Active
 
 ## 정리
 
-비용 도메인은 키워드 매핑이 가장 단순해 보이지만, 실제로는 **"비용은 운영이 아니라 설계 단계에서 결정된다"**는 원리 위에 네 개의 수도꼭지가 놓인 구조다. ① **컴퓨팅**은 약정 가능성(SP/RI)과 중단 허용도(Spot)의 두 축으로 갈리고, RDS/Redshift/ElastiCache는 SP가 아닌 RI라는 예외를 기억해야 한다. ② **스토리지**는 접근 빈도와 최소 보관 기간(IA 30일·Glacier 90일·Deep Archive 180일)으로 계층화되며, "저장 단가"와 "총비용"은 다르다. ③ **네트워크**는 전송 방향(인바운드 무료·아웃바운드/Cross-AZ 유료)과 경로(Gateway Endpoint 무료 우회)에서 새고 막힌다. ④ **운영**은 가시화(Cost Explorer)·차단(Budgets Actions)·세분화(CUR+Athena)의 피드백 루프로 낭비를 통제한다. Pinterest의 Spot 재설계, 반복되는 NAT 비용 누수 사례는 "절감은 아키텍처가 그 트레이드오프를 견디도록 설계됐을 때만 받는 할인"임을 증명한다.
+비용 도메인은 키워드 매핑이 가장 단순해 보이지만, 실제로는 **"비용은 운영이 아니라 설계 단계에서 결정된다"**는 원리 위에 네 개의 수도꼭지가 놓인 구조다. ① **컴퓨팅**은 약정 가능성(SP/RI)과 중단 허용도(Spot)의 두 축으로 갈리고, RDS/Redshift/ElastiCache는 (Compute) SP가 아닌 RI라는 시험상 예외(2025.12 Database Savings Plans 출시)를 기억해야 한다. ② **스토리지**는 접근 빈도와 최소 보관 기간(IA 30일·Glacier 90일·Deep Archive 180일)으로 계층화되며, "저장 단가"와 "총비용"은 다르다. ③ **네트워크**는 전송 방향(인바운드 무료·아웃바운드/Cross-AZ 유료)과 경로(Gateway Endpoint 무료 우회)에서 새고 막힌다. ④ **운영**은 가시화(Cost Explorer)·차단(Budgets Actions)·세분화(CUR+Athena)의 피드백 루프로 낭비를 통제한다. Pinterest의 Spot 재설계, 반복되는 NAT 비용 누수 사례는 "절감은 아키텍처가 그 트레이드오프를 견디도록 설계됐을 때만 받는 할인"임을 증명한다.
 
 다음 글에서는 네 도메인을 가로지르는 최종 모의고사로 시험 직전 점검을 마무리한다.
 
@@ -115,7 +115,7 @@ D) Spot Instance
 
 **정답: B**
 
-해설: **Savings Plans는 RDS·Redshift·ElastiCache·OpenSearch에는 적용되지 않는다.** 이들 관리형 데이터 서비스의 약정 할인은 여전히 **Reserved Instance(RI)** 모델로만 받을 수 있다. A·C의 Savings Plan은 EC2/Fargate/Lambda 컴퓨팅에는 맞지만 RDS에는 적용 불가라 함정이다. D의 Spot은 stateful한 DB에 부적합하다(회수되면 데이터 손실 위험). "RDS/Redshift/ElastiCache를 꾸준히 = RI"가 핵심 신호다.
+해설: **Compute/EC2 Savings Plans는 RDS·Redshift·ElastiCache·OpenSearch에는 적용되지 않는다.** 시험에서 이들 관리형 데이터 서비스의 약정 할인은 **Reserved Instance(RI)** 가 정답 키워드다(2025년 12월 출시된 Database Savings Plans는 별개 상품). A·C의 Savings Plan은 EC2/Fargate/Lambda 컴퓨팅에는 맞지만 RDS에는 적용 불가라 함정이다. D의 Spot은 stateful한 DB에 부적합하다(회수되면 데이터 손실 위험). "RDS/Redshift/ElastiCache를 꾸준히 = RI"가 핵심 신호다.
 
 ---
 
@@ -217,4 +217,4 @@ D) Spot Instance 풀
 
 ## 📌 핵심 요약
 
-비용 도메인(20%)은 "비용은 운영이 아니라 설계에서 결정된다"는 원리 위에 네 개의 수도꼭지가 놓인 구조다. ① 컴퓨팅은 약정 가능성(Savings Plans/RI)과 중단 허용도(Spot)로 갈리며, RDS·Redshift·ElastiCache는 SP가 아닌 RI라는 예외가 단골이다(Pinterest의 Spot 재설계 교훈). ② 스토리지는 접근 빈도와 최소 보관 기간(IA 30일·Glacier 90일·Deep Archive 180일)으로 계층화되고, "저장 단가"와 "총비용"은 다르다. ③ 네트워크는 전송 방향(인바운드 무료·아웃바운드/Cross-AZ 유료)과 경로(S3/DDB Gateway Endpoint 무료 우회)에서 새고 막히며, NAT 데이터 처리 요금 누수가 대표 사례다. ④ 운영은 가시화(Cost Explorer)·자동 차단(Budgets Actions)·세분화(CUR+Athena)의 피드백 루프로 통제한다. 모든 선택의 배경에는 "관리형·서버리스일수록 유휴 비용은 줄지만 직접 깎을 여지도 준다"는 공동 책임 모델의 비용 관점이 깔린다.
+비용 도메인(20%)은 "비용은 운영이 아니라 설계에서 결정된다"는 원리 위에 네 개의 수도꼭지가 놓인 구조다. ① 컴퓨팅은 약정 가능성(Savings Plans/RI)과 중단 허용도(Spot)로 갈리며, RDS·Redshift·ElastiCache는 (Compute) SP가 아닌 RI라는 시험상 예외가 단골이다(2025.12 Database Savings Plans 출시)(Pinterest의 Spot 재설계 교훈). ② 스토리지는 접근 빈도와 최소 보관 기간(IA 30일·Glacier 90일·Deep Archive 180일)으로 계층화되고, "저장 단가"와 "총비용"은 다르다. ③ 네트워크는 전송 방향(인바운드 무료·아웃바운드/Cross-AZ 유료)과 경로(S3/DDB Gateway Endpoint 무료 우회)에서 새고 막히며, NAT 데이터 처리 요금 누수가 대표 사례다. ④ 운영은 가시화(Cost Explorer)·자동 차단(Budgets Actions)·세분화(CUR+Athena)의 피드백 루프로 통제한다. 모든 선택의 배경에는 "관리형·서버리스일수록 유휴 비용은 줄지만 직접 깎을 여지도 준다"는 공동 책임 모델의 비용 관점이 깔린다.

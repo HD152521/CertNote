@@ -91,7 +91,7 @@ SCP(Service Control Policy)는 IAM 정책과 문법이 같지만 적용 범위�
 
 > ⚠️ **함정**: SCP는 Management 계정 자체에는 적용되지 않는다. 이 점이 시험에 나온다. Management 계정이 워크로드를 가지면 안 되는 핵심 이유 중 하나가 이거다. SCP로 보호되지 않는 계정이므로 사고 시 가장 큰 폭발 반경을 가진다. 또 하나 함정 — SCP는 서비스 연결 역할(Service-linked role)에도 일부 적용 안 된다(예: AWSServiceRoleForOrganizations).
 
-SCP는 두 가지 전략으로 운영된다. **Deny List 전략**(기본 FullAWSAccess를 유지하고 금지할 것만 Deny)과 **Allow List 전략**(FullAWSAccess를 떼고 명시적 Allow만 둠). Allow List는 더 엄격하지만 새 서비스가 출시될 때마다 명시 허용을 추가해야 해서 운영 부담이 크다. 대부분 조직은 Deny List + 핵심 가드레일 조합을 쓴다. 또한 SCP는 "최대 5MB까지" 그리고 "한 entity에 최대 5개"라는 제약이 있어서, 정책 통합과 모듈화 설계가 중요해진다.
+SCP는 두 가지 전략으로 운영된다. **Deny List 전략**(기본 FullAWSAccess를 유지하고 금지할 것만 Deny)과 **Allow List 전략**(FullAWSAccess를 떼고 명시적 Allow만 둠). Allow List는 더 엄격하지만 새 서비스가 출시될 때마다 명시 허용을 추가해야 해서 운영 부담이 크다. 대부분 조직은 Deny List + 핵심 가드레일 조합을 쓴다. 또한 SCP는 "문서 최대 10,240자" 그리고 "루트/OU/계정당 직접 연결 최대 10개"라는 제약이 있어서, 정책 통합과 모듈화 설계가 중요해진다.
 
 **사례(가상)**: 2020년 한 미디어 기업이 SCP 없이 운영하다 신입 개발자가 us-east-1 외의 모든 리전에 인스턴스를 무작위로 띄워 한 달 만에 청구액이 평소의 4배가 됐다. SCP로 region 제한이 있었다면 발생 자체가 불가능한 사고였다. 같은 회사는 사고 이후 "Region 제한 + Sandbox 계정 월 한도 + Budgets 알람"의 3중 가드를 표준화했다.
 

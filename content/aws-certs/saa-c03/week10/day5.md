@@ -26,7 +26,7 @@
        │  + Compute Optimizer로 각 계층 right-sizing
        ▼
   데이터 계층
-   ├─ RDS/Aurora → Reserved Instance (SP 미적용!)
+   ├─ RDS/Aurora → Reserved Instance (Compute/EC2 SP 미적용, 시험 키워드)
    ├─ DynamoDB   → On-Demand 또는 Provisioned + Gateway Endpoint(무료)
    └─ S3 → Intelligent-Tiering (패턴 불명) / Lifecycle (패턴 명확)
             + Bucket Keys(KMS 99%↓) + Gateway Endpoint(무료) + 멀티파트 정리
@@ -81,7 +81,7 @@
 | 부서별 비용 분리 | **Cost Allocation Tags** | 활성화 시점부터 소급 없음 |
 | 멀티 계정 커스텀 청구 | **Billing Conductor** | 리셀러·내부 차지백 |
 
-> ⚠️ **함정**: 헷갈리기 쉬운 세 쌍을 다시 정리한다. ① **SP vs RI** — "RDS/Redshift/ElastiCache"가 보이면 무조건 RI, 나머지 EC2 컴퓨팅은 SP. ② **Gateway vs Interface Endpoint** — S3/DDB면 무료 Gateway, 다른 서비스면 ENI 비용 드는 Interface. ③ **Cost Explorer vs CUR** — "Athena/세밀/SQL"이면 CUR, "빠른 그래프/예측"이면 Cost Explorer. 이 세 쌍의 경계를 정확히 알면 비용 문제의 상당수를 풀 수 있다.
+> ⚠️ **함정**: 헷갈리기 쉬운 세 쌍을 다시 정리한다. ① **SP vs RI** — "RDS/Redshift/ElastiCache"가 보이면 시험 키워드상 RI, 나머지 EC2 컴퓨팅은 SP (2025.12 Database Savings Plans 출시로 현재는 DB용 SP도 있으나 Compute/EC2 SP는 DB에 불가). ② **Gateway vs Interface Endpoint** — S3/DDB면 무료 Gateway, 다른 서비스면 ENI 비용 드는 Interface. ③ **Cost Explorer vs CUR** — "Athena/세밀/SQL"이면 CUR, "빠른 그래프/예측"이면 Cost Explorer. 이 세 쌍의 경계를 정확히 알면 비용 문제의 상당수를 풀 수 있다.
 
 **사례(가상)**: 한 주 내내 본 비용 사고들을 한 줄로 묶으면 교훈이 선명하다. **Lyft**(Spot으로 ML 비용 절감 — 인터럽션을 정상으로 가정한 설계), **Dropbox**(탈클라우드로 7,500만 달러 절감 — 전송·저장 비용이 규모에서 거대해짐), **빌 쇼크**(노출 키·실수로 하룻밤 수만 달러 — Budgets Actions·Anomaly Detection이 방어막), **FinOps 운동**(비용은 엔지니어 모두의 책임 — 태그·Budgets·가시화로 문화 전환). 비용 최적화는 일회성 청소가 아니라 설계 단계부터 운영까지 이어지는 지속적 규율이라는 게 공통 메시지다.
 
@@ -90,7 +90,7 @@
 | 비교 항목 | A | B | 판별 키워드 |
 |----------|---|---|-----------|
 | Compute SP vs EC2 Instance SP | 패밀리/리전 자유(~66%) | 패밀리 고정·더 깊은 할인(~72%) | "자유롭게 변경" vs "고정 대신 더 싸게" |
-| SP vs RI | EC2/Fargate/Lambda | RDS/Redshift/ElastiCache | 서비스 이름 |
+| SP vs RI | EC2/Fargate/Lambda (Compute SP) | RDS/Redshift/ElastiCache (시험 키워드: RI) | 서비스 이름 |
 | Spot capacity-optimized vs lowest-price | 회수 최소화 | 최저가(회수 잦음) | "인터럽션 줄이기" |
 | Intelligent-Tiering vs Lifecycle | 패턴 모름·자동 | 패턴 명확·규칙 | "예측 가능?" |
 | Glacier Instant vs Flexible vs Deep | 즉시(ms) | 분~시간 | 검색 속도 요건 |
@@ -165,7 +165,7 @@ D) Spot
 
 **정답: C**
 
-해설: Savings Plans는 EC2·Fargate·Lambda만 커버하고 RDS·Redshift·ElastiCache·OpenSearch는 Reserved Instance로만 약정한다. 따라서 RDS RI가 정답이다. A·B는 SP가 RDS에 적용 안 되므로 오답이고, D는 RDS가 Spot을 지원하지 않으며 DB를 회수 가능한 인스턴스에 올리는 것 자체가 부적절하다. "RDS"가 보이면 RI다.
+해설: Compute/EC2 Savings Plans는 EC2·Fargate·Lambda만 커버하고 시험에서 RDS·Redshift·ElastiCache·OpenSearch는 Reserved Instance가 정답 키워드다(2025년 12월 출시된 Database Savings Plans는 별개 상품). 따라서 RDS RI가 정답이다. A·B는 Compute/EC2 SP가 RDS에 적용 안 되므로 오답이고, D는 RDS가 Spot을 지원하지 않으며 DB를 회수 가능한 인스턴스에 올리는 것 자체가 부적절하다. "RDS"가 보이면 RI다.
 
 ---
 
@@ -262,6 +262,6 @@ D) Billing Conductor + Macie + Inspector
 
 ## 📌 핵심 요약 + 다음 주 예고
 
-비용 도메인(약 20%)은 워크로드 속성을 가격 모델에 매핑하는 사고 체계다. **컴퓨팅**은 약정(SP/RI, RDS는 RI)·시장(Spot, capacity-optimized)·아키텍처(Graviton)·크기(Compute Optimizer)로, **스토리지**는 접근 패턴(Intelligent-Tiering vs Lifecycle)·최소 보관 함정·Bucket Keys·gp3로, **네트워크**는 Gateway Endpoint(무료)·CloudFront·AZ 토폴로지로, **거버넌스**는 Cost Explorer/CUR·Budgets Actions·Anomaly Detection·태그·Consolidated Billing으로 푼다. 모든 도구는 "불확실성을 누가 떠안는가"로 갈린다. SP vs RI, Gateway vs Interface Endpoint, Cost Explorer vs CUR — 이 세 경계만 정확해도 비용 문제의 절반이 풀린다.
+비용 도메인(약 20%)은 워크로드 속성을 가격 모델에 매핑하는 사고 체계다. **컴퓨팅**은 약정(SP/RI, 시험 키워드상 RDS는 RI)·시장(Spot, capacity-optimized)·아키텍처(Graviton)·크기(Compute Optimizer)로, **스토리지**는 접근 패턴(Intelligent-Tiering vs Lifecycle)·최소 보관 함정·Bucket Keys·gp3로, **네트워크**는 Gateway Endpoint(무료)·CloudFront·AZ 토폴로지로, **거버넌스**는 Cost Explorer/CUR·Budgets Actions·Anomaly Detection·태그·Consolidated Billing으로 푼다. 모든 도구는 "불확실성을 누가 떠안는가"로 갈린다. SP vs RI, Gateway vs Interface Endpoint, Cost Explorer vs CUR — 이 세 경계만 정확해도 비용 문제의 절반이 풀린다.
 
 다음 주(Week 11)는 비용에서 **고가용성·재해복구·마이그레이션**으로 넘어간다. Multi-AZ vs Multi-Region, RTO/RPO에 따른 DR 전략(Backup & Restore / Pilot Light / Warm Standby / Multi-Site), DMS·SCT를 통한 데이터베이스 마이그레이션, Snow 패밀리를 통한 대용량 데이터 이전을 다룬다. 비용에서 봤던 "AZ 경계 비용 = 고가용성의 대가"라는 긴장이, 다음 주엔 정면으로 "얼마나 가용하게 만들 것인가 vs 얼마를 쓸 것인가"의 설계 결정으로 확장된다.

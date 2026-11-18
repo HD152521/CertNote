@@ -107,7 +107,7 @@ Predictive Scaling(2021년 GA)은 과거 2주 동안의 메트릭 패턴을 ML�
 
 주간 패턴이나 일간 패턴이 있는 워크로드에서 효과적이다. 월요일 오전 9시에 항상 트래픽이 2배로 뛰는 업무 앱이라면, Predictive Scaling이 8시 45분에 미리 인스턴스를 추가해둔다. Target Tracking은 트래픽이 실제로 뛴 후 CPU가 올라가야 반응하므로 2-3분의 반응 지연이 있다.
 
-Predictive Scaling의 내부 모델은 **시계열 예측(Time Series Forecasting)** 알고리즘이다. AWS는 공개하지 않지만, 일간/주간 계절성(seasonality)과 추세(trend)를 분해하는 분해 모델(Decomposition Model)이나 Prophet(Facebook 오픈소스) 유사 모델로 추정된다. 중요한 것은 학습에 최소 2주 데이터가 필요하며, 새로운 서비스는 처음 2주 동안 예측이 정확하지 않다.
+Predictive Scaling의 내부 모델은 **시계열 예측(Time Series Forecasting)** 알고리즘이다. AWS는 공개하지 않지만, 일간/주간 계절성(seasonality)과 추세(trend)를 분해하는 분해 모델(Decomposition Model)이나 Prophet(Facebook 오픈소스) 유사 모델로 추정된다. 중요한 것은 학습에 최소 24시간 데이터가 필요하고(과거 최대 14일을 분석하며, 2주치가 있으면 예측이 더 정확해진다), 새로운 서비스는 처음 2주 동안 예측이 정확하지 않다.
 
 **사례**: AWS re:Invent 2020에서 Amazon.com의 Prime Day 준비 사례가 공개됐다. Predictive Scaling을 사용해 과거 Prime Day 패턴을 학습시키고, 당일 트래픽 폭증 전 수십 분 전부터 자동으로 수천 대의 인스턴스를 추가했다. 리액티브 스케일링만 사용했을 때보다 응답 시간이 15% 향상됐다.
 
@@ -249,7 +249,7 @@ aws autoscaling start-instance-refresh \
 
 `MinHealthyPercentage: 80`은 교체 중에도 80% 이상의 인스턴스는 항상 Healthy 상태를 유지한다는 의미다. 10대 중 2대씩 교체하면서 각 배치가 안정화될 때까지 기다린다. CI/CD 파이프라인에서 AMI를 빌드하고 Instance Refresh로 자동 배포하는 패턴이 EC2 기반 배포의 표준이 되었다.
 
-> ⚠️ **함정**: Instance Refresh는 새 인스턴스가 Healthy가 된 후 이전 인스턴스를 종료한다. 그런데 Lifecycle Hook의 Terminating:Wait가 있으면 종료 전에 훅 처리를 기다린다. 훅 처리 시간이 길면 Instance Refresh 전체 시간이 매우 길어질 수 있다. Instance Refresh 중에는 Lifecycle Hook 타임아웃을 짧게 설정하거나, 훅 자체를 비활성화하는 것을 고려해야 한다.
+> ⚠️ **함정**: Instance Refresh는 기본적으로(MinHealthyPercentage가 100 미만일 때) 이전 인스턴스를 종료하면서 새 인스턴스를 배치로 시작한다. 새 인스턴스가 Healthy가 된 후 이전 것을 종료하려면 MinHealthyPercentage를 100으로 두면 된다(MaxHealthyPercentage를 100보다 크게 두면 한 번에 교체하는 수가 늘어난다). 그런데 Lifecycle Hook의 Terminating:Wait가 있으면 종료 전에 훅 처리를 기다린다. 훅 처리 시간이 길면 Instance Refresh 전체 시간이 매우 길어질 수 있다. Instance Refresh 중에는 Lifecycle Hook 타임아웃을 짧게 설정하거나, 훅 자체를 비활성화하는 것을 고려해야 한다.
 
 ## 다른 클라우드와의 Auto Scaling 비교
 
@@ -324,9 +324,7 @@ aws autoscaling put-scaling-policy \
       "PredefinedMetricType": "ALBRequestCountPerTarget",
       "ResourceLabel": "app/prod-alb/xxx/targetgroup/app-tg/yyy"
     },
-    "TargetValue": 1000.0,
-    "ScaleInCooldown": 300,
-    "ScaleOutCooldown": 60
+    "TargetValue": 1000.0
   }'
 
 # Lifecycle Hook (종료 시 로그 업로드)

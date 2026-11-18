@@ -325,13 +325,13 @@ D) `lowest-price` Spot 전략 + On-Demand 100% 기반
 
 **문제 10.** 한 회사가 10TB 규모의 데이터 분석을 매주 일요일 새벽 2시에 실행한다. 분석에는 대용량 RAM(256GB)이 필요하고, 분석 결과는 S3에 저장한다. 분석 잡은 중단 불가이며, 완료 후 인스턴스는 종료해도 된다. 가장 비용 효율적인 방법은?
 
-A) r6i.16xlarge(256GB RAM) On-Demand, 매주 수동 시작/종료
-B) r6i.16xlarge Spot + 체크포인트, Scheduled Scaling
-C) r7g.16xlarge On-Demand, Scheduled Scaling으로 자동 시작/종료
-D) r6i.16xlarge Reserved Instance 1년 + Scheduled Scaling
+A) r6i.8xlarge(256GB RAM) On-Demand, 매주 수동 시작/종료
+B) r6i.8xlarge Spot + 체크포인트, Scheduled Scaling
+C) r7g.8xlarge On-Demand, Scheduled Scaling으로 자동 시작/종료
+D) r6i.8xlarge Reserved Instance 1년 + Scheduled Scaling
 
 **정답: C**
-해설: 분석 잡이 중단 불가이므로 Spot은 부적합하다. r7g는 Graviton3 ARM으로 r6i(Intel x86)보다 약 25% 저렴하다. Scheduled Scaling으로 매주 일요일 새벽 2시에 Desired를 1로 올리고, 완료 후 0으로 줄이면(ASG는 0이 불가하므로 Min=0으로 설정 또는 EventBridge + Lambda로 종료) 사용 시간만큼만 비용을 낸다. RI 1년은 주당 몇 시간만 사용하는 패턴에서 나머지 시간을 낭비한다(주당 4시간 사용 시 사용률 2.4%). Graviton 호환 여부는 Python/Java 기반 분석 도구라면 대부분 문제없다.
+해설: 분석 잡이 중단 불가이므로 Spot은 부적합하다. r7g는 Graviton3 ARM으로 r6i(Intel x86)보다 약 25% 저렴하다. Scheduled Scaling으로 매주 일요일 새벽 2시에 Desired를 1로 올리고, 완료 후 0으로 줄이면(Min=0으로 설정하거나 EventBridge + Lambda로 종료) 사용 시간만큼만 비용을 낸다. RI 1년은 주당 몇 시간만 사용하는 패턴에서 나머지 시간을 낭비한다(주당 4시간 사용 시 사용률 2.4%). Graviton 호환 여부는 Python/Java 기반 분석 도구라면 대부분 문제없다.
 
 ---
 

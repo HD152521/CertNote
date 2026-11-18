@@ -84,7 +84,7 @@ Two Generals' Problem(1975)이 증명한 것 — 두 노드 간 안정적인 합
 | 잦은 빈 폴링 비용 | Long Polling 20초 | Short Polling |
 | SaaS 이벤트 라우팅 | EventBridge | Custom Lambda + 큐 |
 | 단순 비동기 워커 | SQS | Step Functions |
-| 200KB 이상 메시지 | S3 + SQS Extended Client | base64로 잘라 보내기 |
+| 1 MiB 초과 메시지 | S3 + SQS Extended Client | base64로 잘라 보내기 |
 
 **사례(가상)**: 2020년 한 핀테크 스타트업이 모든 비동기 처리를 EventBridge로 통일했다가 월 청구서가 SNS+SQS 조합 대비 12배 폭증한 사례가 회자된다. 원인은 EventBridge가 이벤트당 $1/M USD(처음 100M까지)인 데 비해 SNS는 publish가 $0.50/M USD + 구독자 전달은 SQS면 무료에 가까웠던 것. EventBridge의 가치는 "라우팅 표현력 + SaaS 통합"이고, 단순 fanout이라면 SNS가 비용 효율적이다. 시험에서도 "수억 건의 단순 fanout"이라면 비용 키워드가 SNS 쪽을 가리킨다.
 
@@ -267,15 +267,15 @@ D) CloudFront의 Requests/CacheHitRate 메트릭을 기준으로 워커 ASG를 �
 
 ---
 
-**문제 12.** 한 회사가 메시지 크기 600KB의 PDF 데이터를 SQS로 보내야 한다. SQS 메시지 최대 크기는 256KB. 가장 적절한 방법은?
+**문제 12.** 한 회사가 메시지 크기 5MB의 PDF 데이터를 SQS로 보내야 한다. SQS 메시지 최대 크기는 1 MiB(과거 256KB). 가장 적절한 방법은?
 
-A) 600KB PDF를 256KB 미만 3개 청크로 잘라 sequence 번호와 함께 보내고 소비자가 순서대로 조립
+A) 5MB PDF를 1 MiB 미만 여러 청크로 잘라 sequence 번호와 함께 보내고 소비자가 순서대로 조립
 B) S3에 PDF 저장 + SQS 메시지에는 S3 ARN/Key만 (Extended Client / 직접 구현)
 C) FIFO 큐로 변경해 MessageGroupId로 청크 순서를 보장하며 대용량 본문 전송
-D) 메시지당 1MB까지 허용하는 Kinesis Data Streams로 PDF 레코드를 직접 전송
+D) Kinesis Data Streams로 PDF 레코드를 직접 전송
 
 **정답: B**
 
-해설: SQS Extended Client Library가 정확히 이 패턴을 위해 제공된다 — large payload는 S3에 자동 저장하고 SQS에는 reference만 보낸다. 직접 구현도 가능. (A) 메시지 분할/재조립은 순서·중복·실패 복구가 복잡해지고, FIFO조차도 boundaries 보장이 안 됨. (C) FIFO도 256KB 한도는 동일. (D) Kinesis가 1MB까지 가능하지만 큐 모델이 아닌 스트림 모델이라 워크로드 미스매치. 그리고 "PDF를 큐로 통과" 자체가 안티패턴 — S3가 본문 저장에 최적이고 SQS는 reference만 흘리는 게 cloud-native 패턴.
+해설: SQS Extended Client Library가 정확히 이 패턴을 위해 제공된다 — large payload는 S3에 자동 저장하고 SQS에는 reference만 보낸다. 직접 구현도 가능. (A) 메시지 분할/재조립은 순서·중복·실패 복구가 복잡해지고, FIFO조차도 boundaries 보장이 안 됨. (C) FIFO도 메시지 크기 한도(1 MiB)는 동일. (D) 큐 모델이 아닌 스트림 모델이라 워크로드 미스매치. 그리고 "PDF를 큐로 통과" 자체가 안티패턴 — S3가 본문 저장에 최적이고 SQS는 reference만 흘리는 게 cloud-native 패턴.
 
 ---

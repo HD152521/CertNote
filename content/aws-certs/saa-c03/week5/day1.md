@@ -112,7 +112,7 @@ RDS Proxy는 이 문제를 연결 풀링으로 해결한다. Lambda 수천 개�
 [RDS Primary]  ──────── Standby (Multi-AZ)
 ```
 
-RDS Proxy의 내부는 HAProxy와 유사한 역할을 한다. 프로토콜 수준(MySQL 프로토콜, PostgreSQL 프로토콜)에서 파싱을 하기 때문에 쿼리 수준의 라우팅도 가능하다. 예를 들어 SELECT 문은 Read Replica로, 나머지는 Primary로 보내는 설정을 할 수 있다. 이 기능은 애플리케이션 코드 변경 없이 읽기/쓰기를 자동으로 분리한다. 단, 이 기능은 Aurora 클러스터에서 Proxy와 함께 쓸 때 더 효과적이다.
+RDS Proxy는 프로토콜 수준(MySQL 프로토콜, PostgreSQL 프로토콜)에서 연결을 풀링하고 멀티플렉싱한다. 다만 SELECT는 Replica로, 쓰기는 Primary로 보내는 식의 쿼리 수준 읽기/쓰기 분리는 하지 않는다. RDS DB 인스턴스는 복제 구성에서 쓰기 인스턴스에만 프록시를 연결할 수 있다. Aurora에서 읽기를 분산하려면 Reader 엔드포인트(또는 프록시의 읽기 전용 엔드포인트)를 애플리케이션에서 명시적으로 사용한다.
 
 **사례**: 2020년 핀테크 스타트업 Mable(미국 도매 식료품 플랫폼)은 Lambda 기반 서버리스 아키텍처에서 피크 타임에 RDS max_connections를 계속 초과하는 문제를 겪었다. RDS Proxy 도입 후 DB 연결 수가 95% 감소했으며, "Too many connections" 오류가 사라졌다고 보고했다. (AWS 공식 고객 사례)
 

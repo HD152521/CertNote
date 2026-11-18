@@ -191,10 +191,10 @@ aws rds create-global-cluster \
   --global-cluster-identifier prod-global-aurora \
   --source-db-cluster-identifier arn:aws:rds:ap-northeast-2:111:cluster:prod-aurora
 
-# Backtrack 활성화 (MySQL 호환만)
+# Backtrack 윈도 변경 (MySQL 호환만, 생성 시 Backtrack을 켠 클러스터)
 aws rds modify-db-cluster \
   --db-cluster-identifier prod-aurora \
-  --backtrack-window 4320   # 72시간 = 4320분
+  --backtrack-window 259200   # 72시간 = 259200초
 
 # Aurora Serverless v2 클러스터
 aws rds create-db-cluster \

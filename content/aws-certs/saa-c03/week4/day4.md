@@ -1,6 +1,6 @@
 # Day 4 - CloudFront와 Storage Gateway: CDN의 내부 구조와 하이브리드 스토리지 패턴
 
-CloudFront는 단순한 캐시 서버가 아니다. 2008년 출시된 이후 400개가 넘는 엣지 PoP(Point of Presence)로 확장됐고, HTTP 캐시를 넘어 엣지 컴퓨팅, TLS 종료, WAF, 서명 인증, 동적 콘텐츠 가속까지 담당한다. Netflix가 1억 명의 동시 시청자에게 비디오를 스트리밍할 수 있는 것, Amazon Prime Video가 전 세계에서 낮은 지연 시간을 유지할 수 있는 것, 모두 CloudFront 아키텍처 덕분이다.
+CloudFront는 단순한 캐시 서버가 아니다. 2008년 출시된 이후 400개가 넘는 엣지 PoP(Point of Presence)로 확장됐고, HTTP 캐시를 넘어 엣지 컴퓨팅, TLS 종료, WAF, 서명 인증, 동적 콘텐츠 가속까지 담당한다. 대규모 미디어 스트리밍과 전 세계 정적·동적 콘텐츠를 낮은 지연 시간으로 전달하는 일이 이런 엣지 아키텍처 덕분에 가능하다(참고로 Netflix는 CloudFront가 아니라 자체 CDN인 Open Connect를 사용한다).
 
 이 글에서는 CloudFront의 캐시 계층 구조(PoP → Regional Edge Cache → Origin Shield), OAC의 서명 메커니즘, Lambda@Edge와 CloudFront Functions의 실행 위치 차이, Storage Gateway의 4가지 모드의 내부 동작을 다룬다. 그리고 언제 DataSync를 쓰고, 언제 Storage Gateway를 쓰고, 언제 Snow Family를 써야 하는지 판단 기준을 정리한다.
 
@@ -182,7 +182,7 @@ Origin
 4. 사용자가 Signed URL로 접근 → CloudFront가 서명 검증 → 유효하면 콘텐츠 반환
 ```
 
-**사례**: Netflix의 콘텐츠 배포는 CloudFront Signed URL 기반이다. 사용자가 재생 버튼을 누르면 Netflix 백엔드가 해당 사용자의 구독 상태를 확인하고, 유효 시간 내의 Signed URL을 발급한다. 이 URL로 CloudFront에서 비디오 세그먼트를 받아 재생한다. URL 공유로 다른 사람이 무료로 시청하는 것을 막는 핵심 메커니즘이다.
+**적용 예시**: 유료 구독 동영상 서비스를 CloudFront로 배포한다면, 사용자가 재생 버튼을 누를 때 백엔드가 구독 상태를 확인하고 유효 시간 내의 Signed URL(또는 Signed Cookie)을 발급한다. 이 URL로 CloudFront에서 비디오 세그먼트를 받아 재생한다. URL 공유로 다른 사람이 무료로 시청하는 것을 막는 핵심 메커니즘이다.
 
 ## CloudFront + WAF: 엣지 보안 통합
 
@@ -221,6 +221,8 @@ File Gateway (VM)
 사용 사례: 온프레미스 파일 서버의 백업, 온프레미스 생성 데이터를 S3에 자동 저장, 여러 사이트에서 공통 데이터 접근.
 
 ### FSx File Gateway: SMB → FSx Windows File Server
+
+> ⚠️ **참고**: Amazon FSx File Gateway는 신규 고객에게 더 이상 제공되지 않는다(기존 고객은 계속 사용 가능). 신규 환경에서는 온프레미스에서 FSx for Windows File Server에 직접 접근하거나, 파일 공유가 S3 중심이면 S3 File Gateway를 사용한다. 시험 범위의 개념 이해용으로 아래 내용을 학습한다.
 
 온프레미스 Windows 클라이언트가 SMB로 파일에 접근한다. File Gateway의 로컬 캐시로 자주 쓰는 파일에 빠른 접근, 덜 쓰는 파일은 FSx Windows File Server에서 직접 가져온다. Active Directory 통합을 그대로 사용할 수 있다.
 
@@ -261,7 +263,7 @@ File Gateway (VM)
 
 **Snow Family 선택**: 인터넷 대역폭이 너무 좁아서 전송 시간이 수주 이상 걸릴 때. 인터넷 없는 오지, 보안 때문에 인터넷 전송 불가, 페타바이트 이상 대용량. "오프라인 물리 전송"이 핵심.
 
-Snow Family의 필요성은 **저장의 법칙(Kryder's Law)**과 **네트워크 대역폭 성장률** 사이의 격차에서 온다. HDD 밀도는 연간 40%씩 성장하지만 네트워크 대역폭 성장은 그를 따라가지 못한다. 1PB 데이터를 1Gbps 인터넷으로 전송하면 약 12일이 걸린다. Snowball Edge는 100TB를 배송으로 2-3일에 이전할 수 있다. Jim Gray의 논문(2003, "Distributed Computing Economics")에서 처음 분석된 이 문제가 현재도 유효하다.
+Snow Family의 필요성은 **저장의 법칙(Kryder's Law)**과 **네트워크 대역폭 성장률** 사이의 격차에서 온다. HDD 밀도는 연간 40%씩 성장하지만 네트워크 대역폭 성장은 그를 따라가지 못한다. 1PB 데이터를 1Gbps 인터넷으로 전송하면 이론상 약 93일(약 3개월), 100TB도 약 9~10일이 걸린다. Snowball Edge는 배송 기간을 포함해 통상 1주 안팎에 이전할 수 있다. Jim Gray의 논문(2003, "Distributed Computing Economics")에서 처음 분석된 이 문제가 현재도 유효하다.
 
 ## 다른 클라우드와의 CloudFront 비교
 
@@ -403,7 +405,7 @@ C) AWS Storage Gateway S3 File Gateway + S3 버킷
 D) AWS Snowball Edge로 파일 이전 후 S3 접근
 
 **정답: B**
-해설: FSx File Gateway는 온프레미스 Windows 클라이언트에 SMB 인터페이스를 제공하면서, 로컬 캐시와 FSx Windows File Server(AD 통합 지원)를 백엔드로 연결한다. 기존 Windows 앱이 SMB 연결을 그대로 유지하면서 데이터는 FSx에 저장된다. A의 S3는 SMB를 직접 지원하지 않는다. C의 S3 File Gateway는 NFS/SMB를 지원하지만 AD 통합이 FSx Windows만큼 네이티브하지 않다. D는 일회성 이전이지 영구 하이브리드 운영이 아니다.
+해설: (FSx File Gateway는 신규 고객에게는 제공 중단된 서비스지만, 기존 문제 유형 기준의 정답이다. 신규 환경에서는 FSx for Windows File Server에 VPN/Direct Connect로 직접 접근하는 구성을 쓴다.) FSx File Gateway는 온프레미스 Windows 클라이언트에 SMB 인터페이스를 제공하면서, 로컬 캐시와 FSx Windows File Server(AD 통합 지원)를 백엔드로 연결한다. 기존 Windows 앱이 SMB 연결을 그대로 유지하면서 데이터는 FSx에 저장된다. A의 S3는 SMB를 직접 지원하지 않는다. C의 S3 File Gateway는 NFS/SMB를 지원하지만 AD 통합이 FSx Windows만큼 네이티브하지 않다. D는 일회성 이전이지 영구 하이브리드 운영이 아니다.
 
 ---
 

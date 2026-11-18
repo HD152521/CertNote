@@ -171,7 +171,7 @@ Storage Gateway의 **로컬 캐시 계층**은 컴퓨터 메모리 계층 구조
                                            → S3 Object Lambda (데이터 증강)
 ```
 
-**패턴 D: 온프레미스 하이브리드 파일 공유**
+**패턴 D: 온프레미스 하이브리드 파일 공유** (FSx File Gateway는 신규 고객 불가 — 신규 환경은 FSx for Windows File Server에 VPN/Direct Connect로 직접 접근하거나 S3 File Gateway 사용)
 ```
 본사 (Windows AD 환경)
   └─ Storage Gateway FSx File Gateway
@@ -271,8 +271,8 @@ B) 0일: Standard → 180일: Glacier Instant Retrieval → 7년(2,555일): 삭�
 C) 0일: Standard → 30일: Standard-IA → 180일: Glacier Instant → 7년: 삭제
 D) 즉시 Intelligent-Tiering → 7년 후 삭제
 
-**정답: C**
-해설: 진료 후 6개월(180일)까지 자주 접근 → Standard 또는 Standard-IA(30일 이후). 6개월(180일) 이후 연 1-2회, 즉시 필요 → Glacier Instant Retrieval(검색 ms, 90일 최소 보관 충족). 7년(2,555일) 후 만료. B의 180일 Glacier Instant는 최소 보관 90일을 충족하지만, Standard에서 직접 Glacier Instant로 가는 최소 전환 기간은 90일이다. C가 Standard-IA를 중간에 추가해 비용을 더 최적화한다. D의 Intelligent-Tiering은 접근 패턴이 예측 가능한 경우 수동 Lifecycle이 더 저렴하다.
+**정답: B**
+해설: 진료 후 6개월(180일)까지 자주 접근 → Standard 유지. 6개월(180일) 이후 연 1-2회, 즉시 필요 → Glacier Instant Retrieval(검색 ms, 최소 보관 90일 충족). 7년(2,555일) 후 만료. C처럼 30일에 Standard-IA로 내리면 자주 접근하는 기간에 검색 요금이 발생해 오히려 불리하다(Standard-IA 전환 최소 30일 규정은 IA 계열 전환에만 해당). D의 Intelligent-Tiering은 접근 패턴이 예측 가능한 경우 수동 Lifecycle이 더 저렴하다.
 
 ---
 
@@ -383,15 +383,15 @@ D) 버킷 정책이 잘못됐다
 
 ---
 
-**문제 11.** 한 회사가 S3 버킷의 모든 데이터에 KMS 암호화를 적용하고, 암호화되지 않은 객체 업로드를 차단하고 싶다. 어떻게 구성하는가?
+**문제 11.** 한 회사가 S3 버킷의 모든 데이터에 KMS 암호화를 적용하고, SSE-KMS 이외의 방식(SSE-S3 등)으로 암호화를 지정한 업로드를 차단하고 싶다. 어떻게 구성하는가?
 
 A) S3 버킷 기본 암호화를 SSE-KMS로 설정하면 자동으로 모든 객체가 암호화됨
-B) S3 버킷 기본 암호화 SSE-KMS + 버킷 정책에 `s3:x-amz-server-side-encryption-aws:kms` 헤더 없는 요청 Deny
+B) S3 버킷 기본 암호화 SSE-KMS + 버킷 정책에서 `s3:x-amz-server-side-encryption` 값이 `aws:kms`가 아닌 PutObject 요청 Deny
 C) KMS 키 정책에서 암호화 없는 요청 거부
 D) SCP로 암호화 없는 S3 PutObject 차단
 
 **정답: B**
-해설: S3 기본 암호화만 설정하면 암호화 없이 업로드한 객체도 자동으로 SSE-S3로 암호화된다(KMS가 아닌 S3 관리 키로). SSE-KMS를 강제하려면 버킷 정책에서 `x-amz-server-side-encryption` 헤더가 `aws:kms`가 아닌 요청을 Deny해야 한다. 이 정책 없이는 클라이언트가 SSE-S3나 암호화 없이 업로드해도 버킷이 이를 수락한다. A만으로는 SSE-KMS 강제가 되지 않는다.
+해설: 기본 암호화를 SSE-KMS로 설정하면 암호화 헤더 없이 올린 객체도 SSE-KMS로 암호화된다. 하지만 클라이언트가 요청에 SSE-S3(`AES256`) 등 다른 방식을 명시하면 그 요청 설정이 우선하므로 기본 암호화만으로는 SSE-KMS 이외 방식의 업로드를 막지 못한다. 이를 차단하려면 버킷 정책에서 조건키 `s3:x-amz-server-side-encryption`이 `aws:kms`가 아닌 요청을 Deny해야 한다. 헤더가 없는 요청까지 Deny하면 기본 암호화에 의존하는 업로드도 막히므로 주의한다. A만으로는 다른 암호화 방식 지정 업로드를 차단하지 못한다.
 
 ---
 
