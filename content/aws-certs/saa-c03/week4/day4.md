@@ -1,6 +1,6 @@
 # Day 4 - CloudFront와 Storage Gateway: CDN의 내부 구조와 하이브리드 스토리지 패턴
 
-CloudFront는 단순한 캐시 서버가 아니다. 2008년 출시된 이후 400개가 넘는 엣지 PoP(Point of Presence)로 확장됐고, HTTP 캐시를 넘어 엣지 컴퓨팅, TLS 종료, WAF, 서명 인증, 동적 콘텐츠 가속까지 담당한다. 대규모 미디어 스트리밍과 전 세계 정적·동적 콘텐츠를 낮은 지연 시간으로 전달하는 일이 이런 엣지 아키텍처 덕분에 가능하다(참고로 Netflix는 CloudFront가 아니라 자체 CDN인 Open Connect를 사용한다).
+CloudFront는 단순한 캐시 서버가 아니다. 2008년 출시된 이후 750개가 넘는 엣지 PoP(Point of Presence)로 확장됐고, HTTP 캐시를 넘어 엣지 컴퓨팅, TLS 종료, WAF, 서명 인증, 동적 콘텐츠 가속까지 담당한다. 대규모 미디어 스트리밍과 전 세계 정적·동적 콘텐츠를 낮은 지연 시간으로 전달하는 일이 이런 엣지 아키텍처 덕분에 가능하다(참고로 Netflix는 CloudFront가 아니라 자체 CDN인 Open Connect를 사용한다).
 
 이 글에서는 CloudFront의 캐시 계층 구조(PoP → Regional Edge Cache → Origin Shield), OAC의 서명 메커니즘, Lambda@Edge와 CloudFront Functions의 실행 위치 차이, Storage Gateway의 4가지 모드의 내부 동작을 다룬다. 그리고 언제 DataSync를 쓰고, 언제 Storage Gateway를 쓰고, 언제 Snow Family를 써야 하는지 판단 기준을 정리한다.
 
@@ -22,7 +22,7 @@ Origin Shield (선택적 추가 계층)
 Origin (S3, ALB, EC2 등)
 ```
 
-**PoP(Point of Presence, Edge Location)**: 사용자와 가장 가까운 곳. 400개 이상 전 세계 도시. 캐시 용량이 작아서 자주 요청되는 인기 콘텐츠만 유지한다.
+**PoP(Point of Presence, Edge Location)**: 사용자와 가장 가까운 곳. 750개 이상(100여 개 도시, 임베디드 PoP까지 합치면 1,100개 이상). 캐시 용량이 작아서 자주 요청되는 인기 콘텐츠만 유지한다.
 
 **Regional Edge Cache(REC)**: 각 지리적 리전(아태, 북미, 유럽 등)당 몇 개씩 배치. PoP보다 큰 캐시를 가져서 덜 인기 있는 콘텐츠를 더 오래 유지한다. PoP가 미스하면 REC를 먼저 확인하므로, 오리진 부하가 크게 줄어든다.
 
@@ -30,7 +30,7 @@ Origin (S3, ALB, EC2 등)
 
 이 3계층 캐시 구조는 **계층적 캐싱(Hierarchical Caching)**의 구현이다. CDN 이론에서 계층적 캐시는 L1(소형·빠름·짧은 TTL) → L2(대형·조금 느림·긴 TTL) → Origin의 패턴을 따른다. 각 계층에서 캐시 히트율(Cache Hit Ratio)이 높을수록 오리진 부하와 비용이 줄어든다. CloudFront의 Metrics에서 `CacheHitRate`를 보면 각 계층의 효과를 측정할 수 있다.
 
-**사례**: Airbnb는 CloudFront와 Origin Shield를 통해 전 세계 여행자들에게 숙소 이미지를 제공한다. Origin Shield를 us-east-1에 배치해 모든 글로벌 REC의 미스 요청을 집약했다. 이를 통해 오리진 이미지 서버의 요청 수를 90% 이상 줄이고, 전 세계 페이지 로드 시간을 평균 40% 단축했다. (AWS re:Invent 2021 발표 내용 기반)
+**사례(일반 시나리오)**: 전 세계 사용자에게 이미지를 제공하는 서비스에서 Origin Shield를 오리진과 가까운 리전에 배치하면, 여러 REC의 캐시 미스 요청이 한 곳으로 집약되어 오리진이 받는 요청 수가 줄어든다.
 
 ## 캐시 동작(Cache Behavior): CloudFront의 핵심 설정 단위
 
@@ -120,7 +120,7 @@ Origin
 ```
 
 **CloudFront Functions**:
-- 400+ PoP에서 실행 → 사용자와 가장 가까운 곳
+- 750+ PoP에서 실행 → 사용자와 가장 가까운 곳
 - 런타임: JavaScript ES5 (제한된 API)
 - 메모리: 2MB, 실행 시간: 1ms 이내
 - 콜드 스타트: 사실상 없음 (100μs 미만)
@@ -128,8 +128,8 @@ Origin
 - 지원 이벤트: Viewer Request, Viewer Response만
 
 **Lambda@Edge**:
-- 13개 Regional Edge Cache에서 실행
-- 런타임: Node.js 16.x, Python 3.11 (전체 런타임)
+- Regional Edge Cache(현재 15개)에서 실행
+- 런타임: 최신 지원 버전의 Node.js/Python (전체 런타임, 지원 버전은 Lambda 런타임 문서 확인. 폐기된 버전으로는 생성/수정 불가)
 - 메모리: 최대 10GB, 실행 시간: 최대 30초 (Origin 이벤트)
 - 콜드 스타트: 수십~수백 ms
 - 비용: Lambda@Edge 요금 (더 비쌈)
@@ -150,7 +150,7 @@ Origin
 
 **Lambda@Edge 적합한 용도**:
 - JWT 토큰 검증 (외부 IAM, OAuth 서버 호출)
-- A/B 테스트 (DB/ElastiCache에서 실험 설정 읽기)
+- A/B 테스트 (DynamoDB 등 퍼블릭 엔드포인트 저장소에서 실험 설정 읽기. Lambda@Edge는 VPC 접근 미지원이라 VPC 내 ElastiCache/RDS는 불가)
 - 동적 콘텐츠 개인화
 - 오리진 응답 변환 (JSON → HTML)
 - 이미지 최적화 (Sharp 라이브러리 사용)
@@ -263,13 +263,15 @@ File Gateway (VM)
 
 **Snow Family 선택**: 인터넷 대역폭이 너무 좁아서 전송 시간이 수주 이상 걸릴 때. 인터넷 없는 오지, 보안 때문에 인터넷 전송 불가, 페타바이트 이상 대용량. "오프라인 물리 전송"이 핵심.
 
+> 참고(현재 가용성): Snowball Edge를 포함한 Snow Family 장치는 2025-11-07부로 신규 고객에게 제공되지 않는다(기존 고객은 계속 사용). 신규 환경은 온라인 이전은 DataSync, 물리 이전은 AWS Data Transfer Terminal, 엣지 컴퓨팅은 Outposts를 안내받는다. 시험(SAA-C03)에서는 여전히 '오프라인 대용량 전송 = Snow Family'가 정답 키워드다.
+
 Snow Family의 필요성은 **저장의 법칙(Kryder's Law)**과 **네트워크 대역폭 성장률** 사이의 격차에서 온다. HDD 밀도는 연간 40%씩 성장하지만 네트워크 대역폭 성장은 그를 따라가지 못한다. 1PB 데이터를 1Gbps 인터넷으로 전송하면 이론상 약 93일(약 3개월), 100TB도 약 9~10일이 걸린다. Snowball Edge는 배송 기간을 포함해 통상 1주 안팎에 이전할 수 있다. Jim Gray의 논문(2003, "Distributed Computing Economics")에서 처음 분석된 이 문제가 현재도 유효하다.
 
 ## 다른 클라우드와의 CloudFront 비교
 
 | 기능 | AWS CloudFront | GCP Cloud CDN | Azure CDN |
 |------|---------------|--------------|-----------|
-| 엣지 PoP 수 | 400+ | 127+ | 150+ |
+| 엣지 PoP 수 | 750+ | 127+ | 150+ |
 | 엣지 컴퓨팅 | Functions + Lambda@Edge | Cloud Run Edge | Azure Functions Edge |
 | WAF 통합 | AWS WAF (글로벌) | Google Cloud Armor | Azure WAF |
 | Origin Shield | O | O (Cloud CDN Tiered Caching) | 제한적 |
@@ -393,7 +395,7 @@ C) ALB Weighted Target Group
 D) Route 53 Weighted 정책
 
 **정답: B**
-해설: A/B 테스트 로직(DB/ElastiCache에서 실험 설정 읽기, 10% 분기)은 Lambda@Edge의 복잡한 비즈니스 로직 실행 능력이 필요하다. CloudFront는 자동으로 `CloudFront-Viewer-Country` 헤더를 추가하며, Origin Request Policy에서 이 헤더를 오리진에 전달하도록 설정한다. Lambda@Edge는 이 헤더를 읽어 오리진을 선택하거나 오리진에 전달할 수 있다. CloudFront Functions는 외부 시스템 호출이 불가능해 A/B 테스트 로직 구현이 제한적이다.
+해설: A/B 테스트 로직(DynamoDB 등 퍼블릭 엔드포인트 저장소에서 실험 설정 읽기, 10% 분기)은 Lambda@Edge의 복잡한 비즈니스 로직 실행 능력이 필요하다. CloudFront는 자동으로 `CloudFront-Viewer-Country` 헤더를 추가하며, Origin Request Policy에서 이 헤더를 오리진에 전달하도록 설정한다. Lambda@Edge는 이 헤더를 읽어 오리진을 선택하거나 오리진에 전달할 수 있다. CloudFront Functions는 외부 시스템 호출이 불가능해 A/B 테스트 로직 구현이 제한적이다.
 
 ---
 

@@ -30,7 +30,7 @@ Budgets와 별개로 **AWS Cost Anomaly Detection**은 ML로 평소 지출 패�
 
 "마케팅팀이 이번 달 얼마 썼나?"에 답하려면, 모든 리소스에 **누구의 것인지** 표시가 있어야 한다. **Cost Allocation Tags**가 이 역할을 한다 — 리소스에 `Project`, `Environment`, `Owner`, `CostCenter` 같은 태그를 달고, 관리 계정에서 이 태그를 **활성화**하면, 그 시점 이후의 비용이 태그 값별로 그룹화되어 Cost Explorer·CUR·청구서에 나타난다.
 
-여기서 중요한 함정이 있다. **태그 활성화는 소급되지 않는다** — 활성화한 시점부터의 비용만 태그별로 집계되고, 과거 비용은 분류되지 않는다. 그래서 태그 전략은 리소스를 만들기 전에 정해야 하고, 누락된 리소스는 비용 추적에서 새어나간다. 이 때문에 태그를 강제하는 거버넌스(예: 태그 없는 리소스 생성을 SCP·Config Rule로 차단)가 FinOps의 기반이 된다.
+여기서 중요한 함정이 있다. **태그 활성화는 기본적으로 소급되지 않는다** — 활성화한 시점부터의 비용만 태그별로 집계되고, 과거 비용은 분류되지 않는다(2024년 3월부터 관리 계정이 백필(backfill)을 요청하면 최대 12개월 전까지 소급 적용할 수 있지만, 시험에서는 "소급 안 됨"이 기본 전제다). 그래서 태그 전략은 리소스를 만들기 전에 정해야 하고, 누락된 리소스는 비용 추적에서 새어나간다. 이 때문에 태그를 강제하는 거버넌스(예: 태그 없는 리소스 생성을 SCP·Config Rule로 차단)가 FinOps의 기반이 된다.
 
 태그 기반 비용 분리는 회계의 **원가 배분(cost allocation)**과 **쇼백/차지백(showback/chargeback)** 모델을 클라우드에 옮긴 것이다. **Showback**은 각 부서에 "당신들이 이만큼 썼다"고 보여만 주는 것(가시화·책임 환기)이고, **Chargeback**은 실제로 그 부서 예산에서 청구하는 것이다. Showback은 행동 변화를 부드럽게 유도하고 chargeback은 강한 비용 책임을 강제한다. 태그가 정확해야 둘 다 가능하므로, 태그 설계는 단순 기술이 아니라 "조직을 어떻게 비용 단위로 쪼갤 것인가"라는 조직 설계 결정이다.
 
@@ -72,7 +72,7 @@ aws ce create-anomaly-monitor --anomaly-monitor '{
   "MonitorName":"by-service","MonitorType":"DIMENSIONAL",
   "MonitorDimension":"SERVICE"}'
 
-# Cost Allocation Tags 활성화 (활성 시점 이후 비용만 분류됨)
+# Cost Allocation Tags 활성화 (기본은 활성 시점 이후 비용만 분류됨, 백필로 최대 12개월 소급 가능)
 aws ce update-cost-allocation-tags-status --cost-allocation-tags-status '[
   {"TagKey":"Project","Status":"Active"},
   {"TagKey":"CostCenter","Status":"Active"},
@@ -96,7 +96,7 @@ aws cur put-report-definition --report-definition '{
 
 ## 정리
 
-비용 거버넌스는 측정·책임·자동화 세 단계로 FinOps 라이프사이클을 구현한다. ① **Cost Explorer**(빠른 시각화·예측·이상 탐지)와 **CUR**(세분화 원본을 S3로 내보내 Athena 분석)는 OLAP vs raw warehouse처럼 역할이 갈린다 — "Athena 세밀 분석"이면 CUR, "빠른 그래프·예측"이면 Cost Explorer. ② **Budgets**는 사전 한도와 임계 알림을, **Budgets Actions**는 임계 도달 시 IAM·SCP·인스턴스 중지로 강제 차단을 제공하고, **Anomaly Detection**은 ML로 비정상 급증을 패턴 기반으로 잡는다(빌 쇼크 방어). ③ **Cost Allocation Tags**는 비용을 부서·프로젝트로 분리하되 활성화 시점부터 소급 없이 집계되므로 사전 태그 전략과 강제가 필요하고, 이는 showback/chargeback이라는 조직 설계 결정이다. ④ **Consolidated Billing**은 볼륨 할인 합산·SP/RI 공유·SCP 가드레일로 멀티 계정 경제성을 만든다. ⑤ Trusted Advisor·Compute Optimizer·Storage Lens는 거친 청소→정밀 조정→도메인 특화로 협업한다.
+비용 거버넌스는 측정·책임·자동화 세 단계로 FinOps 라이프사이클을 구현한다. ① **Cost Explorer**(빠른 시각화·예측·이상 탐지)와 **CUR**(세분화 원본을 S3로 내보내 Athena 분석)는 OLAP vs raw warehouse처럼 역할이 갈린다 — "Athena 세밀 분석"이면 CUR, "빠른 그래프·예측"이면 Cost Explorer. ② **Budgets**는 사전 한도와 임계 알림을, **Budgets Actions**는 임계 도달 시 IAM·SCP·인스턴스 중지로 강제 차단을 제공하고, **Anomaly Detection**은 ML로 비정상 급증을 패턴 기반으로 잡는다(빌 쇼크 방어). ③ **Cost Allocation Tags**는 비용을 부서·프로젝트로 분리하되 활성화 시점부터 (기본적으로) 소급 없이 집계되므로 사전 태그 전략과 강제가 필요하고, 이는 showback/chargeback이라는 조직 설계 결정이다. ④ **Consolidated Billing**은 볼륨 할인 합산·SP/RI 공유·SCP 가드레일로 멀티 계정 경제성을 만든다. ⑤ Trusted Advisor·Compute Optimizer·Storage Lens는 거친 청소→정밀 조정→도메인 특화로 협업한다.
 
 다음 글에서는 한 주 동안 본 컴퓨팅·스토리지·네트워크·거버넌스 네 축을 종합해, 실제 SAA 시험에 나오는 비용 시나리오를 키워드로 빠르게 매핑하는 통합 복습을 한다.
 
@@ -139,7 +139,7 @@ D) Cost Explorer는 태그를 지원하지 않는다
 
 **정답: B**
 
-해설: 리소스에 태그를 다는 것만으로는 부족하고, 관리(결제) 계정에서 해당 태그를 Cost Allocation Tag로 명시적으로 활성화해야 비용이 태그 값별로 그룹화된다. 또 활성화는 소급되지 않아 활성 시점 이후 비용만 분류된다. A는 틀렸고(자동 반영 아님), C도 틀렸으며(다양한 리소스 지원), D도 틀렸다(Cost Explorer는 활성화된 태그로 그룹화 지원).
+해설: 리소스에 태그를 다는 것만으로는 부족하고, 관리(결제) 계정에서 해당 태그를 Cost Allocation Tag로 명시적으로 활성화해야 비용이 태그 값별로 그룹화된다. 또 활성화는 기본적으로 소급되지 않아 활성 시점 이후 비용만 분류된다(백필 요청 시 최대 12개월 소급 가능). A는 틀렸고(자동 반영 아님), C도 틀렸으며(다양한 리소스 지원), D도 틀렸다(Cost Explorer는 활성화된 태그로 그룹화 지원).
 
 ---
 

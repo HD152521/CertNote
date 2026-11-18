@@ -2,7 +2,7 @@
 
 Day 2에서 본 IAM은 4대 엔터티와 정책 평가 로직이 핵심이었다. 그런데 실제 운영에 들어가면 곧 한 단계 더 깊은 질문이 떠오른다. "다른 계정의 Lambda가 우리 S3를 읽어야 한다", "사용자가 만든 Role이 너무 강하다", "외부 SaaS가 우리 AWS에 안전하게 들어오려면 어떻게 해야 하나" 같은 질문이다. 답은 모두 **STS(Security Token Service)** 와 **Permissions Boundary**, 그리고 **External ID** 라는 도구에 있다.
 
-이 글은 IAM의 진짜 보안 모델 — Role 빌리기, 권한 상한 강제, 위임 신뢰 — 를 다룬다. 시험에서 헷갈리기 쉬운 영역이고, 실무에서도 사고가 잦은 영역이다. 한 가지 미리 짚어둘 것은, IAM은 2010년에야 처음 나왔고 STS는 2011년에 뒤이어 등장했다는 점이다. 그 전까지 AWS의 "다른 계정 위임"이라는 게 그냥 root key 공유였다는 사실을 떠올려보면 — 이 도구들이 왜 이렇게 보수적으로 설계됐는지가 보인다.
+이 글은 IAM의 진짜 보안 모델 — Role 빌리기, 권한 상한 강제, 위임 신뢰 — 를 다룬다. 시험에서 헷갈리기 쉬운 영역이고, 실무에서도 사고가 잦은 영역이다. 한 가지 미리 짚어둘 것은, IAM은 2010년에야 처음 나왔고 STS는 2011년에 뒤이어 등장했다는 점이다. 지금 같은 위임 모델은 그 뒤에 자리잡았다는 점이다. 그 전까지 AWS의 "다른 계정 위임"이라는 게 그냥 root key 공유였다는 사실을 떠올려보면 — 이 도구들이 왜 이렇게 보수적으로 설계됐는지가 보인다.
 
 ## STS는 무엇을 발급하는가
 
@@ -28,7 +28,7 @@ SessionToken     : 만료 시각 + 서명 메타데이터
 
 STS는 글로벌 엔드포인트 `sts.amazonaws.com`(us-east-1로 라우팅)과 리전 엔드포인트 `sts.ap-northeast-2.amazonaws.com`을 둘 다 제공한다. 글로벌 엔드포인트는 us-east-1 장애 시 같이 죽으므로 실무에선 **리전 엔드포인트를 명시적으로 사용**하는 게 표준이다. AWS SDK는 기본적으로 환경변수 `AWS_STS_REGIONAL_ENDPOINTS=regional`을 권장한다. 2017년 S3 us-east-1 대장애 때 STS도 같이 흔들려서 다른 리전의 워크로드까지 인증 실패가 발생한 사건이 이 패턴의 직접적 계기다. 동일한 이유로 SigV4 서명 검증 자체는 리전별로 독립이지만, "토큰을 새로 발급받는 단계"가 글로벌 엔드포인트에 묶이면 단일 장애점이 된다.
 
-STS 토큰의 만료 1시간 기본값은 우연이 아니다. NIST SP 800-63B의 세션 관리 가이드에서 권장하는 "재인증 주기"와 거의 일치한다. 너무 짧으면(예: 5분) 콜드 스타트마다 STS 호출이 폭증해 throttling(`Rate exceeded`)이 발생하고, 너무 길면(예: 12시간) 키 노출 시 공격 윈도우가 길어진다. 1시간은 그 trade-off의 산업 표준값에 가깝다.
+STS 토큰의 만료 1시간 기본값은 짧음과 길음 사이의 절충이다. 너무 짧으면(예: 5분) 콜드 스타트마다 STS 호출이 폭증해 throttling(`Rate exceeded`)이 발생하고, 너무 길면(예: 12시간) 키 노출 시 공격 윈도우가 길어진다. 1시간은 그 trade-off의 절충값이다.
 
 ## Trust Policy: Role을 누가 빌릴 수 있는가
 
@@ -59,7 +59,7 @@ Confused Deputy는 1988년 Norm Hardy가 "The Confused Deputy: or why capabiliti
 
 예를 들어 Datadog이 우리 AWS 계정의 CloudWatch 로그를 수집한다고 가정한다. Datadog의 AWS 계정 안 Role에 `sts:AssumeRole` 권한을 주면 Datadog은 우리 Role을 빌려 우리 로그를 읽는다. 그런데 만약 다른 Datadog 고객 X가 우리 Role의 ARN을 알아내서 자기 Datadog 콘솔에서 "이 Role을 모니터링 대상으로 등록"하면? Datadog은 X의 요청으로 우리 Role을 빌리려 시도할 수 있다 — 이게 Confused Deputy. Deputy(Datadog)의 권한이 "원래 의도된 위임자(우리)"가 아닌 "타인(X)"에 의해 trigger된 것이다.
 
-해결책이 **External ID**다. Trust Policy에 `sts:ExternalId`를 조건으로 걸고, 그 값을 우리 ↔ Datadog 사이에만 공유되는 비밀로 설정한다. X가 우리 Role ARN을 알아도 External ID를 모르면 AssumeRole이 실패한다.
+해결책이 **External ID**다. Trust Policy에 `sts:ExternalId`를 조건으로 걸고, 그 값을 Datadog이 고객(계정)별로 발급한 고유 값으로 설정한다(비밀은 아니다). X가 우리 Role ARN을 알아도 Datadog은 X의 요청에는 X의 External ID를 쓰므로 AssumeRole이 실패한다.
 
 ```json
 "Condition": {
@@ -67,9 +67,9 @@ Confused Deputy는 1988년 Norm Hardy가 "The Confused Deputy: or why capabiliti
 }
 ```
 
-External ID는 비밀일 필요는 없고(추측 불가능하면 됨), Role ARN과 1:1로 묶이는 게 핵심이다. 보통 UUIDv4 같은 충돌 확률이 사실상 0인 식별자를 쓴다.
+External ID는 비밀일 필요는 없고, SaaS가 고객별로 발급해 고객 간에 겹치지 않는 고유 값이라는 게 핵심이다. 고객이 직접 정하지 않고 SaaS에서 받는다. 보통 UUIDv4 같은 충돌 확률이 사실상 0인 식별자를 쓴다.
 
-**사례(가상)**: 2018년 한 보안 연구자가 여러 SaaS 모니터링 도구의 Role 등록 절차에 External ID가 누락된 걸 발견하고 PoC를 공개했다. 이후 AWS는 "Cross-Account Role + External ID"를 ISV 인증의 기본 요건으로 만들었고, 현재 AWS Marketplace에 올라오는 모든 third-party 통합은 External ID를 강제로 요구한다. 더 오래된 사례로는 2014년 Code Spaces 사고 — AWS root 자격 증명이 노출돼 모든 S3 버킷·EBS 스냅샷이 12시간 만에 삭제됐고 회사가 문을 닫았다. Cross-account를 직접 위임하지 않더라도 "위임 가능한 토큰을 광역으로 부여"하는 패턴이 얼마나 위험한지를 보여주는 사건이다.
+**사례(가상)**: 2018년 한 보안 연구자가 여러 SaaS 모니터링 도구의 Role 등록 절차에 External ID가 누락된 걸 발견하고 PoC를 공개했다. 이후 "Cross-Account Role + External ID"는 third-party SaaS 통합의 표준 관행이 됐다. 더 오래된 사례로는 2014년 Code Spaces 사고 — AWS root 자격 증명이 노출돼 모든 S3 버킷·EBS 스냅샷이 12시간 만에 삭제됐고 회사가 문을 닫았다. Cross-account를 직접 위임하지 않더라도 "위임 가능한 토큰을 광역으로 부여"하는 패턴이 얼마나 위험한지를 보여주는 사건이다.
 
 Confused Deputy 문제는 capability-based security의 출발점이기도 하다. ACL이 "누가 무엇에 접근 가능한가"를 신원 기준으로 묶는 데 반해, capability는 "이 토큰을 가진 자에게 권한"이라 위임 시 신원 정보를 명시적으로 동반해야 한다. External ID는 그 신원 정보의 한 형태다. OAuth 2.0의 `state` 파라미터(RFC 6749 § 10.12), SAML의 `Audience` 제한자, OIDC의 `aud` claim도 같은 원리로 confused deputy를 방지하는 메커니즘이다.
 
@@ -100,7 +100,7 @@ Permissions Boundary는 User나 Role에 첨부하는 **권한의 상한선**이�
 | Session Policy | AssumeRole 시 | 그 세션만의 추가 축소 |
 | Resource Policy | 리소스 | 리소스 측 허용 |
 
-실효 권한 = 위 5개의 교집합 + 어디든 명시적 Deny 우선. 수학적으로 보면 `Effective = IdentityPolicy ∩ Boundary ∩ SCP ∩ SessionPolicy ∩ ResourcePolicy` 같은 구조이고, 그 위에 `Deny` 우선이라는 단락 평가가 얹힌다.
+실효 권한 = 위 표의 상한 계열(Identity·Boundary·SCP·Session)의 교집합 + 어디든 명시적 Deny 우선. 수학적으로 보면 `Effective = IdentityPolicy ∩ Boundary ∩ SCP ∩ SessionPolicy` 같은 구조이고(같은 계정의 Resource Policy는 교집합이 아니라 Identity Policy와 합집합으로 허용에 더해진다), 그 위에 `Deny` 우선이라는 단락 평가가 얹힌다.
 
 > ⚠️ **함정**: Permissions Boundary는 권한을 "주지" 않는다. 상한선만 정한다. Identity Policy가 `s3:GetObject`를 안 줬으면 Boundary가 `s3:*`이어도 Get은 안 된다. 시험에선 "Boundary를 붙였더니 어떤 권한이 활성화되었다"는 보기가 함정으로 쓰인다. 또 하나: Boundary는 IAM Principal에만 붙고 Resource에는 못 붙는다. 리소스 측 상한은 SCP나 Resource Policy로 다뤄야 한다.
 
@@ -138,7 +138,7 @@ ABAC는 NIST SP 800-162 "Guide to Attribute Based Access Control"에서 표준�
 | SAML 2.0 | 2005 (OASIS) | XML | 전통 기업 IdP (AD FS, Okta) |
 | OIDC | 2014 (OpenID Foundation) | JWT | 웹·모바일·SaaS |
 
-SAML은 XML이라 무겁고 파싱 취약점도 자주 나왔지만(2018 Duo Security 발견 SAML XML Signature wrapping, CVE-2018-0114 등) 여전히 엔터프라이즈에선 표준이다. OIDC는 JWT 기반으로 가볍고 모바일 친화적이라 신규 통합은 거의 OIDC다. JWT는 RFC 7519, OIDC는 OpenID Connect Core 1.0 스펙으로 정의돼 있다.
+SAML은 XML이라 무겁고 파싱 취약점도 자주 나왔지만(2018 Duo Security가 발견한 SAML XML 주석 삽입 계열 인증 우회, CVE-2017-11427~11430 등) 여전히 엔터프라이즈에선 표준이다. OIDC는 JWT 기반으로 가볍고 모바일 친화적이라 신규 통합은 거의 OIDC다. JWT는 RFC 7519, OIDC는 OpenID Connect Core 1.0 스펙으로 정의돼 있다.
 
 EKS의 IRSA(IAM Roles for Service Accounts), GitHub Actions의 OIDC 통합이 모두 OIDC 기반이다. 이 패턴이 중요한 이유는 **장기 자격 증명을 코드/CI에 안 두기 위함**이다. GitHub Actions에서 AWS에 배포할 때 Access Key를 Secret으로 두는 대신 OIDC 토큰으로 Role을 빌리면 키 회전 부담이 사라진다.
 
@@ -167,7 +167,7 @@ steps:
 
 `sub` claim에 repo와 branch가 박혀 있다는 게 핵심. 다른 repo가 같은 OIDC 토큰을 발급받아도 sub가 다르므로 Role 빌리기가 실패한다. 즉 GitHub 측 토큰이 Role의 사용 범위를 자체적으로 제한한다.
 
-**사례**: 2022년 Travis CI 침해 사고에서 공격자는 770개 이상의 사용자 토큰을 탈취해 GitHub repo에 접근했다. 그 결과 다수의 AWS Access Key가 노출되었다. 만약 OIDC 페더레이션을 썼다면 노출될 장기 토큰이 애초에 존재하지 않았다. 이후 GitHub Actions의 OIDC 사용이 사실상 표준이 됐다. 같은 해 CircleCI도 비슷한 침해를 겪었고, 두 사건 모두 "장기 secret을 CI에 두지 마라"는 교훈을 산업 전체에 각인시켰다.
+**사례**: 2022년 Travis CI 침해 사고에서 공격자는 770개 이상의 사용자 토큰을 탈취해 GitHub repo에 접근했다. 그 결과 다수의 AWS Access Key가 노출되었다. 만약 OIDC 페더레이션을 썼다면 노출될 장기 토큰이 애초에 존재하지 않았다. (GitHub Actions OIDC는 2021년 10월에 이미 출시돼 있었고, 이런 사고들은 그 사용을 더 널리 퍼뜨린 계기다.) 같은 해 CircleCI도 비슷한 침해를 겪었고, 두 사건 모두 "장기 secret을 CI에 두지 마라"는 교훈을 산업 전체에 각인시켰다.
 
 AssumeRoleWithWebIdentity는 OIDC 토큰의 서명을 IdP의 JWKS(JSON Web Key Set, RFC 7517) 엔드포인트에서 가져온 공개키로 검증한다. AWS는 이 JWKS를 IAM Identity Provider 객체로 등록해두고 캐시한다. IdP가 키를 회전(rollover)하면 AWS도 자동으로 새 키를 가져오지만, JWKS URL 자체가 바뀌면 수동 업데이트가 필요하다. 이게 "GitHub Actions에서 OIDC가 갑자기 실패한다"는 실무 트러블의 흔한 원인이다.
 
@@ -197,7 +197,7 @@ AssumeRoleWithWebIdentity는 OIDC 토큰의 서명을 IdP의 JWKS(JSON Web Key S
    8. 명시 Allow 없으면 → DENY (default)
 ```
 
-같은 계정 내에서 Resource Policy와 Identity Policy는 합집합(OR)으로 결합되지만, 교차 계정에서는 교집합(AND)으로 결합된다. KMS만 예외다 — KMS는 키 정책(Key Policy)에서 명시적으로 권한을 위임받지 않으면 IAM 정책이 아무리 강해도 키를 못 쓴다. 이건 KMS의 "key policy must allow"라는 독특한 모델로, 시험에서 예외 규칙으로 묻는다. 같은 모델이 적용되는 또 다른 서비스로 Secrets Manager, S3(특정 액션), Lambda(Resource Policy)가 있다.
+같은 계정 내에서 Resource Policy와 Identity Policy는 합집합(OR)으로 결합되지만, 교차 계정에서는 교집합(AND)으로 결합된다. KMS만 예외다 — KMS는 키 정책(Key Policy)에서 명시적으로 권한을 위임받지 않으면 IAM 정책이 아무리 강해도 키를 못 쓴다. 이건 KMS의 "key policy must allow"라는 독특한 모델로, 시험에서 예외 규칙으로 묻는다. Secrets Manager, S3, Lambda 등은 같은 계정이라면 Identity Policy 또는 Resource Policy 중 하나만 허용해도 되므로 KMS 같은 모델이 아니다.
 
 ## IAM Access Analyzer: 사용 안 하는 권한 찾기
 
@@ -228,7 +228,7 @@ C) root 자격 증명을 공유
 D) S3 Public 액세스 허용
 
 **정답: B**
-해설: SaaS 통합의 보안 표준. External ID는 우리와 SaaS 간 사전 공유 비밀로, 다른 SaaS 고객이 우리 Role ARN을 알아도 빌릴 수 없게 막는다. A는 키 회전 문제, C는 보안 사고로 직행, D는 무관한 답이다. AWS Marketplace 인증 ISV는 모두 External ID를 강제로 요구한다. 추가 안전망으로 Trust Policy의 Condition에 `aws:SourceAccount`나 `aws:SourceArn`을 같이 거는 패턴도 있다. 특히 AWS 서비스(SNS → Lambda 등)가 위임 호출자인 경우 External ID가 안 통하므로 `aws:SourceArn`이 사실상 표준이다.
+해설: SaaS 통합의 보안 표준. External ID는 SaaS가 고객별로 발급한 고유 값(비밀은 아님)으로, 다른 SaaS 고객이 우리 Role ARN을 알아도 빌릴 수 없게 막는다. A는 키 회전 문제, C는 보안 사고로 직행, D는 무관한 답이다. 반면 AWS 서비스 principal(SNS → Lambda 등)이 위임 호출자인 경우에는 External ID가 아니라 `aws:SourceArn`/`aws:SourceAccount` 조건이 표준이다.
 
 ---
 

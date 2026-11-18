@@ -38,7 +38,7 @@ Week 2를 한 문장으로 압축하면 이렇다. **VPC 네트워킹의 모든 
                   [ TGW ] ─── 다른 VPC, 온프레미스
 ```
 
-이 토폴로지가 SAA 시나리오 문제의 *기본 배경*이다. 거의 모든 네트워크 시나리오는 이 그림 위에 "여기서 어떤 컴포넌트가 빠졌는가" 또는 "이 컴포넌트를 추가하려면 무엇이 필요한가"를 묻는 형태로 변형된다. 그림을 따라 패킷 하나를 손가락으로 짚어 보면 이렇다. DB 서브넷의 RDS가 S3에 백업을 쓴다고 하면, 그 패킷은 `local` 라우팅을 벗어나 어디로 가야 하는가? IGW로 가면 인터넷 노출이고, NAT GW로 가면 비용이 발생한다. 정답은 Gateway Endpoint로 빠져 AWS 백본으로 직행하는 것이다 — 이 한 줄의 추론이 시나리오 문제 절반의 골격이다.
+이 토폴로지가 SAA 시나리오 문제의 *기본 배경*이다. 거의 모든 네트워크 시나리오는 이 그림 위에 "여기서 어떤 컴포넌트가 빠졌는가" 또는 "이 컴포넌트를 추가하려면 무엇이 필요한가"를 묻는 형태로 변형된다. 그림을 따라 패킷 하나를 손가락으로 짚어 보면 이렇다. DB 서브넷의 인스턴스(예: DB 서버 EC2의 S3 백업, RDS S3 import/export)가 S3에 쓴다고 하면, 그 패킷은 `local` 라우팅을 벗어나 어디로 가야 하는가? IGW로 가면 인터넷 노출이고, NAT GW로 가면 비용이 발생한다. 정답은 Gateway Endpoint로 빠져 AWS 백본으로 직행하는 것이다 — 이 한 줄의 추론이 시나리오 문제 절반의 골격이다.
 
 이 토폴로지는 *hub-and-spoke* + *3-tier* 두 고전 패턴의 합성이다. 3-tier(Presentation/Application/Data)는 1990년대 후반 엔터프라이즈 아키텍처에서 왔고, hub-and-spoke는 1950년대 항공 노선 설계(Delta가 애틀랜타 허브로 개척)에서 유래해 1990년대 WAN 설계로 넘어왔다. TGW는 정확히 이 hub-and-spoke를 네트워크 코어에 구현한 것이다. AWS가 2018년 re:Invent에서 TGW를 발표하기 전까지는 VPC Peering 풀메시(O(n²) 연결)로 같은 걸 흉내 냈는데, 이건 hub-and-spoke가 아니라 *point-to-point mesh*라서 VPC가 늘수록 관리가 기하급수로 폭증했다.
 
@@ -104,13 +104,13 @@ SG의 stateful은 *connection tracking*(conntrack)을 통해 구현된다. Linux
 
 1. **퍼블릭 서브넷 3조건**: IGW 경로 + Public IP + SG 허용. 한 가지라도 빠지면 안 된다. 진단 순서는 항상 "라우팅 → Public IP → SG → NACL → DNS" 다섯 단계. Reachability Analyzer가 이를 자동화한다.
 2. **NACL은 ephemeral port range를 따로 열어야** outbound 응답이 들어온다. Linux는 32768-60999, Windows는 49152-65535, ELB·NLB는 1024-65535, 안전하게는 1024-65535 다 허용.
-3. **NAT GW는 AZ scoped**. AZ별로 만들고 같은 AZ 프라이빗 서브넷이 같은 AZ NAT 사용. cross-AZ 비용도 함께 줄어든다.
+3. **NAT GW는 AZ scoped**(zonal 기준, 2025-11 추가된 Regional NAT GW는 예외 옵션). AZ별로 만들고 같은 AZ 프라이빗 서브넷이 같은 AZ NAT 사용. cross-AZ 비용도 함께 줄어든다.
 4. **Peering은 non-transitive**. VPC가 늘면 TGW로 전환. 10개 이상 VPC면 무조건 TGW. A↔B, B↔C가 있어도 A↔C는 안 된다(B를 경유 못 함).
 5. **CIDR 겹치면 Peering·TGW 불가**. 회사 차원 IP 거버넌스 필요. IPAM 도입 권장.
 6. **Gateway Endpoint는 S3와 DynamoDB만**. 나머지는 Interface. Gateway Endpoint는 같은 리전 내에서만 동작하고 온프레미스/Peering 너머에서는 접근 불가(라우팅 테이블 기반이라).
 7. **Default NACL은 모두 허용, Custom NACL은 모두 거부가 기본**. Fail-secure 설계.
 8. **Endpoint Policy로 exfiltration 방어**. IAM 정책만으로는 부족. `aws:PrincipalOrgID` 조건이 가장 강력.
-9. **Session Manager는 SSM/SSMmessages/EC2messages 3개 endpoint 필요**(완전 격리 환경). 빠뜨리면 작동 안 함.
+9. **Session Manager는 SSM/SSMmessages/EC2messages 3개 endpoint 세트가 표준**(완전 격리 환경). 최신 SSM Agent(3.3.40.0+)는 ssmmessages 우선이라 ec2messages는 대체 경로지만 시험 기준 정답은 3개 세트.
 10. **VPC `local` route는 삭제 불가**. 더 구체적인 경로는 어플라이언스(GWLB endpoint, NAT GW, ENI 등) target으로만 가능. 같은 VPC 내 격리는 SG/NACL로.
 11. **Cross-AZ 데이터 전송은 양방향 GB당 과금**. Multi-AZ HA의 숨은 비용이고 Week 10에서 자세히 다룬다.
 12. **NAT GW의 connection idle timeout은 350초 고정**. 더 긴 connection은 keepalive 필요. RDS·DB connection pool과 함께 자주 문제가 된다.
@@ -128,7 +128,7 @@ SG의 stateful은 *connection tracking*(conntrack)을 통해 구현된다. Linux
 - **2017년 2월 us-east-1 S3 장애**: 디버깅 명령어 오타로 의도보다 많은 서버가 종료되며 S3가 4시간 다운. 단일 리전 의존이 인터넷 절반을 흔든 사건. AWS Status Page 자체가 S3를 의존한 자기 참조 사고였다. *멀티 리전 + 리전 독립 설계*의 결정적 계기.
 - **2019년 Capital One**: SSRF + IMDSv1 + 과도한 IAM 권한. 잘못 구성된 WAF를 통한 SSRF로 메타데이터 endpoint(169.254.169.254)에서 임시 자격증명을 탈취, S3에서 약 1억 600만 명의 데이터 유출. IMDSv2(토큰 기반) + Endpoint Policy + Permission Boundary 조합이 사후 표준이 됨.
 - **2020년 Single-AZ NAT 다운**: per-AZ NAT 패턴의 결정적 계기. ALB는 살아있었으나 백엔드가 Stripe·Twilio에 못 닿아 결제 30분 실패.
-- **2021년 4월 Travis CI**: 장기 토큰이 빌드 로그에 노출 → GitHub OIDC 페더레이션(단기 토큰) 표준화의 계기.
+- **Travis CI 등 CI 침해 사례**: 빌드 환경의 장기 토큰이 노출 → 장기 키 대신 단기 토큰(OIDC 페더레이션)을 쓰는 흐름이 강화됐다(GitHub Actions OIDC는 2021년 10월 출시이며, 특정 사고를 OIDC 표준화의 계기로 단정하지는 않는다).
 - **2018년 인수합병 CIDR 충돌**: 두 VPC 모두 `10.0.0.0/16` → IPAM 도입의 계기. 6개월 마이그레이션.
 - **2019년 도쿄(ap-northeast-1) AZ 냉방 장애**: 단일 AZ 과열로 EC2·EBS 다수 다운. Multi-AZ ASG가 곧 보험이라는 교훈.
 - **2021년 10월 Meta 6시간 글로벌 장애**: BGP withdrawal로 자기 자신의 인증·DNS까지 다운. SDN 결정성의 양날성.
@@ -183,7 +183,7 @@ C) NAT Instance를 ASG로 — EC2 기반 NAT를 ASG로 자동 복구할 수는 �
 D) IGW를 Private 서브넷에 부착 — Private 인스턴스는 Public IP가 없어 IGW를 붙여도 응답을 받지 못하므로 outbound 자체가 성립하지 않음
 
 **정답: B**
-해설: NAT GW는 AZ scoped. AZ별로 두고 같은 AZ Private이 같은 AZ NAT를 쓰면 한 AZ가 죽어도 다른 AZ는 살아남는다. 비용은 약 2배지만 RTO는 0이 된다. 단일 AZ 절약은 사고 한 번이면 다 무너진다(2020년 Single-AZ NAT 사고가 정확히 이 케이스). D가 오답인 이유는 IGW를 붙여도 Private 인스턴스는 Public IP가 없어 응답을 못 받기 때문 — IGW는 Public IP가 있는 인스턴스에만 양방향이 성립한다.
+해설: (zonal) NAT GW는 AZ scoped(Regional NAT GW는 2025-11 추가된 별도 옵션, 시험 정답 기준은 AZ별 NAT). AZ별로 두고 같은 AZ Private이 같은 AZ NAT를 쓰면 한 AZ가 죽어도 다른 AZ는 살아남는다. 비용은 약 2배지만 RTO는 0이 된다. 단일 AZ 절약은 사고 한 번이면 다 무너진다(2020년 Single-AZ NAT 사고가 정확히 이 케이스). D가 오답인 이유는 IGW를 붙여도 Private 인스턴스는 Public IP가 없어 응답을 못 받기 때문 — IGW는 Public IP가 있는 인스턴스에만 양방향이 성립한다.
 
 ---
 
@@ -318,7 +318,7 @@ C) 한 방향만 과금
 D) Peering 사용 시만 과금
 
 **정답: B**
-해설: cross-AZ 데이터 전송은 양방향 모두 GB당 과금($0.01/GB 각 방향). 비용 최적화의 핵심 함정이고 Multi-AZ HA의 숨은 비용이다. EFS·RDS Multi-AZ 동기 복제·ALB cross-zone load balancing·Kafka 브로커 간 복제 모두 영향을 받는다. *Single-AZ로 모든 워크로드를 묶으면 cross-AZ 비용은 0이지만 가용성도 0*이라는 trade-off가 본질. Week 10 비용 최적화에서 자세히 다룬다.
+해설: cross-AZ 데이터 전송은 양방향 모두 GB당 과금($0.01/GB 각 방향). 비용 최적화의 핵심 함정이고 Multi-AZ HA의 숨은 비용이다. EC2 인스턴스 간 통신·NLB cross-zone load balancing·Kafka 브로커 간 복제 등이 영향을 받는다(ALB cross-zone 트래픽 등 일부는 고객 과금에서 제외된다). *Single-AZ로 모든 워크로드를 묶으면 cross-AZ 비용은 0이지만 가용성도 0*이라는 trade-off가 본질. Week 10 비용 최적화에서 자세히 다룬다.
 
 ---
 
@@ -333,7 +333,7 @@ C) ssm, ssmmessages, ec2messages 3개 Interface Endpoint 생성
 D) Bastion 추가
 
 **정답: C**
-해설: Session Manager의 핵심 의존성. SSM Agent가 세 endpoint에 outbound HTTPS(443)로 닿아야 한다 — `ssm`(API), `ssmmessages`(세션 데이터 채널), `ec2messages`(명령 폴링). 인터넷 없는 환경에서는 PrivateLink Interface Endpoint 3개로 이 endpoint들을 VPC 내부 사설 IP에 노출한다. 하나라도 빠지면 세션이 안 붙는다. 정부·금융·PCI 시나리오에서 자주 등장하는 표준 패턴. B(NAT)를 쓰면 동작은 하지만 "인터넷 경유 금지" 제약을 위반한다.
+해설: Session Manager의 핵심 의존성. SSM Agent가 세 endpoint에 outbound HTTPS(443)로 닿아야 한다 — `ssm`(API), `ssmmessages`(세션 데이터 채널), `ec2messages`(구버전 에이전트의 명령 수신 경로. SSM Agent 3.3.40.0 이후에는 ssmmessages를 우선 사용). 인터넷 없는 환경에서는 PrivateLink Interface Endpoint 3개로 이 endpoint들을 VPC 내부 사설 IP에 노출하는 것이 문서의 기본 구성이다. 정부·금융·PCI 시나리오에서 자주 등장하는 표준 패턴. B(NAT)를 쓰면 동작은 하지만 "인터넷 경유 금지" 제약을 위반한다.
 
 ---
 
@@ -348,4 +348,4 @@ C) AWS Cloud WAN
 D) Direct Connect 100개
 
 **정답: C**
-해설: Cloud WAN(2021 GA)이 TGW의 글로벌 backbone 확장이다. JSON 정책 문서로 segment(prod/dev 격리), attachment, route propagation, 리전 간 연결을 *중앙에서 코드로* 일괄 관리한다. 수십 리전·수백 계정 규모에서는 B(리전별 TGW + 수동 TGW Peering)가 연결·라우트 전파를 일일이 손으로 묶어야 해 운영이 폭증한다. Cloud WAN은 이를 단일 *core network* 정책으로 추상화한다. 시험 출제 빈도는 아직 낮지만 2024년 이후 증가 추세.
+해설: Cloud WAN(2022년 GA)이 TGW의 글로벌 backbone 확장이다. JSON 정책 문서로 segment(prod/dev 격리), attachment, route propagation, 리전 간 연결을 *중앙에서 코드로* 일괄 관리한다. 수십 리전·수백 계정 규모에서는 B(리전별 TGW + 수동 TGW Peering)가 연결·라우트 전파를 일일이 손으로 묶어야 해 운영이 폭증한다. Cloud WAN은 이를 단일 *core network* 정책으로 추상화한다. 시험 출제 빈도는 아직 낮지만 2024년 이후 증가 추세.

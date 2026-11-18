@@ -43,7 +43,7 @@
 
 Redis(Remote Dictionary Server)는 2009년 Salvatore Sanfilippo가 이탈리아에서 개발한 오픈 소스 인메모리 데이터 구조 서버다. "캐시"라고 부르지만 그 안에는 String, List, Set, Sorted Set(ZSet), Hash, Bitmap, HyperLogLog, Stream, Geospatial Index라는 풍부한 데이터 구조가 있다. 이 다양성이 Redis를 단순 캐시를 넘어 세션 스토어, 리더보드, 실시간 카운터, Pub/Sub 브로커, 작업 큐로 만든다.
 
-ElastiCache Redis는 이 Redis를 관리형으로 제공한다. 운영자가 Redis 바이너리 설치, 백업(RDB 스냅샷) 설정, Cluster Mode 구성, 복제 설정을 직접 할 필요 없이, AWS 콘솔과 CLI로 제어한다. ElastiCache Redis는 Redis 7.x까지 지원하며, Redis Cluster 모드와 Redis Sentinel 모드 모두 지원한다.
+ElastiCache Redis는 이 Redis를 관리형으로 제공한다. 운영자가 Redis 바이너리 설치, 백업(RDB 스냅샷) 설정, Cluster Mode 구성, 복제 설정을 직접 할 필요 없이, AWS 콘솔과 CLI로 제어한다. ElastiCache는 Redis OSS(이 글의 'Redis')와 Valkey 엔진을 지원하며(Valkey는 Redis OSS 라이선스 변경 이후 등장한 Redis 호환 오픈소스, 시험 키워드는 여전히 'ElastiCache for Redis'), Cluster Mode Enabled/Disabled 구성과 복제 그룹 기반 자동 페일오버를 제공한다.
 
 **Redis 데이터 구조와 사용 사례:**
 
@@ -98,7 +98,7 @@ Hash Tags(`{user}:sessions`, `{user}:profile`): 중괄호 `{}` 안의 문자열�
 
 **Redis Cluster의 Consistent Hashing이 아닌 이유** — Redis Cluster는 Consistent Hashing 대신 Hash Slot 방식을 사용한다. 이유는 슬롯 재배치(Resharding)의 단순성이다. 노드를 추가할 때 슬롯 단위로 이동하면 되므로, 어떤 키가 어떤 노드로 가는지 명확하게 추적할 수 있다. Consistent Hashing은 이론적으로 우아하지만, 실제 Redis처럼 핫 슬롯 재배치나 수동 슬롯 할당이 필요한 경우 디버깅이 어렵다. 16384개의 슬롯은 1000개 노드에도 충분히 세밀하게 분배할 수 있는 숫자로 설계됐다.
 
-**Twitter Redis 사례** — 2018년 Twitter는 Redis를 대규모로 활용하는 방식을 공개했다. Timelines(타임라인 캐싱), Trends(트렌드 실시간 카운터), Rate Limiting(API 속도 제한) 등에 Redis Cluster를 사용하며, 초당 수백만 건의 Redis 작업을 처리한다. 특히 타임라인 조회에서 Redis Sorted Set을 활용해서 사용자별 최근 트윗 목록을 인메모리에 유지하고, DB 조회 없이 타임라인을 제공한다. `ZADD timeline:{userId} {timestamp} {tweetId}`로 타임라인에 추가하고, `ZREVRANGE timeline:{userId} 0 49`로 최신 50개 트윗을 O(log N + K) 시간에 반환한다. 이것이 Redis ZSet(Sorted Set)의 전형적인 사용 사례다.
+**Redis 활용 사례(일반 예)** — 소셜 서비스의 타임라인 캐싱, 트렌드 실시간 카운터, API 속도 제한 같은 곳에서 Redis가 흔히 쓰인다. 특히 타임라인 조회에서 Redis Sorted Set을 활용하면 사용자별 최근 트윗 목록을 인메모리에 유지하고, DB 조회 없이 타임라인을 제공한다. `ZADD timeline:{userId} {timestamp} {tweetId}`로 타임라인에 추가하고, `ZREVRANGE timeline:{userId} 0 49`로 최신 50개 트윗을 O(log N + K) 시간에 반환한다. 이것이 Redis ZSet(Sorted Set)의 전형적인 사용 사례다.
 
 ## Memcached — 단순함의 미학
 
@@ -211,7 +211,7 @@ EC2/ECS → CloudWatch Logs
 
 **역인덱스의 알고리즘적 우위** — OpenSearch(Elasticsearch)의 역인덱스는 텍스트를 단어 단위로 분석해서 각 단어가 어느 문서에 나오는지를 매핑한다. 이 구조 덕분에 "특정 단어를 포함한 모든 문서"를 O(log N) 시간에 찾을 수 있다. 반면 RDBMS는 `LIKE '%keyword%'` 쿼리를 처리하려면 Full Table Scan이 필요해서 O(N)이다. 이 알고리즘적 차이가 "왜 전문 검색은 OpenSearch를 쓰는가"의 근본 이유다. 역인덱스는 1950년대 정보 검색 분야에서 개발됐으며, Google 검색 엔진의 핵심이기도 하다. Lucene(OpenSearch의 기반 라이브러리)은 2000년 Doug Cutting이 개발했다.
 
-**Netflix OpenSearch 로그 분석 사례** — Netflix는 OpenSearch(이전 Elasticsearch)를 이용해서 수천 개의 마이크로서비스에서 발생하는 로그를 실시간으로 분석한다. 특히 Netflix의 Chaos Engineering 도구인 Chaos Monkey가 인프라에 장애를 주입할 때, 엔지니어들은 OpenSearch Dashboards에서 실시간으로 어떤 서비스가 어떻게 반응하는지 관찰한다. 하루 수십 테라바이트의 로그가 Kinesis → Firehose → OpenSearch 파이프라인으로 처리되며, UltraWarm으로 30일치 로그를 저비용 보관한다. 이 아키텍처 없이는 수천 개 마이크로서비스 디버깅이 불가능했을 것이다.
+**OpenSearch 로그 분석 패턴(일반 예)** — 수천 개의 마이크로서비스에서 발생하는 로그를 OpenSearch(이전 Elasticsearch)로 실시간 분석하는 구성이 흔하다. 장애를 주입하는 카오스 엔지니어링 중에는 OpenSearch Dashboards로 어떤 서비스가 어떻게 반응하는지 관찰할 수 있고, 대량 로그를 Kinesis → Firehose → OpenSearch 파이프라인으로 처리하며 UltraWarm으로 오래된 로그를 저비용 보관할 수 있다.
 
 ## 특수 목적 데이터베이스 — 시나리오 키워드 매핑
 
@@ -221,7 +221,7 @@ EC2/ECS → CloudWatch Logs
 
 **Neptune**: 그래프 데이터베이스. Gremlin(Property Graph)과 SPARQL(RDF) 쿼리 언어 지원. 키워드: "소셜 네트워크", "추천 시스템", "지식 그래프", "fraud detection(사기 탐지 — 계정 간 관계 분석)", "친구 추천". 관계(Relationship) 탐색이 핵심. RDS로 JOIN 기반으로 구현하면 성능이 지수적으로 나빠지는 다단계 관계 탐색에 특화.
 
-**Timestream**: 시계열 전용 DB. 키워드: "IoT 센서 데이터", "서버 메트릭", "시계열 데이터", "자동 만료". 시간 기반 자동 데이터 계층화(메모리 → SSD → 마그네틱). 시계열 함수(`time_series`, `interpolate`, `rate` 등) 내장.
+**Timestream**: 시계열 전용 DB. 키워드: "IoT 센서 데이터", "서버 메트릭", "시계열 데이터", "자동 만료". 시간 기반 자동 데이터 계층화(메모리 스토어 → 마그네틱 스토어). 참고(현재 가용성): Timestream for LiveAnalytics는 2025-06-20부터 신규 고객 불가이며 신규 고객에게는 Timestream for InfluxDB를 권고한다. 시험(SAA-C03)에서는 여전히 '시계열 = Timestream' 키워드로 출제된다. 시계열 함수(`time_series`, `interpolate`, `rate` 등) 내장.
 
 **Keyspaces**: Apache Cassandra와 호환되는 관리형 서비스. 키워드: "Cassandra 마이그레이션", "CQL(Cassandra Query Language)", "Wide-Column 스토어". Cassandra의 분산 Wide-Column 모델을 완전 관리형으로 운영. 노드 관리 불필요.
 

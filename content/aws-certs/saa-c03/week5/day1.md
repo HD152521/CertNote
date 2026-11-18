@@ -53,7 +53,7 @@ MySQL RDS Multi-AZ는 Amazon의 독점 복제 기술(MySQL의 binlog replication
 
 RDS Multi-AZ Cluster는 2021년 말 출시된 신규 옵션이다. 기존 Multi-AZ(1 Primary + 1 Standby)와 달리, 1 Writer + 2 Readable Standby로 구성된다. Readable Standby는 읽기 트래픽을 처리할 수 있어서 기존 Multi-AZ보다 읽기 성능이 개선되고, 페일오버 시간도 35초 이내로 단축된다. SAA-C03 시험에서는 이 Multi-AZ Cluster를 "Multi-AZ"와 구분해서 출제하는 경우가 있으니 주의해야 한다. 시험 지문에 "readable standby" 또는 "multi-az cluster"가 명시되지 않으면 일반 1+1 구조를 가정하는 것이 안전하다.
 
-**사례**: 2013년 10월, Dropbox는 Amazon RDS에서 자체 MySQL 클러스터(나중에 Edgestore라고 부른 것)로 마이그레이션했다. 이유 중 하나가 RDS Multi-AZ의 페일오버 동안 발생하는 연결 끊김 시간이 SLA를 맞추기 어려웠다는 것이었다. 이처럼 금융권이나 글로벌 서비스의 경우 RDS Multi-AZ의 60-120초 페일오버가 허용 불가한 수준일 수 있으며, 그런 경우 Aurora(페일오버 보통 60초 미만, 종종 30초 미만)나 Aurora Global Database로 넘어가야 한다.
+**사례(일반 시나리오)**: 금융권이나 글로벌 서비스의 경우 RDS Multi-AZ의 60-120초 페일오버가 허용 불가한 수준일 수 있으며, 그런 경우 Aurora(페일오버 보통 60초 미만, 종종 30초 미만)나 Aurora Global Database로 넘어가야 한다.
 
 ## Read Replica — 비동기 복제가 만드는 가능성과 한계
 
@@ -114,7 +114,7 @@ RDS Proxy는 이 문제를 연결 풀링으로 해결한다. Lambda 수천 개�
 
 RDS Proxy는 프로토콜 수준(MySQL 프로토콜, PostgreSQL 프로토콜)에서 연결을 풀링하고 멀티플렉싱한다. 다만 SELECT는 Replica로, 쓰기는 Primary로 보내는 식의 쿼리 수준 읽기/쓰기 분리는 하지 않는다. RDS DB 인스턴스는 복제 구성에서 쓰기 인스턴스에만 프록시를 연결할 수 있다. Aurora에서 읽기를 분산하려면 Reader 엔드포인트(또는 프록시의 읽기 전용 엔드포인트)를 애플리케이션에서 명시적으로 사용한다.
 
-**사례**: 2020년 핀테크 스타트업 Mable(미국 도매 식료품 플랫폼)은 Lambda 기반 서버리스 아키텍처에서 피크 타임에 RDS max_connections를 계속 초과하는 문제를 겪었다. RDS Proxy 도입 후 DB 연결 수가 95% 감소했으며, "Too many connections" 오류가 사라졌다고 보고했다. (AWS 공식 고객 사례)
+**사례(일반 시나리오)**: Lambda 기반 서버리스 아키텍처에서 피크 타임에 동시 실행이 늘면 RDS `max_connections`를 계속 초과하는 문제가 생긴다. RDS Proxy로 연결을 풀링하면 DB 쪽 연결 수가 크게 줄고 "Too many connections" 오류를 피할 수 있다.
 
 ## 백업 전략 — PITR과 스냅샷의 차이
 
@@ -140,7 +140,7 @@ Read Replica의 암호화: Primary가 암호화됐으면 같은 리전의 Replic
 
 **네트워크 격리**: RDS는 VPC 안의 프라이빗 서브넷에 두는 것이 원칙이다. Security Group으로 특정 애플리케이션 서버만 접근 허용. 인터넷에서 직접 접근 불가.
 
-**IAM DB 인증**: MySQL과 PostgreSQL에서 지원. IAM 역할에서 임시 토큰을 생성해서 DB 인증에 사용. 비밀번호 없이 인증 가능. 연결이 15분마다 새 토큰으로 갱신된다.
+**IAM DB 인증**: MariaDB, MySQL, PostgreSQL에서 지원. IAM 역할에서 임시 토큰을 생성해서 DB 인증에 사용. 비밀번호 없이 인증 가능. 토큰 수명은 15분이며 연결을 수립할 때만 사용된다(이미 맺어진 세션에는 영향을 주지 않음).
 
 **함정**: "RDS 인스턴스에 SSH로 접속해서 MySQL 설정 파일을 직접 편집할 수 있다" — 불가능하다. RDS는 관리형 서비스로 게스트 OS 접근이 없다. DB 엔진 파라미터는 Parameter Group을 통해 변경한다. 이것이 EC2 위의 자체 MySQL과 RDS의 가장 큰 운영 차이다.
 
@@ -155,7 +155,7 @@ Read Replica의 암호화: Primary가 암호화됐으면 같은 리전의 Replic
 | 관리형 Proxy | RDS Proxy | Cloud SQL Proxy | 내장(SQL Database는 없음) |
 | 암호화 | KMS (생성 시) | CMEK | TDE (Azure Key Vault) |
 
-RDS의 스토리지는 Amazon EBS(gp2, gp3, io1, io2)를 기반으로 한다. gp3는 gp2 대비 20% 저렴하면서도 기본 3000 IOPS를 제공하며, IOPS를 별도로 구매할 수 있어서 대부분의 새 워크로드는 gp3가 권장된다. io1/io2는 최대 100,000 IOPS가 필요한 매우 I/O 집약적인 워크로드용이다. Storage Auto Scaling을 활성화하면 70% 임계값을 넘었을 때 스토리지가 자동으로 확장된다. 단, 스토리지는 늘릴 수만 있고 줄일 수 없다 — 줄이려면 새 인스턴스로 마이그레이션해야 한다.
+RDS의 스토리지는 Amazon EBS(gp2, gp3, io1, io2)를 기반으로 한다. gp3는 gp2 대비 20% 저렴하면서도 기본 3000 IOPS를 제공하며, IOPS를 별도로 구매할 수 있어서 대부분의 새 워크로드는 gp3가 권장된다. io1/io2는 최대 100,000 IOPS가 필요한 매우 I/O 집약적인 워크로드용이다. Storage Auto Scaling을 활성화하면 여유 공간이 할당 스토리지의 10% 이하로 5분 이상 지속될 때(직전 수정 후 스토리지 최적화가 끝났고 최근 24시간 내 수정이 4회 미만일 때) 스토리지가 자동으로 확장된다. 단, 스토리지는 늘릴 수만 있고 줄일 수 없다 — 줄이려면 새 인스턴스로 마이그레이션해야 한다.
 
 ## CLI로 Multi-AZ와 Read Replica 실제로 만들기
 

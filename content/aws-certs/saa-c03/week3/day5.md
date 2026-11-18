@@ -18,7 +18,7 @@ EC2 인스턴스를 선택하면(패밀리와 구매 옵션), 그 인스턴스�
 
 | 병목 자원 | 패밀리 | 대표 워크로드 | 주의점 |
 |----------|--------|-------------|--------|
-| CPU 집약 | C | 인코딩, ML 추론, 배치 | Graviton(c7g)이 25% 저렴 |
+| CPU 집약 | C | 인코딩, ML 추론, 배치 | Graviton(c7g)이 가격 대비 성능 우수 |
 | 범용 | M | 앱 서버, 캐시 | 첫 번째 선택지 |
 | 메모리 | R | 인메모리 DB, SAP | 대용량 RAM이 핵심 |
 | 메모리(극단) | X | SAP HANA 수 TB | 비용 매우 높음 |
@@ -48,8 +48,7 @@ EC2 한 대만?
         ├─ NO: Instance Store (NVMe, 최고 성능)
         └─ YES: EBS
                ├─ 기본: gp3 (IOPS·Throughput 독립, gp2보다 20% 저렴)
-               ├─ OLTP 고성능: io2 (최대 64K IOPS)
-               └─ 미션 크리티컬: io2 Block Express (최대 256K IOPS)
+               └─ OLTP·미션 크리티컬: io2 (2025-04-30부터 모든 io2가 Block Express 아키텍처, 최대 256K IOPS)
 
 여러 EC2 공유?
     ├─ Linux NFS: EFS (자동 확장, Multi-AZ)
@@ -94,7 +93,7 @@ EC2 한 대만?
 EFS는 NFSv4.1 기반 Linux 전용이다. Windows Active Directory 통합, SMB 프로토콜, NTFS ACL이 필요하면 FSx for Windows File Server다.
 
 **함정 3. gp2 볼륨이 이미 최대 IOPS라는 착각**
-gp2의 IOPS는 크기에 비례한다(1GB = 3 IOPS). 100GB gp2는 300 IOPS가 최대다. 더 많은 IOPS가 필요하면 gp3로 전환해서 독립적으로 IOPS를 프로비저닝한다. gp3 전환은 다운타임 없이 즉시 가능하다.
+gp2의 IOPS는 크기에 비례한다(1GB = 3 IOPS). 100GB gp2의 기준(baseline)은 300 IOPS다(1TB 미만 gp2는 버스트 크레딧으로 최대 3,000 IOPS까지 일시 버스트할 수 있고, 크레딧이 소진되면 기준선으로 돌아간다). 더 많은 IOPS가 필요하면 gp3로 전환해서 독립적으로 IOPS를 프로비저닝한다. gp3 전환은 다운타임 없이 즉시 가능하다.
 
 **함정 4. ALB에 고정 IP를 기대하는 경우**
 ALB는 DNS 이름만 있고 IP가 변한다. 파트너 방화벽 화이트리스트에 ALB IP를 등록하는 것은 불가능하다. NLB + EIP가 정답이다. Global Accelerator도 2개의 고정 Anycast IP를 제공하지만, 질문에 Global Accelerator가 명시되지 않으면 NLB + EIP가 더 단순한 답이다.
@@ -169,7 +168,7 @@ EC2 c7g.metal (Cluster Placement Group)
    - 단기/예측 불가 → On-Demand
 
 2. 인스턴스 Right-sizing
-   - Graviton(ARM) 가능 여부 확인 (25% 절감)
+   - Graviton(ARM) 가능 여부 확인 (가격 대비 성능 이점)
    - 실제 CPU/메모리 사용률로 패밀리 선택
 
 3. 스토리지 최적화
@@ -263,7 +262,7 @@ D) Spot 100% + Target Tracking ASG + Multi-AZ
 
 ---
 
-**문제 5.** 한 회사가 EC2에서 EBS gp2 볼륨(200GB)을 사용하는 PostgreSQL 데이터베이스를 운영한다. DBA가 분석하니 평균 IOPS 사용량이 800, 피크가 2,000이며, gp2의 최대 IOPS인 600(200GB × 3)을 초과하고 있어 성능 저하가 발생한다. 가장 비용 효율적인 해결책은?
+**문제 5.** 한 회사가 EC2에서 EBS gp2 볼륨(200GB)을 사용하는 PostgreSQL 데이터베이스를 운영한다. DBA가 분석하니 평균 IOPS 사용량이 800, 피크가 2,000이며, 버스트 크레딧이 소진된 뒤에는 gp2의 기준(baseline) IOPS인 600(200GB × 3)으로 제한되어 성능 저하가 발생한다. 가장 비용 효율적인 해결책은?
 
 A) gp2 볼륨을 1,000GB로 확장
 B) gp2를 io2로 전환 (2,000 IOPS 프로비저닝)
@@ -271,7 +270,7 @@ C) gp3로 전환하고 IOPS를 3,000으로 설정
 D) 인스턴스에 두 번째 gp2 볼륨을 추가해 RAID 0 구성
 
 **정답: C**
-해설: gp3는 크기와 무관하게 최대 16,000 IOPS를 독립적으로 설정할 수 있으며, gp2보다 20% 저렴하다. 피크 2,000 IOPS가 필요하므로 3,000 IOPS로 설정하면 충분하다. A(gp2 확장)는 1,000GB × 3 = 3,000 IOPS를 위해 불필요하게 큰 볼륨을 사야 한다. io2는 64K IOPS가 필요한 미션 크리티컬 환경용으로 gp3보다 훨씬 비싸다. RAID 0은 복잡도와 관리 오버헤드가 높다.
+해설: gp3는 크기와 무관하게 최대 80,000 IOPS를 독립적으로 설정할 수 있으며, gp2보다 20% 저렴하다. 피크 2,000 IOPS가 필요하므로 3,000 IOPS로 설정하면 충분하다. A(gp2 확장)는 1,000GB × 3 = 3,000 IOPS를 위해 불필요하게 큰 볼륨을 사야 한다. io2는 수만 IOPS 이상이 필요한 미션 크리티컬 환경용으로 gp3보다 훨씬 비싸다. RAID 0은 복잡도와 관리 오버헤드가 높다.
 
 ---
 
@@ -295,7 +294,7 @@ C) EC2 Spot 인스턴스 (저렴한 옵션)
 D) EC2 On-Demand (일반 공유 호스트)
 
 **정답: B**
-해설: SQL Server 소켓 과금과 Oracle Core 과금은 모두 물리 CPU 소켓/코어 수를 기준으로 라이선스가 계산된다. Dedicated Host는 특정 물리 서버를 점유하고 그 서버의 소켓 수, 코어 수를 AWS가 공개한다. Dedicated Instance는 같은 계정 내 물리 호스트 격리는 하지만 어느 물리 서버인지 보이지 않아 라이선스 카운팅에 쓸 수 없다. 공유 호스트(On-Demand 일반)에서는 물리 코어 수를 알 수 없으므로 BYOL 라이선스 적용이 불가하다.
+해설: SQL Server 소켓 과금과 Oracle Core 과금은 모두 물리 CPU 소켓/코어 수를 기준으로 라이선스가 계산된다. Dedicated Host는 특정 물리 서버를 점유하고 그 서버의 소켓 수, 코어 수를 AWS가 공개한다. Dedicated Instance는 다른 계정과는 하드웨어가 격리되지만(같은 계정 인스턴스와는 공유 가능) 어느 물리 서버인지 보이지 않아 라이선스 카운팅에 쓸 수 없다. 공유 호스트(On-Demand 일반)에서는 물리 코어 수를 알 수 없으므로 BYOL 라이선스 적용이 불가하다.
 
 ---
 
@@ -307,7 +306,7 @@ C) c6i.8xlarge RI 1년 + SQS
 D) Fargate Spot(vCPU = 8) + SQS
 
 **정답: B**
-해설: 비디오 인코딩은 CPU 집약(C 패밀리). c7g는 Graviton3 ARM으로 c6i(x86) 대비 25% 저렴하다. 체크포인트가 있으므로 Spot 인터럽션 허용 가능. EventBridge로 `EC2 Spot Instance Interruption Warning` 이벤트를 감지해 SQS 메시지를 재투입하면 다른 Spot 인스턴스가 이어서 처리한다. SQS가 작업 큐 역할을 해서 여러 인코딩 인스턴스에 잡을 분산한다. RI는 30-120분짜리 잡이 항상 켜져 있는 구조가 아니면 비효율적이다.
+해설: 비디오 인코딩은 CPU 집약(C 패밀리). c7g는 Graviton3 ARM으로 c6i(x86) 대비 가격 대비 성능이 좋다(AWS는 Graviton이 동급 x86보다 최대 20% 저렴하다고 안내). 체크포인트가 있으므로 Spot 인터럽션 허용 가능. EventBridge로 `EC2 Spot Instance Interruption Warning` 이벤트를 감지해 SQS 메시지를 재투입하면 다른 Spot 인스턴스가 이어서 처리한다. SQS가 작업 큐 역할을 해서 여러 인코딩 인스턴스에 잡을 분산한다. RI는 30-120분짜리 잡이 항상 켜져 있는 구조가 아니면 비효율적이다.
 
 ---
 
@@ -331,7 +330,7 @@ C) r7g.8xlarge On-Demand, Scheduled Scaling으로 자동 시작/종료
 D) r6i.8xlarge Reserved Instance 1년 + Scheduled Scaling
 
 **정답: C**
-해설: 분석 잡이 중단 불가이므로 Spot은 부적합하다. r7g는 Graviton3 ARM으로 r6i(Intel x86)보다 약 25% 저렴하다. Scheduled Scaling으로 매주 일요일 새벽 2시에 Desired를 1로 올리고, 완료 후 0으로 줄이면(Min=0으로 설정하거나 EventBridge + Lambda로 종료) 사용 시간만큼만 비용을 낸다. RI 1년은 주당 몇 시간만 사용하는 패턴에서 나머지 시간을 낭비한다(주당 4시간 사용 시 사용률 2.4%). Graviton 호환 여부는 Python/Java 기반 분석 도구라면 대부분 문제없다.
+해설: 분석 잡이 중단 불가이므로 Spot은 부적합하다. r7g는 Graviton3 ARM으로 r6i(Intel x86)보다 가격 대비 성능이 좋다(AWS는 Graviton이 동급 x86보다 최대 20% 저렴하다고 안내). Scheduled Scaling으로 매주 일요일 새벽 2시에 Desired를 1로 올리고, 완료 후 0으로 줄이면(Min=0으로 설정하거나 EventBridge + Lambda로 종료) 사용 시간만큼만 비용을 낸다. RI 1년은 주당 몇 시간만 사용하는 패턴에서 나머지 시간을 낭비한다(주당 4시간 사용 시 사용률 2.4%). Graviton 호환 여부는 Python/Java 기반 분석 도구라면 대부분 문제없다.
 
 ---
 

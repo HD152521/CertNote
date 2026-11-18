@@ -55,7 +55,7 @@
 | Lambda Authorizer | O | O | O |
 | JWT Authorizer (외부 OIDC) | X | O | X |
 | Mapping Templates (VTL) | O | X | X |
-| AWS 서비스 직접 통합 | O (DDB, SNS, SQS 등) | X | X |
+| AWS 서비스 직접 통합 | O (DDB, SNS, SQS 등, VTL 매핑) | 일부 (EventBridge, SQS, Kinesis, Step Functions, AppConfig) | X |
 | Response Caching | O | X | X |
 | mTLS 클라이언트 인증 | O | O | X |
 | WebSocket 실시간 | X | X | O |
@@ -289,12 +289,12 @@ Step Functions Distributed Map은 최대 10,000개의 병렬 자식 워크플로
 **문제 8.** 보험 청구 처리 시스템에서 고객이 청구서를 제출하면, 검토자가 5 영업일 내에 승인 또는 거부를 해야 한다. 검토자가 응답하지 않으면 에스컬레이션 이메일을 보내야 한다. 이 워크플로를 구현하는 가장 적합한 방법은?
 
 A) SQS + Lambda (5일마다 DLQ 확인)
-B) Step Functions Standard + waitForTaskToken + HeartbeatSeconds(5일) + Catch(States.HeartbeatTimeout → 에스컬레이션)
+B) Step Functions Standard + waitForTaskToken + TimeoutSeconds(5일=432,000초) + Catch(States.Timeout → 에스컬레이션)
 C) EventBridge 스케줄러로 5일 후 알림 Lambda 실행
 D) Step Functions Express + waitForTaskToken
 
 **정답: B**
-waitForTaskToken은 외부 시스템이나 사람의 응답을 기다리는 패턴이다. Step Functions Standard로 최대 1년까지 대기 가능(Express는 5분 한계 — D는 오답). `HeartbeatSeconds`를 5영업일로 설정하면 응답 없을 때 `States.HeartbeatTimeout` 오류가 발생하고, `Catch`로 에스컬레이션 Lambda를 호출한다. A는 5일 간격 폴링이 복잡하고 상태 관리가 어렵다. C는 단순하지만 워크플로 상태 추적이 불가능하다.
+waitForTaskToken은 외부 시스템이나 사람의 응답을 기다리는 패턴이다. Step Functions Standard로 최대 1년까지 대기 가능(Express는 5분 한계 — D는 오답). `TimeoutSeconds`를 5일(432,000초)로 설정하면 응답 없을 때 `States.Timeout` 오류가 발생하고, `Catch`로 에스컬레이션 Lambda를 호출한다(`HeartbeatSeconds`는 작업자가 `SendTaskHeartbeat`를 주기적으로 보내는 용도이지 응답 기한 설정이 아니다. 영업일 계산이 필요하면 별도 로직이 필요하다). A는 5일 간격 폴링이 복잡하고 상태 관리가 어렵다. C는 단순하지만 워크플로 상태 추적이 불가능하다.
 
 ---
 

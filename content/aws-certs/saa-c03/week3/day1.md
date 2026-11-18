@@ -16,7 +16,7 @@ AWS는 2009년부터 워크로드별 최적화 패밀리를 분리하기 시작�
 | **M** (m6i/m7i) | 균형 | 일반 앱 서버, 캐시 | 범용 vCPU:RAM 비율 1:4 |
 | **C** (c6i/c7g) | CPU | 인코딩, ML 추론, 배치 | vCPU:RAM 비율 1:2, 고클럭 |
 | **R** (r6i/r7g) | Memory | 인메모리 DB, SAP HANA | vCPU:RAM 비율 1:8 이상 |
-| **X** (x2idn) | Memory(극단) | SAP HANA 수 TB | 최대 24TB RAM |
+| **X** (x2iedn) | Memory(극단) | SAP HANA 수 TB | 최대 4TB RAM (24TB는 High Memory U 계열) |
 | **I** (i4i) | 로컬 NVMe I/O | NoSQL, 스트리밍 | NVMe SSD 직결, 수백만 IOPS |
 | **D** (d3en) | 스토리지 용량 | Hadoop, 데이터 레이크 | HDD 밀집, 싼 용량 단가 |
 | **G** (g5) | GPU 그래픽 | ML 추론, 렌더링 | NVIDIA A10G GPU |
@@ -50,23 +50,23 @@ Guest VM ← KVM Micro-Hypervisor (메모리 보호, vCPU 스케줄링만)
 
 Nitro의 네트워크 카드는 SR-IOV(Single Root I/O Virtualization)를 이용해 물리 NIC을 여러 가상 함수(VF)로 분할한다. 각 인스턴스는 자신에게 할당된 VF에 직접 접근하므로 네트워크 패킷 경로에서 소프트웨어 레이어가 제거된다. ENA(Elastic Network Adapter) 드라이버가 게스트에 설치되면 이 VF를 직접 제어할 수 있다. 100Gbps 네트워크 성능은 이 구조 덕분에 가능하다.
 
-**사례**: Netflix는 2021년 비디오 인코딩 플랫폼을 Xen c3 인스턴스에서 Nitro c5 인스턴스로 마이그레이션하면서 같은 인코딩 작업에서 CPU 사용량이 약 20% 감소했다고 발표했다. 하이퍼바이저 오버헤드 제거가 실제로 컴퓨팅 비용 절감으로 이어진 사례다.
+**사례(가상 예시)**: 한 서비스가 비디오 인코딩 플랫폼을 Xen 기반 c3 인스턴스에서 Nitro 기반 c5 인스턴스로 마이그레이션하면서 같은 인코딩 작업의 CPU 사용량이 줄었다고 가정해보자. 하이퍼바이저 오버헤드 제거가 컴퓨팅 비용 절감으로 이어질 수 있다는 예다.
 
 ## Graviton: ARM이 x86을 위협하는 이유
 
-2018년 AWS는 자체 설계 ARM 프로세서 Graviton1을 출시했고, 2021년 Graviton2, 2022년 Graviton3로 발전했다. Graviton3는 동급 x86 Intel/AMD 인스턴스 대비 **25% 낮은 가격에 동등하거나 더 나은 성능**을 제공한다고 AWS는 주장한다.
+2018년 AWS는 자체 설계 ARM 프로세서 Graviton1을 출시했고, 2020년 Graviton2(M6g/C6g/R6g GA), 2021년 말 발표·2022년 5월 GA된 Graviton3(C7g)로 발전했다. AWS는 Graviton 기반 인스턴스가 **동급 x86 인스턴스보다 최대 20% 저렴하고 에너지도 적게 쓰면서 가격 대비 성능이 좋다**고 안내한다(Graviton2 출시 때는 동급 x86 대비 최대 40% 가격 대비 성능 향상을 내세웠다).
 
 왜 ARM이 서버 시장에서 가능성을 보이는가. 역사적으로 ARM은 낮은 TDP(열 설계 전력)로 모바일 시장을 장악했다. 서버에서도 전력 당 성능(perf/watt)이 중요해진 이유는 데이터센터 전력 비용 때문이다. AWS는 자체 칩을 설계함으로써 클라우드 워크로드(대규모 병렬, 고대역폭 메모리 접근, 가상화 친화적)에 최적화된 마이크로아키텍처를 만들 수 있다. x86의 역사적 기술 부채(복잡한 디코딩 파이프라인, 레거시 명령 지원)가 없다.
 
 다만 Graviton은 ARM ISA를 사용하므로 소프트웨어 호환성을 확인해야 한다. JVM 기반(Java, Kotlin, Scala), Python, Go, Rust는 대부분 ARM에서 잘 돌아간다. 문제가 되는 건 x86 전용 바이너리를 배포하는 ISV 상용 소프트웨어나, x86 인라인 어셈블리가 박힌 레거시 C/C++ 코드다.
 
-RISC vs CISC 논쟁은 1980년대부터 이어졌다. ARM은 RISC 설계 원칙(단순 명령, 고정 길이, 레지스터 중심)을 따라 파이프라인 설계가 단순하고 전력 효율이 높다. x86은 CISC지만 내부적으로 RISC 마이크로 연산(μop)으로 변환해 실행한다. Graviton3는 ARMV8.2 ISA를 사용하며, SVE(Scalable Vector Extension)로 데이터 병렬 처리를 강화해 ML 추론이나 HPC에서 경쟁력이 있다.
+RISC vs CISC 논쟁은 1980년대부터 이어졌다. ARM은 RISC 설계 원칙(단순 명령, 고정 길이, 레지스터 중심)을 따라 파이프라인 설계가 단순하고 전력 효율이 높다. x86은 CISC지만 내부적으로 RISC 마이크로 연산(μop)으로 변환해 실행한다. Graviton3는 Armv8.4-A 계열 ISA(Graviton2는 Armv8.2-A)를 사용하며, SVE(Scalable Vector Extension)로 데이터 병렬 처리를 강화해 ML 추론이나 HPC에서 경쟁력이 있다.
 
 | 구분 | Intel (x86) | AMD (x86) | Graviton3 (ARM) |
 |------|------------|----------|-----------------|
-| ISA | x86-64 | x86-64 | ARM v8.2 |
+| ISA | x86-64 | x86-64 | Armv8.4-A |
 | 성능 우위 | 싱글 스레드 일부 | 가성비 | 병렬, ML, 비용 |
-| 가격 (동급) | 기준 | -10% | -25% |
+| 가격 (동급) | 기준 | -10% | 최대 -20% |
 | 소프트웨어 호환 | 최고 | 최고 | 오픈소스 ✅, 상용 ⚠️ |
 | 대표 인스턴스 | m6i, c6i | m6a, c6a | m7g, c7g, r7g |
 
@@ -84,7 +84,7 @@ RISC vs CISC 논쟁은 1980년대부터 이어졌다. ARM은 RISC 설계 원칙(
 
 이 선택은 옵션 프라이싱 이론의 유연성 프리미엄(flexibility premium)과 동일 구조다. Compute SP는 Black-Scholes 모델에서 넓은 행사 가능 범위를 가진 옵션처럼 유연성이 높아 프리미엄(할인율 포기)을 낸다. RI는 특정 조건에서만 행사 가능한 유럽형 옵션처럼 조건부 할인이 더 크다.
 
-**Spot 인스턴스**의 90% 할인이 가능한 이유는 AWS의 예비 용량(spare capacity)을 경매하기 때문이다. AWS의 물리 서버는 최대 부하 예측치보다 항상 많이 준비되어 있다. 그 여분을 유휴로 두는 것보다 저렴하게라도 파는 것이 낫다. 단, AWS가 그 용량이 필요해지면 2분 알림 후 인스턴스를 회수한다. Spot의 핵심 제약은 **단방향 종료 권한이 AWS에 있다**는 것이다.
+**Spot 인스턴스**의 90% 할인이 가능한 이유는 AWS의 예비 용량(spare capacity)을 할인된 변동 가격으로 제공하기 때문이다(2017년 이후 입찰 방식이 아닌 변동 시장가 모델). AWS의 물리 서버는 최대 부하 예측치보다 항상 많이 준비되어 있다. 그 여분을 유휴로 두는 것보다 저렴하게라도 파는 것이 낫다. 단, AWS가 그 용량이 필요해지면 2분 알림 후 인스턴스를 회수한다. Spot의 핵심 제약은 **단방향 종료 권한이 AWS에 있다**는 것이다.
 
 ```
 [ Spot 인터럽션 처리 패턴 ]
@@ -104,11 +104,11 @@ RISC vs CISC 논쟁은 1980년대부터 이어졌다. ARM은 RISC 설계 원칙(
 
 > ⚠️ **함정**: Spot에 "데이터베이스", "stateful", "라이선스 서버"가 등장하면 대개 오답이다. Spot은 언제든 중단될 수 있어서 MySQL 마스터나 Elasticsearch 마스터 노드에 쓰면 데이터 손실이 발생한다. 단 Spot Fleet에서 Elasticsearch 데이터 노드(복제본 있음)는 사용 가능하다.
 
-**Dedicated Host**와 **Dedicated Instance**는 혼동하기 쉽다. Dedicated Instance는 같은 AWS 계정의 다른 인스턴스와 물리 호스트를 공유하지 않지만, 어떤 물리 서버에 올라가는지 보이지 않는다. Dedicated Host는 특정 물리 서버를 점유하고 그 서버의 소켓 수, 코어 수까지 보인다. BYOL(Bring Your Own License) 라이선스가 물리 소켓 수나 물리 코어 수 기준으로 계산되는 Oracle DB나 Windows Server SQL Server에서 Dedicated Host가 필요한 이유다.
+**Dedicated Host**와 **Dedicated Instance**는 혼동하기 쉽다. Dedicated Instance는 다른 AWS 계정의 인스턴스와 하드웨어를 공유하지 않지만(같은 계정의 비 Dedicated 인스턴스와는 공유할 수 있다), 어떤 물리 서버에 올라가는지 보이지 않는다. Dedicated Host는 특정 물리 서버를 점유하고 그 서버의 소켓 수, 코어 수까지 보인다. BYOL(Bring Your Own License) 라이선스가 물리 소켓 수나 물리 코어 수 기준으로 계산되는 Oracle DB나 Windows Server SQL Server에서 Dedicated Host가 필요한 이유다.
 
 **Capacity Reservation**은 할인 없이 용량만 확보한다. "예약"이 아니라 "자리 맡기"다. 큰 이벤트 전날 특정 AZ에 인스턴스 자리를 확보해두고, 이벤트가 끝나면 해제한다. Savings Plans와 결합하면 할인 + 용량 확보 두 마리를 잡는다.
 
-**사례**: 2021년 12월, Log4Shell 취약점이 발표되었을 때 많은 회사가 긴급 패치를 위해 대량의 EC2 인스턴스를 필요로 했다. On-Demand 인스턴스 가용성이 순간적으로 낮아진 us-east-1에서 Capacity Reservation 없이 운영하던 팀들이 인스턴스를 즉시 확보하지 못하는 상황이 발생했다. 이후 비즈니스 크리티컬 워크로드에서 Capacity Reservation 도입이 급증했다.
+**사례(가상 예시)**: Log4Shell 같은 긴급 보안 이슈로 많은 회사가 한꺼번에 대량의 EC2 인스턴스를 필요로 하는 상황을 가정해보자. On-Demand 인스턴스 가용성이 순간적으로 낮아진 리전에서 Capacity Reservation 없이 운영하던 팀은 인스턴스를 즉시 확보하지 못할 수 있다. 그래서 비즈니스 크리티컬 워크로드에는 Capacity Reservation을 검토한다.
 
 ## Spot 2분 통지의 기술: 어떻게 동작하는가
 
@@ -132,20 +132,20 @@ Placement Group은 인스턴스를 물리적으로 어떻게 배치할지 AWS에
 
 **Partition Placement Group**은 파티션(논리 그룹)별로 다른 물리 랙 집합을 사용한다. AZ당 최대 7개 파티션, 파티션당 수백 개 인스턴스를 넣을 수 있다. HDFS, Apache Cassandra, Apache HBase 같은 분산 시스템은 데이터 복제본을 다른 "랙 그룹"에 배치해야 단일 랙 장애로 데이터를 잃지 않는다. AWS의 Partition이 바로 이 "랙 그룹"에 해당한다.
 
-Partition Placement Group은 분산 스토리지 시스템의 **Rack Awareness** 개념을 AWS 인프라에 매핑한 것이다. HDFS의 기본 복제 전략(Hadoop 2.x 이상)은 블록의 첫 번째 복제본을 로컬 노드에, 두 번째를 같은 랙의 다른 노드에, 세 번째를 다른 랙의 노드에 배치한다. Partition Group에서 파티션 번호를 인스턴스 메타데이터로 읽어(`instance/placement/partition-number`) Hadoop의 Rack ID에 매핑하면 AWS 위에서 진짜 Rack-Aware HDFS를 구성할 수 있다.
+Partition Placement Group은 분산 스토리지 시스템의 **Rack Awareness** 개념을 AWS 인프라에 매핑한 것이다. HDFS의 기본 복제 전략(Hadoop 2.x 이상)은 블록의 첫 번째 복제본을 로컬 노드에, 두 번째를 다른 랙의 노드에, 세 번째를 두 번째와 같은 랙의 다른 노드에 배치한다. Partition Group에서 파티션 번호를 인스턴스 메타데이터로 읽어(`instance/placement/partition-number`) Hadoop의 Rack ID에 매핑하면 AWS 위에서 진짜 Rack-Aware HDFS를 구성할 수 있다.
 
-**사례**: Netflix의 Cassandra 클러스터는 AWS 위에서 Partition Placement Group을 사용해 각 Cassandra 데이터센터(DC)를 하나의 파티션에 매핑한다. 이를 통해 단일 AWS 랙 장애 시 Cassandra의 복제 인수(replication factor=3)가 파티션 경계를 넘어 데이터 가용성을 보장한다. Netflix가 공개한 Engineering Blog(2016)에서 이 아키텍처를 자세히 설명한다.
+**사례(가상 예시)**: Cassandra 같은 분산 DB를 Partition Placement Group 위에 올리고 각 파티션을 하나의 랙 단위 장애 도메인으로 매핑한다고 가정해보자. 단일 랙 장애가 나도 복제 인수(replication factor=3)의 복제본이 서로 다른 파티션에 흩어져 있어 데이터 가용성이 유지된다.
 
 ## 다른 클라우드와의 비교: GCP와 Azure의 접근법
 
 | 차원 | AWS | GCP | Azure |
 |------|-----|-----|-------|
 | 인스턴스 패밀리 | C/M/R/I/G 등 15+ 패밀리 | 범용/메모리 최적화/가속기 최적화 | B/D/E/F/L/M/N 시리즈 |
-| Spot/선점 가능형 | Spot (2분 통지) | Preemptible/Spot (30초 통지) | Azure Spot (5분 통지) |
-| ARM 지원 | Graviton3 (25% 절감) | Tau T2A (Ampere Altra) | Dpsv5 (Ampere Altra) |
+| Spot/선점 가능형 | Spot (2분 통지) | Preemptible/Spot (30초 통지) | Azure Spot (30초 통지) |
+| ARM 지원 | Graviton (동급 x86보다 최대 20% 저렴) | Tau T2A (Ampere Altra) | Dpsv5 (Ampere Altra) |
 | 자체 AI 칩 | Inferentia2, Trainium2 | TPU v4 | 없음 (NVIDIA A100 사용) |
 | 구매 약정 모델 | RI + Savings Plans | CUD (Committed Use Discount) | Reserved VM Instance |
-| Spot 통지 방식 | 2분, IMDS + EventBridge | 30초, metadata + Pub/Sub | 5분, Azure Scheduled Events |
+| Spot 통지 방식 | 2분, IMDS + EventBridge | 30초, metadata + Pub/Sub | 30초, Azure Scheduled Events |
 
 GCP의 Preemptible은 2분이 아닌 30초 통지로 더 짧다. 또한 GCP는 인스턴스가 24시간을 넘으면 반드시 중단된다는 추가 제약이 있었으나(현재는 Spot으로 대체되며 이 제약 완화됨), AWS Spot은 이론상 무기한 실행 가능하다.
 
@@ -154,9 +154,9 @@ GCP의 Preemptible은 2분이 아닌 30초 통지로 더 짧다. 또한 GCP는 �
 T 패밀리는 다른 패밀리와 근본적으로 다른 성능 모델을 쓴다. 평상시 CPU 사용률은 baseline(예: t3.micro는 10%) 이하로 유지되고, 사용률이 낮을 때 CPU 크레딧을 적립한다. 높은 부하가 오면 크레딧을 소모해 vCPU를 100%까지 burst할 수 있다.
 
 t3.micro 기준:
-- Baseline CPU: 10% (1 vCPU의 10%)
-- 크레딧 적립: 분당 6 크레딧
-- 크레딧 소모: 100% 사용 시 분당 60 크레딧
+- Baseline CPU: vCPU당 10% (t3.micro는 2 vCPU)
+- 크레딧 적립: 시간당 12 크레딧 (분당 0.2)
+- 크레딧 소모: vCPU 100% 사용 시 vCPU당 분당 1 크레딧 (1 크레딧 = vCPU 100%로 1분)
 - 크레딧 고갈 시: Baseline 성능으로 제한(throttle)
 
 **T Unlimited 모드**: 크레딧이 고갈되어도 계속 burst 가능. 대신 초과 사용량을 On-Demand보다 약간 비싼 별도 요금으로 청구한다. 이 모드를 켜두면 t3가 c5처럼 쓰이다가 의외로 비용이 나올 수 있다.

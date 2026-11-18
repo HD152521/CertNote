@@ -23,7 +23,7 @@ at-most-once / at-least-once / exactly-once 세 가지 delivery semantics는 분
 
 > 🔍 **더 깊이**: FIFO 큐의 300 msg/s 제한은 어디서 온 숫자일까. SQS 내부적으로 FIFO는 MessageGroupId를 키로 메시지를 **단일 파티션에 직렬화**한다. 한 그룹 안의 메시지는 반드시 순서대로 처리돼야 하므로 동시 처리가 불가능하고, 따라서 그룹 단위 처리량이 단일 파티션의 한계에 묶인다. 2021년 출시된 **High Throughput FIFO**는 이 제약을 우회하기 위해 "그룹 자체를 여러 파티션에 분산"하는 방식으로 동작하고, 그래서 그룹 수가 충분히 많아야 효과가 나온다(소수의 그룹으로 활성화하면 효과 미미). region에 따라 9,000 ~ 70,000 msg/s까지 가능하다.
 
-**사례**: 2021년 12월 7일, AWS us-east-1에서 약 7시간 동안 내부 네트워크 장애가 발생해 SQS·DynamoDB·Lambda 등 광범위한 서비스가 영향을 받았다. 이때 많은 회사들이 깨달은 점은 "SQS는 region-resilient하지만 SQS endpoint 자체가 us-east-1 control plane에 의존한다"는 것이었다. Robinhood, Disney+, Slack, Coinbase가 모두 다운됐고, 이 사건 이후 멀티 리전 SQS 패턴(active-active queue + Route 53 health check)이 본격적으로 논의되기 시작했다. [AWS 공식 회고](https://aws.amazon.com/message/12721/).
+**사례**: 2021년 12월 7일, AWS us-east-1에서 약 7시간 동안 내부 네트워크 장치 장애가 발생해 EC2·ELB·Route 53 API, STS, API Gateway, EventBridge, Fargate 등이 영향을 받았다(AWS 공식 회고에는 SQS 언급이 없다). 이런 리전 단위 장애는 한 리전에 큐를 두는 설계가 그 리전과 운명을 같이한다는 점을 보여주고, 그래서 멀티 리전 SQS 패턴(active-active queue + Route 53 health check)이 논의된다. [AWS 공식 회고](https://aws.amazon.com/message/12721/).
 
 ## 가시성 타임아웃: SQS가 "한 번 이상" 뒤에 숨긴 메커니즘
 
@@ -57,7 +57,7 @@ SQS는 내부적으로 메시지를 여러 서버에 분산 저장하는데, 가
 
 DLQ 설계의 비대칭 규칙: 표준 큐의 DLQ는 표준이어야 하고, FIFO 큐의 DLQ는 FIFO여야 한다. 이건 메시지 ID 형식이 다르기 때문이고, 시험에 "FIFO 큐의 DLQ로 표준 큐를 쓸 수 있나"가 함정으로 나온다.
 
-**사례**: 2020년 Robinhood가 GameStop 사태 직후 결제 처리 큐가 비정상 폭증해 DLQ가 가득 차는 사고를 겪었다. 원인은 한 외부 결제 게이트웨이가 일부 거래에 대해 항상 500을 반환했고, 컨슈머가 재시도하며 maxReceiveCount를 다 소진하자 모든 거래가 DLQ로 빠졌다. 사후 분석에서 "DLQ에 메시지가 일정 수치 이상 쌓이면 CloudWatch Alarm + PagerDuty"를 빼먹은 게 직접적 원인이었다. 그 이후 회사 표준 SRE 체크리스트에 "모든 큐에 DLQ가 있고, 모든 DLQ에 알람이 있는가"가 들어갔다.
+**가상 시나리오**: 결제 처리 큐에서 외부 결제 게이트웨이가 일부 거래에 대해 계속 500을 반환하고, 컨슈머가 재시도하다 maxReceiveCount를 소진하면 해당 거래가 전부 DLQ로 빠진다. 이때 "DLQ에 메시지가 일정 수치 이상 쌓이면 CloudWatch Alarm으로 알림"이 없으면 아무도 모른 채 DLQ만 쌓인다. 그래서 "모든 큐에 DLQ가 있고, 모든 DLQ에 알람이 있는가"를 운영 체크리스트로 삼는다.
 
 Circuit Breaker 패턴(Netflix Hystrix, 2012)과 DLQ는 다른 레벨의 실패 격리다. Circuit Breaker는 "다운스트림이 망가졌으니 잠시 호출을 끊자"는 클라이언트 쪽 보호이고, DLQ는 "이미 받은 메시지가 망가졌으니 격리하자"는 큐 쪽 보호다. 잘 설계된 시스템은 두 가지를 다 갖는다 — Circuit Breaker로 외부 의존성 장애를 빠르게 차단하고, 그래도 흘러들어온 poison message는 DLQ로 격리.
 
@@ -104,11 +104,11 @@ SQS의 큐 길이는 시스템 부하의 가장 직접적인 신호다. CloudWat
 
 EC2 Auto Scaling Group을 쓸 때는 **Backlog Per Instance** 메트릭을 만들어 쓰는 게 가장 정석이다. 단순히 "큐 길이 1000 이상이면 스케일아웃"으로 잡으면 인스턴스 수와 무관하게 매번 같은 임계값에서 스케일하는 문제가 있다. 대신 "메시지 수 ÷ 현재 인스턴스 수 = 인스턴스당 백로그" 같은 custom metric을 만들고 "인스턴스당 100개 이상이면 추가"라는 목표 추적(target tracking) 정책을 쓴다. 이 패턴은 AWS Auto Scaling 공식 백서의 권장 사항이다.
 
-Lambda는 EC2와 모델이 완전히 다르다. Lambda + SQS는 **Event Source Mapping**(ESM)이라는 SQS poller가 Lambda 서비스 내부에서 동작하며 자동으로 컨슈머 수를 늘린다. 큐가 차면 ESM이 동시 실행 Lambda 수를 점진적으로 늘리는데(처음엔 5개, 1분마다 60개씩 추가, 표준 큐 기준 최대 1,000), 이걸 모르고 "Lambda는 무한히 스케일하니 안전하다"고 가정하면 큰 스파이크에서 처리 지연이 생긴다. 2022년 11월 출시된 **Maximum Concurrency** 옵션으로 ESM 자체에 Lambda 동시성 상한을 걸 수 있게 됐는데, 다운스트림(예: RDS connection pool)을 보호하는 데 필수다.
+Lambda는 EC2와 모델이 완전히 다르다. Lambda + SQS는 **Event Source Mapping**(ESM)이라는 SQS poller가 Lambda 서비스 내부에서 동작하며 자동으로 컨슈머 수를 늘린다. 큐가 차면 ESM이 동시 실행 Lambda 수를 점진적으로 늘리는데(처음엔 동시 호출 5개, 메시지가 남아 있으면 분당 최대 300개씩 추가, 표준 큐 기준 ESM 하나당 최대 1,250 — 2023년 11월 이전에는 분당 60개씩, 최대 1,000이었다), 이걸 모르고 "Lambda는 무한히 스케일하니 안전하다"고 가정하면 큰 스파이크에서 처리 지연이 생긴다. 2023년 1월 출시된 **Maximum Concurrency** 옵션으로 ESM 자체에 Lambda 동시성 상한을 걸 수 있게 됐는데, 다운스트림(예: RDS connection pool)을 보호하는 데 필수다.
 
 Little's Law(L = λW)는 큐잉 이론의 기본 법칙으로, "큐의 평균 길이 L = 도착률 λ × 평균 대기시간 W"이다. SQS 운영에서 이 식이 의미하는 바는 "큐 길이를 줄이려면 도착률을 줄이거나(rate limit) 처리시간을 줄이거나(컨슈머 추가) 둘 중 하나"라는 것이다. ASG의 target tracking은 사실상 W를 일정하게 유지하기 위해 컨슈머 수를 조절하는 동작이다.
 
-Lambda + SQS의 ESM은 2020년 11월에 출시된 **Batch Window**(0-5분)와 **Partial Batch Response** 기능이 운영성을 크게 바꿨다. Batch Window는 "메시지가 모일 때까지 기다린 뒤 배치 처리"를 가능하게 해서 비용을 낮춘다(짧은 호출 여러 번 → 긴 호출 한 번). Partial Batch Response는 배치 10개 중 일부만 실패했을 때 실패한 메시지만 가시성 복원하고 성공한 건 자동 삭제하는 기능으로, 그 전엔 배치 안에 1개라도 실패하면 전체 10개가 재시도돼 중복 처리가 심했다.
+Lambda + SQS의 ESM은 **Batch Window**(0-5분, 2020년 11월 출시)와 **Partial Batch Response**(2021년 11월 출시) 기능이 운영성을 크게 바꿨다. Batch Window는 "메시지가 모일 때까지 기다린 뒤 배치 처리"를 가능하게 해서 비용을 낮춘다(짧은 호출 여러 번 → 긴 호출 한 번). Partial Batch Response는 배치 10개 중 일부만 실패했을 때 실패한 메시지만 가시성 복원하고 성공한 건 자동 삭제하는 기능으로, 그 전엔 배치 안에 1개라도 실패하면 전체 10개가 재시도돼 중복 처리가 심했다.
 
 ## 다른 메시징 시스템과의 비교
 
@@ -126,7 +126,7 @@ SQS의 설계를 다른 메시징 시스템과 나란히 놓으면 그 trade-off
 
 SQS의 강점은 **운영 부담이 거의 0**이라는 점이다. 브로커도 없고 노드도 없고 클러스터도 없다. 단점은 "한 번 소비되면 사라진다"는 큐 모델이므로 같은 메시지를 여러 시스템이 독립적으로 처리해야 하면 SNS fanout(다음 글) 또는 Kinesis(Day 4)로 가야 한다.
 
-**사례**: 2018년 New Relic이 자체 Kafka 클러스터를 운영하다가 일부 워크로드를 SQS로 옮기는 과정을 블로그에 공개했다. 핵심 교훈은 "Kafka는 처리량과 보존이 필요할 때 가치 있지만, 단순 디커플링에는 SQS가 운영 비용이 1/10"이었다. 모든 메시징 워크로드를 Kafka로 통일하는 게 아니라 워크로드 특성에 맞게 골라 쓰는 게 정답이라는 점이 이 시기부터 업계 컨센서스가 됐다.
+**일반론**: Kafka는 처리량과 보존(재처리)이 필요할 때 가치 있지만, 단순한 디커플링에는 SQS가 운영 부담이 훨씬 적다. 모든 메시징 워크로드를 Kafka로 통일하기보다 워크로드 특성에 맞게 골라 쓰는 게 보통의 정답이다.
 
 ## CLI로 직접 만져보기
 
@@ -203,7 +203,7 @@ C) SQS Standard를 FIFO로 변경
 D) Lambda 동시성을 무제한으로 설정
 
 **정답: A**
-해설: Poison message 문제의 표준 해결책은 DLQ + maxReceiveCount다. 3번 실패하면 자동으로 DLQ로 격리되어 큐 정체를 막고, 운영자는 DLQ에서 원인을 분석한 뒤 Redrive API로 재처리할 수 있다. DLQ에 메시지가 쌓이는 것 자체가 비정상이므로 반드시 CloudWatch Alarm으로 알림을 받아야 하는데, 이게 빠진 사고가 2020년 Robinhood 사례. B는 문제를 12시간 늦출 뿐 해결하지 못함. C는 메시지 모델 변경이지 실패 격리와 무관. D는 오히려 외부 API에 더 큰 부하를 주어 상황을 악화시킨다.
+해설: Poison message 문제의 표준 해결책은 DLQ + maxReceiveCount다. 3번 실패하면 자동으로 DLQ로 격리되어 큐 정체를 막고, 운영자는 DLQ에서 원인을 분석한 뒤 Redrive API로 재처리할 수 있다. DLQ에 메시지가 쌓이는 것 자체가 비정상이므로 반드시 CloudWatch Alarm으로 알림을 받아야 하는데, 이게 빠지면 DLQ만 조용히 쌓이는 사고로 이어진다. B는 문제를 12시간 늦출 뿐 해결하지 못함. C는 메시지 모델 변경이지 실패 격리와 무관. D는 오히려 외부 API에 더 큰 부하를 주어 상황을 악화시킨다.
 
 ---
 

@@ -85,7 +85,7 @@ Secondary 리전에서는 읽기 전용으로 사용할 수 있다. 만약 Prima
 
 Aurora Global Database의 Planned Failover와 Unplanned Failover는 다르다. **Planned Failover(Managed Planned Failover)**는 유지보수나 리전 마이그레이션을 위해 사용하며, Secondary를 새 Primary로 먼저 승격한 다음 원래 Primary를 Secondary로 강등한다. 이 과정에서 데이터 손실(RPO)이 거의 0이다. **Unplanned Failover**는 Primary 리전 장애 시 Secondary를 수동으로 Promote하는 것으로, 복제 Lag에 해당하는 데이터가 손실될 수 있다(RPO는 보통 수 초 단위).
 
-**사례**: 삼성전자의 B2B SaaS 플랫폼 SmartThings는 전 세계 수억 개의 IoT 디바이스 이벤트를 처리한다. 국내 AWS 고객 사례 세션(AWS Summit Seoul)에서 SmartThings 팀은 Aurora Global Database를 통해 미국, 유럽, 아시아 사용자들이 가장 가까운 리전의 Aurora Secondary에서 디바이스 상태를 읽어가는 구조를 설명했다. 복제 지연이 1초 미만이기 때문에 전 세계 사용자가 거의 동일한 최신 상태를 볼 수 있다.
+**사례(일반 시나리오)**: 전 세계에 흩어진 IoT 디바이스 이벤트를 처리하는 서비스는 Aurora Global Database로 미국·유럽·아시아 사용자가 가장 가까운 리전의 Aurora Secondary에서 디바이스 상태를 읽도록 구성할 수 있다. 복제 지연이 보통 1초 미만이므로 전 세계 사용자가 거의 동일한 최신 상태를 볼 수 있다.
 
 ## Aurora Serverless v2 — 자동 스케일링의 의미
 
@@ -108,7 +108,7 @@ Serverless v2의 스케일링 메커니즘은 "Resource Sharing on Multi-Tenant 
 
 ## Backtrack과 Fast Clone — 빠른 복구의 두 가지 방법
 
-Aurora MySQL에만 있는 독특한 기능 두 가지가 Backtrack과 Fast Clone이다.
+Backtrack은 Aurora MySQL에만 있는 기능이고, Fast Clone은 Aurora MySQL/PostgreSQL 모두 지원하는 빠른 복구·복제 방법이다.
 
 **Backtrack**: 마치 비디오를 되감듯이 클러스터를 과거의 특정 시점으로 되돌린다. PITR과 다른 점은, PITR은 새 클러스터를 만들지만 Backtrack은 현재 클러스터 자체를 되돌린다. 몇 분 안에 완료된다. 단, MySQL 호환 Aurora에서만 지원한다. PostgreSQL 호환 Aurora는 Backtrack이 없다 — PITR을 써야 한다. Backtrack 가능 범위는 최대 72시간 전까지다.
 
@@ -143,7 +143,7 @@ Aurora는 RDS MySQL/PostgreSQL보다 약 20% 비싸다. 이 추가 비용이 정
 | 항목 | RDS MySQL/PostgreSQL | Aurora MySQL/PostgreSQL |
 |------|---------------------|------------------------|
 | 스토리지 | 인스턴스당 EBS | 공유 분산 (6 카피, 3 AZ) |
-| 최대 스토리지 | 64TB (gp3), 16TB (gp2) | 최대 128TB |
+| 최대 스토리지 | 64TiB (MySQL/MariaDB/PostgreSQL, gp2·gp3 모두. SQL Server gp3 볼륨도 2026-06부터 64TiB, 이전에는 16TiB) | 최대 128TB |
 | 최대 Read Replica | 소스당 15개 (MySQL·MariaDB·PostgreSQL·SQL Server) | 15개 |
 | 복제 지연 | 비동기 (수 초) | 보통 100ms보다 훨씬 짧음 (공유 스토리지) |
 | 페일오버 시간 | 60-120초 | 보통 60초 미만(종종 30초 미만) |
@@ -153,7 +153,7 @@ Aurora는 RDS MySQL/PostgreSQL보다 약 20% 비싸다. 이 추가 비용이 정
 | Fast Clone | 없음 | 있음 (COW) |
 | 비용 | 기준 | 약 20% 높음 |
 
-**사례**: 넷플릭스(Netflix)는 AWS 위에 글로벌 스트리밍 서비스를 운영하면서 핵심 데이터를 여러 리전에 걸쳐 복제한다. 공식 기술 블로그(Netflix Tech Blog)에 따르면, 넷플릭스는 "Active-Active" 멀티 리전 전략을 추구하는데 Aurora Global Database가 그 기반 중 하나로 활용된다. 특히 사용자 프로필과 구독 정보 같은 글로벌하게 읽기가 많은 데이터에서 Secondary 리전의 읽기 분산이 지연을 크게 줄였다고 언급한다.
+**사례(일반 시나리오)**: 글로벌 스트리밍 같은 서비스에서 사용자 프로필·구독 정보처럼 읽기가 많은 데이터를 여러 리전에 복제해 두면, Aurora Global Database의 Secondary 리전에서 읽기를 분산해 지연을 줄이고 리전 장애에 대비할 수 있다.
 
 ## CLI로 Aurora 클러스터 실제로 설정하기
 

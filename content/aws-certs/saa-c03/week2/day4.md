@@ -85,7 +85,7 @@ Route Table에 자동 추가:
 - ENI를 VPC에 생성, AWS 서비스에 DNS 매핑.
 - **시간당 + GB당 과금**.
 - 거의 모든 AWS 서비스 지원 + ISV SaaS 지원.
-- 같은 리전 + Cross-region (2023년 GA).
+- 같은 리전 + Cross-region (2024년 11월 GA).
 
 | 항목 | Gateway Endpoint | Interface Endpoint |
 |------|-----------------|-------------------|
@@ -184,7 +184,7 @@ ClientVPN은 *VPN-based remote access*의 클라우드 버전이지만, Zero Tru
 | 사용자 원격 접속 | ClientVPN (또는 Verified Access) |
 | 글로벌 VPC backbone | TGW Peering 또는 Cloud WAN |
 
-이 표를 머리에 박아두면 시나리오 첫 줄만 봐도 후보가 2개로 좁혀진다. 그 다음은 비용·복잡도·HA 요구치를 비교해 최종 답을 정한다. 마지막으로 한 가지 — 2021년 출시된 *AWS Cloud WAN*은 TGW의 글로벌 backbone 확장이고, 다중 리전 멀티 계정 네트워크를 *policy as code*로 관리하게 해준다. 수십 리전·수백 계정 규모에서는 Cloud WAN이 TGW + TGW Peering 조합보다 운영이 훨씬 단순하다.
+이 표를 머리에 박아두면 시나리오 첫 줄만 봐도 후보가 2개로 좁혀진다. 그 다음은 비용·복잡도·HA 요구치를 비교해 최종 답을 정한다. 마지막으로 한 가지 — 2021년 발표되고 2022년 7월 GA된 *AWS Cloud WAN*은 TGW의 글로벌 backbone 확장이고, 다중 리전 멀티 계정 네트워크를 *policy as code*로 관리하게 해준다. 수십 리전·수백 계정 규모에서는 Cloud WAN이 TGW + TGW Peering 조합보다 운영이 훨씬 단순하다.
 
 ---
 
@@ -282,4 +282,4 @@ C) AWS Cloud WAN
 D) Direct Connect 전용선
 
 **정답: C**
-해설: Cloud WAN(2021 출시)이 TGW의 글로벌 backbone 확장. JSON 정책으로 segment(prod/dev)와 attachment, route propagation을 일괄 관리. TGW Peering으로 수동 구축할 수도 있지만 수십 리전 규모에서는 Cloud WAN이 표준. 시험에는 아직 자주 안 나오지만 2024년 이후 등장 빈도 증가 중.
+해설: Cloud WAN(2022년 GA)이 TGW의 글로벌 backbone 확장. JSON 정책으로 segment(prod/dev)와 attachment, route propagation을 일괄 관리. TGW Peering으로 수동 구축할 수도 있지만 수십 리전 규모에서는 Cloud WAN이 표준. 시험에는 아직 자주 안 나오지만 2024년 이후 등장 빈도 증가 중.

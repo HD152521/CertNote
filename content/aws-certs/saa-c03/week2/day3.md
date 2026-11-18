@@ -34,7 +34,7 @@ SG는 **ENI에 부착되는** stateful 방화벽이다. "Stateful"이라는 게 
 | 한도 | 인스턴스당 5개 SG, SG당 60 in + 60 out 룰 |
 | Source | IP CIDR, 다른 SG, prefix list |
 
-Stateful이라는 의미는 SG가 **connection tracking table**을 유지한다는 뜻이다. 한 TCP 흐름(src IP:port + dst IP:port + protocol)이 허용되면 그 흐름의 응답 패킷은 자동 통과. 이건 Linux netfilter의 `conntrack` 모듈과 정확히 같은 모델이다. AWS는 ENI마다 별도의 conntrack을 유지하며, 트래픽 폭증 시 conntrack 테이블 크기가 한계에 다다르면 신규 연결이 떨어진다. EC2 인스턴스 타입마다 supported connection 개수가 다르고, Nitro 인스턴스는 수백만 개까지 가능하다. 이 한계는 *DDoS 공격 시 connection 폭주*의 직접적 영향 요인이고, AWS Shield Advanced가 자동으로 conntrack 한도를 늘리는 보호를 제공한다.
+Stateful이라는 의미는 SG가 **connection tracking table**을 유지한다는 뜻이다. 한 TCP 흐름(src IP:port + dst IP:port + protocol)이 허용되면 그 흐름의 응답 패킷은 자동 통과. 이건 Linux netfilter의 `conntrack` 모듈과 정확히 같은 모델이다. AWS는 ENI마다 별도의 conntrack을 유지하며, 트래픽 폭증 시 conntrack 테이블 크기가 한계에 다다르면 신규 연결이 떨어진다. EC2 인스턴스 타입마다 supported connection 개수가 다르고, Nitro 인스턴스는 수백만 개까지 가능하다. 이 한계는 *DDoS 공격 시 connection 폭주*의 직접적 영향 요인이다.
 
 Stateful 방화벽은 1990년대 Check Point의 FireWall-1이 처음 상업화했고, 그 전까지 모든 방화벽은 stateless(packet-by-packet) 였다. Stateless 방화벽은 응답 트래픽을 위한 ephemeral port range를 명시 허용해야 하는 운영 부담이 있다. AWS NACL이 stateless라서 같은 이슈가 있고, 이 점이 시험의 함정이 된다. Stateful 방화벽의 발명은 보안 산업에 결정적이었는데, 이전까지의 *packet filter*가 모든 패킷을 독립적으로 보는 것에 비해 *connection*이라는 의미 단위를 도입했기 때문이다. RFC 2979(1999)가 이를 공식 정의한다.
 
@@ -107,7 +107,7 @@ NACL의 "번호 순 첫 매칭" 평가는 *first-match firewall* 모델이고, C
 
 > ⚠️ **함정**: NACL은 *서브넷 전체*에 적용되므로 변경 시 영향 범위가 크다. 한 서브넷에 100개 ENI가 있다면 NACL 룰 한 줄 잘못 추가가 100개 인스턴스의 트래픽을 동시에 막을 수 있다. SG는 ENI 단위라 변경의 *blast radius*가 작다. 운영 환경에서 NACL을 건드릴 때는 항상 *change window*와 *롤백 plan*을 미리 준비해야 한다.
 
-SG와 NACL의 *복잡도 폭발*은 클라우드 네트워크 보안의 고전적 문제다. 한 조직이 수십 개 VPC × 수백 개 SG × 수천 개 룰을 운영하면 사람이 추적 불가능해진다. 해결책은 ① IaC로 룰을 코드화(Terraform, CloudFormation), ② AWS Firewall Manager로 SG를 중앙 정책 강제, ③ Access Analyzer로 외부 노출 자동 감지. 2023년 출시된 *AWS Network Firewall*은 NACL/SG 위에 더 상위 L7 방화벽을 두는 옵션을 제공한다.
+SG와 NACL의 *복잡도 폭발*은 클라우드 네트워크 보안의 고전적 문제다. 한 조직이 수십 개 VPC × 수백 개 SG × 수천 개 룰을 운영하면 사람이 추적 불가능해진다. 해결책은 ① IaC로 룰을 코드화(Terraform, CloudFormation), ② AWS Firewall Manager로 SG를 중앙 정책 강제, ③ Access Analyzer로 외부 노출 자동 감지. 2020년 출시된 *AWS Network Firewall*은 NACL/SG 위에 더 상위 L7 방화벽을 두는 옵션을 제공한다.
 
 ## VPC Flow Logs: 누가 누구와 통신했는가
 
@@ -137,7 +137,7 @@ Flow Logs는 **NetFlow**(Cisco, 1996)의 클라우드 버전이다. NetFlow가 �
 
 **사례(가상)**: 2020년 한 핀테크가 Flow Logs로 GuardDuty가 잡지 못한 데이터 유출을 사후 발견했다. 한 EC2에서 외부 미지의 IP로 매일 자정에 ~500MB가 빠져나가는 패턴이 Athena 쿼리에서 잡혔다. 알고 보니 마이닝 멀웨어가 아니라 잘못 설정된 백업 스크립트가 잘못된 S3 endpoint로 데이터를 보내고 있었던 것. Flow Logs가 없었으면 발견이 몇 달 더 걸렸을 거다. 비슷한 사례로 2022년 한 게임 회사가 Flow Logs를 통해 *crypto-mining* 멀웨어 감염 EC2를 발견했는데, CPU 사용률은 normal이었지만 Flow Logs의 outbound 트래픽 패턴(미지의 mining pool 도메인)이 알람을 띄웠다.
 
-Flow Logs는 v5(2021년)에서 *traffic-type*, *pkt-srcaddr*, *pkt-dstaddr* 같은 새 필드를 추가했다. *pkt-srcaddr*는 NAT 변환 *전*의 원래 IP를 보여줘서, NAT GW를 통과한 트래픽도 원본 source를 추적 가능하게 만든다. 이건 보안 사고 조사에서 결정적이다 — NAT 너머의 진짜 공격자 IP를 알 수 있게 됐다. 또 v5에서 ENI마다 다른 필드 집합을 선택할 수 있어서 로그 비용을 세밀하게 조정할 수 있다.
+Flow Logs는 v3에서 *pkt-srcaddr*, *pkt-dstaddr* 등을, v4에서 *region*, *az-id* 등을, v5(2021년)에서 *flow-direction*, *traffic-path* 같은 필드를 추가했다. *pkt-srcaddr*는 NAT 변환 *전*의 원래 IP를 보여줘서, NAT GW를 통과한 트래픽도 원본 source를 추적 가능하게 만든다. 이건 보안 사고 조사에서 결정적이다 — NAT 너머의 진짜 공격자 IP를 알 수 있게 됐다. 또 사용자 지정 형식(custom format, v2부터)으로 Flow Log마다 필드 집합을 선택할 수 있어서 로그 비용을 세밀하게 조정할 수 있다.
 
 ## Flow Logs의 한계와 보완
 

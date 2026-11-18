@@ -51,7 +51,7 @@
   └────────────────────────────────────────────┘
 
   Route 53 Failover/ARC: Primary 비정상 → Secondary
-   (Health Check + ARC Readiness로 준비 상태 상시 점검)
+   (Health Check + ARC Readiness로 준비 상태 상시 점검 — Readiness Check는 2026-04-30부터 신규 고객 불가)
 
   [ 마이그레이션 유입 경로 ]
    온프레 DB(Oracle) ─SCT+DMS(CDC)─▶ Aurora
@@ -192,7 +192,7 @@ D) GuardDuty
 
 **정답: B**
 
-해설: Route 53 ARC는 헬스 체크에 의존하지 않고 운영자가 라우팅 컨트롤로 "리전 트래픽 100%/0%"를 즉시 전환하며, Readiness Check로 보조 리전의 용량·쿼터·설정 준비 상태를 상시 점검한다. 5개 리전 클러스터로 동작해 장애 중에도 제어가 살아 있다. Failover 정책 단독(A)은 헬스 체크 기반이라 명시적 제어가 아니고, CloudWatch Alarm(C)은 임계값 알림, GuardDuty(D)는 위협 탐지로 페일오버 제어와 무관하다. "명시적·헬스체크 비의존 페일오버 + 준비 점검" = ARC.
+해설: Route 53 ARC는 헬스 체크에 의존하지 않고 운영자가 라우팅 컨트롤로 "리전 트래픽 100%/0%"를 즉시 전환하며, Readiness Check로 보조 리전의 용량·쿼터·설정 준비 상태를 상시 점검한다. 5개 리전 클러스터로 동작해 장애 중에도 제어가 살아 있다. Failover 정책 단독(A)은 헬스 체크 기반이라 명시적 제어가 아니고, CloudWatch Alarm(C)은 임계값 알림, GuardDuty(D)는 위협 탐지로 페일오버 제어와 무관하다. "명시적·헬스체크 비의존 페일오버 + 준비 점검" = ARC. (참고: Readiness Check는 2026-04-30부터 신규 고객에게 닫힌 기능이라 기존 고객만 쓸 수 있고, 신규 구성은 ARC Region switch·라우팅 컨트롤을 쓴다. 시험 키워드로는 여전히 "ARC = 라우팅 컨트롤 + Readiness Check"로 나온다.)
 
 ---
 

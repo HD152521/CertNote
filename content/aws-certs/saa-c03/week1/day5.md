@@ -40,7 +40,7 @@
 
 이 3층 모델은 사실 분산 시스템 보안의 고전적인 3축 — *Where*(위치), *Who*(신원), *What*(자원) — 을 클라우드 운영에 매핑한 것이다. 1985년 NIST가 정의한 보안 3요소(Confidentiality / Integrity / Availability)에 더해, 2003년 NIST SP 800-53이 명문화한 Access Control(AC), Audit & Accountability(AU), System and Communications Protection(SC) 세 영역이 거의 일대일로 매칭된다. AC는 IAM, AU는 CloudTrail/Config, SC는 VPC/네트워크 컨트롤로 구현된다.
 
-이 3층은 실제 AWS의 권한 평가 엔진에서도 그대로 반영된다. AWS Zelkova(IAM 정형 검증)와 Tiros(네트워크 정형 검증)는 각각 IAM/SCP 정책과 VPC 라우팅을 SMT 제약으로 변환해서 "이 요청이 도달 가능한가"를 푼다. 2018년 USENIX Security 논문 "Semantic-based Automated Reasoning for AWS Access Policies"가 Zelkova의 기반이고, 같은 해 발표된 "Reachability Analysis for AWS-based Networks"가 Tiros의 기반이다. Access Analyzer, Reachability Analyzer, IAM Access Advisor가 모두 이 위에서 돌아간다.
+이 3층은 실제 AWS의 권한 평가 엔진에서도 그대로 반영된다. AWS Zelkova(IAM 정형 검증)와 Tiros(네트워크 정형 검증)는 각각 IAM/SCP 정책과 VPC 라우팅을 SMT 제약으로 변환해서 "이 요청이 도달 가능한가"를 푼다. 2018년 FMCAD 논문 "Semantic-based Automated Reasoning for AWS Access Policies using SMT"가 Zelkova의 기반이고, 2019년 CAV에서 발표된 "Reachability Analysis for AWS-based Networks"가 Tiros의 기반이다. IAM Access Analyzer는 Zelkova 위에서, VPC Reachability Analyzer는 Tiros 위에서 돌아간다.
 
 ## 시나리오 키워드 매핑
 
@@ -72,7 +72,7 @@
 
 이 표는 시험 전날 30분이면 통독되고, 같은 매핑을 5번 이상 반복해서 보면 시험장에서 시나리오 첫 줄만 보고 후보 답이 떠오른다. 키워드 → 솔루션 매핑은 SAA의 "패턴 인식 시험"적 성격을 가장 잘 보여준다.
 
-> ⚠️ **함정**: 같은 키워드가 다른 답으로 가는 경우도 많다. "암호화"는 KMS인가 CloudHSM인가? 단일 회사 사용이면 KMS, FIPS 140-2 Level 3 규제(FedRAMP High, 일부 금융)면 CloudHSM. "DR"은 Multi-AZ인가 Cross-Region인가? AZ 단위 격리는 Multi-AZ, 리전 단위 격리는 Cross-Region. 키워드만 보지 말고 "이 시나리오의 위협 모델이 무엇이냐"를 함께 봐야 한다.
+> ⚠️ **함정**: 같은 키워드가 다른 답으로 가는 경우도 많다. "암호화"는 KMS인가 CloudHSM인가? 일반적인 암호화·키 관리면 KMS(KMS의 HSM도 현재 FIPS 140-3 Level 3 인증이라 FIPS 레벨만으로는 CloudHSM이 필수가 아니다), 단독 테넌시(전용 HSM)나 키·HSM을 고객이 직접 통제해야 하는 규제(일부 금융·공공)면 CloudHSM. "DR"은 Multi-AZ인가 Cross-Region인가? AZ 단위 격리는 Multi-AZ, 리전 단위 격리는 Cross-Region. 키워드만 보지 말고 "이 시나리오의 위협 모델이 무엇이냐"를 함께 봐야 한다.
 
 ## CAP/PACELC와 AWS 서비스 매핑
 
@@ -82,7 +82,7 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 |--------|------------|------|
 | DynamoDB (default) | Eventually Consistent | AP |
 | DynamoDB (strong) | Strong Consistent (단일 리전) | CP |
-| DynamoDB Global Table | Multi-Master, Last-Writer-Wins | AP |
+| DynamoDB Global Table | Multi-Master, Last-Writer-Wins (기본 MREC; MRSC 선택 시 강한 일관성) | AP (기본) |
 | Aurora (single region) | Strong | CP |
 | Aurora Global DB | Async replication | AP (리전 간) |
 | RDS Multi-AZ | Sync replication | CP |
@@ -92,9 +92,9 @@ SAA에서 직접 묻지는 않지만, 시나리오 해석에 결정적이다. �
 | FSx for Lustre | Strong (POSIX) | CP |
 | Neptune | Strong (single writer) | CP |
 
-DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공되고(`ConsistentRead=true`), Global Table은 항상 eventual이다. Global Table의 충돌 해결은 **Last-Writer-Wins**(LWW) 기반이라 동시 쓰기 시 데이터 손실 가능성이 있다. 그래서 멀티 마스터 글로벌 쓰기가 필요하면 DynamoDB Global Table을 쓰되 "타임스탬프 충돌이 비즈니스적으로 허용 가능한가"를 먼저 따져야 한다. 더 엄격한 일관성이 필요하면 CRDT(Conflict-free Replicated Data Type)나 Paxos/Raft 기반 합의 알고리즘이 필요한데, AWS는 이를 Aurora의 quorum-based replication(6-way write across 3 AZ, 4/6 write, 3/6 read 쿼럼)으로 일부 제공한다. Aurora 논문 *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases*(SIGMOD 2017)가 이 아키텍처의 정수다.
+DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공되고(`ConsistentRead=true`), Global Table은 기본(MREC)이 eventual이다(2025년에 다중 리전 강한 일관성 MRSC 옵션이 추가돼 RPO 0이 가능하고, 서울 리전도 지원하며 3개 리전 구성이 필요하다). Global Table의 충돌 해결은 **Last-Writer-Wins**(LWW) 기반이라 동시 쓰기 시 데이터 손실 가능성이 있다. 그래서 멀티 마스터 글로벌 쓰기가 필요하면 DynamoDB Global Table을 쓰되 "타임스탬프 충돌이 비즈니스적으로 허용 가능한가"를 먼저 따져야 한다. 더 엄격한 일관성이 필요하면 CRDT(Conflict-free Replicated Data Type)나 Paxos/Raft 기반 합의 알고리즘이 필요한데, AWS는 이를 Aurora의 quorum-based replication(6-way write across 3 AZ, 4/6 write, 3/6 read 쿼럼)으로 일부 제공한다. Aurora 논문 *Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases*(SIGMOD 2017)가 이 아키텍처의 정수다.
 
-**사례**: 2015년 GitHub은 자체 MySQL 클러스터 분할 사고로 24시간 동안 데이터 일관성이 깨졌다. 두 데이터센터 간 네트워크 분할이 발생했고, 양쪽 모두 자신이 primary라고 판단해 쓰기를 받아버린 split-brain 사건이다. 사후 분석 보고서에서 GitHub은 "분할 시 우리는 CP를 선택하고 가용성을 포기한다"고 명시했다. 이런 사례는 CAP의 trade-off가 추상적 이론이 아니라 매일 운영자가 마주하는 결정임을 보여준다. AWS는 RDS Multi-AZ에서 같은 결정을 내렸고, 그래서 페일오버 동안 60초 정도 가용성이 끊긴다.
+**사례**: 2018년 10월 21일 GitHub은 네트워크 분할 이후 MySQL 클러스터가 갈라지는 사고로 24시간 넘게 서비스가 저하됐다. 두 데이터센터 간 네트워크 분할이 발생했고, 양쪽 모두 자신이 primary라고 판단해 쓰기를 받아버린 split-brain 사건이다. 사후 분석 보고서에서 GitHub은 "사이트 사용성과 복구 시간보다 데이터 무결성을 우선했다"고 밝혔다(CAP로 보면 CP 쪽 판단). 이런 사례는 CAP의 trade-off가 추상적 이론이 아니라 매일 운영자가 마주하는 결정임을 보여준다. AWS는 RDS Multi-AZ에서 같은 결정을 내렸고, 그래서 페일오버 동안 60초 정도 가용성이 끊긴다.
 
 > ⚠️ **함정**: "Aurora는 strong consistent이므로 글로벌 DB도 같다"고 가정하면 틀린다. Aurora Global Database는 **storage-level async replication**(보통 1초 RPO)이고 secondary 리전은 read-only다. 글로벌 쓰기를 원하면 DynamoDB Global Table을 써야 하지만 그건 LWW의 충돌 위험을 받아들여야 한다. 또 "ElastiCache Redis Cluster Mode는 ASync replication이지만 multi-AZ 페일오버로 가용성 보장"이라고 보는 것도 부분적으로 틀리다 — 페일오버 시 ack되지 않은 쓰기는 손실될 수 있다.
 
@@ -141,7 +141,7 @@ DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공
 
 이 토폴로지는 AWS Security Reference Architecture(SRA) 문서에 권장 형태로 명시되어 있다. 모든 대기업 고객이 이 변형을 쓴다고 보면 정확하다. Netflix, Capital One, Airbnb, Slack 등의 공개 발표 자료를 보면 거의 같은 패턴이 반복된다.
 
-**사례**: 2019년 Netflix Tech Blog는 자사 다계정 전략을 공개했는데, 1,000개 이상의 AWS 계정을 운영하면서 워크로드별·팀별·환경별로 계정을 잘게 쪼개는 "Account per Workload" 패턴을 표준화했다고 밝혔다. 이유는 ① 블래스트 반경 제한, ② 비용·태그 자동화, ③ IAM 권한 단순화. 같은 패턴을 Spotify, Lyft, Stripe도 채택했고, 이게 SRA가 권장하는 토폴로지의 실제 모델이다. 2023년 기준 큰 회사는 보통 100~5,000 계정을 운영하고, AWS Organizations의 한도(10,000 계정/Org)가 사실상 상한이다.
+**사례**: 2019년 Netflix Tech Blog는 자사 다계정 전략을 공개했는데, 1,000개 이상의 AWS 계정을 운영하면서 워크로드별·팀별·환경별로 계정을 잘게 쪼개는 "Account per Workload" 패턴을 표준화했다고 밝혔다. 이유는 ① 블래스트 반경 제한, ② 비용·태그 자동화, ③ IAM 권한 단순화. 같은 패턴을 Spotify, Lyft, Stripe도 채택했고, 이게 SRA가 권장하는 토폴로지의 실제 모델이다. 2023년 기준 큰 회사는 보통 100~5,000 계정을 운영하고, AWS Organizations의 계정 한도(기본 10개, Service Quotas 증설 요청으로 최대 50,000개)가 이론상 상한이다.
 
 다계정 운영의 실무 핵심은 두 가지 자동화다. ① 계정 발급 자동화 — Control Tower의 Account Factory 또는 Account Factory for Terraform(AFT)으로 새 계정 생성 → 베이스라인 적용 → 권한 부여 → 알림이 GitOps 흐름으로 묶인다. ② 베이스라인 자동 배포 — CloudFormation StackSets의 `SERVICE_MANAGED + auto-deployment=Enabled` 옵션으로 새 계정에 자동으로 보안 베이스라인(GuardDuty, Config Rules, IAM Password Policy, S3 BPA 등)이 들어간다. 이 두 자동화가 없으면 100계정 운영은 사람으로 불가능하다.
 
@@ -156,7 +156,7 @@ DynamoDB의 strong consistency는 단일 리전 안에서만 옵션으로 제공
 | Permissions Boundary | 신원 권한 상한 | SCP: 계정 권한 상한 | 적용 단위가 다름 |
 | Cross-Region Read Replica | Async, 수동 promote | Aurora Global DB: Async + Fast 페일오버 (수 분 수준) | RPO·RTO 차이 |
 | CloudFront Functions | 엣지 PoP, 1ms 제약 | Lambda@Edge: Regional Edge, 더 무거움 | 위치·런타임 차이 |
-| KMS | 멀티 테넌트 HSM | CloudHSM: 단독 HSM, FIPS 140-2 L3 | 규제 강도 |
+| KMS | 멀티 테넌트 HSM | CloudHSM: 단독(single-tenant) 전용 HSM, 키·HSM 직접 통제 | 규제 강도 |
 | STS AssumeRole | 일반 cross-account | AssumeRoleWithWebIdentity: OIDC | 외부 IdP 페더레이션 |
 | Resource Policy Allow | Same-account 충분 | Cross-account: 양쪽 Allow 필요 | 평가 로직 |
 
@@ -189,10 +189,10 @@ D) ElastiCache Global Datastore — 리전 간 1초 미만으로 Redis 데이터
 A) Direct Connect만 사용 — 본사와 AWS 리전을 전용 회선으로 저지연 연결하지만, 데이터 자체는 결국 AWS 리전에 저장되므로 "본사 내부 보관" 규제 요건을 충족하지 못함
 B) Local Zones — 주요 도시에 배치된 AWS 운영 미니 시설로 저지연을 주지만, 고객 건물이 아닌 AWS 데이터센터라 데이터 주권 요건에 부적합
 C) Outposts
-D) Snowball Edge — 페타바이트급 데이터를 오프라인으로 옮기거나 단기 엣지 컴퓨팅에 쓰는 일회성 장비라, 상시 AWS API 운영 플랫폼으로는 부적합
+D) Snowball Edge — 페타바이트급 데이터를 오프라인으로 옮기거나 단기 엣지 컴퓨팅에 쓰는 일회성 장비라, 상시 AWS API 운영 플랫폼으로는 부적합(2025-11-07부터 신규 고객에게는 제공되지 않으며 대안은 DataSync·Data Transfer Terminal·Outposts이나, 시험 키워드로는 유지)
 
 **정답: C**
-해설: 고객 데이터센터 안에 AWS 하드웨어 + 동일 API. 전자금융감독규정·GDPR Schrems II 같은 규제 시나리오의 정답. Local Zones는 AWS 운영 시설, Direct Connect는 전용선, Snowball Edge는 일회성 데이터 이전용. Outposts는 "내 건물 + AWS API"가 동시에 필요한 거의 유일한 시나리오에 쓴다 — 그렇지 않으면 Direct Connect로 충분한 경우가 많다. 비용으로는 Outposts가 3년 약정 기준 EC2 대비 1.5~2배 비싼 편이라 규제 외 이유로는 잘 안 쓴다.
+해설: 고객 데이터센터 안에 AWS 하드웨어 + 동일 API. 전자금융감독규정·GDPR Schrems II 같은 규제 시나리오의 정답. Local Zones는 AWS 운영 시설, Direct Connect는 전용선, Snowball Edge는 일회성 데이터 이전용(신규 고객 불가는 위 보기 D 참고). Outposts는 "내 건물 + AWS API"가 동시에 필요한 거의 유일한 시나리오에 쓴다 — 그렇지 않으면 Direct Connect로 충분한 경우가 많다. 비용으로는 Outposts가 3년 약정 기준 EC2 대비 1.5~2배 비싼 편이라 규제 외 이유로는 잘 안 쓴다.
 
 ---
 
@@ -228,7 +228,7 @@ C) EC2를 띄워 SSH 키 — 배포마다 별도 EC2와 SSH 키를 관리해야 
 D) root 자격 증명 — 계정 전역 무제한 권한을 CI에 노출하는 것으로, 최소 권한 원칙을 정면으로 위반하는 최악의 선택임
 
 **정답: B**
-해설: GitHub OIDC → STS AssumeRoleWithWebIdentity → 단명 토큰. Trust Policy에서 `sub` claim으로 repo·branch 제한. Travis CI 침해 사례가 OIDC 표준화의 결정적 계기. 같은 패턴이 GitLab, Bitbucket, Buildkite 등에도 확장 적용되고 있어서, 이제는 CI 전반의 표준이라 봐도 무방하다. 보안 강화로는 trust policy에 `token.actions.githubusercontent.com:sub` claim을 `repo:org/repo:ref:refs/heads/main`처럼 브랜치까지 잠그는 게 정석이다.
+해설: GitHub OIDC → STS AssumeRoleWithWebIdentity → 단명 토큰. Trust Policy에서 `sub` claim으로 repo·branch 제한. GitHub Actions OIDC(2021년 10월 출시)는 Travis CI 같은 CI 침해 사례가 이어지면서 더 널리 쓰이게 됐다. 같은 패턴이 GitLab, Bitbucket, Buildkite 등에도 확장 적용되고 있어서, 이제는 CI 전반의 표준이라 봐도 무방하다. 보안 강화로는 trust policy에 `token.actions.githubusercontent.com:sub` claim을 `repo:org/repo:ref:refs/heads/main`처럼 브랜치까지 잠그는 게 정석이다.
 
 ---
 
@@ -240,7 +240,7 @@ C) S3 Public Read — 로그 버킷을 공개로 열어 누구나 읽게 만드�
 D) VPN 연결 — 네트워크 계층 터널만 제공할 뿐, SaaS가 우리 계정 역할을 빌릴 때의 신원 위임·권한 경계 문제와는 무관함
 
 **정답: A**
-해설: External ID는 사전 공유 비밀로 다른 SaaS 고객이 우리 Role ARN을 알아도 빌릴 수 없게 차단. Marketplace ISV 인증의 필수 요건. External ID에 더해 `aws:SourceAccount`나 `aws:SourceArn` 조건을 같이 거는 게 더 안전하다. 2022년 AWS가 발견한 "Confused Deputy" 패턴 점검 결과에 따르면, 다수 ISV가 External ID만 적용하고 SourceArn을 빠뜨려 부분적으로 취약한 상태였다.
+해설: External ID는 SaaS가 고객별로 발급한 고유 값(비밀은 아님)으로, 다른 SaaS 고객이 우리 Role ARN을 알아도 빌릴 수 없게 차단. 타 계정 SaaS 위임에는 External ID가, AWS 서비스 principal 위임에는 `aws:SourceArn`/`aws:SourceAccount`가 쓰인다.
 
 ---
 
@@ -312,4 +312,4 @@ C) Transit Gateway만 사용 — VPC 간 라우팅 허브일 뿐 각 계정이 �
 D) Direct Connect — 온프레미스와 AWS를 잇는 전용 회선 서비스라, 계정 간 VPC 서브넷 공유 시나리오와는 전혀 무관함
 
 **정답: B**
-해설: RAM으로 서브넷 공유 → 받는 계정은 ENI/EC2를 만들 수 있지만 라우팅·NACL은 못 건드림. 네트워크 설계와 워크로드 운영의 깔끔한 분리. Peering은 점대점, TGW는 라우팅 허브로 보완재. 실제 운영에서는 RAM(서브넷 공유) + Transit Gateway(VPC 간 라우팅 허브) 조합을 같이 쓰는 경우가 가장 많다. RAM은 같은 Organization 안에서만 적용 가능(Resource Sharing Sharing Outside Organization을 켜면 외부 계정도 가능하지만 보안상 거의 안 씀).
+해설: RAM으로 서브넷 공유 → 받는 계정은 ENI/EC2를 만들 수 있지만 라우팅·NACL은 못 건드림. 네트워크 설계와 워크로드 운영의 깔끔한 분리. Peering은 점대점, TGW는 라우팅 허브로 보완재. 실제 운영에서는 RAM(서브넷 공유) + Transit Gateway(VPC 간 라우팅 허브) 조합을 같이 쓰는 경우가 가장 많다. RAM 공유 중 VPC 서브넷은 같은 Organization 안의 계정과만 공유할 수 있다(다른 리소스 유형은 Organization 밖 계정과도 공유할 수 있지만 서브넷은 해당 없음).

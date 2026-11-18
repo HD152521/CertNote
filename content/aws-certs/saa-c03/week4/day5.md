@@ -54,7 +54,7 @@ Storage Gateway ←────────────── CloudFront (CDN)
 
 스토리지 클래스 선택은 정보이론의 **엔트로피(Entropy)** 개념과 연결된다. 접근 패턴이 예측 가능할수록(엔트로피 낮음) 수동 Lifecycle 정책이 최적화된다. 예측이 불가능할수록(엔트로피 높음) Intelligent-Tiering의 자동 분류가 전체 TCO를 낮춘다. Intelligent-Tiering의 모니터링 비용은 예측 불확실성에 대한 "정보 비용"이다.
 
-**사례**: Netflix는 전체 콘텐츠 카탈로그를 스토리지 클래스 계층으로 관리한다. 신작과 인기작은 Standard, 6개월 이상 된 덜 인기 있는 콘텐츠는 Standard-IA, 원본 마스터 파일은 Glacier Deep Archive. Lifecycle 정책으로 자동 전환하되, 콘텐츠가 다시 인기를 얻으면(시즌2 출시, 수상 등) S3 Batch Operations로 다시 Standard로 올린다. 이 패턴 하나로 연간 수천만 달러의 스토리지 비용을 절감한다.
+**사례(일반 시나리오)**: 미디어 콘텐츠 카탈로그를 스토리지 클래스 계층으로 관리할 수 있다. 신작과 인기작은 Standard, 오래되어 덜 인기 있는 콘텐츠는 Standard-IA, 원본 마스터 파일은 Glacier Deep Archive. Lifecycle 정책으로 자동 전환하되, 콘텐츠가 다시 인기를 얻으면 S3 Batch Operations로 다시 Standard로 올린다.
 
 ## S3 보안: 5계층 평가와 키워드 매핑
 
@@ -78,7 +78,7 @@ Storage Gateway ←────────────── CloudFront (CDN)
 
 S3 접근 제어의 5계층 구조는 OSI 모델과 같은 **계층화 원칙**을 따른다. 각 계층은 독립적으로 동작하고, 하위 계층이 거부하면 상위 계층의 허용이 무효화된다. NIST SP 800-207 "Zero Trust Architecture"에서 말하는 "모든 요청을 잠재적으로 적대적으로 간주하고 매 요청마다 인증/인가"는 이 다층 구조로 구현된다. BPA가 첫 번째 검문소, SCP가 조직 경계, VPC Endpoint Policy가 네트워크 경계, IAM/Bucket Policy가 신원 기반 제어다.
 
-봉투 암호화(Envelope Encryption)에서 SSE-KMS의 "키가 KMS 밖으로 나오지 않는다"는 보장은 어떻게 이루어지는가. KMS의 HSM(Hardware Security Module)은 FIPS 140-2 Level 3 인증을 받은 하드웨어다. 마스터 키는 물리적으로 이 HSM 안에서만 존재한다. KMS의 `GenerateDataKey` API를 호출하면 HSM 내부에서 DEK(데이터 암호화 키)를 생성해, 평문 DEK와 마스터 키로 암호화된 DEK를 반환한다. 이후 마스터 키는 HSM 밖으로 절대 나오지 않으며, 암호화된 DEK만 저장된다. 이 구조가 키 탈취를 거의 불가능하게 만드는 핵심이다.
+봉투 암호화(Envelope Encryption)에서 SSE-KMS의 "키가 KMS 밖으로 나오지 않는다"는 보장은 어떻게 이루어지는가. KMS의 HSM(Hardware Security Module)은 FIPS 140-3 Level 3 인증을 받은 하드웨어다. 마스터 키는 물리적으로 이 HSM 안에서만 존재한다. KMS의 `GenerateDataKey` API를 호출하면 HSM 내부에서 DEK(데이터 암호화 키)를 생성해, 평문 DEK와 마스터 키로 암호화된 DEK를 반환한다. 이후 마스터 키는 HSM 밖으로 절대 나오지 않으며, 암호화된 DEK만 저장된다. 이 구조가 키 탈취를 거의 불가능하게 만드는 핵심이다.
 
 > ⚠️ **함정**: Object Lock Governance Mode와 Compliance Mode를 혼동하지 말 것. "누구도 삭제 불가"가 요건이면 Compliance Mode. Governance Mode는 `s3:BypassGovernanceRetention` 권한을 가진 IAM 사용자(root 포함)가 잠금 해제 가능하다. 시험에서 "규제 감사관 요건", "법적 보관", "root도 삭제 불가"가 나오면 Compliance Mode다.
 
@@ -109,7 +109,7 @@ CloudFront 관련 문제는 두 가지 패턴으로 나온다. "어느 계층에
 
 **Invalidation(캐시 무효화)**: 파일이 업데이트됐을 때 캐시를 강제 갱신. `/images/*`처럼 와일드카드 사용 가능. 첫 1,000개 경로/월은 무료, 이후 경로당 과금. 잦은 업데이트가 있는 경우 파일명에 버전/해시를 포함해 Invalidation 없이 새 캐시를 생성하는 전략이 더 효율적이다.
 
-**사례**: 2021년 Facebook의 DNS 장애가 6시간 동안 서비스를 중단시켰을 때, CloudFront를 CDN으로 사용하는 사이트들은 캐시 히트율이 높은 정적 콘텐츠에 대해서 오리진 장애와 무관하게 서비스를 계속 제공했다. CloudFront의 TTL 기반 캐시가 오리진 장애의 완충재 역할을 한 사례다. 단, TTL=0인 API 경로는 오리진 장애의 영향을 그대로 받았다.
+**사례(일반 시나리오)**: 오리진에 장애가 생겨도 캐시 히트율이 높은 정적 콘텐츠는 TTL이 유효한 동안 CloudFront 캐시에서 계속 제공된다. CloudFront의 TTL 기반 캐시가 오리진 장애의 완충재 역할을 하는 것이다. 단, TTL=0인 API 경로는 오리진 장애의 영향을 그대로 받는다.
 
 ### 엣지 컴퓨팅 선택 기준
 
@@ -123,7 +123,7 @@ CloudFront 관련 문제는 두 가지 패턴으로 나온다. "어느 계층에
 | 이미지 변환 (Sharp 등) | ❌ (메모리/시간 부족) | ✅ |
 | 오리진 응답 변환 | ❌ (Origin 이벤트 없음) | ✅ |
 
-CloudFront Functions가 "외부 호출 불가"인 이유는 네트워크 제약뿐 아니라 **실행 시간 제약(1ms)** 때문이다. HTTP 외부 호출의 RTT가 최소 수십 ms이므로, 1ms 제약 안에서 완료할 수 없다. Lambda@Edge는 30초까지 실행 가능해 외부 API 호출이 가능하다. 그러나 Lambda@Edge는 Regional Edge Cache(13개 위치)에서 실행되므로 CloudFront Functions(400+ PoP)보다 지리적으로 사용자에서 멀다. 이것이 "가볍고 빠른 로직은 Functions, 무거운 로직은 Lambda@Edge"라는 원칙의 기술적 근거다.
+CloudFront Functions가 "외부 호출 불가"인 이유는 네트워크 제약뿐 아니라 **실행 시간 제약(1ms)** 때문이다. HTTP 외부 호출의 RTT가 최소 수십 ms이므로, 1ms 제약 안에서 완료할 수 없다. Lambda@Edge는 30초까지 실행 가능해 외부 API 호출이 가능하다. 그러나 Lambda@Edge는 Regional Edge Cache(현재 15개 위치)에서 실행되므로 CloudFront Functions(750+ PoP)보다 지리적으로 사용자에서 멀다. 이것이 "가볍고 빠른 로직은 Functions, 무거운 로직은 Lambda@Edge"라는 원칙의 기술적 근거다.
 
 ## 하이브리드 스토리지 도구 선택: 세 서비스의 결정적 차이
 
@@ -131,7 +131,7 @@ CloudFront Functions가 "외부 호출 불가"인 이유는 네트워크 제약�
 |--|---------|----------------|-------------|
 | **핵심 목적** | 이전/동기화 | 영구 하이브리드 | 오프라인 대량 이전 |
 | **키워드** | "마이그레이션", "일회성 전송", "정기 동기화" | "로컬처럼 계속 사용", "캐시 동기화", "NFS/SMB 유지" | "네트워크 불충분", "페타바이트", "인터넷 없는 환경" |
-| **오프라인** | 불가 | 불가 | 핵심 기능 |
+| **오프라인** | 불가 | 불가 | 핵심 기능 (신규 고객 불가, 2025-11-07~) |
 | **실시간성** | 예약/실시간 | 지속적 캐시 동기화 | 해당 없음 |
 | **Storage Gateway 세부** | - | S3 File GW (NFS/SMB→S3) / FSx File GW (SMB→FSx, AD) / Volume GW (iSCSI→EBS Snap) / Tape GW (VTL→S3/Glacier) | - |
 
@@ -177,7 +177,6 @@ Storage Gateway의 **로컬 캐시 계층**은 컴퓨터 메모리 계층 구조
   └─ Storage Gateway FSx File Gateway
        ├─ 로컬 캐시 (자주 쓰는 파일, 즉시 응답)
        └─ Amazon FSx for Windows File Server (AD 통합)
-            └─ Lifecycle: 오래된 파일 → S3 Intelligent-Tiering
 ```
 
 **패턴 E: 멀티 팀 데이터 레이크**
@@ -222,7 +221,7 @@ SAA 시험의 비용 최적화 도메인(20% 비중)에서 스토리지 관련 �
 □ Transfer Acceleration: 불필요하면 비활성화
 ```
 
-**사례**: Dropbox는 2016년 AWS에서 자체 데이터센터로 이전("Magic Pocket" 프로젝트)하기 전까지 S3를 기반으로 수억 명의 사용자 파일을 저장했다. 이 기간 동안 Dropbox가 적용한 S3 비용 최적화 패턴은 접근 빈도 기반 스토리지 클래스 분류, 멀티파트 업로드 최적화, CloudFront 통합으로 GET 요청 비용 절감이었다. 당시 S3 비용이 연간 수천만 달러 규모였고, 최적화 작업으로 30-40%를 절감했다고 공개됐다. 이 경험이 이후 "Exabyte-scale 스토리지를 어떻게 최적화할 것인가"라는 업계 논의의 시발점이 됐다.
+**사례(일반 시나리오)**: 대규모 사용자 파일을 S3에 저장하는 서비스에서는 접근 빈도 기반 스토리지 클래스 분류, 멀티파트 업로드 최적화, CloudFront 통합을 통한 GET 요청 비용 절감 같은 패턴으로 S3 비용을 줄일 수 있다.
 
 ## 주요 숫자 암기표
 
@@ -242,7 +241,7 @@ SAA 시험의 비용 최적화 도메인(20% 비중)에서 스토리지 관련 �
 | Deep Archive Bulk 검색 | 48시간 | |
 | CRR RTC SLA | 15분 이내 99.99% | Replication Time Control |
 | S3 성능 한도 | 3,500 PUT/5,500 GET (prefix당) | 자동 파티셔닝 (2018~ |
-| CloudFront PoP 수 | 400+ | 글로벌 엣지 |
+| CloudFront PoP 수 | 750+ | 글로벌 엣지 |
 | CloudFront Functions 실행 시간 | 1ms 이내 | |
 | Lambda@Edge 최대 실행 시간 | 30초 (Origin 이벤트) | |
 | Presigned URL IAM 역할 최대 | IAM 세션 만료 시간 | 역할 세션 종료 시 무효 |
@@ -272,7 +271,7 @@ C) 0일: Standard → 30일: Standard-IA → 180일: Glacier Instant → 7년: �
 D) 즉시 Intelligent-Tiering → 7년 후 삭제
 
 **정답: B**
-해설: 진료 후 6개월(180일)까지 자주 접근 → Standard 유지. 6개월(180일) 이후 연 1-2회, 즉시 필요 → Glacier Instant Retrieval(검색 ms, 최소 보관 90일 충족). 7년(2,555일) 후 만료. C처럼 30일에 Standard-IA로 내리면 자주 접근하는 기간에 검색 요금이 발생해 오히려 불리하다(Standard-IA 전환 최소 30일 규정은 IA 계열 전환에만 해당). D의 Intelligent-Tiering은 접근 패턴이 예측 가능한 경우 수동 Lifecycle이 더 저렴하다.
+해설: 진료 후 6개월(180일)까지 자주 접근 → Standard 유지. 6개월(180일) 이후 연 1-2회, 즉시 필요 → Glacier Instant Retrieval(검색 ms, 최소 보관 90일 충족). 7년(2,555일) 후 만료. C처럼 30일에 Standard-IA로 내리면 자주 접근하는 기간에 검색 요금이 발생해 오히려 불리하다(Standard-IA의 30일은 최소 보관 과금 기간이다. 2026-07 이전에는 Standard에서의 전환 가능 시점 최소값이기도 했다). D의 Intelligent-Tiering은 접근 패턴이 예측 가능한 경우 수동 Lifecycle이 더 저렴하다.
 
 ---
 
@@ -320,7 +319,7 @@ C) ALB에서 쿼리 파라미터를 정규화
 D) Cache Policy에서 쿼리 파라미터를 캐시 키에서 제외
 
 **정답: B**
-해설: 쿼리 파라미터를 알파벳순으로 정렬하는 것은 단순 문자열 조작으로 CloudFront Functions(1ms 이내, 2MB 메모리)로 충분하다. Viewer Request 이벤트에서 실행되어 400+ PoP에서 동작하고, Lambda@Edge 대비 약 1/6 비용이다. Lambda@Edge는 외부 호출이나 복잡한 로직이 필요 없는 경우 과스펙이다. D처럼 쿼리 파라미터를 캐시 키에서 제외하면 `?size=medium`과 `?size=large`가 같은 캐시를 반환해 잘못된 이미지가 전달된다.
+해설: 쿼리 파라미터를 알파벳순으로 정렬하는 것은 단순 문자열 조작으로 CloudFront Functions(1ms 이내, 2MB 메모리)로 충분하다. Viewer Request 이벤트에서 실행되어 750+ PoP에서 동작하고, Lambda@Edge 대비 약 1/6 비용이다. Lambda@Edge는 외부 호출이나 복잡한 로직이 필요 없는 경우 과스펙이다. D처럼 쿼리 파라미터를 캐시 키에서 제외하면 `?size=medium`과 `?size=large`가 같은 캐시를 반환해 잘못된 이미지가 전달된다.
 
 ---
 
@@ -361,7 +360,7 @@ C) ①-Tape Gateway, ②-Snowball Edge, ③-S3 File Gateway, ④-DataSync
 D) ①-S3 File Gateway, ②-DataSync, ③-Tape Gateway, ④-Snowball Edge
 
 **정답: A**
-해설: 1. Tape Gateway는 iSCSI VTL로 기존 백업 소프트웨어를 속인다. 소프트웨어 교체 없이 S3/Glacier에 백업 저장. 2. DataSync는 Direct Connect를 통해 병렬 전송으로 빠르게 이전. 일회성 마이그레이션에 최적. 3. S3 File Gateway는 NFS 마운트를 제공해 직원들이 기존 파일 접근 방식 유지. 로컬 캐시로 빠른 접근. 4. Snowball Edge는 물리 디바이스로 데이터를 수집해 AWS 시설로 배송. 인터넷 없는 환경의 대용량 이전에 필수.
+해설: 1. Tape Gateway는 iSCSI VTL로 기존 백업 소프트웨어를 속인다. 소프트웨어 교체 없이 S3/Glacier에 백업 저장. 2. DataSync는 Direct Connect를 통해 병렬 전송으로 빠르게 이전. 일회성 마이그레이션에 최적. 3. S3 File Gateway는 NFS 마운트를 제공해 직원들이 기존 파일 접근 방식 유지. 로컬 캐시로 빠른 접근. 4. Snowball Edge는 물리 디바이스로 데이터를 수집해 AWS 시설로 배송. 인터넷 없는 환경의 대용량 이전에 필수(시험 키워드 기준. 현재는 신규 고객에게 제공되지 않아 실무에서는 Data Transfer Terminal·파트너 솔루션 등을 검토).
 
 ---
 

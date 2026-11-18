@@ -17,7 +17,7 @@ S3 스토리지 클래스의 가격 구조는 세 가지 비용 차원으로 이
 여기에 **최소 보관 기간(Minimum storage duration)**과 **최소 객체 크기(Minimum billable object size)**가 추가 함정이다.
 
 ```
-[ S3 비용 구조 비교 (ap-northeast-2, 2025년 기준 참고) ]
+[ S3 비용 구조 비교 (대략적 참고치. 리전·시점별로 다르며, Glacier Flexible·Deep Archive 값은 us-east-1 수준이라 서울 리전은 더 높다. 정확한 값은 공식 요금 페이지 확인) ]
 
 클래스               | 저장($/GB/월) | GET 요청     | 검색비 | 최소 기간
 Standard             | ~$0.025      | $0.0004/1K   | 없음   | 없음
@@ -35,7 +35,7 @@ Glacier Deep Archive | ~$0.00099    | $0.0004/1K   | $0.02/GB(Std) | 180일
 
 ### Standard: 기본값의 의미
 
-S3 Standard는 3개 이상의 AZ에 데이터를 복제하고, 임의의 두 AZ가 동시에 손실되어도 데이터를 복구할 수 있는 내구성을 제공한다. 11개의 9(99.999999999%)라는 내구성은 연간 0.000000001%의 손실 확률을 의미한다. 10만 개의 1MB 파일을 1,000만 년 보관해도 한 개 파일을 잃을 확률이다.
+S3 Standard는 3개 이상의 AZ에 데이터를 복제하고, 임의의 두 AZ가 동시에 손실되어도 데이터를 복구할 수 있는 내구성을 제공한다. 11개의 9(99.999999999%)라는 내구성은 연간 0.000000001%의 손실 확률을 의미한다. AWS 표현으로는 1,000만 개의 객체를 저장하면 평균적으로 약 1만 년에 한 개 정도의 객체를 잃을 수 있는 수준이다.
 
 Standard는 검색 시간이 ms 단위이고, 추가 검색 비용이 없다. 액세스 패턴에 제약이 없다. 초당 수천 번 읽어도, 한 달에 한 번 읽어도 같은 저장 단가다. 모든 워크로드의 시작점이다.
 
@@ -65,17 +65,17 @@ Intelligent-Tiering은 객체의 접근 패턴을 모니터링하고, 자동으�
 [ Intelligent-Tiering 티어 구조 ]
 
 Frequent Access     ← 기본 (자동)
-    ↓ 30일 미접근
+    ↓ 30일 연속 미접근
 Infrequent Access   ← 자동 이동 (검색 비용 없음!)
-    ↓ 90일 추가 미접근
-Archive Instant Access  ← 자동 (ms 검색, 검색비 있음)
-    ↓ 180일 추가 미접근
-Archive Access      ← 선택 사항 (3-5시간 검색, 검색비 있음)
-    ↓ 옵션
-Deep Archive Access ← 선택 사항 (12시간 검색, 검색비 있음)
+    ↓ 90일 연속 미접근
+Archive Instant Access  ← 자동 (ms 검색, 검색비 없음)
+    ↓ 옵션 활성화 시: 최소 90일 연속 미접근 (최대 730일까지 설정)
+Archive Access      ← 선택 사항 (3-5시간 검색, 검색비 없음)
+    ↓ 옵션 활성화 시: 최소 180일 연속 미접근 (최대 730일)
+Deep Archive Access ← 선택 사항 (12시간 검색, 검색비 없음)
 ```
 
-핵심 장점: Frequent ↔ Infrequent Access 자동 이동에는 **검색 비용이 없다**. 객체 모니터링 비용(객체당 월 약 $0.0025/1,000 objects)만 추가로 낸다. 128KB 미만의 작은 객체는 항상 Frequent Access 티어에 머문다(모니터링 비용만 내고 IA로 이동하지 않음 → 작은 파일 많으면 손해).
+핵심 장점: 티어 간 자동 이동과 모든 티어(Archive 포함)에서 **검색 비용이 없다**. 객체 모니터링 비용(객체당 월 약 $0.0025/1,000 objects)만 추가로 낸다. 128KB 미만의 작은 객체는 모니터링 대상이 아니어서 모니터링 비용도 없지만 항상 Frequent Access 티어에 머문다(자동 티어링 이점이 없음 → 작은 파일만 많으면 효과가 없다).
 
 Intelligent-Tiering이 가장 유리한 케이스는 **접근 패턴이 예측 불가하거나, 팀이 적극적으로 수명 주기를 관리할 의지가 없는 경우**다. 수동 Lifecycle 정책을 완벽하게 설계하고 관리할 수 있다면 수동 Lifecycle이 더 최적화될 수 있다.
 
@@ -96,7 +96,7 @@ Glacier 시리즈는 "거의 안 보지만 오래 보관해야 하는" 데이터
 
 **Glacier Deep Archive**: S3에서 가장 저렴한 클래스. 저장 단가가 Standard의 약 4%다. Standard 검색(기본) 12시간, Bulk 검색 48시간. 최소 보관 기간 180일. 7-10년 규제 보관이 필요한 금융·의료 데이터에 쓴다.
 
-**사례**: Netflix는 원본 마스터 비디오 파일(최고 품질, 4K HDR, 수 TB)을 Glacier Deep Archive에 보관한다. 이 파일들은 새 포맷이 등장하거나 콘텐츠 재마스터링이 필요할 때만 꺼내므로, 수년에 한 번 접근한다. Standard에 보관 대비 비용이 약 25분의 1 수준이다. 유사하게, 할리우드 스튜디오들이 디지털 마스터 보관소로 S3 Glacier Deep Archive를 사용한다.
+**사례**: 미디어 기업이 원본 마스터 비디오 파일(최고 품질, 4K HDR, 수 TB)을 Glacier Deep Archive에 보관하는 것이 대표적인 패턴이다. 이 파일들은 새 포맷이 등장하거나 콘텐츠 재마스터링이 필요할 때만 꺼내므로, 수년에 한 번 접근한다. Standard에 보관 대비 비용이 약 25분의 1 수준이다. 유사하게, 영상 제작사들이 디지털 마스터 보관소로 S3 Glacier Deep Archive를 쓸 수 있다.
 
 Glacier의 검색 지연은 의도된 설계다. 빠른 검색을 위해서는 데이터가 즉시 접근 가능한 스토리지에 있어야 하는데, 이는 비용이 높다. Glacier의 데이터는 비용이 낮은 고밀도 스토리지(HDD)에 저장되고, 검색 요청이 오면 테이프나 HDD에서 데이터를 읽어 임시 고속 스토리지로 복사한 후 접근을 허용한다. Expedited 검색이 Standard보다 비싼 이유는 즉각적인 고속 스토리지 할당이 필요하기 때문이다.
 
@@ -108,19 +108,19 @@ Glacier의 검색 지연은 의도된 설계다. 빠른 검색을 위해서는 �
 
 ```
 [ 유효한 Lifecycle 전환 경로 ]
+(괄호는 '전환 가능 시점'과 '최소 보관(과금) 기간'을 구분한 것. 최소 보관 기간은 일찍 이동/삭제 시 남은 기간을 청구하는 개념)
 
-Standard → Standard-IA    (최소 30일)
-Standard → One Zone-IA    (최소 30일)
-Standard → Glacier Instant (최소 90일)
-Standard → Glacier Flexible (최소 90일)
-Standard → Deep Archive   (최소 90일)
+Standard → Standard-IA    (전환: 2026-07-16 이전에는 전환까지 최소 30일, 이후 Standard→IA/One Zone-IA 전환의 30일 최소는 폐지돼 0일부터 가능 / 최소 과금 기간 30일은 그대로)
+Standard → One Zone-IA    (전환: 위와 동일 / 최소 과금 기간 30일은 그대로)
+Standard → Glacier Instant (전환 0일부터 가능, 최소 과금 90일)
+Standard → Glacier Flexible (전환 0일부터 가능, 최소 과금 90일)
+Standard → Deep Archive   (전환 0일부터 가능, 최소 과금 180일)
 
-Standard-IA → Glacier Instant (추가 30일 이상)
-Standard-IA → Glacier Flexible (추가 30일 이상)
-Standard-IA → Deep Archive   (추가 30일 이상)
+Standard-IA → Glacier Instant (한 설정 안에서는 IA 최소 30일 이후 시점으로 지정)
+Standard-IA → Glacier Flexible (위와 동일)
+Standard-IA → Deep Archive   (위와 동일)
 
-Intelligent-Tiering → Glacier Flexible (90일 이상)
-Intelligent-Tiering → Deep Archive   (90일 이상)
+Intelligent-Tiering → Glacier Instant/Flexible/Deep Archive (현재 티어에 따라 가능. Intelligent-Tiering 자체에는 최소 보관 기간 없음)
 ```
 
 반대 방향(예: Glacier → Standard) 이동은 Lifecycle로 불가능하다. 검색 후 CopyObject로 수동 이동해야 한다.
@@ -173,7 +173,7 @@ Intelligent-Tiering → Deep Archive   (90일 이상)
 }
 ```
 
-> ⚠️ **함정 2종**: 첫째, Lifecycle 전환을 설정해도 **객체가 최소 보관 기간보다 일찍 삭제되면 남은 기간의 비용을 냄**. 3일 된 파일을 Standard-IA로 이동하면 이론상 불가(30일 최소)지만, Lifecycle으로는 기술적으로 가능하고 그 경우 30일치가 청구된다. 둘째, Lifecycle **전환은 자정(UTC)에 실행**된다. 설정 후 즉시 이동하지 않는다.
+> ⚠️ **함정 2종**: 첫째, Lifecycle 전환을 설정해도 **객체가 최소 보관 기간보다 일찍 삭제되면 남은 기간의 비용을 냄**. 3일 된 파일을 Standard-IA로 이동하는 것은 2026-07 이전에는 불가(전환 최소 30일)였으나 현재는 가능하며, 이 경우에도 30일치(최소 보관 기간)가 청구된다. 둘째, Lifecycle **전환은 자정(UTC)에 실행**된다. 설정 후 즉시 이동하지 않는다.
 
 ## S3 Storage Lens: 조직 전체의 스토리지 가시성
 
@@ -298,12 +298,12 @@ S3 스토리지 클래스는 "저장 비용 ↓ = 검색 비용·시간 ↑"라�
 **문제 1.** 의료 영상(MRI, CT) 데이터를 보관한다. 영상은 진료 후 3개월간 자주 조회되다가, 이후에는 1년에 1-2번 정도만 의사의 요청으로 즉시 제공해야 한다. 5년 이상 보관이 법적 의무다. 가장 비용 효율적인 수명 주기 설계는?
 
 A) 영구적으로 Standard 유지
-B) 생성 후 30일 → Standard-IA, 90일 → Glacier Instant Retrieval, 5년 후 삭제
+B) 생성 후 90일 → Glacier Instant Retrieval, 5년 후 삭제
 C) 생성 즉시 Glacier Flexible Retrieval
 D) 생성 후 90일 → Glacier Deep Archive, 5년 후 삭제
 
 **정답: B**
-해설: 첫 3개월(90일) 간 자주 접근 → Standard 또는 Standard-IA(30일 이후). 이후 연 1-2회 접근 시 즉시 필요 → Glacier Instant Retrieval(검색 ms). 90일 후 전환이 Glacier Instant 최소 보관 기간(90일)을 충족한다. 5년 후 삭제는 법적 의무 충족 후 불필요한 비용 방지. C는 초기 3개월 자주 접근 시 Glacier Flexible의 검색 비용(시간+비용)이 과도하게 발생한다. D는 즉시 검색 불가(12시간 대기).
+해설: 첫 3개월(90일) 간 자주 접근 → Standard 유지(30일에 Standard-IA로 내리면 자주 조회하는 기간에 검색 요금이 발생해 불리). 이후 연 1-2회 접근 시 즉시 필요 → Glacier Instant Retrieval(검색 ms). 5년 보관이므로 Glacier Instant의 최소 보관 기간(90일)도 충족한다. 5년 후 삭제는 법적 의무 충족 후 불필요한 비용 방지. C는 초기 3개월 자주 접근 시 Glacier Flexible의 검색 비용(시간+비용)이 과도하게 발생한다. D는 즉시 검색 불가(12시간 대기).
 
 ---
 

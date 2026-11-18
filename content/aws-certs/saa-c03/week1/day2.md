@@ -45,7 +45,7 @@ IAM은 두 가지 질문에 답하는 시스템이다. 첫째 "이 요청자가 
    | EC2 / Lambda / 다른 계정 / OIDC
 ```
 
-**사례**: 2017년 OneLogin 침해 사건. 공격자가 AWS API 키를 탈취한 뒤 며칠간 고객 데이터를 빼냈다. 사후 분석에서 드러난 핵심 원인은 **장기 IAM User Access Key를 코드 저장소(Git)에 커밋했다가 노출됐고, 그 키에 광범위한 권한이 붙어 있었다**는 것. 만약 이 키가 Role 기반 임시 자격 증명이었다면 노출 시점에 이미 만료됐을 가능성이 높다. 이 사건은 "사람이든 앱이든 가능한 한 Role을 써라"는 베스트 프랙티스가 자리잡은 결정적 계기 중 하나다.
+**사례**: 2017년 OneLogin 침해 사건. 공격자가 AWS API 키를 탈취한 뒤 며칠간 고객 데이터를 빼냈다. OneLogin의 이후 공지에서 드러난 핵심 원인은 **AWS API 키가 탈취됐고, 그 키로 AWS API에 광범위하게 접근할 수 있었다**는 것. 만약 이 키가 Role 기반 임시 자격 증명이었다면 노출 시점에 이미 만료됐을 가능성이 높다. 이 사건은 "사람이든 앱이든 가능한 한 Role을 써라"는 베스트 프랙티스가 자리잡은 결정적 계기 중 하나다.
 
 ## Policy: JSON 한 장이 모든 걸 결정한다
 
@@ -126,7 +126,7 @@ AWS 계정을 만들면 처음 만들어지는 신원이 **root**다. root는 �
 
 ## IAM Identity Center(구 AWS SSO): 진짜 표준
 
-현대 AWS 운영의 표준은 **IAM Identity Center**다. 회사의 IdP(Okta, Azure AD, Google Workspace)에서 SAML 2.0 또는 OIDC로 SSO 로그인하고, 권한 세트(Permission Set)를 통해 여러 계정에 임시 자격 증명을 발급받는다. 시험에서도 "여러 계정 다수 사용자 권한 관리"라는 시나리오면 거의 답은 IAM Identity Center다.
+현대 AWS 운영의 표준은 **IAM Identity Center**다. 회사의 IdP(Okta, Azure AD, Google Workspace)에서 SAML 2.0(+SCIM 프로비저닝)으로 SSO 로그인하고, 권한 세트(Permission Set)를 통해 여러 계정에 임시 자격 증명을 발급받는다. 시험에서도 "여러 계정 다수 사용자 권한 관리"라는 시나리오면 거의 답은 IAM Identity Center다.
 
 | 비교 | IAM User | IAM Identity Center |
 |------|----------|---------------------|
@@ -138,14 +138,13 @@ AWS 계정을 만들면 처음 만들어지는 신원이 **root**다. root는 �
 
 ## MFA: 두 번째 요인의 의미
 
-MFA는 "내가 아는 것(비밀번호) + 내가 가진 것(토큰 생성기)"의 조합이다. AWS는 4가지 MFA를 지원한다.
+MFA는 "내가 아는 것(비밀번호) + 내가 가진 것(토큰 생성기)"의 조합이다. AWS는 크게 3가지 MFA를 지원한다.
 
 - **가상 MFA**: Authy, Google Authenticator (TOTP, RFC 6238)
-- **하드웨어 MFA**: YubiKey 등 FIDO U2F/WebAuthn
-- **SMS MFA**: 더 이상 권장 안 함 (SIM swap 공격 취약)
-- **U2F 보안 키**: 가장 안전. 피싱 내성 있음
+- **패스키·보안 키(FIDO2/WebAuthn)**: YubiKey 등. 가장 안전하고 피싱 내성이 있다
+- **하드웨어 TOTP 토큰**: 물리 토큰이 TOTP 코드를 생성 (SMS MFA는 AWS가 신규 활성화 지원을 종료했다 — SIM swap 취약)
 
-TOTP는 30초마다 바뀌는 6자리 코드인데, 그 알고리즘은 RFC 6238에 정의되어 있다. 공유된 비밀(QR 코드 스캔 시 등록한 시드)과 현재 시각의 30초 윈도우를 HMAC-SHA1로 합쳐 해시하고, 그 결과의 일부분을 6자리 숫자로 자른다. 시험에선 "MFA를 강제하려면 어떻게?"라는 문제가 나오는데, 답은 **정책의 Condition에 `aws:MultiFactorAuthPresent: true`를 거는 것**.
+TOTP는 30초마다 바뀌는 6자리 코드인데, 그 알고리즘은 RFC 6238에 정의되어 있다. 공유된 비밀(QR 코드 스캔 시 등록한 시드)과 현재 시각의 30초 윈도우를 HMAC-SHA1로 합쳐 해시하고, 그 결과의 일부분을 6자리 숫자로 자른다. 시험에선 "MFA를 강제하려면 어떻게?"라는 문제가 나오는데, 답은 **MFA 없는 요청을 Deny하는 Condition(`aws:MultiFactorAuthPresent`가 false이면 Deny)을 정책에 거는 것**.
 
 ```json
 "Condition": {
@@ -153,7 +152,7 @@ TOTP는 30초마다 바뀌는 6자리 코드인데, 그 알고리즘은 RFC 6238
 }
 ```
 
-이 조건이 붙은 Deny statement는 "MFA를 안 거친 세션이면 무조건 거부"라는 의미가 된다. `BoolIfExists`를 쓰는 이유는 일부 서비스(예: IAM Role을 통한 서비스 간 호출)에서 이 키가 아예 존재하지 않을 수 있기 때문이다.
+이 조건이 붙은 Deny statement는 "MFA를 안 거친 세션이면 무조건 거부"라는 의미가 된다. `BoolIfExists`를 쓰는 이유는 장기 자격 증명(Access Key) 등으로 보낸 요청에는 이 키가 아예 없을 수 있는데, `Bool`만 쓰면 키가 없을 때 조건이 일치하지 않아 Deny를 피해 가기 때문이다. `IfExists`는 키가 없으면 조건을 일치(true)로 취급해 그런 요청도 Deny에 걸리게 한다.
 
 WebAuthn/FIDO2는 비대칭 키 기반이라 피싱에 본질적으로 강하다. 등록 시 디바이스에서 키 쌍을 생성하고, 공개키만 서버에 저장한다. 로그인 시 서버가 보낸 챌린지를 디바이스의 비밀키로 서명하는데, 그 서명에는 **origin(접속 도메인)** 이 포함된다. 따라서 피싱 사이트에서 받은 챌린지를 정상 서비스에 다시 던지는 공격이 자동으로 막힌다. SAA에선 깊게 안 물어보지만 "어떤 MFA가 가장 안전한가" 류 문제의 답은 FIDO/WebAuthn.
 
@@ -256,12 +255,12 @@ D) Organizations 가입이 필수
 **문제 6.** MFA를 강제하는 가장 적절한 방법은?
 
 A) 사용자에게 MFA를 켜라고 부탁
-B) 정책의 Condition에 `aws:MultiFactorAuthPresent: true` 추가
+B) MFA 없는 요청을 Deny하는 Condition(`aws:MultiFactorAuthPresent: false`)을 정책에 추가
 C) root 자격 증명만 MFA 사용
 D) Access Key 회전 주기 단축
 
 **정답: B**
-해설: IAM 정책의 Condition이 답. `BoolIfExists`를 같이 써서 MFA 키가 없는 세션(서비스 호출 등)을 정확히 다뤄야 한다. A는 강제력이 없고, C는 일반 사용자를 보호하지 못하며, D는 MFA가 아닌 키 회전 정책일 뿐이다. 보안 정책은 항상 "사람의 선의"가 아닌 "기술적 강제"로 구현해야 한다.
+해설: IAM 정책의 Condition이 답. `BoolIfExists`를 같이 써서 MFA 키가 아예 없는 요청(장기 Access Key 호출 등)도 Deny에 걸리게 해야 한다. A는 강제력이 없고, C는 일반 사용자를 보호하지 못하며, D는 MFA가 아닌 키 회전 정책일 뿐이다. 보안 정책은 항상 "사람의 선의"가 아닌 "기술적 강제"로 구현해야 한다.
 
 ---
 

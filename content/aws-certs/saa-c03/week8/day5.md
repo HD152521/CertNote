@@ -11,7 +11,7 @@
 | 축 | 도구 | 핵심 역할 |
 |----|------|----------|
 | 키 관리 | KMS | 봉투 암호화, CMK·AWS Managed·CloudHSM 분류 |
-| 비밀·구성 | Secrets Manager / Parameter Store / CloudHSM | 자동 회전 / 무료 구성 / FIPS L3 전용 |
+| 비밀·구성 | Secrets Manager / Parameter Store / CloudHSM | 자동 회전 / 무료 구성 / 단독 테넌시 전용 HSM |
 | 사용자 인증 | Cognito User Pool | 디렉터리·JWT·소셜·SAML SSO |
 | 사용자 인가 | Cognito Identity Pool | STS Role 임시 위임 |
 | 차단 (L7) | WAF | OWASP, Rate Limit, Bot Control |
@@ -27,7 +27,7 @@
 
 | 헷갈리는 쌍 | 구분 키 |
 |-------------|--------|
-| KMS vs CloudHSM | multi-tenant vs single-tenant, AWS 명의 인증 vs 고객 명의 인증 |
+| KMS vs CloudHSM | multi-tenant vs single-tenant(고객 단독 통제). FIPS 레벨은 구분 기준 아님 |
 | Secrets Manager vs Parameter Store | 자동 회전·유료 vs 무료·회전 없음 |
 | User Pool vs Identity Pool | JWT 발급(우리 API용) vs STS 자격증명(AWS API용) |
 | Cognito vs IAM Identity Center | 외부 앱 사용자 vs 직원의 AWS 콘솔 SSO |
@@ -100,16 +100,16 @@ D) Route 53 health check + failover로 트래픽을 대기 리전으로 우회�
 
 ---
 
-**문제 2.** 한 핀테크 회사가 PCI DSS 컴플라이언스를 받기 위해 "키 자료에 AWS 직원도 접근할 수 없으며 FIPS 140-2 Level 3 인증을 회사 명의로" 요구받았다. 가장 적합한 키 저장소는?
+**문제 2.** 한 핀테크 회사가 PCI DSS 컴플라이언스를 받기 위해 "키 자료를 고객 단독 통제의 single-tenant 전용 HSM에 두어야 한다"고 요구받았다. 가장 적합한 키 저장소는?
 
-A) KMS Customer Managed Key — multi-tenant HSM 위에서 FIPS 140-2 Level 3 모듈을 쓰되 AWS 명의 인증, 키 정책으로 접근 통제
+A) KMS Customer Managed Key — multi-tenant HSM 위에서 FIPS 140-3 Level 3 HSM을 쓰며 키 정책으로 접근 통제
 B) Secrets Manager에 키 자료를 보관하고 자동 회전 + KMS 봉투 암호화로 보호
-C) CloudHSM (single-tenant FIPS 140-2 Level 3, 고객 명의 인증)
+C) CloudHSM (single-tenant, 고객 단독 통제)
 D) Parameter Store SecureString + KMS CMK로 암호화해 AWS 직원 접근 차단
 
 **정답: C**
 
-해설: CloudHSM은 single-tenant이고 AWS 직원도 키 자료에 접근할 수 없으며 FIPS 140-2 Level 3 인증을 고객 명의로 받는다. KMS CMK(A)도 FIPS L3 HSM 위에서 동작하지만 multi-tenant이고 AWS 명의 인증이라 이 요구를 충족하지 못한다. 컴플라이언스 요구가 명시적으로 "AWS 직원 접근 불가 + 고객 명의"이면 CloudHSM이 유일한 답이다. 일반적으로는 KMS CMK로 충분하지만, 일부 강한 규제 환경에서는 CloudHSM이 필수다.
+해설: CloudHSM은 single-tenant이고 고객이 HSM과 키를 독점 제어한다(KMS도 AWS 직원이 평문 키에 접근할 수 없게 설계돼 있어 그 점이 차이는 아니다). KMS CMK(A)도 FIPS 140-3 Level 3 HSM 위에서 동작하지만 multi-tenant라 이 요구를 충족하지 못한다. 컴플라이언스 요구가 명시적으로 "단독 통제 + single-tenant"이면 CloudHSM이 유일한 답이다. 일반적으로는 KMS CMK로 충분하지만, 일부 강한 규제 환경에서는 CloudHSM이 필수다.
 
 ---
 

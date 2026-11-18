@@ -11,7 +11,7 @@ Day 1~3에서 본 SQS·SNS·EventBridge는 모두 **메시지 단위**로 동작
 | 서비스 | 출시 | 모델 | 핵심 사용 케이스 |
 |--------|------|------|----------------|
 | **Kinesis Data Streams (KDS)** | 2013.11 | Real-time log, 샤드 기반 | 실시간 ingest, 다중 컨슈머 |
-| **Kinesis Data Firehose** | 2015.10 | Managed delivery (sink) | S3/Redshift/OpenSearch 자동 적재 |
+| **Amazon Data Firehose** (구 Kinesis Data Firehose, 2024.02 개명) | 2015.10 | Managed delivery (sink) | S3/Redshift/OpenSearch 자동 적재 |
 | **Managed Service for Apache Flink** (구 Kinesis Data Analytics) | 2016.08, 2023 리브랜딩 | Stream processing | 윈도우 집계, 실시간 ETL |
 | **Kinesis Video Streams** | 2017.11 | Video ingest | 비디오 스트림 (SAA 범위 밖) |
 | **MSK (Managed Streaming for Kafka)** | 2018.11 | Managed Apache Kafka | Kafka 마이그레이션, 호환 필요 |
@@ -70,7 +70,7 @@ EFO:
   [샤드 1]─push─[Consumer A] (2MB/s 전용)
         ─push─[Consumer B] (2MB/s 전용)
         ─push─[Consumer C] (2MB/s 전용)
-        (각자 독립 stream, 최대 20 consumer per shard)
+        (각자 독립 stream, 스트림당 기본 최대 20 consumer 등록)
 ```
 
 언제 EFO를 쓰는가: ① 한 스트림을 3개 이상 컨슈머가 동시에 처리해야 할 때, ② latency가 중요할 때(예: 실시간 부정거래 탐지), ③ Standard에서 polling 비용이 컨슈머 운영 비용의 큰 부분을 차지할 때.
@@ -83,7 +83,7 @@ Lambda를 KDS 컨슈머로 쓰면 자동으로 EFO를 선택할 수 있다 (Even
 
 KDS가 강력하지만 단점도 분명하다 — 컨슈머 코드를 직접 짜야 하고, KCL(Kinesis Client Library) 같은 SDK로 체크포인트·샤드 할당·재처리 로직을 관리해야 한다. 분석 적재 같은 단순한 케이스에 이건 과한 운영 부담이다.
 
-**Kinesis Data Firehose**는 "이미 만들어진 컨슈머"다. 데이터를 받아서 정해진 sink(S3·Redshift·OpenSearch·Splunk·외부 HTTP)에 자동으로 적재한다. 샤드도 없고, 컨슈머 코드도 없고, 그냥 PUT만 하면 된다.
+**Amazon Data Firehose**(2024년 2월 개명 전 이름은 Kinesis Data Firehose이며, 시험 문항·옛 자료에는 옛 이름으로 나온다)는 "이미 만들어진 컨슈머"다. 데이터를 받아서 정해진 sink(S3·Redshift·OpenSearch·Splunk·외부 HTTP)에 자동으로 적재한다. 샤드도 없고, 컨슈머 코드도 없고, 그냥 PUT만 하면 된다.
 
 ```
 [ Firehose 동작 모델 ]
@@ -239,7 +239,7 @@ Lambda vs Kappa Architecture는 빅데이터 진영의 오래된 논쟁이다. 2
 
 KDS는 "AWS에 있고 운영을 안 하고 싶다 + 365일까지 보존이면 충분 + Kafka 생태계가 필요 없다"면 가장 단순한 답이다. MSK는 그 반대 — 기존 Kafka 자산이 있거나 Kafka Streams·KSQL 같은 생태계가 필요할 때.
 
-**사례**: 2023년 Netflix는 자체 Keystone 데이터 파이프라인에서 KDS와 자체 Kafka 클러스터를 병행 운영하는 구조를 공개했다. KDS는 "단순한 ingest + S3 적재" 워크로드(트래픽의 70%)에 쓰고, Kafka는 "복잡한 stream processing + 멀티 리전 미러링" 워크로드(30%)에 썼다. 같은 회사 안에서도 워크로드 특성에 따라 골라 쓰는 게 표준이고, "이 회사는 Kafka를 쓴다/안 쓴다" 같은 이분법은 현실과 거리가 있다.
+**일반론**: 한 조직 안에서도 "단순한 ingest + S3 적재" 워크로드는 KDS로, "복잡한 stream processing + 멀티 리전 미러링" 워크로드는 Kafka로 나누는 식으로 워크로드 특성에 따라 골라 쓰는 게 표준이고, "이 회사는 Kafka를 쓴다/안 쓴다" 같은 이분법은 현실과 거리가 있다.
 
 ## 운영 안티패턴 정리
 
