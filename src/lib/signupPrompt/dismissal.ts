@@ -1,7 +1,7 @@
 // 가입 권유 카드를 닫은 기록. 한 번 닫으면 모든 자리의 카드를 일정 기간 숨긴다(같은 사람에게 반복해서 묻지 않는다).
 // localStorage 는 막혀 있을 수 있으므로(시크릿 모드 등) 읽기·쓰기 모두 try/catch — 실패하면 "닫지 않음"으로 본다.
 export const DISMISS_KEY = 'certnote:signup-prompt-dismissed-at';
-export const SNOOZE_DAYS = 14;
+export const SNOOZE_DAYS = 1;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;

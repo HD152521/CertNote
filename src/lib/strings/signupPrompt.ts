@@ -16,7 +16,7 @@ export const signupPromptStrings: Dict<SignupPromptKey> = {
     cta: '가입하기',
     freeCta: '무료로 가입하기',
     region: '계정 만들기 안내',
-    close: '닫기',
+    close: '오늘 하루 보지 않기',
   },
   en: {
     quizAnswered: 'Sign up to keep a wrong-answer notebook from now on, with spaced-repetition review of the questions you miss.',
@@ -25,7 +25,7 @@ export const signupPromptStrings: Dict<SignupPromptKey> = {
     cta: 'Create an account',
     freeCta: 'Create a free account',
     region: 'Create an account',
-    close: 'Dismiss',
+    close: 'Hide for today',
   },
 };
 

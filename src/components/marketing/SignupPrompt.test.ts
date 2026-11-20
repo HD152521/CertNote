@@ -57,7 +57,7 @@ describe('SignupPrompt', () => {
     expect(a.getAttribute('href')).toBe('/signup?lang=en&next=%2Fen%2Fsaa-c03%2Fweek1%2Fday1');
     expect(a.getAttribute('rel')).toBe('nofollow');
     expect(host.textContent).not.toMatch(HANGUL);
-    expect(host.querySelector('button')!.getAttribute('aria-label')).toBe('Dismiss');
+    expect(host.querySelector('button')!.getAttribute('aria-label')).toBe('Hide for today');
     expect(track).toHaveBeenCalledWith('signup_prompt_view', { placement: 'hub', lang: 'en' });
   });
 
