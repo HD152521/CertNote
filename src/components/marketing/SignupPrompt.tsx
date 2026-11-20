@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
-import { X } from 'lucide-react';
 import { track } from '@/lib/analytics';
 import { useAuthState } from '@/lib/auth/useAuthState';
 import { signupHref } from '@/lib/auth/signupHref';
@@ -38,7 +37,7 @@ interface SignupPromptProps {
   className?: string;
 }
 
-// 비로그인 방문자에게만 보이는 가입 권유 카드. 본문을 막지 않고, 닫을 수 있고(14일간 모든 자리에서 숨김),
+// 비로그인 방문자에게만 보이는 가입 권유 카드. 본문을 막지 않고, 닫을 수 있고(오늘 하루 모든 자리에서 숨김),
 // 문장 하나 + 버튼 하나다. 로그인 여부는 정적 페이지가 모르므로 마운트 뒤에 확인하고, 그전까지는 그리지 않는다
 // (SSR HTML 에 /signup 링크가 실리지 않는다).
 export function SignupPrompt({ placement, message, active = true, reserveSpace = false, className }: SignupPromptProps) {
@@ -96,9 +95,9 @@ export function SignupPrompt({ placement, message, active = true, reserveSpace =
           type="button"
           aria-label={s.close}
           onClick={(e) => dismiss(e.currentTarget.closest('aside') as HTMLElement)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-fg-muted transition hover:bg-bg hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+          className="inline-flex items-center rounded-md px-2 py-2 text-xs text-fg-muted transition hover:bg-bg hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
         >
-          <X className="h-4 w-4" aria-hidden />
+          {s.close}
         </button>
       </div>
     </aside>
