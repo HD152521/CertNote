@@ -186,6 +186,14 @@ export default async function CertIndexPage({ params }: PageProps) {
         {lang === 'ko' && mockExamCount > 0 && (
           <p className="text-xs text-fg-faint">노트·실습은 로그인 없이 볼 수 있고, 모의고사와 오답 복습은 무료 가입 뒤에 쓸 수 있어요.</p>
         )}
+        {/* 가입 전에 맛보기로 5문제를 풀어 볼 수 있는 공개 경로(/try). 모의고사(/exam)는 로그인 뒤라 여기서 먼저 써 보게 한다. */}
+        {lang === 'ko' && mockExamCount > 0 && (
+          <p>
+            <Link href={`/try?cert=${slug}`} prefetch={false} rel="nofollow" className="text-sm font-medium text-accent hover:underline">
+              가입 없이 5문제 먼저 풀어보기 →
+            </Link>
+          </p>
+        )}
         {/* 이 브라우저에서 읽던 기록이 있을 때만 보인다(한국어 화면 전용 문구). */}
         {lang === 'ko' && <ResumeLink slug={slug} className="max-w-md" />}
         {/* 후기는 한국어 전용(영어판엔 후기 라우트가 없다 — /en/reviews/* 는 404). */}
