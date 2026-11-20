@@ -24,7 +24,7 @@ const CONTENT_PREFIXES: readonly string[] = [...SECTIONS, EN_CATEGORY, DEFAULT_C
 const PROTECTED_PREFIXES: readonly string[] = ['admin', 'dashboard', 'review', 'notebook', 'exam', 'account'];
 // 4세그먼트 이상 깊이의 실제 API 라우트(src/app/api 를 훑어 같은 목록임을 확인하는 테스트가 있다).
 // 이 밖의 /api/a/b/c 는 존재하지 않는다.
-export const REAL_FOUR_SEGMENT_API_ROUTES: readonly string[] = ['/api/auth/google/callback', '/api/account/password/setup'];
+export const REAL_FOUR_SEGMENT_API_ROUTES: readonly string[] = ['/api/auth/google/callback', '/api/account/password/setup', '/api/exam/preview/check'];
 // Next 가 직접 서빙하는 내부 에셋 접두사. 이 밖의 /_next/* 는 존재하지 않는다.
 const NEXT_ASSET_PREFIXES: readonly string[] = ['/_next/static/', '/_next/image'];
 // day 라우트가 받는 URL 깊이.
