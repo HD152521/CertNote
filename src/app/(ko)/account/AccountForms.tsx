@@ -26,7 +26,7 @@ function ChangePasswordForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        showToast({ message: data.message ?? s.passwordChangeFailed, tone: 'error' });
+        showToast({ message: data.message ?? s.passwordChangeFailed, tone: 'error', durationMs: data.message ? 0 : undefined });
         return;
       }
       showToast({ message: s.passwordUpdated });

@@ -6,13 +6,11 @@ import { pick } from '@/lib/strings/dict';
 import { verifyStrings } from '@/lib/strings/verify';
 import { showToast } from '@/lib/toast';
 
-type Status = 'idle' | 'sending' | 'sent' | 'limited' | 'failed';
+type Status = 'idle' | 'sending' | 'sent';
 
 // 보낸 직후 같은 버튼을 다시 누를 수 없게 막는 시간. 서버 레이트리밋(10분 3회)에 닿기 전에
 // 클라이언트에서 먼저 연타를 걸러 낸다 — 메일은 몇 초~몇 십 초 늦게 오는 일이 흔해 사용자가 재촉하게 된다.
 const RESEND_COOLDOWN_MS = 60_000;
-// 발송 결과 알림(토스트)을 띄워 두는 시간.
-const RESULT_TOAST_MS = 6000;
 
 interface ResendVerifyButtonProps {
   /** 서버가 언어를 정한 화면(후기 작성)은 그 값을 넘긴다. 없으면 클라이언트 언어. */
@@ -48,16 +46,16 @@ export function ResendVerifyButton({ lang: langProp, className }: ResendVerifyBu
       });
       if (res.ok) {
         setStatus('sent');
-        showToast({ message: s.resendSent, durationMs: RESULT_TOAST_MS });
         setCoolingDown(true);
         cooldownTimer.current = setTimeout(() => setCoolingDown(false), RESEND_COOLDOWN_MS);
       } else {
-        setStatus(res.status === 429 ? 'limited' : 'failed');
-        showToast({ message: res.status === 429 ? s.resendRateLimited : s.resendFailed, tone: 'error', durationMs: RESULT_TOAST_MS });
+        // 실패·제한은 토스트로. 성공만 쿨다운(버튼 비활성) 내내 인라인으로 남는다.
+        setStatus('idle');
+        showToast({ message: res.status === 429 ? s.resendRateLimited : s.resendFailed, tone: 'error' });
       }
     } catch {
-      setStatus('failed');
-      showToast({ message: s.resendFailed, tone: 'error', durationMs: RESULT_TOAST_MS });
+      setStatus('idle');
+      showToast({ message: s.resendFailed, tone: 'error' });
     } finally {
       inFlight.current = false;
     }
@@ -73,6 +71,9 @@ export function ResendVerifyButton({ lang: langProp, className }: ResendVerifyBu
       >
         {status === 'sending' ? s.resendSending : s.resendVerify}
       </button>
+      {status === 'sent' && (
+        <p role="status" className="mt-2 text-xs text-fg-muted">{s.resendSent}</p>
+      )}
     </div>
   );
 }

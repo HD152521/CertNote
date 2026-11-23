@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { ArrowUpToLine, CornerDownRight } from 'lucide-react';
 import { dismissToast, showToast } from '@/lib/toast';
 import {
   pickCurrentHeading, readPosition, resumeScrollY, savePosition, sectionWithin, shouldOfferResume, takeResumeIntent, type ReadingPosition,
@@ -69,9 +70,11 @@ export function ResumeReading({ href, lang = 'ko' }: { href: string; lang?: 'ko'
       void document.fonts?.ready.then(() => requestAnimationFrame(() => {
         if (scrollToSaved(saved) && plainOpen && !cancelled) {
           noticeId = showToast({
-            message: `${t.resumed} · ${saved.headingText}`,
+            message: t.resumed,
+            detail: saved.headingText,
+            icon: CornerDownRight,
             durationMs: NOTICE_MS,
-            action: { label: t.top, onAction: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
+            action: { label: t.top, icon: ArrowUpToLine, onAction: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
           });
         }
       }));

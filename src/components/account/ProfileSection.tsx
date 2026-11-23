@@ -53,7 +53,7 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        showToast({ message: data.message ?? s.saveFailed, tone: 'error' });
+        showToast({ message: data.message ?? s.saveFailed, tone: 'error', durationMs: data.message ? 0 : undefined });
         return;
       }
       showToast({ message: s.profileSaved });

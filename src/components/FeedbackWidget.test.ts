@@ -28,6 +28,13 @@ describe('FeedbackWidget 버튼', () => {
     expect(html).toContain('h-8 w-8');
   });
 
+  test('포커스 링은 버튼이 아니라 32px 원(span)에 보인다', () => {
+    nav.pathname = '/';
+    const html = renderToStaticMarkup(createElement(FeedbackWidget));
+    expect(html).toContain('focus-visible:outline-none');
+    expect(html).toContain('group-focus-visible:ring-2');
+  });
+
   test('모의고사·복습 세션에서는 그리지 않는다', () => {
     nav.pathname = '/exam';
     expect(renderToStaticMarkup(createElement(FeedbackWidget))).toBe('');

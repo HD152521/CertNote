@@ -74,11 +74,11 @@ export function FeedbackWidget() {
           onClick={() => setOpen(true)}
           aria-label={s.feedbackOpen}
           className={cn(
-            'group fixed bottom-2 right-2 z-50 inline-flex h-11 w-11 items-center justify-center sm:bottom-4 sm:right-4 sm:h-auto sm:w-auto',
+            'group fixed bottom-2 right-2 z-50 inline-flex h-11 w-11 items-center justify-center focus-visible:outline-none sm:bottom-4 sm:right-4 sm:h-auto sm:w-auto',
             overlapsAd && 'invisible pointer-events-none',
           )}
         >
-          <span className="inline-flex h-8 w-8 items-center justify-center gap-1.5 rounded-full bg-accent text-sm font-medium text-accent-fg opacity-80 shadow-md transition group-hover:opacity-100 sm:h-auto sm:w-auto sm:px-4 sm:py-2.5 sm:opacity-100 sm:shadow-lg sm:group-hover:opacity-90">
+          <span className="inline-flex h-8 w-8 items-center justify-center gap-1.5 rounded-full bg-accent text-sm font-medium text-accent-fg shadow-md transition group-hover:opacity-90 group-focus-visible:ring-2 group-focus-visible:ring-accent group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-bg sm:h-auto sm:w-auto sm:px-4 sm:py-2.5 sm:shadow-lg">
             <MessageSquarePlus className="h-4 w-4" />
             <span className="hidden sm:inline">{s.feedbackButton}</span>
           </span>

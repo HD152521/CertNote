@@ -10,7 +10,7 @@ vi.mock('@/lib/i18n-client', async () => {
   return { useLanguage: () => 'ko', t: actual.t };
 });
 
-import { ToastList } from './Toast';
+import { ToastList, ToastViewport } from './Toast';
 
 const noop = () => {};
 function render(items: ToastItem[], lang: 'ko' | 'en' = 'ko') {
@@ -18,18 +18,19 @@ function render(items: ToastItem[], lang: 'ko' | 'en' = 'ko') {
 }
 const item = (over: Partial<ToastItem> = {}): ToastItem => ({ id: 1, message: '저장되었습니다.', tone: 'info', durationMs: 4000, ...over });
 
-describe('ToastList', () => {
-  test('일반 알림은 role=status, aria-live=polite', () => {
-    const html = render([item()]);
-    expect(html).toContain('role="status"');
-    expect(html).toContain('aria-live="polite"');
-    expect(html).toContain('저장되었습니다.');
+describe('ToastViewport', () => {
+  test('토스트가 없어도 빈 live region 두 개(polite status / assertive alert)가 항상 있다', () => {
+    const html = renderToStaticMarkup(createElement(ToastViewport));
+    expect(html).toMatch(/<div role="status" aria-live="polite"[^>]*><\/div>/);
+    expect(html).toMatch(/<div role="alert" aria-live="assertive"[^>]*><\/div>/);
   });
+});
 
-  test('오류 알림은 role=alert', () => {
-    const html = render([item({ tone: 'error' })]);
-    expect(html).toContain('role="alert"');
-    expect(html).not.toContain('role="status"');
+describe('ToastList', () => {
+  test('개별 토스트에는 role·aria-live 를 달지 않는다(컨테이너가 맡는다)', () => {
+    const html = render([item(), item({ id: 2, message: 'e', tone: 'error' })]);
+    expect(html).not.toMatch(/role=|aria-live=/);
+    expect(html).toContain('data-tone="error"');
   });
 
   test('닫기 버튼은 기존 close 문구를 접근성 이름으로 쓴다(ko·en)', () => {
@@ -40,6 +41,13 @@ describe('ToastList', () => {
   test('동작 버튼은 있을 때만 나온다', () => {
     expect(render([item()])).not.toContain('처음부터');
     expect(render([item({ action: { label: '처음부터', onAction: noop } })])).toContain('처음부터');
+  });
+
+  test('detail 이 있으면 한 줄 말줄임(truncate)으로 이어 붙인다', () => {
+    const html = render([item({ message: '이어 보는 중', detail: '긴 소제목' })]);
+    expect(html).toContain('truncate');
+    expect(html).toContain('긴 소제목');
+    expect(render([item()])).not.toContain('truncate');
   });
 
   test('등장 모션은 toast-enter 클래스이고 CSS 에서 모션 허용일 때만 애니메이션한다', () => {
