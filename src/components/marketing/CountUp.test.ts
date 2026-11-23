@@ -100,9 +100,10 @@ describe('CountUp — 클라이언트', () => {
     let now = 0;
     vi.spyOn(performance, 'now').mockImplementation(() => now);
     const callbacks: FrameRequestCallback[] = [];
+    let nextId = 0;
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
       callbacks.push(cb);
-      return callbacks.length;
+      return ++nextId;
     });
     const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     return { callbacks, cancel, setNow: (n: number) => (now = n) };
@@ -164,7 +165,8 @@ describe('CountUp — 클라이언트', () => {
     callbacks.shift()?.(COUNT_UP_MS);
     expect(host.textContent).toBe('792+');
     await act(async () => root.unmount());
-    expect(cancel).toHaveBeenCalled();
+    // 마지막으로 예약된 프레임(두 번째 rAF, id 2)을 정확히 취소해야 한다 — 무조건 호출만 보는 약한 단언이 아니다
+    expect(cancel).toHaveBeenCalledWith(2);
   });
 });
 

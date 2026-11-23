@@ -22,10 +22,12 @@ export function CountUp({ value, prefix, suffix, locale, className }: CountUpPro
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     let frame = 0;
+    let played = false;
     let observer: IntersectionObserver | null = null;
     const fmt = { prefix, suffix, locale };
 
     const play = () => {
+      played = true;
       const start = performance.now();
       const tick = (now: number) => {
         const elapsed = now - start;
@@ -51,7 +53,8 @@ export function CountUp({ value, prefix, suffix, locale, className }: CountUpPro
     return () => {
       observer?.disconnect();
       cancelAnimationFrame(frame);
-      el.textContent = finalText;
+      // 재생을 시작한 경우에만 최종값으로 되돌린다(재생 전에는 건드리지 않아 React 가 쓴 텍스트를 덮어쓰지 않는다).
+      if (played) el.textContent = finalText;
     };
   }, [value, prefix, suffix, locale, finalText]);
 
