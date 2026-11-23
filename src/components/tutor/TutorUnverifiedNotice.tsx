@@ -17,13 +17,18 @@ interface TutorUnverifiedNoticeProps {
 }
 
 export function TutorUnverifiedNotice({ onRetry, checking, stillUnverified, retryError }: TutorUnverifiedNoticeProps) {
-  const s = pick(shellStrings, useLanguage());
+  const lang = useLanguage();
+  const s = pick(shellStrings, lang);
   const [state, setState] = useState<ResendState>('idle');
 
   async function resend() {
     setState('sending');
     try {
-      const res = await fetch('/api/auth/resend-verify', { method: 'POST' });
+      const res = await fetch('/api/auth/resend-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lang }),
+      });
       setState(res.ok ? 'sent' : res.status === 429 ? 'later' : 'failed');
     } catch {
       setState('failed');

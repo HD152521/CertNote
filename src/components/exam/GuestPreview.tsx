@@ -145,7 +145,7 @@ export function GuestPreview({ certSlug, certCode, totalCount, lang }: GuestPrev
             {fmt(s.signupBody, { code: certCode, total: totalCount })}
           </p>
           <Link
-            href={signupHref(lang, lang === 'en' ? `/en/try?cert=${certSlug}` : `/exam?cert=${certSlug}`)}
+            href={signupHref(lang, `/exam?cert=${certSlug}`)}
             rel="nofollow"
             prefetch={false}
             data-signup-cta

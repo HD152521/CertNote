@@ -3,6 +3,7 @@ import { AppError, errorResponse } from '@/lib/auth/errors';
 import { getAccountAuthInfo } from '@/lib/auth/account';
 import { createResetToken } from '@/lib/auth/passwordReset';
 import { appUrl, getMailer } from '@/lib/mail/mailer';
+import { buildAuthMail, mailLanguage, tokenLink } from '@/lib/mail/authMail';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
 
 // 비밀번호 없는(구글 전용) 계정의 "비밀번호 설정" 메일 발송.
@@ -31,12 +32,10 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const token = await createResetToken(session.sub);
-    const link = `${appUrl()}/reset?token=${token}`;
-    await getMailer().send(
-      info.email,
-      'CertNote 비밀번호 설정',
-      `<p>아래 링크에서 비밀번호를 설정하세요. 설정하면 구글 로그인과 함께 이메일·비밀번호로도 로그인할 수 있습니다. 1시간 동안 유효합니다.</p><p><a href="${link}">${link}</a></p>`,
-    );
+    const body = await req.json().catch(() => null);
+    const lang = mailLanguage(body?.lang);
+    const { subject, html } = buildAuthMail('setup', tokenLink(appUrl(), '/reset', token, lang), lang);
+    await getMailer().send(info.email, subject, html);
     return Response.json({ ok: true });
   } catch (err) {
     return errorResponse(err);

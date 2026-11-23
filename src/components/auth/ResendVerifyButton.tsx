@@ -21,7 +21,8 @@ interface ResendVerifyButtonProps {
 // 서버 값(마이페이지 SSR의 email_verified, 후기 API 의 403 email_unverified)으로 정한다.
 export function ResendVerifyButton({ lang: langProp, className }: ResendVerifyButtonProps) {
   const clientLang = useLanguage();
-  const s = pick(verifyStrings, langProp ?? clientLang);
+  const lang = langProp ?? clientLang;
+  const s = pick(verifyStrings, lang);
   const [status, setStatus] = useState<Status>('idle');
   const [coolingDown, setCoolingDown] = useState(false);
   // 상태 갱신이 그려지기 전의 빠른 두 번째 클릭까지 막으려고 ref 로도 잠근다.
@@ -37,7 +38,11 @@ export function ResendVerifyButton({ lang: langProp, className }: ResendVerifyBu
     inFlight.current = true;
     setStatus('sending');
     try {
-      const res = await fetch('/api/auth/resend-verify', { method: 'POST' });
+      const res = await fetch('/api/auth/resend-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lang }),
+      });
       if (res.ok) {
         setStatus('sent');
         setCoolingDown(true);

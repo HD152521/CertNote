@@ -20,7 +20,7 @@ export default function ForgotPage() {
       const res = await fetch('/api/auth/forgot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: email.trim(), lang }),
       });
       const data = await res.json();
       if (!res.ok) setError(authErrorMessage(lang, data, t(lang, 'requestFailed')));
