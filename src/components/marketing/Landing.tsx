@@ -5,6 +5,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { buildFaqPageLd, type FaqEntry } from '@/lib/structuredData';
 import { DAILY_STUDY_MINUTES } from '@/lib/studyTime';
 import { HomeHero } from '@/components/marketing/HomeHero';
+import { CountUp } from '@/components/marketing/CountUp';
 import { FeaturedCerts } from '@/components/marketing/FeaturedCerts';
 import { certCodes, heroFeatured } from '@/components/marketing/homeData';
 
@@ -50,6 +51,8 @@ function buildHighlights(trackSpan: WeekSpan | null) {
     },
   ];
 }
+
+const LOCALE = 'ko-KR';
 
 interface LandingProps {
   certCount: number;
@@ -147,7 +150,13 @@ function buildFaq(weekSpan: WeekSpan | null, awsCerts: CertMeta[]): FaqEntry[] {
 }
 
 export function Landing({ certCount, pageCount, questionCount, certs }: LandingProps) {
-  const nf = (n: number) => n.toLocaleString('ko-KR');
+  const nf = (n: number) => n.toLocaleString(LOCALE);
+  const figures = [
+    { value: certCount, label: '자격증 트랙' },
+    { value: pageCount, suffix: '+', label: '심화 노트' },
+    { value: questionCount, suffix: '+', label: '연습 문항' },
+    { value: 0, prefix: '₩', label: '전 과정 무료' },
+  ];
   const awsCerts = certs.filter((c) => (c.section ?? 'aws') === 'aws');
   const linuxCount = certs.filter((c) => c.section === 'linux').length;
   const dataCount = certs.filter((c) => c.section === 'data').length;
@@ -163,15 +172,12 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
 
       {/* 숫자 줄: 박스 대신 가는 선으로 나눠 본문 위계를 해치지 않게 한다. */}
       <ul className="grid grid-cols-2 gap-y-6 border-y border-border py-6 sm:grid-cols-4 sm:divide-x sm:divide-border">
-        {[
-          [nf(certCount), '자격증 트랙'],
-          [`${nf(pageCount)}+`, '심화 노트'],
-          [`${nf(questionCount)}+`, '연습 문항'],
-          ['₩0', '전 과정 무료'],
-        ].map(([figure, label]) => (
+        {figures.map(({ value, prefix, suffix, label }) => (
           <li key={label} className="flex flex-col-reverse px-4 first:pl-0">
             <span className="mt-1 text-sm text-fg-muted">{label}</span>
-            <span className="font-mono text-3xl font-bold tracking-tight">{figure}</span>
+            <span className="font-mono text-3xl font-bold tracking-tight">
+              <CountUp value={value} prefix={prefix} suffix={suffix} locale={LOCALE} />
+            </span>
           </li>
         ))}
       </ul>

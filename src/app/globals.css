@@ -180,6 +180,16 @@ html, body {
   .toast-enter { animation: toast-in 0.18s ease-out; }
 }
 
+/* 홈 자격증 카드 등장(FeaturedCerts): 한 번, 짧게. 히어로·H1 에는 쓰지 않는다(LCP·CLS).
+   both = 지연 동안 시작 상태(투명)를 유지해 깜박임이 없다. 모션 줄이기 설정이면 클래스가 아무 효과도 내지 않는다. */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card-enter { animation: card-in 0.4s ease-out both; }
+}
+
 /* 홈(/, /en)에서는 본문이 자격증 목록을 직접 보여 주므로 같은 목록인 왼쪽 사이드바를 접는다.
    셸은 정적 캐시를 위해 pathname 을 모르는 서버 컴포넌트라, 홈 본문이 data-home-page 표식을 달고
    셸이 :has() 로 그것을 감지한다 — JS 없이 첫 페인트부터 적용돼 레이아웃 시프트가 없다.

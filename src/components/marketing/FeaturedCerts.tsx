@@ -36,13 +36,14 @@ export function groupRest(certs: CertMeta[]): Group[] {
   return groups.filter((g) => g.certs.length > 0);
 }
 
-function Tile({ cert, lang, large }: { cert: CertMeta; lang: Language; large: boolean }) {
+function Tile({ cert, lang, large, delayMs }: { cert: CertMeta; lang: Language; large: boolean; delayMs: number }) {
   const s = pick(homeStrings, lang);
   return (
     <Link
       href={certLink(cert, lang)}
+      style={{ animationDelay: `${delayMs}ms` }}
       className={cn(
-        'group flex flex-col border border-border bg-bg-elevated transition-colors hover:border-accent hover:bg-bg-subtle',
+        'card-enter group flex flex-col border border-border bg-bg-elevated transition-colors hover:border-accent hover:bg-bg-subtle',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
         large ? 'p-7 md:col-span-3 md:min-h-56' : 'p-5 md:col-span-2',
       )}
@@ -88,11 +89,11 @@ export function FeaturedCerts({ lang, certs }: FeaturedCertsProps) {
       {tiles.length > 0 && (
         <div className="grid gap-4 md:grid-cols-5">
           {tiles.map((cert, i) => (
-            <Tile key={cert.slug} cert={cert} lang={lang} large={i === 0} />
+            <Tile key={cert.slug} cert={cert} lang={lang} large={i === 0} delayMs={i * 60} />
           ))}
         </div>
       )}
-      <div aria-label={s.tracksIndexLabel} role="group" className="divide-y divide-border border-y border-border">
+      <div aria-label={s.tracksIndexLabel} role="group" style={{ animationDelay: '120ms' }} className="card-enter divide-y divide-border border-y border-border">
         {groups.map((g) => (
           <div key={g.key} className="grid gap-2 py-4 sm:grid-cols-[9rem_1fr] sm:gap-6">
             <p className="text-xs font-semibold uppercase tracking-widest text-fg-faint sm:pt-1.5">{s[g.labelKey]}</p>
