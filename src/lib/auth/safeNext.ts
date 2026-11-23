@@ -18,5 +18,8 @@ export function safeNext(raw: string | null | undefined, fallback = '/'): string
     return fallback;
   }
   if (url.origin !== PROBE_ORIGIN) return fallback;
+  // `/exam/..//evil.com` 은 `..` 정규화 뒤 pathname 이 `//evil.com` 이 된다. 이 값을 router.push 하면
+  // 브라우저가 프로토콜 상대 URL(외부 호스트)로 읽으므로, 정규화된 결과도 `//` 로 시작하면 거절한다.
+  if (url.pathname.startsWith('//')) return fallback;
   return `${url.pathname}${url.search}${url.hash}`;
 }

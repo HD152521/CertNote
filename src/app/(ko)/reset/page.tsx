@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { useAuthLanguage } from '@/lib/auth/useAuthLanguage';
 import { authErrorMessage } from '@/lib/strings/auth';
 
 function ResetForm() {
-  const lang = useLanguage();
+  const lang = useAuthLanguage();
   const params = useSearchParams();
   const router = useRouter();
   const token = params.get('token') ?? '';

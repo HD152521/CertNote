@@ -100,7 +100,7 @@ export function AuthForm({ mode, certs = [], googleEnabled = false }: AuthFormPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           mode === 'signup'
-            ? { email, password, name, birthdate, occupation, targetCert, purpose, experienceLevel, consent }
+            ? { email, password, name, birthdate, occupation, targetCert, purpose, experienceLevel, consent, lang }
             : { email, password },
         ),
       });

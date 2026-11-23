@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage, t } from '@/lib/i18n-client';
+import { useAuthLanguage } from '@/lib/auth/useAuthLanguage';
 import { authErrorMessage } from '@/lib/strings/auth';
 import { pick } from '@/lib/strings/dict';
 import { verifyStrings } from '@/lib/strings/verify';
@@ -11,7 +12,8 @@ import { verifyStrings } from '@/lib/strings/verify';
 type State = 'verifying' | 'success' | 'error';
 
 function VerifyInner() {
-  const lang = useLanguage();
+  // 메일 링크의 ?lang=en 을 받아 쿠키 없는 새 기기에서도 영어로 보이게 한다(쿠키도 함께 맞춘다).
+  const lang = useAuthLanguage();
   const vs = pick(verifyStrings, lang);
   const params = useSearchParams();
   const token = params.get('token') ?? '';

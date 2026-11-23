@@ -1,6 +1,7 @@
 import { AppError, errorResponse } from '@/lib/auth/errors';
 import { createResetToken, findUserIdByEmail } from '@/lib/auth/passwordReset';
 import { appUrl, getMailer } from '@/lib/mail/mailer';
+import { buildAuthMail, mailLanguage, tokenLink } from '@/lib/mail/authMail';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,12 +21,9 @@ export async function POST(req: Request) {
     const userId = await findUserIdByEmail(email);
     if (userId) {
       const token = await createResetToken(userId);
-      const link = `${appUrl()}/reset?token=${token}`;
-      await getMailer().send(
-        email,
-        'CertNote 비밀번호 재설정',
-        `<p>아래 링크에서 비밀번호를 재설정하세요. 1시간 동안 유효합니다.</p><p><a href="${link}">${link}</a></p>`,
-      );
+      const lang = mailLanguage(body?.lang);
+      const { subject, html } = buildAuthMail('reset', tokenLink(appUrl(), '/reset', token, lang), lang);
+      await getMailer().send(email, subject, html);
     }
     // 존재하지 않는 이메일이어도 동일 응답.
     return Response.json({ ok: true });

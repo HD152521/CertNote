@@ -57,7 +57,7 @@ describe('GuestPreview (en)', () => {
     expect(HANGUL.test(host.innerHTML)).toBe(false);
     const cta = host.querySelector<HTMLAnchorElement>('a[data-signup-cta]')!;
     expect(cta.textContent).toContain('Create a free account');
-    expect(cta.getAttribute('href')).toContain('/signup?lang=en');
+    expect(cta.getAttribute('href')).toBe(`/signup?lang=en&next=${encodeURIComponent(`/exam?cert=${CERT}`)}`);
     expect(host.textContent).toContain(`${total}-question`);
     act(() => cta.click());
     expect(track).toHaveBeenCalledWith('signup_prompt_click', expect.objectContaining({ placement: 'try_result', lang: 'en' }));
