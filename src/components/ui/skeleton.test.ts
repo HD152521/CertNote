@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
@@ -15,7 +15,7 @@ function walk(dir: string, out: string[] = []): string[] {
   }
   return out;
 }
-const rel = (p: string) => p.slice(SRC.length + 1).split(String.fromCharCode(92)).join('/');
+const rel = (p: string) => p.slice(SRC.length + 1).replaceAll(sep, '/');
 
 describe('Skeleton 조각', () => {
   test('aria-hidden 이고 motion-safe 펄스만 쓴다', () => {
@@ -63,10 +63,17 @@ describe('loading.tsx 위치', () => {
     const html = renderToStaticMarkup(createElement(mod.default));
     expect(html).toContain('aria-hidden');
     expect(html).toContain('motion-safe:animate-pulse');
-    expect(html).not.toMatch(/Loading|불러오는/);
+    expect(html.replace(/<[^>]*>/g, '').trim()).toBe('');
   });
 
   test('(en) 루트는 (ko) 루트를 re-export 한다', () => {
     expect(readFileSync(join(SRC, 'app/(en)/loading.tsx'), 'utf8')).toContain("from '../(ko)/loading'");
+  });
+});
+
+describe('모서리', () => {
+  test('SkeletonCard 는 rounded-lg, SkeletonLine 은 rounded 를 유지한다', () => {
+    expect(renderToStaticMarkup(createElement(SkeletonCard))).toContain('rounded-lg');
+    expect(renderToStaticMarkup(createElement(SkeletonLine))).toMatch(/class="[^"]*\brounded\b/);
   });
 });
