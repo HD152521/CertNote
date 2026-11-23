@@ -186,10 +186,9 @@ describe('Landing — 정정된 문구', () => {
     expect(text).not.toContain('재시험');
   });
 
-  it('복습·모의고사가 가입 필요임을 SAA 카드와 안내 줄에서 밝힌다', () => {
+  it('복습·모의고사가 가입 필요임을 히어로 대표 카드와 안내 줄에서 밝힌다', () => {
     expect(text).toContain('모의고사·복습·AI 설명은 무료 가입 후 이용');
     expect(text).toContain('실전 모의고사 · 간격반복 복습 (무료 가입 후 이용)');
-    expect(text).toContain('틀린 문제는 간격반복으로 복습 (무료 가입 후 이용)');
     expect(text).not.toContain('자동 복습');
   });
 });
