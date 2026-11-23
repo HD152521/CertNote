@@ -10,6 +10,7 @@ import { profileSelectOptions } from '@/lib/strings/auth';
 import { certOptionLabel } from '@/lib/certOptionLabel';
 import { pick } from '@/lib/strings/dict';
 import { accountStrings } from '@/lib/strings/account';
+import { showToast } from '@/lib/toast';
 
 const optional = (opts: readonly string[], noneLabel: string, lang: 'ko' | 'en') => [
   { value: '', label: noneLabel },
@@ -36,19 +37,14 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
   const router = useRouter();
   const [v, setV] = useState<ProfileValues>(initial);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
 
   function set<K extends keyof ProfileValues>(key: K, value: ProfileValues[K]) {
     setV((prev) => ({ ...prev, [key]: value }));
-    setDone(false);
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError('');
-    setDone(false);
     try {
       const res = await fetch('/api/account/profile', {
         method: 'PATCH',
@@ -57,13 +53,13 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? s.saveFailed);
+        showToast({ message: data.message ?? s.saveFailed, tone: 'error', durationMs: data.message ? 0 : undefined });
         return;
       }
-      setDone(true);
+      showToast({ message: s.profileSaved });
       router.refresh();
     } catch {
-      setError(t(lang, 'networkError'));
+      showToast({ message: t(lang, 'networkError'), tone: 'error' });
     } finally {
       setBusy(false);
     }
@@ -101,8 +97,6 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
         </Field>
       </Group>
 
-      {error && <p className="text-sm text-danger" role="alert">{error}</p>}
-      {done && <p className="text-sm text-accent">{s.profileSaved}</p>}
       <button type="submit" disabled={busy}
         className="w-full rounded-md bg-accent px-3 py-2.5 text-sm font-semibold text-accent-fg transition hover:opacity-90 disabled:opacity-50">
         {busy ? t(lang, 'saving') : s.saveProfile}

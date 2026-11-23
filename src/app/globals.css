@@ -171,6 +171,15 @@ html, body {
   .cli-flash { animation: cli-flash 1.4s ease-out; }
 }
 
+/* 토스트(components/ui/Toast): 모션 줄이기 설정이면 움직임 없이 바로 나타난다. */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toast-enter { animation: toast-in 0.18s ease-out; }
+}
+
 /* 홈(/, /en)에서는 본문이 자격증 목록을 직접 보여 주므로 같은 목록인 왼쪽 사이드바를 접는다.
    셸은 정적 캐시를 위해 pathname 을 모르는 서버 컴포넌트라, 홈 본문이 data-home-page 표식을 달고
    셸이 :has() 로 그것을 감지한다 — JS 없이 첫 페인트부터 적용돼 레이아웃 시프트가 없다.

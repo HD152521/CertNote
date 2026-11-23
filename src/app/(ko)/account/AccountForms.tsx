@@ -6,6 +6,7 @@ import { emitAuthChange } from '@/lib/auth/authEvents';
 import { t, useLanguage } from '@/lib/i18n-client';
 import { fmt, pick } from '@/lib/strings/dict';
 import { accountStrings } from '@/lib/strings/account';
+import { showToast } from '@/lib/toast';
 
 function ChangePasswordForm() {
   const lang = useLanguage();
@@ -13,14 +14,10 @@ function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError('');
-    setDone(false);
     try {
       const res = await fetch('/api/account/password', {
         method: 'POST',
@@ -29,14 +26,14 @@ function ChangePasswordForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? s.passwordChangeFailed);
+        showToast({ message: data.message ?? s.passwordChangeFailed, tone: 'error', durationMs: data.message ? 0 : undefined });
         return;
       }
-      setDone(true);
+      showToast({ message: s.passwordUpdated });
       setCurrentPassword('');
       setNewPassword('');
     } catch {
-      setError(t(lang, 'networkError'));
+      showToast({ message: t(lang, 'networkError'), tone: 'error' });
     } finally {
       setBusy(false);
     }
@@ -65,8 +62,6 @@ function ChangePasswordForm() {
           placeholder={s.newPasswordPlaceholder}
           className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm"
         />
-        {error && <p className="text-xs text-danger">{error}</p>}
-        {done && <p className="text-xs text-fg-muted">{s.passwordUpdated}</p>}
         <button
           type="submit"
           disabled={busy}

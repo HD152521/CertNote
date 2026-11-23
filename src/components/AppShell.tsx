@@ -6,6 +6,7 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { SearchProvider } from './SearchProvider';
 import { FeedbackWidget } from './FeedbackWidget';
+import { ToastViewport } from './ui/Toast';
 import { SiteFooter } from './SiteFooter';
 import { getAllDays, listCerts } from '@/lib/content';
 import { buildCertTree, type CertTree } from '@/lib/navTree';
@@ -46,6 +47,7 @@ export async function AppShell({ certs, lang, children }: AppShellProps) {
         <SiteFooter />
       </div>
       <FeedbackWidget />
+      <ToastViewport />
     </SearchProvider>
   );
 }

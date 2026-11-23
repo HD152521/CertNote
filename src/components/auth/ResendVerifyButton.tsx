@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useLanguage, type Language } from '@/lib/i18n-client';
 import { pick } from '@/lib/strings/dict';
 import { verifyStrings } from '@/lib/strings/verify';
+import { showToast } from '@/lib/toast';
 
-type Status = 'idle' | 'sending' | 'sent' | 'limited' | 'failed';
+type Status = 'idle' | 'sending' | 'sent';
 
 // 보낸 직후 같은 버튼을 다시 누를 수 없게 막는 시간. 서버 레이트리밋(10분 3회)에 닿기 전에
 // 클라이언트에서 먼저 연타를 걸러 낸다 — 메일은 몇 초~몇 십 초 늦게 오는 일이 흔해 사용자가 재촉하게 된다.
@@ -48,17 +49,17 @@ export function ResendVerifyButton({ lang: langProp, className }: ResendVerifyBu
         setCoolingDown(true);
         cooldownTimer.current = setTimeout(() => setCoolingDown(false), RESEND_COOLDOWN_MS);
       } else {
-        setStatus(res.status === 429 ? 'limited' : 'failed');
+        // 실패·제한은 토스트로. 성공만 쿨다운(버튼 비활성) 내내 인라인으로 남는다.
+        setStatus('idle');
+        showToast({ message: res.status === 429 ? s.resendRateLimited : s.resendFailed, tone: 'error' });
       }
     } catch {
-      setStatus('failed');
+      setStatus('idle');
+      showToast({ message: s.resendFailed, tone: 'error' });
     } finally {
       inFlight.current = false;
     }
   }
-
-  const message =
-    status === 'sent' ? s.resendSent : status === 'limited' ? s.resendRateLimited : status === 'failed' ? s.resendFailed : '';
 
   return (
     <div className={className}>
@@ -70,10 +71,8 @@ export function ResendVerifyButton({ lang: langProp, className }: ResendVerifyBu
       >
         {status === 'sending' ? s.resendSending : s.resendVerify}
       </button>
-      {message && (
-        <p role="status" className={`mt-2 text-xs ${status === 'sent' ? 'text-fg-muted' : 'text-danger'}`}>
-          {message}
-        </p>
+      {status === 'sent' && (
+        <p role="status" className="mt-2 text-xs text-fg-muted">{s.resendSent}</p>
       )}
     </div>
   );
