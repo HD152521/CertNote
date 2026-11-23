@@ -154,3 +154,16 @@
   - 커뮤니티 글 초안(에브리타임·네이버 카페·티스토리, 리눅스마스터1·SAA·SQLD)은 `docs/growth/community-posts.md`. 게시는 사용자, `utm_source`는 채널별로 다르게.
   - 정리: 머지된 로컬 브랜치 7개·worktree 2개·lab PNG 4개 삭제. 이전부터 남은 브랜치(feat/p3-followup 등)는 푸시 안 된 작업이 있을 수 있어 그대로 둠.
   - 다음: ① 사용자가 글 게시 후 PostHog에서 채널별 `guest_exam_start`→`guest_exam_done`→가입 전환 확인 ② GSC "색인 생성됨" 개수·404 4개 URL ③ 퀴즈 잔여(sap-c02/dop-c02의 엄격한 RTO·RPO 수치 요구 문항 점검, 영어판 번역 표본 확인).
+
+- 11-18~24 (내용 검수·GSC 재검사·UI/영어판 개편)
+  - 내용 검수 범위 A(SQLD·리눅스마스터 1·2급·SAA-C03) high·mid 완료: #89(SAA high 32, 정답 2건 변경 — baseline 두 줄 수동 수정), #90(리눅스마스터 1·2급 약 30), #91(SQLD mid 3·low 2), #92(SAA mid 약 120, 50개 파일, 정답 변경 없음). 보류: Oracle 재현이 필요한 ORA 코드·`(+)` 표기, 옛 "Kinesis Data Firehose" 표기 약 10곳, RTO 표기 통일, SAA low 약 190행. #92 와 #90 의 마지막 FAIL 반영분은 2차 검수 없이 반영(PR 설명에 적음).
+  - GSC 재검사(11-23 실행, 같은 735 URL): 색인됨 0→0, 크롤됨-미색인 281→293, URL 모름 258→252, noindex 제외 194→189, 중복 2→1. 11-15 이후 구글이 새로 크롤한 URL 30건, 아직 한 번도 안 온 URL 252건. 90일 노출 53·클릭 0(기준선 73은 90일 창이 밀려 줄어든 것으로 악화 아님). 구글이 일부 재방문하지만 색인하지 않아 신규 도메인 신뢰 가설과 계속 맞다. 사용자 쪽: 색인 생성 요청·외부 링크, 11-30 전후 재검사.
+  - UI·영어판 개편(계획서 `docs/growth/ui-refresh-and-en-parity-plan-2026-11-23.md`, 단계마다 구현 에이전트 + 독립 검수 후 머지·운영 확인):
+    - #97 `/en/try`(noindex·사이트맵 제외·hreflang 없음, 맛보기 API 가 body `lang` 으로 영어 은행 사용). `/en/pricing` 은 `/pricing` 이 `/` 로 307·robots 차단이라 만들지 않음.
+    - #98 영어 인증 메일(가입·재발송·재설정·비밀번호 설정)과 `?lang=en` 링크, `/verify`·`/reset` 힌트, 영어 가입 후 `/exam` 복귀. 새 `/en/login` 등은 만들지 않고 쿠키·`?lang=en` 유지. 검수에서 `safeNext` 오픈 리다이렉트(`/exam/..//evil.com`) 발견·수정.
+    - #99 홈 개편: 공용 HomeHero/FeaturedCerts, 히어로(대표 자격증 SAA-C03 ↔ 이어서 읽기), 카드 위계, 홈에서만 사이드바 숨김(`:has([data-home-page])`, CSS 만). H1·SEO 문구·hreflang·정적 프리렌더 불변.
+    - #100 피드백 버튼 모바일 아이콘(44px 터치 영역) + 토스트 통일(상시 live region, 오류 10초/수동 닫기, 광고 겹침 시 감춤). #101 로딩 스켈레톤(노트 본문 폭, exam/review/notebook/dashboard 추가, motion-safe). 콘텐츠 경로에는 loading.tsx 를 추가하지 않음(소프트 404 방지, 시험으로 고정). #102 카운트업(한국어 홈)과 카드 fade-up.
+    - 계획서와 다르게 한 것: 가입 카드 기본 버튼을 "계속 공부하기"로 바꾸는 항목은 가입자 증가 목표와 충돌해 하지 않음.
+  - 통합 점검(11-24 운영): 사이트맵 1,679 전부 200, 홈에서 전부 도달(고아 0, 4xx·5xx 링크 0), 존재하지 않는 콘텐츠 경로 404 유지, day 페이지 canonical 자기참조·noindex 없음·hreflang 쌍·JSON-LD Course/Breadcrumb 정상. 모바일 홈 실험실 측정 LCP 659ms·CLS 0.00(스로틀 없음, 필드 데이터 없음). `scripts/verify-seo.mjs` 는 옛 `/aws-certs`·Article 스키마 기준이라 15건 실패로 나오는데 실제 신호는 정상(스크립트가 낡음, 갱신 필요).
+  - 확인하지 못한 것: 모바일 실화면 캡처(캡처 시간 초과로 수치만 확인), 토스트가 실제로 뜨는 모습, 카드 fade-up 이 모바일 LCP 에 주는 영향, 영어 홈 첫 방문 흐름의 실기기 확인.
+  - 남은 것(후속 후보): 로그인 홈 `/home` 의 사이드바 중복·균일 격자, 한국어 홈 하단 균일 카드, `verify-seo.mjs` 갱신, 계정 흐름 로그인·가입 메타 제목 영어화(동적 렌더 필요해 보류).
