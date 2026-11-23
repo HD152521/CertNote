@@ -19,6 +19,8 @@ export type PathDecision =
   | 'pass'; // 건드리지 않음.
 
 export const STUDY_HOME_PATH = '/home';
+/** 영어판 맛보기(noindex). 자격증 slug 가 아니므로 존재 검증(content)을 건너뛴다 — 정확 일치만. */
+export const EN_TRY_PATH = '/en/try';
 
 const CONTENT_PREFIXES: readonly string[] = [...SECTIONS, EN_CATEGORY, DEFAULT_CATEGORY];
 const PROTECTED_PREFIXES: readonly string[] = ['admin', 'dashboard', 'review', 'notebook', 'exam', 'account'];
@@ -38,7 +40,7 @@ export function classifyPath(pathname: string): PathDecision {
   const first = segments[0] ?? '';
 
   // /en/about 같은 영어 정보 페이지는 자격증 콘텐츠가 아니다 — 존재 검증(contentPathExists)을 거치면 404 가 된다.
-  if (isEnInfoPath(pathname)) return 'pass';
+  if (isEnInfoPath(pathname) || pathname === EN_TRY_PATH) return 'pass';
   if (CONTENT_PREFIXES.includes(first)) return 'content';
   // 대소문자만 다른 접두사(/AWS, /Linux). 대소문자 무시 호스트에선 프리렌더 파일 조회가 소문자 페이지로
   // 풀려 200 이 되므로 호스트와 무관하게 404 로 고정한다.
