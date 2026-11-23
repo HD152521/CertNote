@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CATEGORY, EN_CATEGORY } from '@/lib/category';
 import { listCerts } from '@/lib/content';
@@ -97,8 +97,9 @@ describe('히어로 자리 — 교체해도 레이아웃이 밀리지 않는다'
     renderToStaticMarkup(createElement(HeroSlotView, { lang: 'ko', featured, codes: { 'saa-c03': 'SAA-C03' }, resume: r }));
 
   it('대표 카드와 이어서 읽기가 같은 고정 높이 틀 클래스를 쓴다', () => {
-    expect(HERO_SLOT_FRAME).toMatch(/\bh-\[[\d.]+rem\]/);
-    expect(HERO_SLOT_FRAME).toMatch(/\bsm:h-\[[\d.]+rem\]/);
+    expect(HERO_SLOT_FRAME).toMatch(/\bmin-h-\[[\d.]+rem\]/);
+    expect(HERO_SLOT_FRAME).not.toMatch(/overflow-hidden|(^|\s)h-\[/);
+    expect(HERO_SLOT_FRAME).toMatch(/\bsm:min-h-\[[\d.]+rem\]/);
     expect(render(null)).toContain(`class="${HERO_SLOT_FRAME}"`);
     const resumed = render(resume);
     expect(resumed).toContain(`class="${HERO_SLOT_FRAME}"`);
@@ -126,6 +127,28 @@ describe('사이드바 중복 제거는 CSS 로만 한다', () => {
     const ko = renderToStaticMarkup(createElement(Landing, { ...buildHomeStats(certs), certs }));
     expect(ko).toContain('data-home-page');
     expect(root('src/app/(en)/en/page.tsx')).toContain('data-home-page');
+  });
+});
+
+describe('접근성·표식 위치', () => {
+  it('히어로 카드 링크에 코드+이름+행동의 aria-label 이 있다', async () => {
+    const html = await renderShared('en');
+    expect(html).toMatch(/data-hero-slot="featured"[^>]*aria-label="[A-Z0-9-]+ [^"]+ — Start with Week 1"/);
+  });
+
+  it('data-home-page 는 Landing.tsx 와 en/page.tsx 두 곳에만 있다', () => {
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (/\.(tsx?|css)$/.test(e.name) && !e.name.endsWith('.test.ts') && readFileSync(p, 'utf8').includes('data-home-page')) {
+          hits.push(p.split(sep).join('/').split('/src/')[1]);
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(hits.sort()).toEqual(['app/(en)/en/page.tsx', 'app/globals.css', 'components/marketing/Landing.tsx']);
   });
 });
 

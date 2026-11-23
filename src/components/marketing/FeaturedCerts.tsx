@@ -9,8 +9,6 @@ import { fmt, pick } from '@/lib/strings/dict';
 import { formatCertLength } from '@/lib/strings/chrome';
 import { homeStrings, type HomeKey } from '@/lib/strings/home';
 
-// 히어로의 대표 자격증(기본 SAA-C03). 인기·점유율 순위가 아니라 편집상의 선택이다.
-export const HERO_SLUG = 'saa-c03';
 // 큰 타일 두 개. 순서 = 노출 순서(첫 타일이 더 크다). 입문(CLF)과 다른 분야(리눅스마스터)를 보여 준다.
 export const FEATURED_SLUGS = ['clf-c02', 'linux-master-1'];
 

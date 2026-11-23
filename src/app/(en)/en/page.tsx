@@ -35,10 +35,12 @@ export default async function EnHomePage() {
   const certs = await listCerts(EN_CATEGORY).catch(() => []);
   return (
     <div data-home-page className="mx-auto max-w-5xl space-y-16 py-8 lg:py-12">
-      <HomeHero lang="en" featured={heroFeatured(certs, 'en')} codes={certCodes(certs)} browseHref="#tracks" />
-      <p className="-mt-10 text-xs text-fg-faint">
-        <Link href="/" className="underline underline-offset-4 hover:text-fg">Switch to the Korean site</Link> if you prefer Korean.
-      </p>
+      <div className="space-y-4">
+        <HomeHero lang="en" featured={heroFeatured(certs, 'en')} codes={certCodes(certs)} browseHref="#tracks" />
+        <p className="text-xs text-fg-faint">
+          <Link href="/" className="underline underline-offset-4 hover:text-fg">Switch to the Korean site</Link> if you prefer Korean.
+        </p>
+      </div>
       {certs.length > 0 && <FeaturedCerts lang="en" certs={certs} />}
       <SignupPrompt placement="en_home" message="home" reserveSpace />
       {certs.length === 0 && (

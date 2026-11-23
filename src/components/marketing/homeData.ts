@@ -1,7 +1,10 @@
 import type { CertMeta } from '@/lib/content';
 import type { Language } from '@/lib/i18n';
-import { HERO_SLUG, certLink } from '@/components/marketing/FeaturedCerts';
+import { certLink } from '@/components/marketing/FeaturedCerts';
 import type { FeaturedSummary } from '@/components/marketing/HeroSlot';
+
+// 히어로의 대표 자격증(기본 SAA-C03). 인기·점유율 순위가 아니라 편집상의 선택이다.
+export const HERO_SLUG = 'saa-c03';
 
 // 홈 히어로에 넘길 값. 서버에서 만들어 클라이언트 HeroSlot 에 plain props 로 건넨다.
 export function heroFeatured(certs: CertMeta[], lang: Language): FeaturedSummary | null {

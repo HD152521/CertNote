@@ -29,6 +29,7 @@ export type HomeKey =
   | 'bulletDaily'
   | 'bulletAccount'
   | 'resumeMeta'
+  | 'slotAria'
   // 자격증 영역
   | 'tracksHeading'
   | 'tracksLead'
@@ -59,6 +60,7 @@ export const homeStrings: Dict<HomeKey> = {
     bulletDaily: '매일 {minutes}분 안팎 심화 노트 + 연습 문제',
     bulletAccount: '실전 모의고사 · 간격반복 복습 (무료 가입 후 이용)',
     resumeMeta: '{code} · {week}주차 {day}일차',
+    slotAria: '{code} {name} — {cta}',
     tracksHeading: '자격증 트랙 {n}개',
     tracksLead: '입문용 Cloud Practitioner와 리눅스마스터 트랙도 같은 구조(주차별 노트, 하루 한 편, 연습 문제)로 열려 있습니다.',
     tileStart: 'Week 1부터 보기',
@@ -87,6 +89,7 @@ export const homeStrings: Dict<HomeKey> = {
     bulletDaily: 'About {minutes} minutes a day: one deep note plus practice questions',
     bulletAccount: 'Mock exams and spaced-repetition review (free with an account)',
     resumeMeta: '{code} · Week {week}, Day {day}',
+    slotAria: '{code} {name} — {cta}',
     tracksHeading: 'All {n} tracks',
     tracksLead: 'Every track has the same shape: weekly notes, one lesson a day, practice questions at the end.',
     tileStart: 'Start Week 1',

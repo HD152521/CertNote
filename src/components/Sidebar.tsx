@@ -3,7 +3,7 @@ import { SidebarNav, type CertTree } from './SidebarNav';
 
 interface SidebarProps { certTrees: CertTree[]; enCertTrees?: CertTree[]; }
 
-// 데스크탑(lg+) 고정 사이드바. 홈 본문(data-home-page)이 같은 줄에 있으면 CSS 로 접힌다(globals.css, 자격증 목록 중복 제거).
+// 데스크탑(lg+) 고정 사이드바. 홈 본문(홈 표식 속성)이 같은 줄에 있으면 CSS 로 접힌다(globals.css, 자격증 목록 중복 제거).
 //  트리 렌더링은 SidebarNav에 위임(모바일 드로어와 공유).
 export function Sidebar({ certTrees, enCertTrees }: SidebarProps) {
   return (
