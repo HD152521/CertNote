@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { EN_CATEGORY, certLevelLabel } from '@/lib/category';
+import { EN_CATEGORY } from '@/lib/category';
 import { listCerts } from '@/lib/content';
 import { hreflangPair } from '@/lib/i18n';
 import { SITE_NAME } from '@/lib/site';
+import { HomeHero } from '@/components/marketing/HomeHero';
+import { FeaturedCerts } from '@/components/marketing/FeaturedCerts';
+import { certCodes, heroFeatured } from '@/components/marketing/homeData';
 import { SignupPrompt } from '@/components/marketing/SignupPrompt';
 import { CertRequestForm } from '@/components/userInput/CertRequestForm';
 import { withDefaultOgImage } from '@/lib/ogImages';
@@ -32,36 +34,12 @@ export const metadata: Metadata = {
 export default async function EnHomePage() {
   const certs = await listCerts(EN_CATEGORY).catch(() => []);
   return (
-    <div className="mx-auto max-w-3xl space-y-10 py-4">
-      <header className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Certification prep, <span className="text-accent">one day at a time</span>
-        </h1>
-        <p className="text-fg-muted leading-relaxed">
-          In-depth daily study notes for 11 AWS certifications, SQL Developer (SQLD) and Linux Master Level 1 and 2 — written to be read on your commute, with practice
-          questions after every lesson. <strong className="text-fg">Everything is free to read, and every track is fully available in English.</strong>
-        </p>
-        <p className="text-xs text-fg-faint">
-          Notes and practice questions need no sign-up; mock exams and spaced-repetition review are free with an account.{' '}
-          <Link href="/" className="underline underline-offset-4 hover:text-fg">Switch to the Korean site</Link> if you prefer
-          Korean.
-        </p>
-      </header>
-      <section className="grid gap-3 sm:grid-cols-2">
-        {certs.map((c) => (
-          <Link
-            key={c.slug}
-            href={`/${EN_CATEGORY}/${c.slug}`}
-            className="group flex items-center justify-between gap-3 rounded-lg border border-border bg-bg-elevated px-4 py-3 transition hover:border-border-strong"
-          >
-            <span className="min-w-0">
-              <span className="block font-mono text-[11px] text-fg-faint">{c.code} · {certLevelLabel(c.level)}</span>
-              <span className="block truncate text-sm font-medium">{c.name}</span>
-            </span>
-            <ArrowRight className="h-4 w-4 shrink-0 text-fg-faint transition group-hover:text-fg" />
-          </Link>
-        ))}
-      </section>
+    <div data-home-page className="mx-auto max-w-5xl space-y-16 py-8 lg:py-12">
+      <HomeHero lang="en" featured={heroFeatured(certs, 'en')} codes={certCodes(certs)} browseHref="#tracks" />
+      <p className="-mt-10 text-xs text-fg-faint">
+        <Link href="/" className="underline underline-offset-4 hover:text-fg">Switch to the Korean site</Link> if you prefer Korean.
+      </p>
+      {certs.length > 0 && <FeaturedCerts lang="en" certs={certs} />}
       <SignupPrompt placement="en_home" message="home" reserveSpace />
       {certs.length === 0 && (
         <p className="text-sm text-fg-muted">English tracks are being prepared — check back soon.</p>

@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { BookOpen, Timer, RefreshCw, ArrowRight, Check, TrendingUp, ListChecks, Lock, Unlock } from 'lucide-react';
-import { certHref } from '@/lib/content';
+import { BookOpen, Timer, RefreshCw, ListChecks, Lock, Unlock } from 'lucide-react';
 import type { CertMeta } from '@/lib/content';
 import { JsonLd } from '@/components/JsonLd';
 import { buildFaqPageLd, type FaqEntry } from '@/lib/structuredData';
 import { DAILY_STUDY_MINUTES } from '@/lib/studyTime';
-import { SignupCta } from '@/components/marketing/SignupCta';
-import { ResumeLink } from '@/components/resume/ResumeLink';
+import { HomeHero } from '@/components/marketing/HomeHero';
+import { FeaturedCerts } from '@/components/marketing/FeaturedCerts';
+import { certCodes, heroFeatured } from '@/components/marketing/homeData';
 
 interface WeekSpan {
   min: number;
@@ -50,9 +50,6 @@ function buildHighlights(trackSpan: WeekSpan | null) {
     },
   ];
 }
-
-// 대표 트랙으로 먼저 노출할 자격증(순서 = 노출 순서). 인기·점유율 순위가 아니라 편집상의 선택이다.
-const POPULAR_SLUGS = ['saa-c03', 'clf-c02', 'linux-master-1'];
 
 interface LandingProps {
   certCount: number;
@@ -151,10 +148,6 @@ function buildFaq(weekSpan: WeekSpan | null, awsCerts: CertMeta[]): FaqEntry[] {
 
 export function Landing({ certCount, pageCount, questionCount, certs }: LandingProps) {
   const nf = (n: number) => n.toLocaleString('ko-KR');
-  const popular = POPULAR_SLUGS.map((slug) => certs.find((c) => c.slug === slug)).filter(
-    (c): c is CertMeta => Boolean(c),
-  );
-  const others = certs.filter((c) => !POPULAR_SLUGS.includes(c.slug));
   const awsCerts = certs.filter((c) => (c.section ?? 'aws') === 'aws');
   const linuxCount = certs.filter((c) => c.section === 'linux').length;
   const dataCount = certs.filter((c) => c.section === 'data').length;
@@ -163,103 +156,27 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
   const faq = buildFaq(spanOf(awsCerts), awsCerts);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-20 py-12">
-      {/* Hero Section */}
-      <section className="space-y-6">
-        <div className="space-y-3">
-          <div className="inline-block rounded-full bg-accent/10 px-3 py-1">
-            <p className="text-xs font-medium text-accent">한국어 노트 · 연습문제 · 복습으로 준비하는 AWS 자격증 독학 사이트</p>
-          </div>
-          <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
-            한국어로 배우는<br />AWS 자격증 합격 가이드
-          </h1>
-          <p className="max-w-2xl text-xl text-fg-muted">
-            주차별 구조화된 커리큘럼 • 매일 {DAILY_STUDY_MINUTES}분 안팎 심화 노트 • 연습문제·모의고사·간격반복 복습까지. 전 과정 무료.
-          </p>
-        </div>
+    <div data-home-page className="mx-auto max-w-5xl space-y-16 py-8 lg:py-12">
+      {/* 첫 화면: 제목·행동 + 대표 자격증/이어서 읽기(영어 홈과 같은 컴포넌트). 홈 본문이 있다는 표식(data-home-page)은
+          바깥 div 에 있어 AppShell 이 CSS 로 왼쪽 사이드바를 접는다(globals.css). */}
+      <HomeHero lang="ko" featured={heroFeatured(certs, 'ko')} codes={certCodes(certs)} browseHref="/aws" />
 
-        {/* CTA Buttons */}
-        <div className="flex flex-wrap items-center gap-3 pt-2">
-          <SignupCta
-            placement="home_hero"
-            className="rounded-lg bg-accent px-6 py-3 font-semibold text-accent-fg transition hover:opacity-90 flex items-center gap-2"
-          >
-            무료로 시작하기 <ArrowRight className="h-4 w-4" />
-          </SignupCta>
-          <Link
-            href="/aws"
-            className="rounded-lg border border-border px-6 py-3 font-semibold transition hover:border-border-strong"
-          >
-            자격증 둘러보기
-          </Link>
-        </div>
-        <p className="text-sm text-fg-faint">
-          ✓ 전 주차 노트·연습문제 로그인 없이 열람 • ✓ 모의고사·복습·AI 설명은 무료 가입 후 이용
-        </p>
-        {/* 다시 찾아온 방문자에게만 보인다(이 브라우저의 읽은 기록). */}
-        <ResumeLink codes={Object.fromEntries(certs.map((c) => [c.slug, c.code]))} className="max-w-md" />
-      </section>
+      {/* 숫자 줄: 박스 대신 가는 선으로 나눠 본문 위계를 해치지 않게 한다. */}
+      <ul className="grid grid-cols-2 gap-y-6 border-y border-border py-6 sm:grid-cols-4 sm:divide-x sm:divide-border">
+        {[
+          [nf(certCount), '자격증 트랙'],
+          [`${nf(pageCount)}+`, '심화 노트'],
+          [`${nf(questionCount)}+`, '연습 문항'],
+          ['₩0', '전 과정 무료'],
+        ].map(([figure, label]) => (
+          <li key={label} className="flex flex-col-reverse px-4 first:pl-0">
+            <span className="mt-1 text-sm text-fg-muted">{label}</span>
+            <span className="font-mono text-3xl font-bold tracking-tight">{figure}</span>
+          </li>
+        ))}
+      </ul>
 
-      {/* Trust Section */}
-      <section className="grid grid-cols-2 gap-6 sm:grid-cols-4 rounded-2xl border border-border/50 bg-bg-subtle p-8">
-        <div className="text-center">
-          <p className="text-3xl font-bold">{nf(certCount)}</p>
-          <p className="text-sm text-fg-muted mt-1">자격증 트랙</p>
-        </div>
-        <div className="text-center">
-          <p className="text-3xl font-bold">{nf(pageCount)}+</p>
-          <p className="text-sm text-fg-muted mt-1">심화 노트</p>
-        </div>
-        <div className="text-center">
-          <p className="text-3xl font-bold">{nf(questionCount)}+</p>
-          <p className="text-sm text-fg-muted mt-1">연습 문항</p>
-        </div>
-        <div className="text-center">
-          <p className="text-3xl font-bold">₩0</p>
-          <p className="text-sm text-fg-muted mt-1">전 과정 무료</p>
-        </div>
-      </section>
-
-      {/* SAA-C03 Featured */}
-      {popular.length > 0 && popular[0] && (
-        <section className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-accent" />
-              <span className="text-sm font-semibold text-accent">대표 트랙</span>
-            </div>
-            <h2 className="text-3xl font-bold">AWS Solutions Architect Associate (SAA-C03)</h2>
-            <p className="text-lg text-fg-muted">아키텍처 설계 직무를 겨냥한 AWS 어소시에이트 레벨 자격증</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Link
-              href={certHref(popular[0])}
-              className="group flex flex-col gap-3 rounded-xl border border-border bg-gradient-to-br from-accent/5 to-transparent p-6 transition hover:border-accent hover:from-accent/10"
-            >
-              <div className="space-y-2">
-                <p className="font-mono text-sm font-semibold text-accent">{popular[0].code}</p>
-                <p className="text-lg font-semibold">{popular[0].name}</p>
-                <ul className="space-y-1 text-sm text-fg-muted">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> {popular[0].weeks}주 · 총 {popular[0].dayCount}일 커리큘럼</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 매일 심화 노트 + 연습 문제</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> 실전 모의고사 · 간격반복 복습 (무료 가입 후 이용)</li>
-                </ul>
-              </div>
-              <span className="mt-auto flex items-center gap-2 text-sm font-semibold text-accent group-hover:gap-3">
-                Week 1부터 시작 <ArrowRight className="h-4 w-4" />
-              </span>
-            </Link>
-            <div className="space-y-2 rounded-xl border border-border p-6">
-              <p className="font-semibold">CertNote로 SAA 준비하면</p>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>한국어 심화 노트로 개념부터 탄탄히</span></li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>매일 한 편씩, 하루 {DAILY_STUDY_MINUTES}분 안팎 학습</span></li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0" /> <span>틀린 문제는 간격반복으로 복습 (무료 가입 후 이용)</span></li>
-              </ul>
-            </div>
-          </div>
-        </section>
-      )}
+      <FeaturedCerts lang="ko" certs={certs} />
 
       {/* Features */}
       <section className="space-y-4">
@@ -311,48 +228,6 @@ export function Landing({ certCount, pageCount, questionCount, certs }: LandingP
           AI 오답 설명은 이메일 인증을 마친 계정에서 하루 3번까지 쓸 수 있습니다. 모든 기능이 무료입니다.
         </p>
       </section>
-
-      {/* More Certs */}
-      {popular.length > 1 && (
-        <section className="space-y-4">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold">다른 자격증도 준비하세요</h2>
-            <p className="text-fg-muted">입문용 Cloud Practitioner와 리눅스마스터 트랙도 같은 구조(주차별 노트, 하루 한 편, 연습 문제)로 열려 있습니다.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {popular.slice(1).map((cert) => (
-              <Link
-                key={cert.slug}
-                href={certHref(cert)}
-                className="group flex flex-col gap-2 rounded-xl border border-border p-5 transition hover:border-accent hover:bg-bg-subtle"
-              >
-                <span className="font-mono text-xs text-fg-faint">{cert.code}</span>
-                <span className="font-semibold">{cert.name}</span>
-                <span className="mt-auto flex items-center gap-1 text-xs text-fg-muted transition group-hover:text-accent">
-                  Week 1부터 보기 <ArrowRight className="h-3.5 w-3.5" />
-                </span>
-              </Link>
-            ))}
-          </div>
-          {/* 나머지 트랙의 허브. 홈은 허브 3개에만 링크해 SQLD·리눅스마스터 2급 등은 홈에서 닿는 길이 없었다.
-              허브는 각 트랙의 주차 목록이 있는 색인 대상 페이지라, 홈의 링크를 여기로 모은다. */}
-          {others.length > 0 && (
-            <ul aria-label="전체 자격증 트랙" className="flex flex-wrap gap-2">
-              {others.map((cert) => (
-                <li key={cert.slug}>
-                  <Link
-                    href={certHref(cert)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-fg-muted transition hover:border-accent hover:text-fg"
-                  >
-                    <span className="font-mono text-xs text-fg-faint">{cert.code}</span>
-                    {cert.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
 
       {/* FAQ — 렌더 텍스트와 아래 JSON-LD 가 같은 배열에서 나온다(구조적 1:1 보장). */}
       <section className="space-y-4">
