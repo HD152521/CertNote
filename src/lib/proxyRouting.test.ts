@@ -132,3 +132,14 @@ describe('classifyPath — 임의 category 의 후기 경로는 소프트 404 �
     }
   });
 });
+
+describe('classifyPath — /en/try (영어 맛보기)', () => {
+  test('정확히 /en/try 만 pass 이고 proxy 를 거친다(콘텐츠 존재 검증으로 404 가 되지 않는다)', () => {
+    expect(reachesProxy('/en/try')).toBe(true);
+    expect(classifyPath('/en/try')).toBe('pass');
+  });
+
+  test.each(['/en/try/', '/en/try/x', '/en/tryx', '/en/Try', '/en/try/x/y'])('비슷한 경로 %s 는 content 검증으로 간다', (p) => {
+    expect(classifyPath(p)).toBe('content');
+  });
+});

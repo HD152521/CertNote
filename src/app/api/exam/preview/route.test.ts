@@ -46,4 +46,32 @@ describe('guest exam preview API', () => {
     for (let i = 0; i < 25; i++) last = (await start(post({ certSlug: cert }, '10.0.0.9'))).status;
     expect(last).toBe(429);
   });
+
+  const HANGUL = /[ㄱ-ㆎ가-힣]/;
+
+  test('lang=en 이면 영어 문제와 영어 해설을 내려준다(한글 없음)', async () => {
+    const res = await start(post({ certSlug: cert, lang: 'en' }, '10.0.1.1'));
+    expect(res.status).toBe(200);
+    const { questions } = (await res.json()) as { questions: { questionId: string; prompt: string; choices: { text: string }[] }[] };
+    expect(questions.length).toBeGreaterThan(0);
+    for (const q of questions) expect(HANGUL.test(q.prompt + q.choices.map((c) => c.text).join(' '))).toBe(false);
+    const ok = await check(post({ questionId: questions[0].questionId, selected: 'A', lang: 'en' }, '10.0.1.1'));
+    const body = (await ok.json()) as { explanation: string };
+    expect(HANGUL.test(body.explanation)).toBe(false);
+  });
+
+  test('lang 이 없거나 알 수 없으면 한국어 그대로', async () => {
+    const res = await start(post({ certSlug: cert, lang: 'fr' }, '10.0.1.2'));
+    const { questions } = (await res.json()) as { questions: { prompt: string }[] };
+    expect(HANGUL.test(questions.map((q) => q.prompt).join(' '))).toBe(true);
+  });
+
+  test('영어 요청의 오류 메시지는 영어, 한국어 요청은 한국어', async () => {
+    const en = (await (await start(post({ certSlug: 'nope-c99', lang: 'en' }, '10.0.1.3'))).json()) as { message: string };
+    expect(HANGUL.test(en.message)).toBe(false);
+    const ko = (await (await start(post({ certSlug: 'nope-c99' }, '10.0.1.4'))).json()) as { message: string };
+    expect(HANGUL.test(ko.message)).toBe(true);
+    const chk = (await (await check(post({ questionId: 'zzz', selected: 'A', lang: 'en' }, '10.0.1.5'))).json()) as { message: string };
+    expect(HANGUL.test(chk.message)).toBe(false);
+  });
 });
