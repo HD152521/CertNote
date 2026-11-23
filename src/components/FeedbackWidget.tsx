@@ -63,6 +63,8 @@ export function FeedbackWidget() {
 
   if (hidesFeedbackButton(pathname)) return null;
 
+  // 모바일(<sm)은 터치 영역 44px(h-11 w-11)에 눈에 보이는 원은 32px 아이콘만 — 읽는 화면을 덜 가린다. sm 이상은 기존 알약.
+  // 이전/다음 day 버튼(DayNavigationOverlay)은 세로 중앙 가장자리라 하단 버튼과 겹치지 않는다.
   return (
     <>
       {!open && (
@@ -72,11 +74,14 @@ export function FeedbackWidget() {
           onClick={() => setOpen(true)}
           aria-label={s.feedbackOpen}
           className={cn(
-            'fixed bottom-4 right-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg shadow-lg transition hover:opacity-90',
+            'group fixed bottom-2 right-2 z-50 inline-flex h-11 w-11 items-center justify-center sm:bottom-4 sm:right-4 sm:h-auto sm:w-auto',
             overlapsAd && 'invisible pointer-events-none',
           )}
         >
-          <MessageSquarePlus className="h-4 w-4" /> {s.feedbackButton}
+          <span className="inline-flex h-8 w-8 items-center justify-center gap-1.5 rounded-full bg-accent text-sm font-medium text-accent-fg opacity-80 shadow-md transition group-hover:opacity-100 sm:h-auto sm:w-auto sm:px-4 sm:py-2.5 sm:opacity-100 sm:shadow-lg sm:group-hover:opacity-90">
+            <MessageSquarePlus className="h-4 w-4" />
+            <span className="hidden sm:inline">{s.feedbackButton}</span>
+          </span>
         </button>
       )}
 
