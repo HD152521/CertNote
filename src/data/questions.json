@@ -23577,7 +23577,7 @@
       }
     ],
     "answer": "B",
-    "explanation": "Aurora Global Database는 전용 복제 인프라로 리전 간 RPO를 보통 1초 미만으로 유지하고 RTO ~1분의 페일오버를 제공한다. RPO가 정확히 0이 아닌 이유는 CAP 정리의 현실 — 리전 간 동기 복제는 왕복 레이턴시를 모든 쓰기에 부과하므로, Aurora Global은 비동기 복제를 쓰고 그 지연을 1초 미만으로 최적화한다. RDS Multi-AZ(A)는 단일 리전(멀티 리전 DR 아님), Cross-Region RR(C)은 Aurora Global보다 RPO/RTO가 나쁘고, DynamoDB(D)는 키-값으로 SQL이 아니다."
+    "explanation": "Aurora Global Database는 전용 복제 인프라로 리전 간 RPO를 보통 1초 안팎으로, 승격은 보통 1분 안팎으로 끝낸다(AWS가 보장하는 수치는 아니고 'typically' 수준의 전형값이다). RPO가 정확히 0이 아닌 이유는 CAP 정리의 현실 — 리전 간 동기 복제는 왕복 레이턴시를 모든 쓰기에 부과하므로, Aurora Global은 비동기 복제를 쓰고 그 지연을 1초 미만으로 최적화한다. RDS Multi-AZ(A)는 단일 리전(멀티 리전 DR 아님), Cross-Region RR(C)은 Aurora Global보다 RPO/RTO가 나쁘고, DynamoDB(D)는 키-값으로 SQL이 아니다."
   },
   {
     "id": "dop-c02-w16-d2-q2",
@@ -40917,7 +40917,7 @@
       }
     ],
     "answer": "C",
-    "explanation": "요구사항은 \"글로벌 읽기 분산 + 낮은 latency + 단일 쓰기 리전\". B)는 RDS Cross-Region Read Replica로 가능하지만 복제 지연이 수 초 ~ 수십 초 수준이고 페일오버가 수동. C) Aurora Global Database는 전용 복제 인프라로 **1초 미만** 복제 지연 + RPO < 1초, RTO < 1분을 보장하며 secondary 리전 최대 5개까지 확장 가능. 게임 리더보드처럼 \"신선도가 중요한 읽기\"에 더 적합. D)는 RDBMS 모델을 NoSQL로 바꿔야 해서 마이그레이션 비용이 크고, 트랜잭션·JOIN이 필요한 워크로드에 안 맞음. A)는 글로벌 분산을 못 함."
+    "explanation": "요구사항은 \"글로벌 읽기 분산 + 낮은 latency + 단일 쓰기 리전\". B)는 RDS Cross-Region Read Replica로 가능하지만 복제 지연이 수 초 ~ 수십 초 수준이고 페일오버가 수동. C) Aurora Global Database는 전용 복제 인프라로 **1초 미만**의 일반적 복제 지연 + RPO 1초 안팎, RTO 1분 안팎(AWS가 보장하는 수치는 아닌 전형값)으로 secondary 리전 최대 5개까지 확장 가능. 게임 리더보드처럼 \"신선도가 중요한 읽기\"에 더 적합. D)는 RDBMS 모델을 NoSQL로 바꿔야 해서 마이그레이션 비용이 크고, 트랜잭션·JOIN이 필요한 워크로드에 안 맞음. A)는 글로벌 분산을 못 함."
   },
   {
     "id": "dva-c02-w7-d2-q1",
@@ -103835,7 +103835,7 @@
       }
     ],
     "answer": "B",
-    "explanation": "Aurora Global Database는 storage-level 비동기 복제로 최대 5개 secondary 리전을 두고 일반적으로 RPO < 1초·RTO < 1분을 보장하는 관리형 글로벌 SQL DB다. A는 단일 리전 내 고가용성만 제공하고, C(DDB)는 SQL이 아니라 NoSQL이며, D(Read Replica)는 일관성·failover 보장이 약하고 RTO/RPO SLA를 명시하지 않는다. 함정: \"글로벌 SQL + RPO 1초\"는 Aurora Global의 직답이며, NoSQL 요구가 아닌 한 DDB로 답이 가지 않는다."
+    "explanation": "Aurora Global Database는 storage-level 비동기 복제로 최대 5개 secondary 리전을 두고 일반적으로 RPO 1초 안팎·RTO 1분 안팎을 달성하는(보장 수치는 아님) 관리형 글로벌 SQL DB다. A는 단일 리전 내 고가용성만 제공하고, C(DDB)는 SQL이 아니라 NoSQL이며, D(Read Replica)는 일관성·failover 보장이 약하고 RTO/RPO SLA를 명시하지 않는다. 함정: \"글로벌 SQL + RPO 1초\"는 Aurora Global의 직답이며, NoSQL 요구가 아닌 한 DDB로 답이 가지 않는다."
   },
   {
     "id": "sap-c02-w14-d4-q3",
@@ -103985,7 +103985,7 @@
       }
     ],
     "answer": "B",
-    "explanation": "Aurora Global은 최대 5개 리전, RPO < 1초, RTO < 1분 보장. RDS Multi-AZ는 단일 리전 내 가용성만 제공하고, Read Replica는 일관성이 약하며 자동 failover SLA가 없다. DMS는 마이그레이션·복제 도구이지 글로벌 DB 솔루션이 아니다. \"글로벌 SQL + RPO 1초\"는 Aurora Global의 직답이다."
+    "explanation": "Aurora Global은 최대 5개 리전, 일반적으로 RPO 1초 안팎, RTO 1분 안팎(AWS가 보장하는 수치는 아닌 전형값). RDS Multi-AZ는 단일 리전 내 가용성만 제공하고, Read Replica는 일관성이 약하며 자동 failover SLA가 없다. DMS는 마이그레이션·복제 도구이지 글로벌 DB 솔루션이 아니다. \"글로벌 SQL + RPO 1초\"는 Aurora Global의 직답이다."
   },
   {
     "id": "sap-c02-w14-d5-q2",
@@ -109385,7 +109385,7 @@
       }
     ],
     "answer": "B",
-    "explanation": "Aurora Global Database는 스토리지 레벨 복제로 RPO < 1초를 달성하고, 장애 시 Secondary를 Primary로 Promote하는 데 < 1분이 걸린다. A는 RPO가 수초~수십 초로 1초를 보장하지 못하고 RTO가 길다. C는 DMS가 DR 솔루션으로 부적합하다(마이그레이션 도구). D는 RPO/RTO 요건 불충족."
+    "explanation": "Aurora Global Database는 스토리지 레벨 복제로 일반적으로 RPO 1초 안팎을 달성하고, 장애 시 Secondary를 Primary로 Promote하는 데 보통 1분 안팎이 걸린다(AWS가 보장하는 수치는 아닌 전형값). A는 RPO가 수초~수십 초로 1초를 보장하지 못하고 RTO가 길다. C는 DMS가 DR 솔루션으로 부적합하다(마이그레이션 도구). D는 RPO/RTO 요건 불충족."
   },
   {
     "id": "sap-c02-w5-d1-q2",
