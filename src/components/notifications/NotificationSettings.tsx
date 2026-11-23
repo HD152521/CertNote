@@ -91,7 +91,7 @@ export function NotificationSettings() {
   }
 
   if (loading) {
-    return <div className="h-24 animate-pulse rounded-lg border border-border" />;
+    return <div className="h-24 motion-safe:animate-pulse rounded-lg border border-border" />;
   }
 
   if (!supported) {
