@@ -200,3 +200,13 @@ describe('Landing — 허브 링크', () => {
     for (const c of CERTS) expect(hrefs, c.slug).toContain(`/${c.section}/${c.slug}`);
   });
 });
+
+describe('Landing — 숫자 띠(카운트업)', () => {
+  it('서버 HTML 에 최종값이 그대로 들어 있다(효과는 마운트 뒤에만)', () => {
+    const html = renderHtml();
+    expect(html).toContain('>5<');
+    expect(html).toContain('>4,321+<');
+    expect(html).toContain('>7,654+<');
+    expect(html).toContain('>₩0<');
+  });
+});
