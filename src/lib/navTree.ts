@@ -19,10 +19,19 @@ export interface CertTree {
   weeks: NavWeek[];
 }
 
+// 사이드바는 day 번호를 따로 그리므로 제목 앞의 "Day N - " 는 화면에 쓰이지 않는다(SidebarNav 가 예전엔 렌더 때 뗐다).
+// 서버에서 미리 떼어 보내면 모든 페이지의 HTML·RSC·세그먼트에 실리는 트리에서 day 마다 약 9바이트가 빠진다.
+// 접두사만 있는 제목은 비워 보내지 않고 원문을 그대로 둔다.
+const NAV_DAY_PREFIX = /^Day\s*\d+\s*[-–]\s*/i;
+
+export function navDayTitle(title: string): string {
+  return title.replace(NAV_DAY_PREFIX, '') || title;
+}
+
 export function buildCertTree(meta: CertMeta, days: readonly DayRef[]): CertTree {
   const byWeek = new Map<number, NavDay[]>();
   for (const d of days) {
-    byWeek.set(d.week, [...(byWeek.get(d.week) ?? []), [d.day, d.title]]);
+    byWeek.set(d.week, [...(byWeek.get(d.week) ?? []), [d.day, navDayTitle(d.title)]]);
   }
   return {
     meta: { slug: meta.slug, code: meta.code, level: meta.level, section: meta.section, name: meta.name },

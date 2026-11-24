@@ -128,7 +128,7 @@ export function SidebarNav({ certTrees, enCertTrees, onNavigate }: SidebarNavPro
                             title={title}
                           >
                             <span className="mr-1.5 tabular-nums text-fg-faint">{day}.</span>
-                            {title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}
+                            {title}
                           </Link>
                         </li>
                       );
