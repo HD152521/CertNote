@@ -226,11 +226,23 @@ function Factors({ s, f, inputs }: { s: R; f: ReadinessFactors; inputs: { totalQ
 }
 
 // 오늘 → 시험일 두 갈래: 지금 속도, 목표 속도. 지난 기록은 그리지 않는다(풀이 기록 보관 개수에 한도가 있어 과거 곡선이 부정확).
+// 값 라벨은 점 바로 밑(+18)에 두는 게 기본이지만, 그 위치가 맨 아래 축 라벨("오늘"/D-DAY, y=224)과
+// 가까워지면(진도율이 낮아 점이 축에 붙을 때) 겹친다 — 11-27 피드백(글자 간격·위치가 안 맞음)의 실제 원인.
+// 점이 축에 가까우면 라벨을 점 "위"로 뒤집어서 항상 최소 간격을 보장한다.
+function valueLabelY(pointY: number): number {
+  const below = pointY + 18;
+  return below > 206 ? pointY - 12 : below;
+}
+
 function ProjectionChart({ s, now, projection }: { s: R; now: number; projection: CoverageProjection }) {
   const x0 = 60;
   const x1 = 660;
   const y = (pct: number) => 200 - pct * 1.6;
   const goalY = y(projection.goal);
+  const nowY = y(now);
+  const paceY = y(projection.atExamCurrentPace);
+  // 목표선 라벨과 "지금 n%" 라벨이 같은 높이로 겹칠 수 있어(진도가 이미 목표에 근접) 최소 14px 띄운다.
+  const goalLabelY = Math.abs(goalY - nowY) < 14 ? goalY - 8 - 14 : goalY - 8;
   return (
     <section aria-labelledby="proj-h" className="space-y-3.5 rounded-2xl border border-border bg-bg-elevated p-5 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -248,14 +260,14 @@ function ProjectionChart({ s, now, projection }: { s: R; now: number; projection
       >
         <line x1={x0} y1={200} x2={x1} y2={200} className="stroke-border" />
         <line x1={x0} y1={goalY} x2={x1} y2={goalY} className="stroke-fg" strokeDasharray="2 4" />
-        <text x={x0} y={goalY - 8} fontSize="11" className="fill-fg-muted">{fmt(s.goalLine, { goal: projection.goal })}</text>
-        <text x={x0} y={218} fontSize="11" className="fill-fg-muted">{s.today}</text>
-        <text x={x1} y={218} fontSize="11" textAnchor="end" className="fill-fg-muted">D-DAY</text>
-        <line x1={x0} y1={y(now)} x2={x1} y2={y(projection.atExamCurrentPace)} className="stroke-fg-faint" strokeWidth={3} strokeDasharray="6 5" />
-        <line x1={x0} y1={y(now)} x2={x1} y2={goalY} className="stroke-accent" strokeWidth={3} strokeDasharray="6 5" />
-        <circle cx={x0} cy={y(now)} r={5} className="fill-accent" />
-        <text x={x0 + 10} y={y(now) + 18} fontSize="12" className="fill-fg font-mono">{now}%</text>
-        <text x={x1 - 8} y={y(projection.atExamCurrentPace) + 18} fontSize="12" textAnchor="end" className="fill-fg-muted font-mono">
+        <text x={x0} y={goalLabelY} fontSize="11" className="fill-fg-muted">{fmt(s.goalLine, { goal: projection.goal })}</text>
+        <text x={x0} y={224} fontSize="11" className="fill-fg-muted">{s.today}</text>
+        <text x={x1} y={224} fontSize="11" textAnchor="end" className="fill-fg-muted">D-DAY</text>
+        <line x1={x0} y1={nowY} x2={x1} y2={paceY} className="stroke-fg-faint" strokeWidth={3} strokeDasharray="6 5" />
+        <line x1={x0} y1={nowY} x2={x1} y2={goalY} className="stroke-accent" strokeWidth={3} strokeDasharray="6 5" />
+        <circle cx={x0} cy={nowY} r={5} className="fill-accent" />
+        <text x={x0 + 10} y={valueLabelY(nowY)} fontSize="12" className="fill-fg font-mono">{now}%</text>
+        <text x={x1 - 8} y={valueLabelY(paceY)} fontSize="12" textAnchor="end" className="fill-fg-muted font-mono">
           {projection.atExamCurrentPace}%
         </text>
       </svg>
