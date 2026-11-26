@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# 환경변수 값 백업 폴더 — 절대 커밋 금지(실제 비밀값이 들어있음)
+/secrets/
+
 # vercel
 .vercel
 
