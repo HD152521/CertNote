@@ -8,6 +8,10 @@ import { SITE_URL } from './site';
 
 // docs/growth/next-work-plan-2026-11-14.md Step 1 — 영어 URL 에는 카테고리가 없어 /en/aws 등은 존재하지 않는다.
 const CATEGORY_PATHS = ['/en/aws', '/en/linux', '/en/data'] as const;
+// 후기 통합(2026-11-27) — 자격증별 후기 페이지를 섹션 허브(?cert= 필터)로 합치며 추가한 리다이렉트.
+// 카테고리 리다이렉트와 목적이 다르므로 별도 상수로 두되, "/en 하위에 의도치 않은 규칙이 몰래
+// 추가되지 않았는지" 검증하는 아래 테스트에는 이 값도 더해 합집합으로 비교한다.
+const OTHER_EN_SOURCES = ['/en/reviews/:cert'] as const;
 
 async function loadRedirects(): Promise<Array<{ source: string; destination: string; permanent?: boolean; has?: unknown }>> {
   return (await (nextConfig as NextConfig).redirects?.()) ?? [];
@@ -22,7 +26,7 @@ describe('/en/<카테고리> 리다이렉트', () => {
 
   test('/en 하위의 다른 경로에는 리다이렉트 규칙이 없다', async () => {
     const enSources = (await loadRedirects()).map((r) => r.source).filter((s) => s === '/en' || s.startsWith('/en/'));
-    expect(enSources.sort()).toEqual([...CATEGORY_PATHS].sort());
+    expect(enSources.sort()).toEqual([...CATEGORY_PATHS, ...OTHER_EN_SOURCES].sort());
   });
 
   test('프록시 분류는 그대로다(/en/saa-c03/... 은 content, /en/about 은 pass)', () => {

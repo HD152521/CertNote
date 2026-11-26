@@ -39,7 +39,7 @@ describe('day 라우트 구조 — category 는 리터럴 폴더', () => {
     }
   });
 
-  test('src/app 아래 캐시되는(force-dynamic 아닌) 동적 세그먼트 page 중 첫 세그먼트가 [category] 인 것은 허브·후기뿐이다', async () => {
+  test('src/app 아래 캐시되는(force-dynamic 아닌) 동적 세그먼트 page 중 첫 세그먼트가 [category] 인 것은 허브·시험정보·후기뿐이다', async () => {
     const found: string[] = [];
     async function walk(dir: string) {
       for (const e of await fs.readdir(dir, { withFileTypes: true })) {
@@ -49,10 +49,12 @@ describe('day 라우트 구조 — category 는 리터럴 폴더', () => {
       }
     }
     await walk(path.join(KO_APP, '[category]'));
+    // 후기는 자격증별 페이지 없이 섹션 허브(?cert= 필터) 하나로 통합됐다(2026-11-27) —
+    // /{category}/reviews/{cert}는 next.config.ts redirects가 그 허브로 301 보낸다.
     expect(found.sort()).toEqual([
+      '[category]/[slug]/exam-info/page.tsx', // dynamicParams=false 허브
       '[category]/[slug]/page.tsx', // dynamicParams=false 허브
       '[category]/page.tsx', // dynamicParams=false 허브
-      '[category]/reviews/[cert]/page.tsx', // force-dynamic
       '[category]/reviews/page.tsx', // force-dynamic
     ]);
   });
