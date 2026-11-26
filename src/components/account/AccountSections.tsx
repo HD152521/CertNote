@@ -53,7 +53,7 @@ export function AccountSections({
 
       {/* 미인증 계정만(서버 값) — 구글 계정은 가입 시 인증된 것으로 저장돼 보이지 않는다. */}
       {!emailVerified && (
-        <div className="mb-8 rounded-md border border-warning/40 bg-warning/5 px-3 py-2.5">
+        <div className="mb-8 border-l-2 border-warning/50 pl-4">
           <p className="text-sm font-medium text-fg">{vs.emailNotVerified}</p>
           <p className="mt-0.5 text-xs text-fg-muted">{vs.emailNotVerifiedHint}</p>
           <ResendVerifyButton className="mt-2" />

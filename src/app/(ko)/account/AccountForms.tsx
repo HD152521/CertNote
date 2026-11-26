@@ -178,7 +178,7 @@ function DeleteAccountForm({ hasPassword, userEmail }: { hasPassword: boolean; u
   }
 
   return (
-    <section className="space-y-3 rounded-md border border-danger/40 p-4">
+    <section className="space-y-3 border-l-2 border-danger/50 pl-4">
       <h2 className="text-sm font-semibold text-danger">{s.deleteAccount}</h2>
       <p className="text-sm text-fg-muted">{s.deleteAccountWarning}</p>
       {!confirming ? (
