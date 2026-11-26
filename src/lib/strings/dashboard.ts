@@ -241,6 +241,7 @@ export const statsStrings: Dict<StatsKey> = {
 
 type ReadinessKey =
   | 'title'
+  | 'disclaimer'
   | 'scaleAria'
   | 'scaleRisk'
   | 'scaleBehind'
@@ -289,12 +290,12 @@ type ReadinessKey =
   | 'how1'
   | 'how2'
   | 'how3'
-  | 'how4'
   | 'setExamDate';
 
 export const readinessStrings: Dict<ReadinessKey> = {
   ko: {
     title: '합격 준비도',
+    disclaimer: '진도·정답률로 만든 경험적 추정치예요. 실제 합격·불합격 기록으로 검증된 값이 아니니, 방향을 참고하는 용도로만 써 주세요.',
     scaleAria: '0부터 100 사이에서 {p}. 40 미만 위험, 40부터 64 조금 늦음, 65 이상 순조로움',
     scaleRisk: '위험',
     scaleBehind: '조금 늦음',
@@ -343,11 +344,11 @@ export const readinessStrings: Dict<ReadinessKey> = {
     how1: '진도(45%)와 최근 정답률(55%)을 섞어 준비도를 냅니다.',
     how2: '최근 정답률이 목표보다 낮으면 깎습니다. 다 풀어도 못 맞히면 떨어지니까요.',
     how3: '목표 진도까지 하루 20문제 넘게 필요하면 시간 부족으로 깎습니다.',
-    how4: '실제 합격·불합격 기록으로 맞춰 본 값이 아닙니다. 방향을 보는 용도로 써 주세요.',
     setExamDate: '시험일 정하기',
   },
   en: {
     title: 'Exam readiness',
+    disclaimer: "A rough estimate from your progress and accuracy — not validated against real pass/fail outcomes. Use it as a direction, not a guarantee.",
     scaleAria: '{p} on a 0–100 scale. Under 40 at risk, 40 to 64 a bit behind, 65 and up on track',
     scaleRisk: 'At risk',
     scaleBehind: 'A bit behind',
@@ -396,7 +397,6 @@ export const readinessStrings: Dict<ReadinessKey> = {
     how1: 'Readiness mixes progress (45%) and recent accuracy (55%).',
     how2: 'If recent accuracy is below your goal, it’s lowered — finishing everything doesn’t help if answers are wrong.',
     how3: 'If reaching the progress goal needs more than 20 questions a day, it’s lowered for time.',
-    how4: 'It hasn’t been checked against real pass/fail results. Use it to see direction, not as a promise.',
     setExamDate: 'Set exam date',
   },
 };

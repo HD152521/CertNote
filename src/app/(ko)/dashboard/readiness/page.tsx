@@ -75,6 +75,13 @@ export default async function ReadinessPage() {
 
         {state !== 'pending' && <Scale s={s} p={prediction.probability} />}
 
+        {/* 화면의 확신(큰 숫자·게이지)과 실제 근거 수준(검증 안 된 휴리스틱)이 안 맞는다는 피드백
+            (2026-11-26) — 예전엔 이 안내가 맨 아래 접힌 <details> 4번째 줄에만 있어 거의 안 보였다.
+            숫자 바로 밑으로 끌어올려 항상 보이게 한다. */}
+        <p className="rounded-lg border border-border bg-bg-subtle px-3 py-2.5 text-xs leading-relaxed text-fg-muted">
+          {s.disclaimer}
+        </p>
+
         <p className="text-[15px] leading-relaxed">
           {state === 'pending' ? (
             fmt(s.summaryPending, { n: inputs.attemptedQuestions, min: MIN_ATTEMPTS_FOR_PREDICTION })
@@ -109,7 +116,6 @@ export default async function ReadinessPage() {
           <li>{s.how1}</li>
           <li>{s.how2}</li>
           <li>{s.how3}</li>
-          <li>{s.how4}</li>
         </ul>
       </details>
     </div>
