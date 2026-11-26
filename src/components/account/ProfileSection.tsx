@@ -105,15 +105,16 @@ export function ProfileSection({ certs, initial }: { certs: CertOption[]; initia
   );
 }
 
+// 박스 대신 라벨 + 밑줄로만 그룹을 나눈다(마이페이지 전체가 박스 중첩으로 보이지 않도록).
 function Group({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-border bg-bg-elevated p-4 sm:p-5">
-      <div className="mb-3 flex items-baseline justify-between gap-2">
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between gap-2 border-b border-border pb-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">{title}</h3>
         {hint && <span className="text-[11px] text-fg-faint">{hint}</span>}
       </div>
       <div className="space-y-3">{children}</div>
-    </section>
+    </div>
   );
 }
 

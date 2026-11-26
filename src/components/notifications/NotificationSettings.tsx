@@ -91,13 +91,13 @@ export function NotificationSettings() {
   }
 
   if (loading) {
-    return <div className="h-24 motion-safe:animate-pulse rounded-lg border border-border" />;
+    return <div className="h-20 motion-safe:animate-pulse rounded-lg bg-fg/5" />;
   }
 
   if (!supported) {
     return (
-      <section className="space-y-2 rounded-lg border border-border p-4">
-        <h2 className="flex items-center gap-2 text-sm font-medium"><BellOff className="h-4 w-4" /> {s.studyNotifications}</h2>
+      <section className="space-y-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold"><BellOff className="h-4 w-4" /> {s.studyNotifications}</h2>
         <p className="text-sm text-fg-faint">{s.pushUnsupportedDetail}</p>
       </section>
     );
@@ -106,9 +106,9 @@ export function NotificationSettings() {
   const denied = permissionState() === 'denied';
 
   return (
-    <section className="space-y-4 rounded-lg border border-border p-4">
+    <section className="space-y-4">
       <div className="space-y-1">
-        <h2 className="flex items-center gap-2 text-sm font-medium"><BellRing className="h-4 w-4" /> {s.studyNotifications}</h2>
+        <h2 className="flex items-center gap-2 text-sm font-semibold"><BellRing className="h-4 w-4" /> {s.studyNotifications}</h2>
         <p className="text-xs text-fg-faint">{s.studyNotificationsDesc}</p>
       </div>
 

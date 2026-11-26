@@ -41,7 +41,7 @@ function ChangePasswordForm() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-medium">{t(lang, 'changePassword')}</h2>
+      <h2 className="text-sm font-semibold">{t(lang, 'changePassword')}</h2>
       <form onSubmit={submit} className="space-y-3">
         <input
           type="password"
@@ -110,7 +110,7 @@ function SetPasswordSection({ userEmail }: { userEmail: string }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-medium">{s.setPasswordTitle}</h2>
+      <h2 className="text-sm font-semibold">{s.setPasswordTitle}</h2>
       <p className="text-sm text-fg-muted">{s.setPasswordDesc}</p>
       {error && <p className="text-xs text-danger">{error}</p>}
       {sent && <p role="status" className="text-xs text-fg-muted">{fmt(s.setPasswordEmailSent, { email: userEmail })}</p>}
@@ -179,7 +179,7 @@ function DeleteAccountForm({ hasPassword, userEmail }: { hasPassword: boolean; u
 
   return (
     <section className="space-y-3 rounded-md border border-danger/40 p-4">
-      <h2 className="text-lg font-medium text-danger">{s.deleteAccount}</h2>
+      <h2 className="text-sm font-semibold text-danger">{s.deleteAccount}</h2>
       <p className="text-sm text-fg-muted">{s.deleteAccountWarning}</p>
       {!confirming ? (
         <button
