@@ -1,6 +1,7 @@
 import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSection } from './category';
 import { getAllDays, getCategoryIndex, getCertMeta } from './content';
 import { parseDaySegment } from './day/segment';
+import { getExamInfo } from './examInfo';
 
 // docs/SEO-indexing-fix-plan.md Step6 소프트 404 수정용 존재 검증.
 //
@@ -83,6 +84,10 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   if (isSection(category) && meta.section !== category) return false;
 
   if (segments.length === 2) return true; // 자격증 허브 — slug 존재만 검증.
+  // 시험정보 상세([category]/[slug]/exam-info). dynamicParams=false(허브와 같은 근거)로도 막히지만,
+  // 허브의 대소문자 불일치 방어와 같은 이유로 여기서도 명시 검증한다 — examInfo 없는 자격증은 그
+  // 페이지 자체를 안 만들었으므로(generateStaticParams) 404 여야 한다.
+  if (segments.length === 3) return weekSeg === 'exam-info' && getExamInfo(slug) !== null;
   if (segments.length !== 4) return true; // 그 외 깊이는 애초에 어떤 라우트도 매칭하지 않는다.
 
   const week = parseDaySegment(weekSeg, 'week');

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { EN_CATEGORY, SECTIONS } from '@/lib/category';
 import { getAllDays, getCertMetaMtime, getDayMtime, listCerts } from '@/lib/content';
+import { getExamInfo } from '@/lib/examInfo';
 import { getRoadmapRoles } from '@/lib/roadmap';
 import { getSourceFileMtime } from '@/lib/fileMtime';
 import { FREE_WEEK } from '@/lib/entitlement/policy';
@@ -90,6 +91,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
   );
   const homeLastMod = maxMtime([await getSourceFileMtime('src/app/(ko)/page.tsx'), ...allCertMetaMtimes]);
+  // 시험정보 콘텐츠의 실제 소스(examInfo.ts, 데이터 교체 시 이 시각이 갱신된다). cert meta.json
+  // 과는 독립적인 변경이라 따로 둔다 — [category]/[slug]/exam-info/page.tsx 가 이 파일만 읽는다.
+  const examInfoFileMtime = await getSourceFileMtime('src/lib/examInfo.ts');
 
   const out: MetadataRoute.Sitemap = [
     sitemapEntry(SITE_URL, homeLastMod, 'weekly', 1),
@@ -119,6 +123,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       out.push(
         sitemapEntry(`${SITE_URL}/${section}/${cert.slug}`, await getCertMetaMtime(section, cert.slug), 'weekly', 0.9),
       );
+      // 시험정보 상세 페이지(도메인 비중·FAQ·버전 비교). 자격증마다 있는 건 아니다(examInfo.ts 참고).
+      if (getExamInfo(cert.slug)) {
+        out.push(
+          sitemapEntry(
+            `${SITE_URL}/${section}/${cert.slug}/exam-info`,
+            maxMtime([examInfoFileMtime, await getCertMetaMtime(section, cert.slug)]),
+            'monthly',
+            0.6,
+          ),
+        );
+      }
       const days = await getAllDays(section, cert.slug);
       for (const d of days) {
         if (!isIndexableDay(section, d.week)) continue; // noindex day는 제출하지 않는다.
@@ -177,6 +192,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     out.push(sitemapEntry(`${SITE_URL}/${EN_CATEGORY}`, maxMtime(enCertMetaMtimes), 'weekly', 0.8));
     for (const cert of enCerts) {
       out.push(sitemapEntry(`${SITE_URL}/${EN_CATEGORY}/${cert.slug}`, await getCertMetaMtime(EN_CATEGORY, cert.slug), 'weekly', 0.7));
+      if (getExamInfo(cert.slug)) {
+        out.push(
+          sitemapEntry(
+            `${SITE_URL}/${EN_CATEGORY}/${cert.slug}/exam-info`,
+            maxMtime([examInfoFileMtime, await getCertMetaMtime(EN_CATEGORY, cert.slug)]),
+            'monthly',
+            0.5,
+          ),
+        );
+      }
       const days = await getAllDays(EN_CATEGORY, cert.slug);
       for (const d of days) {
         if (!isIndexableDay(EN_CATEGORY, d.week)) continue; // 번역 덜 된 주차는 noindex — 제외.

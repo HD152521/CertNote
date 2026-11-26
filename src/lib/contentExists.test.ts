@@ -101,7 +101,13 @@ describe('contentPathExists', () => {
     expect(await contentPathExists('/linux/saa-c03/week2/day1')).toBe(false);
   });
 
-  test('3세그먼트(어떤 라우트도 매칭하지 않는 깊이)는 검증 없이 true — 이미 라우트 매칭 단계에서 404 처리됨', async () => {
-    expect(await contentPathExists('/aws-certs/saa-c03/bogus')).toBe(true);
+  test('시험정보 페이지(3세그먼트, exam-info)는 그 자격증에 examInfo 가 있어야 true', async () => {
+    expect(await contentPathExists('/aws-certs/saa-c03/exam-info')).toBe(true);
+    expect(await contentPathExists('/en/saa-c03/exam-info')).toBe(true);
+  });
+
+  test('exam-info 가 아닌 3세그먼트, 또는 없는 자격증의 exam-info 는 false', async () => {
+    expect(await contentPathExists('/aws-certs/saa-c03/bogus')).toBe(false);
+    expect(await contentPathExists('/aws-certs/nonexistent-cert/exam-info')).toBe(false);
   });
 });

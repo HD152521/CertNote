@@ -11,14 +11,12 @@ import { getExamInfo, isUpcomingActive, kstToday, localizeExamInfo } from '@/lib
 import { getMockExamQuestionCount } from '@/lib/exam/examBankCount';
 import { buildTrackContents } from '@/lib/certTrack';
 import BulletList from '@/components/ui/BulletList';
-import ExamInfoCard from '@/components/ExamInfoCard';
-import ExamRevisionSection from '@/components/ExamRevisionSection';
 import UpcomingExamNotice from '@/components/UpcomingExamNotice';
 import { ResumeLink } from '@/components/resume/ResumeLink';
 import { cn } from '@/lib/cn';
 import { linkDayRefHref } from '@/lib/navTree';
 import { JsonLd } from '@/components/JsonLd';
-import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
+import { buildCourseLd, buildBreadcrumbLd } from '@/lib/structuredData';
 import { AdSlot } from '@/components/ads/AdSlot';
 import { resolveAdPlacement } from '@/lib/ads/adPlacements';
 import { certOgImage } from '@/lib/ogImages';
@@ -209,11 +207,15 @@ export default async function CertIndexPage({ params }: PageProps) {
       </header>
       {lang === 'en' && <SignupPrompt placement="hub" message="home" reserveSpace />}
       {upcoming && <UpcomingExamNotice code={meta.code} upcoming={upcoming} />}
-      {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}
-      {examInfo && <ExamInfoCard info={examInfo} lang={lang} section={section} />}
-      {/* 이전 시험 버전과의 차이. 문구가 한국어라 영어판에는 싣지 않는다(src/components/ExamRevisionSection.tsx). */}
-      {lang === 'ko' && examInfo?.revision && (
-        <ExamRevisionSection code={meta.code} revision={examInfo.revision} domains={examInfo.domains} />
+      {/* 시험 정보(도메인 비중·FAQ·버전 비교)는 별도 페이지로 옮겼다 — 이 허브는 "간단히 보고
+          Week로 넘어가기"가 목적인데 그 콘텐츠가 길어서 Week 목록을 밀어내고 있었다(유저 피드백,
+          2026-11-26). 상세 내용은 [category]/[slug]/exam-info/page.tsx 참고. */}
+      {examInfo && (
+        <p>
+          <Link href={`/${category}/${slug}/exam-info`} className="text-sm font-medium text-accent hover:underline">
+            {lang === 'en' ? 'See full exam info →' : '자세한 시험 정보 보기 →'}
+          </Link>
+        </p>
       )}
 
       {/* 트랙 구성 — 자격증마다 값이 달라지는 '사실 명세'다(홍보 문구가 아니다).
@@ -236,10 +238,6 @@ export default async function CertIndexPage({ params }: PageProps) {
           />
         </section>
       )}
-
-      {/* 시험 정보·트랙 구성(읽는 글)과 주차 목록 사이. 아래 목록은 줄마다 링크라, 부모의 space-y-10(40px)과
-          주차 제목 한 줄을 사이에 두고 떨어뜨린다. 목록 한가운데나 "Week 1부터 시작" 버튼 옆에는 두지 않는다. */}
-      {adHub && <AdSlot {...adHub} />}
 
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
@@ -268,6 +266,10 @@ export default async function CertIndexPage({ params }: PageProps) {
           </div>
         ))}
       </section>
+
+      {/* 광고는 Week 목록 뒤(페이지 끝)에 — 허브의 본래 목적(간단한 정보 → Week로 이동)을
+          가로막지 않는 자리. 목록 한가운데나 "Week 1부터 시작" 버튼 옆에는 두지 않는다. */}
+      {adHub && <AdSlot {...adHub} />}
     </div>
   );
 }
