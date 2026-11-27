@@ -52,10 +52,10 @@ function ExamInfoTeaser({ category, slug, info, lang }: { category: string; slug
       className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 transition hover:border-border-strong hover:bg-bg-subtle"
     >
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1">
-        <span className="shrink-0 text-sm font-medium text-fg-muted">{en ? 'Exam info' : '시험 정보'}</span>
+        <span className="shrink-0 text-sm font-semibold text-fg">{en ? 'Exam info' : '시험 정보'}</span>
         {facts.slice(0, 3).map((f) => (
           <span key={f.label} className="whitespace-nowrap text-sm text-fg">
-            <span className="text-fg-faint">{f.label}</span> <span className="font-medium">{f.value}</span>
+            <span className="text-fg-muted">{f.label}</span> <span className="font-semibold">{f.value}</span>
           </span>
         ))}
       </div>
@@ -256,7 +256,7 @@ export default async function CertIndexPage({ params }: PageProps) {
           en 트랙은 Week 1 프리뷰만 있고 모의고사·복습이 한국어 전용이라 ko에서만 렌더한다. */}
       {lang !== 'en' && (
         <section aria-labelledby="track-contents-heading" className="space-y-3">
-          <h2 id="track-contents-heading" className="text-sm font-medium text-fg-muted">
+          <h2 id="track-contents-heading" className="text-base font-semibold text-fg">
             트랙 구성
           </h2>
           <BulletList
@@ -273,19 +273,14 @@ export default async function CertIndexPage({ params }: PageProps) {
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
           <div key={w} className="space-y-2">
-            <h2
-              className={cn(
-                'text-xs uppercase tracking-wider text-fg-faint',
-                lang === 'en' && 'font-mono',
-              )}
-            >
+            <h2 className="text-base font-semibold text-fg">
               {lang === 'en' ? `Week ${w}` : `${w}주차`}
             </h2>
             <ul className="divide-y divide-border rounded-lg border border-border bg-bg-elevated">
               {ws.map((d) => (
                 <li key={d.href}>
                   <Link href={linkDayRefHref(d)} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle transition">
-                    <span className="font-mono text-xs text-fg-faint w-10 shrink-0">Day {d.day}</span>
+                    <span className="w-14 shrink-0 text-sm font-medium tabular-nums text-fg-muted">Day {d.day}</span>
                     <span className="flex-1 text-sm truncate">{d.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
                     {/* 번역 전 주차는 한국어 원문으로 연결된다(linkDayHref). 누르기 전에 알 수 있게 표시한다. */}
                     {linkDayRefHref(d) !== d.href && <span className="font-mono text-[10px] text-fg-faint">KO</span>}
