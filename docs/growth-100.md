@@ -167,3 +167,5 @@
   - 통합 점검(11-24 운영): 사이트맵 1,679 전부 200, 홈에서 전부 도달(고아 0, 4xx·5xx 링크 0), 존재하지 않는 콘텐츠 경로 404 유지, day 페이지 canonical 자기참조·noindex 없음·hreflang 쌍·JSON-LD Course/Breadcrumb 정상. 모바일 홈 실험실 측정 LCP 659ms·CLS 0.00(스로틀 없음, 필드 데이터 없음). `scripts/verify-seo.mjs` 는 옛 `/aws-certs`·Article 스키마 기준이라 15건 실패로 나오는데 실제 신호는 정상(스크립트가 낡음, 갱신 필요).
   - 확인하지 못한 것: 모바일 실화면 캡처(캡처 시간 초과로 수치만 확인), 토스트가 실제로 뜨는 모습, 카드 fade-up 이 모바일 LCP 에 주는 영향, 영어 홈 첫 방문 흐름의 실기기 확인.
   - 남은 것(후속 후보): 로그인 홈 `/home` 의 사이드바 중복·균일 격자, 한국어 홈 하단 균일 카드, `verify-seo.mjs` 갱신, 계정 흐름 로그인·가입 메타 제목 영어화(동적 렌더 필요해 보류).
+- 11-24 (호스팅 이전 검토·페이지 무게 측정): Vercel Hobby 한도 초과로 사이트가 402 로 멈춤. 하루 급증은 auto-ops(51분), 평소 소모는 cert-note(3시간 17분). Railway Hobby(월 $5)로 옮기는 안을 권했고 결정은 사용자 몫. **환경변수 18개 중 17개가 `vercel env pull` 에서 [SENSITIVE] 자리표시자로 나와 전부 재발급이 필요**(DB 는 외부 Neon 이라 데이터는 안전). 페이지 1개 저장물은 약 635KB 이고 사이드바 목차가 약 44%, `_full.segment.rsc` 는 `.rsc` 의 동일 복사본. 제목 접두사 제거로 -4% 적용(perf/page-weight), 목차 지연 로딩(-44%)은 SEO 영향 때문에 결정 대기. 상세는 `docs/hosting-and-page-weight-2026-11-24.md`.
+11-26~27 Vercel Pro 로 복구(청구·점검 범위, 환경변수 백업 원칙, 허브 가독성 #105, 봇 차단 PR 불필요 결정): docs/hosting-and-page-weight-2026-11-24.md 7절 참고.

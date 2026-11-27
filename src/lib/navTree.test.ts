@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { CertMeta, DayRef } from './content';
-import { buildCertTree, linkDayHref, navDayHref } from './navTree';
+import { buildCertTree, linkDayHref, navDayHref, navDayTitle } from './navTree';
 
 const meta: CertMeta = {
   slug: 'saa-c03',
@@ -25,9 +25,17 @@ describe('buildCertTree — 사이드바 전송용 축약 트리', () => {
     const tree = buildCertTree(meta, [day(1, 1, 'Day 1 - A'), day(1, 2, 'Day 2 - B'), day(2, 1, 'Day 1 - C')]);
 
     expect(tree.weeks).toEqual([
-      [1, [[1, 'Day 1 - A'], [2, 'Day 2 - B']]],
-      [2, [[1, 'Day 1 - C']]],
+      [1, [[1, 'A'], [2, 'B']]],
+      [2, [[1, 'C']]],
     ]);
+  });
+
+  test('제목 앞의 "Day N - " 는 서버에서 떼고, 접두사만 있는 제목은 원문을 둔다', () => {
+    expect(navDayTitle('Day 12 - VPC: 서브넷')).toBe('VPC: 서브넷');
+    expect(navDayTitle('Day 3 – 하이픈 변형')).toBe('하이픈 변형');
+    expect(navDayTitle('day 4 - 대소문자')).toBe('대소문자');
+    expect(navDayTitle('접두사 없음')).toBe('접두사 없음');
+    expect(navDayTitle('Day 5 -')).toBe('Day 5 -');
   });
 
   test('비어 있는 day 번호(파일 없음)는 건너뛴 그대로 유지한다', () => {
