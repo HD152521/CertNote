@@ -52,10 +52,10 @@ function ExamInfoTeaser({ category, slug, info, lang }: { category: string; slug
       className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 transition hover:border-border-strong hover:bg-bg-subtle"
     >
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1">
-        <span className="shrink-0 text-sm font-medium text-fg-muted">{en ? 'Exam info' : '시험 정보'}</span>
+        <span className="shrink-0 text-sm font-semibold text-fg">{en ? 'Exam info' : '시험 정보'}</span>
         {facts.slice(0, 3).map((f) => (
           <span key={f.label} className="whitespace-nowrap text-sm text-fg">
-            <span className="text-fg-faint">{f.label}</span> <span className="font-medium">{f.value}</span>
+            <span className="text-fg-muted">{f.label}</span> <span className="font-semibold">{f.value}</span>
           </span>
         ))}
       </div>
@@ -249,14 +249,39 @@ export default async function CertIndexPage({ params }: PageProps) {
           2026-11-27) — 상자 전체가 exam-info로 넘어가는 클릭 영역이다. */}
       {examInfo && <ExamInfoTeaser category={category} slug={slug} info={examInfo} lang={lang} />}
 
+      <section className="space-y-6">
+        {[...byWeek.entries()].map(([w, ws]) => (
+          <div key={w} className="space-y-2">
+            <h2 className="text-base font-semibold text-fg">
+              {lang === 'en' ? `Week ${w}` : `${w}주차`}
+            </h2>
+            <ul className="divide-y divide-border rounded-lg border border-border bg-bg-elevated">
+              {ws.map((d) => (
+                <li key={d.href}>
+                  <Link href={linkDayRefHref(d)} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle transition">
+                    <span className="w-14 shrink-0 text-sm font-medium tabular-nums text-fg-muted">Day {d.day}</span>
+                    <span className="flex-1 text-sm truncate">{d.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
+                    {/* 번역 전 주차는 한국어 원문으로 연결된다(linkDayHref). 누르기 전에 알 수 있게 표시한다. */}
+                    {linkDayRefHref(d) !== d.href && <span className="font-mono text-[10px] text-fg-faint">KO</span>}
+                    <ArrowRight className="h-4 w-4 text-fg-faint" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
       {/* 트랙 구성 — 자격증마다 값이 달라지는 '사실 명세'다(홍보 문구가 아니다).
           이 페이지 본문에는 '모의고사'·'연습문제'라는 단어가 아예 없었고(메타 description에만
           있었다), 모의고사 화면 /exam 은 robots.ts에서 Disallow라 검색으로 닿을 수 있는 접점이
           한 곳도 없었다. 문구 생성은 buildTrackContents(수치 없으면 줄 생략)에 위임한다.
-          en 트랙은 Week 1 프리뷰만 있고 모의고사·복습이 한국어 전용이라 ko에서만 렌더한다. */}
+          en 트랙은 Week 1 프리뷰만 있고 모의고사·복습이 한국어 전용이라 ko에서만 렌더한다.
+          Week 목록 아래로 옮겼다(2026-11-27 피드백: Week·Day 를 찾으려면 이 상자 뒤까지 스크롤해야
+          했다). 본문에 남아 있으므로 위 설명(텍스트 접점)은 그대로 유지된다. */}
       {lang !== 'en' && (
         <section aria-labelledby="track-contents-heading" className="space-y-3">
-          <h2 id="track-contents-heading" className="text-sm font-medium text-fg-muted">
+          <h2 id="track-contents-heading" className="text-base font-semibold text-fg">
             트랙 구성
           </h2>
           <BulletList
@@ -269,34 +294,6 @@ export default async function CertIndexPage({ params }: PageProps) {
           />
         </section>
       )}
-
-      <section className="space-y-6">
-        {[...byWeek.entries()].map(([w, ws]) => (
-          <div key={w} className="space-y-2">
-            <h2
-              className={cn(
-                'text-xs uppercase tracking-wider text-fg-faint',
-                lang === 'en' && 'font-mono',
-              )}
-            >
-              {lang === 'en' ? `Week ${w}` : `${w}주차`}
-            </h2>
-            <ul className="divide-y divide-border rounded-lg border border-border bg-bg-elevated">
-              {ws.map((d) => (
-                <li key={d.href}>
-                  <Link href={linkDayRefHref(d)} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle transition">
-                    <span className="font-mono text-xs text-fg-faint w-10 shrink-0">Day {d.day}</span>
-                    <span className="flex-1 text-sm truncate">{d.title.replace(/^Day\s*\d+\s*[-–]\s*/i, '')}</span>
-                    {/* 번역 전 주차는 한국어 원문으로 연결된다(linkDayHref). 누르기 전에 알 수 있게 표시한다. */}
-                    {linkDayRefHref(d) !== d.href && <span className="font-mono text-[10px] text-fg-faint">KO</span>}
-                    <ArrowRight className="h-4 w-4 text-fg-faint" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </section>
 
       {/* 광고는 Week 목록 뒤(페이지 끝)에 — 허브의 본래 목적(간단한 정보 → Week로 이동)을
           가로막지 않는 자리. 목록 한가운데나 "Week 1부터 시작" 버튼 옆에는 두지 않는다. */}
