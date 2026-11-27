@@ -249,27 +249,6 @@ export default async function CertIndexPage({ params }: PageProps) {
           2026-11-27) — 상자 전체가 exam-info로 넘어가는 클릭 영역이다. */}
       {examInfo && <ExamInfoTeaser category={category} slug={slug} info={examInfo} lang={lang} />}
 
-      {/* 트랙 구성 — 자격증마다 값이 달라지는 '사실 명세'다(홍보 문구가 아니다).
-          이 페이지 본문에는 '모의고사'·'연습문제'라는 단어가 아예 없었고(메타 description에만
-          있었다), 모의고사 화면 /exam 은 robots.ts에서 Disallow라 검색으로 닿을 수 있는 접점이
-          한 곳도 없었다. 문구 생성은 buildTrackContents(수치 없으면 줄 생략)에 위임한다.
-          en 트랙은 Week 1 프리뷰만 있고 모의고사·복습이 한국어 전용이라 ko에서만 렌더한다. */}
-      {lang !== 'en' && (
-        <section aria-labelledby="track-contents-heading" className="space-y-3">
-          <h2 id="track-contents-heading" className="text-base font-semibold text-fg">
-            트랙 구성
-          </h2>
-          <BulletList
-            items={buildTrackContents({
-              dayCount: meta.dayCount,
-              weeks: meta.weeks,
-              mockExamCount,
-            })}
-            className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5"
-          />
-        </section>
-      )}
-
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
           <div key={w} className="space-y-2">
@@ -292,6 +271,29 @@ export default async function CertIndexPage({ params }: PageProps) {
           </div>
         ))}
       </section>
+
+      {/* 트랙 구성 — 자격증마다 값이 달라지는 '사실 명세'다(홍보 문구가 아니다).
+          이 페이지 본문에는 '모의고사'·'연습문제'라는 단어가 아예 없었고(메타 description에만
+          있었다), 모의고사 화면 /exam 은 robots.ts에서 Disallow라 검색으로 닿을 수 있는 접점이
+          한 곳도 없었다. 문구 생성은 buildTrackContents(수치 없으면 줄 생략)에 위임한다.
+          en 트랙은 Week 1 프리뷰만 있고 모의고사·복습이 한국어 전용이라 ko에서만 렌더한다.
+          Week 목록 아래로 옮겼다(2026-11-27 피드백: Week·Day 를 찾으려면 이 상자 뒤까지 스크롤해야
+          했다). 본문에 남아 있으므로 위 설명(텍스트 접점)은 그대로 유지된다. */}
+      {lang !== 'en' && (
+        <section aria-labelledby="track-contents-heading" className="space-y-3">
+          <h2 id="track-contents-heading" className="text-base font-semibold text-fg">
+            트랙 구성
+          </h2>
+          <BulletList
+            items={buildTrackContents({
+              dayCount: meta.dayCount,
+              weeks: meta.weeks,
+              mockExamCount,
+            })}
+            className="rounded-lg border border-border bg-bg-elevated p-4 sm:p-5"
+          />
+        </section>
+      )}
 
       {/* 광고는 Week 목록 뒤(페이지 끝)에 — 허브의 본래 목적(간단한 정보 → Week로 이동)을
           가로막지 않는 자리. 목록 한가운데나 "Week 1부터 시작" 버튼 옆에는 두지 않는다. */}
