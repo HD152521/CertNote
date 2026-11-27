@@ -41,7 +41,7 @@
   --bg-elevated: #161616;
   --fg: #f5f5f5;
   --fg-muted: #a3a3a3;
-  --fg-faint: #525252;
+  --fg-faint: #7a7a7a; /* 배경(#0a0a0a~#161616) 대비 약 4:1 이상. 예전 #525252 는 약 2.4:1 이라 라벨이 안 보였다 */
   --border: #262626;
   --border-strong: #404040;
   --accent: #2dd4bf;
