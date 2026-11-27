@@ -1,6 +1,7 @@
 import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSection } from './category';
 import { getAllDays, getCategoryIndex, getCertMeta } from './content';
 import { parseDaySegment } from './day/segment';
+import { getExamInfo } from './examInfo';
 
 // docs/SEO-indexing-fix-plan.md Step6 소프트 404 수정용 존재 검증.
 //
@@ -49,27 +50,18 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   // 섹션 하위의 후기 라우트(/{section}/reviews[/{cert}]) 검증. 이 라우트는 force-dynamic이라
   // 페이지 내부 notFound()가 스트리밍 때문에 200으로 누수된다(day 라우트와 동일 메커니즘) —
   // 그래서 존재 여부를 여기(렌더 전)서 판정해 잘못된 cert는 진짜 404 마커로 리라이트한다.
-  // 영어판 후기(/en/reviews[/{cert}]): AWS 후기를 영어 화면으로 보여 주는 noindex 페이지. cert 는 영어 인덱스 기준.
+  // 후기는 섹션 허브 하나로 통합됐다(?cert= 쿼리 필터, 2026-11-27) — 자격증별 경로
+  // (/{section}/reviews/{cert}·/en/reviews/{cert})는 next.config.ts redirects가 허브+쿼리로
+  // 301 보내므로 proxy까지 오지 않는다. 혹시라도 redirect를 건너뛰고 들어오면 404 로 막는다
+  // (그 경로엔 더 이상 콘텐츠가 없다 — 진짜 내용은 /{section}/reviews?cert= 에 있다).
   if (category === EN_CATEGORY && slug === 'reviews') {
-    if (segments.length === 2) return true;
-    if (segments.length !== 3) return false;
-    return certSlugExists(category, segments[2]);
+    return segments.length === 2; // /en/reviews 허브만 존재, 그 아래는 없음.
   }
   if (slug === 'reviews') {
     // 후기는 한국어 섹션(/aws·/linux·/data) 전용이다. /en/reviews*·/aws-certs/reviews* 는 라우트가
     // notFound() 를 내는데 스트리밍 때문에 200(소프트 404)으로 새므로 여기서 먼저 404 로 판정한다.
     if (!isSection(category)) return false;
-    if (segments.length === 2) return true; // /{section}/reviews 허브
-    if (segments.length !== 3) return false; // 더 깊은 경로 없음
-    // /{section}/reviews/{cert} — cert가 이 섹션에 실제로 존재해야 한다.
-    try {
-      if (!(await certSlugExists(category, segments[2]))) return false;
-      const rm = await getCertMeta(category, segments[2]);
-      if (isSection(category) && rm.section !== category) return false; // 교차 섹션 차단
-      return true;
-    } catch {
-      return false;
-    }
+    return segments.length === 2; // /{section}/reviews 허브만 존재, 그 아래는 없음.
   }
   if (!(await certSlugExists(category, slug))) return false; // 없는 slug·대소문자 불일치.
   let meta;
@@ -83,6 +75,10 @@ export async function contentPathExists(pathname: string): Promise<boolean> {
   if (isSection(category) && meta.section !== category) return false;
 
   if (segments.length === 2) return true; // 자격증 허브 — slug 존재만 검증.
+  // 시험정보 상세([category]/[slug]/exam-info). dynamicParams=false(허브와 같은 근거)로도 막히지만,
+  // 허브의 대소문자 불일치 방어와 같은 이유로 여기서도 명시 검증한다 — examInfo 없는 자격증은 그
+  // 페이지 자체를 안 만들었으므로(generateStaticParams) 404 여야 한다.
+  if (segments.length === 3) return weekSeg === 'exam-info' && getExamInfo(slug) !== null;
   if (segments.length !== 4) return true; // 그 외 깊이는 애초에 어떤 라우트도 매칭하지 않는다.
 
   const week = parseDaySegment(weekSeg, 'week');

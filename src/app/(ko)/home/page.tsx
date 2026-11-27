@@ -1,14 +1,21 @@
 import type { Metadata } from 'next';
-import { DEFAULT_CATEGORY, certLevelLabel } from '@/lib/category';
+import { headers } from 'next/headers';
+import Link from 'next/link';
+import { Flame } from 'lucide-react';
+import { DEFAULT_CATEGORY } from '@/lib/category';
 import { listCerts } from '@/lib/content';
-import { groupCertsByLevel } from '@/lib/levels';
-import { CertCard } from '@/components/CertCard';
 import { ContinueCards } from '@/components/ContinueCards';
 import { getCurrentUser } from '@/lib/auth/currentUser';
-import { getStarterDay } from '@/lib/study/starter';
-import { ExamDateNudge } from '@/components/study/ExamDateNudge';
+import { getTodayCardData } from '@/lib/study/todayCardData';
+import { TodayCard } from '@/components/dashboard/TodayCard';
 import { HomeLanding } from '@/components/marketing/HomeLanding';
+import type { Language } from '@/lib/i18n-client';
+import { pick } from '@/lib/strings/dict';
+import { dashboardStrings } from '@/lib/strings/dashboard';
+import { fmt } from '@/lib/strings/study';
 import { metadata as homeMetadata } from '../page';
+
+const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
 
 // 로그인 사용자의 학습 홈. 공개 URL 이 아니다 — src/proxy.ts 가 유효한 세션 쿠키가 있는 `/` 요청을
 // 여기로 rewrite 한다(주소창은 `/`). `/home` 을 직접 열면 proxy 가 `/` 로 돌려보낸다.
@@ -31,33 +38,62 @@ export default async function StudyHomePage() {
   const session = await getCurrentUser();
   if (!session) return <HomeLanding />;
 
-  const certs = await listCerts(DEFAULT_CATEGORY);
-  const awsCount = certs.filter((c) => (c.section ?? 'aws') === 'aws').length;
-  const linuxCount = certs.filter((c) => c.section === 'linux').length;
-  const dataCount = certs.filter((c) => c.section === 'data').length;
-  const trackSummary = `AWS 클라우드 자격증 ${awsCount}종${linuxCount > 0 ? ` + 리눅스마스터 ${linuxCount}종` : ''}${dataCount > 0 ? ` + SQLD` : ''}`;
-  const groups = groupCertsByLevel(certs, 'aws').map((g) => ({ level: g.level, items: g.certs }));
-  const starter = await getStarterDay(session.sub);
+  const headersList = await headers();
+  const lang = (headersList.get('x-language') || 'ko') as Language;
+  const s = pick(dashboardStrings, lang);
 
+  const certs = await listCerts(DEFAULT_CATEGORY);
+  const todayData = await getTodayCardData(session.sub);
+
+  // 전체 자격증 목록은 안 보여준다 — 사이드바가 이미 전부 가지고 있다(둘 다 보이면 같은 걸 두 번 보여주는 것).
+  // 홈은 "지금 나는 어디까지 왔고 오늘 뭘 하면 되는지"를 바로 보여준다.
   return (
-    <div className="mx-auto max-w-3xl space-y-12">
-      <section className="space-y-3">
-        <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">Certification Notes · {certs.length} tracks</p>
-        <h1 className="text-3xl font-semibold tracking-tight">AWS 자격증으로 시작하는 클라우드 네이티브</h1>
-        <p className="text-base text-fg-muted max-w-xl">{trackSummary}. 매일 한 페이지씩 주차별 한국어 노트로 학습. 사이드바에서 자격증을 골라 시작하세요.</p>
+    <div className="mx-auto max-w-3xl space-y-10">
+      {/* "오늘 뭘 하면 되는지"를 한 장으로 — 대시보드의 숫자 타일·그래프는 여기 안 가져온다,
+          그건 /dashboard 에서 보고 싶을 때 보는 것이고 홈은 오늘 할 일 하나만 분명하면 된다. */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="font-mono text-xs uppercase tracking-wider text-fg-faint">Certification Notes · {certs.length} tracks</p>
+          {todayData.streakCurrent > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1.5 text-[13px] font-semibold text-accent">
+              <Flame className="h-3.5 w-3.5" aria-hidden />
+              {fmt(s.streak, { n: todayData.streakCurrent })}
+            </span>
+          )}
+        </div>
+        <TodayCard lang={lang} plan={todayData.plan} starter={todayData.starter} reviewDue={todayData.reviewDue} />
       </section>
-      <ContinueCards certs={certs} starter={starter} />
-      <ExamDateNudge />
-      {groups.map(({ level, items }) => (
-        <section key={level} className="space-y-4">
-          <h2 className="text-sm font-medium text-fg-muted">{certLevelLabel(level)}</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {items.map((c) => (
-              <CertCard key={c.slug} cert={c} />
-            ))}
+
+      {/* 여러 자격증을 오가며 읽던 자리로 바로 가는 카드. 플랜 없는 신규 유저용 "시작하기"는
+          위 TodayCard(NoPlanBody)가 이미 보여주므로 여기선 starter 를 넘기지 않는다(중복 방지). */}
+      <ContinueCards certs={certs} />
+
+      {/* 한 문제라도 푼 자격증의 전체 진행률. 박스로 감싸지 않고 얇은 막대 한 줄씩 — /dashboard 의
+          ProgressCard "다른 자격증" 줄과 같은 모양(이미 아는 시각 언어를 재사용). */}
+      {todayData.activeCerts.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-fg-muted">어디까지 왔나</h2>
+          <div className="divide-y divide-border">
+            {todayData.activeCerts.map((c) => {
+              const cov = pct(c.attemptedQuestions, c.totalQuestions);
+              const acc = c.attempts > 0 ? Math.round((c.correct / c.attempts) * 100) : 0;
+              return (
+                <Link
+                  key={c.slug}
+                  href={`/${DEFAULT_CATEGORY}/${c.slug}`}
+                  className="flex min-h-11 items-center gap-3 py-2.5 text-[13px] transition hover:text-fg"
+                >
+                  <span className="w-28 shrink-0 truncate font-mono text-xs text-fg-muted">{c.code}</span>
+                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-subtle">
+                    <span className="block h-full rounded-full" style={{ width: `${cov}%`, backgroundColor: c.accent }} />
+                  </span>
+                  <span className="shrink-0 text-right text-fg-muted tabular-nums">{fmt(s.otherLine, { cov, acc })}</span>
+                </Link>
+              );
+            })}
           </div>
         </section>
-      ))}
+      )}
     </div>
   );
 }

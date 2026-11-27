@@ -47,15 +47,14 @@ describe('contentPathExists', () => {
     expect(await contentPathExists('/aws/saa-c03')).toBe(true);
   });
 
+  // 후기는 섹션 허브 하나로 통합(2026-11-27) — /{section}/reviews/{cert}·/en/reviews/{cert}는
+  // next.config.ts redirects가 ?cert= 쿼리로 301 보내므로 더는 "존재하는 콘텐츠"가 아니다.
   test('후기 라우트는 한국어 섹션 전용: /en/reviews*·/aws-certs/reviews* 는 false(소프트 404 방지)', async () => {
-    // /en/reviews 는 영어판 후기(noindex) 페이지가 따로 있다 — 존재하지 않는 cert 만 false.
     expect(await contentPathExists('/en/reviews')).toBe(true);
-    expect(await contentPathExists('/en/reviews/saa-c03')).toBe(true);
-    expect(await contentPathExists('/en/reviews/nope-c99')).toBe(false);
-    expect(await contentPathExists('/en/reviews/saa-c03/extra')).toBe(false);
+    expect(await contentPathExists('/en/reviews/saa-c03')).toBe(false);
     expect(await contentPathExists('/aws-certs/reviews')).toBe(false);
     expect(await contentPathExists('/aws/reviews')).toBe(true);
-    expect(await contentPathExists('/aws/reviews/saa-c03')).toBe(true);
+    expect(await contentPathExists('/aws/reviews/saa-c03')).toBe(false);
   });
 
   test('존재하는 slug + 존재하는 week/day(paid, 4세그먼트)는 true', async () => {
@@ -101,7 +100,13 @@ describe('contentPathExists', () => {
     expect(await contentPathExists('/linux/saa-c03/week2/day1')).toBe(false);
   });
 
-  test('3세그먼트(어떤 라우트도 매칭하지 않는 깊이)는 검증 없이 true — 이미 라우트 매칭 단계에서 404 처리됨', async () => {
-    expect(await contentPathExists('/aws-certs/saa-c03/bogus')).toBe(true);
+  test('시험정보 페이지(3세그먼트, exam-info)는 그 자격증에 examInfo 가 있어야 true', async () => {
+    expect(await contentPathExists('/aws-certs/saa-c03/exam-info')).toBe(true);
+    expect(await contentPathExists('/en/saa-c03/exam-info')).toBe(true);
+  });
+
+  test('exam-info 가 아닌 3세그먼트, 또는 없는 자격증의 exam-info 는 false', async () => {
+    expect(await contentPathExists('/aws-certs/saa-c03/bogus')).toBe(false);
+    expect(await contentPathExists('/aws-certs/nonexistent-cert/exam-info')).toBe(false);
   });
 });

@@ -86,11 +86,11 @@ describe('reviewRobots — 후기 페이지 색인 게이트', () => {
 
 // 회귀 방지: 예전에 자격증별 페이지에만 게이트가 있고 섹션 허브에는 없어서, 후기 0건인
 // /{section}/reviews 가 색인 대상으로 남아 있었다(사이드바에서 링크되어 크롤은 계속 됐다).
-// 두 라우트가 같은 단일 출처를 쓰는지 소스 수준에서 고정한다.
+// 자격증별 페이지는 섹션 허브(?cert= 필터)로 통합됐다(2026-11-27) — 지금은 허브 하나뿐이라
+// 선언만 남지만, 라우트가 다시 늘어나도 같은 단일 출처를 쓰는지 소스 수준에서 고정해 둔다.
 describe('후기 라우트가 색인 정책을 공유한다', () => {
   const routes = [
     'src/app/(ko)/[category]/reviews/page.tsx',
-    'src/app/(ko)/[category]/reviews/[cert]/page.tsx',
   ];
 
   test.each(routes)('%s 가 reviewRobots 를 쓴다', (rel) => {

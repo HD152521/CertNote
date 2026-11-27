@@ -1,5 +1,5 @@
 import { SignupPrompt } from '@/components/marketing/SignupPrompt';
-import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory, sectionLabel, sectionOfCategory, type Section } from '@/lib/category';
+import { DEFAULT_CATEGORY, EN_CATEGORY, SUPPORTED_CATEGORIES, isSupportedCategory, langOfCategory, sectionLabel, sectionOfCategory, type Lang, type Section } from '@/lib/category';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -7,18 +7,16 @@ import { hreflangPair } from '@/lib/i18n';
 import { ArrowRight } from 'lucide-react';
 import { getAllDays, getCertMeta, listCerts, certLevelLabel, certHref } from '@/lib/content';
 import { isHighlightLevel } from '@/lib/levels';
-import { getExamInfo, isUpcomingActive, kstToday, localizeExamInfo } from '@/lib/examInfo';
+import { getExamInfo, isUpcomingActive, kstToday, localizeExamInfo, type ExamInfo } from '@/lib/examInfo';
 import { getMockExamQuestionCount } from '@/lib/exam/examBankCount';
 import { buildTrackContents } from '@/lib/certTrack';
 import BulletList from '@/components/ui/BulletList';
-import ExamInfoCard from '@/components/ExamInfoCard';
-import ExamRevisionSection from '@/components/ExamRevisionSection';
 import UpcomingExamNotice from '@/components/UpcomingExamNotice';
 import { ResumeLink } from '@/components/resume/ResumeLink';
 import { cn } from '@/lib/cn';
 import { linkDayRefHref } from '@/lib/navTree';
 import { JsonLd } from '@/components/JsonLd';
-import { buildCourseLd, buildBreadcrumbLd, buildFaqPageLd } from '@/lib/structuredData';
+import { buildCourseLd, buildBreadcrumbLd } from '@/lib/structuredData';
 import { AdSlot } from '@/components/ads/AdSlot';
 import { resolveAdPlacement } from '@/lib/ads/adPlacements';
 import { certOgImage } from '@/lib/ogImages';
@@ -31,6 +29,42 @@ const LAB_LABEL_OF_SECTION_EN: Record<Section, string> = {
 const LAB_LABEL_OF_SECTION: Record<Section, string> = {
   aws: 'AWS CLI 실습', linux: '리눅스 셸 실습', data: 'SQL 실습장 (설치 없이)', kubernetes: '실습', terraform: '실습',
 };
+
+// 허브 상단의 시험 정보 요약 상자. "눌러야 아는" 바텍스트 링크 하나만 있으면 정보가 전혀
+// 안 보여서(피드백, 2026-11-27) 핵심 수치 2~3개를 미리 보여주고, 상자 전체를 exam-info로
+// 넘어가는 클릭 영역으로 둔다. 단일 응시(문항·시간) 수치가 없는 다단계 시험(phases)은
+// 합격 기준·단계 수로 대체한다.
+function ExamInfoTeaser({ category, slug, info, lang }: { category: string; slug: string; info: ExamInfo; lang: Lang }) {
+  const en = lang === 'en';
+  const passing = info.passingCriteria ?? (info.passingScore !== undefined && info.scoreMax !== undefined ? `${info.passingScore}/${info.scoreMax}` : undefined);
+  const facts: { label: string; value: string }[] = [];
+  if (info.questionCount !== undefined) facts.push({ label: en ? 'Questions' : '문항 수', value: `${info.questionCount}${en ? '' : '문항'}` });
+  if (info.durationMin !== undefined) facts.push({ label: en ? 'Duration' : '시험 시간', value: `${info.durationMin}${en ? 'min' : '분'}` });
+  if (passing) facts.push({ label: en ? 'Passing' : '합격 기준', value: passing });
+  if (info.costUsd !== undefined) facts.push({ label: en ? 'Cost' : '응시료', value: `$${info.costUsd}` });
+  if (facts.length === 0 && info.phases && info.phases.length > 0) {
+    facts.push({ label: en ? 'Format' : '형식', value: en ? `${info.phases.length}-stage exam` : `${info.phases.length}단계 시험` });
+  }
+
+  return (
+    <Link
+      href={`/${category}/${slug}/exam-info`}
+      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 transition hover:border-border-strong hover:bg-bg-subtle"
+    >
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1">
+        <span className="shrink-0 text-sm font-medium text-fg-muted">{en ? 'Exam info' : '시험 정보'}</span>
+        {facts.slice(0, 3).map((f) => (
+          <span key={f.label} className="whitespace-nowrap text-sm text-fg">
+            <span className="text-fg-faint">{f.label}</span> <span className="font-medium">{f.value}</span>
+          </span>
+        ))}
+      </div>
+      <span className="shrink-0 whitespace-nowrap text-sm font-medium text-accent">
+        {en ? 'See more' : '더 보기'} <ArrowRight className="inline h-4 w-4" />
+      </span>
+    </Link>
+  );
+}
 
 interface PageProps { params: Promise<{ category: string; slug: string }>; }
 
@@ -196,25 +230,24 @@ export default async function CertIndexPage({ params }: PageProps) {
         )}
         {/* 이 브라우저에서 읽던 기록이 있을 때만 보인다(한국어 화면 전용 문구). */}
         {lang === 'ko' && <ResumeLink slug={slug} className="max-w-md" />}
-        {/* 후기는 한국어 전용(영어판엔 후기 라우트가 없다 — /en/reviews/* 는 404). */}
+        {/* 후기는 한국어 전용(영어판 허브에는 이 링크 자체가 없다). 섹션 후기 허브
+            하나로 통합돼(2026-11-27) 자격증별 페이지가 따로 없다 — ?cert= 필터로 이 자격증만 본다. */}
         {lang === 'ko' && (
           <p>
-            {/* 일반 <a> 로 전체 이동한다: 이 자격증 페이지([category]/[slug])에서 <Link> 로 후기([category]/reviews/[cert])에
-                클라이언트 이동하면 "페이지를 찾을 수 없습니다"가 렌더된다(직접 열기·새로고침·후기 허브에서 이동은 정상). */}
-            <a href={`/${category}/reviews/${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
+            <Link href={`/${category}/reviews?cert=${slug}`} className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
               {meta.code} 합격 후기 보기 →
-            </a>
+            </Link>
           </p>
         )}
       </header>
       {lang === 'en' && <SignupPrompt placement="hub" message="home" reserveSpace />}
       {upcoming && <UpcomingExamNotice code={meta.code} upcoming={upcoming} />}
-      {examInfo && examInfo.faq && examInfo.faq.length > 0 && <JsonLd data={buildFaqPageLd(examInfo.faq)} />}
-      {examInfo && <ExamInfoCard info={examInfo} lang={lang} section={section} />}
-      {/* 이전 시험 버전과의 차이. 문구가 한국어라 영어판에는 싣지 않는다(src/components/ExamRevisionSection.tsx). */}
-      {lang === 'ko' && examInfo?.revision && (
-        <ExamRevisionSection code={meta.code} revision={examInfo.revision} domains={examInfo.domains} />
-      )}
+      {/* 시험 정보(도메인 비중·FAQ·버전 비교)는 별도 페이지로 옮겼다 — 이 허브는 "간단히 보고
+          Week로 넘어가기"가 목적인데 그 콘텐츠가 길어서 Week 목록을 밀어내고 있었다(유저 피드백,
+          2026-11-26). 상세 내용은 [category]/[slug]/exam-info/page.tsx 참고. 다만 링크 한 줄만
+          있으면 "눌러야 아는" 블랙박스라 핵심 수치 1~3개는 바로 보이는 요약 상자를 둔다(피드백,
+          2026-11-27) — 상자 전체가 exam-info로 넘어가는 클릭 영역이다. */}
+      {examInfo && <ExamInfoTeaser category={category} slug={slug} info={examInfo} lang={lang} />}
 
       {/* 트랙 구성 — 자격증마다 값이 달라지는 '사실 명세'다(홍보 문구가 아니다).
           이 페이지 본문에는 '모의고사'·'연습문제'라는 단어가 아예 없었고(메타 description에만
@@ -236,10 +269,6 @@ export default async function CertIndexPage({ params }: PageProps) {
           />
         </section>
       )}
-
-      {/* 시험 정보·트랙 구성(읽는 글)과 주차 목록 사이. 아래 목록은 줄마다 링크라, 부모의 space-y-10(40px)과
-          주차 제목 한 줄을 사이에 두고 떨어뜨린다. 목록 한가운데나 "Week 1부터 시작" 버튼 옆에는 두지 않는다. */}
-      {adHub && <AdSlot {...adHub} />}
 
       <section className="space-y-6">
         {[...byWeek.entries()].map(([w, ws]) => (
@@ -268,6 +297,10 @@ export default async function CertIndexPage({ params }: PageProps) {
           </div>
         ))}
       </section>
+
+      {/* 광고는 Week 목록 뒤(페이지 끝)에 — 허브의 본래 목적(간단한 정보 → Week로 이동)을
+          가로막지 않는 자리. 목록 한가운데나 "Week 1부터 시작" 버튼 옆에는 두지 않는다. */}
+      {adHub && <AdSlot {...adHub} />}
     </div>
   );
 }

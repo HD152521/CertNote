@@ -64,6 +64,22 @@ const nextConfig: NextConfig = {
         destination: '/aws/:path*',
         permanent: true,
       },
+      // ── 자격증별 후기 페이지 통합(2026-11-27) ──────────────────────────────
+      // /{section}/reviews/{cert}·/en/reviews/{cert}는 섹션 후기 허브(/{section}/reviews)와
+      // 내용이 겹치는 별도 페이지였다(허브에 이미 ?cert= 필터가 있다) — 후기를 "한 페이지에
+      // 모아서 필터링만 잘 되면 된다"는 피드백으로 허브 하나로 합친다. ko 쪾는 proxy.ts
+      // matcher가 /:a/reviews/:b도 잡지만, 레거시 /aws-certs 301과 같은 순서로 next.config
+      // redirects가 proxy보다 먼저 처리된다(위 /aws-certs 규칙 주석과 동일 근거).
+      {
+        source: '/:category(aws|linux|data)/reviews/:cert',
+        destination: '/:category/reviews?cert=:cert',
+        permanent: true,
+      },
+      {
+        source: '/en/reviews/:cert',
+        destination: '/en/reviews?cert=:cert',
+        permanent: true,
+      },
     ];
   },
 };
